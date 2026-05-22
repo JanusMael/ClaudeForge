@@ -249,6 +249,10 @@ Contributions welcome. Please open an issue before submitting a pull request for
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor guide.
 
+If you find this tool useful, I accept tips / donations:
+
+[![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/JanusMael)
+
 ---
 
 ## License
