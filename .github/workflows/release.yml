@@ -92,9 +92,20 @@ jobs:
 
       - run: dotnet restore ClaudeForge.slnx
 
-      - run: dotnet build ClaudeForge.slnx --no-restore -c Release
+      # Test gate uses -c Debug (mirrors the CI workflow) rather than -c Release.
+      # In Release configuration, ClaudeForge.csproj sets <RuntimeIdentifiers>
+      # (plural), which makes MSBuild on .NET 8+ auto-pick the current host's
+      # RID at build time and require RID-qualified assets in obj/project.assets.json.
+      # The preceding `dotnet restore` is RID-agnostic, so the build then fails
+      # with NETSDK1047 on whichever OS triggered the auto-RID-pick first.
+      # Debug mode doesn't activate the RuntimeIdentifiers PropertyGroup, so
+      # the test gate runs identically to CI's working pattern. The actual
+      # Release-mode build/trim coverage is exercised by the publish jobs
+      # below — running it twice (here and in publish) adds no value and
+      # introduces the auto-RID-pick failure mode.
+      - run: dotnet build ClaudeForge.slnx --no-restore -c Debug
 
-      - run: dotnet test ClaudeForge.slnx --no-build -c Release
+      - run: dotnet test ClaudeForge.slnx --no-build -c Debug
 
   # ── Publish via src/publish/publish.ps1 on each host OS ────────────────────
   #
@@ -293,16 +304,20 @@ jobs:
 
           | Platform              | Architecture   | File                                                                       |
           |-----------------------|----------------|----------------------------------------------------------------------------|
-          | Windows               | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-win-x64.zip\`                    |
-          | Windows               | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-win-arm64.zip\`                  |
-          | Linux                 | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz\`               |
-          | Linux                 | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-linux-arm64.tar.gz\`             |
-          | macOS (Intel)         | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-osx-x64.tar.gz\`                 |
-          | macOS (Apple Silicon) | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz\`               |
+          | Windows               | x64            | \`${{ env.APP_NAME }}-win-x64.zip\`                                       |
+          | Windows               | ARM64          | \`${{ env.APP_NAME }}-win-arm64.zip\`                                     |
+          | Linux                 | x64            | \`${{ env.APP_NAME }}-linux-x64.tar.gz\`                                  |
+          | Linux                 | ARM64          | \`${{ env.APP_NAME }}-linux-arm64.tar.gz\`                                |
+          | macOS (Intel)         | x64            | \`${{ env.APP_NAME }}-osx-x64.tar.gz\`                                    |
+          | macOS (Apple Silicon) | ARM64          | \`${{ env.APP_NAME }}-osx-arm64.tar.gz\`                                  |
+
+          The version (${{ env.VERSION }}) is encoded in the release tag rather than in
+          the archive filenames — publish.ps1 produces unversioned artefact names
+          so local dev builds and CI builds share one filename pattern.
 
           **Linux:** Extract, then run the bundled \`linux-setup.sh\` to install a per-user \`.desktop\` entry so Wayland compositors render the window icon correctly:
           \`\`\`bash
-          tar -xzf ${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz -C ~/${{ env.APP_NAME }}
+          tar -xzf ${{ env.APP_NAME }}-linux-x64.tar.gz -C ~/${{ env.APP_NAME }}
           cd ~/${{ env.APP_NAME }}
           ./linux-setup.sh
           ./${{ env.APP_NAME }}
@@ -310,7 +325,7 @@ jobs:
 
           **macOS:** The binary is unsigned. Use the bundled \`allow-app-to-run.sh\` to strip the Gatekeeper quarantine xattr from every file in the extracted directory:
           \`\`\`bash
-          tar -xzf ${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz -C ~/${{ env.APP_NAME }}
+          tar -xzf ${{ env.APP_NAME }}-osx-arm64.tar.gz -C ~/${{ env.APP_NAME }}
           cd ~/${{ env.APP_NAME }}
           ./allow-app-to-run.sh
           ./${{ env.APP_NAME }}
@@ -344,9 +359,9 @@ jobs:
             --notes-file release-notes.md \
             $EXTRA_FLAGS \
             ${{ env.PRERELEASE_FLAG }} \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-win-x64.zip \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-win-arm64.zip \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-linux-arm64.tar.gz \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-osx-x64.tar.gz \
-            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz
+            artifacts/${{ env.APP_NAME }}-win-x64.zip \
+            artifacts/${{ env.APP_NAME }}-win-arm64.zip \
+            artifacts/${{ env.APP_NAME }}-linux-x64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-linux-arm64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-osx-x64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-osx-arm64.tar.gz

@@ -19,6 +19,12 @@ ARMx64/
 src/dist/
 dist/
 publish/
+# Negation: src/publish/ is a SOURCE directory holding the publish scripts
+# themselves (publish.ps1, Publish-Rid.ps1, per-RID convenience wrappers,
+# Analyze-XamlClosures.ps1, Smoke-PublishedBinary.ps1).  The unanchored
+# `publish/` rule above would otherwise hide it from git.
+!/src/publish/
+!/src/publish/**
 
 # ---------------------------------------------------------------------------
 # Visual Studio
