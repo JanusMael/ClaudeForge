@@ -123,10 +123,28 @@ public class BackupClientTests
             handler,
             CancellationToken.None);
 
+        // Drain Progress<T>'s asynchronous ThreadPool dispatch before
+        // asserting.  The SDK wraps BackupProgressHandler in Progress<T>
+        // (see BackupClient.WrapProgress), which posts callbacks to the
+        // ThreadPool when no SynchronizationContext is captured (which is
+        // the default for async test methods under MSTest).  Those callbacks
+        // run asynchronously — by the time CreateAsync's await returns,
+        // queued progress dispatches may not have reached the handler yet.
+        // The race is hidden on Windows / Linux CI runners but lost
+        // consistently on the macOS-latest ARM64 runner.  A short settle
+        // drains the queue before the count assertion fires.
+        await Task.Delay(250);
+
         // The producer fires several phase transitions during a backup
         // (discovery, individual file additions, manifest rewrite). The exact
         // count varies by platform; assert we got at least one event.
-        Assert.IsTrue(progressEvents.Count > 0,
+        int eventCount;
+        lock (progressEvents)
+        {
+            eventCount = progressEvents.Count;
+        }
+
+        Assert.IsTrue(eventCount > 0,
             "Progress handler must be invoked at least once during a backup.");
     }
 
