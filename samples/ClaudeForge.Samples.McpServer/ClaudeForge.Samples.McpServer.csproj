@@ -9,18 +9,10 @@
           build with package-version conflicts long before the GUI does.
         -->
         <IsPackable>false</IsPackable>
-        <Nullable>enable</Nullable>
         <PackageId>ClaudeForge.Samples.McpServer</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
     </ItemGroup>
 </Project>

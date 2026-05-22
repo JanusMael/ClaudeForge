@@ -11,7 +11,10 @@
         </Description>
         <!-- Add the Windows platform TFM so DefaultShareService can compile with MAUI
              Essentials on Windows builds. Directory.Build.props sets the singular
-             <TargetFramework>; the plural form here takes precedence. -->
+             <TargetFramework>; the plural form here takes precedence.
+             Note: <EnableWindowsTargeting>true</EnableWindowsTargeting> is set
+             repo-wide in Directory.Build.props so this project's Windows TFM
+             also restores on macOS / Linux CI hosts. -->
         <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
         <!-- Enable MAUI Essentials only for the Windows TFM -->
         <UseMauiEssentials Condition="$([MSBuild]::IsTargetFrameworkCompatible(
@@ -25,10 +28,6 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.0.3" />
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
              ClaudeForge.Sdk so the SDK can produce dialog models that this services
              library renders.  Couples the services lib to ClaudeForge.Sdk in this

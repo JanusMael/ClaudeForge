@@ -40,11 +40,4 @@
              ClaudeForge grant — remove once 4.3.7 fully retires the wrap path. -->
         <InternalsVisibleTo Include="ClaudeForge.Tests"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-    </ItemGroup>
 </Project>

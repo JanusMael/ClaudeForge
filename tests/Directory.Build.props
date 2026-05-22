@@ -1,0 +1,27 @@
+﻿<Project>
+    <!-- MSBuild applies only the CLOSEST Directory.Build.props by default.
+         To inherit the repo-root settings (Nullable, LangVersion, AutoVersioning,
+         debug-type policy, etc.) on top of the test-only additions below, the
+         root file must be explicitly imported.  GetPathOfFileAbove walks up
+         the directory tree to find the next Directory.Build.props above this
+         one — at the repo root, in this case. -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <!-- Test projects never get packed as NuGets; suppress the per-project
+             redundant declarations. -->
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Test framework + coverage tooling — applied to every project under tests/.
+             Previously duplicated across all 5 test csprojs. -->
+        <PackageReference Include="MSTest" Version="3.8.3" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+</Project>

@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -38,10 +39,13 @@ public sealed class HasUnsavedChangesRecheckTests
     public void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
-        if (Directory.Exists(_sandbox))
-        {
-            Directory.Delete(_sandbox, recursive: true);
-        }
+        // Robust delete: each test constructs a MainWindowViewModel which
+        // wires a FileSystemWatcher against the sandbox directory.  On the
+        // CI windows-latest runner the watcher's ReadDirectoryChangesW
+        // completion-port handle can outlive Dispose() by tens of
+        // milliseconds, racing with Directory.Delete.  The helper does
+        // a forced GC pass + retry-with-backoff to absorb that latency.
+        TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
     [TestMethod]

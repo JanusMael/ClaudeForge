@@ -2,21 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Sdk.Tests</RootNamespace>
-        <IsPackable>false</IsPackable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="6.0.4">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="MSTest" Version="3.8.3"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
-    </ItemGroup>
 
     <ItemGroup>
         <!-- ClaudeForge.Sdk → ClaudeForge.Core is transitive, so the Sdk tests
