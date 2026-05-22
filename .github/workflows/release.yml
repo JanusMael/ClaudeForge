@@ -144,7 +144,15 @@ jobs:
 
       - name: Publish (win-x64, win-arm64)
         shell: pwsh
-        run: pwsh src/publish/publish.ps1 -All -Rids win-x64,win-arm64
+        # `shell: pwsh` already runs this `run:` block inside pwsh, so an
+        # inner `pwsh src/publish/publish.ps1 ...` invocation nests pwsh
+        # twice.  The outer pwsh tokenises the inner command line and
+        # passes "win-x64,win-arm64" as a SINGLE argv string to the inner
+        # pwsh, which then fails publish.ps1's `[ValidateSet]` on -Rids
+        # (no RID literally named "win-x64,win-arm64" exists).  Calling
+        # the script directly lets pwsh's expression parser handle the
+        # comma-array natively: -Rids win-x64,win-arm64 → @('win-x64','win-arm64').
+        run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -174,7 +182,9 @@ jobs:
 
       - name: Publish (linux-x64, linux-arm64)
         shell: pwsh
-        run: pwsh src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
+        # See the comment on the corresponding Windows step for why we call
+        # the script directly instead of via an inner `pwsh` invocation.
+        run: ./src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -204,7 +214,9 @@ jobs:
 
       - name: Publish (osx-x64, osx-arm64)
         shell: pwsh
-        run: pwsh src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
+        # See the comment on the Windows publish step for why we call the
+        # script directly instead of via an inner `pwsh` invocation.
+        run: ./src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
