@@ -7,11 +7,23 @@
         <Version>1.0.0</Version>
         <!-- Add Windows platform TFM to pick up the net10.0-windows build of
              LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
-             Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it. -->
+             Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it.
+             Note: <EnableWindowsTargeting>true</EnableWindowsTargeting> is set
+             repo-wide in Directory.Build.props so this project's Windows TFM
+             also restores on macOS / Linux CI hosts. -->
         <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
-        <!-- Satellite assembly languages. Only en (base) and zh-Hans are packaged in
-             self-contained builds; add more as translations are completed. -->
-        <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+        <!-- SatelliteResourceLanguages intentionally omitted.
+             When this property is set, .NET treats it as a STRICT allow-list:
+             only satellite assemblies whose folder name exactly matches one of
+             the listed culture IDs are copied into the publish output.  The
+             previous value (`en;zh-Hans`) was both stale (de-DE / es-ES / pt-BR
+             resx files exist but their satellites were stripped) and quietly
+             wrong (the Chinese resx compiles to a `zh-CN` satellite folder, not
+             `zh-Hans` — so even Chinese was silently dropped from self-contained
+             builds).  Leaving the property unset means every Strings.<culture>.resx
+             in Localization/ ships automatically; future translations don't need
+             a csproj edit.  Trade-off: ~50–150 KB of extra publish size per added
+             culture, which is negligible against the ~80 MB self-contained binary. -->
     </PropertyGroup>
 
     <!-- Expose internal test-seam members to the test project. -->
@@ -222,10 +234,6 @@
         <PackageReference Include="Avalonia" Version="12.0.3" />
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0"/>
         <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
         <!-- Avalonia.Svg.Skia has no Avalonia 12 release; Svg.Skia is the underlying
              standalone package (no Avalonia dependency) and provides the same SKSvg API. -->

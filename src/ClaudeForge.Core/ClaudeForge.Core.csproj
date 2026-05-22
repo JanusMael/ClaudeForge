@@ -6,10 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="JsonSchema.Net" Version="9.2.1" />
         <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
              file discovery errors).  No Avalonia dependency — safe to reference from Core. -->

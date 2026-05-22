@@ -86,6 +86,18 @@ public class EnvironmentEditorViewModelTests
     [TestMethod]
     public void Refresh_PopulatesEntriesFromAllLayers()
     {
+        // EnvironmentEditorViewModel.Refresh only consults the provider's
+        // Machine scope on Windows (see the OperatingSystem.IsWindows()
+        // guard at EnvironmentEditorViewModel.cs ~line 509).  On Linux /
+        // macOS, Machine-scope env vars don't exist as an OS concept, so
+        // the FakeEnvironmentProvider.Machine dict is intentionally
+        // ignored — making MACHINE_VAR absent from AllEntries on those
+        // platforms.  Skip rather than assert.
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
+        }
+
         FakeEnvironmentProvider provider = new();
         provider.Machine["MACHINE_VAR"] = "machine-val";
         provider.User["USER_VAR"] = "user-val";
@@ -155,6 +167,15 @@ public class EnvironmentEditorViewModelTests
     [TestMethod]
     public void IsOverridden_TrueWhenMultipleLayersDefineVar()
     {
+        // Machine + User layer overlap requires Machine to be readable.
+        // EnvironmentEditorViewModel skips the Machine scope on non-Windows
+        // (see OS guard at EnvironmentEditorViewModel.cs ~line 509), so the
+        // override condition can't be observed on Linux / macOS.
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
+        }
+
         FakeEnvironmentProvider provider = new();
         provider.Machine["CLAUDE_MODEL"] = "m1";
         provider.User["CLAUDE_MODEL"] = "m2";

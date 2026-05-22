@@ -5,6 +5,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/JanusMael/ClaudeForge?label=latest)](https://github.com/JanusMael/ClaudeForge/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/JanusMael)
 
 A cross-platform desktop editor for [Claude Code](https://claude.ai/code) and [Claude Desktop](https://claude.com/download) configuration files.
 
@@ -247,6 +248,10 @@ Contributions welcome. Please open an issue before submitting a pull request for
 5. Submit a pull request
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor guide.
+
+> If you find this tool useful, I accept tips / donations:
+>
+> ❤️ ~B [![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/JanusMael)
 
 ---
 

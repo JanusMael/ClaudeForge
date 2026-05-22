@@ -54,13 +54,27 @@ public sealed class SanitiseExceptionForStatusTests
     [TestMethod]
     public void WithHintPath_AppendsFilenameOnly()
     {
+        // Use a platform-correct hint path so Path.GetFileName (which the
+        // production helper uses) extracts the leaf on every OS.  Previously
+        // the test hard-coded "C:\\Users\\brian\\.claude\\settings.json", but
+        // backslash is not a directory separator on Linux/macOS, so the
+        // entire string was returned and the "on settings.json" assertion
+        // failed there.  The dir-portion check (NOT-contains "C:\\Users")
+        // is similarly skipped on non-Windows since the string never
+        // contains that substring there.
+        string hintPath = OperatingSystem.IsWindows()
+            ? @"C:\Users\brian\.claude\settings.json"
+            : "/home/brian/.claude/settings.json";
+        string hintDirSubstring = OperatingSystem.IsWindows()
+            ? @"C:\Users"
+            : "/home/brian";
+
         IOException ex = new("disk full");
-        string output = MainWindowViewModel.SanitiseExceptionForStatus(
-            ex, hintPath: @"C:\Users\brian\.claude\settings.json");
+        string output = MainWindowViewModel.SanitiseExceptionForStatus(ex, hintPath: hintPath);
 
         Assert.IsTrue(output.Contains("on settings.json"),
             $"hintPath must surface its filename component as 'on <name>'. Got: {output}");
-        Assert.IsFalse(output.Contains(@"C:\Users", StringComparison.Ordinal),
+        Assert.IsFalse(output.Contains(hintDirSubstring, StringComparison.Ordinal),
             "Directory portion of hintPath must NOT appear.");
     }
 

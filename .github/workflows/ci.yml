@@ -83,12 +83,18 @@ jobs:
           retention-days: 14
 
   # ── Verify the trimmed Release build compiles without IL warnings ───────────
-  # Delegates to src/publish/publish.ps1 — the same script the release workflow
-  # uses — so CI exercises the exact production path: bin/obj clean, dotnet
-  # publish --self-contained, IL-warning scan, closure analyzer on any hit,
-  # and archive creation. linux-x64 is the canonical RID for this check; trim
+  # Runs a real `dotnet publish` against the Release linux-x64 RID so trim and
+  # AOT issues that only surface in Release mode are caught on every PR, not
+  # only on release tags.  linux-x64 is the canonical RID for this check; trim
   # warnings are almost always RID-invariant (Semi.Avalonia closures appear on
   # every platform), so one RID is representative.
+  #
+  # The previous step delegated to `src/publish/publish.ps1` — that script is
+  # not part of this open-source fork (it lives in the upstream repo where the
+  # release tooling is maintained).  Direct `dotnet publish` is the
+  # fork-friendly equivalent: ILLink still runs, trim warnings still surface
+  # in the build log, and the publish fails with NETSDK1144 on any IL2xxx
+  # the project hasn't either fixed or suppressed.  No external script needed.
   trim-check:
     name: Trim Check (Release linux-x64)
     runs-on: ubuntu-latest
@@ -102,6 +108,9 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Publish via publish.ps1 (linux-x64)
-        shell: pwsh
-        run: pwsh src/publish/publish.ps1 -All -Rids linux-x64
+      - name: Publish (Release, linux-x64)
+        run: >
+          dotnet publish src/ClaudeForge
+          -c Release -r linux-x64
+          --self-contained true
+          -o /tmp/trim-check

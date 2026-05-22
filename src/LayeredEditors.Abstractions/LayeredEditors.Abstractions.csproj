@@ -10,10 +10,4 @@
             scope/override semantics.
         </Description>
     </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
 </Project>

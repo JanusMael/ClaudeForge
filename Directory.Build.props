@@ -5,6 +5,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- Allow restoring Windows targeting packs on non-Windows hosts.
+             Two projects in the solution use the plural <TargetFrameworks>
+             form to add a net10.0-windows10.0.19041.0 TFM:
+               * src/ClaudeForge/ClaudeForge.csproj
+                   (picks up the MAUI-Essentials build of the share service)
+               * src/LayeredEditors.Avalonia.Services/...csproj
+                   (the share service itself, compiled against MAUI Essentials)
+             On non-Windows hosts (macOS / Linux CI) `dotnet restore` against
+             those projects fails with NETSDK1100 unless this opt-in is set.
+             It is a no-op on Windows hosts and a no-op on projects that do
+             NOT target a Windows-only TFM, so setting it globally here is
+             both safe and future-proof — any new Windows-TFM project
+             inherits the same restore behaviour without a per-csproj edit. -->
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -47,5 +61,23 @@
         <DebugType>embedded</DebugType>
         <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
+
+    <!-- AutoVersioning source generator — applies to every project in the solution.
+         Hoisted here because the previous per-csproj pattern duplicated the
+         identical PackageReference block across 13 projects (52 lines of noise).
+         The generator is gated by GenerateAutoVersionedAssemblyInfo=true above,
+         so it actually runs on every project; this single declaration is all
+         that's needed.
+
+         PrivateAssets="all" keeps the generator from flowing transitively to
+         consumers of any library this repo ships (it's a build-time tool, not
+         a runtime dependency).  IncludeAssets enumerates the asset types the
+         generator legitimately needs at build time. -->
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
 </Project>

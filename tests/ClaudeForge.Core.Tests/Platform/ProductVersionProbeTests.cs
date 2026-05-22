@@ -77,13 +77,43 @@ public sealed class ProductVersionProbeTests
         }
         else
         {
-            // On Unix, /bin/sleep is universally available.
-            // We pass the path directly; the args "--version" won't affect sleep's
-            // behaviour — it still blocks until killed.
-            slowBinary = "/bin/sleep";
-            string? result = await ProductVersionProbe.TryGetClaudeCodeVersionAsync(slowBinary);
-            Assert.IsNull(result,
-                "Slow process must be killed after the internal timeout and the method must return null.");
+            // The original approach used `/bin/sleep` here on the assumption
+            // that `sleep --version` would block.  That's wrong: GNU coreutils'
+            // `sleep --version` follows the standard convention of printing
+            // version info and exiting immediately, which defeats the slow-
+            // process intent (no kill ever fires, and the probe returns the
+            // parsed version — making the IsNull assertion fail on Linux /
+            // macOS CI).
+            //
+            // Mirror the Windows batch-file approach instead: write a shell
+            // script that ignores its args and loops indefinitely, then use
+            // that as the slow binary.  This actually exercises the
+            // Kill(entireProcessTree:true) path on Unix.
+            string scriptPath = Path.Combine(Path.GetTempPath(), $"probe-slow-{Guid.NewGuid():N}.sh");
+            await File.WriteAllTextAsync(scriptPath,
+                "#!/usr/bin/env bash\nwhile true; do sleep 1; done\n");
+            // chmod +x — required for the probe's Process.Start to invoke the
+            // script directly without a shell wrapper.  UnixFileMode is the
+            // managed equivalent of `chmod 0700`.
+            File.SetUnixFileMode(scriptPath,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            try
+            {
+                string? result = await ProductVersionProbe.TryGetClaudeCodeVersionAsync(scriptPath);
+                Assert.IsNull(result,
+                    "Slow process must be killed after the internal timeout and the method must return null.");
+            }
+            finally
+            {
+                try
+                {
+                    File.Delete(scriptPath);
+                }
+                catch
+                {
+                    /* best-effort cleanup */
+                }
+            }
         }
     }
 }

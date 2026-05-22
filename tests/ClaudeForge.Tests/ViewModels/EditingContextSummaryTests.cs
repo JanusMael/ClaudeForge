@@ -44,6 +44,27 @@ public sealed class EditingContextSummaryTests
         }
     }
 
+    /// <summary>
+    /// Build a platform-correct project-root path for the test fixture.
+    /// <para>
+    /// Previously these tests hard-coded <c>"C:\\repos\\demo"</c>, which
+    /// works on Windows but fails on Linux/macOS — <see cref="Path.GetFileName(string)"/>
+    /// only treats backslash as a directory separator on Windows.  On
+    /// Linux a string like <c>"C:\\repos\\demo"</c> is just a flat name
+    /// containing literal backslashes, so <c>ProjectFolderName</c>
+    /// returns the whole string and the assertions fail.
+    /// </para>
+    /// <para>
+    /// This helper returns a path that uses the host OS's directory
+    /// separator, so the production <see cref="Path"/> APIs behave the
+    /// way the test author intended on every platform.
+    /// </para>
+    /// </summary>
+    private static string MakeProjectRoot(string leaf, bool trailingSeparator = false) =>
+        OperatingSystem.IsWindows()
+            ? $@"C:\repos\{leaf}{(trailingSeparator ? @"\" : "")}"
+            : $"/repos/{leaf}{(trailingSeparator ? "/" : "")}";
+
     // -----------------------------------------------------------------------
     // No-project mode
     // -----------------------------------------------------------------------
@@ -99,21 +120,21 @@ public sealed class EditingContextSummaryTests
     [TestMethod]
     public void ProjectOpen_IsProjectOpenIsTrue()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
         Assert.IsTrue(_vm.IsProjectOpen);
     }
 
     [TestMethod]
     public void ProjectOpen_FolderNameIsLeaf()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
         Assert.AreEqual("demo", _vm.ProjectFolderName);
     }
 
     [TestMethod]
     public void ProjectOpen_FolderName_TrailingSlashStripped()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo\\";
+        _vm.ProjectRoot = MakeProjectRoot("demo", trailingSeparator: true);
         Assert.AreEqual("demo", _vm.ProjectFolderName,
             "Trailing separators must not produce an empty leaf name.");
     }
@@ -121,7 +142,7 @@ public sealed class EditingContextSummaryTests
     [TestMethod]
     public void ProjectOpen_ClaudeDirPathIsProjectDotClaude()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
         Assert.IsTrue(_vm.ProjectClaudeDirPath.EndsWith(Path.Combine("demo", ".claude")),
             $"Expected ProjectClaudeDirPath to end with 'demo{Path.DirectorySeparatorChar}.claude' but got '{_vm.ProjectClaudeDirPath}'.");
     }
@@ -129,7 +150,7 @@ public sealed class EditingContextSummaryTests
     [TestMethod]
     public void ProjectOpen_SummaryIncludesProjectName()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
         StringAssert.Contains(_vm.EditingContextSummary, "demo",
             "Project-mode summary must include the project leaf name.");
     }
@@ -137,7 +158,7 @@ public sealed class EditingContextSummaryTests
     [TestMethod]
     public void ProjectOpen_IconIsFolder()
     {
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
         Assert.AreEqual("📁", _vm.EditingContextIcon);
     }
 
@@ -151,7 +172,7 @@ public sealed class EditingContextSummaryTests
         List<string?> seen = new();
         ((INotifyPropertyChanged)_vm).PropertyChanged += (_, e) => seen.Add(e.PropertyName);
 
-        _vm.ProjectRoot = "C:\\repos\\demo";
+        _vm.ProjectRoot = MakeProjectRoot("demo");
 
         // The [NotifyPropertyChangedFor] attributes on _projectRoot must
         // surface as PropertyChanged events for every derived UI property
@@ -171,7 +192,7 @@ public sealed class EditingContextSummaryTests
         Assert.IsFalse(_vm.IsProjectOpen);
 
         // Open A
-        _vm.ProjectRoot = "C:\\repos\\alpha";
+        _vm.ProjectRoot = MakeProjectRoot("alpha");
         Assert.IsTrue(_vm.IsProjectOpen);
         Assert.AreEqual("alpha", _vm.ProjectFolderName);
 
@@ -181,7 +202,7 @@ public sealed class EditingContextSummaryTests
         Assert.AreEqual(string.Empty, _vm.ProjectFolderName);
 
         // Open B
-        _vm.ProjectRoot = "C:\\repos\\beta";
+        _vm.ProjectRoot = MakeProjectRoot("beta");
         Assert.IsTrue(_vm.IsProjectOpen);
         Assert.AreEqual("beta", _vm.ProjectFolderName);
     }
