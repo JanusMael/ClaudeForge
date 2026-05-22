@@ -1,0 +1,127 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
+        xmlns:app="using:Bennewitz.Ninja.ClaudeForge"
+        xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+        x:Class="Bennewitz.Ninja.ClaudeForge.Views.AboutDialog"
+        x:DataType="views:AboutDialog"
+        Title="{x:Static loc:Strings.MenuAbout}"
+        Width="520"
+        MinWidth="440"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <!--
+        About ClaudeForge modal.
+
+        Currently shows app name, tagline, and version. The right-half
+        "Resources" panel is intentionally a vertical StackPanel (rather
+        than a one-line label) so future hyperlinks (documentation site,
+        GitHub repo, release notes, license) can be appended one per row
+        without re-architecting the layout. Each future link should be a
+        small Button styled like a hyperlink, calling
+        IShellLauncher.OpenUrlAsync — keeping clickable hit areas full
+        width to match the bottom-bar version button precedent.
+    -->
+    <DockPanel>
+
+        <!-- Bottom button bar -->
+        <Border DockPanel.Dock="Bottom"
+                Padding="14,10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0">
+            <!-- AutomationProperties.Name reuses Content's key — visible
+                 label is the right screen-reader announcement. -->
+            <Button Content="{x:Static loc:Strings.ButtonClose}"
+                    HorizontalAlignment="Right"
+                    MinWidth="80"
+                    IsCancel="True"
+                    IsDefault="True"
+                    Click="OnCloseClick"
+                    AutomationProperties.Name="{x:Static loc:Strings.ButtonClose}" />
+        </Border>
+
+        <!-- Body -->
+        <Grid ColumnDefinitions="*,1,*"
+              RowDefinitions="*"
+              Margin="20,18">
+
+            <!-- Left: app identity -->
+            <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Top">
+                <Image Source="{x:Static app:AppIcon.BitmapInstance}"
+                       Width="48" Height="48"
+                       HorizontalAlignment="Left"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+                <TextBlock Text="{x:Static loc:Strings.LabelAboutAppName}"
+                           FontSize="20" FontWeight="Bold" />
+                <TextBlock Text="{x:Static loc:Strings.LabelAboutTagline}"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                <!-- Single TextBlock with Runs so the version label and the
+                     version number share one line layout (and one baseline).
+                     Two TextBlocks in a StackPanel each VerticalAlignment=Center
+                     with different FontFamily (default vs Consolas) produces
+                     visibly mis-aligned baselines because center-alignment uses
+                     each TextBlock's BBox center and Consolas's ascender/descender
+                     ratio differs from the system font's.  Inline Runs ride a
+                     single text line so the glyphs sit on the same baseline
+                     regardless of FontFamily. -->
+                <TextBlock FontSize="11"
+                           Margin="0,8,0,0"
+                           VerticalAlignment="Center">
+                    <Run Text="{x:Static loc:Strings.LabelAboutVersion}"
+                         FontWeight="SemiBold"
+                         Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <Run Text=" " />
+                    <Run Text="{Binding AppVersion, Mode=OneTime}"
+                         FontFamily="Consolas,Menlo,monospace" />
+                </TextBlock>
+                <!-- Copyright pulled from AssemblyCopyrightAttribute via runtime
+                     reflection in AboutDialog.axaml.cs.  Hidden via
+                     StringConverters.IsNotNullOrEmpty when the attribute is absent
+                     (test hosts, design-time tooling) so the line collapses
+                     cleanly rather than leaving a blank gap. -->
+                <TextBlock FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Text="{Binding AppCopyright, Mode=OneTime}"
+                           IsVisible="{Binding AppCopyright, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Vertical separator -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    Width="1"
+                    Margin="14,0" />
+
+            <!--
+                Right: resources panel.
+
+                Empty for now — a single placeholder label keeps the visual
+                balance of the two-column body until the first hyperlink
+                lands. Append future <Button Classes="link" .../> rows here
+                as they are added; the StackPanel will grow vertically and
+                SizeToContent="Height" on the Window will absorb the change.
+            -->
+            <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
+                <TextBlock Text="{x:Static loc:Strings.HeadingAboutLinks}"
+                           FontSize="13" FontWeight="SemiBold" />
+                <Button Classes="link"
+                        Content="{x:Static loc:Strings.LinkGitHubRepo}"
+                        Click="OnGitHubClick"
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="https://github.com/JanusMael/ClaudeForge"
+                        AutomationProperties.Name="{x:Static loc:Strings.LinkGitHubRepo}" />
+                <Button Classes="link"
+                        Content="{x:Static loc:Strings.LinkReportIssue}"
+                        Click="OnReportIssueClick"
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="https://github.com/JanusMael/ClaudeForge/issues"
+                        AutomationProperties.Name="{x:Static loc:Strings.LinkReportIssue}" />
+            </StackPanel>
+
+        </Grid>
+    </DockPanel>
+</Window>

@@ -1,0 +1,305 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:loc="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Localization"
+             xmlns:sys="using:System"
+             x:Class="Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.PropertyEditorWrapper"
+             x:DataType="vm:PropertyEditorViewModel">
+
+    <UserControl.Resources>
+        <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
+        <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
+        <conv:BoolToStatusTextConverter x:Key="BoolToStatusText" />
+        <conv:BoolToStatusBrushConverter x:Key="BoolToStatusBrush" />
+    </UserControl.Resources>
+
+    <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
+         Instead IsEnabled is applied only to the ContentControl (Row 3 editor) below. -->
+    <Border Padding="16,10"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="0,0,0,1">
+
+        <StackPanel Spacing="4">
+
+            <!-- Row 1: Property name + scope badge + reset button -->
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Command="{Binding ResetToInheritedCommand}"
+                        IsVisible="{Binding CanReset}"
+                        Content="{x:Static loc:WrapperStrings.LabelReset}"
+                        FontSize="11"
+                        Padding="8,2"
+                        ToolTip.Tip="{x:Static loc:WrapperStrings.TipResetToInherited}" />
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- 2026-05-16 — Property-name pill (background + foreground both
+                         theme-aware via App-side tokens).  Tokens are defined in the
+                         CONSUMER App.axaml (ClaudeForge/App.axaml) rather than this
+                         library because the library has no theme-dictionaries
+                         infrastructure of its own.  When the brushes are absent
+                         (consumer didn't define them), the Border/TextBlock fall
+                         back to transparent bg + default foreground, which is the
+                         same visual as the pre-pill behaviour. -->
+                    <!-- 2026-05-16 — ToolTip.Tip on Border + inner TextBlock per I9
+                         (Avalonia tooltips don't propagate child→parent), and
+                         explicit AutomationProperties on the TextBlock so screen
+                         readers in object-navigation mode announce the property
+                         name + description without relying on auto-derivation.
+                         Tooltip shows the schema path which disambiguates nested
+                         properties whose DisplayName is generic. -->
+                    <Border Background="{DynamicResource AppPropertyHeadingBackgroundBrush}"
+                            CornerRadius="3" Padding="8,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding Path}">
+                        <TextBlock x:Name="PropertyNameLabel"
+                                   Text="{Binding DisplayName}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppPropertyHeadingBrush}"
+                                   VerticalAlignment="Center"
+                                   ToolTip.Tip="{Binding Path}"
+                                   AutomationProperties.Name="{Binding DisplayName}"
+                                   AutomationProperties.HelpText="{Binding Description}" />
+                    </Border>
+
+                    <!-- Scope badge — only shown when a value exists at some scope -->
+                    <Border IsVisible="{Binding EffectiveScope, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Background="{Binding EffectiveScope, Converter={StaticResource ScopeToBrush}}"
+                            CornerRadius="4" Padding="6,2"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding EffectiveScope, Converter={StaticResource ScopeToName}}"
+                                   FontSize="10" Foreground="White" FontWeight="Bold" />
+                    </Border>
+
+                    <!-- Override indicator -->
+                    <TextBlock IsVisible="{Binding IsOverridden}"
+                               Text="{x:Static loc:WrapperStrings.LabelOverridden}"
+                               FontSize="10" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               VerticalAlignment="Center" />
+
+                    <!-- Read-only lock icon -->
+                    <TextBlock IsVisible="{Binding IsLocked}"
+                               Text="🔒"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="{x:Static loc:WrapperStrings.TipReadOnly}" />
+
+                    <!-- Undocumented indicator: not in official docs -->
+                    <TextBlock IsVisible="{Binding IsUndocumented}"
+                               Text="🕵"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="{x:Static loc:WrapperStrings.TipUndocumented}" />
+
+                    <!-- New-since-last-snapshot badge -->
+                    <Border IsVisible="{Binding IsNew}"
+                            Background="{DynamicResource SystemAccentColorBrush}"
+                            CornerRadius="4" Padding="6,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{x:Static loc:WrapperStrings.TipNewSetting}">
+                        <TextBlock Text="✨ NEW"
+                                   FontSize="9" FontWeight="Bold"
+                                   Foreground="White" />
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Row 2: Description / help text (URLs are linkified) -->
+            <ctrl:LinkifiedTextBlock SourceText="{Binding Description}"
+                                     IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                     Margin="0,0,0,4" />
+
+            <!-- Row 3: The actual editor control, resolved from DataTemplates.
+                 Unknown types (e.g. specialized App editors) fall through to
+                 Application.DataTemplates so the host can register them.
+                 IsEnabled here (not on the outer Border) so Row 1 (lock icon) keeps
+                 hit-test visibility and can show its tooltip even when locked. -->
+            <ContentControl Content="{Binding}"
+                            IsEnabled="{Binding IsLocked, Converter={x:Static BoolConverters.Not}}">
+                <ContentControl.DataTemplates>
+
+                    <!-- 2026-05-16 — Every primary editor input gets
+                         AutomationProperties.Name + HelpText bound to the VM's
+                         DisplayName + Description so screen-reader Tab-navigation
+                         announces the property context ("Default Mode, edit text,
+                         '…' ") rather than just role+value.  Auxiliary controls
+                         (Browse button, chevron, per-row × buttons) keep their
+                         own context-specific announcements; only the PRIMARY
+                         input carries the property name. -->
+
+                    <!-- Boolean: tri-state CheckBox with coloured status label
+                         (null=Unset/gray, true=Enabled/green, false=Disabled/red) -->
+                    <DataTemplate x:DataType="vm:BooleanPropertyEditorViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <CheckBox IsChecked="{Binding Value}"
+                                      IsThreeState="True"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{Binding DisplayName}"
+                                      AutomationProperties.HelpText="{Binding Description}" />
+                            <TextBlock Text="{Binding Value, Converter={StaticResource BoolToStatusText}}"
+                                       Foreground="{Binding Value, Converter={StaticResource BoolToStatusBrush}}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- String -->
+                    <DataTemplate x:DataType="vm:StringPropertyEditorViewModel">
+                        <TextBox Text="{Binding Value}"
+                                 PlaceholderText="{Binding Watermark}"
+                                 MinWidth="200"
+                                 MaxWidth="500"
+                                 HorizontalAlignment="Left"
+                                 AutomationProperties.Name="{Binding DisplayName}"
+                                 AutomationProperties.HelpText="{Binding Description}" />
+                    </DataTemplate>
+
+                    <!-- Path -->
+                    <DataTemplate x:DataType="vm:PathPropertyEditorViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{Binding Value}"
+                                     PlaceholderText="{Binding Watermark}"
+                                     Width="360"
+                                     AutomationProperties.Name="{Binding DisplayName}"
+                                     AutomationProperties.HelpText="{Binding Description}" />
+                            <Button Content="Browse..."
+                                    Command="{Binding BrowseCommand}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Enum: strict enums (JSON-Schema "enum") → ComboBox with visible dropdown
+                         chevron so users can discover the allowed values. Free-form enums
+                         (promoted from "examples") → AutoCompleteBox so users can type
+                         arbitrary values with suggestions. Discriminated via
+                         IsStrictEnum/AllowsFreeForm so only one control is visible. -->
+                    <DataTemplate x:DataType="vm:EnumPropertyEditorViewModel">
+                        <Grid HorizontalAlignment="Left">
+                            <ComboBox IsVisible="{Binding IsStrictEnum}"
+                                      ItemsSource="{Binding EnumOptions}"
+                                      SelectedItem="{Binding SelectedValue}"
+                                      PlaceholderText="{Binding Watermark}"
+                                      MinWidth="200"
+                                      AutomationProperties.Name="{Binding DisplayName}"
+                                      AutomationProperties.HelpText="{Binding Description}" />
+                            <StackPanel IsVisible="{Binding AllowsFreeForm}"
+                                        Orientation="Horizontal" Spacing="4">
+                                <AutoCompleteBox Name="FreeFormBox"
+                                                 ItemsSource="{Binding EnumOptions}"
+                                                 Text="{Binding SelectedValue}"
+                                                 PlaceholderText="{Binding Watermark}"
+                                                 FilterMode="Contains"
+                                                 MinimumPrefixLength="0"
+                                                 MinWidth="200"
+                                                 AutomationProperties.Name="{Binding DisplayName}"
+                                                 AutomationProperties.HelpText="{Binding Description}" />
+                                <Button Content="▾" Padding="8,4"
+                                        ToolTip.Tip="{x:Static loc:WrapperStrings.TipShowSuggestions}"
+                                        Click="OnEnumDropdownToggleClick" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+
+                    <!-- Number / Integer -->
+                    <DataTemplate x:DataType="vm:NumberPropertyEditorViewModel">
+                        <!-- Minimum/Maximum on the source VM are double? (nullable);
+                             NumericUpDown.Minimum/Maximum are decimal (non-nullable),
+                             so a null source would emit "Could not convert (null) to
+                             System.Decimal" warnings. TargetNullValue substitutes the
+                             decimal sentinels so the spinner is effectively unbounded
+                             when the schema does not specify a range. -->
+                        <NumericUpDown Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Minimum="{Binding Minimum, TargetNullValue={x:Static sys:Decimal.MinValue}}"
+                                       Maximum="{Binding Maximum, TargetNullValue={x:Static sys:Decimal.MaxValue}}"
+                                       PlaceholderText="{Binding Watermark}"
+                                       Increment="1"
+                                       HorizontalAlignment="Left"
+                                       Width="200"
+                                       AutomationProperties.Name="{Binding DisplayName}"
+                                       AutomationProperties.HelpText="{Binding Description}" />
+                    </DataTemplate>
+
+                    <!-- String array -->
+                    <DataTemplate x:DataType="vm:StringArrayPropertyEditorViewModel">
+                        <StackPanel Spacing="6" x:DataType="vm:StringArrayPropertyEditorViewModel">
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                                            <TextBlock Text="{Binding}"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="200" />
+                                            <Button Content="×"
+                                                    Padding="6,2"
+                                                    FontSize="12"
+                                                    Click="OnRemoveItem" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding NewItemText}"
+                                         PlaceholderText="{Binding AddItemWatermark}"
+                                         Width="300" />
+                                <Button Content="Add"
+                                        Command="{Binding AddItemCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!--
+                        Object: render children recursively through PropertyEditorWrapper so
+                        each nested leaf picks up the full DisplayName + Description + scope
+                        badge chrome. A bare ContentControl here only resolves the leaf
+                        DataTemplate (Bool/String/Number/…) and strips the label, which is why
+                        nested checkboxes previously appeared unlabeled.
+                    -->
+                    <DataTemplate x:DataType="vm:ObjectPropertyEditorViewModel">
+                        <Expander IsExpanded="{Binding IsExpanded}"
+                                  Header="{Binding DisplayName}">
+                            <ItemsControl ItemsSource="{Binding Children}">
+                                <ItemsControl.ItemTemplate>
+                                    <!-- x:DataType enables compiled bindings inside the recursive
+                                         PropertyEditorWrapper; without it, trim analysis emits an
+                                         IL2026 ReflectionBinding warning for this closure. -->
+                                    <DataTemplate x:DataType="vm:PropertyEditorViewModel">
+                                        <ctrl:PropertyEditorWrapper />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+                    </DataTemplate>
+
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+            <!-- Row 4: Inherited-from-scope chiclet + value (single row).
+                 Mirrors the App-side wrapper.  Placed AFTER the editor
+                 so the reading order is "editor first, then 'falls
+                 through to: [scope] {value}' below it" — matches the
+                 user's mental model of inheritance as a default when
+                 the editing scope is empty.  Visible only when
+                 HasInheritedFromOtherScope is true.  2026-05-14. -->
+            <StackPanel Orientation="Horizontal" Spacing="6"
+                        Margin="0,4,0,0"
+                        IsVisible="{Binding HasInheritedFromOtherScope}">
+                <Border Background="{Binding InheritedFromScope, Converter={StaticResource ScopeToBrush}}"
+                        CornerRadius="4" Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding InheritedFromScope, Converter={StaticResource ScopeToName}}"
+                               FontSize="10" Foreground="White" FontWeight="Bold" />
+                </Border>
+                <TextBlock Text="{Binding InheritedDisplay}"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="600" />
+            </StackPanel>
+
+        </StackPanel>
+    </Border>
+</UserControl>

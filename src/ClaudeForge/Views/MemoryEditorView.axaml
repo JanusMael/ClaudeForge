@@ -1,0 +1,823 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:sdk="using:Bennewitz.Ninja.ClaudeForge.Sdk.Memory"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:md="https://github.com/whistyun/Markdown.Avalonia.Tight"
+             xmlns:mdc="clr-namespace:Markdown.Avalonia.Controls;assembly=Markdown.Avalonia"
+             xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.MemoryEditorView"
+             x:DataType="vm:MemoryEditorViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="16" Margin="16">
+
+            <!-- Code section header — matches the nav-pill styling used by other top-level
+                 editor views.  HorizontalAlignment removed (was Left) so the header pill
+                 fills its parent's width and the right-edge Refresh button has a stable
+                 anchor; without this the pill would shrink-wrap its content and the
+                 button would float on top of the title text. -->
+            <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                    TextElement.Foreground="White"
+                    CornerRadius="6"
+                    Padding="14,8"
+                    VerticalAlignment="Center">
+                <DockPanel LastChildFill="True">
+                    <!-- Refresh shared by both tabs.  Hosted in the header pill so the
+                         tabs themselves no longer need their own toolbar (was wasting
+                         vertical space + creating a gap above the row content).  Visible
+                         only when the inventory is showing — the viewer pane has its
+                         own Back-to-list affordance.  Border + Foreground are explicit
+                         so it reads correctly against the accent-blue pill background. -->
+                    <Button DockPanel.Dock="Right"
+                            Content="{x:Static loc:Strings.ButtonRefresh}"
+                            Command="{Binding RefreshCommand}"
+                            IsVisible="{Binding !IsViewerVisible}"
+                            Foreground="White"
+                            Background="Transparent"
+                            BorderBrush="White"
+                            BorderThickness="1"
+                            Padding="10,2"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonRefresh}"
+                            Margin="8,0,0,0" />
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.HeaderMemoryCode}"
+                                   FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock Text="{x:Static loc:Strings.NavDescMemory}"
+                                   FontSize="11" Opacity="0.85" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Code section body — TabControl with two tabs. -->
+            <TabControl IsVisible="{Binding HasCodeMemory}">
+
+                <!-- ── Tier 1 — User Memory (read-only inventory) ────────── -->
+                <TabItem Header="{x:Static loc:Strings.HeaderTabUserMemory}">
+                    <Grid Margin="0,4,0,0">
+                        <!-- Inventory list — visible when no file is selected.
+                             Categories start COLLAPSED so the user sees the high-level
+                             list first; click an Expander to drill in.  Avoids the
+                             "wall of files" problem when many categories are populated. -->
+                        <ItemsControl ItemsSource="{Binding Tier1Groups}"
+                                      IsVisible="{Binding !IsViewerVisible}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:UserMemoryGroupViewModel">
+                                    <Expander Margin="0,2" IsExpanded="False">
+                                        <Expander.Header>
+                                            <!-- ToolTip on the header StackPanel (not the Expander
+                                                 itself) so the description triggers only on the
+                                                 clickable header — not when the user is hovering
+                                                 over individual file rows in the expanded body. -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                                        ToolTip.Tip="{Binding Tooltip}">
+                                                <TextBlock Text="{Binding HumanLabel}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding CountLabel}" Opacity="0.6" />
+                                            </StackPanel>
+                                        </Expander.Header>
+                                        <StackPanel Spacing="2" Margin="0,4">
+                                            <TextBlock IsVisible="{Binding IsEmpty}"
+                                                       Text="—"
+                                                       Opacity="0.5"
+                                                       FontStyle="Italic" />
+                                            <ItemsControl ItemsSource="{Binding Files}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="sdk:UserMemoryFile">
+                                                        <Border Padding="8,4"
+                                                                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                                                BorderThickness="0,0,0,1">
+                                                            <!-- Grid layout: DisplayName button (auto) | Subtitle (fills, vertically centered) | Reveal (auto).
+                                                                 Replaces the prior DockPanel where the Subtitle was the LastChildFill child and
+                                                                 ended up top-aligned because the DisplayName button defaulted to Dock=Top.
+                                                                 Grid with VerticalAlignment="Center" on every cell keeps the Subtitle inline
+                                                                 with the DisplayName button regardless of the row's measured height. -->
+                                                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                                                  VerticalAlignment="Center">
+                                                                <Button Grid.Column="0"
+                                                                        Content="{Binding DisplayName}"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        FontWeight="SemiBold"
+                                                                        Padding="0"
+                                                                        AutomationProperties.Name="{Binding DisplayName, StringFormat='Open memory file {0}'}"
+                                                                        Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).LoadFileCommand}"
+                                                                        CommandParameter="{Binding}" />
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding Subtitle}"
+                                                                           Opacity="0.6"
+                                                                           FontSize="11"
+                                                                           TextWrapping="NoWrap"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="8,0,0,0" />
+                                                                <!-- Per-row action group: Open in editor + Reveal in Explorer.
+                                                                     Open in editor delegates to IShellLauncher.OpenInDefaultEditor,
+                                                                     which on Windows uses the registered file association
+                                                                     (VS Code / Notepad / etc. for .md), on macOS uses `open -t`,
+                                                                     and on Linux uses xdg-open. -->
+                                                                <StackPanel Grid.Column="2"
+                                                                            Orientation="Horizontal"
+                                                                            Spacing="4"
+                                                                            Margin="6,0,0,0"
+                                                                            VerticalAlignment="Center">
+                                                                    <Button
+                                                                        Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                                        FontSize="11"
+                                                                        Padding="6,2"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                                        Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).OpenInEditorCommand}"
+                                                                        CommandParameter="{Binding AbsolutePath}" />
+                                                                    <Button
+                                                                        Content="{x:Static loc:PlatformLabels.Reveal}"
+                                                                        FontSize="11"
+                                                                        Padding="6,2"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.ButtonReveal}"
+                                                                        Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).RevealCommand}"
+                                                                        CommandParameter="{Binding AbsolutePath}" />
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Expander>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- File viewer — visible when a Tier 1 file is open.  Toolbar
+                             (Back-to-list + read-only note) lives INSIDE the viewer
+                             border so it's tied to the viewer it controls — replaces
+                             the prior page-level toolbar that wasted vertical space when
+                             the viewer wasn't open. -->
+                        <DockPanel IsVisible="{Binding IsViewerVisible}" LastChildFill="True">
+                            <Border DockPanel.Dock="Top"
+                                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                    BorderThickness="1,1,1,0"
+                                    CornerRadius="4,4,0,0"
+                                    Padding="8,6">
+                                <DockPanel LastChildFill="True">
+                                    <!-- Back-to-list moved to the far LEFT
+                                         with the shared orange "back-button" Style class
+                                         (same look as the deep-link Back at the bottom of
+                                         the nav sidebar).  Replaces the stale "click
+                                         Reveal-in-Explorer" hint label that used to live
+                                         on the left — there is no Reveal button on this
+                                         toolbar, so the hint pointed at a non-existent
+                                         control.  Open-in-Editor is the actual edit path. -->
+                                    <Button DockPanel.Dock="Left"
+                                            Classes="back-button"
+                                            Content="{x:Static loc:Strings.ButtonCloseViewer}"
+                                            Command="{Binding CloseViewerCommand}"
+                                            FontWeight="SemiBold"
+                                            FontSize="11"
+                                            Padding="10,4"
+                                            Margin="0,0,8,0"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCloseViewer}"
+                                            VerticalAlignment="Center" />
+                                    <!-- Right-aligned action group: Open in editor + Copy markdown.
+                                         Open in editor uses the registered file association
+                                         (e.g., VS Code for .md on a typical Windows install) so
+                                         users can edit Tier 1 markdown in their preferred external
+                                         editor.  Copy markdown is the smoke-iteration aid: pushes
+                                         ViewerContent onto the platform clipboard via the View's
+                                         CopyMarkdownRequested handler. -->
+                                    <StackPanel DockPanel.Dock="Right"
+                                                Orientation="Horizontal"
+                                                Spacing="6"
+                                                VerticalAlignment="Center">
+                                        <!-- FallbackValue='' silences the null-traversal warning that
+                                             fires once during viewer tear-down: SelectedFile flips to
+                                             null and Avalonia re-evaluates this binding before the
+                                             button is unrendered.  Same pattern EnvironmentEditorView
+                                             uses for its SelectedEntry.* bindings. -->
+                                        <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                Command="{Binding OpenInEditorCommand}"
+                                                CommandParameter="{Binding SelectedFile.AbsolutePath, FallbackValue=''}"
+                                                FontSize="11"
+                                                AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                Padding="8,2" />
+                                        <Button Content="{x:Static loc:Strings.ButtonCopyMarkdown}"
+                                                Command="{Binding CopyMarkdownCommand}"
+                                                FontSize="11"
+                                                AutomationProperties.Name="{x:Static loc:Strings.ButtonCopyMarkdown}"
+                                                Padding="8,2" />
+                                    </StackPanel>
+                                    <!-- LastChildFill takes whatever's left — we put a single empty
+                                         control here so the DockPanel renders cleanly without a
+                                         filler text block competing for vertical space. -->
+                                    <Panel />
+                                </DockPanel>
+                            </Border>
+                            <Border BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                    BorderThickness="1,0,1,1"
+                                    Padding="12"
+                                    CornerRadius="0,0,4,4">
+                                <!-- Markdown viewer powered by Markdown.Avalonia
+                                     (12.0.0-a3, prerelease for Avalonia 12).
+                                     MarkdownStyleName="GithubLike" picks the
+                                     package's GitHub-flavored typography +
+                                     spacing.  The Styles block below overrides
+                                     specific colors that would otherwise blend
+                                     into our Fluent light/dark backgrounds —
+                                     GithubLike assumes a white page, so on
+                                     dark theme its near-black foreground +
+                                     light-grey code-block background would be
+                                     unreadable.  Each Setter binds to a
+                                     DynamicResource Fluent token so the
+                                     palette tracks the active theme.
+
+                                     Selectors target ctxt:CTextBlock with the
+                                     class names Markdown.Avalonia attaches at
+                                     render time (Heading1Class / CodeBlockClass /
+                                     BlockquoteClass / etc.) — see the embedded
+                                     Markdown.Avalonia.Tight DLL strings dump
+                                     for the canonical class list.  Selection /
+                                     copy keep working — MarkdownScrollViewer
+                                     uses SelectableTextBlock under the hood. -->
+                                <!-- Foreground set directly on the control so it
+                                     INHERITS to descendant CTextBlocks even if a
+                                     particular Style override doesn't take effect.
+                                     This is the dark-theme safety net: GithubLike
+                                     hardcodes a near-black body color which becomes
+                                     invisible on the Fluent dark base-low background.
+                                     Setting Foreground here propagates the Fluent
+                                     base-high color to anything the Styles below
+                                     don't reach.
+
+                                     Per-class Style overrides match GithubLike's
+                                     own selector specificity (the package sets
+                                     Foreground on Heading1..6 / CodeBlock /
+                                     Blockquote individually with class selectors;
+                                     a broader `ctxt|CTextBlock` selector loses to
+                                     those, which is why the first iteration left
+                                     dark-theme text unreadable). Repeating each
+                                     class explicitly puts our override at the
+                                     same specificity tier, and "later style wins"
+                                     resolves it in our favor. -->
+                                <!-- Markdown viewer: switched from MarkdownStyleName="GithubLike"
+                                     to "FluentTheme" after a smoke session showed the GithubLike
+                                     overrides couldn't reliably win Avalonia 12's style cascade
+                                     (the package loads its MarkdownStyle styles via a path that
+                                     evaluates after our local <Styles> in many cases, defeating
+                                     same-specificity source-order resolution).  Concrete failures
+                                     under GithubLike + overrides:
+                                       - Dark theme H2/H3/etc still rendered as #ff000000 black.
+                                       - Code-block body invisible because the SyntaxHigh package
+                                         only ships theme-appendix axaml for FluentTheme /
+                                         FluentAvalonia / DefaultTheme — no GithubLike variant —
+                                         so AvaloniaEdit's SyntaxHighlighting setter never fires.
+
+                                     FluentTheme is theme-aware end-to-end out of the box: every
+                                     foreground / background routes through Fluent tokens via the
+                                     package's mde:Alpha / mde:Multiply markup extensions, and its
+                                     matching SyntaxHigh appendix auto-loads (giving us correct
+                                     code-block rendering with no overrides).
+
+                                     Trade-off: we lose GithubLike's heavier H1 (28pt UltraBold)
+                                     and the white/grey table striping aesthetic.  FluentTheme
+                                     uses lighter, smaller headers consistent with WinUI 3 and
+                                     theme-tracking tints throughout — which is closer to the
+                                     rest of this app's UI anyway.
+
+                                     if the
+                                     full GithubLike typography aesthetic is wanted (UltraBold
+                                     headers, heavier H1, distinct white/grey table striping),
+                                     the route is to author a full Styles collection (typography
+                                     setters from GithubLike, theme-aware Foreground / Background
+                                     setters via Fluent tokens) and assign it to the package's
+                                     MarkdownStyle property (NOT MarkdownStyleName).  That bypasses
+                                     the package's auto-load entirely so we own the cascade.
+                                     Probably 60-80 lines of XAML — track separately when the
+                                     aesthetic gap becomes a real friction. -->
+                                <!-- Markdown viewer with FULL CUSTOM Styles assigned via the
+                                     package's MarkdownStyle property — bypasses MarkdownStyleName
+                                     entirely so the package's auto-load doesn't compete with
+                                     our cascade.  Two prior approaches failed:
+
+                                       (a) MarkdownStyleName="GithubLike" + local override Styles
+                                           — package loaded its styles AFTER ours, defeating
+                                           same-specificity source-order resolution.
+                                       (b) MarkdownStyleName="FluentTheme" + local override Styles
+                                           — same problem, plus FluentTheme's setters use mde:Alpha
+                                           / mde:DivideColor markup extensions over Fluent tokens
+                                           that don't always resolve in our app, leaving values
+                                           unset and falling back to defaults (= near-black, =
+                                           invisible on dark theme).
+
+                                     This block defines every style the viewer needs from scratch,
+                                     bound to DynamicResource App-owned tokens defined per theme
+                                     variant in App.axaml (AppPrimaryTextBrush /
+                                     AppCodeBlockBackgroundBrush / AppCodeBlockBorderBrush /
+                                     AppPanelBorderBrush / AppLinkBrush).  Semi.Avalonia does
+                                     NOT reliably define the SystemControl* family (per the
+                                     hazard documented in App.axaml comments — Semi maps that
+                                     family to dark-ish in BOTH theme variants), so app-owned
+                                     tokens are the only reliable cross-theme path.
+
+                                     CAVEAT: these Style setters are dead code in practice
+                                     today.  The package writes Foreground inline at
+                                     LocalValue priority during render, beating any Style.
+                                     The code-behind walk-the-tree in MemoryEditorView.axaml.cs
+                                     is what actually colors the rendered output.  Keeping
+                                     these setters here for two reasons:
+                                       (1) The non-Foreground properties (FontSize, FontWeight,
+                                           Margin, Padding, CornerRadius, etc.) DO land —
+                                           those drive the visible typography hierarchy.
+                                       (2) If a future Markdown.Avalonia release stops writing
+                                           Foreground inline, these styles take effect and
+                                           SHOULD render correctly under Semi.
+
+                                     Selectors mirror Markdown.Avalonia's emitted element tree:
+                                       - .Markdown_Avalonia_MarkdownViewer is the ancestor class
+                                         applied to every CTextBlock / Border / Grid / TextBlock
+                                         the package emits.
+                                       - ctxt|CTextBlock.HeadingN / CodeBlock / ListMarker / Note /
+                                         Paragraph for typed inline content.
+                                       - Border.CodeBlock / Blockquote / Table / TableHeader /
+                                         OddTableRow / EvenTableRow for typed containers.
+
+                                     SyntaxHigh / AvaloniaEdit code-body rendering was
+                                     dropped in favour of Markdown.Avalonia.Tight (the minimal
+                                     package without SyntaxHigh) — fenced code blocks now
+                                     render as TextBlock.CodeBlock for both no-language and
+                                     language-tagged fences.  Trade-off: lose syntax
+                                     highlighting + per-block Copy button + language watermark.
+                                     Reasoning: AvaloniaEdit's Fluent theme XAML referenced an
+                                     unbounded set of Fluent typography tokens via StaticResource
+                                     (hard-fail), and Semi.Avalonia doesn't define them — would
+                                     have required defining each one as it surfaced (see commit
+                                     log around 2026-05-05 16:30 for the cascade).  Code blocks
+                                     still render readable monospace via the code-behind walk
+                                     handling TextBlock + Border.CodeBlock. -->
+                                <md:MarkdownScrollViewer x:Name="MarkdownViewer"
+                                                         Markdown="{Binding ViewerContent}"
+                                                         TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                                         MaxHeight="600">
+                                    <md:MarkdownScrollViewer.MarkdownStyle>
+                                        <Styles>
+                                            <!-- Body / paragraph defaults — also the inheritance
+                                                 source for every element these styles don't reach. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="14" />
+                                                <Setter Property="Margin" Value="0,5" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Paragraph">
+                                                <Setter Property="Margin" Value="0,7,0,0" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="14" />
+                                            </Style>
+
+                                            <!-- Headings — sized in a 28/22/18/15/13/13 ladder so
+                                                 the section hierarchy reads at a glance, all forced
+                                                 to the high-contrast theme foreground. -->
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading1">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="28" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                                <Setter Property="Margin" Value="0,15,0,5" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading2">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="22" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                                <Setter Property="Margin" Value="0,12,0,4" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading3">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="18" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Margin" Value="0,10,0,4" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading4">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="15" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Margin" Value="0,8,0,3" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading5">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="13" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading6">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontSize" Value="13" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Style>
+
+                                            <!-- Lists — Grid.List sets indentation; ListMarker is
+                                                 the per-item bullet/number prefix. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.List">
+                                                <Setter Property="Margin" Value="20,0,0,0" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.ListMarker">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="Margin" Value="0,5,5,5" />
+                                            </Style>
+
+                                            <!-- Inline `code` — theme-aware bg + fg, monospace. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CCode">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                                            </Style>
+
+                                            <!-- Hyperlinks — high-contrast Fluent accent that
+                                                 reads on both themes. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CHyperlink">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppLinkBrush}" />
+                                                <Setter Property="IsUnderline" Value="True" />
+                                            </Style>
+
+                                            <!-- Code-block container — outline + padding give the
+                                                 block visible boundaries on either theme. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.CodeBlock">
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource AppCodeBlockBorderBrush}" />
+                                                <Setter Property="BorderThickness" Value="1" />
+                                                <Setter Property="CornerRadius" Value="4" />
+                                                <Setter Property="Padding" Value="8" />
+                                                <Setter Property="Margin" Value="0,4" />
+                                            </Style>
+                                            <!-- Plain (no-language) fenced code blocks. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock.CodeBlock">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
+                                                <Setter Property="FontFamily"
+                                                        Value="Consolas, Menlo, monospace" />
+                                                <Setter Property="FontSize" Value="12" />
+                                            </Style>
+                                            <!-- Tables — outer Border, per-cell Border, header bg,
+                                                 alternating row striping. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Table">
+                                                <Setter Property="Margin" Value="5" />
+                                                <Setter Property="BorderThickness" Value="0,0,1,1" />
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource AppPanelBorderBrush}" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TightTable">
+                                                <Setter Property="HorizontalAlignment" Value="Left" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table > Border">
+                                                <Setter Property="Margin" Value="0" />
+                                                <Setter Property="BorderThickness" Value="1,1,0,0" />
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource AppPanelBorderBrush}" />
+                                                <Setter Property="Padding" Value="6,3" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table">
+                                                <Setter Property="mdc:AutoScaleColumnDefinitions.IsEnabled"
+                                                        Value="True" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader">
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                                            </Style>
+                                            <Style
+                                                Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader ctxt|CTextBlock">
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.OddTableRow">
+                                                <Setter Property="Background" Value="Transparent" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.EvenTableRow">
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                                            </Style>
+
+                                            <!-- Blockquote stripe + body container. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Blockquote">
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource AppPanelBorderBrush}" />
+                                                <Setter Property="BorderThickness" Value="3,0,0,0" />
+                                                <Setter Property="Padding" Value="10,2" />
+                                            </Style>
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer StackPanel.Blockquote">
+                                                <Setter Property="Margin" Value="10,5" />
+                                            </Style>
+
+                                            <!-- Note callout. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Note">
+                                                <Setter Property="Margin" Value="5,0,5,0" />
+                                                <Setter Property="Padding" Value="10,5" />
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource AppPanelBorderBrush}" />
+                                                <Setter Property="BorderThickness" Value="1" />
+                                                <Setter Property="CornerRadius" Value="4" />
+                                                <Setter Property="Background"
+                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                                            </Style>
+
+                                            <!-- Horizontal rule. -->
+                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer mdc|Rule">
+                                                <Setter Property="Margin" Value="0,8" />
+                                            </Style>
+                                        </Styles>
+                                    </md:MarkdownScrollViewer.MarkdownStyle>
+                                </md:MarkdownScrollViewer>
+                            </Border>
+                        </DockPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- ── Tier 2 — Footprint (audit + delete) ────────────────── -->
+                <TabItem Header="{x:Static loc:Strings.HeaderTabFootprint}">
+                    <!-- No per-tab toolbar — Refresh moved to the header pill.  The
+                         category list flows directly under the tab header so there's
+                         no dead vertical space.  Below the category table, a separate
+                         Expander surfaces the per-project transcript breakdown so the
+                         user can wipe one project's history without touching others
+                         (finer-grained than the Session transcripts category-level delete). -->
+                    <StackPanel Spacing="8" Margin="0,4,0,0">
+                        <!-- Warning banner — surfaces when total footprint
+                             crosses the FootprintWarningThresholdBytes constant
+                             (5 GiB).  Soft-amber styling (vs the destructive
+                             red dialog or the accent-blue header pill) flags
+                             the issue without alarming.  The body suggests
+                             the user expand the per-project breakdown to
+                             wipe specific projects rather than the whole
+                             Session-transcripts category. -->
+                        <!-- Theme-aware caution palette: AppCautionBackgroundBrush is a
+                             warm amber tint defined per-theme in App.axaml so the banner
+                             stays readable on dark theme (the prior #FFF3E0 hardcode was
+                             white-cream and disappeared on dark backgrounds).
+                             AppCautionBrush is the matching amber accent for headers /
+                             borders.  Body text uses AppPrimaryTextBrush so it inherits
+                             the theme's high-contrast foreground rather than the prior
+                             hardcoded #5D4037 brown which read poorly on dark theme. -->
+                        <Border IsVisible="{Binding IsFootprintLarge}"
+                                Background="{DynamicResource AppCautionBackgroundBrush}"
+                                BorderBrush="{DynamicResource AppCautionBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{x:Static loc:Strings.HeaderFootprintLargeWarning}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AppCautionBrush}" />
+                                <TextBlock Text="{Binding FootprintWarningMessage}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding FootprintRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FootprintRowViewModel">
+                                    <Border Padding="8,6"
+                                            BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                            BorderThickness="0,0,0,1">
+                                        <DockPanel LastChildFill="True">
+                                            <StackPanel DockPanel.Dock="Right"
+                                                        Orientation="Horizontal"
+                                                        Spacing="6"
+                                                        VerticalAlignment="Center">
+                                                <!-- Open in editor — for category paths that resolve to
+                                                 a single file (history.jsonl, bash-commands.log,
+                                                 cost-tracker.log) the OS dispatches the file to its
+                                                 registered editor; for category paths that resolve
+                                                 to a directory (projects/, sessions/, todos/) the OS
+                                                 typically falls back to the file manager.  We accept
+                                                 the file/dir asymmetry to keep the per-row UX
+                                                 consistent across categories. -->
+                                                <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                        FontSize="11"
+                                                        Padding="6,2"
+                                                        AutomationProperties.Name="{Binding HumanLabel, StringFormat='Open {0} in editor'}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).OpenInEditorCommand}"
+                                                        CommandParameter="{Binding AbsolutePath}" />
+                                                <Button Content="{x:Static loc:PlatformLabels.Reveal}"
+                                                        FontSize="11"
+                                                        Padding="6,2"
+                                                        AutomationProperties.Name="{Binding HumanLabel, StringFormat='Reveal {0} in file manager'}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).RevealCommand}"
+                                                        CommandParameter="{Binding AbsolutePath}" />
+                                                <Button Content="{x:Static loc:Strings.ButtonDeleteFootprint}"
+                                                        FontSize="11"
+                                                        Padding="6,2"
+                                                        Foreground="#C62828"
+                                                        AutomationProperties.Name="{Binding HumanLabel, StringFormat='Delete {0}'}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).DeleteFootprintCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <Grid ColumnDefinitions="*,80,80,140" RowDefinitions="Auto,Auto">
+                                                <!-- Tooltip on the human label so hovering the
+                                                 row's title surfaces what the category
+                                                 contains and how Claude uses it — useful
+                                                 context before deciding whether to delete. -->
+                                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                                           Text="{Binding HumanLabel}"
+                                                           FontWeight="SemiBold"
+                                                           ToolTip.Tip="{Binding Tooltip}" />
+                                                <TextBlock Grid.Row="1" Grid.Column="0"
+                                                           Text="{Binding AbsolutePath}"
+                                                           Opacity="0.6"
+                                                           FontSize="11"
+                                                           TextWrapping="NoWrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           FontFamily="Consolas, Menlo, monospace" />
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                           Text="{Binding FileCount}"
+                                                           Opacity="0.8"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                                           Text="{Binding HumanSize}"
+                                                           Opacity="0.8"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center" />
+                                                <StackPanel Grid.Row="0" Grid.Column="3" Grid.RowSpan="2"
+                                                            Orientation="Horizontal" Spacing="4"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center">
+                                                    <TextBlock Text="{x:Static loc:Strings.HeaderInStandardBackup}"
+                                                               FontSize="11" Opacity="0.7" />
+                                                    <TextBlock Text="{Binding InStandardBackupLabel}"
+                                                               FontSize="11" FontWeight="SemiBold" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Per-project transcript breakdown.  Visible only when
+                         ~/.claude/projects/ has at least one project on disk.
+                         Starts collapsed — most users will only drill in when
+                         they explicitly want to clean up one project's chat
+                         history without nuking the rest.
+
+                         Implemented as Button + IsVisible-bound ItemsControl
+                         (toggled via a VM RelayCommand) instead of an Expander
+                         or ToggleButton:
+                           • Avalonia's default Expander theme indents both
+                             header and body, which the user reported as
+                             "indented oddly" and "wastes real estate".
+                           • ToggleButton's checked/hover state visuals
+                             collapsed text + background to similar values
+                             on light theme — caused flicker and occasional
+                             invisibility of the header text.
+                           • Button has a simpler theme contract — explicit
+                             Foreground=DynamicResource keeps the text
+                             readable on both light and dark themes, and the
+                             pressed/hover states are predictable. -->
+                        <StackPanel IsVisible="{Binding HasProjectBreakdown}" Spacing="2">
+                            <Button Command="{Binding ToggleProjectBreakdownCommand}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="0,4"
+                                    HorizontalContentAlignment="Left"
+                                    HorizontalAlignment="Stretch"
+                                    Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                    Cursor="Hand"
+                                    AutomationProperties.Name="{x:Static loc:Strings.HeaderProjectTranscriptBreakdown}"
+                                    ToolTip.Tip="{x:Static loc:Strings.TipProjectTranscriptBreakdown}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="▶"
+                                               FontSize="10"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding !IsProjectBreakdownExpanded}" />
+                                    <TextBlock Text="▼"
+                                               FontSize="10"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsProjectBreakdownExpanded}" />
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderProjectTranscriptBreakdown}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <ItemsControl ItemsSource="{Binding ProjectTranscripts}"
+                                          IsVisible="{Binding IsProjectBreakdownExpanded}"
+                                          HorizontalAlignment="Stretch">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ProjectTranscriptRowViewModel">
+                                        <Border Padding="8,6"
+                                                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                                BorderThickness="0,0,0,1">
+                                            <DockPanel LastChildFill="True">
+                                                <StackPanel DockPanel.Dock="Right"
+                                                            Orientation="Horizontal"
+                                                            Spacing="6"
+                                                            VerticalAlignment="Center">
+                                                    <!-- The breakdown's ItemsControl inherits its DataContext
+                                                     from the surrounding StackPanel/TabItem, which IS the
+                                                     MemoryEditorViewModel.  Skip the row's local DataContext
+                                                     (ProjectTranscriptRowViewModel) and reach back to the
+                                                     ItemsControl's DataContext for command dispatch. -->
+                                                    <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                                            FontSize="11"
+                                                            Padding="6,2"
+                                                            AutomationProperties.Name="{Binding DisplayName, StringFormat='Open project {0} in editor'}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).OpenInEditorCommand}"
+                                                            CommandParameter="{Binding AbsolutePath}" />
+                                                    <Button Content="{x:Static loc:PlatformLabels.Reveal}"
+                                                            FontSize="11"
+                                                            Padding="6,2"
+                                                            AutomationProperties.Name="{Binding DisplayName, StringFormat='Reveal project {0} in file manager'}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).RevealCommand}"
+                                                            CommandParameter="{Binding AbsolutePath}" />
+                                                    <Button Content="{x:Static loc:Strings.ButtonDeleteFootprint}"
+                                                            FontSize="11"
+                                                            Padding="6,2"
+                                                            Foreground="#C62828"
+                                                            AutomationProperties.Name="{Binding DisplayName, StringFormat='Delete transcripts for project {0}'}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:MemoryEditorViewModel)DataContext).DeleteProjectTranscriptsCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                                <Grid ColumnDefinitions="*,80,80,140" RowDefinitions="Auto,Auto">
+                                                    <TextBlock Grid.Row="0" Grid.Column="0"
+                                                               Text="{Binding DisplayName}"
+                                                               FontWeight="SemiBold"
+                                                               ToolTip.Tip="{Binding MangledName}" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="0"
+                                                               Text="{Binding AbsolutePath}"
+                                                               Opacity="0.6"
+                                                               FontSize="11"
+                                                               TextWrapping="NoWrap"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               FontFamily="Consolas, Menlo, monospace" />
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                               Text="{Binding FileCount}"
+                                                               Opacity="0.8"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                    <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                                               Text="{Binding HumanSize}"
+                                                               Opacity="0.8"
+                                                               VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                    <StackPanel Grid.Row="0" Grid.Column="3" Grid.RowSpan="2"
+                                                                Orientation="Horizontal" Spacing="4"
+                                                                VerticalAlignment="Center"
+                                                                HorizontalAlignment="Center">
+                                                        <TextBlock
+                                                            Text="{x:Static loc:Strings.HeaderProjectColumnLastSeen}"
+                                                            FontSize="11" Opacity="0.7" />
+                                                        <TextBlock Text="{Binding LastWriteDisplay}"
+                                                                   FontSize="11" FontWeight="SemiBold" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+
+            <!-- Desktop section — explainer panel, no Tier 1/2 surface. -->
+            <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                    TextElement.Foreground="White"
+                    CornerRadius="6"
+                    Padding="14,8"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    Margin="0,16,0,0">
+                <TextBlock Text="{x:Static loc:Strings.HeaderMemoryDesktop}"
+                           FontWeight="SemiBold" FontSize="14" />
+            </Border>
+            <Border BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1"
+                    Padding="12"
+                    CornerRadius="4">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.LabelDesktopMemoryExplainerTitle}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Static loc:Strings.LabelDesktopMemoryExplainerBody}"
+                               TextWrapping="Wrap"
+                               Opacity="0.85" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

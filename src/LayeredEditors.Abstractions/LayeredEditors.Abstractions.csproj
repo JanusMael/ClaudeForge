@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.Layer.Abstractions</RootNamespace>
+        <AssemblyName>LayeredEditors.Abstractions</AssemblyName>
+        <Description>
+            Generic abstractions for hierarchical, layered-scope settings editors.
+            Pure interfaces with no UI or serialization dependencies; consumable by any host
+            (Avalonia, WPF, CLI, tests) that wants to expose property editors with
+            scope/override semantics.
+        </Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+</Project>

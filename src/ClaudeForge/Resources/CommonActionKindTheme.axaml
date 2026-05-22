@@ -1,0 +1,29 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Chiclet colours for the Permissions › Common Actions kind taxonomy.
+        Keys follow the convention expected by
+        ClaudeForge.Converters.CommonActionKindToBrushConverter:
+        "common-action-brush-{kind}" where {kind} is the lowercase
+        CommonActionKind enum name.
+
+        Palette is intentionally aligned with the scope brushes in
+        ScopeTheme.axaml so the visual grammar of the app is consistent:
+        green = safe / non-mutating, amber = local mutation, blue = network /
+        external dependency, red = irreversible / broad blast.
+    -->
+
+    <!-- Read — non-mutating: cat, ls, git status, Read, Glob, Grep -->
+    <SolidColorBrush x:Key="common-action-brush-read" Color="#388E3C" />
+
+    <!-- Write — local-state mutation: edit, write, git add, git commit -->
+    <SolidColorBrush x:Key="common-action-brush-write" Color="#F57F17" />
+
+    <!-- Network — external I/O: npm, dotnet, curl, WebFetch, mcp__* -->
+    <SolidColorBrush x:Key="common-action-brush-network" Color="#1976D2" />
+
+    <!-- Destructive — irreversible / broad blast: git push, raw Bash -->
+    <SolidColorBrush x:Key="common-action-brush-destructive" Color="#D32F2F" />
+
+</ResourceDictionary>

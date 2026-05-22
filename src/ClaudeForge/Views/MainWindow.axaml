@@ -1,0 +1,815 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+        xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
+        xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+        xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+        xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+        x:Class="Bennewitz.Ninja.ClaudeForge.Views.MainWindow"
+        x:Name="RootWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1270" Height="900"
+        MinWidth="800" MinHeight="500">
+
+    <!-- 2026-05-15 — Window-scoped keyboard shortcuts (W2).  Ctrl+S
+         was already wired via the OnKeyDown code-behind handler; the
+         other shortcuts are added here for declarative parity.
+         Ctrl+O → Open Project, F5 → Reload, Ctrl+F → focus search box. -->
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenProjectCommand}" />
+        <KeyBinding Gesture="F5" Command="{Binding ReloadCommand}" />
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding FocusSearchCommand}" />
+    </Window.KeyBindings>
+
+    <!-- Window-scoped fully-opaque brushes for the search popup. Semi.Avalonia's
+         SystemControlBackgroundChromeMediumBrush is defined with alpha < FF, which
+         renders the popup semi-translucent and lets the toolbar bleed through.
+         Defining our own opaque ARGB brushes (#FFxxxxxx) in theme-swap dictionaries
+         guarantees the popup is fully solid in both light and dark themes. -->
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="SearchPopupBackgroundBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="SearchPopupBorderBrush" Color="#FFCCCCCC" />
+                    <!-- Section "GroupTitle" label in search results: medium grey against white popup -->
+                    <SolidColorBrush x:Key="SearchGroupLabelBrush" Color="#FF707070" />
+                    <!-- Description/snippet text: slightly muted but clearly legible on white -->
+                    <SolidColorBrush x:Key="SearchDescriptionBrush" Color="#FF555555" />
+                    <!-- Toolbar / status bar: clearly distinguishable from white main content area -->
+                    <SolidColorBrush x:Key="BarBackgroundBrush" Color="#FFE8E8EC" />
+                    <SolidColorBrush x:Key="BarSeparatorBrush" Color="#FFA8A8B0" />
+                    <!-- Selection accent used by the navigation tree's selected item AND the
+                         settings-page heading pill. Defined explicitly here (rather than
+                         relying on Semi.Avalonia's internal brush keys, which vary across
+                         versions and resolved to invisible-on-white in 12.0.0) so the
+                         heading pill is guaranteed to render with a saturated, legible
+                         blue against the white content area. White-on-this-blue passes
+                         WCAG AA at the 18pt SemiBold heading size. -->
+                    <SolidColorBrush x:Key="NavSelectedAccentBrush" Color="#FF1664F0" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SearchPopupBackgroundBrush" Color="#FF1F1F1F" />
+                    <SolidColorBrush x:Key="SearchPopupBorderBrush" Color="#FF3A3A3A" />
+                    <!-- Section "GroupTitle" label in search results: light grey against #1F1F1F popup -->
+                    <SolidColorBrush x:Key="SearchGroupLabelBrush" Color="#FFAAAAAA" />
+                    <!-- Description/snippet text: bright enough to read on the dark popup background -->
+                    <SolidColorBrush x:Key="SearchDescriptionBrush" Color="#FFBBBBBB" />
+                    <!-- Toolbar / status bar: clearly darker than the typical ~#1E1E1E content area -->
+                    <SolidColorBrush x:Key="BarBackgroundBrush" Color="#FF111113" />
+                    <SolidColorBrush x:Key="BarSeparatorBrush" Color="#FF38383E" />
+                    <!-- Slightly lighter / more saturated blue for dark mode so the heading
+                         pill stands out against ~#1E1E1E content backgrounds without
+                         clashing with toolbar #111. Same blue family as the light theme
+                         entry above; pick one to retune both. -->
+                    <SolidColorBrush x:Key="NavSelectedAccentBrush" Color="#FF3375E0" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <!-- Install banner: pale goldenrod + dark text — theme-independent.
+                 TextElement.Foreground is explicitly forced on the banner root to
+                 prevent dark-theme defaults (white text) from rendering on the
+                 light yellow background. -->
+            <SolidColorBrush x:Key="InstallBannerBgBrush" Color="#FFFEF9C3" />
+            <SolidColorBrush x:Key="InstallBannerFgBrush" Color="#FF292524" />
+            <SolidColorBrush x:Key="InstallBannerBorderBrush" Color="#FFFBBF24" />
+            <SolidColorBrush x:Key="InstallBannerCodeBgBrush" Color="#FFFEF08A" />
+            <SolidColorBrush x:Key="InstallBannerCodeBorderBrush" Color="#FFD97706" />
+            <!-- Teal-blue from LE.LinkBrush — the same colour used for hyperlinks throughout the app -->
+            <SolidColorBrush x:Key="InstallBannerLinkBrush" Color="#FF006B8A" />
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource BarBackgroundBrush}"
+                BorderBrush="{DynamicResource BarSeparatorBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="8,4">
+            <DockPanel>
+                <!-- Right-side controls -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <!-- Profile controls: label → dropdown → ✏ manage -->
+                    <TextBlock Text="{x:Static loc:Strings.LabelEditingProfile}" VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               ToolTip.Tip="{x:Static loc:Strings.TipEditingProfile}" />
+                    <!-- Active profile selector -->
+                    <ComboBox ItemsSource="{Binding AvailableProfileEntries}"
+                              SelectedItem="{Binding SelectedProfileEntry}"
+                              MinWidth="130"
+                              ToolTip.Tip="{x:Static loc:Strings.TipProfileSelector}"
+                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameActiveProfile}"
+                              AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpActiveProfile}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:UnifiedProfileEntry">
+                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                    <ToolTip.Tip>
+                                        <TextBlock Text="{Binding Tooltip}" MaxWidth="280" TextWrapping="Wrap" />
+                                    </ToolTip.Tip>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <!-- Claude Code chiclet — CLI profile exists and this is not the global entry -->
+                                    <Border Background="#22BB55"
+                                            CornerRadius="3" Padding="4,1"
+                                            IsVisible="{Binding ShowCliChiclet}"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Static loc:Strings.BadgeLabelCli}"
+                                                   FontSize="9" FontWeight="Bold" Foreground="White" />
+                                    </Border>
+                                    <!-- Claude Desktop chiclet — Desktop profile exists and this is not the global entry -->
+                                    <Border Background="#0078D4"
+                                            CornerRadius="3" Padding="4,1"
+                                            IsVisible="{Binding ShowDesktopChiclet}"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Static loc:Strings.BadgeLabelDesktop}"
+                                                   FontSize="9" FontWeight="Bold" Foreground="White" />
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <!-- Manage profiles button — navigates to the Profiles section where
+                         users can create, delete, apply, and sync profiles.
+                         switched from ✏ glyph to a localized text label
+                         after Linux smoke reported "icon vertically squished, can't
+                         tell what it is" — the pencil glyph (U+270F) renders as
+                         missing-glyph on systems without an emoji-capable font that
+                         covers Dingbats. -->
+                    <!-- W6 2026-05-15 — Alt-mnemonic via AccessText.  Avalonia 12's
+                         Button does NOT treat `_` in a plain string Content as a
+                         mnemonic prefix (RecognizesAccessKey defaults to false on
+                         the ContentPresenter); wrapping the text in <AccessText>
+                         is the explicit-and-portable way to make Alt+M work and
+                         hide the literal underscore from the rendered label. -->
+                    <Button Command="{Binding NavigateToProfilesCommand}"
+                            Padding="8,4"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource BarButtonBackgroundBrush}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipManageProfiles}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameManageProfiles}">
+                        <AccessText Text="{x:Static loc:Strings.ButtonManageProfiles}" />
+                    </Button>
+                </StackPanel>
+                <!-- Left-side controls -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Command="{Binding OpenProjectCommand}"
+                            Background="{DynamicResource BarButtonBackgroundBrush}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonOpenProject}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonOpenProject}">
+                        <AccessText Text="{x:Static loc:Strings.ButtonOpenProject}" />
+                    </Button>
+                    <Button Command="{Binding SaveCommand}"
+                            Background="{DynamicResource BarButtonBackgroundBrush}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonSave}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonSave}">
+                        <AccessText Text="{x:Static loc:Strings.ButtonSave}" />
+                    </Button>
+                    <!-- "Save dialog off" badge.  Visible only when the user has
+                         unchecked "Show this dialog on save" inside the
+                         SaveChangesDialog this session.  Reload Window re-enables
+                         the preference (see MainWindowViewModel.ReloadAsync, which
+                         resets ShowSaveChangesDialog = true).  Click the badge
+                         tooltip to find out how to bring the dialog back.
+                         2026-05-14 — replaces the prior one-shot status-bar message
+                         that got overwritten by the next save's "Saved." (the user
+                         lost the warning).  Standing settings belong in a standing
+                         affordance, not the transient status slot. -->
+                    <Border IsVisible="{Binding !ShowSaveChangesDialog}"
+                            Background="{DynamicResource AppStatusWarningBackgroundBrush}"
+                            CornerRadius="10" Padding="6,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{x:Static loc:Strings.TipBadgeSaveDialogOff}">
+                        <TextBlock Text="{x:Static loc:Strings.BadgeSaveDialogOff}"
+                                   Foreground="{DynamicResource AppStatusWarningForegroundBrush}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <Button Command="{Binding ExportCommand}"
+                            Background="{DynamicResource BarButtonBackgroundBrush}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonExport}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonExport}">
+                        <AccessText Text="{x:Static loc:Strings.ButtonExport}" />
+                    </Button>
+                    <Separator />
+                    <!-- Global search: GotFocus reopens existing results when the
+                         user refocuses after light-dismiss closed the popup. -->
+                    <!-- W2 2026-05-15 — Ctrl+F focuses this box via the FocusOnRequest
+                         attached behaviour: the VM bumps SearchFocusRequestId, the
+                         behaviour calls Focus() + moves caret to end on each
+                         increment.  Counter pattern (not a bool) so successive
+                         Ctrl+F presses always fire even when the prior value would
+                         have been the same. -->
+                    <TextBox Text="{Binding Search.SearchQuery}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkSearch}"
+                             MinWidth="200"
+                             x:Name="SearchBox"
+                             behaviors:FocusOnRequest.RequestId="{Binding SearchFocusRequestId}"
+                             GotFocus="OnSearchBoxGotFocus"
+                             ToolTip.Tip="{x:Static loc:Strings.TipSearchBox}"
+                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameSearchBox}"
+                             AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpSearchBox}" />
+                    <!-- NOTE: The loading progress bar lives in the status bar (bottom), not here. -->
+                    <Popup IsOpen="{Binding Search.IsSearchOpen}"
+                           PlacementTarget="{Binding ElementName=SearchBox}"
+                           Placement="Bottom"
+                           IsLightDismissEnabled="True">
+                        <!-- Window-scoped opaque brushes (see Window.Resources) guarantee the
+                             popup is fully solid in both themes; a soft shadow visually separates
+                             it from the toolbar. -->
+                        <Border Background="{DynamicResource SearchPopupBackgroundBrush}"
+                                BorderBrush="{DynamicResource SearchPopupBorderBrush}"
+                                BorderThickness="1" Padding="4" MinWidth="360" MaxHeight="400"
+                                BoxShadow="0 2 8 0 #40000000">
+                            <ScrollViewer>
+                                <ItemsControl ItemsSource="{Binding Search.SearchResults}">
+                                    <!-- Virtualize: SearchResults can be large (every matching
+                                         setting across all groups), but the popup is bounded
+                                         by the outer Border's MaxHeight=400, so VSP sees a
+                                         real viewport and only materializes visible rows.
+                                         Keeps typing-through-results interactive even at
+                                         hundreds of matches. -->
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SearchResultViewModel">
+                                            <!-- ElementName (#RootWindow) keeps this binding on the
+                                                 compiled-binding path; `$parent[Window]` would emit
+                                                 a `ReflectionBindingExtension(String)` call that
+                                                 trips IL2026 under trimming. -->
+                                            <!-- I20: AutomationProperties.Name binds to TooltipText
+                                                 which aggregates group title + property name + scope
+                                                 chiclet info — same description a sighted user sees on
+                                                 hover, so the screen reader announces the same context. -->
+                                            <Button HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left"
+                                                    Padding="6,4"
+                                                    Command="{Binding #RootWindow.((vm:MainWindowViewModel)DataContext).SelectSearchResultCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip.Tip="{Binding TooltipText}"
+                                                    AutomationProperties.Name="{Binding TooltipText}">
+                                                <StackPanel>
+                                                    <TextBlock>
+                                                        <Run Text="{Binding GroupTitle}"
+                                                             Foreground="{DynamicResource SearchGroupLabelBrush}" />
+                                                        <Run Text=" › " />
+                                                        <Run Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Snippet}"
+                                                               FontSize="11"
+                                                               Foreground="{DynamicResource SearchDescriptionBrush}"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Status bar: left = current section, centre = status message, right = version -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource BarBackgroundBrush}"
+                BorderBrush="{DynamicResource BarSeparatorBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="8,2">
+            <DockPanel>
+                <!-- Loading progress bar: shown while workspaces are loading/reloading.
+                     Docked to the right so it never pushes the status text around. -->
+                <ProgressBar DockPanel.Dock="Right"
+                             IsIndeterminate="True"
+                             IsVisible="{Binding IsLoading}"
+                             Width="100" Height="4"
+                             Margin="8,0,0,0"
+                             VerticalAlignment="Center"
+                             ToolTip.Tip="{x:Static loc:Strings.TipProgressLoading}" />
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <!-- Left: theme toggle + reload window -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                        <!-- Foreground is set on the inner TextBlock rather than on the Button
+                             because Semi.Avalonia's button template overrides Button.Foreground
+                             in its Normal state; a TextBlock inline property wins outright. -->
+                        <Button Command="{Binding ToggleThemeCommand}"
+                                Background="{DynamicResource BarButtonBackgroundBrush}"
+                                ToolTip.Tip="{x:Static loc:Strings.TipToggleTheme}"
+                                Padding="6,1"
+                                FontSize="11"
+                                AutomationProperties.Name="{x:Static loc:Strings.AutoNameToggleTheme}">
+                            <TextBlock Text="{Binding ThemeButtonLabel}"
+                                       Foreground="{DynamicResource BarButtonForegroundBrush}" />
+                        </Button>
+                        <Button Command="{Binding ReloadCommand}"
+                                Background="{DynamicResource BarButtonBackgroundBrush}"
+                                ToolTip.Tip="{x:Static loc:Strings.TipReloadWindow}"
+                                Padding="6,1"
+                                FontSize="11"
+                                AutomationProperties.Name="{x:Static loc:Strings.AutoNameReloadWindow}">
+                            <!-- W6 — AccessText derives from TextBlock and honours `_`
+                                 as the Alt-mnemonic prefix; literal underscore is hidden
+                                 unless the access-key matching is suppressed. -->
+                            <AccessText Text="{x:Static loc:Strings.ButtonReloadWindow}"
+                                        Foreground="{DynamicResource BarButtonForegroundBrush}" />
+                        </Button>
+                        <!--
+                            Clear App Data — deletes ~/.claude/cache/ClaudeForge-gui-state.json
+                            (window position, theme, last node, etc.) and exits.
+                            Confirmation dialog gates the destructive action; the
+                            command latches SaveWindowState before exiting so the
+                            file isn't re-created during shutdown.
+                        -->
+                        <Button Command="{Binding ClearAppDataCommand}"
+                                Background="{DynamicResource BarButtonBackgroundBrush}"
+                                ToolTip.Tip="{x:Static loc:Strings.TipClearAppData}"
+                                Padding="6,1"
+                                FontSize="11"
+                                AutomationProperties.Name="{x:Static loc:Strings.AutoNameClearAppData}">
+                            <AccessText Text="{x:Static loc:Strings.ButtonClearAppData}"
+                                        Foreground="{DynamicResource BarButtonForegroundBrush}" />
+                        </Button>
+                    </StackPanel>
+                    <!-- Centre: status message, severity-styled.
+                         2026-05-14 rework — instead of a single bare TextBlock that
+                         never auto-cleared and styled successes / failures / actives
+                         identically, the centre slot now renders one of five per-kind
+                         variants (Active / Success / Warning / Failure / State).
+                         Each variant is its own Border with IsVisible bound to the
+                         matching Is{Kind} boolean on StatusController, so there's no
+                         enum-to-brush converter to maintain.  Auto-clear (Success /
+                         Warning) and manual dismiss (Failure × button) are driven by
+                         StatusController hung off MainWindowViewModel.Status — see
+                         CLAUDE.md "Status bar" for the full rules.
+                         The "Save dialog off" badge lives on the toolbar (next to the
+                         Save button) rather than here — standing settings shouldn't
+                         compete with transient status events for the same slot.
+                         Centred via Grid, then each variant is HorizontalAlignment=Center
+                         inside the Grid cell. -->
+                    <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Active: blue pill, "…" prefix, no dismiss button.
+                             Tied to the lifetime of the operation that emitted it. -->
+                        <Border CornerRadius="10" Padding="8,2"
+                                Background="{DynamicResource AppStatusActiveBackgroundBrush}"
+                                MaxWidth="600"
+                                IsVisible="{Binding Status.IsActive}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="…" FontWeight="Bold" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusActiveForegroundBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Status.Text}" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusActiveForegroundBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Success: green pill, ✓ prefix.  Auto-clears after ~6s. -->
+                        <Border CornerRadius="10" Padding="8,2"
+                                Background="{DynamicResource AppStatusSuccessBackgroundBrush}"
+                                MaxWidth="600"
+                                IsVisible="{Binding Status.IsSuccess}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="✓" FontWeight="Bold" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusSuccessForegroundBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Status.Text}" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusSuccessForegroundBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Warning: amber pill, ⚠ prefix.  Auto-clears after ~10s. -->
+                        <Border CornerRadius="10" Padding="8,2"
+                                Background="{DynamicResource AppStatusWarningBackgroundBrush}"
+                                MaxWidth="600"
+                                IsVisible="{Binding Status.IsWarning}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="⚠" FontWeight="Bold" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusWarningForegroundBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Status.Text}" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusWarningForegroundBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <!-- Failure: red pill, ✗ prefix, × dismiss button.
+                             Sticks until the user dismisses or another status replaces. -->
+                        <Border CornerRadius="10" Padding="8,2"
+                                Background="{DynamicResource AppStatusFailureBackgroundBrush}"
+                                MaxWidth="600"
+                                IsVisible="{Binding Status.IsFailure}">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="✗" FontWeight="Bold" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusFailureForegroundBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Status.Text}" FontSize="11"
+                                           Foreground="{DynamicResource AppStatusFailureForegroundBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                                <Button Command="{Binding DismissStatusCommand}"
+                                        Background="Transparent" BorderThickness="0"
+                                        Padding="4,0"
+                                        Cursor="Hand"
+                                        ToolTip.Tip="{x:Static loc:Strings.TipDismissStatus}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameDismissStatus}">
+                                    <TextBlock Text="✕" FontWeight="Bold" FontSize="11"
+                                               Foreground="{DynamicResource AppStatusFailureForegroundBrush}" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <!-- State: quiet text, no pill, no icon.  Long-lived identity
+                             text (Ready / Project: foo) that intentionally looks like
+                             the old status bar so it doesn't compete with the active /
+                             success / failure pills above. -->
+                        <TextBlock Text="{Binding Status.Text}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="600"
+                                   IsVisible="{Binding Status.IsState}" />
+                    </Grid>
+                    <!-- Right-centre: active profile badges (CLI + Desktop).
+                         Shown only when a profile has been applied via the Profiles panel. -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Center"
+                                Margin="0,0,8,0">
+                        <!-- CLI-active badge: green pill. Click navigates to Profiles section. -->
+                        <Button Command="{Binding NavigateToProfilesCommand}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Cursor="Hand"
+                                IsVisible="{Binding CliActiveProfileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                AutomationProperties.Name="{Binding CliActiveProfileName, StringFormat='Active Claude Code profile: {0}. Click to manage profiles.'}">
+                            <Border Background="#22BB55" CornerRadius="4" Padding="6,1"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="{x:Static loc:Strings.TipCliActiveBadge}">
+                                <TextBlock Text="{Binding CliActiveProfileName, StringFormat='Claude Code: {0}'}"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="White" />
+                            </Border>
+                        </Button>
+                        <!-- Desktop-active badge: blue pill. Click navigates to Profiles section. -->
+                        <Button Command="{Binding NavigateToProfilesCommand}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Cursor="Hand"
+                                IsVisible="{Binding DesktopActiveProfileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                AutomationProperties.Name="{Binding DesktopActiveProfileName, StringFormat='Active Claude Desktop profile: {0}. Click to manage profiles.'}">
+                            <Border Background="#0078D4" CornerRadius="4" Padding="6,1"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="{x:Static loc:Strings.TipDesktopActiveBadge}">
+                                <TextBlock
+                                    Text="{Binding DesktopActiveProfileName, StringFormat='Claude Desktop: {0}'}"
+                                    FontSize="10" FontWeight="Bold"
+                                    Foreground="White" />
+                            </Border>
+                        </Button>
+                    </StackPanel>
+                    <!--
+                        Right: app version button.
+                        Rendered as a Button (not a TextBlock) so the entire
+                        rectangle — text + surrounding background — is a click
+                        target that opens the About ClaudeForge dialog. Styled
+                        flat to keep visual continuity with the rest of the
+                        status bar. Hover shows the same affordance via cursor
+                        change because Button is intrinsically interactive.
+                    -->
+                    <Button Grid.Column="3"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Stretch"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8,2"
+                            Cursor="Hand"
+                            Click="OnVersionLabelClick"
+                            ToolTip.Tip="{x:Static loc:Strings.TipVersionLabel}"
+                            AutomationProperties.Name="{x:Static loc:Strings.MenuAbout}">
+                        <TextBlock Text="{Binding AppVersion, StringFormat='v{0}', Mode=OneTime}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center" />
+                    </Button>
+                </Grid>
+            </DockPanel>
+        </Border>
+
+        <!-- Main content: sidebar + splitter + editor -->
+        <!-- IsEnabled is also bound to !IsLoading so keyboard focus cannot reach
+             controls while a workspace rebuild is in progress (the transparent overlay
+             panel above blocks pointer events; this covers keyboard / tab navigation). -->
+        <Grid ColumnDefinitions="240,4,*"
+              IsEnabled="{Binding !IsLoading}">
+
+            <!-- Loading overlay: transparent panel over the whole content area that
+                 blocks pointer input and shows a wait cursor while settings are
+                 being loaded or rebuilt (profile switch, initial load, reload). -->
+            <Panel Grid.Column="0" Grid.ColumnSpan="3"
+                   IsVisible="{Binding IsLoading}"
+                   IsHitTestVisible="True"
+                   Background="Transparent"
+                   Cursor="Wait"
+                   ZIndex="100" />
+
+            <!-- Navigation sidebar -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <!-- Back button: anchored to the bottom of the sidebar, only visible
+                         after a deep-link navigation (env-var token click or search-result
+                         jump). Manual tree navigation clears it.
+                         Orange "back-button" Style class applied — defined in App.axaml
+                         and shared with the Memory page viewer's back-to-inventory
+                         button so the two stay visually consistent. -->
+                    <Button DockPanel.Dock="Bottom"
+                            Classes="back-button"
+                            Command="{Binding NavigateBackCommand}"
+                            IsVisible="{Binding CanGoBack}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,9"
+                            Margin="48,4,48,4"
+                            ToolTip.Tip="{x:Static loc:Strings.TipNavigateBack}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameNavigateBack}"
+                            AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpNavigateBack}">
+                        <TextBlock Text="{x:Static loc:Strings.ButtonBack}" FontWeight="SemiBold" Foreground="White" />
+                    </Button>
+                    <TreeView ItemsSource="{Binding NavigationTree}"
+                              SelectedItem="{Binding SelectedNode}">
+                        <TreeView.Styles>
+                            <!-- Expand all top-level header items (Claude Code, Claude Desktop) on startup.
+                                 The user explicitly wants them always-expanded. During the session the
+                                 user can still collapse them manually (local value overrides this style). -->
+                            <Style Selector="TreeView > TreeViewItem">
+                                <Setter Property="IsExpanded" Value="True" />
+                            </Style>
+
+                            <!--
+                                Force the selected-item background to NavSelectedAccentBrush so the
+                                navigation tree's highlight matches the page-heading pill in
+                                SettingsGroupEditorView. Semi.Avalonia 12 picks a near-transparent
+                                fill for selected TreeViewItems by default which made the "this row
+                                is selected" affordance hard to see. Foreground forced to white so
+                                the row text stays legible on the saturated accent fill.
+                            -->
+                            <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+                                <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
+                            </Style>
+                            <Style Selector="TreeViewItem:selected /template/ ContentPresenter">
+                                <Setter Property="TextElement.Foreground" Value="White" />
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.ItemTemplate>
+                            <!--
+                                Hover tooltip describing each section.
+
+                                The TextBlock is wrapped in a Border with
+                                Background="Transparent" so hover registers across
+                                the whole row (text glyphs + dead space), not just
+                                over the rendered text. The tooltip falls back to a
+                                generic "Click to open this section." when the node
+                                has no Description.
+
+                                x:DataType enables compiled bindings for Children /
+                                Title / Description; without it trim analysis emits
+                                an IL2026 ReflectionBinding warning for this
+                                template's closure.
+                            -->
+                            <TreeDataTemplate x:DataType="libvm:NavigationNodeViewModel"
+                                              ItemsSource="{Binding Children}">
+                                <Panel HorizontalAlignment="Stretch">
+                                    <!-- Divider rendering — thin horizontal line.
+                                         Bound to IsDivider so the same template can
+                                         render both real nav rows and the small
+                                         section separators (Essentials → Claude Code
+                                         break, Claude Desktop → Effective break).
+                                         Without this branch the divider node took
+                                         the full height of a regular nav row, which
+                                         wasted vertical space on small windows. -->
+                                    <Border IsVisible="{Binding IsDivider}"
+                                            Height="1"
+                                            Margin="6,4"
+                                            Background="{DynamicResource AppPanelBorderBrush}" />
+
+                                    <!-- Standard nav row — icon + text + tooltip.
+                                         Hidden when this node is a divider so the
+                                         two visuals don't both render.
+
+                                         2026-05-07 v2: Icon column shown ONLY for
+                                         top-level nodes (Essentials, Claude Code /
+                                         Claude Desktop section headers, Effective
+                                         Settings, Profiles, Backup, Environment,
+                                         Memory).  Sub-items (Children of section
+                                         headers) hide the column entirely so
+                                         titles align flush-left without an icon-
+                                         shaped indent.  Avalonia collapses
+                                         IsVisible=false controls to zero width
+                                         inside StackPanel so this works without
+                                         a separate row template.  Original v1
+                                         enabled icons everywhere; sub-items
+                                         without an icon got pushed-right by
+                                         Width=18 reserved space, and the one
+                                         sub-item that DID have an icon (Version
+                                         Information's ℹ) looked out of place
+                                         next to its iconless siblings. -->
+                                    <Border IsVisible="{Binding !IsDivider}"
+                                            Background="Transparent"
+                                            HorizontalAlignment="Stretch"
+                                            ToolTip.Tip="{Binding Description, FallbackValue={x:Static loc:Strings.TipNavigationDefault}, TargetNullValue={x:Static loc:Strings.TipNavigationDefault}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <!-- ToolTip on BOTH icon AND title
+                                                 TextBlocks (and the parent Border
+                                                 above) — Avalonia tooltips don't
+                                                 propagate child→parent, so a hover
+                                                 landing on the icon glyph or the
+                                                 title text would see nothing if
+                                                 only the Border had one.  Same
+                                                 pattern as the scope-badge in
+                                                 PropertyEditorWrapper.axaml. -->
+                                            <TextBlock Text="{Binding Icon}"
+                                                       IsVisible="{Binding IsTopLevel}"
+                                                       Width="18"
+                                                       TextAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Padding="0,2"
+                                                       ToolTip.Tip="{Binding Description, FallbackValue={x:Static loc:Strings.TipNavigationDefault}, TargetNullValue={x:Static loc:Strings.TipNavigationDefault}}" />
+                                            <TextBlock Text="{Binding Title}"
+                                                       VerticalAlignment="Center"
+                                                       Padding="0,2,4,2"
+                                                       ToolTip.Tip="{Binding Description, FallbackValue={x:Static loc:Strings.TipNavigationDefault}, TargetNullValue={x:Static loc:Strings.TipNavigationDefault}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Panel>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Drag splitter -->
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <!-- Editor area: install banner (row 0) + content (row 1) -->
+            <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*">
+
+                <!-- Install-guidance banner: shown only when Claude Code is not detected.
+                     Pale-goldenrod background with forced dark foreground ensures the
+                     text is always legible regardless of the active theme.
+                     TextElement.Foreground on the root Border cascades to all child
+                     TextBlocks, preventing white-on-yellow in dark mode. -->
+                <Border Grid.Row="0"
+                        IsVisible="{Binding ShowInstallBanner}"
+                        Background="{DynamicResource InstallBannerBgBrush}"
+                        BorderBrush="{DynamicResource InstallBannerBorderBrush}"
+                        BorderThickness="0,0,0,2"
+                        Padding="12,10"
+                        TextElement.Foreground="{DynamicResource InstallBannerFgBrush}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="{x:Static loc:Strings.ButtonDismissInstallBanner}"
+                                Command="{Binding DismissInstallBannerCommand}"
+                                Padding="8,4"
+                                VerticalAlignment="Top"
+                                ToolTip.Tip="{x:Static loc:Strings.TipButtonDismissInstall}"
+                                AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonDismissInstall}" />
+                        <StackPanel Spacing="6">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="{x:Static loc:Strings.LabelInstallBannerTitle}" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Text="{x:Static loc:Strings.TextInstallBannerDesc}" />
+                            <!-- Install command: label on its own line, then the shared
+                                 panel (monospace code block + Copy + Run buttons). The
+                                 same control ships on the About page's "(not detected)"
+                                 row, so the UX is consistent across surfaces. -->
+                            <TextBlock Text="{x:Static loc:Strings.LabelInstallCommand}" />
+                            <controls:InstallCommandPanel DataContext="{Binding InstallPanel}" />
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2,0,0">
+                                <TextBlock Text="{x:Static loc:Strings.LabelLearnMore}"
+                                           FontSize="11"
+                                           VerticalAlignment="Center" />
+                                <HyperlinkButton Content="{x:Static loc:Strings.LinkClaudeOverview}"
+                                                 NavigateUri="https://claude.com/product/overview"
+                                                 FontSize="11" Padding="0"
+                                                 Foreground="{DynamicResource InstallBannerLinkBrush}"
+                                                 ToolTip.Tip="{x:Static loc:Strings.TipLinkClaudeOverview}" />
+                                <TextBlock Text="·"
+                                           FontSize="11"
+                                           VerticalAlignment="Center" />
+                                <HyperlinkButton Content="{x:Static loc:Strings.LinkQuickStart}"
+                                                 NavigateUri="https://code.claude.com/docs/en/quickstart"
+                                                 FontSize="11" Padding="0"
+                                                 Foreground="{DynamicResource InstallBannerLinkBrush}"
+                                                 ToolTip.Tip="{x:Static loc:Strings.TipLinkQuickStart}" />
+                            </StackPanel>
+
+                            <!-- Post-install next-step note: left-accent callout so it reads
+                                 as a "what to do next" hint separate from the install command.
+                                 Linux/macOS: reminds users to set PATH; Windows: restart only. -->
+                            <Border Background="{DynamicResource InstallBannerCodeBgBrush}"
+                                    BorderBrush="{DynamicResource InstallBannerBorderBrush}"
+                                    BorderThickness="3,0,0,0"
+                                    CornerRadius="0,3,3,0"
+                                    Padding="8,5"
+                                    Margin="0,6,0,0">
+                                <TextBlock Text="{Binding InstallPostInstallNote}"
+                                           FontSize="11"
+                                           TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Schema-violation banner (Phase 3.15).
+                     Surfaces post-reload when ValidatePendingChangesAsync() returns
+                     errors against the freshly-loaded workspace. Reuses the same
+                     amber/yellow palette as the install banner so the user reads
+                     both as "advisory, not blocking." Click "Show details" to open
+                     the same field-by-field dialog the pre-save flow uses.
+                     IsVisible binds to HasSchemaErrors which auto-clears when
+                     a subsequent reload finds no issues. -->
+                <Border Grid.Row="1"
+                        IsVisible="{Binding HasSchemaErrors}"
+                        Background="{DynamicResource InstallBannerBgBrush}"
+                        BorderBrush="{DynamicResource InstallBannerBorderBrush}"
+                        BorderThickness="0,0,0,2"
+                        Padding="12,8"
+                        TextElement.Foreground="{DynamicResource InstallBannerFgBrush}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="{x:Static loc:Strings.ButtonShowSchemaDetails}"
+                                Command="{Binding ShowSchemaErrorsCommand}"
+                                Padding="8,4"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonShowSchemaDetails}" />
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="{Binding SchemaErrorsBannerText}" />
+                            <TextBlock TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Text="{x:Static loc:Strings.LabelSchemaBannerDesc}" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Content area: welcome screen or active editor.
+                     Right margin gives a few pixels of breathing room between
+                     the editor content and the window's right edge. -->
+                <Panel Grid.Row="2" Margin="0,0,6,0">
+
+                    <!--
+                        Welcome screen when no editor is selected. The user
+                        reaches it by clicking the "Claude Code" / "Claude
+                        Desktop" header rows in the navigation tree, which
+                        clears ActiveEditor (see
+                        MainWindowViewModel.OnSelectedNodeChanged).
+                    -->
+                    <views:WelcomeView
+                        IsVisible="{Binding ActiveEditor, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                    <!-- Editor area: DataTemplates map VM types to Views -->
+                    <ContentControl Content="{Binding ActiveEditor}">
+                        <ContentControl.DataTemplates>
+                            <DataTemplate DataType="vm:SettingsGroupEditorViewModel">
+                                <views:SettingsGroupEditorView />
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:EffectiveSettingsViewModel">
+                                <views:EffectiveSettingsView />
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:AboutEditorViewModel">
+                                <views:AboutEditorView />
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:EnvironmentEditorViewModel">
+                                <views:EnvironmentEditorView />
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:BackupRestoreViewModel">
+                                <views:BackupRestoreView />
+                            </DataTemplate>
+                            <DataTemplate DataType="vm:ProfilesViewModel">
+                                <views:ProfilesView />
+                            </DataTemplate>
+                        </ContentControl.DataTemplates>
+                    </ContentControl>
+
+                </Panel>
+
+            </Grid>
+
+        </Grid>
+    </DockPanel>
+
+</Window>

@@ -1,0 +1,140 @@
+# ---------------------------------------------------------------------------
+# .NET build outputs
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+x64/
+x86/
+ARM/
+ARMx64/
+*.dll.config
+
+# ---------------------------------------------------------------------------
+# publish.ps1 output — self-contained RID zips + per-RID publish logs
+# ---------------------------------------------------------------------------
+src/dist/
+dist/
+publish/
+
+# ---------------------------------------------------------------------------
+# Visual Studio
+# ---------------------------------------------------------------------------
+.vs/
+.vshistory/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.ide/
+*.userprefs
+*.pidb
+*.svclog
+*.rsuser
+*.VC.db
+*.VC.VC.opendb
+*.pubxml.user
+*.publishproj.user
+
+# ---------------------------------------------------------------------------
+# JetBrains Rider / ReSharper
+# ---------------------------------------------------------------------------
+.idea/
+*.DotSettings.user
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.[Rr]e[Ss]harper.user
+
+# ---------------------------------------------------------------------------
+# VS Code
+# (nothing currently checked in; if you later want to share tasks/launch/
+# recommended extensions, remove the blanket ignore and add the specific
+# files instead.)
+# ---------------------------------------------------------------------------
+.vscode/
+
+# ---------------------------------------------------------------------------
+# Editor swap / backup files
+# ---------------------------------------------------------------------------
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+
+# ---------------------------------------------------------------------------
+# NuGet
+# ---------------------------------------------------------------------------
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!packages/build/
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ---------------------------------------------------------------------------
+# Paket (if ever adopted)
+# ---------------------------------------------------------------------------
+.paket/paket.exe
+paket-files/
+
+# ---------------------------------------------------------------------------
+# Test results & coverage
+# ---------------------------------------------------------------------------
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.xml
+coverage*.json
+coverage*.info
+coverage/
+coverage-output/
+.coverlet/
+
+# ---------------------------------------------------------------------------
+# MSBuild / ILLink / binlogs
+# ---------------------------------------------------------------------------
+*.binlog
+msbuild.log
+msbuild.err.log
+msbuild.wrn.log
+*.tlog/
+
+# ---------------------------------------------------------------------------
+# OS junk
+# ---------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---------------------------------------------------------------------------
+# Claude Code local state
+# Per-user permission grants / session state. Untracked from the repo.
+# Intentionally broad: catches .claude/, .claude.json, .claude.local.*, etc.
+# ---------------------------------------------------------------------------
+.claude*
+
+# ---------------------------------------------------------------------------
+# Stray log files — never commit by accident
+# Covers publish logs, MSBuild logs, test-harness logs, ad-hoc diagnostics.
+# If you ever need to commit a specific log deliberately, use
+# `git add -f path/to/file.log`.
+# ---------------------------------------------------------------------------
+*.log
+

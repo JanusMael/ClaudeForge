@@ -1,0 +1,51 @@
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>preview</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <!-- Turn the generator ON for the consuming projects -->
+        <GenerateAutoVersionedAssemblyInfo>true</GenerateAutoVersionedAssemblyInfo>
+
+        <!-- Company and product names; consumed by the source generator at build time -->
+        <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
+        <AssemblyProduct>ClaudeForge</AssemblyProduct>
+        <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
+
+        <!-- Map CI environment variables to the MSBuild properties the generator reads.
+             Replace $(GITHUB_SHA) / $(GITHUB_ACTIONS) with your CI provider's equivalents,
+             e.g. GitLab: $(CI_COMMIT_SHA) / $(GITLAB_CI), Bitbucket: $(BITBUCKET_COMMIT) / $(CI). -->
+        <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
+        <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
+    </PropertyGroup>
+
+    <!--
+      PDB policy — applies to all projects in the solution unless a project overrides.
+  
+      Debug:   portable PDB (separate .pdb file alongside the assembly).
+               Portable format is cross-platform and required for local source-stepping;
+               the separate file is expected and convenient in the debug output directory.
+  
+      Release: embedded PDB (debug info baked directly into the managed assembly).
+               The embedded format is the portable format inlined as a PE section;
+               no separate .pdb file is produced, so there are no loose symbol files
+               to exclude from zips or installers.  When PublishSingleFile bundles
+               an assembly into the single-file executable the embedded PDB travels
+               with it automatically — giving full symbols inside the shipped binary
+               with zero extra files.
+    -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <DebugType>embedded</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+
+</Project>

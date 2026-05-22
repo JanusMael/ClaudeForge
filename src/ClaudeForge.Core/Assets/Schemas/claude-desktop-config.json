@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "claude-desktop-config",
+  "type": "object",
+  "title": "Claude Desktop Configuration",
+  "description": "Configuration for Claude Desktop application",
+  "properties": {
+    "preferences": {
+      "type": "object",
+      "title": "Preferences",
+      "description": "Desktop application preferences",
+      "properties": {
+        "coworkScheduledTasksEnabled": {
+          "type": "boolean",
+          "title": "Cowork Scheduled Tasks",
+          "description": "Enable Cowork to run scheduled automation tasks. When enabled, Claude Cowork can execute tasks on a schedule in the background."
+        },
+        "ccdScheduledTasksEnabled": {
+          "type": "boolean",
+          "title": "CCD Scheduled Tasks",
+          "description": "Enable Claude Code Desktop to run scheduled tasks. When enabled, automated tasks can be triggered on a schedule."
+        },
+        "sidebarMode": {
+          "type": "string",
+          "title": "Sidebar Mode",
+          "description": "Controls how the sidebar panel is displayed. Possible values depend on the Claude Desktop version; leave unset to use the default layout."
+        },
+        "dockBounceEnabled": {
+          "type": "boolean",
+          "title": "Dock Bounce",
+          "description": "When enabled, the app dock icon bounces to notify you of new messages or completed tasks (macOS only)."
+        },
+        "coworkWebSearchEnabled": {
+          "type": "boolean",
+          "title": "Cowork Web Search",
+          "description": "Allow Claude Cowork to perform web searches when answering questions or completing tasks."
+        },
+        "keepAwakeEnabled": {
+          "type": "boolean",
+          "title": "Keep Awake",
+          "description": "Prevent the system from sleeping while Claude Desktop is active. Useful for long-running tasks that should not be interrupted by sleep."
+        }
+      }
+    },
+    "mcpServers": {
+      "type": "object",
+      "title": "MCP Servers",
+      "description": "Model Context Protocol server configurations",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

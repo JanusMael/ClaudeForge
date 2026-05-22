@@ -1,0 +1,337 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:app="using:Bennewitz.Ninja.ClaudeForge"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.WelcomeView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <!--
+        Welcome page shown when no editor is selected (ActiveEditor == null).
+        Four stacked sections — each a SemiBold heading followed by content.
+        Bordered "card" wrappers were removed 2026-05-07: Configuration
+        scopes had no Border (it embeds a control directly), and the
+        14 px Border padding on the other three sections made their
+        headings look indented relative to Scopes.  Removing the Borders
+        aligns all four headings flush at the outer ScrollViewer's left
+        Padding.  Visual grouping comes from the SemiBold headings + the
+        outer StackPanel's Spacing=20.
+
+          1. "What you're editing now" — context-aware summary that adapts
+             based on whether a project folder is open. Tells the user
+             exactly which file Save will write and which scopes are active.
+
+          2. "Things to know" (2026-05-07) — concise feature pointers a
+             new user might overlook (auto-reload, ★ Essentials, 🧠 Memory).
+             Frugal — three bullets max.
+
+          3. "Configuration scopes" — embeds the reusable ScopeLegend control
+             so the 4-row scope table is identical here, in the per-editor
+             "?" popup, and on the Backup/Restore page.
+
+          4. "What backups include" — bullet list mirroring BackupEngine
+             reality so users know what Create-backup actually captures
+             without having to read Backup-page docs.
+
+        DataContext is the parent MainWindowViewModel via DataContext
+        inheritance from MainWindow, so the IsProjectOpen / ProjectFolderName
+        / UserSettingsPath / etc. properties resolve directly.
+    -->
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" Padding="24,20">
+        <StackPanel MaxWidth="900" HorizontalAlignment="Stretch" Spacing="20">
+
+            <!-- Top heading — H1 + tagline left-flush, hero icon docked right.
+                 DockPanel.Dock=Right floats the icon to the far right edge so
+                 the H1 stays flush with the left padding of the ScrollViewer —
+                 same column as the four section headings below.  Reversing
+                 this to a horizontal StackPanel with the icon on the left
+                 introduces a ~62 px indent on the H1 that misaligns it with
+                 the section headings.
+                 The 48-px icon mirrors the AboutDialog hero (same
+                 AppIcon.BitmapInstance source, same display size) so Welcome
+                 and About share a visual identity.  The icon is decorative —
+                 AutomationProperties.AccessibilityView=Raw hides it from the
+                 SR's Content view because the H1 already carries the page
+                 identity.
+                 AutomationProperties.HeadingLevel marks the H1 + the four
+                 section headings below as H2 so screen-reader users can jump
+                 section-to-section with their "next heading" key (H on
+                 NVDA/JAWS).  Without these markers the SemiBold weight +
+                 larger FontSize is a purely visual cue the SR doesn't expose. -->
+            <DockPanel LastChildFill="True">
+                <Image DockPanel.Dock="Right"
+                       Source="{x:Static app:AppIcon.BitmapInstance}"
+                       Width="48" Height="48"
+                       VerticalAlignment="Center"
+                       Margin="14,0,0,0"
+                       RenderOptions.BitmapInterpolationMode="HighQuality"
+                       AutomationProperties.AccessibilityView="Raw" />
+                <StackPanel Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Static loc:Strings.WelcomeHeading}"
+                               FontSize="24" FontWeight="Bold"
+                               AutomationProperties.HeadingLevel="1" />
+                    <TextBlock Text="{x:Static loc:Strings.WelcomeSubtitle}"
+                               FontSize="14"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+
+            <!-- ── Section 1: What you're editing now ──────────────────── -->
+            <!-- 2026-05-07: Border removed so this section's heading aligns
+                 flush with Configuration scopes (Section 3, which has no
+                 Border).  All four sections now share the same left edge —
+                 outer ScrollViewer Padding=24,20 + outer StackPanel default
+                 = 24px from window left.  Visual grouping comes from
+                 SemiBold headings + the outer StackPanel.Spacing=20. -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.HeadingEditingContext}"
+                           FontSize="13" FontWeight="SemiBold"
+                           AutomationProperties.HeadingLevel="2" />
+
+                <!-- Variant A: no project open.
+                         🏠 emoji is decorative — AccessibilityView="Raw" hides
+                         it from the screen-reader's Content view so the user
+                         doesn't hear "house" before each line of meaningful
+                         text.  Same pattern below for 📁 and every '•' bullet.
+                         The monospace path TextBlock gets an
+                         AutomationProperties.Name with a friendly prefix so
+                         the SR announces "User settings file: <path>" instead
+                         of spelling out each character. -->
+                <StackPanel IsVisible="{Binding !IsProjectOpen}" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="🏠" FontSize="14" VerticalAlignment="Center"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="{x:Static loc:Strings.TextEditingContextNoProject}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding UserSettingsPath}"
+                               FontFamily="Consolas,Menlo,monospace"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.Name="{Binding UserSettingsPath, StringFormat='User settings file: {0}'}" />
+                    <TextBlock Text="{x:Static loc:Strings.TextOpenProjectHint}"
+                               FontSize="12"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Variant B: project open -->
+                <StackPanel IsVisible="{Binding IsProjectOpen}" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="📁" FontSize="14" VerticalAlignment="Center"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="{Binding EditingContextSummary}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding ProjectClaudeDirPath}"
+                               FontFamily="Consolas,Menlo,monospace"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.Name="{Binding ProjectClaudeDirPath, StringFormat='Project Claude folder: {0}'}" />
+                    <TextBlock Text="{Binding UserSettingsPath}"
+                               FontFamily="Consolas,Menlo,monospace"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.Name="{Binding UserSettingsPath, StringFormat='User settings file: {0}'}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ── Section 2: Things to know (2026-05-07) ──────────────── -->
+            <!-- Concise pointers to behaviours / features a new user might
+                 overlook.  Three bullets deliberately — frugal so the section
+                 doesn't compete with the primary "what you're editing"
+                 guidance above.  Bullets ordered by likely usefulness:
+                   1. Auto-reload — explains a passive behaviour that's
+                      otherwise invisible until the user notices it happen.
+                   2. ★ Essentials — surfaces the new top-of-tree page where
+                      the high-impact knobs live.
+                   3. 🧠 Memory — surfaces what Claude has captured about
+                      the user + the privacy-hygiene erase capability.
+                      Audience for this app skews technical / power-user, so
+                      the privacy angle is mentioned explicitly.
+
+                 Keep this section to ~3 bullets going forward; if a future
+                 feature needs space, replace one rather than appending a
+                 fourth.  The Welcome page is "orientation", not docs.
+
+                 Exception (2026-05-20): a 4th Windows-only bullet
+                 (TextWelcomeWslHint, gated by IsWindowsPlatform) points
+                 at the WSL Common Actions group on the Permissions page
+                 as a solution to Git Bash / MSYS path-mangling friction.
+                 Non-Windows users still see only 3 bullets.  If another
+                 Windows-only bullet is ever added, prefer consolidating
+                 with this one rather than appending — the "Things to know"
+                 section gets unwieldy past 4 visible lines even on
+                 Windows.
+
+                 2026-05-07 v2: negative top margin halves the visual gap
+                 between the editing-context section above and this
+                 section's heading.  The outer StackPanel's Spacing=20 +
+                 this -10 margin nets a 10 px gap, vs the previous 20 px.
+                 All other sections keep the full 20 px spacing.
+
+                 2026-05-07 v3: Border removed so this section's heading
+                 aligns flush with Configuration scopes (Section 3) —
+                 the Border had been creating a 14 px content indent
+                 that made Scopes look out-dented by comparison. -->
+            <StackPanel Spacing="8" Margin="0,-10,0,0">
+                <TextBlock Text="{x:Static loc:Strings.HeadingThingsToKnow}"
+                           FontSize="13" FontWeight="SemiBold"
+                           AutomationProperties.HeadingLevel="2" />
+                <!-- DockPanel rather than Horizontal StackPanel: a horizontal
+                         StackPanel passes Infinity in the stack direction during
+                         measure, so the inner TextBlock gets unbounded width and
+                         TextWrapping=Wrap never kicks in — long bullet text
+                         overflows the panel.  DockPanel.LastChildFill makes the
+                         text take exactly the remaining width after the bullet
+                         glyph, which is constrained by the parent Border's
+                         actual width.
+                         '•' glyphs marked AccessibilityView="Raw" so the SR
+                         reads only the bullet's content text, not "bullet bullet
+                         bullet" between each line. -->
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextWelcomeAutoReload}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextWelcomeEssentials}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextWelcomeMemory}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <!-- 2026-05-20 — Windows-only WSL discovery bullet.
+                         Gated on MainWindowViewModel.IsWindowsPlatform so
+                         non-Windows users still see 3 bullets (per the
+                         section-budget guidance above).  Discoverability
+                         hint for the WSL Common Actions group on the
+                         Permissions page — pairs with TextCommonActionsWslHint
+                         which renders contextually on that page. -->
+                <DockPanel LastChildFill="True"
+                           IsVisible="{Binding IsWindowsPlatform}">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextWelcomeWslHint}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+            </StackPanel>
+
+            <!-- ── Section 3: Configuration scopes ─────────────────────── -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="{x:Static loc:Strings.HeadingScopes}"
+                           FontSize="13" FontWeight="SemiBold"
+                           AutomationProperties.HeadingLevel="2" />
+                <controls:ScopeLegend />
+            </StackPanel>
+
+            <!-- ── Section 4: What backups include ─────────────────────── -->
+            <!-- 2026-05-07: Border removed (see Section 1 / 2 comments) so
+                 this section's heading aligns flush with Configuration
+                 scopes (Section 3). -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.HeadingBackupContents}"
+                           FontSize="13" FontWeight="SemiBold"
+                           AutomationProperties.HeadingLevel="2" />
+
+                <!-- Bullet rows; '•' character is portable.  DockPanel
+                         (not Horizontal StackPanel) so TextWrapping=Wrap can
+                         constrain to the actual remaining width — the
+                         backup-content bullets are short today, but the
+                         pattern matches the Things-to-know section's
+                         wrap-fix and won't regress if a future translation
+                         or content update makes a line longer.
+                         '•' glyphs marked AccessibilityView="Raw" so the SR
+                         reads only the bullet content, not the literal
+                         bullet character. -->
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine1}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine2}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left" Text="•"
+                               Margin="0,0,6,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine3}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </DockPanel>
+                <TextBlock Text="{x:Static loc:Strings.TextBackupContentsExcluded}"
+                           FontSize="11" FontStyle="Italic"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,4,0,0" />
+                <TextBlock Text="{x:Static loc:Strings.TextBackupContentsProjectNote}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- ── Footer: Show-on-launch opt-out (2026-05-19) ─────────────
+                 Lets the user dismiss the dedicated "Welcome" nav node.
+                 When unchecked, MainWindowViewModel.ApplyWelcomeNodeVisibility
+                 removes the node from the tree immediately and persists the
+                 preference via WindowState.ShowWelcomeNode.  The Welcome
+                 page remains reachable by clicking the "Claude Code" or
+                 "Claude Desktop" header nodes (no Editor → ActiveEditor
+                 null → WelcomeView renders).  Clearing app data resets
+                 the preference to true. -->
+            <!-- 2026-05-19 — IsChecked is bound OneWay only.  Two-way
+                 binding from CheckBox.IsChecked (bool?) to a bool VM
+                 property fires a binding-init round-trip that lands
+                 false (null → default(bool) = false) on the source the
+                 first time WelcomeView renders, even when the user
+                 hasn't clicked the checkbox.  That spurious false-write
+                 triggered OnShowWelcomeOnLaunchChanged → SaveWindowState
+                 → persisted opt-out without any user interaction.
+
+                 The Click handler in WelcomeView.axaml.cs is the only
+                 path that flips the VM property, so the only way to
+                 persist false is via a literal user click. -->
+            <Border Margin="0,16,0,0"
+                    Padding="0,12,0,0"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="0,1,0,0">
+                <CheckBox x:Name="ShowWelcomeOnLaunchCheck"
+                          IsChecked="{Binding ShowWelcomeOnLaunch, Mode=OneWay}"
+                          Click="OnShowWelcomeOnLaunchClicked"
+                          Content="{x:Static loc:Strings.LabelShowWelcomeOnLaunch}"
+                          ToolTip.Tip="{x:Static loc:Strings.TipShowWelcomeOnLaunch}"
+                          AutomationProperties.Name="{x:Static loc:Strings.LabelShowWelcomeOnLaunch}"
+                          AutomationProperties.HelpText="{x:Static loc:Strings.TipShowWelcomeOnLaunch}" />
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

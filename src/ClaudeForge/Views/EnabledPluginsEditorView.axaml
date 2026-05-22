@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.EnabledPluginsEditorView"
+             x:DataType="vm:EnabledPluginsEditorViewModel">
+
+    <DockPanel Margin="8">
+
+        <!-- Add row at the bottom -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+            <TextBox Text="{Binding NewPluginRef}"
+                     PlaceholderText="e.g. formatter@anthropic-tools"
+                     Width="430"
+                     AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewPluginRef}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding AddPluginCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Content="Add" Command="{Binding AddPluginCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.ButtonAddPlugin}" />
+        </StackPanel>
+
+        <!-- Plugin list: CheckBox (enabled toggle) + editable TextBox (plugin ref) + remove.
+             I20: each per-row control's AutomationProperties.Name binds to PluginRef so
+             screen readers identify which plugin the control acts on. -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Plugins}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PluginEntry">
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                            <CheckBox IsChecked="{Binding Enabled}"
+                                      VerticalAlignment="Center"
+                                      ToolTip.Tip="{x:Static loc:Strings.TipPluginToggle}"
+                                      AutomationProperties.Name="{Binding PluginRef, StringFormat='Plugin enabled: {0}'}" />
+                            <TextBox Text="{Binding PluginRef}"
+                                     Width="480"
+                                     FontFamily="Consolas,Menlo,monospace"
+                                     VerticalAlignment="Center"
+                                     AutomationProperties.Name="{Binding PluginRef, StringFormat='Plugin reference: {0}'}" />
+                            <Button Content="&#x2715;" Padding="6,2" FontSize="11"
+                                    VerticalAlignment="Center"
+                                    Click="OnRemovePlugin"
+                                    AutomationProperties.Name="{Binding PluginRef, StringFormat='Remove plugin {0}'}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
+
+</UserControl>

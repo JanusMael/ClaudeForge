@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Claude-specific scope badge colors.
+        Keys follow the convention expected by LayeredEditors.Avalonia.Converters.ScopeToBrushConverter:
+        "scope-brush-{scope.Id}" where Id is the lowercase IEditorScope.Id.
+    -->
+
+    <!-- Managed (red) — administrator-controlled, read-only -->
+    <SolidColorBrush x:Key="scope-brush-managed" Color="#D32F2F" />
+
+    <!-- User (~/.claude/settings.json) — blue -->
+    <SolidColorBrush x:Key="scope-brush-user" Color="#1976D2" />
+
+    <!-- Project (.claude/settings.json) — green -->
+    <SolidColorBrush x:Key="scope-brush-project" Color="#388E3C" />
+
+    <!-- Local (.claude/settings.local.json) — amber -->
+    <SolidColorBrush x:Key="scope-brush-local" Color="#F57F17" />
+
+    <!--
+        Environment-layer brushes used by EnvironmentEditorView.
+        Process  (highest priority, read-only) — dark purple
+        Claude   (Claude env dict)             — teal
+        User     (Windows HKCU)               — blue-grey
+        Machine  (Windows HKLM)               — brown/earthy
+    -->
+    <SolidColorBrush x:Key="scope-brush-process" Color="#6A1B9A" />
+    <SolidColorBrush x:Key="scope-brush-claude-env" Color="#00695C" />
+    <SolidColorBrush x:Key="scope-brush-user-env" Color="#37474F" />
+    <SolidColorBrush x:Key="scope-brush-machine-env" Color="#4E342E" />
+
+</ResourceDictionary>

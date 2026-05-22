@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Trim-warning suppressions for Microsoft.Maui.ApplicationModel.
+
+  This file is included ONLY when publishing against the Windows TFM
+  (net10.0-windows10.0.19041.0).  Including it for non-Windows TFMs produces
+  IL2007: Could not resolve assembly 'Microsoft.Maui.ApplicationModel' because
+  the package is not referenced there.
+
+  See ClaudeForge.csproj for the conditional _ILLinkSuppressions item:
+    Condition="'$(Configuration)' == 'Release' And
+               $([MSBuild]::IsTargetFrameworkCompatible(
+                   '$(TargetFramework)', 'net10.0-windows10.0.19041.0'))"
+-->
+<linker>
+
+    <!--
+      Suppress IL2026 across the entire Microsoft.Maui.ApplicationModel module
+      (Windows Share API — DefaultShareService).
+      MAUI Essentials uses reflection-based platform detection internally without
+      [RequiresUnreferencedCode] annotations on its public surface. The API is
+      only called on Windows builds (guarded by #if NET10_0_WINDOWS10_0_19041_0_OR_GREATER)
+      and the code paths exercised at runtime are preserved by the app's use of
+      typed share requests (ShareTextRequest / ShareFileRequest / ShareFile).
+    -->
+    <assembly fullname="Microsoft.Maui.ApplicationModel">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Microsoft.Maui.ApplicationModel</property>
+        </attribute>
+    </assembly>
+
+</linker>

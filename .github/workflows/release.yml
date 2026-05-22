@@ -1,0 +1,352 @@
+name: Release
+
+# Triggered by a version tag: v1.2.3 or v1.2.3-rc.1 (pre-release)
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Required to create the GitHub Release, upload assets, and read PR bodies.
+permissions:
+  contents: write
+  pull-requests: read   # needed to read PR body for release notes
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  APP_NAME: ClaudeForge
+
+# ── Variables and secrets mapping ────────────────────────────────────────────
+# Configure under Settings → Secrets and variables → Actions on the repository.
+#
+# This workflow delegates all build work to `src/publish/publish.ps1` — the
+# same script developers run locally. The script reads $env:PublicVersion to
+# stamp the assembly and embed the version in archive filenames; the workflow
+# wires that env var from the tag below. To trace what the script does, read
+# its header comment (publish.ps1) and its single-RID worker (Publish-Rid.ps1).
+#
+# Repository secrets (Settings → Secrets → Actions → New repository secret):
+#
+#   APPLE_SIGNING_CERT     Base64-encoded Apple Developer certificate (.p12).
+#                          Apply after publish on macos-latest, before the
+#                          artifact upload step in publish-macos:
+#                            run: |
+#                              echo "${{ secrets.APPLE_SIGNING_CERT }}" | base64 -d > cert.p12
+#                              security import cert.p12 -P "${{ secrets.APPLE_CERT_PASSWORD }}" \
+#                                -k ~/Library/Keychains/login.keychain-db -A
+#                              # Sign every binary inside each tar.gz (extract → sign → repack)
+#                              # See: docs in WORKFLOWS.md once codesigning is enabled.
+#
+#   APPLE_CERT_PASSWORD    Passphrase protecting the .p12 certificate file.
+#   APPLE_NOTARIZE_USER    Apple ID (email address) for xcrun notarytool.
+#   APPLE_NOTARIZE_PASS    App-specific password generated at appleid.apple.com.
+#   APPLE_TEAM_ID          Ten-character Apple Developer Team ID (e.g. A1B2C3D4E5).
+#
+#   WINDOWS_SIGNING_CERT   Base64-encoded Authenticode certificate (.pfx).
+#                          Apply after publish on windows-latest, before the
+#                          artifact upload step in publish-windows:
+#                            run: |
+#                              echo "${{ secrets.WINDOWS_SIGNING_CERT }}" | base64 -d > cert.pfx
+#                              # Sign every ClaudeForge.exe inside the produced .zip
+#                              # (unzip → signtool → zip back). signtool.exe ships in the
+#                              # Windows 10 SDK already installed on windows-latest runners.
+#
+#   WINDOWS_CERT_PASSWORD  Passphrase protecting the .pfx file.
+#
+#   SLACK_RELEASE_WEBHOOK  Incoming webhook URL for a Slack release-announcements
+#                          channel. Add a final step in the release job:
+#                            - uses: slackapi/slack-github-action@v2
+#                              with:
+#                                webhook: ${{ secrets.SLACK_RELEASE_WEBHOOK }}
+#                                webhook-type: incoming-webhook
+#                                payload: |
+#                                  { "text": ":rocket: ${{ env.APP_NAME }} ${{ env.VERSION }} released — <${{ steps.create_release.outputs.url }}|view release>" }
+#
+# Repository variables (Settings → Variables → Actions → New repository variable):
+#   These override the workflow-level env defaults defined above.
+#
+#   APP_NAME               Release-title prefix and download-table heading, e.g. 'ClaudeForge'.
+#                          NOTE: the archive filenames are produced by publish.ps1 and use
+#                          the assembly name (ClaudeForge) directly — changing APP_NAME here
+#                          only affects the release title and the download-table heading.
+
+jobs:
+
+  # ── Gate: tests must pass on all platforms before anything is published ─────
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - run: dotnet restore ClaudeForge.slnx
+
+      - run: dotnet build ClaudeForge.slnx --no-restore -c Release
+
+      - run: dotnet test ClaudeForge.slnx --no-build -c Release
+
+  # ── Publish via src/publish/publish.ps1 on each host OS ────────────────────
+  #
+  # publish.ps1 is the canonical entry point — same script developers run
+  # locally (`pwsh src/publish/publish.ps1 -All`). It handles bin/obj cleaning,
+  # the Windows maui-windows workload preflight, calls Publish-Rid.ps1 per
+  # RID, scans IL warnings, and runs the closure analyzer when warnings hit.
+  #
+  # One job per OS so each RID builds on its native host:
+  #
+  #   windows-latest  → win-x64, win-arm64   (Windows TFM + maui-windows workload)
+  #   ubuntu-latest   → linux-x64, linux-arm64
+  #   macos-latest    → osx-x64, osx-arm64   (native dylibs match the runner arch)
+  #
+  # PublicVersion env var → publish.ps1 → -p:Version on dotnet publish AND
+  # the archive filename. Result naming: ClaudeForge-<version>-<rid>.zip (Win)
+  # or .tar.gz (Linux/macOS).
+  publish-windows:
+    name: Publish (Windows)
+    needs: test
+    runs-on: windows-latest
+    env:
+      PublicVersion: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Extract version from tag
+        shell: bash
+        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Publish (win-x64, win-arm64)
+        shell: pwsh
+        run: pwsh src/publish/publish.ps1 -All -Rids win-x64,win-arm64
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: src/dist/*.zip
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-linux:
+    name: Publish (Linux)
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      PublicVersion: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Extract version from tag
+        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Publish (linux-x64, linux-arm64)
+        shell: pwsh
+        run: pwsh src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: src/dist/*.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  publish-macos:
+    name: Publish (macOS)
+    needs: test
+    runs-on: macos-latest
+    env:
+      PublicVersion: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Extract version from tag
+        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Publish (osx-x64, osx-arm64)
+        shell: pwsh
+        run: pwsh src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-macos
+          path: src/dist/*.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  # ── Create the GitHub Release ───────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [publish-windows, publish-linux, publish-macos]
+    runs-on: ubuntu-latest
+
+    steps:
+      # Full history is required for two reasons:
+      #   1. git log -1 --format='%b' reads the tagged commit's message body.
+      #   2. gh release create --generate-notes (fallback path) diffs between tags.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      # Download all platform artifacts into a flat ./artifacts/ directory.
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh artifacts/
+
+      - name: Detect pre-release
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "PRERELEASE_FLAG=--prerelease" >> "$GITHUB_ENV"
+          else
+            echo "PRERELEASE_FLAG=" >> "$GITHUB_ENV"
+          fi
+
+      # Determine the changelog source in priority order:
+      #
+      #   1. PR merge  — the tag's commit SHA matches the merge commit of a PR.
+      #                  The PR body is the author-written changelog; use it directly.
+      #                  Convention: write your changelog in the PR description.
+      #
+      #   2. Direct push — no associated PR.  The commit message body (everything
+      #                  after the first blank line) becomes the changelog.
+      #                  Convention: multi-line commit messages with changelog markdown.
+      #
+      #   3. Fallback  — commit has no body either.  GitHub's --generate-notes
+      #                  auto-produces a categorised list of merged PRs and commits
+      #                  since the previous release tag (see .github/release.yml for
+      #                  label-to-section mapping).
+      - name: Resolve changelog source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+
+          # The Commits → Pulls API returns PRs whose merge commit matches SHA.
+          PR_NUMBER=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/pulls" \
+            --jq '.[0].number // empty' 2>/dev/null || echo "")
+
+          if [[ -n "$PR_NUMBER" ]]; then
+            echo "Changelog source: PR #${PR_NUMBER} body"
+            gh pr view "$PR_NUMBER" --json body --jq '.body' > changelog-content.md
+            echo "CHANGELOG_SOURCE=pr" >> "$GITHUB_ENV"
+          else
+            COMMIT_BODY=$(git log -1 --format='%b' HEAD)
+            if [[ -n "$COMMIT_BODY" ]]; then
+              echo "Changelog source: commit message body"
+              printf '%s' "$COMMIT_BODY" > changelog-content.md
+              echo "CHANGELOG_SOURCE=commit" >> "$GITHUB_ENV"
+            else
+              echo "Changelog source: --generate-notes fallback"
+              echo "CHANGELOG_SOURCE=generate" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      # Part 1 of the notes file: download table + per-platform install instructions.
+      # Part 2: the changelog section (PR body / commit body / nothing — auto-generated
+      #         notes are appended by GitHub after Part 1 in the fallback path).
+      #
+      # Filename pattern is fixed by Publish-Rid.ps1:
+      #   Windows  → ClaudeForge-<version>-<rid>.zip
+      #   Linux    → ClaudeForge-<version>-<rid>.tar.gz   (bundles linux-setup.sh + .desktop + .svg)
+      #   macOS    → ClaudeForge-<version>-<rid>.tar.gz   (bundles allow-app-to-run.sh)
+      - name: Write release notes
+        run: |
+          cat > release-notes.md << EOF
+          ## Downloads
+
+          | Platform              | Architecture   | File                                                                       |
+          |-----------------------|----------------|----------------------------------------------------------------------------|
+          | Windows               | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-win-x64.zip\`                    |
+          | Windows               | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-win-arm64.zip\`                  |
+          | Linux                 | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz\`               |
+          | Linux                 | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-linux-arm64.tar.gz\`             |
+          | macOS (Intel)         | x64            | \`${{ env.APP_NAME }}-${{ env.VERSION }}-osx-x64.tar.gz\`                 |
+          | macOS (Apple Silicon) | ARM64          | \`${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz\`               |
+
+          **Linux:** Extract, then run the bundled \`linux-setup.sh\` to install a per-user \`.desktop\` entry so Wayland compositors render the window icon correctly:
+          \`\`\`bash
+          tar -xzf ${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz -C ~/${{ env.APP_NAME }}
+          cd ~/${{ env.APP_NAME }}
+          ./linux-setup.sh
+          ./${{ env.APP_NAME }}
+          \`\`\`
+
+          **macOS:** The binary is unsigned. Use the bundled \`allow-app-to-run.sh\` to strip the Gatekeeper quarantine xattr from every file in the extracted directory:
+          \`\`\`bash
+          tar -xzf ${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz -C ~/${{ env.APP_NAME }}
+          cd ~/${{ env.APP_NAME }}
+          ./allow-app-to-run.sh
+          ./${{ env.APP_NAME }}
+          \`\`\`
+
+          ---
+          EOF
+
+          if [[ "$CHANGELOG_SOURCE" != "generate" ]]; then
+            {
+              echo ""
+              echo "## What's Changed"
+              echo ""
+              cat changelog-content.md
+            } >> release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # When an explicit changelog exists (PR body or commit message body),
+          # --notes-file alone is used and the release shows exactly what was written.
+          # When neither exists, --generate-notes asks GitHub to auto-produce a
+          # categorised PR/commit list (bucketed by PR labels per .github/release.yml).
+          EXTRA_FLAGS=""
+          [[ "$CHANGELOG_SOURCE" == "generate" ]] && EXTRA_FLAGS="--generate-notes"
+
+          gh release create "$GITHUB_REF_NAME" \
+            --title "${{ env.APP_NAME }} ${{ env.VERSION }}" \
+            --notes-file release-notes.md \
+            $EXTRA_FLAGS \
+            ${{ env.PRERELEASE_FLAG }} \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-win-x64.zip \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-win-arm64.zip \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-linux-x64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-linux-arm64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-osx-x64.tar.gz \
+            artifacts/${{ env.APP_NAME }}-${{ env.VERSION }}-osx-arm64.tar.gz

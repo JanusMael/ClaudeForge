@@ -1,0 +1,245 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.EffectiveSettingsView"
+             x:DataType="vm:EffectiveSettingsViewModel">
+
+    <UserControl.Resources>
+        <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
+        <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
+        <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
+        <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
+        <conv:OverriddenTooltipConverter x:Key="OverriddenTooltip" />
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Header: title + descriptive subtitle explaining what "effective" means -->
+        <Border DockPanel.Dock="Top" Padding="16,10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <Button Content="{x:Static loc:Strings.ButtonShareConfig}"
+                            Command="{Binding ShareConfigCommand}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonShareConfig}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonShareConfig}" />
+                    <Button Content="{x:Static loc:Strings.ButtonRefreshEffective}"
+                            Command="{Binding RefreshCommand}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonRefreshEffective}" />
+                </StackPanel>
+                <!-- Accent-pill heading — same NavSelectedAccentBrush used by the
+                     navigation tree's selected row and by SettingsGroupEditorView's
+                     page heading, so "this is the active page" reads identically
+                     across all top-level surfaces. -->
+                <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                        TextElement.Foreground="White"
+                        CornerRadius="6"
+                        Padding="14,8"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.HeadingEffectiveSettings}"
+                                   FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.TextEffectiveSettingsSubtitle}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="800"
+                                   Opacity="0.92" />
+                    </StackPanel>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <!-- Project status / warning banner -->
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding IsProjectMissing}"
+                Background="#FFF8E1"
+                Padding="14,7"
+                BorderBrush="#FFE082"
+                BorderThickness="0,0,0,1">
+            <TextBlock Text="{Binding ProjectStatusText}"
+                       Foreground="#795548"
+                       FontSize="12" />
+        </Border>
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding IsProjectMissing, Converter={x:Static BoolConverters.Not}}"
+                Padding="14,5"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <TextBlock Text="{Binding ProjectStatusText}"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Border>
+
+        <!-- Tab view: flat table + raw JSON -->
+        <TabControl>
+
+            <!-- Property table -->
+            <TabItem Header="{x:Static loc:Strings.TabProperties}">
+                <DockPanel>
+                    <!-- Filter bar -->
+                    <Border DockPanel.Dock="Top" Padding="8,6"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="0,0,0,1">
+                        <TextBox Text="{Binding FilterText}"
+                                 PlaceholderText="{x:Static loc:Strings.WatermarkFilterProps}"
+                                 MaxWidth="400"
+                                 HorizontalAlignment="Left"
+                                 AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterProps}" />
+                    </Border>
+
+                    <DataGrid ItemsSource="{Binding FilteredRows}"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              GridLinesVisibility="Horizontal"
+                              CanUserReorderColumns="True"
+                              CanUserResizeColumns="True"
+                              CanUserSortColumns="True"
+                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}">
+                        <DataGrid.Columns>
+                            <!--
+                                Cells are wrapped in <controls:TipCell> rather than relying
+                                on bare TextBlock.ToolTip.Tip so the tooltip fires anywhere
+                                inside the cell bounds — not just over the text glyphs.
+                                This matches the pattern already used in EnvironmentEditorView
+                                and BackupRestoreView. The Tip property holds the tooltip
+                                content; an internal property-changed handler in TipCell
+                                forwards it to ToolTip.SetTip on the cell itself.
+                            -->
+                            <DataGridTemplateColumn Width="220"
+                                                    CanUserSort="True"
+                                                    SortMemberPath="Property">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveProperty}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                        <controls:TipCell Tip="{Binding Property}">
+                                            <TextBlock Text="{Binding Property}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="12,0"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </controls:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Value column: tooltip is the pretty-printed long value
+                                 (returns null for short values so no tooltip is shown). -->
+                            <DataGridTemplateColumn Width="*"
+                                                    CanUserSort="True" SortMemberPath="DisplayValue">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValueCol}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                        <!-- SelectableTextBlock + ContextFlyout matches the
+                                             SaveChangesDialog cell pattern: drag-select + Ctrl+C
+                                             copies the visible (ellipsis-trimmed) text natively;
+                                             right-click → Copy copies the FULL DisplayValue so
+                                             long JSON blobs are recoverable in one click without
+                                             needing to expand the column. -->
+                                        <controls:TipCell
+                                            Tip="{Binding DisplayValue,
+                                                Converter={StaticResource LongValueTooltip}}">
+                                            <SelectableTextBlock Text="{Binding DisplayValue}"
+                                                                 TextTrimming="CharacterEllipsis"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="12,0">
+                                                <SelectableTextBlock.ContextFlyout>
+                                                    <MenuFlyout>
+                                                        <MenuItem Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                  Click="OnCopyEffectiveValue" />
+                                                    </MenuFlyout>
+                                                </SelectableTextBlock.ContextFlyout>
+                                            </SelectableTextBlock>
+                                        </controls:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Width="Auto"
+                                                    CanUserSort="True"
+                                                    SortMemberPath="Scope">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveScope}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                        <!-- Outer TipCell makes the entire cell area hoverable
+                                             (not just the colored badge), so users can read the
+                                             scope description by pointing anywhere in the cell. -->
+                                        <controls:TipCell
+                                            Tip="{Binding Scope,
+                                                Converter={StaticResource ScopeToTooltip}}">
+                                            <Border
+                                                Background="{Binding Scope, Converter={StaticResource ScopeToBrush}}"
+                                                TextElement.Foreground="White"
+                                                CornerRadius="3" Padding="6,2" Margin="4,2"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                IsVisible="{Binding Scope, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                <TextBlock
+                                                    Text="{Binding Scope, Converter={StaticResource ScopeToName}}"
+                                                    FontSize="10" FontWeight="Bold"
+                                                    HorizontalAlignment="Center" />
+                                            </Border>
+                                        </controls:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Overridden column: convert from CheckBoxColumn to a Template
+                                 so we can wrap it in TipCell and switch tooltip text based
+                                 on the bool value (true = something IS overriding, false = sole). -->
+                            <DataGridTemplateColumn Width="Auto"
+                                                    CanUserSort="True"
+                                                    SortMemberPath="IsOverridden">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveOverridden}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveOverridden}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                        <controls:TipCell
+                                            Tip="{Binding IsOverridden,
+                                                Converter={StaticResource OverriddenTooltip}}">
+                                            <CheckBox IsChecked="{Binding IsOverridden}"
+                                                      IsEnabled="False"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      AutomationProperties.Name="{x:Static loc:Strings.HeaderEffectiveOverridden}" />
+                                        </controls:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Raw JSON with syntax highlighting -->
+            <TabItem Header="{x:Static loc:Strings.TabJson}">
+                <DockPanel>
+                    <!-- Copy button -->
+                    <Button DockPanel.Dock="Top"
+                            Content="{x:Static loc:Strings.ButtonCopyToClipboard}"
+                            Command="{Binding CopyJsonCommand}"
+                            Margin="8,6"
+                            HorizontalAlignment="Left"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCopyToClipboard}" />
+                    <lecontrols:JsonHighlightBlock Json="{Binding EffectiveJson}" />
+                </DockPanel>
+            </TabItem>
+
+        </TabControl>
+
+    </DockPanel>
+</UserControl>

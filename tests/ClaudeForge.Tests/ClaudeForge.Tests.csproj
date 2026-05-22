@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Tests</RootNamespace>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Headless" Version="12.0.3" />
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="MSTest" Version="3.8.3"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
+        <ProjectReference Include="..\..\src\ClaudeForge\ClaudeForge.csproj"/>
+        <ProjectReference Include="..\..\src\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
+    </ItemGroup>
+</Project>

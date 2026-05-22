@@ -1,0 +1,115 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Controls.ScopeLegend"
+             x:Name="LegendRoot"
+             x:DataType="controls:ScopeLegend">
+
+    <!--
+        Reusable 4-row scope legend.
+
+        Rendered identically wherever the user needs to be reminded of what
+        each ConfigScope means: WelcomeView, the SettingsGroupEditorView "?"
+        popup, and the BackupRestoreView header.
+
+        Layout note — column alignment requires a SINGLE Grid containing both
+        the header row and the four data rows. Earlier revisions used one
+        Grid for the header and a separate ItemsControl/Grid for data rows,
+        which produced drift because each row's Auto-sized "File" column
+        sized independently to its own path length. Using one outer Grid
+        with shared column definitions keeps every column edge perfectly
+        aligned across the header and all four data rows.
+
+        Rows are computed once in code-behind (`Items`) — the i-th row index
+        in this Grid binds to Items[i] via `{Binding #LegendRoot.Items[i]}`,
+        so the AXAML compiler stays in compiled-binding mode (no reflection).
+    -->
+    <Border Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            CornerRadius="4"
+            Padding="14,10">
+        <Grid x:Name="LegendGrid"
+              ColumnDefinitions="Auto,Auto,*"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+              ColumnSpacing="14"
+              RowSpacing="6">
+
+            <!-- ── Header row ─────────────────────────────────────────── -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static loc:Strings.HeaderScopeLegendScope}"
+                       FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Static loc:Strings.HeaderScopeLegendFile}"
+                       FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="{x:Static loc:Strings.HeaderScopeLegendMeaning}"
+                       FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+            <!-- ── Row 1: Managed ─────────────────────────────────────── -->
+            <Border Grid.Row="1" Grid.Column="0"
+                    Background="{Binding #LegendRoot.Items[0].BadgeBrush}"
+                    CornerRadius="4" Padding="8,2"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="{Binding #LegendRoot.Items[0].Name}"
+                           Foreground="White" FontWeight="Bold" FontSize="11" />
+            </Border>
+            <TextBlock Grid.Row="1" Grid.Column="1"
+                       Text="{Binding #LegendRoot.Items[0].Path}"
+                       VerticalAlignment="Center"
+                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+            <TextBlock Grid.Row="1" Grid.Column="2"
+                       Text="{Binding #LegendRoot.Items[0].Meaning}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+
+            <!-- ── Row 2: Local ───────────────────────────────────────── -->
+            <Border Grid.Row="2" Grid.Column="0"
+                    Background="{Binding #LegendRoot.Items[1].BadgeBrush}"
+                    CornerRadius="4" Padding="8,2"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="{Binding #LegendRoot.Items[1].Name}"
+                           Foreground="White" FontWeight="Bold" FontSize="11" />
+            </Border>
+            <TextBlock Grid.Row="2" Grid.Column="1"
+                       Text="{Binding #LegendRoot.Items[1].Path}"
+                       VerticalAlignment="Center"
+                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+            <TextBlock Grid.Row="2" Grid.Column="2"
+                       Text="{Binding #LegendRoot.Items[1].Meaning}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+
+            <!-- ── Row 3: Project ─────────────────────────────────────── -->
+            <Border Grid.Row="3" Grid.Column="0"
+                    Background="{Binding #LegendRoot.Items[2].BadgeBrush}"
+                    CornerRadius="4" Padding="8,2"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="{Binding #LegendRoot.Items[2].Name}"
+                           Foreground="White" FontWeight="Bold" FontSize="11" />
+            </Border>
+            <TextBlock Grid.Row="3" Grid.Column="1"
+                       Text="{Binding #LegendRoot.Items[2].Path}"
+                       VerticalAlignment="Center"
+                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+            <TextBlock Grid.Row="3" Grid.Column="2"
+                       Text="{Binding #LegendRoot.Items[2].Meaning}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+
+            <!-- ── Row 4: User ────────────────────────────────────────── -->
+            <Border Grid.Row="4" Grid.Column="0"
+                    Background="{Binding #LegendRoot.Items[3].BadgeBrush}"
+                    CornerRadius="4" Padding="8,2"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock Text="{Binding #LegendRoot.Items[3].Name}"
+                           Foreground="White" FontWeight="Bold" FontSize="11" />
+            </Border>
+            <TextBlock Grid.Row="4" Grid.Column="1"
+                       Text="{Binding #LegendRoot.Items[3].Path}"
+                       VerticalAlignment="Center"
+                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+            <TextBlock Grid.Row="4" Grid.Column="2"
+                       Text="{Binding #LegendRoot.Items[3].Meaning}"
+                       VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
+
+        </Grid>
+    </Border>
+
+</UserControl>

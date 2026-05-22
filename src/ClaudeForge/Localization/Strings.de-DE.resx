@@ -1,0 +1,2618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  German (Germany) (de-DE) translation of Strings.resx.
+  Keep <data name="..."> keys byte-identical to the English source; only translate <value> contents.
+-->
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — toolbar
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelEditingProfile" xml:space="preserve">
+    <value>Bearbeitetes Profil:</value>
+  </data>
+  <data name="TipEditingProfile" xml:space="preserve">
+    <value>Ein Profil ist ein benannter Satz von Claude-Einstellungen. „(global)“ verwendet Ihre gemeinsamen benutzerweiten Einstellungen; benannte Profile ermöglichen den Wechsel zwischen verschiedenen Konfigurationen.</value>
+  </data>
+  <data name="TipProfileSelector" xml:space="preserve">
+    <value>Aktives Claude-Profil wechseln. „(global)“ verwendet die gemeinsamen Benutzereinstellungen; benannte Profile (z. B. „work“) sind separate Einstellungssätze, die in ~/.claude/profiles/ gespeichert sind.</value>
+  </data>
+  <data name="AutoNameActiveProfile" xml:space="preserve">
+    <value>Aktives Profil</value>
+  </data>
+  <data name="AutoHelpActiveProfile" xml:space="preserve">
+    <value>Wählen Sie ein Claude-Einstellungsprofil. Wählen Sie (global) für Ihre gemeinsamen Benutzereinstellungen oder ein benanntes Profil, um die Konfiguration zu wechseln.</value>
+  </data>
+  <data name="TipManageProfiles" xml:space="preserve">
+    <value>Öffnen Sie den Bereich „Profile“, um benannte Profile zu erstellen, zu löschen, anzuwenden oder zu synchronisieren</value>
+  </data>
+  <data name="AutoNameManageProfiles" xml:space="preserve">
+    <value>Profile verwalten</value>
+  </data>
+  <data name="ButtonOpenProject" xml:space="preserve">
+    <value>📂 Pr_ojekt öffnen</value>
+    <comment>Alt+O — top toolbar button. The underscore is Avalonia's access-key prefix; AccessText underlines the next character when Alt is held.</comment>
+  </data>
+  <data name="TipButtonOpenProject" xml:space="preserve">
+    <value>Projektordner öffnen, um dessen .claude/settings.json-Dateien zu laden</value>
+  </data>
+  <data name="AutoNameButtonOpenProject" xml:space="preserve">
+    <value>Projektordner öffnen</value>
+  </data>
+  <data name="ButtonSave" xml:space="preserve">
+    <value>💾 _Speichern</value>
+    <comment>Alt+S — top toolbar button.</comment>
+  </data>
+  <data name="TipButtonSave" xml:space="preserve">
+    <value>Alle geänderten Einstellungen auf die Festplatte speichern (Strg+S)</value>
+  </data>
+  <data name="AutoNameButtonSave" xml:space="preserve">
+    <value>Alle Einstellungen speichern</value>
+  </data>
+  <data name="ButtonExport" xml:space="preserve">
+    <value>📤 _Exportieren…</value>
+    <comment>Alt+E — top toolbar button.</comment>
+  </data>
+  <data name="TipButtonExport" xml:space="preserve">
+    <value>Die vollständig zusammengeführte effektive Konfiguration als .zip-Datei exportieren</value>
+  </data>
+  <data name="AutoNameButtonExport" xml:space="preserve">
+    <value>Effektive Konfiguration exportieren</value>
+  </data>
+
+  <!-- screen-reader names for controls
+       that have no naturally-derivable label.  See CLAUDE.md "Accessibility
+       — screen-reader names" and AGENTS.md invariant I20. -->
+  <data name="AutoNameEffectiveRowsGrid" xml:space="preserve">
+    <value>Liste der effektiven Einstellungen</value>
+    <comment>Screen-reader name for the DataGrid that lists the merged property values per scope.</comment>
+  </data>
+  <data name="AutoHelpEffectiveRowsGrid" xml:space="preserve">
+    <value>Liste der Einstellungseigenschaften und ihrer effektiven zusammengeführten Werte über die Geltungsbereiche Verwaltet, Lokal, Projekt und Benutzer. Schreibgeschützt; verwenden Sie zur Wertänderung die Editorseiten.</value>
+    <comment>Screen-reader help text describing the EffectiveRows DataGrid's purpose and read-only nature.</comment>
+  </data>
+  <data name="AutoNameNewPluginRef" xml:space="preserve">
+    <value>Neue Plugin-Referenz</value>
+    <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
+  </data>
+
+  <!-- screen-reader names for controls
+       in the larger editor views.  Sorted by view file. -->
+
+  <!-- BackupRestoreView -->
+  <data name="AutoNameBrowseBackupFolder" xml:space="preserve">
+    <value>Nach Backup-Ausgabeordner suchen</value>
+    <comment>Disambiguates the "Browse" button next to the backup output folder TextBox.</comment>
+  </data>
+  <data name="AutoNameBrowseRestoreFolder" xml:space="preserve">
+    <value>Nach Wiederherstellungs-Quellordner suchen</value>
+    <comment>Disambiguates the "Browse" button next to the restore source folder TextBox.</comment>
+  </data>
+  <data name="AutoNameBackupsGrid" xml:space="preserve">
+    <value>Verfügbare Backups</value>
+    <comment>Screen-reader name for the DataGrid listing previously-created backups on the Restore tab.</comment>
+  </data>
+
+  <!-- ProfilesView -->
+  <data name="AutoNameNewCliProfile" xml:space="preserve">
+    <value>Neues Claude Code CLI-Profil</value>
+  </data>
+  <data name="AutoNameNewDesktopProfile" xml:space="preserve">
+    <value>Neues Claude Desktop-Profil</value>
+  </data>
+  <data name="AutoNameDeleteDesktopProfile" xml:space="preserve">
+    <value>Desktop-Profil löschen</value>
+  </data>
+  <data name="AutoNameCliProfilesGrid" xml:space="preserve">
+    <value>Claude Code CLI-Profile</value>
+  </data>
+  <data name="AutoNameDesktopProfilesGrid" xml:space="preserve">
+    <value>Claude Desktop-Profile</value>
+  </data>
+
+  <!-- PermissionsEditorView -->
+  <data name="AutoNameAddAdditionalDirectory" xml:space="preserve">
+    <value>Zusätzliches Verzeichnis hinzufügen</value>
+  </data>
+
+  <!-- McpServersEditorView -->
+  <data name="AutoNameMcpServerList" xml:space="preserve">
+    <value>Liste der MCP-Server</value>
+  </data>
+  <data name="AutoNameEditArgument" xml:space="preserve">
+    <value>Argumentwert bearbeiten</value>
+  </data>
+  <data name="AutoNameAddArgument" xml:space="preserve">
+    <value>Argument hinzufügen</value>
+  </data>
+  <data name="AutoNameEditEnvKey" xml:space="preserve">
+    <value>Name der Umgebungsvariable bearbeiten</value>
+  </data>
+  <data name="AutoNameEditEnvValue" xml:space="preserve">
+    <value>Wert der Umgebungsvariable bearbeiten</value>
+  </data>
+  <data name="AutoNameAddEnvVar" xml:space="preserve">
+    <value>Umgebungsvariable hinzufügen</value>
+  </data>
+
+  <!-- HooksEditorView -->
+  <data name="AutoNameHookEventList" xml:space="preserve">
+    <value>Hook-Ereignistypen</value>
+  </data>
+  <data name="AutoNameHooksGrid" xml:space="preserve">
+    <value>Hooks für ausgewähltes Ereignis</value>
+  </data>
+  <data name="AutoNameNewHookHeaderKey" xml:space="preserve">
+    <value>Name des neuen HTTP-Headers</value>
+  </data>
+  <data name="AutoNameNewHookHeaderValue" xml:space="preserve">
+    <value>Wert des neuen HTTP-Headers</value>
+  </data>
+  <data name="AutoNameAddHookHeader" xml:space="preserve">
+    <value>HTTP-Header hinzufügen</value>
+  </data>
+  <data name="AutoNameAddHookAllowedEnvVar" xml:space="preserve">
+    <value>Erlaubte Umgebungsvariable hinzufügen</value>
+  </data>
+
+  <!-- MarketplacesEditorView -->
+  <data name="AutoNameNewMarketplaceSourceType" xml:space="preserve">
+    <value>Quelltyp des neuen Marketplace</value>
+  </data>
+  <data name="AutoNameAddMarketplace" xml:space="preserve">
+    <value>Marketplace hinzufügen</value>
+  </data>
+
+  <!-- EnvironmentEditorView -->
+  <data name="AutoNameEnvVarEditValue" xml:space="preserve">
+    <value>Wert der Umgebungsvariable</value>
+  </data>
+
+  <data name="WatermarkSearch" xml:space="preserve">
+    <value>Einstellungen durchsuchen…</value>
+  </data>
+  <data name="TipSearchBox" xml:space="preserve">
+    <value>Alle Einstellungen nach Name oder Beschreibung durchsuchen</value>
+  </data>
+  <data name="AutoNameSearchBox" xml:space="preserve">
+    <value>Einstellungen durchsuchen</value>
+  </data>
+  <data name="AutoHelpSearchBox" xml:space="preserve">
+    <value>Tippen Sie, um alle Einstellungen nach Name oder Beschreibung zu durchsuchen. Klicken Sie auf ein Ergebnis, um direkt zu dieser Einstellung zu gelangen.</value>
+  </data>
+  <data name="TipProgressLoading" xml:space="preserve">
+    <value>Einstellungen werden geladen…</value>
+  </data>
+
+  <!-- MainWindow — status bar -->
+  <data name="TipToggleTheme" xml:space="preserve">
+    <value>Zwischen hellem und dunklem Design umschalten</value>
+  </data>
+  <data name="AutoNameToggleTheme" xml:space="preserve">
+    <value>Design umschalten</value>
+  </data>
+  <data name="ButtonReloadWindow" xml:space="preserve">
+    <value>Fenster _neu laden</value>
+    <comment>Alt+R — status bar button. (F5 also reloads via the Window.KeyBindings.)</comment>
+  </data>
+  <data name="TipReloadWindow" xml:space="preserve">
+    <value>Nicht gespeicherte Änderungen verwerfen und alle Einstellungsdateien von der Festplatte neu laden</value>
+  </data>
+  <data name="AutoNameReloadWindow" xml:space="preserve">
+    <value>Einstellungen von der Festplatte neu laden</value>
+  </data>
+  <data name="TipCliActiveBadge" xml:space="preserve">
+    <value>Die Claude Code CLI liest die Einstellungen aus diesem Profil (festgelegt über „Anwenden“ im Profile-Bereich oder über die claudectx-CLI). Öffnen Sie den Bereich „Profile“, um ein anderes Profil anzuwenden.</value>
+  </data>
+  <data name="TipDesktopActiveBadge" xml:space="preserve">
+    <value>Claude Desktop liest seine Konfiguration aus diesem Profil (festgelegt über „Anwenden“ im Profile-Bereich). Öffnen Sie den Bereich „Profile“, um ein anderes Desktop-Profil anzuwenden.</value>
+  </data>
+  <data name="StringFormatCliActive" xml:space="preserve">
+    <value>Claude Code: {0}</value>
+  </data>
+  <data name="StringFormatDesktopActive" xml:space="preserve">
+    <value>Claude Desktop: {0}</value>
+  </data>
+  <data name="TipAppVersion" xml:space="preserve">
+    <value>ClaudeForge-Version</value>
+  </data>
+
+  <!-- MainWindow — navigation sidebar -->
+  <data name="TipNavigateBack" xml:space="preserve">
+    <value>Zur zuvor besuchten Seite zurückkehren</value>
+  </data>
+  <data name="AutoNameNavigateBack" xml:space="preserve">
+    <value>Zurück navigieren</value>
+  </data>
+  <data name="AutoHelpNavigateBack" xml:space="preserve">
+    <value>Kehrt zu der Seite zurück, die Sie vor dem Klick auf einen Deep-Link betrachtet haben</value>
+  </data>
+  <data name="ButtonBack" xml:space="preserve">
+    <value>← Zurück</value>
+  </data>
+
+  <!-- MainWindow — install guidance banner -->
+  <data name="LabelInstallBannerTitle" xml:space="preserve">
+    <value>Keine Claude-Installation erkannt</value>
+  </data>
+  <data name="TextInstallBannerDesc" xml:space="preserve">
+    <value>Claude Code wurde auf diesem System nicht gefunden. Sie können dennoch Konfigurationsdateien durchsuchen, erstellen und exportieren — nützlich, um andere Rechner einzurichten oder Konfigurationen mit Kollegen zu teilen.</value>
+  </data>
+  <data name="LabelInstallCommand" xml:space="preserve">
+    <value>Auf diesem Rechner installieren mit Befehl:</value>
+  </data>
+  <data name="ButtonCopyInstall" xml:space="preserve">
+    <value>📋 Kopieren</value>
+  </data>
+  <data name="TipButtonCopyInstall" xml:space="preserve">
+    <value>Installationsbefehl in die Zwischenablage kopieren</value>
+  </data>
+  <data name="AutoNameButtonCopyInstall" xml:space="preserve">
+    <value>Installationsbefehl kopieren</value>
+  </data>
+  <data name="TipButtonRunInstall" xml:space="preserve">
+    <value>Ein Terminal öffnen und den Installationsbefehl ausführen</value>
+  </data>
+  <data name="AutoNameButtonRunInstall" xml:space="preserve">
+    <value>Installationsbefehl ausführen</value>
+  </data>
+  <data name="ButtonDismissInstallBanner" xml:space="preserve">
+    <value>✕ Schließen</value>
+  </data>
+  <data name="TipButtonDismissInstall" xml:space="preserve">
+    <value>Diese Meldung für den Rest dieser Sitzung ausblenden</value>
+  </data>
+  <data name="AutoNameButtonDismissInstall" xml:space="preserve">
+    <value>Installationshinweis schließen</value>
+  </data>
+  <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
+    <value>Nach der Installation: Wenn Claude Code in ~/.local/bin landet und dieses Verzeichnis nicht in Ihrem PATH ist, klicken Sie auf der Seite „Versionsinformationen“ auf „Zum PATH hinzufügen“ (oder führen Sie den vom Installationsprogramm ausgegebenen export-Befehl in Ihrer Shell aus). Starten Sie dann ClaudeForge neu, damit die Installation erkannt wird.</value>
+  </data>
+  <data name="TextInstallPostInstallNoteWindows" xml:space="preserve">
+    <value>Nach der Installation: Starten Sie ClaudeForge neu, damit die neue Installation erkannt wird (die laufende Anwendung sieht den alten PATH).</value>
+  </data>
+  <data name="LabelLearnMore" xml:space="preserve">
+    <value>Mehr erfahren:</value>
+  </data>
+  <data name="LinkClaudeOverview" xml:space="preserve">
+    <value>Claude-Übersicht</value>
+  </data>
+  <data name="TipLinkClaudeOverview" xml:space="preserve">
+    <value>Claude-Übersichtsseite im Browser öffnen</value>
+  </data>
+  <data name="LinkQuickStart" xml:space="preserve">
+    <value>Schnellstart-Anleitung</value>
+  </data>
+  <data name="TipLinkQuickStart" xml:space="preserve">
+    <value>Claude Code Schnellstart-Anleitung im Browser öffnen</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WelcomeView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="WelcomeHeading" xml:space="preserve">
+    <value>Willkommen bei ClaudeForge</value>
+    <comment>title-bar AppTitle is now "ClaudeForge" alone; the Welcome page heading still uses a longer-form descriptor since it has the visual space.</comment>
+  </data>
+  <data name="WelcomeSubtitle" xml:space="preserve">
+    <value>Plattformübergreifender, geltungsbereichsbewusster Einstellungseditor für Claude Code und Claude Desktop.</value>
+    <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
+  </data>
+  <data name="WelcomeHint" xml:space="preserve">
+    <value>Einstellungen sind geschichtet: Verwaltet &gt; Benutzer &gt; Projekt &gt; Lokal</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ProfilesView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="ButtonRefreshAll" xml:space="preserve">
+    <value>↻ Alles aktualisieren</value>
+  </data>
+  <data name="TipRefreshAll" xml:space="preserve">
+    <value>Beide Profilverzeichnisse erneut einlesen und beide Listen aktualisieren.</value>
+  </data>
+  <data name="HeadingProfiles" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="ButtonNewProfile" xml:space="preserve">
+    <value>+ Neu</value>
+  </data>
+  <data name="TipNewCliProfile" xml:space="preserve">
+    <value>Ein neues CLI-Profil erstellen, basierend auf den aktuellen Live-Einstellungen unter ~/.claude/.</value>
+  </data>
+  <data name="BadgeLabelCli" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="HeadingCliProfiles" xml:space="preserve">
+    <value>Claude Code-Profile</value>
+  </data>
+  <data name="LabelRunSelected" xml:space="preserve">
+    <value>Ausgewählt: </value>
+  </data>
+  <data name="ButtonApplyToCli" xml:space="preserve">
+    <value>▶ Auf CLI anwenden</value>
+  </data>
+  <data name="TipApplyToCli" xml:space="preserve">
+    <value>Die Dateien dieses Profils nach ~/.claude/ kopieren, damit die Claude Code CLI sie beim nächsten Start liest. Speichert zuerst automatisch das aktuell aktive Profil.</value>
+  </data>
+  <data name="ButtonSyncFromLive" xml:space="preserve">
+    <value>⇅ Von Live synchronisieren</value>
+  </data>
+  <data name="TipSyncFromLive" xml:space="preserve">
+    <value>Aktualisiert die im Profil gespeicherten Dateien mit den aktuellen Live-Versionen von ~/.claude/settings.json, CLAUDE.md und mcpServers.</value>
+  </data>
+  <data name="ButtonDeleteProfile" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="TipDeleteCliProfile" xml:space="preserve">
+    <value>Dieses Profilverzeichnis dauerhaft löschen. Die Live-Dateien unter ~/.claude/ sind nicht betroffen.</value>
+  </data>
+  <data name="ButtonExportProfile" xml:space="preserve">
+    <value>Exportieren…</value>
+  </data>
+  <data name="TipButtonExportProfile" xml:space="preserve">
+    <value>Dieses Profil in eine einzelne JSON-Datei exportieren. Verwendet das gleiche Format wie das claudectx-CLI-Tool, sodass die resultierende Datei von beiden Anwendungen importiert werden kann.</value>
+  </data>
+  <data name="ButtonImportProfile" xml:space="preserve">
+    <value>Importieren…</value>
+  </data>
+  <data name="TipButtonImportProfile" xml:space="preserve">
+    <value>Ein Profil aus einer JSON-Datei importieren. Akzeptiert Dateien, die entweder von ClaudeForge oder vom claudectx-CLI-Tool exportiert wurden (https://github.com/foxj77/claudectx).</value>
+  </data>
+  <data name="DialogTitleExportProfileFailed" xml:space="preserve">
+    <value>Export fehlgeschlagen</value>
+  </data>
+  <data name="DialogTitleImportProfileFailed" xml:space="preserve">
+    <value>Import fehlgeschlagen</value>
+  </data>
+  <data name="StatusProfileExportedFmt" xml:space="preserve">
+    <value>„{0}“ wurde nach {1} exportiert</value>
+    <comment>{0} is the profile name, {1} is the destination file path.</comment>
+  </data>
+  <data name="StatusProfileImportedFmt" xml:space="preserve">
+    <value>Profil „{0}“ importiert</value>
+    <comment>{0} is the resolved profile name (after override resolution).</comment>
+  </data>
+  <data name="HeadingClaudectxBanner" xml:space="preserve">
+    <value>claudectx-Kompatibilität</value>
+  </data>
+  <data name="TextClaudectxBannerBody" xml:space="preserve">
+    <value>Die Schaltfläche „Auf CLI anwenden“ unten wechselt die Live-Dateien unter ~/.claude/ (settings.json, CLAUDE.md, mcpServers in ~/.claude.json) mittels reiner Datei-I/O — es ist kein externes Tool erforderlich. Das claudectx-CLI-Tool ist eine OPTIONALE Terminal-Alternative, die denselben Wechsel über den gemeinsamen Active-Profile-Zeiger unter ~/.claude/.claudectx-current ausführt; installieren Sie es nur, wenn Sie einen CLI-Workflow wünschen. Ein mit einem der beiden Tools erstelltes Profil ist sofort vom anderen nutzbar. Export/Import unten erzeugt und konsumiert das claudectx-Single-File-JSON-Sharing-Format.</value>
+  </data>
+  <data name="LinkClaudectxRepo" xml:space="preserve">
+    <value>https://github.com/foxj77/claudectx</value>
+    <comment>Public URL of the claudectx repository — surfaces on the Profiles page banner as a clickable link.</comment>
+  </data>
+  <data name="FilePickerProfileJson" xml:space="preserve">
+    <value>Profil-JSON</value>
+    <comment>File picker filter display name for *.json profile export/import files.</comment>
+  </data>
+  <data name="HeaderProfileName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TipHeaderProfileName" xml:space="preserve">
+    <value>Profilname — entspricht dem Unterverzeichnis unter ~/.claude/profiles/</value>
+  </data>
+  <data name="HeaderCliActive" xml:space="preserve">
+    <value>CLI aktiv</value>
+  </data>
+  <data name="TipHeaderCliActive" xml:space="preserve">
+    <value>Grünes Abzeichen: Dieses Profil ist derzeit auf ~/.claude/ angewendet — die Claude Code CLI liest aus diesem Profil.</value>
+  </data>
+  <data name="BadgeCliActive" xml:space="preserve">
+    <value>● Claude Code</value>
+  </data>
+  <data name="TipCliActivePill" xml:space="preserve">
+    <value>Die Dateien dieses Profils befinden sich derzeit in ~/.claude/ — die Claude Code CLI liest aus diesem Profil.</value>
+  </data>
+  <data name="HeaderClaudeMd" xml:space="preserve">
+    <value>CLAUDE.md</value>
+  </data>
+  <data name="TipHeaderClaudeMd" xml:space="preserve">
+    <value>Dieses Profil enthält eine benutzerdefinierte globale Anweisungsdatei CLAUDE.md</value>
+  </data>
+  <data name="HeaderMcpServers" xml:space="preserve">
+    <value>MCP-Server</value>
+  </data>
+  <data name="TipHeaderMcpServers" xml:space="preserve">
+    <value>Dieses Profil enthält benutzerdefinierte MCP-Server-Definitionen</value>
+  </data>
+  <data name="BadgeLabelDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="HeadingDesktopProfiles" xml:space="preserve">
+    <value>Claude Desktop-Profile</value>
+  </data>
+  <data name="TipNewDesktopProfile" xml:space="preserve">
+    <value>Ein neues Desktop-Profil erstellen, basierend auf der aktuellen Live-Datei claude_desktop_config.json.</value>
+  </data>
+  <data name="TextDesktopNotInstalled" xml:space="preserve">
+    <value>Claude Desktop scheint auf diesem Rechner nicht installiert zu sein. Desktop-Profile werden verfügbar, sobald Claude Desktop installiert ist.</value>
+  </data>
+  <data name="ButtonApplyToDesktop" xml:space="preserve">
+    <value>▶ Auf Desktop anwenden</value>
+  </data>
+  <data name="TipApplyToDesktop" xml:space="preserve">
+    <value>Die claude_desktop_config.json dieses Profils an den Live-Desktop-Speicherort kopieren. Claude Desktop übernimmt die Änderung beim nächsten Start. Speichert zuerst automatisch das aktuell aktive Desktop-Profil.</value>
+  </data>
+  <data name="ButtonSyncDesktopFromLive" xml:space="preserve">
+    <value>⇅ Von Live synchronisieren</value>
+  </data>
+  <data name="TipSyncDesktopFromLive" xml:space="preserve">
+    <value>Dieses Profil mit der aktuellen Live-Datei claude_desktop_config.json aktualisieren.</value>
+  </data>
+  <data name="TipDeleteDesktopProfile" xml:space="preserve">
+    <value>Dieses Desktop-Profil dauerhaft löschen. Die Live-Desktop-Konfiguration ist nicht betroffen.</value>
+  </data>
+  <data name="HeaderDesktopActive" xml:space="preserve">
+    <value>Desktop aktiv</value>
+  </data>
+  <data name="TipHeaderDesktopActive" xml:space="preserve">
+    <value>Blaues Abzeichen: Die Konfiguration dieses Profils ist derzeit am Live-Desktop-Konfigurationsspeicherort angewendet.</value>
+  </data>
+  <data name="BadgeDesktopActive" xml:space="preserve">
+    <value>● Claude Desktop</value>
+  </data>
+  <data name="TipDesktopActivePill" xml:space="preserve">
+    <value>Die Konfiguration dieses Profils ist derzeit am Live-Speicherort der Claude Desktop-Konfiguration angewendet.</value>
+  </data>
+  <data name="HeaderDesktopProfileName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TipHeaderDesktopProfileName" xml:space="preserve">
+    <value>Profilname — entspricht dem Unterverzeichnis im Desktop-Profilverzeichnis</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BackupRestoreView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingBackupRestore" xml:space="preserve">
+    <value>Backup / Wiederherstellen</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="TipButtonCancel" xml:space="preserve">
+    <value>Aktuellen Vorgang abbrechen</value>
+  </data>
+  <data name="TabBackup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="TabRestore" xml:space="preserve">
+    <value>Wiederherstellen</value>
+  </data>
+  <data name="TabMsixFix" xml:space="preserve">
+    <value>Windows-MSIX-Fix</value>
+  </data>
+  <data name="LabelOutputFolder" xml:space="preserve">
+    <value>Ausgabeordner</value>
+  </data>
+  <data name="ButtonBrowse" xml:space="preserve">
+    <value>Durchsuchen…</value>
+  </data>
+  <data name="WatermarkBackupDir" xml:space="preserve">
+    <value>Kein Ordner gewählt — klicken Sie auf Durchsuchen, um einen festzulegen</value>
+  </data>
+  <data name="TextBackupDirHint" xml:space="preserve">
+    <value>Backup-Archive (.zip) werden in diesen Ordner geschrieben. Die Wiederherstellungs-Registerkarte kann einen anderen Ordner durchsuchen.</value>
+  </data>
+  <data name="TextNoBackupDirWarning" xml:space="preserve">
+    <value>⚠ Kein Ausgabeordner ausgewählt. Klicken Sie auf Durchsuchen, um auszuwählen, wo Backup-Dateien gespeichert werden.</value>
+  </data>
+  <data name="LabelScope" xml:space="preserve">
+    <value>Geltungsbereich</value>
+  </data>
+  <data name="RadioSettingsOnly" xml:space="preserve">
+    <value>Nur Einstellungen (schnell, Standard)</value>
+  </data>
+  <data name="RadioFullBackup" xml:space="preserve">
+    <value>Vollständig (enthält ~/.claude/projects — Sitzungsprotokolle, Speicher)</value>
+  </data>
+  <data name="RadioSanitizedBackup" xml:space="preserve">
+    <value>Bereinigt zum Teilen (Geheimnisse geschwärzt — nicht wiederherstellbar)</value>
+  </data>
+  <data name="TipRadioSanitizedBackup" xml:space="preserve">
+    <value>Gleicher Dateiumfang wie „Nur Einstellungen“, aber jeder *.json-Wert, dessen Schlüssel mit dem Klassifikator für sensible Schlüssel übereinstimmt (env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer), wird durch die wörtliche Zeichenkette „[redacted]“ ersetzt. Gedacht, um die Struktur Ihrer Konfiguration mit dem Support, der Community oder in einem Bugreport zu teilen, ohne API-Schlüssel, MCP-Auth-Header oder OAuth-Token preiszugeben. Bereinigte Archive können nicht wiederhergestellt werden — wählen Sie „Nur Einstellungen“ oder „Vollständig“ für ein wiederherstellbares Backup.</value>
+  </data>
+  <data name="TextBackupSecretsWarning" xml:space="preserve">
+    <value>⚠ In diesem Modus werden Geheimnisse wortgetreu gespeichert. API-Schlüssel, OAuth-Token und MCP-Autorisierungs-Header werden im Klartext im Archiv abgelegt. Halten Sie die .zip-Datei privat; wählen Sie unten den Modus „Bereinigt“, wenn Sie das Backup teilen möchten.</value>
+  </data>
+  <data name="TextSanitizedModeExplainer" xml:space="preserve">
+    <value>Bereinigtes Backup: Geheimnisbehaftete Werte werden durch „[redacted]“ ersetzt, sodass das Archiv sicher geteilt werden kann. Anmeldedaten werden vollständig ausgelassen. Das Ergebnis kann NICHT wiederhergestellt werden — es ist ein Sharing-Artefakt, kein Wiederherstellungspunkt.</value>
+  </data>
+  <data name="LabelClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="CheckboxClaudeCode" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="CheckboxClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="CheckboxIncludeCredentials" xml:space="preserve">
+    <value>API-Anmeldedaten einbeziehen (~/.claude/.credentials.json)</value>
+  </data>
+  <data name="TipIncludeCredentials" xml:space="preserve">
+    <value>Aktivieren Sie dies nur, wenn die Backup-Datei auf vertrauenswürdigem Speicher verbleibt. Jeder, der das Backup besitzt, kann sich als Sie anmelden, solange diese Token gültig sind.</value>
+  </data>
+  <data name="LabelRetention" xml:space="preserve">
+    <value>Aufbewahrung</value>
+  </data>
+  <data name="LabelKeepLast" xml:space="preserve">
+    <value>Behalte letzte</value>
+  </data>
+  <data name="LabelKeepAll" xml:space="preserve">
+    <value>Backups (0 = alle behalten)</value>
+  </data>
+  <data name="ButtonCreateBackup" xml:space="preserve">
+    <value>Backup erstellen</value>
+  </data>
+  <data name="LabelRestoreFolder" xml:space="preserve">
+    <value>Wiederherstellungsordner</value>
+  </data>
+  <data name="WatermarkRestoreDir" xml:space="preserve">
+    <value>Kein Ordner gewählt — klicken Sie auf Durchsuchen, um Backups zu finden</value>
+  </data>
+  <data name="TextNoRestoreDirWarning" xml:space="preserve">
+    <value>⚠ Kein Ordner ausgewählt. Klicken Sie auf Durchsuchen, um den Ordner mit Ihren Backup-Archiven auszuwählen.</value>
+  </data>
+  <data name="TextChooseRestoreFolder" xml:space="preserve">
+    <value>Wählen Sie oben einen Ordner aus, um verfügbare Backups anzuzeigen.</value>
+  </data>
+  <data name="TextRestoreInstructions" xml:space="preserve">
+    <value>Wählen Sie ein Backup zum Wiederherstellen aus. Vorhandene Dateien werden als .pre-restore-*.bak beiseitegeschoben, bevor sie überschrieben werden.</value>
+  </data>
+  <data name="MenuOpenFileLocation" xml:space="preserve">
+    <value>Dateispeicherort öffnen</value>
+  </data>
+  <data name="HeaderBackupDate" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="TipHeaderBackupDate" xml:space="preserve">
+    <value>Datum und Uhrzeit der Erstellung dieses Backups (Ortszeit)</value>
+  </data>
+  <data name="HeaderBackupFile" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="TipHeaderBackupFile" xml:space="preserve">
+    <value>Name der Backup-Archivdatei auf der Festplatte</value>
+  </data>
+  <data name="HeaderBackupPlatform" xml:space="preserve">
+    <value>Plattform</value>
+  </data>
+  <data name="TipHeaderBackupPlatform" xml:space="preserve">
+    <value>Betriebssystemplattform, die dieses Backup erstellt hat: windows, macos oder linux. Beim Wiederherstellen eines Backups von einer anderen Plattform können manuelle Pfadanpassungen erforderlich sein.</value>
+  </data>
+  <data name="HeaderBackupMode" xml:space="preserve">
+    <value>Modus</value>
+  </data>
+  <data name="TipHeaderBackupMode" xml:space="preserve">
+    <value>Backup-Umfang — SettingsOnly schließt Sitzungsprotokolle und Projektspeicher aus; Full enthält alles unter ~/.claude/.</value>
+  </data>
+  <data name="HeaderBackupClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="TipHeaderBackupClients" xml:space="preserve">
+    <value>Welche Claude-Clients enthalten waren: ClaudeCode und/oder ClaudeDesktop</value>
+  </data>
+  <data name="HeaderBackupSize" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="TipHeaderBackupSize" xml:space="preserve">
+    <value>Komprimierte Größe des Backup-Archivs</value>
+  </data>
+  <data name="HeaderBackupActions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="TipHeaderBackupActions" xml:space="preserve">
+    <value>Wiederherstellen überschreibt Ihre Live-Einstellungen mit diesem Backup (vorhandene Dateien werden als .pre-restore-*.bak gesichert). Löschen entfernt das Archiv dauerhaft.</value>
+  </data>
+  <data name="ButtonRestore" xml:space="preserve">
+    <value>Wiederherstellen</value>
+  </data>
+  <data name="ButtonDeleteBackup" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="ButtonShareBackup" xml:space="preserve">
+    <value>Teilen</value>
+  </data>
+  <data name="TipButtonShareBackup" xml:space="preserve">
+    <value>Dieses Backup-Archiv über das Freigabe-Panel des Betriebssystems an eine andere App oder ein anderes Gerät senden</value>
+  </data>
+  <data name="HeadingMsixFix" xml:space="preserve">
+    <value>Virtualisierter MSIX-Pfad erkannt</value>
+  </data>
+  <data name="TextMsixDesc" xml:space="preserve">
+    <value>Claude Desktop ist als MSIX-Paket installiert. Windows virtualisiert die Schreibvorgänge der App in einen paketspezifischen AppData-Pfad. Das führt dazu, dass die Schaltfläche „Edit Config“ die falsche Datei öffnet und Tools (einschließlich dieser App) eine veraltete Kopie sehen. Das Erstellen einer NTFS-Junction vom Standardpfad zum virtualisierten Pfad behebt beides.</value>
+  </data>
+  <data name="LabelMsixVirtualisedPath" xml:space="preserve">
+    <value>Virtualisierter Pfad (tatsächlicher Speicherort):</value>
+  </data>
+  <data name="LabelMsixStandardPath" xml:space="preserve">
+    <value>Standardpfad (das, was Tools betrachten):</value>
+  </data>
+  <data name="ButtonCreateJunction" xml:space="preserve">
+    <value>Junction erstellen</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EnvironmentEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingEnvironmentVariables" xml:space="preserve">
+    <value>Umgebungsvariablen</value>
+  </data>
+  <data name="TextEnvSubtitle" xml:space="preserve">
+    <value>Die Prozessumgebung von Claude selbst. Für Server-spezifische Anmeldedaten (API-Schlüssel etc.) verwenden Sie stattdessen den env-Abschnitt innerhalb jedes MCP-Servers.</value>
+  </data>
+  <data name="ButtonRefreshEnv" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="TipRefreshEnv" xml:space="preserve">
+    <value>Die aktuelle Prozessumgebung erneut einlesen und alle gespeicherten Werte von der Festplatte neu laden</value>
+  </data>
+  <data name="AutoNameRefreshEnv" xml:space="preserve">
+    <value>Umgebungsvariablen aktualisieren</value>
+  </data>
+  <data name="WatermarkFilterVars" xml:space="preserve">
+    <value>Variablen filtern…</value>
+  </data>
+  <data name="CheckboxShowAll" xml:space="preserve">
+    <value>Alle anzeigen</value>
+  </data>
+  <data name="TextShowCommonVars" xml:space="preserve">
+    <value>Es werden gängige Entwicklervariablen angezeigt. Aktivieren Sie „Alle anzeigen“, um alles zu sehen.</value>
+  </data>
+  <data name="TextMacLinuxNote" xml:space="preserve">
+    <value>ℹ  Unter macOS / Linux sind die Umgebungsspeicher „User“ und „Machine“ über .NET nicht dauerhaft beschreibbar. Nur der Claude-env-Geltungsbereich steht zur Bearbeitung zur Verfügung.</value>
+  </data>
+  <data name="SectionClaudeAnthropicNode" xml:space="preserve">
+    <value>Claude / Anthropic / Node</value>
+  </data>
+  <data name="SectionGeneralPath" xml:space="preserve">
+    <value>Allgemein (PATH, Shell, Betriebssystem)</value>
+  </data>
+  <data name="HeaderEnvName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TipHeaderEnvName" xml:space="preserve">
+    <value>Name der Umgebungsvariable. Bewegen Sie den Mauszeiger darüber, um eine Beschreibung zu sehen; klicken Sie, um sie im Detailbereich anzuzeigen/zu bearbeiten.</value>
+  </data>
+  <data name="HeaderEffectiveValue" xml:space="preserve">
+    <value>Effektiver Wert</value>
+  </data>
+  <data name="TipHeaderEffectiveValue" xml:space="preserve">
+    <value>Der aufgelöste Wert, den Claude liest, nachdem alle Umgebungs-Geltungsbereiche angewendet wurden (Prozess schlägt Benutzer schlägt Claude-gespeichert)</value>
+  </data>
+  <data name="HeaderSource" xml:space="preserve">
+    <value>Quelle</value>
+  </data>
+  <data name="TipHeaderSource" xml:space="preserve">
+    <value>Welcher Geltungsbereich liefert den effektiven Wert: process (OS-env), claude (in der Claude-env-Konfiguration gespeichert), user (Windows-Benutzerumgebung) oder machine (Windows-Maschinenumgebung)</value>
+  </data>
+  <data name="HeaderOverridden" xml:space="preserve">
+    <value>Überschrieben</value>
+  </data>
+  <data name="TipHeaderOverridden" xml:space="preserve">
+    <value>Markiert, wenn ein engerer Geltungsbereich (process oder claude) diese Variable explizit setzt und damit Vorrang vor den gespeicherten Werten hat</value>
+  </data>
+  <data name="LabelNewVariable" xml:space="preserve">
+    <value>Neue Variable:</value>
+  </data>
+  <data name="WatermarkVarName" xml:space="preserve">
+    <value>VARIABLENNAME</value>
+  </data>
+  <data name="ButtonAddVar" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="TextValueEditedInPane" xml:space="preserve">
+    <value>(Wert im Detailbereich bearbeitet)</value>
+  </data>
+  <data name="TextSelectVariable" xml:space="preserve">
+    <value>Wählen Sie eine Variable aus, um ihre Werte je Geltungsbereich anzuzeigen.</value>
+  </data>
+  <data name="LabelEdit" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="LabelWritingTo" xml:space="preserve">
+    <value>Schreibt nach:</value>
+  </data>
+  <data name="WatermarkValueNotSet" xml:space="preserve">
+    <value>(nicht gesetzt)</value>
+  </data>
+  <data name="ButtonSaveEnvVar" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="ButtonRemoveFromScope" xml:space="preserve">
+    <value>Aus Geltungsbereich entfernen</value>
+  </data>
+  <data name="TextProcessEnvNote" xml:space="preserve">
+    <value>ℹ  Diese Variable ist in der Prozessumgebung gesetzt und kann hier nicht bearbeitet werden. Sie überschreibt jeden gespeicherten Wert.</value>
+  </data>
+  <data name="LabelValuesByLayer" xml:space="preserve">
+    <value>Werte nach Schicht</value>
+  </data>
+  <data name="LabelProcess" xml:space="preserve">
+    <value>Prozess</value>
+  </data>
+  <data name="LabelClaude" xml:space="preserve">
+    <value>Claude</value>
+  </data>
+  <data name="LabelUser" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="LabelMachine" xml:space="preserve">
+    <value>Maschine</value>
+  </data>
+  <data name="TargetNullNotSet" xml:space="preserve">
+    <value>(nicht gesetzt)</value>
+  </data>
+  <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
+    <value>„{0}“ ist kein gültiger Name für eine Umgebungsvariable.</value>
+  </data>
+  <data name="StatusEnvAccessDeniedFmt" xml:space="preserve">
+    <value>Zugriff beim Schreiben von „{0}“ verweigert: {1}</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       AboutEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingVersionInfo" xml:space="preserve">
+    <value>Versionsinformationen</value>
+  </data>
+  <data name="LabelClaudeCode" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="LabelClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="LabelPlatform" xml:space="preserve">
+    <value>Plattform</value>
+  </data>
+  <data name="LabelConfigFile" xml:space="preserve">
+    <value>Konfigurationsdatei</value>
+  </data>
+  <data name="ButtonOpenConfig" xml:space="preserve">
+    <value>Konfiguration öffnen</value>
+  </data>
+  <data name="TipButtonOpenConfig" xml:space="preserve">
+    <value>Die primäre Konfigurationsdatei im Standard-Texteditor öffnen</value>
+  </data>
+  <data name="ButtonManageProfiles" xml:space="preserve">
+    <value>_Verwalten…</value>
+    <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
+  </data>
+  <data name="ButtonRevealInExplorer" xml:space="preserve">
+    <value>Im Explorer anzeigen</value>
+    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
+  </data>
+
+  <!-- platform-resolved Reveal-in-Files-app labels.
+       PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
+       based on PlatformInfo.Current.  Direct AXAML bindings should use
+       the PlatformLabels static, not these resx entries. -->
+  <data name="ButtonRevealWindows" xml:space="preserve">
+    <value>Im Explorer anzeigen</value>
+  </data>
+  <data name="ButtonRevealMac" xml:space="preserve">
+    <value>Im Finder anzeigen</value>
+  </data>
+  <data name="ButtonRevealLinux" xml:space="preserve">
+    <value>In Dateien anzeigen</value>
+  </data>
+  <data name="TipButtonRevealWindows" xml:space="preserve">
+    <value>Im Windows-Explorer anzeigen</value>
+  </data>
+  <data name="TipButtonRevealMac" xml:space="preserve">
+    <value>Im Finder anzeigen</value>
+  </data>
+  <data name="TipButtonRevealLinux" xml:space="preserve">
+    <value>Im Dateimanager anzeigen</value>
+  </data>
+
+  <!-- platform-resolved variants of the Memory-page viewer
+       edit hint.  Same approach as ButtonReveal* above. -->
+  <data name="TextMemoryViewerEditHintWindows" xml:space="preserve">
+    <value>Zum Bearbeiten in Ihrem Texteditor öffnen — klicken Sie auf „Im Explorer anzeigen“.</value>
+  </data>
+  <data name="TextMemoryViewerEditHintMac" xml:space="preserve">
+    <value>Zum Bearbeiten in Ihrem Texteditor öffnen — klicken Sie auf „Im Finder anzeigen“.</value>
+  </data>
+  <data name="TextMemoryViewerEditHintLinux" xml:space="preserve">
+    <value>Zum Bearbeiten in Ihrem Texteditor öffnen — klicken Sie auf „In Dateien anzeigen“.</value>
+  </data>
+  <data name="LabelLogFile" xml:space="preserve">
+    <value>Protokolldatei</value>
+  </data>
+  <data name="ButtonShareLog" xml:space="preserve">
+    <value>Protokoll teilen</value>
+  </data>
+  <data name="TipButtonShareLog" xml:space="preserve">
+    <value>Die aktuelle Protokolldatei teilen (nützlich für Fehlerberichte)</value>
+  </data>
+  <data name="ButtonShareConfig" xml:space="preserve">
+    <value>Konfiguration teilen</value>
+  </data>
+  <data name="TipButtonShareConfig" xml:space="preserve">
+    <value>Die effektiven Einstellungen als JSON-Text teilen</value>
+  </data>
+  <data name="TargetNullNotDetected" xml:space="preserve">
+    <value>(nicht erkannt)</value>
+  </data>
+
+  <!-- Claude Code PATH-warning block (AboutEditorView): appears when the
+       binary is present on disk at a canonical install location but the
+       user's PATH does not expose it (common on Windows ARM64 after an
+       `npm i -g` into %APPDATA%\npm). -->
+  <data name="LabelClaudeCodeNotOnPath" xml:space="preserve">
+    <value>Installiert, aber nicht im PATH</value>
+  </data>
+  <data name="TextClaudeCodeNotOnPath" xml:space="preserve">
+    <value>Gefunden unter {0}, aber das enthaltende Verzeichnis ist nicht in Ihrem PATH. `claude` aus einem Terminal auszuführen wird fehlschlagen, bis der PATH aktualisiert ist.</value>
+  </data>
+  <data name="ButtonAddClaudeCodeToPath" xml:space="preserve">
+    <value>Zum PATH hinzufügen</value>
+  </data>
+  <data name="TipButtonAddClaudeCodeToPath" xml:space="preserve">
+    <value>Das Verzeichnis, das claude enthält, zum Benutzer-PATH hinzufügen (keine Administratorrechte erforderlich). Öffnen Sie ein neues Terminal, damit die Änderung wirksam wird.</value>
+  </data>
+  <data name="TextAddToPathAdded" xml:space="preserve">
+    <value>Zum Benutzer-PATH hinzugefügt. Öffnen Sie ein neues Terminal, um `claude` zu verwenden.</value>
+  </data>
+  <data name="TextAddToPathAlreadyPresent" xml:space="preserve">
+    <value>Das Verzeichnis war bereits im PATH (Ihre aktuelle Sitzung ist möglicherweise veraltet).</value>
+  </data>
+  <data name="TextAddToPathFailed" xml:space="preserve">
+    <value>PATH konnte nicht aktualisiert werden — bearbeiten Sie `HKCU\Environment\Path` manuell oder kontaktieren Sie den Support.</value>
+  </data>
+  <data name="TextAddToPathUnsupported" xml:space="preserve">
+    <value>Automatische PATH-Bearbeitung wird auf dieser Plattform nicht unterstützt. Fügen Sie das Verzeichnis manuell zu Ihrer Shell-rc-Datei hinzu.</value>
+  </data>
+  <data name="DialogTitleAddClaudeCodeToPath" xml:space="preserve">
+    <value>Claude Code zum PATH hinzufügen?</value>
+  </data>
+  <data name="DialogMessageAddClaudeCodeToPath" xml:space="preserve">
+    <value>Dies fügt das folgende Verzeichnis an Ihre Umgebungsvariable PATH des Benutzers an (keine Administratorrechte erforderlich):
+
+{0}
+
+Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gestartet werden. Fortfahren?</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SaveChangesDialog
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="ButtonCopyAllChanges" xml:space="preserve">
+    <value>Alle kopieren</value>
+  </data>
+  <data name="TipButtonCopyAllChanges" xml:space="preserve">
+    <value>Eine reine Textzusammenfassung aller Änderungen in die Zwischenablage kopieren (ohne Beschreibungen)</value>
+  </data>
+  <data name="CheckboxShowDialog" xml:space="preserve">
+    <value>Diesen Dialog beim Speichern anzeigen</value>
+  </data>
+  <data name="TipCheckboxShowDialog" xml:space="preserve">
+    <value>Deaktivieren, um diesen Bestätigungsdialog zu überspringen und zukünftig sofort zu speichern</value>
+  </data>
+  <data name="ButtonDiscardChanges" xml:space="preserve">
+    <value>Änderungen verwerfen</value>
+  </data>
+  <data name="ButtonSaveDialog" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="DialogTitleSaveChanges" xml:space="preserve">
+    <value>Änderungen speichern</value>
+    <comment>Window title for the SaveChangesDialog when shown in Save mode (regular save flow + pre-Backup save guard).</comment>
+  </data>
+  <data name="DialogTitleRestorePreview" xml:space="preserve">
+    <value>Wiederherstellungs-Vorschau</value>
+    <comment>Window title for the SaveChangesDialog when shown in Restore mode (pre-Restore save guard).</comment>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       McpServersEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="WatermarkServerName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="TipAddServer" xml:space="preserve">
+    <value>Server hinzufügen</value>
+  </data>
+  <data name="LabelTransportType" xml:space="preserve">
+    <value>Transport-Typ</value>
+  </data>
+  <data name="LabelCommand" xml:space="preserve">
+    <value>Befehl</value>
+  </data>
+  <data name="WatermarkMcpCommand" xml:space="preserve">
+    <value>z. B. npx, python, /pfad/zum/server</value>
+  </data>
+  <data name="LabelMcpDescription" xml:space="preserve">
+    <value>Beschreibung</value>
+    <comment>MCP server description field (optional human-readable blurb).</comment>
+  </data>
+  <data name="WatermarkMcpDescription" xml:space="preserve">
+    <value>Optional — kurze Beschreibung, die in Tooltipps angezeigt wird</value>
+  </data>
+  <data name="LabelDisableBypassPermissionsMode" xml:space="preserve">
+    <value>bypassPermissions-Modus deaktivieren</value>
+    <comment>Permissions toggle that prevents `defaultMode = bypassPermissions` from taking effect; managed-scope org policy.</comment>
+  </data>
+  <data name="LabelDisableBypassPermissionsModeCheckbox" xml:space="preserve">
+    <value>Alle bypassPermissions-Standards blockieren</value>
+  </data>
+  <data name="TextDisableBypassPermissionsModeHint" xml:space="preserve">
+    <value>Wenn gesetzt, weigert sich Claude, im bypassPermissions-Modus zu laufen, unabhängig von einer Überschreibung auf Benutzerebene. Wird typischerweise im verwalteten Geltungsbereich durch die Organisationsrichtlinie konfiguriert.</value>
+  </data>
+  <data name="LabelAdditionalDirectories" xml:space="preserve">
+    <value>Zusätzliche Verzeichnisse</value>
+    <comment>Extra directories the permission scope extends into.</comment>
+  </data>
+  <data name="TextAdditionalDirectoriesHint" xml:space="preserve">
+    <value>Pfade außerhalb des Projekt-Stamms, die Claude als zum Geltungsbereich gehörig betrachten darf. Ein absoluter Pfad pro Zeile.</value>
+  </data>
+  <data name="WatermarkAdditionalDirectory" xml:space="preserve">
+    <value>z. B. /pfad/zu/anderem/verzeichnis</value>
+  </data>
+  <data name="HeaderHookTimeout" xml:space="preserve">
+    <value>Timeout (s)</value>
+    <comment>Per-hook timeout column header in the hooks DataGrid.</comment>
+  </data>
+  <data name="TipHookTimeout" xml:space="preserve">
+    <value>Optionales Hook-spezifisches Timeout in Sekunden. Leer lassen, um den CLI-Standard zu verwenden.</value>
+  </data>
+  <data name="LabelHookHeaders" xml:space="preserve">
+    <value>HTTP-Header</value>
+    <comment>Header row for the URL-hook headers editor.</comment>
+  </data>
+  <data name="TextHookHeadersHint" xml:space="preserve">
+    <value>Benutzerdefinierte HTTP-Header, die der Anfrage hinzugefügt werden, wenn dieser URL-Hook ausgelöst wird. Verwenden Sie ${VARNAME}, um Werte aus den unten aufgeführten Umgebungsvariablen einzufügen.</value>
+  </data>
+  <data name="WatermarkHookHeaderKey" xml:space="preserve">
+    <value>Header-Name (z. B. Authorization)</value>
+  </data>
+  <data name="WatermarkHookHeaderValue" xml:space="preserve">
+    <value>Header-Wert (oder Bearer ${TOKEN})</value>
+  </data>
+  <data name="LabelHookAllowedEnvVars" xml:space="preserve">
+    <value>Erlaubte Umgebungsvariablen</value>
+    <comment>Header row for the URL-hook allowed-env-vars editor.</comment>
+  </data>
+  <data name="TextHookAllowedEnvVarsHint" xml:space="preserve">
+    <value>Namen von Umgebungsvariablen, deren Werte über ${VARNAME} in Header-Werte eingefügt werden dürfen. Nicht hier aufgeführte Namen werden nicht ersetzt.</value>
+  </data>
+  <data name="WatermarkHookAllowedEnvVar" xml:space="preserve">
+    <value>Variablenname (z. B. API_TOKEN)</value>
+  </data>
+  <data name="LabelUrl" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="WatermarkMcpUrl" xml:space="preserve">
+    <value>z. B. http://localhost:3000/sse</value>
+  </data>
+  <data name="LabelArguments" xml:space="preserve">
+    <value>Argumente</value>
+  </data>
+  <data name="HeaderArgValue" xml:space="preserve">
+    <value>Wert</value>
+  </data>
+  <data name="WatermarkAddArgument" xml:space="preserve">
+    <value>Argument hinzufügen…</value>
+  </data>
+  <data name="LabelMcpEnvVars" xml:space="preserve">
+    <value>Umgebungsvariablen</value>
+  </data>
+  <data name="TextMcpEnvVarsHint" xml:space="preserve">
+    <value>Werden ausschließlich in den Subprozess dieses Servers eingespeist — für Claude oder andere Server nicht sichtbar. Verwenden Sie dies für API-Schlüssel und Anmeldedaten, die dieses Tool benötigt.</value>
+  </data>
+  <data name="HeaderEnvKey" xml:space="preserve">
+    <value>Schlüssel</value>
+  </data>
+  <data name="HeaderEnvValue" xml:space="preserve">
+    <value>Wert</value>
+  </data>
+  <data name="WatermarkEnvKey" xml:space="preserve">
+    <value>SCHLÜSSEL</value>
+  </data>
+  <data name="WatermarkEnvValue" xml:space="preserve">
+    <value>Wert</value>
+  </data>
+  <data name="ValidationMcpCommandRequired" xml:space="preserve">
+    <value>Befehl ist für stdio-Transport erforderlich.</value>
+  </data>
+  <data name="ValidationMcpUrlInvalid" xml:space="preserve">
+    <value>URL muss eine gültige http://- oder https://-Adresse sein.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HooksEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextSelectEventType" xml:space="preserve">
+    <value>Ereignistyp auswählen</value>
+  </data>
+  <data name="ButtonAddHook" xml:space="preserve">
+    <value>+ Hook hinzufügen</value>
+  </data>
+  <data name="HeaderMatcher" xml:space="preserve">
+    <value>Matcher</value>
+  </data>
+  <data name="HeaderHookType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="HeaderCommandPromptUrl" xml:space="preserve">
+    <value>Befehl / Prompt / URL</value>
+  </data>
+  <data name="ButtonRemoveHook" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="TextHookValidationWarning" xml:space="preserve">
+    <value>Ein oder mehrere Hooks haben einen leeren Matcher oder Befehl — diese Hooks werden nicht ausgelöst.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PermissionsEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelDefaultMode" xml:space="preserve">
+    <value>Standardmodus</value>
+  </data>
+  <data name="TextDefaultModeHint" xml:space="preserve">
+    <value>Steuert, wie Claude Tool-Aufrufe behandelt, die von keiner Allow-, Deny- oder Ask-Regel abgedeckt sind. Bewegen Sie den Mauszeiger über jede Option für eine Beschreibung.</value>
+  </data>
+  <data name="PlaceholderDefaultMode" xml:space="preserve">
+    <value>(nicht gesetzt — wird vererbt)</value>
+  </data>
+  <data name="HeaderAllow" xml:space="preserve">
+    <value>Erlauben</value>
+  </data>
+  <data name="HeaderDeny" xml:space="preserve">
+    <value>Verweigern</value>
+  </data>
+  <data name="HeaderAsk" xml:space="preserve">
+    <value>Nachfragen</value>
+  </data>
+  <data name="TextPermissionsExplainer" xml:space="preserve">
+    <value>Berechtigungsregeln steuern, welche Claude Code-Tools ohne Nachfrage laufen dürfen. Eine Regel ist entweder ein bloßer Tool-Name — z. B. Read oder Bash —, der uneingeschränkten Zugriff auf dieses Tool gewährt, oder eine parametrisierte Form wie Bash(git *) oder Read(./**/*.ts), die nur Aufrufe trifft, deren Argument auf das Muster passt. Regeln in „Erlauben“ laufen lautlos; „Verweigern“-Regeln werden direkt blockiert; „Nachfragen“-Regeln lösen unabhängig vom Standardmodus stets eine Bestätigungsabfrage aus.</value>
+  </data>
+  <data name="TextExamplesHeader" xml:space="preserve">
+    <value>Beispiele:</value>
+  </data>
+  <data name="HeaderCommonActions" xml:space="preserve">
+    <value>Häufige Aktionen</value>
+  </data>
+  <data name="TextCommonActionsNote" xml:space="preserve">
+    <value>Gefiltert, um Regeln auszublenden, die bereits in einem Geltungsbereich vorhanden sind.</value>
+  </data>
+  <data name="TextCommonActionsEmpty" xml:space="preserve">
+    <value>Alle gängigen Regeln sind bereits konfiguriert.</value>
+  </data>
+  <data name="TextCommonActionsWslHint" xml:space="preserve">
+    <value>Windows-Tipp: Das Bash-Tool von Claude läuft standardmäßig über Git Bash / MSYS, was bei dateisystemlastigen Befehlen Pfade verstümmeln kann. Setzen Sie die WSL-Gruppe unten auf die Erlaubnisliste (z. B. Bash(wsl git status)), und Claude wird automatisch den WSL-Pfad bevorzugen, wenn diese Regeln vorhanden sind.</value>
+    <comment>Permissions page Common Actions contextual hint — shown only when PlatformInfo.Current.IsWindows is true. Explains why the WSL group is there and how to use it. Paired with TextWelcomeWslHint on the Welcome page for cross-discoverability.</comment>
+  </data>
+  <data name="WatermarkAllowRule" xml:space="preserve">
+    <value>z. B. Read oder Bash(git *)</value>
+  </data>
+  <data name="TipPermissionRule" xml:space="preserve">
+    <value>Regel eingeben: bloßer Tool-Name (z. B. Read) oder parametrisierte Form (z. B. Bash(git *)). Siehe Beispiele unten.</value>
+  </data>
+  <data name="TipAddAllowRule" xml:space="preserve">
+    <value>Diese Erlauben-Regel hinzufügen</value>
+  </data>
+  <data name="WatermarkDenyRule" xml:space="preserve">
+    <value>z. B. Write oder Bash(rm *)</value>
+  </data>
+  <data name="TipAddDenyRule" xml:space="preserve">
+    <value>Diese Verweigern-Regel hinzufügen</value>
+  </data>
+  <data name="WatermarkAskRule" xml:space="preserve">
+    <value>z. B. Bash(npm install *)</value>
+  </data>
+  <data name="TipAddAskRule" xml:space="preserve">
+    <value>Diese Nachfragen-Regel hinzufügen</value>
+  </data>
+  <data name="TipRemoveRule" xml:space="preserve">
+    <value>Regel entfernen</value>
+  </data>
+  <data name="TipCommonAddAllow" xml:space="preserve">
+    <value>Diese Regel zur Erlauben-Liste hinzufügen — läuft lautlos ohne Nachfrage</value>
+  </data>
+  <data name="TipCommonAddDeny" xml:space="preserve">
+    <value>Diese Regel zur Verweigern-Liste hinzufügen — wird direkt blockiert</value>
+  </data>
+  <data name="TipCommonAddAsk" xml:space="preserve">
+    <value>Diese Regel zur Nachfragen-Liste hinzufügen — löst stets eine Bestätigungsabfrage aus</value>
+  </data>
+  <data name="StringFormatRuleCount" xml:space="preserve">
+    <value>({0} Regel(n))</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PropertyEditorWrapper
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelDefinedInScopes" xml:space="preserve">
+    <value>Definiert in Geltungsbereichen:</value>
+  </data>
+  <data name="TipResetToInherited" xml:space="preserve">
+    <value>Diese Einstellung im aktuellen Geltungsbereich entfernen (vom niedrigeren Geltungsbereich erben)</value>
+  </data>
+  <data name="ButtonReset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="TextOverridden" xml:space="preserve">
+    <value>(überschrieben)</value>
+  </data>
+  <data name="TipShowSuggestions" xml:space="preserve">
+    <value>Vorschlagsliste anzeigen</value>
+  </data>
+  <data name="TipManagedLocked" xml:space="preserve">
+    <value>Vom Administrator verwaltet — schreibgeschützt</value>
+  </data>
+  <data name="TipUndocumented" xml:space="preserve">
+    <value>Undokumentierte Einstellung — nicht in der offiziellen Claude-Dokumentation</value>
+  </data>
+  <data name="TipNewSetting" xml:space="preserve">
+    <value>Neue Einstellung — seit Ihrer letzten Sitzung hinzugefügt</value>
+  </data>
+  <data name="TextNewBadge" xml:space="preserve">
+    <value>✨ NEU</value>
+  </data>
+  <data name="ButtonAdd" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EffectiveSettingsView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingEffectiveSettings" xml:space="preserve">
+    <value>Effektive Einstellungen (zusammengeführt)</value>
+  </data>
+  <data name="ButtonRefreshEffective" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="TabProperties" xml:space="preserve">
+    <value>Eigenschaften</value>
+  </data>
+  <data name="TabJson" xml:space="preserve">
+    <value>JSON</value>
+  </data>
+  <data name="WatermarkFilterProps" xml:space="preserve">
+    <value>Eigenschaften filtern…</value>
+  </data>
+  <data name="HeaderEffectiveProperty" xml:space="preserve">
+    <value>Eigenschaft</value>
+  </data>
+  <data name="TipHeaderEffectiveProperty" xml:space="preserve">
+    <value>Name der Einstellung (JSON-Schlüssel), wie in der settings.json verwendet</value>
+  </data>
+  <data name="HeaderEffectiveValueCol" xml:space="preserve">
+    <value>Wert</value>
+  </data>
+  <data name="TipHeaderEffectiveValueCol" xml:space="preserve">
+    <value>Der zusammengeführte effektive Wert — der tatsächliche Wert, den Claude liest, nachdem alle Schichten angewendet wurden</value>
+  </data>
+  <data name="HeaderEffectiveScope" xml:space="preserve">
+    <value>Geltungsbereich</value>
+  </data>
+  <data name="TipHeaderEffectiveScope" xml:space="preserve">
+    <value>Welche Konfigurationsschicht diesen Wert definiert: local (nur Maschine) &gt; project (im Repo geteilt) &gt; user (persönlicher Standard) &gt; managed (Organisationsrichtlinie)</value>
+  </data>
+  <data name="HeaderEffectiveOverridden" xml:space="preserve">
+    <value>Überschrieben</value>
+  </data>
+  <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
+    <value>Markiert, wenn ein engerer Geltungsbereich (z. B. local oder project) diese Eigenschaft explizit setzt und damit den Wert dieser Zeile überschreibt</value>
+  </data>
+  <data name="ButtonCopyToClipboard" xml:space="preserve">
+    <value>In Zwischenablage kopieren</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ViewModel — status messages (MainWindowViewModel)
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="StatusLoadingSettings" xml:space="preserve">
+    <value>Schema und Einstellungen werden geladen…</value>
+  </data>
+  <data name="StatusReady" xml:space="preserve">
+    <value>Bereit</value>
+  </data>
+  <data name="StatusNothingToSave" xml:space="preserve">
+    <value>Nichts zu speichern — Einstellungen sind noch nicht geladen.</value>
+  </data>
+  <data name="StatusSaved" xml:space="preserve">
+    <value>Gespeichert.</value>
+  </data>
+  <data name="StatusReloading" xml:space="preserve">
+    <value>Wird neu geladen…</value>
+  </data>
+  <data name="StatusReloaded" xml:space="preserve">
+    <value>Neu geladen.</value>
+  </data>
+  <data name="StatusNothingToExport" xml:space="preserve">
+    <value>Nichts zu exportieren — Einstellungen sind noch nicht geladen.</value>
+  </data>
+  <data name="StatusErrorFmt" xml:space="preserve">
+    <value>Fehler: {0}</value>
+  </data>
+  <data name="StatusSaveFailedFmt" xml:space="preserve">
+    <value>Speichern fehlgeschlagen: {0}</value>
+  </data>
+  <data name="StatusSchemaValidationFailed" xml:space="preserve">
+    <value>Speichern blockiert: Schema-Validierung fehlgeschlagen</value>
+  </data>
+  <data name="TitleUnsavedChangesOnClose" xml:space="preserve">
+    <value>Nicht gespeicherte Änderungen</value>
+    <comment>Window title of the modal that appears when the user closes the main window with pending edits.</comment>
+  </data>
+  <data name="AppTitle" xml:space="preserve">
+    <value>ClaudeForge</value>
+    <comment>Main window title prefix.  MainWindowViewModel.WindowTitle appends " — &lt;branch|folder|No Project Loaded&gt;" and a " *" suffix when there are unsaved edits.</comment>
+  </data>
+  <data name="TitleNoProjectLoaded" xml:space="preserve">
+    <value>Kein Projekt geladen</value>
+    <comment>Appended to the AppTitle in the window titlebar when no project root is set (user has not opened a project folder).  Format: "ClaudeForge — No Project Loaded".</comment>
+  </data>
+  <data name="TextUnsavedChangesOnClose" xml:space="preserve">
+    <value>Sie haben nicht gespeicherte Änderungen. Was möchten Sie tun?
+
+Speichern — Ihre Änderungen auf die Festplatte schreiben und schließen.
+Nicht speichern — Ihre Änderungen verwerfen und schließen.
+Abbrechen — das Fenster geöffnet lassen.</value>
+    <comment>Body of the unsaved-changes-on-close modal.  Three explicit choices so the user can't accidentally lose work.</comment>
+  </data>
+  <data name="TipDismissStatus" xml:space="preserve">
+    <value>Diese Statusmeldung ausblenden.</value>
+  </data>
+  <data name="AutoNameDismissStatus" xml:space="preserve">
+    <value>Statusmeldung ausblenden</value>
+  </data>
+  <data name="BadgeSaveDialogOff" xml:space="preserve">
+    <value>Speichern-Dialog aus</value>
+  </data>
+  <data name="TipBadgeSaveDialogOff" xml:space="preserve">
+    <value>Die Einstellung „Diesen Dialog beim Speichern anzeigen“ ist in dieser Sitzung deaktiviert — Speichervorgänge schreiben direkt, ohne einen Bestätigungsdialog anzuzeigen. Klicken Sie auf „Fenster neu laden“, um sie wieder zu aktivieren, oder speichern Sie noch einmal und aktivieren Sie das Kontrollkästchen erneut.</value>
+  </data>
+  <data name="TitleSchemaValidationFailed" xml:space="preserve">
+    <value>Kann nicht speichern — Schema-Validierungsfehler</value>
+  </data>
+  <data name="LabelSchemaBannerTitleFmt" xml:space="preserve">
+    <value>⚠ {0} Schema-Problem(e) in geladener Konfiguration gefunden</value>
+    <comment>{0} is the integer count of validation errors. Banner at the top of the main window when validation fails after a workspace reload.</comment>
+  </data>
+  <data name="LabelSchemaBannerDesc" xml:space="preserve">
+    <value>Ein oder mehrere Werte auf der Festplatte entsprechen nicht dem erwarteten Schema. Die App funktioniert weiterhin — Sie können andere Änderungen speichern —, aber Claude lehnt die betroffenen Felder zur Laufzeit möglicherweise ab. Klicken Sie auf „Details anzeigen“ für die feldweise Aufstellung.</value>
+  </data>
+  <data name="ButtonShowSchemaDetails" xml:space="preserve">
+    <value>Details anzeigen</value>
+  </data>
+  <data name="TitleSchemaValidationDetails" xml:space="preserve">
+    <value>Schema-Validierungsprobleme</value>
+  </data>
+  <data name="LabelCommonActionKindRead" xml:space="preserve">
+    <value>Lesen</value>
+    <comment>Chiclet label for non-mutating Common Actions rules (cat, ls, git status, Read).</comment>
+  </data>
+  <data name="LabelCommonActionKindWrite" xml:space="preserve">
+    <value>Schreiben</value>
+    <comment>Chiclet label for local-state-mutating Common Actions rules (edit, git add, git commit).</comment>
+  </data>
+  <data name="LabelCommonActionKindNetwork" xml:space="preserve">
+    <value>Netzwerk</value>
+    <comment>Chiclet label for external-I/O Common Actions rules (npm, dotnet, curl, WebFetch, mcp__*).</comment>
+  </data>
+  <data name="LabelCommonActionKindDestructive" xml:space="preserve">
+    <value>Destruktiv</value>
+    <comment>Chiclet label for irreversible / broad-blast-radius Common Actions rules (git push, raw Bash).</comment>
+  </data>
+  <data name="LabelCommonActionsCatchAll" xml:space="preserve">
+    <value>Alle Tools — Platzhalterregeln, die für jedes Tool gelten</value>
+    <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
+  </data>
+  <!-- Phase 5 — Memory & Footprint page -->
+  <data name="NavTitleMemory" xml:space="preserve">
+    <value>Speicher</value>
+    <comment>Top-level nav node label for the Memory page.</comment>
+  </data>
+  <data name="NavDescMemory" xml:space="preserve">
+    <value>Prüfen, anzeigen und aufräumen, welche Dateien Claude bei jeder Sitzung liest und welchen Verhaltens-Fußabdruck er auf der Festplatte hinterlässt.</value>
+    <comment>Top-level nav node description for the Memory page.</comment>
+  </data>
+  <data name="HeaderMemoryCode" xml:space="preserve">
+    <value>Claude Code — Speicher &amp; Fußabdruck</value>
+    <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>
+  </data>
+  <data name="HeaderMemoryDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+    <comment>Section header above the Desktop explainer panel on the Memory page.</comment>
+  </data>
+  <data name="HeaderTabUserMemory" xml:space="preserve">
+    <value>Benutzerspeicher</value>
+    <comment>Tab header for the Tier 1 (read-only) user-memory inventory.</comment>
+  </data>
+  <data name="HeaderTabFootprint" xml:space="preserve">
+    <value>Fußabdruck</value>
+    <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
+  </data>
+  <data name="LabelMemoryViewerNote" xml:space="preserve">
+    <value>Zum Bearbeiten in Ihrem Texteditor öffnen — klicken Sie auf „Im Explorer anzeigen“.</value>
+    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
+  </data>
+  <data name="ButtonRefresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+    <comment>Generic Refresh button label used on Memory page tabs.</comment>
+  </data>
+  <data name="ButtonReveal" xml:space="preserve">
+    <value>Im Explorer anzeigen</value>
+    <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
+  </data>
+  <data name="ButtonCloseViewer" xml:space="preserve">
+    <value>Zurück zur Liste</value>
+    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
+  </data>
+  <data name="ButtonCopyMarkdown" xml:space="preserve">
+    <value>Markdown kopieren</value>
+    <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
+  </data>
+  <data name="ButtonOpenInEditor" xml:space="preserve">
+    <value>In Editor öffnen</value>
+    <comment>Button that opens a file in the platform's registered default editor for the file's type. Used on the Memory page Tier 1 file viewer toolbar, Tier 1 inventory rows, Tier 2 footprint rows, and per-project transcript rows.</comment>
+  </data>
+  <data name="LabelMemoryCategoryPrimary" xml:space="preserve">
+    <value>Primärer Speicher (CLAUDE.md / AGENTS.md)</value>
+  </data>
+  <data name="LabelMemoryCategoryProject" xml:space="preserve">
+    <value>Projekt-Speicher</value>
+  </data>
+  <data name="LabelMemoryCategorySubagents" xml:space="preserve">
+    <value>Benutzerdefinierte Subagenten</value>
+  </data>
+  <data name="LabelMemoryCategoryCommands" xml:space="preserve">
+    <value>Slash-Befehle</value>
+  </data>
+  <data name="LabelMemoryCategoryHooks" xml:space="preserve">
+    <value>Hook-Skripte</value>
+  </data>
+  <data name="LabelMemoryCategoryPlans" xml:space="preserve">
+    <value>Gespeicherte Pläne</value>
+  </data>
+  <data name="LabelMemoryCategoryRules" xml:space="preserve">
+    <value>Regeldateien</value>
+  </data>
+  <data name="LabelMemoryCategorySkills" xml:space="preserve">
+    <value>Benutzerdefinierte Skills</value>
+  </data>
+  <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
+    <value>Tool-übergreifender Speicher (Codex, Gemini, OpenCode)</value>
+  </data>
+  <data name="LabelFootprintCategoryTranscripts" xml:space="preserve">
+    <value>Sitzungsprotokolle</value>
+  </data>
+  <data name="LabelFootprintCategorySessions" xml:space="preserve">
+    <value>Sitzungs-Metadaten</value>
+  </data>
+  <data name="LabelFootprintCategoryHistory" xml:space="preserve">
+    <value>Prompt-Verlauf</value>
+  </data>
+  <data name="LabelFootprintCategoryBashLog" xml:space="preserve">
+    <value>Bash-Befehlsprotokoll</value>
+  </data>
+  <data name="LabelFootprintCategoryCostLog" xml:space="preserve">
+    <value>Kosten-Tracker-Protokoll</value>
+  </data>
+  <data name="LabelFootprintCategoryTodos" xml:space="preserve">
+    <value>Todo-Listen</value>
+  </data>
+  <data name="LabelFootprintCategoryFileHistory" xml:space="preserve">
+    <value>Dateibearbeitungsverlauf</value>
+  </data>
+  <data name="LabelFileCountFmt" xml:space="preserve">
+    <value>({0} Datei(en))</value>
+    <comment>Inline summary on a Tier 1 group expander header. {0} = file count.</comment>
+  </data>
+  <data name="LabelYes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="LabelNo" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="HeaderInStandardBackup" xml:space="preserve">
+    <value>In Standard-Backup?</value>
+    <comment>Tier 2 footprint table column header.</comment>
+  </data>
+  <data name="TitleDeleteFootprintFmt" xml:space="preserve">
+    <value>{0} löschen?</value>
+    <comment>Destructive dialog title. {0} = footprint category human label.</comment>
+  </data>
+  <data name="MsgDeleteFootprintConfirmFmt" xml:space="preserve">
+    <value>Dies löscht {0} Datei(en) mit insgesamt {1} dauerhaft von der Festplatte:</value>
+    <comment>Destructive dialog body. {0} = file count, {1} = humanised size.</comment>
+  </data>
+  <data name="ButtonDeleteFootprint" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Confirm-button label on the Destructive footprint-delete dialog.</comment>
+  </data>
+  <data name="LabelDesktopMemoryExplainerTitle" xml:space="preserve">
+    <value>Claude Desktop hat keine äquivalente Benutzerspeicher-Datei.</value>
+  </data>
+  <data name="LabelDesktopMemoryExplainerBody" xml:space="preserve">
+    <value>Claude Desktop liest seine Konfiguration aus einer einzigen config.json und speichert den Konversationsverlauf in einem undurchsichtigen, von Chromium verwalteten IndexedDB-Speicher. Die Speicher-Seite zeigt vom Benutzer erstellten Speicher nur für Claude Code an; für Desktop verwenden Sie den anwendungseigenen Befehl „Chat-Verlauf löschen“ für Datenschutzaktionen.</value>
+  </data>
+  <!-- Memory page Tier 1 / Tier 2 row tooltips. -->
+  <data name="TipMemoryCategoryPrimary" xml:space="preserve">
+    <value>Oberste CLAUDE.md (oder AGENTS.md), die Claude zu Beginn jeder Code-Sitzung liest — Ihre projektunabhängigen Vorlieben und dauerhaften Anweisungen.</value>
+  </data>
+  <data name="TipMemoryCategoryProject" xml:space="preserve">
+    <value>CLAUDE.md (oder AGENTS.md) im Stamm des geöffneten Projekts — Vorlieben mit Geltungsbereich des aktuellen Projekts, gelegt über den primären Speicher.</value>
+  </data>
+  <data name="TipMemoryCategorySubagents" xml:space="preserve">
+    <value>Definitionen benutzerdefinierter Subagenten in ~/.claude/agents/. Jede .md-Datei beschreibt einen benannten Agenten mit eigenem Systemprompt, eigenen Tools und Auslösebedingungen.</value>
+  </data>
+  <data name="TipMemoryCategoryCommands" xml:space="preserve">
+    <value>Benutzerdefinierte Slash-Befehle in ~/.claude/commands/. Jede .md-Datei ordnet einem Aufruf /name einen parametrisierten Prompt zu.</value>
+  </data>
+  <data name="TipMemoryCategoryHooks" xml:space="preserve">
+    <value>Skripte, die vom Hook-System bei Sitzungs-Lebenszyklusereignissen (PreToolUse, PostToolUse usw.) ausgeführt werden. Gespeichert in ~/.claude/hooks/ — jede ausführbare Dateierweiterung wird akzeptiert.</value>
+  </data>
+  <data name="TipMemoryCategoryPlans" xml:space="preserve">
+    <value>Gespeicherte Pläne in ~/.claude/plans/. Jede .md erfasst einen strukturierten Implementierungsplan, der über Sitzungen hinweg erhalten bleibt.</value>
+  </data>
+  <data name="TipMemoryCategoryRules" xml:space="preserve">
+    <value>Regeldateien in ~/.claude/rules/ (rekursiv). Markdown-Dokumente, die Codierungskonventionen, Sicherheitsrichtlinien und persönliche Standards beschreiben, die Claude befolgt.</value>
+  </data>
+  <data name="TipMemoryCategorySkills" xml:space="preserve">
+    <value>Benutzerdefinierte Skills in ~/.claude/skills/&lt;name&gt;/SKILL.md. Jeder Skill bündelt aufgabenspezifisches Wissen, das Claude aufrufen kann, wenn dessen Beschreibung mit der Absicht des Benutzers übereinstimmt.</value>
+  </data>
+  <data name="TipMemoryCategoryCrossTool" xml:space="preserve">
+    <value>Speicherdateien für verwandte KI-Tools (.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md), die Claude als Tool-übergreifenden Kontext liest.</value>
+  </data>
+  <data name="TipFootprintCategoryTranscripts" xml:space="preserve">
+    <value>Vollständige Konversationsprotokolle jeder Sitzung, als JSONL unter ~/.claude/projects/&lt;mangled&gt;/ gespeichert. Größter einzelner Beitrag zur Festplattennutzung; in Standard-Backups nicht enthalten.</value>
+  </data>
+  <data name="TipFootprintCategorySessions" xml:space="preserve">
+    <value>Metadaten je Sitzung: ~/.claude/sessions/, session-data/, session-env/. Sitzungsbezogener Zustand, Umgebungsaufnahmen und Resume-Hinweise.</value>
+  </data>
+  <data name="TipFootprintCategoryHistory" xml:space="preserve">
+    <value>~/.claude/history.jsonl — jeder interaktive Prompt, den Sie eingegeben haben, sitzungsübergreifend gespeichert, damit der Aufwärtspfeil frühere Eingaben aufruft.</value>
+  </data>
+  <data name="TipFootprintCategoryBashLog" xml:space="preserve">
+    <value>~/.claude/bash-commands.log — Protokoll der Bash-Aufrufe, die Claude in Ihrem Namen ausgeführt hat, nützlich zur Prüfung der Shell-Aktivität.</value>
+  </data>
+  <data name="TipFootprintCategoryCostLog" xml:space="preserve">
+    <value>~/.claude/cost-tracker.log — Token-Kosten-Telemetrie je Sitzung zur Kostenanalyse.</value>
+  </data>
+  <data name="TipFootprintCategoryTodos" xml:space="preserve">
+    <value>~/.claude/todos/ — Todo-Listen-Snapshots aus dem TodoWrite-Tool, je Sitzung bereichsgebunden.</value>
+  </data>
+  <data name="TipFootprintCategoryFileHistory" xml:space="preserve">
+    <value>~/.claude/file-history/ — Vorher-/Nachher-Snapshots von Dateien, die Claude bearbeitet hat, verwendet von der Diff-Anzeige des Edit-Tools.</value>
+  </data>
+  <!-- per-project transcript drilldown. -->
+  <data name="HeaderProjectTranscriptBreakdown" xml:space="preserve">
+    <value>Aufschlüsselung je Projekt</value>
+    <comment>Expander header for the per-project transcript drilldown on the Footprint tab.</comment>
+  </data>
+  <data name="TipProjectTranscriptBreakdown" xml:space="preserve">
+    <value>Eine Zeile pro Projekt unter ~/.claude/projects/. Ermöglicht es, die Protokolle eines einzelnen Projekts zu löschen, ohne die anderen anzufassen — feinkörniger als das Löschen auf Kategorieebene oben unter „Sitzungsprotokolle“.</value>
+    <comment>Tooltip on the per-project breakdown Expander header.</comment>
+  </data>
+  <data name="TitleDeleteProjectTranscriptsFmt" xml:space="preserve">
+    <value>Protokolle für {0} löschen?</value>
+    <comment>Destructive dialog title when deleting a single project's transcripts. {0} = decoded project display name.</comment>
+  </data>
+  <data name="MsgDeleteProjectTranscriptsConfirmFmt" xml:space="preserve">
+    <value>Dies löscht {0} Protokolldatei(en) mit insgesamt {1} dauerhaft aus dem Verzeichnis dieses Projekts:</value>
+    <comment>Destructive dialog body for per-project transcript delete. {0} = file count, {1} = humanised size.</comment>
+  </data>
+  <data name="HeaderProjectColumnLastSeen" xml:space="preserve">
+    <value>Letzte Aktivität</value>
+    <comment>Column header for the relative-time column in the per-project breakdown.</comment>
+  </data>
+  <!-- Footprint warning banner (size threshold). -->
+  <data name="HeaderFootprintLargeWarning" xml:space="preserve">
+    <value>Großer Fußabdruck</value>
+    <comment>Banner header on the Footprint tab when total disk usage exceeds the warning threshold.</comment>
+  </data>
+  <data name="MsgFootprintLargeWarningFmt" xml:space="preserve">
+    <value>Ihr Claude-Fußabdruck beträgt derzeit {0}. Erwägen Sie, die Aufschlüsselung je Projekt unten zu erweitern, um Protokolle von Projekten zu löschen, an denen Sie nicht mehr arbeiten.</value>
+    <comment>Banner body. {0} = humanised aggregate size (e.g. "12.4 GB").</comment>
+  </data>
+  <!-- Marketplace list per-row Advanced sub-fields. -->
+  <data name="HeaderAdvancedFields" xml:space="preserve">
+    <value>Erweitert</value>
+    <comment>Per-row Expander header surfacing optional ref / path sub-fields on github / git Marketplace variants.</comment>
+  </data>
+  <data name="LabelMarketplaceRef" xml:space="preserve">
+    <value>ref</value>
+    <comment>Label for the optional git ref (branch / tag / SHA) sub-field on a Marketplace row.</comment>
+  </data>
+  <data name="WatermarkMarketplaceRef" xml:space="preserve">
+    <value>main / v1.2.3 / 8a3f2c1</value>
+    <comment>Placeholder text for the ref TextBox.</comment>
+  </data>
+  <data name="LabelMarketplacePath" xml:space="preserve">
+    <value>path</value>
+    <comment>Label for the optional subdirectory path sub-field on a Marketplace row.</comment>
+  </data>
+  <data name="WatermarkMarketplacePath" xml:space="preserve">
+    <value>marketplace.json oder pfad/zu/verzeichnis</value>
+    <comment>Placeholder text for the path TextBox.</comment>
+  </data>
+  <data name="HeaderHttpHeaders" xml:space="preserve">
+    <value>HTTP-Header</value>
+    <comment>Per-row Expander header surfacing the HTTP headers sub-editor on a Marketplace url variant.</comment>
+  </data>
+  <data name="WatermarkHeaderName" xml:space="preserve">
+    <value>Header-Name</value>
+    <comment>Placeholder for the new-header name TextBox (e.g. Authorization).</comment>
+  </data>
+  <data name="WatermarkHeaderValue" xml:space="preserve">
+    <value>Header-Wert</value>
+    <comment>Placeholder for the new-header value TextBox (e.g. Bearer xyz).</comment>
+  </data>
+  <!-- pluginConfigs typed editor (audit closure). -->
+  <data name="WatermarkPluginId" xml:space="preserve">
+    <value>plugin-id@marketplace</value>
+    <comment>Placeholder for the per-row plugin id TextBox (format: plugin-name@marketplace-id).</comment>
+  </data>
+  <data name="WatermarkPluginMcpServerName" xml:space="preserve">
+    <value>Name des MCP-Servers (z. B. github)</value>
+    <comment>Placeholder for the per-server name TextBox inside a plugin's mcpServers map.</comment>
+  </data>
+  <data name="WatermarkPluginConfigKey" xml:space="preserve">
+    <value>Konfigurationsschlüssel</value>
+    <comment>Placeholder for the per-config key TextBox inside an MCP server config map.</comment>
+  </data>
+  <data name="WatermarkPluginConfigValue" xml:space="preserve">
+    <value>Konfigurationswert</value>
+    <comment>Placeholder for the per-config value TextBox.</comment>
+  </data>
+  <data name="ButtonAddPlugin" xml:space="preserve">
+    <value>Plugin hinzufügen</value>
+    <comment>Add-button label for adding a new plugin entry to pluginConfigs.</comment>
+  </data>
+  <data name="ButtonAddServer" xml:space="preserve">
+    <value>Server hinzufügen</value>
+    <comment>Add-button label for adding a new MCP server entry inside a plugin.</comment>
+  </data>
+  <data name="TipCommonActionKindRead" xml:space="preserve">
+    <value>Lesen — nicht verändernd: Auflisten, Suchen, Anzeigen, Status. Das Tool kann Inhalte einsehen, aber nichts auf der Festplatte ändern oder Netzwerkaufrufe tätigen.</value>
+    <comment>Tooltip on the green Read chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindWrite" xml:space="preserve">
+    <value>Schreiben — verändert den lokalen Zustand: Bearbeiten, Speichern, Hinzufügen, Committen. Änderungen bleiben auf diesem Rechner und können per Versionskontrolle oder Backup rückgängig gemacht werden.</value>
+    <comment>Tooltip on the amber Write chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindNetwork" xml:space="preserve">
+    <value>Netzwerk — ruft entfernte Dienste auf: Paketinstallationen, Web-Abrufe, MCP-Server. Diese Berechtigung erlaubt dem Tool den Internetzugriff.</value>
+    <comment>Tooltip on the blue Network chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindDestructive" xml:space="preserve">
+    <value>Destruktiv — irreversibel oder mit großer Auswirkungsbreite: git push, rohe Shell-Wildcards. Einmal gewährt, kann eine Wiederherstellung externe Maßnahmen erfordern.</value>
+    <comment>Tooltip on the red Destructive chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="LabelEditingScope" xml:space="preserve">
+    <value>Bearbeiteter Geltungsbereich:</value>
+    <comment>Caption above the scope combo box on every settings page.</comment>
+  </data>
+  <data name="TipEditingScopeLabel" xml:space="preserve">
+    <value>Der Geltungsbereich (Schicht) bestimmt, in welche Konfigurationsdatei diese Einstellung geschrieben wird. Niedrigere Geltungsbereiche überschreiben höhere: local &gt; project &gt; user &gt; managed.</value>
+    <comment>Tooltip on the "Editing scope:" label.</comment>
+  </data>
+  <data name="TipEditingScopeCombo" xml:space="preserve">
+    <value>Wählen Sie die Konfigurationsschicht, in die geschrieben werden soll. „local“ betrifft nur Ihren aktuellen Rechner; „project“ wird mit dem Repo geteilt; „user“ ist Ihr persönlicher Standard; „managed“ wird von der Organisation gesteuert und ist schreibgeschützt.</value>
+    <comment>Tooltip on the scope ComboBox.</comment>
+  </data>
+  <data name="AutoNameEditingScope" xml:space="preserve">
+    <value>Bearbeiteter Geltungsbereich</value>
+    <comment>AutomationProperties.Name on the scope ComboBox.</comment>
+  </data>
+  <data name="AutoHelpEditingScope" xml:space="preserve">
+    <value>Wählen Sie die Konfigurationsschicht, in die Änderungen geschrieben werden sollen. Engere Geltungsbereiche haben Vorrang vor weiteren.</value>
+    <comment>AutomationProperties.HelpText on the scope ComboBox.</comment>
+  </data>
+  <data name="TipEditorErrorCopy" xml:space="preserve">
+    <value>Klicken Sie und drücken Sie Strg+A, dann Strg+C, um diesen Fehler zu kopieren</value>
+    <comment>Tooltip on the inline editor-error SelectableTextBlock that appears next to the scope combo when a SetValue throws.</comment>
+  </data>
+  <data name="HeaderTabProperties" xml:space="preserve">
+    <value>Eigenschaften</value>
+    <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="LabelClearPropertyFilter" xml:space="preserve">
+    <value>✕ Eigenschaftsfilter löschen</value>
+    <comment>Button text for the clear-filter button on the property-filter bar.</comment>
+  </data>
+  <data name="TipClearPropertyFilter" xml:space="preserve">
+    <value>Eigenschaftsfilter löschen und alle Eigenschaften anzeigen</value>
+    <comment>Tooltip on the clear-property-filter button.</comment>
+  </data>
+  <data name="AutoNameClearPropertyFilter" xml:space="preserve">
+    <value>Eigenschaftsfilter löschen</value>
+    <comment>AutomationProperties.Name on the clear-property-filter button.</comment>
+  </data>
+  <data name="HeaderTabEffective" xml:space="preserve">
+    <value>Effektiv</value>
+    <comment>Tab header on the SettingsGroupEditor view (Effective Values tab).</comment>
+  </data>
+  <data name="LabelCopyToClipboard" xml:space="preserve">
+    <value>In Zwischenablage kopieren</value>
+    <comment>Generic copy-to-clipboard button label, reused across editor JSON views.</comment>
+  </data>
+  <data name="TipCopyJsonClipboard" xml:space="preserve">
+    <value>Das unten gezeigte JSON in die Zwischenablage kopieren</value>
+    <comment>Tooltip on the copy-JSON-to-clipboard button on the JSON tab of SettingsGroupEditor.</comment>
+  </data>
+  <data name="AutoNameCopyJsonClipboard" xml:space="preserve">
+    <value>JSON in die Zwischenablage kopieren</value>
+    <comment>AutomationProperties.Name on the copy-JSON-to-clipboard button.</comment>
+  </data>
+  <data name="LabelShowAllSchemaProps" xml:space="preserve">
+    <value>Alle Schema-Eigenschaften anzeigen (einschließlich nicht gesetzter Standardwerte)</value>
+    <comment>Checkbox label on the JSON tab of SettingsGroupEditor that toggles whether unset defaults are rendered.</comment>
+  </data>
+  <data name="TipShowAllSchemaProps" xml:space="preserve">
+    <value>Aktiviert: zeigt jede vom Schema definierte Eigenschaft mit ihrem Standardwert oder einem Platzhalter, nützlich als Referenz. Deaktiviert: zeigt nur Eigenschaften, für die im aktiven Geltungsbereich ein Wert gesetzt ist.</value>
+    <comment>Tooltip on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="AutoNameShowAllSchemaProps" xml:space="preserve">
+    <value>Alle Schema-Eigenschaften anzeigen</value>
+    <comment>AutomationProperties.Name on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="AutoHelpShowAllSchemaProps" xml:space="preserve">
+    <value>Wenn aktiviert, enthält die JSON-Ansicht jede Schema-Eigenschaft mit Standard- oder Platzhalterwerten. Wenn deaktiviert, werden nur gesetzte Werte angezeigt.</value>
+    <comment>AutomationProperties.HelpText on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="HeaderSaveDialogProperty" xml:space="preserve">
+    <value>Eigenschaft</value>
+    <comment>Save-confirmation dialog: "Property" column header.</comment>
+  </data>
+  <data name="HeaderSaveDialogOld" xml:space="preserve">
+    <value>Alt</value>
+    <comment>Save-confirmation dialog: "Old value" column header.</comment>
+  </data>
+  <data name="HeaderSaveDialogNew" xml:space="preserve">
+    <value>Neu</value>
+    <comment>Save-confirmation dialog: "New value" column header.</comment>
+  </data>
+
+  <!-- Save-changes dialog kind-pill labels — drive both the
+       hover tooltip and AutomationProperties.Name on the coloured + / - / ~
+       pill in the leftmost column.  Without these, screen-reader users only
+       hear the bare glyph (which announces as "Plus sign" / "Minus" / "Tilde")
+       and have no idea what the row's nature is. -->
+  <data name="SaveDialogKindAdded" xml:space="preserve">
+    <value>Hinzugefügte Eigenschaft</value>
+    <comment>Tooltip + screen-reader name for the green '+' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="SaveDialogKindRemoved" xml:space="preserve">
+    <value>Entfernte Eigenschaft</value>
+    <comment>Tooltip + screen-reader name for the red '-' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="SaveDialogKindModified" xml:space="preserve">
+    <value>Geänderte Eigenschaft</value>
+    <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+
+  <data name="LabelMenuCopy" xml:space="preserve">
+    <value>Kopieren</value>
+    <comment>Generic "Copy" context-menu item label, used in SaveChangesDialog cell context-flyouts and EffectiveSettings cells.</comment>
+  </data>
+  <data name="WatermarkMarketplaceName" xml:space="preserve">
+    <value>Marketplace-Name</value>
+    <comment>Marketplaces editor: placeholder text for the marketplace-name field (both new-row and existing-row inline).</comment>
+  </data>
+  <data name="WatermarkMarketplaceSource" xml:space="preserve">
+    <value>URL / Repo / Pfad / Paket</value>
+    <comment>Marketplaces editor: placeholder text for the marketplace source/url field.</comment>
+  </data>
+  <data name="LabelMarketplaceAdd" xml:space="preserve">
+    <value>Hinzufügen</value>
+    <comment>Marketplaces editor: button text for adding a new marketplace.</comment>
+  </data>
+  <data name="WatermarkMarketplaceNameInline" xml:space="preserve">
+    <value>Name</value>
+    <comment>Marketplaces editor: shorter placeholder text for the inline name field on existing rows.</comment>
+  </data>
+  <data name="LabelOperationReadOnly" xml:space="preserve">
+    <value>Schreibgeschützt</value>
+    <comment>Common Actions operation-group header for non-mutating File-tool rules.</comment>
+  </data>
+  <data name="LabelOperationWrite" xml:space="preserve">
+    <value>Schreiben</value>
+    <comment>Common Actions operation-group header for File-tool write rules.</comment>
+  </data>
+  <data name="LabelOperationSearchView" xml:space="preserve">
+    <value>Suchen &amp; Anzeigen</value>
+    <comment>Common Actions operation-group header for shell-tool view/search commands.</comment>
+  </data>
+  <data name="LabelOperationGitRead" xml:space="preserve">
+    <value>Git (lesen)</value>
+    <comment>Common Actions operation-group header for git status/log/diff.</comment>
+  </data>
+  <data name="LabelOperationGitWrite" xml:space="preserve">
+    <value>Git (schreiben)</value>
+    <comment>Common Actions operation-group header for git add/commit/push.</comment>
+  </data>
+  <data name="LabelOperationRuntimes" xml:space="preserve">
+    <value>Laufzeiten</value>
+    <comment>Common Actions operation-group header for interpreter/runtime invocations (dotnet/npm/python/node).</comment>
+  </data>
+  <data name="LabelOperationNetwork" xml:space="preserve">
+    <value>Netzwerk</value>
+    <comment>Common Actions operation-group header for outbound network commands (curl, wget, Invoke-WebRequest).</comment>
+  </data>
+  <data name="LabelOperationFetchSearch" xml:space="preserve">
+    <value>Abrufen &amp; Suchen</value>
+    <comment>Common Actions operation-group header for the Web tool's WebFetch/WebSearch operations.</comment>
+  </data>
+  <data name="LabelOperationWildcards" xml:space="preserve">
+    <value>Platzhalter</value>
+    <comment>Common Actions operation-group header inside the catch-all wildcard tier.</comment>
+  </data>
+  <data name="ThemeLabelLight" xml:space="preserve">
+    <value>☀ Hell</value>
+  </data>
+  <data name="ThemeLabelDark" xml:space="preserve">
+    <value>&#x263E; Dunkel</value>
+  </data>
+  <data name="InstallRunPowerShell" xml:space="preserve">
+    <value>▶ In PowerShell ausführen</value>
+  </data>
+  <data name="InstallRunTerminal" xml:space="preserve">
+    <value>▶ Im Terminal ausführen</value>
+  </data>
+  <data name="TextNoTerminalFound" xml:space="preserve">
+    <value>Kein Terminal gefunden — verwenden Sie stattdessen Kopieren</value>
+  </data>
+  <data name="InstallRunBrowser" xml:space="preserve">
+    <value>▶ Im Browser öffnen</value>
+  </data>
+  <data name="TipButtonOpenDownload" xml:space="preserve">
+    <value>Die Claude Desktop-Downloadseite im Standardbrowser öffnen</value>
+  </data>
+  <data name="AutoNameButtonOpenDownload" xml:space="preserve">
+    <value>Downloadseite öffnen</value>
+  </data>
+  <data name="TipButtonCopyUrl" xml:space="preserve">
+    <value>Download-URL in die Zwischenablage kopieren</value>
+  </data>
+  <data name="AutoNameButtonCopyUrl" xml:space="preserve">
+    <value>Download-URL kopieren</value>
+  </data>
+
+  <!-- Dialog strings (MainWindowViewModel) -->
+  <data name="DialogTitleNewProfile" xml:space="preserve">
+    <value>Neues Profil</value>
+  </data>
+  <data name="DialogPromptNewProfile" xml:space="preserve">
+    <value>Geben Sie einen Namen für das neue Profil ein:</value>
+  </data>
+  <data name="DialogPlaceholderNewProfile" xml:space="preserve">
+    <value>z. B. work, personal, home</value>
+  </data>
+  <data name="DialogTitleInvalidName" xml:space="preserve">
+    <value>Ungültiger Name</value>
+  </data>
+  <data name="MsgReservedProfileName" xml:space="preserve">
+    <value>„{0}“ ist ein reservierter Name. Bitte wählen Sie einen anderen Profilnamen.</value>
+  </data>
+  <data name="MsgDotProfileName" xml:space="preserve">
+    <value>Profilname darf nicht „.“ oder „..“ sein.</value>
+  </data>
+  <data name="MsgInvalidPathChars" xml:space="preserve">
+    <value>Profilname enthält Zeichen, die in Dateinamen nicht erlaubt sind.</value>
+  </data>
+  <data name="DialogTitleProfileExists" xml:space="preserve">
+    <value>Profil existiert bereits</value>
+  </data>
+  <data name="MsgProfileAlreadyExists" xml:space="preserve">
+    <value>Ein Profil mit dem Namen „{0}“ existiert bereits. Wählen Sie einen anderen Namen.</value>
+  </data>
+  <data name="DialogTitleDeleteProfile" xml:space="preserve">
+    <value>Profil löschen</value>
+  </data>
+  <data name="MsgConfirmDeleteProfile" xml:space="preserve">
+    <value>Profil „{0}“ und alle zugehörigen Einstellungen löschen? Dies kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="DialogTitleError" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="MsgCannotCreateProfile" xml:space="preserve">
+    <value>Profil konnte nicht erstellt werden: {0}</value>
+  </data>
+  <data name="MsgCannotDeleteProfile" xml:space="preserve">
+    <value>Profil konnte nicht gelöscht werden: {0}</value>
+  </data>
+  <data name="WorkspaceNameClaudeCode" xml:space="preserve">
+    <value>Claude Code-Einstellungen</value>
+  </data>
+  <data name="WorkspaceNameClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop-Konfiguration</value>
+  </data>
+  <data name="DialogTitleOpenProject" xml:space="preserve">
+    <value>Projektordner öffnen</value>
+  </data>
+  <data name="DialogTitleExportConfigs" xml:space="preserve">
+    <value>Effektive Konfigurationen exportieren</value>
+  </data>
+  <data name="FileFilterZipArchive" xml:space="preserve">
+    <value>Zip-Archiv</value>
+  </data>
+
+  <!-- ViewModel — status messages (MainWindowViewModel) — format strings -->
+  <data name="StatusReloadFailedFmt" xml:space="preserve">
+    <value>Neuladen fehlgeschlagen: {0}</value>
+  </data>
+  <data name="StatusReloadingFileFmt" xml:space="preserve">
+    <value>Wird neu geladen ({0} geändert)…</value>
+  </data>
+  <data name="StatusOpeningProjectFmt" xml:space="preserve">
+    <value>Projekt wird geöffnet: {0}…</value>
+  </data>
+  <data name="StatusProjectOpenFmt" xml:space="preserve">
+    <value>Projekt: {0}</value>
+  </data>
+  <data name="StatusOpenProjectFailedFmt" xml:space="preserve">
+    <value>Projekt konnte nicht geöffnet werden: {0}</value>
+  </data>
+  <data name="StatusExportedFmt" xml:space="preserve">
+    <value>Exportiert nach {0}</value>
+  </data>
+  <data name="StatusExportFailedFmt" xml:space="preserve">
+    <value>Export fehlgeschlagen: {0}</value>
+  </data>
+  <data name="StatusProfileCreatedFmt" xml:space="preserve">
+    <value>Profil „{0}“ aus den aktuellen Live-Einstellungen erstellt.</value>
+  </data>
+  <data name="StatusProfileDeletedFmt" xml:space="preserve">
+    <value>Profil „{0}“ gelöscht.</value>
+  </data>
+
+  <!-- ViewModel — status messages (BackupRestoreViewModel) -->
+  <data name="StatusChooseBackupFolder" xml:space="preserve">
+    <value>Wählen Sie zuerst einen Ausgabeordner (klicken Sie auf Durchsuchen neben dem Ordnerpfad).</value>
+  </data>
+  <data name="ProgressPreparing" xml:space="preserve">
+    <value>Wird vorbereitet…</value>
+  </data>
+  <data name="ProgressStarting" xml:space="preserve">
+    <value>Wird gestartet…</value>
+  </data>
+  <data name="ProgressRestoring" xml:space="preserve">
+    <value>Wird wiederhergestellt…</value>
+  </data>
+  <data name="ProgressCreatingJunction" xml:space="preserve">
+    <value>Junction wird erstellt…</value>
+  </data>
+  <data name="LabelLastBackupNever" xml:space="preserve">
+    <value>Noch kein Backup</value>
+  </data>
+  <data name="LabelLastBackupJustNow" xml:space="preserve">
+    <value>Letztes Backup: gerade eben</value>
+  </data>
+  <data name="LabelLastBackupMinutesFmt" xml:space="preserve">
+    <value>Letztes Backup: vor {0} Minute(n)</value>
+  </data>
+  <data name="LabelLastBackupHoursFmt" xml:space="preserve">
+    <value>Letztes Backup: vor {0} Stunde(n)</value>
+  </data>
+  <data name="LabelLastBackupDaysFmt" xml:space="preserve">
+    <value>Letztes Backup: vor {0} Tag(en)</value>
+  </data>
+  <data name="StatusBackupWarningsFmt" xml:space="preserve">
+    <value>  [!] {0} Warnung(en) — siehe Manifest.</value>
+  </data>
+  <data name="StatusBackupDeletedFmt" xml:space="preserve">
+    <value>{0} gelöscht.</value>
+  </data>
+  <data name="StatusBackupDeleteFailedFmt" xml:space="preserve">
+    <value>{0} konnte nicht gelöscht werden.</value>
+  </data>
+  <data name="StatusClaudeRunningFmt" xml:space="preserve">
+    <value>[!] Claude läuft derzeit ({0} Prozess(e)). Einige Dateien können während der Wiederherstellung gesperrt sein.</value>
+  </data>
+
+  <!-- ViewModel — status messages (ProfilesViewModel) -->
+  <data name="StatusNoCliProfiles" xml:space="preserve">
+    <value>Keine CLI-Profile gefunden. Erstellen Sie eines mit der Schaltfläche „Neu“.</value>
+  </data>
+  <data name="StatusCreatingProfileFmt" xml:space="preserve">
+    <value>Profil „{0}“ wird erstellt…</value>
+  </data>
+  <data name="StatusApplyingProfileFmt" xml:space="preserve">
+    <value>Profil „{0}“ wird angewendet…</value>
+  </data>
+  <data name="StatusProfileAppliedFmt" xml:space="preserve">
+    <value>Profil „{0}“ angewendet. Claude Code verwendet diese Einstellungen beim nächsten Start.</value>
+  </data>
+  <data name="StatusSyncingProfileFmt" xml:space="preserve">
+    <value>Live-Dateien werden in Profil „{0}“ synchronisiert…</value>
+  </data>
+  <data name="StatusProfileSyncedFmt" xml:space="preserve">
+    <value>Profil „{0}“ aus den Live-Einstellungen aktualisiert.</value>
+  </data>
+  <data name="StatusApplyTimedOut" xml:space="preserve">
+    <value>Anwenden hat das Zeitlimit überschritten.</value>
+  </data>
+  <data name="StatusSyncTimedOut" xml:space="preserve">
+    <value>Synchronisierung hat das Zeitlimit überschritten.</value>
+  </data>
+  <data name="StatusNoDesktopProfiles" xml:space="preserve">
+    <value>Keine Desktop-Profile gefunden. Erstellen Sie eines mit der Schaltfläche „Neu“.</value>
+  </data>
+  <data name="StatusCreatingDesktopProfileFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ wird erstellt…</value>
+  </data>
+  <data name="StatusDesktopProfileCreatedFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ aus der aktuellen Live-Konfiguration erstellt.</value>
+  </data>
+  <data name="StatusApplyingDesktopProfileFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ wird angewendet…</value>
+  </data>
+  <data name="StatusDesktopProfileAppliedFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ angewendet.</value>
+  </data>
+  <data name="StatusSyncingDesktopProfileFmt" xml:space="preserve">
+    <value>Live-Desktop-Konfiguration wird in Profil „{0}“ synchronisiert…</value>
+  </data>
+  <data name="StatusDesktopProfileSyncedFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ aus der Live-Konfiguration aktualisiert.</value>
+  </data>
+  <data name="StatusDesktopProfileDeletedFmt" xml:space="preserve">
+    <value>Desktop-Profil „{0}“ gelöscht.</value>
+  </data>
+
+  <!-- ViewModel — status messages (EnvironmentEditorViewModel) -->
+  <data name="StatusCannotSaveClaude" xml:space="preserve">
+    <value>Kann nicht in den Claude-Geltungsbereich speichern — es wurde keine Claude Code-Installation erkannt.</value>
+  </data>
+  <data name="StatusEnvSavedFmt" xml:space="preserve">
+    <value>{0} → {1} gespeichert.</value>
+  </data>
+  <data name="StatusEnvRemovedFmt" xml:space="preserve">
+    <value>{0} aus {1} entfernt.</value>
+  </data>
+  <data name="StatusEnvAddedFmt" xml:space="preserve">
+    <value>{0} zu {1} hinzugefügt.</value>
+  </data>
+  <data name="StatusCannotWriteEnvFmt" xml:space="preserve">
+    <value>Kann nicht in die Claude-env schreiben: {0}</value>
+  </data>
+  <data name="ScopeNoteClaude" xml:space="preserve">
+    <value>Schreibt in das Claude Code env-Dictionary (wird mit der Haupt-Schaltfläche Speichern gespeichert).</value>
+  </data>
+  <data name="ScopeNoteUser" xml:space="preserve">
+    <value>Schreibt sofort in die Windows-Benutzerumgebungs-Registry.</value>
+  </data>
+  <data name="ScopeNoteMachine" xml:space="preserve">
+    <value>Schreibt sofort in die Windows-Maschinenumgebungs-Registry (erfordert erhöhte Rechte).</value>
+  </data>
+
+  <!-- ViewModel — labels (AboutEditorViewModel) -->
+  <data name="LabelDocumentation" xml:space="preserve">
+    <value>Dokumentation</value>
+  </data>
+  <data name="LabelSupport" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Versionshinweise</value>
+  </data>
+  <data name="LabelDownloadUpdates" xml:space="preserve">
+    <value>Download / Updates</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Scope semantics & editing-context surfacing (WelcomeView,
+       MainWindow status row, SettingsGroupEditorView ? popup,
+       BackupRestoreView header, SaveChangesDialog destination paths).
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
+  <data name="LabelEditingContext" xml:space="preserve">
+    <value>Bearbeitet wird</value>
+  </data>
+  <data name="HeadingEditingContext" xml:space="preserve">
+    <value>Was Sie gerade bearbeiten</value>
+  </data>
+  <data name="TextEditingContextNoProject" xml:space="preserve">
+    <value>Benutzerkonfiguration — kein Projekt geöffnet</value>
+  </data>
+  <data name="TextEditingContextWithProject" xml:space="preserve">
+    <value>Benutzer + Projekt + Lokal — Projekt: {0}</value>
+  </data>
+  <data name="TextOpenProjectHint" xml:space="preserve">
+    <value>Öffnen Sie einen Projektordner, um die Geltungsbereiche Projekt und Lokal zu bearbeiten.</value>
+  </data>
+  <data name="LinkOpenProject" xml:space="preserve">
+    <value>Projekt öffnen…</value>
+  </data>
+  <data name="LinkShowScopes" xml:space="preserve">
+    <value>Geltungsbereiche anzeigen</value>
+  </data>
+
+  <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
+  <data name="HeadingScopes" xml:space="preserve">
+    <value>Konfigurations-Geltungsbereiche</value>
+  </data>
+  <data name="TextScopeMeaningManaged" xml:space="preserve">
+    <value>Organisationsrichtlinie. Schreibgeschützt; überschreibt alles.</value>
+  </data>
+  <data name="TextScopeMeaningLocal" xml:space="preserve">
+    <value>Ihre rechnerlokalen Überschreibungen für dieses Projekt. Höchste Benutzerpriorität.</value>
+  </data>
+  <data name="TextScopeMeaningProject" xml:space="preserve">
+    <value>Mit dem Team über Git geteilt. Überschreibt Benutzer.</value>
+  </data>
+  <data name="TextScopeMeaningUser" xml:space="preserve">
+    <value>Ihr persönlicher Standard für jedes Projekt.</value>
+  </data>
+  <data name="TextScopePathManaged" xml:space="preserve">
+    <value>~/.claude/managed-settings.json</value>
+  </data>
+  <data name="TextScopePathLocal" xml:space="preserve">
+    <value>&lt;project&gt;/.claude/settings.local.json</value>
+  </data>
+  <data name="TextScopePathProject" xml:space="preserve">
+    <value>&lt;project&gt;/.claude/settings.json</value>
+  </data>
+  <data name="TextScopePathUser" xml:space="preserve">
+    <value>~/.claude/settings.json</value>
+  </data>
+  <data name="TipScopeLegendButton" xml:space="preserve">
+    <value>Was bedeutet jeder Geltungsbereich?</value>
+  </data>
+
+  <!-- Backup contents explainer (Welcome + BackupRestoreView header) -->
+  <data name="HeadingBackupContents" xml:space="preserve">
+    <value>Was Backups enthalten</value>
+  </data>
+  <data name="TextBackupContentsLine1" xml:space="preserve">
+    <value>Alles unter ~/.claude/ — Einstellungen, Profile, Hooks, MCP-Server.</value>
+  </data>
+  <data name="TextBackupContentsLine2" xml:space="preserve">
+    <value>~/.claude.json (Claude Code-Root-Konfiguration).</value>
+  </data>
+  <data name="TextBackupContentsLine3" xml:space="preserve">
+    <value>Desktop-Konfiguration und Desktop-Profile.</value>
+  </data>
+  <data name="TextBackupContentsExcluded" xml:space="preserve">
+    <value>Standardmäßig ausgeschlossen: cache/, projects/, .credentials.json.</value>
+  </data>
+  <data name="TextBackupContentsProjectNote" xml:space="preserve">
+    <value>Projektdateien (.claude/ in Ihrem Repo) werden nur einbezogen, wenn zum Zeitpunkt des Backups ein Projekt geöffnet ist oder explizit hinzugefügt wurde.</value>
+  </data>
+
+  <!-- Welcome-page "Things to know" section.  Concise pointers
+       to behaviours / features a new user might overlook.  Three bullets
+       deliberately — frugal so the section doesn't compete with the
+       primary "what you're editing" guidance. -->
+  <data name="HeadingThingsToKnow" xml:space="preserve">
+    <value>Wissenswertes</value>
+  </data>
+  <data name="TextWelcomeAutoReload" xml:space="preserve">
+    <value>Automatisches Neuladen — wenn ein anderes Tool oder ein Editor eine Konfigurationsdatei auf der Festplatte ändert (z. B. claudectx beim Profilwechsel oder eine Handänderung in Ihrem Texteditor), erkennt diese App das automatisch und aktualisiert den Editor.</value>
+  </data>
+  <data name="TextWelcomeEssentials" xml:space="preserve">
+    <value>★ „Essentials“ (oben im Navigationsbaum) bündelt die wichtigsten Stellschrauben — Token-Budgets, Sandbox, MCP-Vertrauen, Modellauswahl — für eine schnelle Überprüfung bei einer Neuinstallation.</value>
+  </data>
+  <data name="TextWelcomeMemory" xml:space="preserve">
+    <value>🧠 „Speicher“ zeigt, was Claude über Sie weiß (Sitzungsprotokolle, Prompt-Verlauf, Todos, Kosten-Tracker, Dateibearbeitungs-Protokolle), und ermöglicht das Löschen — nützlich für Datenschutzhygiene vor dem Teilen Ihres Rechners, dem Aufzeichnen einer Demo oder Screenshots.</value>
+  </data>
+  <data name="TextWelcomeWslHint" xml:space="preserve">
+    <value>🪟 Windows-Tipp — wenn Claude bei dateisystemlastigen Operationen durch Git Bash / MSYS-Pfadverstümmelung (Backslashes, Forward-Slash-Globs usw.) ins Stolpern gerät, bietet Berechtigungen → Häufige Aktionen → WSL Ein-Klick-Erlaubnislisten-Muster für die WSL-gewrappten Varianten (z. B. Bash(wsl git status)). Claude bevorzugt den WSL-Pfad, sobald diese Regeln vorhanden sind.</value>
+    <comment>Welcome page "Things to know" bullet — shown only when PlatformInfo.Current.IsWindows is true. Points Windows users at the WSL Common Actions group added as a solution to MSYS path-mangling friction.</comment>
+  </data>
+  <data name="TextSaveSilentSaveSafetyNet" xml:space="preserve">
+    <value>Sie haben nicht gespeicherte Änderungen, aber die Vorschau auf die Änderungen je Eigenschaft konnte nicht erstellt werden. Trotzdem speichern?</value>
+    <comment>Fallback dialog body shown by the silent-save safety net (SaveCoreAsync) when SDK reports HasUnsavedChanges=true but SaveDialogBuilder.Build returns null. The user-visible wording is intentionally vague — internal diagnostic context lives in the rolling log, not in the dialog.</comment>
+  </data>
+
+  <!-- Save / Restore confirmation dialog destination paths -->
+  <data name="LabelWillBeWrittenTo" xml:space="preserve">
+    <value>Wird geschrieben nach:</value>
+  </data>
+  <data name="LabelWillBeRestoredTo" xml:space="preserve">
+    <value>Wird wiederhergestellt nach:</value>
+  </data>
+  <data name="TextSaveSummary" xml:space="preserve">
+    <value>{0} Änderung(en) werden über {1} Datei(en) gespeichert:</value>
+  </data>
+  <data name="TextRestoreSummary" xml:space="preserve">
+    <value>{0} Änderung(en) werden über {1} Datei(en) wiederhergestellt:</value>
+  </data>
+
+  <!-- Effective Settings tab — descriptive subtitle above the grid + cell tooltip strings -->
+  <data name="TextEffectiveSettingsSubtitle" xml:space="preserve">
+    <value>Die vollständig zusammengeführten Werte, die Claude zur Laufzeit tatsächlich sieht, nach der Schichtung Verwaltet &gt; Lokal &gt; Projekt &gt; Benutzer. Jede Zeile zeigt den gewinnenden Wert, den Geltungsbereich, aus dem er stammt, und ob ein höher priorisierter Geltungsbereich einen niedrigeren überschreibt.</value>
+  </data>
+  <data name="TextEffectiveTabSubtitle" xml:space="preserve">
+    <value>Die tatsächlichen Laufzeitwerte, die Claude für die Einstellungen auf dieser Seite nach der Schichtung liest. Eigenschaften ohne Wert in irgendeinem Geltungsbereich werden ausgeblendet.</value>
+  </data>
+
+  <!-- Clear App Data button (status bar) -->
+  <data name="ButtonClearAppData" xml:space="preserve">
+    <value>App-_Daten löschen</value>
+    <comment>Alt+D — status bar button.  "D" rather than "C" to avoid conflict with common Cancel/Close mnemonics in dialogs.</comment>
+  </data>
+  <data name="TipClearAppData" xml:space="preserve">
+    <value>Gespeicherte Fensterposition, Größe, Design, zuletzt ausgewählte Seite und andere persistente UI-Zustände löschen. Berührt Ihre Claude-Konfigurationsdateien NICHT. ClaudeForge wird beendet.</value>
+  </data>
+  <data name="AutoNameClearAppData" xml:space="preserve">
+    <value>App-Daten löschen und beenden</value>
+  </data>
+  <data name="TitleClearAppDataConfirm" xml:space="preserve">
+    <value>App-Daten löschen?</value>
+  </data>
+  <data name="TextClearAppDataConfirm" xml:space="preserve">
+    <value>Dies löscht die persistente UI-Zustandsdatei unter ~/.claude/cache/ClaudeForge-gui-state.json (Fensterposition, Größe, Design, zuletzt ausgewählte Seite, Profilauswahl, Backup-Einstellungen). Ihre Claude-Konfigurationsdateien (~/.claude/settings.json und Co.) sind NICHT betroffen. ClaudeForge wird beendet. Fortfahren?</value>
+  </data>
+  <data name="ConfirmClearAppData" xml:space="preserve">
+    <value>Löschen und beenden</value>
+  </data>
+
+  <!-- Page-heading subtitles for top-level pages that get the accent-pill heading -->
+  <data name="TextProfilesSubtitle" xml:space="preserve">
+    <value>Benannte Einstellungsprofile für Claude Code und Claude Desktop. Wechseln Sie zwischen Konfigurationen, synchronisieren Sie über Produkte hinweg oder löschen Sie alte Profile.</value>
+  </data>
+  <data name="TextBackupRestoreSubtitle" xml:space="preserve">
+    <value>Erstellen Sie zeitgestempelte Backup-Archive Ihrer Claude-Konfiguration und stellen Sie diese später wieder her. Optionale Einbindung von Projekten und Anmeldedaten.</value>
+  </data>
+  <data name="TipEffectiveOverriddenTrue" xml:space="preserve">
+    <value>Diese Eigenschaft ist auch in einem Geltungsbereich mit niedrigerer Priorität definiert, aber ein höher priorisierter Geltungsbereich gewinnt.</value>
+  </data>
+  <data name="TipEffectiveOverriddenFalse" xml:space="preserve">
+    <value>Diese Eigenschaft ist nur in einem Geltungsbereich definiert.</value>
+  </data>
+
+  <!-- Navigation tree tooltips for the section descriptions in the left pane -->
+  <data name="TipNavigationDefault" xml:space="preserve">
+    <value>Klicken, um diesen Abschnitt zu öffnen.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BackupRestoreView — new UI polish strings
+       ═══════════════════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════════════════════
+       PermissionsEditorView — bypassPermissions danger banner
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextBypassPermissionsWarning" xml:space="preserve">
+    <value>Das Setzen von defaultMode auf bypassPermissions ist äquivalent zum Start von Claude Code mit dem Flag --dangerouslySkipPermissions. Alle Tool-Berechtigungsabfragen werden unterdrückt — Claude kann ohne Nachfrage lesen, schreiben und ausführen. Verwenden Sie dies nur in vollständig isolierten oder automatisierten Umgebungen, in denen Sie alle Eingaben kontrollieren.</value>
+  </data>
+
+  <data name="TextNoBackupYetDescription" xml:space="preserve">
+    <value>Verwenden Sie „Jetzt sichern“, um Ihren ersten Snapshot zu erstellen. Backups sind Zip-Dateien, die auf der Registerkarte „Wiederherstellen“ wiederhergestellt werden können.</value>
+  </data>
+  <data name="TextRestoreDescription" xml:space="preserve">
+    <value>Wählen Sie einen Backup-Ordner und eine Zip-Datei zum Wiederherstellen aus. Dies überschreibt Ihre aktuellen Konfigurationsdateien.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HooksEditorView — guidance + column header tooltips
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextHookMatcherGuidance" xml:space="preserve">
+    <value>Matcher ist ein Muster für Tool-Namen (z. B. Bash, Edit, * passt auf alle Tools). Jeder Hook läuft, wenn ein passender Tool-Aufruf das ausgewählte Ereignis auslöst.</value>
+  </data>
+  <data name="TipHookMatcherHeader" xml:space="preserve">
+    <value>Tool-Namensmuster — verwenden Sie *, um auf alle Tools zu passen</value>
+  </data>
+  <data name="TipHookTypeHeader" xml:space="preserve">
+    <value>Hook-Typ: command führt einen Shell-Befehl aus, prompt schiebt einen System-Prompt ein, url postet an einen Webhook</value>
+  </data>
+  <data name="TipHookCommandHeader" xml:space="preserve">
+    <value>Der Shell-Befehl, der Prompt-Text oder die URL, die aufgerufen werden soll</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       AboutDialog — GitHub links
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LinkGitHubRepo" xml:space="preserve">
+    <value>GitHub-Repository</value>
+  </data>
+  <data name="LinkReportIssue" xml:space="preserve">
+    <value>Problem melden</value>
+  </data>
+
+  <!-- About modal -->
+  <data name="MenuAbout" xml:space="preserve">
+    <value>Über ClaudeForge</value>
+  </data>
+  <data name="TipVersionLabel" xml:space="preserve">
+    <value>Klicken Sie, um den Dialog „Über ClaudeForge“ zu öffnen.</value>
+  </data>
+  <data name="LabelAboutAppName" xml:space="preserve">
+    <value>ClaudeForge</value>
+  </data>
+  <data name="LabelAboutTagline" xml:space="preserve">
+    <value>Plattformübergreifender, geltungsbereichsbewusster Einstellungseditor für Claude Code und Claude Desktop.</value>
+  </data>
+  <data name="LabelAboutVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="HeadingAboutLinks" xml:space="preserve">
+    <value>Ressourcen</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+
+  <!-- EnabledPluginsEditorView.axaml — toggle row tooltip -->
+  <data name="TipPluginToggle" xml:space="preserve">
+    <value>Aktiviert / deaktiviert umschalten</value>
+  </data>
+
+  <!-- PermissionsEditorView.axaml — synthetic-rule banner header.
+       The CLI flag literal (the dangerously-skip-permissions flag name)
+       is intentionally left in-line as English: it is the actual flag
+       name, not a translatable label. -->
+  <data name="LabelEquivalentToBypass" xml:space="preserve">
+    <value>Äquivalent zu --dangerouslySkipPermissions</value>
+  </data>
+
+  <!-- EnvironmentEditorView.axaml — inline validation message. -->
+  <data name="ValidationEnvVarName" xml:space="preserve">
+    <value>Der Name muss mit einem Buchstaben oder _ beginnen und darf nur Buchstaben, Ziffern und _ enthalten.</value>
+  </data>
+
+  <!-- ScopeLegend.axaml — three column headers for the 4-row legend. -->
+  <data name="HeaderScopeLegendScope" xml:space="preserve">
+    <value>Geltungsbereich</value>
+  </data>
+  <data name="HeaderScopeLegendFile" xml:space="preserve">
+    <value>Datei</value>
+  </data>
+  <data name="HeaderScopeLegendMeaning" xml:space="preserve">
+    <value>Bedeutung</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Backup / Restore dialogs (BackupRestoreViewModel.cs) — Phase 2.2
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="DialogTitleUnsavedChanges" xml:space="preserve">
+    <value>Nicht gespeicherte Änderungen</value>
+    <comment>Dialog title shown when the user starts Backup or Restore with dirty workspace edits.</comment>
+  </data>
+  <data name="DialogTitleBackupWithoutSaving" xml:space="preserve">
+    <value>Backup ohne Speichern?</value>
+  </data>
+  <data name="DialogTitleIncludeCredentials" xml:space="preserve">
+    <value>API-Anmeldedaten einbeziehen?</value>
+  </data>
+  <data name="DialogTitleBackupFailed" xml:space="preserve">
+    <value>Backup fehlgeschlagen</value>
+  </data>
+  <data name="DialogTitleRestoreFailed" xml:space="preserve">
+    <value>Wiederherstellung fehlgeschlagen</value>
+  </data>
+  <data name="DialogTitleDiscardUnsavedEdits" xml:space="preserve">
+    <value>Nicht gespeicherte Änderungen verwerfen?</value>
+  </data>
+  <data name="DialogTitleCrossPlatformRestore" xml:space="preserve">
+    <value>Plattformübergreifende Wiederherstellung</value>
+  </data>
+  <data name="DialogTitleRestoreCompletedSkippedFmt" xml:space="preserve">
+    <value>Wiederherstellung abgeschlossen — {0} Datei(en) übersprungen</value>
+    <comment>{0} is the count of files that could not be written (locked or inaccessible).</comment>
+  </data>
+
+  <!-- drag-drop a backup zip onto the Restore tab.  Confirm
+       prompt before routing to the existing RestoreCommand path. -->
+  <data name="DialogTitleDropRestore" xml:space="preserve">
+    <value>Aus abgelegtem Backup wiederherstellen?</value>
+    <comment>Title of the confirm prompt shown after a backup .zip is dropped onto the Restore tab.</comment>
+  </data>
+  <data name="DialogTitleDropRestoreInvalid" xml:space="preserve">
+    <value>Aus abgelegter Datei kann nicht wiederhergestellt werden</value>
+    <comment>Error-alert title when the dropped file is not a valid backup archive.</comment>
+  </data>
+  <data name="TextDropRestorePromptPrefix" xml:space="preserve">
+    <value>Wiederherstellen aus </value>
+    <comment>Body text: leading half of the drop-restore confirm prompt.  Followed by the filename, then TextDropRestorePromptSuffix.  Trailing space intentional.</comment>
+  </data>
+  <data name="TextDropRestorePromptSuffix" xml:space="preserve">
+    <value>?
+
+Dies überschreibt Ihre aktuellen Einstellungen mit dem Inhalt des abgelegten Backup-Archivs.</value>
+    <comment>Body text: trailing half of the drop-restore confirm prompt.  Follows the filename.</comment>
+  </data>
+  <data name="TextDropRestoreNotZip" xml:space="preserve">
+    <value>Nur Backup-.zip-Dateien können zum Wiederherstellen hier abgelegt werden.</value>
+    <comment>Error-alert body when the dropped file is not a .zip.</comment>
+  </data>
+  <data name="TextDropRestoreNotABackup" xml:space="preserve">
+    <value>Die abgelegte Datei ist kein gültiges ClaudeForge-Backup-Archiv.  Sie ist möglicherweise beschädigt, stammt aus einer neueren Version oder ist eine andere Art von Zip.</value>
+    <comment>Error-alert body when the dropped zip has no valid manifest.json of Kind=backup.</comment>
+  </data>
+
+  <data name="ButtonContinueWithoutSaving" xml:space="preserve">
+    <value>Ohne Speichern fortfahren</value>
+  </data>
+  <data name="ButtonIncludeCredentialsConfirm" xml:space="preserve">
+    <value>Anmeldedaten einbeziehen</value>
+    <comment>Confirm-button label on the credentials prompt.  Distinct from the checkbox label CheckboxIncludeCredentials.</comment>
+  </data>
+  <data name="ButtonOmitCredentials" xml:space="preserve">
+    <value>Anmeldedaten weglassen</value>
+  </data>
+  <data name="ButtonDiscardAndRestore" xml:space="preserve">
+    <value>Verwerfen und wiederherstellen</value>
+  </data>
+  <data name="ButtonRestoreAnyway" xml:space="preserve">
+    <value>Trotzdem wiederherstellen</value>
+  </data>
+
+  <data name="TextSaveBeforeBackupPrompt" xml:space="preserve">
+    <value>Sie haben nicht gespeicherte Änderungen im aktiven Arbeitsbereich. Möchten Sie sie vor dem Backup speichern? Andernfalls enthält das Backup nur das, was sich derzeit auf der Festplatte befindet — Ihre nicht gespeicherten Änderungen werden nicht einbezogen.</value>
+  </data>
+  <data name="TextProceedWithoutSavingBackup" xml:space="preserve">
+    <value>Mit dem Backup fortfahren? Ihre nicht gespeicherten Änderungen sind nicht in diesem Backup enthalten, bleiben aber im Speicher und können später gespeichert werden.</value>
+  </data>
+  <data name="TextSaveBeforeRestorePrompt" xml:space="preserve">
+    <value>Sie haben nicht gespeicherte Änderungen im aktiven Arbeitsbereich. Möchten Sie sie vor der Wiederherstellung speichern?</value>
+  </data>
+  <data name="TextDiscardUnsavedForRestore" xml:space="preserve">
+    <value>Eine Wiederherstellung überschreibt Ihre aktuellen Einstellungen. Möchten Sie Ihre nicht gespeicherten Änderungen verwerfen und mit der Wiederherstellung fortfahren?</value>
+  </data>
+  <data name="TextCredentialsExplainer" xml:space="preserve">
+    <value> enthält OAuth-Token. Jeder, der diese Backup-Datei besitzt, kann sich als Sie anmelden, solange diese Token gültig sind.
+
+Beziehen Sie Anmeldedaten nur ein, wenn das Backup auf vertrauenswürdigem Speicher verbleibt.
+
+Anmeldedaten in dieses Backup einbeziehen?</value>
+    <comment>Trailing text after the credentials path in the credentials confirmation prompt.  Leading space is intentional — it follows a path segment.</comment>
+  </data>
+  <data name="TextRestoreSkippedExplainer" xml:space="preserve">
+    <value>Die Wiederherstellung wurde abgeschlossen, aber die folgenden Datei(en) konnten nicht geschrieben werden (sie sind möglicherweise von einem laufenden Claude-Prozess gesperrt). Schließen Sie Claude und führen Sie die Wiederherstellung bei Bedarf erneut durch:
+
+</value>
+    <comment>Trailing blank line is intentional — the file list is appended to this text.</comment>
+  </data>
+  <data name="TextRestoreSkippedTrailerFmt" xml:space="preserve">
+    <value>
+  … und {0} weitere (siehe Protokoll für die vollständige Liste)</value>
+    <comment>{0} is the count of files beyond the first 10 shown.  Leading newline is intentional.</comment>
+  </data>
+  <data name="TextCrossPlatformRestorePrefix" xml:space="preserve">
+    <value>Dieses Backup wurde auf „</value>
+  </data>
+  <data name="TextCrossPlatformRestoreMiddle" xml:space="preserve">
+    <value>“ erstellt, aber Sie befinden sich auf „</value>
+  </data>
+  <data name="TextCrossPlatformRestoreSuffix" xml:space="preserve">
+    <value>“.
+
+Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherweise manuelle Anpassungen. Fortfahren?</value>
+  </data>
+
+  <!-- ════════════════════════════════════════════════════════════════════════════
+       Essentials page — pinned high-importance settings.
+       Each card has: Title, Body ("why this matters"), and (where applicable)
+       a DangerBanner when the value is in a known-unsafe state.  AmberCallout
+       text is shared across cards (same message regardless of which card the
+       user arrived at via a synthetic search hit).
+       ════════════════════════════════════════════════════════════════════════════ -->
+  <data name="NavTitleWelcome" xml:space="preserve">
+    <value>Willkommen</value>
+    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
+  </data>
+  <data name="NavDescWelcome" xml:space="preserve">
+    <value>Orientierung für den Editor — was bearbeitet wird, wie sich Geltungsbereiche schichten und wo die wichtigsten Einstellungen zu finden sind. Wird beim ersten Start standardmäßig angezeigt.</value>
+    <comment>Tooltip / description for the Welcome nav node.</comment>
+  </data>
+  <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
+    <value>Diese Seite beim Start anzeigen</value>
+    <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
+  </data>
+  <data name="TipShowWelcomeOnLaunch" xml:space="preserve">
+    <value>Wenn deaktiviert, verschwindet der Eintrag „Willkommen“ aus dem Navigationsbaum und kehrt beim nächsten Start nicht zurück. Sie können diese Seite weiterhin erreichen, indem Sie auf die Überschrift „Claude Code“ oder „Claude Desktop“ im Baum klicken. Das Löschen der App-Daten setzt diese Einstellung zurück.</value>
+    <comment>Tooltip / accessibility description for the Show-on-launch checkbox on the Welcome page.</comment>
+  </data>
+  <data name="NavTitleEssentials" xml:space="preserve">
+    <value>Essentials</value>
+    <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
+  </data>
+  <data name="NavDescEssentials" xml:space="preserve">
+    <value>Besonders wichtige Claude Code-Einstellungen — Token-Budgets, Sandbox, MCP-Vertrauen, Modell und Update-Kanal — angeheftet zur schnellen Überprüfung und Änderung.</value>
+    <comment>Tooltip / description for the Essentials nav node.</comment>
+  </data>
+  <data name="HeaderEssentials" xml:space="preserve">
+    <value>Essentials — besonders wichtige Einstellungen</value>
+    <comment>Heading rendered at the top of the Essentials editor view.</comment>
+  </data>
+  <data name="HeaderEssentialsBody" xml:space="preserve">
+    <value>Diese Einstellungen haben überdurchschnittlich großen Einfluss auf Kosten, Qualität, Sicherheit oder Verhalten. Überprüfen Sie sie, wenn Sie ein neues Projekt einrichten oder Claude Code aktualisieren.</value>
+    <comment>Sub-header explainer for the Essentials editor view.</comment>
+  </data>
+
+  <data name="LabelEssentialsViewInGroupFmt" xml:space="preserve">
+    <value>In {0} anzeigen</value>
+    <comment>"View in &lt;group&gt;" deep-link button label.  {0} is the home-group title (e.g. "Permissions", "Environment").</comment>
+  </data>
+  <data name="LabelEssentialsAddListEntry" xml:space="preserve">
+    <value>Hinzufügen</value>
+    <comment>Label for the Add button on StringList cards (e.g. sandbox.allowedDomains).</comment>
+  </data>
+  <data name="LabelEssentialsRemoveListEntry" xml:space="preserve">
+    <value>Entfernen</value>
+    <comment>Label for the per-row Remove button on StringList cards.</comment>
+  </data>
+  <data name="LabelEssentialsAmberCallout" xml:space="preserve">
+    <value>Sie sind über die Suche hierher gelangt — dies ist die Einstellung, die zu Ihrer Anfrage passt. Bearbeiten Sie den Wert unten.</value>
+    <comment>One-time amber callout shown when a card is opened via a synthetic search hit.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceHeader" xml:space="preserve">
+    <value>Effektive Quelle</value>
+    <comment>Header for the env-var "effective source" sub-row showing which of (settings.json env, OS user, OS machine) is contributing.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceSettings" xml:space="preserve">
+    <value>settings.json env</value>
+    <comment>Source label: the value comes from the env map in settings.json.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceUser" xml:space="preserve">
+    <value>OS-Benutzerumgebung</value>
+    <comment>Source label: the value comes from the user-scope OS environment variable.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceMachine" xml:space="preserve">
+    <value>OS-Maschinenumgebung</value>
+    <comment>Source label: the value comes from the machine-scope OS environment variable.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceNone" xml:space="preserve">
+    <value>nicht gesetzt</value>
+    <comment>Source label: the variable is not set in any scope.</comment>
+  </data>
+
+  <!-- Card 1 — Max Thinking Tokens -->
+  <data name="EssentialsCardMaxThinkingTokensTitle" xml:space="preserve">
+    <value>Maximale Thinking-Token</value>
+  </data>
+  <data name="EssentialsCardMaxThinkingTokensBody" xml:space="preserve">
+    <value>Begrenzt, wie viele Token Claude pro Zug für erweitertes Denken aufwenden kann (env: MAX_THINKING_TOKENS). Der Standardwert kann komplexes Schlussfolgern abschneiden; erhöhen Sie ihn auf 32000 oder mehr für anspruchsvolle architektonische Arbeit.</value>
+  </data>
+
+  <!-- Card 2 — Max Output Tokens -->
+  <data name="EssentialsCardMaxOutputTokensTitle" xml:space="preserve">
+    <value>Maximale Output-Token</value>
+  </data>
+  <data name="EssentialsCardMaxOutputTokensBody" xml:space="preserve">
+    <value>Begrenzt die Antwortlänge, die Claude ausgeben kann (env: CLAUDE_CODE_MAX_OUTPUT_TOKENS). Der Standardwert kann lange Dateibearbeitungen oder generierten Code abschneiden; erhöhen Sie ihn, wenn Sie „[output truncated]“ sehen.</value>
+  </data>
+
+  <!-- Card 3 — Auto-trust project MCP servers -->
+  <data name="EssentialsCardEnableAllMcpTitle" xml:space="preserve">
+    <value>Projekt-MCP-Servern automatisch vertrauen</value>
+  </data>
+  <data name="EssentialsCardEnableAllMcpBody" xml:space="preserve">
+    <value>Wenn aktiviert, vertraut Claude jedem MCP-Server, der in der .mcp.json eines Projekts definiert ist, ohne nachzufragen. Bequem — aber ein bösartiges Projekt-Repository kann einen schädlichen MCP-Server mitliefern. Lassen Sie es deaktiviert und genehmigen Sie Server einzeln.</value>
+  </data>
+  <data name="EssentialsCardEnableAllMcpDanger" xml:space="preserve">
+    <value>Gefahr: Jeder MCP-Server in jedem Projekt, das Sie öffnen, läuft mit Ihren Tools und Anmeldedaten. Aktivieren Sie dies nur in vollständig isolierten Umgebungen.</value>
+  </data>
+
+  <!-- Card 4 — Sandbox enabled -->
+  <data name="EssentialsCardSandboxEnabledTitle" xml:space="preserve">
+    <value>Sandbox aktiviert</value>
+  </data>
+  <data name="EssentialsCardSandboxEnabledBody" xml:space="preserve">
+    <value>Wenn aktiviert, beschränkt die Bash-Sandbox Dateisystem-Schreibvorgänge und Netzwerkabgänge auf eine Erlaubnisliste. Das Deaktivieren der Sandbox erlaubt jedem von Claude ausgeführten Shell-Befehl, beliebige Dateien zu berühren und beliebige Hosts zu erreichen.</value>
+  </data>
+  <data name="EssentialsCardSandboxEnabledDanger" xml:space="preserve">
+    <value>Gefahr: Bei deaktivierter Sandbox hat jeder Tool-Aufruf, der einen Shell-Befehl ausführt, uneingeschränkten Dateisystem- und Netzwerkzugriff.</value>
+  </data>
+
+  <!-- Card 5 — Sandbox allowed domains -->
+  <data name="EssentialsCardSandboxDomainsTitle" xml:space="preserve">
+    <value>In Sandbox erlaubte Domains</value>
+  </data>
+  <data name="EssentialsCardSandboxDomainsBody" xml:space="preserve">
+    <value>Ausgehende Hosts, die die Sandbox erreichen darf (z. B. github.com, registry.npmjs.org). Ohne Einträge hier schlagen Netzwerkoperationen innerhalb der Sandbox fehl.</value>
+  </data>
+  <data name="EssentialsCardSandboxDomainsListPlaceholder" xml:space="preserve">
+    <value>z. B. github.com</value>
+    <comment>Placeholder text for the Add-entry textbox on the sandbox.allowedDomains card.</comment>
+  </data>
+
+  <!-- Card 6 — Model -->
+  <data name="EssentialsCardModelTitle" xml:space="preserve">
+    <value>Modell</value>
+  </data>
+  <data name="EssentialsCardModelBody" xml:space="preserve">
+    <value>Standardmodell für Claude Code-Sitzungen. Wählen Sie ein kleineres Modell (haiku), um die Kosten für Routinearbeiten zu senken; wählen Sie das größte (opus) für anspruchsvolle architektonische Überlegungen.</value>
+  </data>
+
+  <!-- Card 7 — Effort level -->
+  <data name="EssentialsCardEffortLevelTitle" xml:space="preserve">
+    <value>Aufwandsstufe</value>
+  </data>
+  <data name="EssentialsCardEffortLevelBody" xml:space="preserve">
+    <value>Wie viel Budget für erweitertes Denken Claude pro Zug bereit ist auszugeben. Höhere Stufen können bei schwierigen Problemen bessere Antworten liefern, kosten aber mehr.</value>
+  </data>
+
+  <!-- Card 8 — Fast mode -->
+  <data name="EssentialsCardFastModeTitle" xml:space="preserve">
+    <value>Schnellmodus</value>
+  </data>
+  <data name="EssentialsCardFastModeBody" xml:space="preserve">
+    <value>Überspringt einige optionale Schlussfolgerungsschritte für zügigere Antworten. Abwägung: etwas geringere Qualität bei komplexen Aufgaben im Austausch für geringere Latenz und niedrigere Kosten.</value>
+  </data>
+
+  <!-- Card 9 — Auto-updates channel -->
+  <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">
+    <value>Auto-Update-Kanal</value>
+  </data>
+  <data name="EssentialsCardAutoUpdatesChannelBody" xml:space="preserve">
+    <value>Aus welchem Claude Code-Release-Stream sich die Binärdatei automatisch aktualisiert (stable, latest). „latest“ erhält neue Funktionen früher, bringt aber gelegentliche Regressionen mit sich.</value>
+  </data>
+
+  <!-- Card 10 — Auto-memory enabled -->
+  <data name="EssentialsCardAutoMemoryEnabledTitle" xml:space="preserve">
+    <value>Automatischer Speicher aktiviert</value>
+  </data>
+  <data name="EssentialsCardAutoMemoryEnabledBody" xml:space="preserve">
+    <value>Wenn aktiviert, erfasst Claude automatisch „Speicher“-Fakten auf Sitzungsebene (Projektkonventionen, Umgebung, Ihre Vorlieben). Deaktivieren Sie es für Sitzungen, in denen Sie keinen persistenten Kontext wünschen.</value>
+  </data>
+
+  <!-- Card 11 — Disable bypass-permissions mode -->
+  <data name="EssentialsCardDisableBypassTitle" xml:space="preserve">
+    <value>bypass-permissions-Modus deaktivieren</value>
+  </data>
+  <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
+    <value>Sperrt die Einstellung permissions.defaultMode gegen „bypassPermissions“ — den Modus, der jede Tool-Berechtigungsabfrage unterdrückt. Entspricht dem Festpinnen der Sicherheit; empfohlen für gemeinsam genutzte / verwaltete Umgebungen.</value>
+  </data>
+
+</root>

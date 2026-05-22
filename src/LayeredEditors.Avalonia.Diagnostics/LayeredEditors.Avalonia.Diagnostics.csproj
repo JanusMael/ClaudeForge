@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Diagnostics</RootNamespace>
+        <AssemblyName>LayeredEditors.Avalonia.Diagnostics</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <!-- Generate XML doc in all configurations for IDE IntelliSense and NuGet packaging.
+             The publish script excludes *.xml from the distribution zip so the doc file
+             does not appear in user-facing archives. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- CS1591: Missing XML comment for publicly visible type or member.
+             Enabled selectively: we want public API documented for the future NuGet
+             package, but internal test seams don't need doc comments. -->
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Description>
+            Production-ready logging and diagnostics infrastructure for Avalonia apps:
+            Serilog bridge for Avalonia's internal logger, bucketed rolling file sink,
+            floating F12 live-log window, extensibility-friendly replacement for the
+            built-in ExceptionValidationPlugin, and a DataValidationErrors attached-property
+            logger that catches binding errors Avalonia's own logger never sees.
+        </Description>
+        <!-- NuGet package metadata — placeholders, filled in before first publish. -->
+        <PackageId>LayeredEditors.Avalonia.Diagnostics</PackageId>
+        <Authors>LayeredEditors contributors</Authors>
+        <PackageTags>avalonia;serilog;logging;diagnostics;binding;crash</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Core Avalonia runtime. -->
+        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+
+        <!-- Serilog pipeline. PrivateAssets="" lets these flow transitively to
+             consuming apps, so a consumer that only references this project still
+             gets Serilog symbols. Pinned to trim-annotated, reflection-free versions
+             (no Serilog.Settings.Configuration — that one is not trim-safe). -->
+        <PackageReference Include="Serilog" Version="4.3.1" PrivateAssets="" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" PrivateAssets="" />
+        <PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" PrivateAssets=""/>
+    </ItemGroup>
+
+    <!-- Expose internal test-seam members (Map, BucketStart/FileName, etc.) to the
+         matching test project without making them part of the public API. -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>LayeredEditors.Avalonia.Diagnostics.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- README packaged for NuGet when we decide to publish. Kept optional
+             via Condition so the project still builds without it. -->
+        <None Include="README.md" Pack="true" PackagePath="\" Condition="Exists('README.md')"/>
+    </ItemGroup>
+</Project>

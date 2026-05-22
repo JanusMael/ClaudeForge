@@ -1,0 +1,41 @@
+<Project>
+
+    <!--
+      Strip non-distributable files from the publish output.
+  
+      The publish output directory is the authoritative list of what goes into the
+      distribution zip.  Two categories of files are excluded here so the script
+      can zip whatever dotnet publish produces without any additional filtering:
+  
+      *.xml — XML documentation files produced by <GenerateDocumentationFile>true</>.
+              Intentionally generated unconditionally (useful for IDE IntelliSense
+              and dotnet pack), but not needed at runtime.
+  
+      *.pdb — PDB symbol files.
+              In-tree project assemblies use DebugType=embedded (Directory.Build.props),
+              so they produce no loose .pdb files at all.  The only .pdb files that
+              reach the publish output come from native third-party NuGet packages
+              (e.g. libSkiaSharp.pdb, libHarfBuzzSharp.pdb from SkiaSharp).  Those
+              are native debug symbols; they serve no purpose for end users and should
+              not appear in the distribution zip.
+  
+      Implementation notes:
+      - ResolvedFileToPublish is the item list the SDK uses to copy files into the
+        publish output folder.  Removing entries here suppresses the copy; the build
+        output under bin/ is unaffected.
+      - AfterTargets="ComputeFilesToPublish" runs after the SDK has populated
+        ResolvedFileToPublish but before files are physically copied.
+      - This file (Directory.Build.targets) is imported at the END of the SDK import
+        chain, after all SDK targets are defined, which is why targets that hook into
+        SDK targets via AfterTargets/BeforeTargets must live here and not in
+        Directory.Build.props (which is imported at the beginning, before SDK targets
+        exist).
+    -->
+    <Target Name="ExcludeNonDistributableFromPublish" AfterTargets="ComputeFilesToPublish">
+        <ItemGroup>
+            <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                                   Condition="'%(Extension)' == '.xml' Or '%(Extension)' == '.pdb'"/>
+        </ItemGroup>
+    </Target>
+
+</Project>

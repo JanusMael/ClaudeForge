@@ -1,0 +1,48 @@
+<!--
+    Library-level color resources for LayeredEditors.Avalonia.
+
+    All six values are theme-neutral (work on both Semi Light and Dark backgrounds).
+    Host applications can override any key in their own Application.Resources before
+    the first render — no library fork required.
+
+    Included automatically by SemiBundle.axaml via StyleInclude. Hosts that use a
+    different theme must include this file explicitly if they want the defaults:
+
+        <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/EditorColors.axaml" />
+
+    WHY THIS IS A <Styles> FILE AND NOT A <ResourceDictionary>
+    ──────────────────────────────────────────────────────────
+    Avalonia's XAML compiler (XamlX) compiles .axaml to IL at build time, so type
+    mismatches become hard build errors (AVLN3000) rather than runtime surprises.
+
+    The first attempt used a <ResourceDictionary> here and included it from
+    SemiBundle.axaml via:
+
+        <Styles.Resources>
+            <ResourceInclude Source="...EditorColors.axaml" />
+        </Styles.Resources>
+
+    XamlX rejected that with AVLN3000: Styles.Resources is an IResourceDictionary
+    (IDictionary<object,object>) — it accepts key-value brush entries directly, but
+    not a ResourceInclude node (which is an IResourceProvider, not a KVP).
+
+    The fix: declare this file as a <Styles> document so SemiBundle.axaml can pull
+    it in with a plain <StyleInclude>, which is the idiomatic Avalonia 11 pattern
+    for composing theme fragments.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+        <!-- LinkifiedTextBlock — URL and env-var token colors -->
+        <SolidColorBrush x:Key="LE.LinkBrush" Color="#006B8A" />  <!-- teal-blue: unvisited URL -->
+        <SolidColorBrush x:Key="LE.VisitedBrush" Color="#6B3FA0" />  <!-- purple: visited URL -->
+        <SolidColorBrush x:Key="LE.EnvVarBrush" Color="#1565C0" />  <!-- blue: env-var token -->
+
+        <!-- BoolToStatusBrushConverter — tri-state boolean indicator colors -->
+        <SolidColorBrush x:Key="LE.BoolEnabled" Color="#2E7D32" />  <!-- green: true / enabled -->
+        <SolidColorBrush x:Key="LE.BoolDisabled" Color="#C62828" />  <!-- red: false / disabled -->
+        <SolidColorBrush x:Key="LE.BoolUnset" Color="#9E9E9E" />  <!-- grey: null / unset -->
+    </Styles.Resources>
+
+</Styles>

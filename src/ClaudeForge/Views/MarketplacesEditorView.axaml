@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.MarketplacesEditorView"
+             x:DataType="vm:MarketplacesEditorViewModel">
+
+    <UserControl.Resources>
+        <!--
+            SelectionBoxItemTemplate — used by the closed ComboBox "pill":
+            shows ONLY the short value name, no description, no extra chrome.
+        -->
+        <DataTemplate x:Key="SourceSelectionTemplate" x:DataType="vm:MarketplaceSourceInfo">
+            <TextBlock Text="{Binding Value}"
+                       FontFamily="Consolas,Menlo,monospace" />
+        </DataTemplate>
+
+        <!--
+            ItemTemplate — used for each row inside the open dropdown:
+            shows the short value on the left plus the description on the right.
+        -->
+        <DataTemplate x:Key="SourceItemTemplate" x:DataType="vm:MarketplaceSourceInfo">
+            <DockPanel ToolTip.Tip="{Binding Description}"
+                       AutomationProperties.Name="{Binding AccessibleName}">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="{Binding Value}"
+                           FontFamily="Consolas,Menlo,monospace"
+                           MinWidth="110" />
+                <TextBlock Text="{Binding Description}"
+                           FontSize="11"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Add row -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="8,6">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBox Text="{Binding NewName}"
+                         PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceName}"
+                         Width="176" Margin="0,0,6,0"
+                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplaceName}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding AddMarketplaceCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <ComboBox ItemsSource="{x:Static vm:MarketplaceEntry.SourceTypeInfos}"
+                          SelectedItem="{Binding SelectedSourceTypeInfo}"
+                          ItemTemplate="{StaticResource SourceItemTemplate}"
+                          SelectionBoxItemTemplate="{StaticResource SourceSelectionTemplate}"
+                          Width="220" Margin="0,0,6,0"
+                          AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewMarketplaceSourceType}" />
+                <TextBox Text="{Binding NewSourceValue}"
+                         PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceSource}"
+                         Width="360" Margin="0,0,6,0"
+                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplaceSource}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding AddMarketplaceCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button Content="{x:Static loc:Strings.LabelMarketplaceAdd}"
+                        Command="{Binding AddMarketplaceCommand}"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddMarketplace}" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Marketplace list — each row matches the add-row layout for visual consistency -->
+        <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Marketplaces}" Margin="8,4">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MarketplaceEntry">
+                        <WrapPanel Orientation="Horizontal" Margin="0,4">
+                            <TextBox Text="{Binding Name}"
+                                     PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceNameInline}"
+                                     Width="176" Margin="0,0,6,0"
+                                     AutomationProperties.Name="{Binding Name, StringFormat='{}Marketplace name: {0}'}" />
+                            <ComboBox ItemsSource="{x:Static vm:MarketplaceEntry.SourceTypeInfos}"
+                                      SelectedItem="{Binding SelectedSourceTypeInfo}"
+                                      ItemTemplate="{StaticResource SourceItemTemplate}"
+                                      SelectionBoxItemTemplate="{StaticResource SourceSelectionTemplate}"
+                                      Width="220" Margin="0,0,6,0"
+                                      AutomationProperties.Name="{Binding Name, StringFormat='{}Marketplace source type: {0}'}" />
+                            <TextBox Text="{Binding SourceValue}"
+                                     PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceSource}"
+                                     Width="360" Margin="0,0,6,0"
+                                     AutomationProperties.Name="{Binding Name, StringFormat='{}Marketplace source value: {0}'}" />
+                            <Button Content="&#x2715;" Padding="6,2" FontSize="11"
+                                    VerticalAlignment="Center"
+                                    Click="OnRemoveMarketplace"
+                                    AutomationProperties.Name="{Binding Name, StringFormat='{}Remove marketplace: {0}'}" />
+                        </WrapPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
+</UserControl>

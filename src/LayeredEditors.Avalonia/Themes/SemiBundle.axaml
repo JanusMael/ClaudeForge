@@ -1,0 +1,30 @@
+<!--
+    Opt-in Semi.Avalonia theme bundle.
+
+    Consumers that want the Semi look merge this single Styles file from their
+    Application.Styles:
+
+        <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/SemiBundle.axaml" />
+
+    Consumers that prefer Fluent (or another theme) simply do not include it —
+    the LayeredEditors.Avalonia library never forces a theme on its host.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:semi="https://irihi.tech/semi">
+
+    <!-- Locale="en-US" pins Semi's own built-in component strings (button labels,
+         date-picker month names, etc.) to English regardless of the OS culture.
+         Without this, users on non-English Windows would see Semi's internal strings
+         in their OS language while the rest of the app remains English. -->
+    <semi:SemiTheme Locale="en-US" />
+    <StyleInclude Source="avares://Semi.Avalonia.DataGrid/Index.axaml" />
+
+    <!-- Library-level color tokens (LE.*). Hosts can override any key in their own
+         Application.Resources to retheme editor chrome without forking the library.
+         EditorColors.axaml is a <Styles> document (not a ResourceDictionary) so it
+         can be consumed here via StyleInclude — see the comment in that file for why
+         <Styles.Resources><ResourceInclude> does NOT work in Avalonia 11 (AVLN3000). -->
+    <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/EditorColors.axaml" />
+
+</Styles>

@@ -1,0 +1,346 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.ProfilesView"
+             x:DataType="vm:ProfilesViewModel">
+
+    <DockPanel>
+
+        <!-- ── Page header ──────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top" Padding="16,10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonRefreshAll}"
+                        Command="{Binding RefreshCommand}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonRefreshAll}"
+                        ToolTip.Tip="{x:Static loc:Strings.TipRefreshAll}" />
+                <!-- Accent-pill heading; see EffectiveSettingsView / SettingsGroupEditorView
+                     for the same pattern. NavSelectedAccentBrush is shared with the nav
+                     tree's selected-row background. -->
+                <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                        TextElement.Foreground="White"
+                        CornerRadius="6"
+                        Padding="14,8"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.HeadingProfiles}"
+                                   FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.TextProfilesSubtitle}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="700"
+                                   Opacity="0.92" />
+                    </StackPanel>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Body: two independent sections ──────────────────────────── -->
+        <ScrollViewer>
+            <StackPanel Spacing="0">
+
+                <!-- ════════════════════════════════════════════════════════
+                     SECTION 1 — Claude Code (CLI) Profiles
+                     ════════════════════════════════════════════════════════ -->
+                <Border Padding="16,12,16,0">
+                    <DockPanel>
+                        <!-- Section header row -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                                <Button Content="{x:Static loc:Strings.ButtonImportProfile}"
+                                        Command="{Binding ImportCommand}"
+                                        IsEnabled="{Binding !IsBusy}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.ButtonImportProfile}"
+                                        ToolTip.Tip="{x:Static loc:Strings.TipButtonImportProfile}" />
+                                <Button Content="{x:Static loc:Strings.ButtonNewProfile}"
+                                        Command="{Binding NewProfileCommand}"
+                                        IsEnabled="{Binding !IsBusy}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewCliProfile}"
+                                        ToolTip.Tip="{x:Static loc:Strings.TipNewCliProfile}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Border Background="#22BB55" CornerRadius="3" Padding="5,2">
+                                    <TextBlock Text="{x:Static loc:Strings.BadgeLabelCli}" FontSize="10"
+                                               FontWeight="Bold" Foreground="White" />
+                                </Border>
+                                <TextBlock Text="{x:Static loc:Strings.HeadingCliProfiles}"
+                                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Description -->
+                        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+                            Named profiles store separate copies of your Claude Code settings, CLAUDE.md, and MCP server
+                            definitions under
+                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="~/.claude/profiles/" />.
+                            Use <Bold>Apply to CLI</Bold> to make a profile active for the Claude Code CLI.
+                            Compatible with the <Run FontFamily="Cascadia Mono,Consolas,monospace">claudectx</Run>
+                            tool.
+                        </TextBlock>
+
+                        <!-- claudectx interop banner.  Surfaces the design contract
+                             (ClaudeForge edits, claudectx activates) so users coming from claudectx
+                             see the connection and users new to claudectx discover it.  Link is
+                             clickable via LinkifiedTextBlock.
+
+                             Brushes use App* tokens (defined per-theme in App.axaml ThemeDictionaries)
+                             rather than SystemControl* tokens — Semi.Avalonia does NOT reliably
+                             define the SystemControl* brush family in both themes.  See CLAUDE.md
+                             "Common gotchas" — Semi.Avalonia brush tokens. -->
+                        <Border DockPanel.Dock="Top" Margin="0,0,0,10"
+                                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="12,8">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{x:Static loc:Strings.HeadingClaudectxBanner}"
+                                           FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                <TextBlock Text="{x:Static loc:Strings.TextClaudectxBannerBody}"
+                                           TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                <libctrl:LinkifiedTextBlock SourceText="{x:Static loc:Strings.LinkClaudectxRepo}"
+                                                            FontSize="11" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CLI action bar (visible when a row is selected) -->
+                        <Border DockPanel.Dock="Bottom" Padding="0,8,0,4"
+                                IsVisible="{Binding SelectedProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <DockPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                    <Button Content="{x:Static loc:Strings.ButtonApplyToCli}"
+                                            Command="{Binding ApplyCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonApplyToCli}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipApplyToCli}" />
+                                    <Button Content="{x:Static loc:Strings.ButtonSyncFromLive}"
+                                            Command="{Binding SyncCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonSyncFromLive}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipSyncFromLive}" />
+                                    <Button Content="{x:Static loc:Strings.ButtonExportProfile}"
+                                            Command="{Binding ExportCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonExportProfile}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipButtonExportProfile}" />
+                                    <Button Content="{x:Static loc:Strings.ButtonDeleteProfile}"
+                                            Command="{Binding DeleteCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonDeleteProfile}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipDeleteCliProfile}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- CLI status message -->
+                        <TextBlock DockPanel.Dock="Bottom"
+                                   Text="{Binding StatusMessage}"
+                                   FontSize="11" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                        <!-- CLI profile DataGrid -->
+                        <DataGrid ItemsSource="{Binding Profiles}"
+                                  SelectedItem="{Binding SelectedProfile}"
+                                  IsReadOnly="True"
+                                  AutoGenerateColumns="False"
+                                  GridLinesVisibility="Horizontal"
+                                  CanUserReorderColumns="True"
+                                  behaviors:CopyValue.IsEnabled="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  AutomationProperties.Name="{x:Static loc:Strings.AutoNameCliProfilesGrid}"
+                                  MinHeight="80"
+                                  MaxHeight="260">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="*" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderProfileName}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderProfileName}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ProfileRowViewModel">
+                                            <ctrl:TipCell Tip="{Binding Name}">
+                                                <TextBlock Text="{Binding Name}"
+                                                           VerticalAlignment="Center" Margin="4,0" />
+                                            </ctrl:TipCell>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="Auto" CanUserSort="True" SortMemberPath="IsCliActive">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderCliActive}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderCliActive}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ProfileRowViewModel">
+                                            <Border Background="#22BB55" CornerRadius="3" Padding="4,2" Margin="4,2"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsCliActive}"
+                                                    ToolTip.Tip="{x:Static loc:Strings.TipCliActivePill}">
+                                                <TextBlock Text="{x:Static loc:Strings.BadgeCliActive}" FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="White" HorizontalAlignment="Center" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridCheckBoxColumn Binding="{Binding HasClaudeMd}" Width="Auto" CanUserSort="True">
+                                    <DataGridCheckBoxColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderClaudeMd}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderClaudeMd}" />
+                                    </DataGridCheckBoxColumn.Header>
+                                </DataGridCheckBoxColumn>
+                                <DataGridCheckBoxColumn Binding="{Binding HasMcp}" Width="Auto" CanUserSort="True">
+                                    <DataGridCheckBoxColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderMcpServers}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderMcpServers}" />
+                                    </DataGridCheckBoxColumn.Header>
+                                </DataGridCheckBoxColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                    </DockPanel>
+                </Border>
+
+                <!-- Separator between the two sections -->
+                <Border Margin="16,16,16,0"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="0,1,0,0" />
+
+                <!-- ════════════════════════════════════════════════════════
+                     SECTION 2 — Claude Desktop Profiles
+                     ════════════════════════════════════════════════════════ -->
+                <Border Padding="16,12,16,16">
+                    <DockPanel>
+                        <!-- Section header row -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6"
+                                        IsEnabled="{Binding DesktopAvailable}">
+                                <Button Content="{x:Static loc:Strings.ButtonNewProfile}"
+                                        Command="{Binding NewDesktopProfileCommand}"
+                                        IsEnabled="{Binding !IsDesktopBusy}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewDesktopProfile}"
+                                        ToolTip.Tip="{x:Static loc:Strings.TipNewDesktopProfile}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Border Background="#0078D4" CornerRadius="3" Padding="5,2">
+                                    <TextBlock Text="{x:Static loc:Strings.BadgeLabelDesktop}" FontSize="10"
+                                               FontWeight="Bold" Foreground="White" />
+                                </Border>
+                                <TextBlock Text="{x:Static loc:Strings.HeadingDesktopProfiles}"
+                                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Description -->
+                        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
+                            Named profiles store separate snapshots of your
+                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="claude_desktop_config.json" />
+                            under the Desktop config directory. Use <Bold>Apply to Desktop</Bold> to make a
+                            profile active. Claude Desktop picks up the change on its next launch.
+                            Independent from CLI profiles — managed separately.
+                        </TextBlock>
+
+                        <!-- Not-installed notice -->
+                        <Border DockPanel.Dock="Top" Padding="10,6" Margin="0,0,0,8"
+                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                CornerRadius="4"
+                                IsVisible="{Binding !DesktopAvailable}">
+                            <TextBlock TextWrapping="Wrap" FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="{x:Static loc:Strings.TextDesktopNotInstalled}" />
+                        </Border>
+
+                        <!-- Desktop action bar (visible when a row is selected) -->
+                        <Border DockPanel.Dock="Bottom" Padding="0,8,0,4"
+                                IsVisible="{Binding SelectedDesktopProfile, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <DockPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                    <Button Content="{x:Static loc:Strings.ButtonApplyToDesktop}"
+                                            Command="{Binding ApplyDesktopCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonApplyToDesktop}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipApplyToDesktop}" />
+                                    <Button Content="{x:Static loc:Strings.ButtonSyncDesktopFromLive}"
+                                            Command="{Binding SyncDesktopCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonSyncDesktopFromLive}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipSyncDesktopFromLive}" />
+                                    <Button Content="{x:Static loc:Strings.ButtonDeleteProfile}"
+                                            Command="{Binding DeleteDesktopCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameDeleteDesktopProfile}"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipDeleteDesktopProfile}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Desktop status message -->
+                        <TextBlock DockPanel.Dock="Bottom"
+                                   Text="{Binding DesktopStatusMessage}"
+                                   FontSize="11" Margin="0,4,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding DesktopStatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                        <!-- Desktop profile DataGrid -->
+                        <DataGrid ItemsSource="{Binding DesktopProfiles}"
+                                  SelectedItem="{Binding SelectedDesktopProfile}"
+                                  IsReadOnly="True"
+                                  AutoGenerateColumns="False"
+                                  GridLinesVisibility="Horizontal"
+                                  CanUserReorderColumns="True"
+                                  behaviors:CopyValue.IsEnabled="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  AutomationProperties.Name="{x:Static loc:Strings.AutoNameDesktopProfilesGrid}"
+                                  MinHeight="80"
+                                  MaxHeight="260"
+                                  IsEnabled="{Binding DesktopAvailable}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="*" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderDesktopProfileName}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderDesktopProfileName}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:DesktopProfileRowViewModel">
+                                            <ctrl:TipCell Tip="{Binding Name}">
+                                                <TextBlock Text="{Binding Name}"
+                                                           VerticalAlignment="Center" Margin="4,0" />
+                                            </ctrl:TipCell>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="Auto" CanUserSort="True" SortMemberPath="IsActive">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderDesktopActive}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderDesktopActive}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:DesktopProfileRowViewModel">
+                                            <Border Background="#0078D4" CornerRadius="3" Padding="4,2" Margin="4,2"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsActive}"
+                                                    ToolTip.Tip="{x:Static loc:Strings.TipDesktopActivePill}">
+                                                <TextBlock Text="{x:Static loc:Strings.BadgeDesktopActive}"
+                                                           FontSize="10" FontWeight="Bold"
+                                                           Foreground="White" HorizontalAlignment="Center" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                    </DockPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </DockPanel>
+</UserControl>

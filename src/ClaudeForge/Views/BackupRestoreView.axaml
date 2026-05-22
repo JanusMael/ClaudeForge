@@ -1,0 +1,519 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:core="using:Bennewitz.Ninja.ClaudeForge.Core.Backup"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.BackupRestoreView"
+             x:DataType="vm:BackupRestoreViewModel">
+
+    <UserControl.Resources>
+        <conv:BytesToHumanReadableConverter x:Key="BytesToHuman" />
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- Header — accent-pill matching the nav tree's selected row background.
+             See SettingsGroupEditorView and EffectiveSettingsView for the same
+             pattern; NavSelectedAccentBrush is defined in MainWindow.axaml. -->
+        <Border DockPanel.Dock="Top" Padding="16,10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                    TextElement.Foreground="White"
+                    CornerRadius="6"
+                    Padding="14,8"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="{x:Static loc:Strings.HeadingBackupRestore}"
+                               FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupRestoreSubtitle}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               MaxWidth="700"
+                               Opacity="0.92" />
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!--
+            What-backups-include explainer.
+
+            Sits directly below the page heading so a user landing on the
+            Backup / Restore page sees, in plain language, exactly what
+            "Create backup" will and will not capture. Mirrors the Welcome
+            page's "What backups include" section so users who skipped
+            Welcome still get the same information at the moment of action.
+        -->
+        <Border DockPanel.Dock="Top" Margin="16,4,16,0"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1" CornerRadius="4" Padding="14,10">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.HeadingBackupContents}"
+                           FontSize="13" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="•" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine1}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="•" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine2}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="•" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <TextBlock Text="{x:Static loc:Strings.TextBackupContentsLine3}"
+                               FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Text="{x:Static loc:Strings.TextBackupContentsExcluded}"
+                           FontSize="11" FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,4,0,0" />
+                <TextBlock Text="{x:Static loc:Strings.TextBackupContentsProjectNote}"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- Status + progress footer (shared across tabs) -->
+        <Border DockPanel.Dock="Bottom" Padding="16,6"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0"
+                IsVisible="{Binding IsBusy}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonCancel}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonCancel}"
+                        Command="{Binding CancelOperationCommand}"
+                        VerticalAlignment="Center"
+                        Margin="12,0,0,0"
+                        ToolTip.Tip="{x:Static loc:Strings.TipButtonCancel}" />
+                <StackPanel Orientation="Vertical" Spacing="4">
+                    <TextBlock Text="{Binding ProgressMessage}" />
+                    <ProgressBar Value="{Binding ProgressPercent}" Minimum="0" Maximum="100" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TabControl>
+
+            <!-- =========================== BACKUP TAB =========================== -->
+            <TabItem Header="{x:Static loc:Strings.TabBackup}">
+                <ScrollViewer>
+                    <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
+
+                        <!-- Last-backup status row — inline with surrounding content, no extra padding -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding LastBackupLabel}"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{x:Static loc:Strings.TextNoBackupYetDescription}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       IsVisible="{Binding HasNeverBackedUp}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- 2026-05-06: Create Backup button hoisted to the top of the tab so the
+                             primary action is the first thing the user sees on landing.  The
+                             button stays disabled (via CanCreateBackup) until BackupDirectory is
+                             configured below; users with a fresh install see the warning text
+                             under the Output folder TextBox prompting them to choose one.  Sized
+                             slightly larger than secondary buttons (Padding 20,10 vs 16,8 default)
+                             to read as the primary CTA on the tab. -->
+                        <Button Content="{x:Static loc:Strings.ButtonCreateBackup}"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonCreateBackup}"
+                                Command="{Binding BackupCommand}"
+                                IsEnabled="{Binding CanCreateBackup}"
+                                HorizontalAlignment="Left"
+                                Padding="20,10"
+                                FontWeight="SemiBold" />
+
+                        <TextBlock Text="{x:Static loc:Strings.LabelOutputFolder}" FontWeight="SemiBold"
+                                   Margin="0,8,0,0" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right"
+                                    Content="{x:Static loc:Strings.ButtonBrowse}"
+                                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameBrowseBackupFolder}"
+                                    Command="{Binding BrowseBackupDirectoryCommand}"
+                                    Margin="8,0,0,0" />
+                            <TextBox Text="{Binding BackupDirectory}"
+                                     AutomationProperties.Name="{x:Static loc:Strings.LabelOutputFolder}"
+                                     PlaceholderText="{x:Static loc:Strings.WatermarkBackupDir}"
+                                     IsReadOnly="True" />
+                        </DockPanel>
+                        <TextBlock
+                            Text="{x:Static loc:Strings.TextBackupDirHint}"
+                            FontSize="11"
+                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                            TextWrapping="Wrap"
+                            IsVisible="{Binding BackupDirectory, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <TextBlock
+                            Text="{x:Static loc:Strings.TextNoBackupDirWarning}"
+                            FontSize="11"
+                            Foreground="#CC7700"
+                            TextWrapping="Wrap"
+                            IsVisible="{Binding BackupDirectory, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+
+                        <TextBlock Text="{x:Static loc:Strings.LabelScope}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <StackPanel Orientation="Vertical" Spacing="4">
+                            <RadioButton GroupName="BackupMode"
+                                         Content="{x:Static loc:Strings.RadioSettingsOnly}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.RadioSettingsOnly}"
+                                         IsChecked="{Binding Mode, Converter={x:Static vm:BackupModeConverter.IsSettingsOnly}}" />
+                            <RadioButton GroupName="BackupMode"
+                                         Content="{x:Static loc:Strings.RadioFullBackup}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.RadioFullBackup}"
+                                         IsChecked="{Binding Mode, Converter={x:Static vm:BackupModeConverter.IsFull}}" />
+                            <RadioButton GroupName="BackupMode"
+                                         Content="{x:Static loc:Strings.RadioSanitizedBackup}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.RadioSanitizedBackup}"
+                                         ToolTip.Tip="{x:Static loc:Strings.TipRadioSanitizedBackup}"
+                                         IsChecked="{Binding Mode, Converter={x:Static vm:BackupModeConverter.IsSanitized}}" />
+                        </StackPanel>
+
+                        <!-- 2026-05-14 — secrets-leak advisory.  Always shown for non-Sanitized
+                             modes so the user is informed that secrets (API keys, OAuth tokens,
+                             MCP auth headers) DO travel inside SettingsOnly / Full archives.
+                             Suppressed for Sanitized mode where the redactor scrubs them. -->
+                        <Border Background="#FFF3CD" BorderBrush="#FFD58C" BorderThickness="1"
+                                CornerRadius="3" Padding="8,6"
+                                IsVisible="{Binding ShowSecretsWarning}">
+                            <TextBlock Text="{x:Static loc:Strings.TextBackupSecretsWarning}"
+                                       FontSize="11" TextWrapping="Wrap"
+                                       Foreground="#664D03" />
+                        </Border>
+                        <!-- Mode-specific explainer for Sanitized — visible only when Sanitized
+                             is selected so the user understands the trade-off (not restorable). -->
+                        <Border Background="#E7F1FF" BorderBrush="#A6C8FF" BorderThickness="1"
+                                CornerRadius="3" Padding="8,6"
+                                IsVisible="{Binding Mode, Converter={x:Static vm:BackupModeConverter.IsSanitized}}">
+                            <TextBlock Text="{x:Static loc:Strings.TextSanitizedModeExplainer}"
+                                       FontSize="11" TextWrapping="Wrap"
+                                       Foreground="#0A3A75" />
+                        </Border>
+
+                        <TextBlock Text="{x:Static loc:Strings.LabelClients}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeCode}"
+                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeCode}"
+                                  IsChecked="{Binding IncludeClaudeCode}" />
+                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeDesktop}"
+                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeDesktop}"
+                                  IsChecked="{Binding IncludeClaudeDesktop}" />
+
+                        <!-- 2026-05-15 — the IncludeCredentials checkbox was removed in
+                             favour of always-prompting via the credentials dialog at
+                             backup time.  The dialog body now carries the full
+                             "anyone with this backup can log in as you" warning that
+                             was previously on the checkbox tooltip, and the user gets
+                             a fresh decision every backup instead of a once-and-done
+                             preference.  Sanitized-mode hard-drops credentials
+                             regardless (BackupEngine.ShouldSkipHomeFile) — the
+                             prompt is suppressed entirely in that case. -->
+
+                        <TextBlock Text="{x:Static loc:Strings.LabelRetention}" FontWeight="SemiBold" Margin="0,8,0,0" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{x:Static loc:Strings.LabelKeepLast}" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding KeepLast}" Minimum="0" Maximum="100"
+                                           AutomationProperties.Name="{x:Static loc:Strings.LabelKeepLast}"
+                                           FormatString="0" Width="100" />
+                            <TextBlock Text="{x:Static loc:Strings.LabelKeepAll}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </StackPanel>
+
+                        <!-- 2026-05-06: Create Backup button moved to the top of the tab
+                             (above the Output folder field).  Status message stays at the
+                             bottom so post-action feedback flows below the configuration
+                             section the user just touched. -->
+                        <!-- 2026-05-15 — italicised so the "Backup saved to file.zip" /
+                             "Restored N items" sentences read as ephemeral status copy
+                             instead of looking like part of the page chrome.  The
+                             trailing period was also dropped at the engine message
+                             level so the filename doesn't visually run into a "." -->
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   Margin="0,8,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- =========================== RESTORE TAB =========================== -->
+            <TabItem Header="{x:Static loc:Strings.TabRestore}">
+                <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
+                     FileDrop is a reusable attached-property behaviour in
+                     LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
+                     IDataTransfer / DataFormat.File surface and filters payloads by
+                     extension before invoking the command.  Routes to
+                     RestoreFromDroppedArchiveCommand with the local file path as
+                     parameter; the VM handles validation, the confirm prompt, and
+                     the actual restore via the existing RestoreCommand path so all
+                     click-from-list guards (dirty-workspace prompt, cross-platform
+                     warning, Sanitized refusal at engine layer) fire unchanged.
+                     Set on the DockPanel so the entire tab body — header row,
+                     datagrid, empty-state placeholder — accepts drops. -->
+                <DockPanel behaviors:FileDrop.AllowedExtensions="zip"
+                           behaviors:FileDrop.DropCommand="{Binding RestoreFromDroppedArchiveCommand}">
+
+                    <!-- Restore folder row — always visible -->
+                    <Border DockPanel.Dock="Top" Padding="12,8"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="0,0,0,1">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="{x:Static loc:Strings.TextRestoreDescription}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                            <TextBlock Text="{x:Static loc:Strings.LabelRestoreFolder}" FontWeight="SemiBold" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right"
+                                        Content="{x:Static loc:Strings.ButtonBrowse}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameBrowseRestoreFolder}"
+                                        Command="{Binding BrowseRestoreDirectoryCommand}"
+                                        Margin="8,0,0,0" />
+                                <TextBox Text="{Binding RestoreDirectory}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.LabelRestoreFolder}"
+                                         PlaceholderText="{x:Static loc:Strings.WatermarkRestoreDir}"
+                                         IsReadOnly="True" />
+                            </DockPanel>
+                            <TextBlock
+                                Text="{x:Static loc:Strings.TextNoRestoreDirWarning}"
+                                FontSize="11" Foreground="#CC7700" TextWrapping="Wrap"
+                                IsVisible="{Binding !HasRestoreDirectory}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty-state placeholder when no directory is configured -->
+                    <TextBlock DockPanel.Dock="Top"
+                               Margin="16,32"
+                               Text="{x:Static loc:Strings.TextChooseRestoreFolder}"
+                               HorizontalAlignment="Center"
+                               FontSize="14"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               IsVisible="{Binding !HasRestoreDirectory}" />
+
+                    <TextBlock DockPanel.Dock="Top" Margin="16,12,16,6"
+                               Text="{x:Static loc:Strings.TextRestoreInstructions}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               TextWrapping="Wrap"
+                               IsVisible="{Binding HasRestoreDirectory}" />
+
+                    <DataGrid x:Name="BackupDataGrid"
+                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameBackupsGrid}"
+                              ItemsSource="{Binding Backups}"
+                              SelectedItem="{Binding SelectedBackup, Mode=TwoWay}"
+                              IsVisible="{Binding HasRestoreDirectory}"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              GridLinesVisibility="Horizontal"
+                              CanUserResizeColumns="True"
+                              CanUserSortColumns="True"
+                              PointerPressed="OnBackupDataGridPointerPressed"
+                              behaviors:CopyValue.IsEnabled="True"
+                              Margin="12">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="{x:Static loc:Strings.MenuOpenFileLocation}"
+                                          Command="{Binding OpenFileLocationCommand}"
+                                          CommandParameter="{Binding SelectedBackup}" />
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <!-- 2026-05-19 — column widths tuned for default ~950 px window.
+                             Date / File name / Mode get preferential real estate; Platform,
+                             Clients, Size, Actions tightened.  File name is the * flex
+                             column with MinWidth=180 so it never gets squeezed to invisible
+                             when fixed columns sum > available grid width.  Each column
+                             remains user-resizable at runtime via the DataGrid's column
+                             grippers — the widths below are first-paint defaults, not
+                             ceilings. -->
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="150" MinWidth="100" SortMemberPath="DisplayDate">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupDate}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupDate}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <ctrl:TipCell Tip="{Binding DisplayDate}">
+                                            <TextBlock Text="{Binding DisplayDate}"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="*" MinWidth="180" SortMemberPath="DisplayName">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupFile}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupFile}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <ctrl:TipCell Tip="{Binding DisplayName}">
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       VerticalAlignment="Center" Margin="4,0"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="100" MinWidth="90" SortMemberPath="DisplayPlatform">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupPlatform}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupPlatform}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <ctrl:TipCell Tip="{Binding DisplayPlatform}">
+                                            <TextBlock Text="{Binding DisplayPlatform}"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="110" MinWidth="85" SortMemberPath="DisplayMode">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupMode}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupMode}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <!-- DisplayModeTooltip — for Sanitized rows surfaces the
+                                             long-form "(for sharing — not restorable)" hover hint
+                                             that the compact "Sanitized" chip label omits. -->
+                                        <ctrl:TipCell Tip="{Binding DisplayModeTooltip}">
+                                            <Grid>
+                                                <!-- Plain text for non-Sanitized modes -->
+                                                <TextBlock Text="{Binding DisplayMode}"
+                                                           VerticalAlignment="Center" Margin="4,0"
+                                                           IsVisible="{Binding !IsSanitized}" />
+                                                <!-- Coloured chip for Sanitized rows so the user
+                                                     recognises sharing-only archives at a glance and
+                                                     correlates the visual with the disabled Restore
+                                                     button on the same row.  Label is just
+                                                     "Sanitized" — the amber chip + tooltip carry
+                                                     the rest of the semantics. -->
+                                                <Border CornerRadius="3" Padding="6,2"
+                                                        Background="#FFE7B5" BorderBrush="#E0A800"
+                                                        BorderThickness="1"
+                                                        VerticalAlignment="Center" Margin="4,0"
+                                                        IsVisible="{Binding IsSanitized}">
+                                                    <TextBlock Text="{Binding DisplayMode}"
+                                                               Foreground="#664D03"
+                                                               VerticalAlignment="Center" />
+                                                </Border>
+                                            </Grid>
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="110" MinWidth="80" SortMemberPath="DisplayClients">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupClients}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupClients}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <!-- Cell shows short form ("Code", "Desktop", "Code+Desktop");
+                                             tooltip shows the long ClaudeCode / ClaudeDesktop product
+                                             names so hovering surfaces the disambiguation. -->
+                                        <ctrl:TipCell Tip="{Binding DisplayClientsTooltip}">
+                                            <TextBlock Text="{Binding DisplayClients}"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="75" MinWidth="55" SortMemberPath="DisplaySize">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupSize}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupSize}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <ctrl:TipCell Tip="{Binding DisplaySize}">
+                                            <TextBlock Text="{Binding DisplaySize}"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                        </ctrl:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="220" MinWidth="180">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderBackupActions}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderBackupActions}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:BackupRowViewModel">
+                                        <!-- 2026-05-19 — explicit Padding="10,4" on each
+                                             button trims the Semi.Avalonia default (~16,8) so
+                                             the 3 buttons fit comfortably in a 220 px column.
+                                             Reclaimed 20 px goes to Platform (90 → 100) +
+                                             10 to the File-name flex column. -->
+                                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                                    VerticalAlignment="Center">
+                                            <Button Content="{x:Static loc:Strings.ButtonRestore}"
+                                                    Padding="10,4"
+                                                    AutomationProperties.Name="{Binding DisplayName, StringFormat='{}{0} — Restore'}"
+                                                    IsEnabled="{Binding IsRestorable}"
+                                                    Click="OnRestoreBackup" />
+                                            <Button Content="{x:Static loc:Strings.ButtonDeleteBackup}"
+                                                    Padding="10,4"
+                                                    AutomationProperties.Name="{Binding DisplayName, StringFormat='{}{0} — Delete'}"
+                                                    Click="OnDeleteBackup" />
+                                            <Button Content="{x:Static loc:Strings.ButtonShareBackup}"
+                                                    Padding="10,4"
+                                                    AutomationProperties.Name="{Binding DisplayName, StringFormat='{}{0} — Share'}"
+                                                    ToolTip.Tip="{x:Static loc:Strings.TipButtonShareBackup}"
+                                                    Click="OnShareBackup" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- =========================== MSIX FIX TAB (Windows-only, conditional) =========================== -->
+            <TabItem Header="{x:Static loc:Strings.TabMsixFix}"
+                     IsVisible="{Binding ShowMsixTab}">
+                <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
+                    <TextBlock Text="{x:Static loc:Strings.HeadingMsixFix}"
+                               FontSize="15" FontWeight="SemiBold" />
+                    <TextBlock TextWrapping="Wrap"
+                               Text="{x:Static loc:Strings.TextMsixDesc}" />
+
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1" CornerRadius="3" Padding="10">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{x:Static loc:Strings.LabelMsixVirtualisedPath}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding MsixStatus.VirtualisedPath}"
+                                       FontFamily="Consolas,Courier New,monospace" />
+                            <TextBlock Text="{x:Static loc:Strings.LabelMsixStandardPath}" FontWeight="SemiBold"
+                                       Margin="0,6,0,0" />
+                            <TextBlock Text="{Binding MsixStatus.StandardPath}"
+                                       FontFamily="Consolas,Courier New,monospace" />
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="{x:Static loc:Strings.ButtonCreateJunction}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCreateJunction}"
+                            Command="{Binding FixMsixCommand}"
+                            IsEnabled="{Binding !IsBusy}"
+                            HorizontalAlignment="Left"
+                            Padding="16,6" />
+                </StackPanel>
+            </TabItem>
+
+        </TabControl>
+    </DockPanel>
+</UserControl>

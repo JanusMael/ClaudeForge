@@ -1,0 +1,207 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.EssentialsView"
+             x:DataType="vm:EssentialsViewModel">
+
+    <!--
+        Essentials page.
+
+        Renders the curated list of pinned high-importance settings as
+        cards.  Each card auto-selects an inline editor surface based on
+        its EssentialsCardKind via the per-Kind DataTriggers below.
+
+        The danger-banner overlay (red) and the amber callout (one-time,
+        post-search-arrival) sit ABOVE the editor surface so the user
+        always sees the warning before touching the value.
+    -->
+
+    <ScrollViewer>
+        <StackPanel Spacing="16" Margin="16">
+
+            <!-- Page header pill — matches MemoryEditorView styling. -->
+            <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                    TextElement.Foreground="White"
+                    CornerRadius="6"
+                    Padding="14,8"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="{x:Static loc:Strings.HeaderEssentials}"
+                               FontWeight="SemiBold" FontSize="14" />
+                    <TextBlock Text="{x:Static loc:Strings.HeaderEssentialsBody}"
+                               FontSize="11" Opacity="0.85" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Card list -->
+            <ItemsControl ItemsSource="{Binding Cards}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EssentialsCardViewModel">
+
+                        <Border BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12"
+                                Margin="0,0,0,4">
+                            <StackPanel Spacing="8">
+
+                                <!-- Header row — severity dot + title + "View in <group>" -->
+                                <DockPanel LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            Classes="link"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            Padding="6,2"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource AppLinkBrush}"
+                                            Content="{Binding ViewInGroupLabel}"
+                                            ToolTip.Tip="{Binding ViewInGroupTitle}"
+                                            Command="{Binding ViewInGroupCommand}"
+                                            AutomationProperties.Name="{Binding ViewInGroupTitle}" />
+
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Border Width="10" Height="10" CornerRadius="5"
+                                                Background="{Binding SeverityBrush}" />
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold" FontSize="14"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <!-- Body — "why this matters" -->
+                                <TextBlock Text="{Binding Body}"
+                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12" />
+
+                                <!-- One-time amber callout (auto-dismissable) -->
+                                <Border IsVisible="{Binding ShowAmberCallout}"
+                                        Background="{DynamicResource AppCautionBackgroundBrush}"
+                                        BorderBrush="{DynamicResource AppCautionBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8,6">
+                                    <TextBlock Text="{x:Static loc:Strings.LabelEssentialsAmberCallout}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                </Border>
+
+                                <!-- Standing red danger banner (predicate-driven) -->
+                                <Border IsVisible="{Binding IsDanger}"
+                                        Background="#33D32F2F"
+                                        BorderBrush="#D32F2F"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8,6">
+                                    <TextBlock Text="{Binding DangerBannerText}"
+                                               TextWrapping="Wrap"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                </Border>
+
+                                <!-- ── Editor surface — one per Kind ─────────────── -->
+
+                                <!-- Bool: tri-state CheckBox.  IsThreeState makes null
+                                     ("inherit / not set") an explicit visible state. -->
+                                <!-- I20: each editor binds its AutomationProperties.Name to the
+                                     card Title so a screen-reader user knows which knob they're
+                                     adjusting ("Max thinking tokens" / "Sandbox enabled" / etc.).
+                                     The CheckBox already has Content={Title} so the auto-derived
+                                     name would match anyway; setting it explicit guards against
+                                     future theme changes that strip Content from the auto-derive. -->
+                                <CheckBox IsThreeState="True"
+                                          IsChecked="{Binding BoolValue, Mode=TwoWay}"
+                                          IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsBool}}"
+                                          Content="{Binding Title}"
+                                          AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- Int: NumericUpDown.  Empty-text → null binds correctly to int?. -->
+                                <NumericUpDown Value="{Binding IntValue, Mode=TwoWay}"
+                                               IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsInt}}"
+                                               Minimum="0"
+                                               Maximum="999999"
+                                               Increment="1000"
+                                               FormatString="0"
+                                               Width="200"
+                                               HorizontalAlignment="Left"
+                                               AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- EnumString: editable ComboBox so users can type
+                                     custom values for Model (which has free-form
+                                     identifiers in addition to the listed examples). -->
+                                <ComboBox ItemsSource="{Binding EnumOptions}"
+                                          SelectedItem="{Binding EnumValue, Mode=TwoWay}"
+                                          IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsEnumString}}"
+                                          MinWidth="220"
+                                          HorizontalAlignment="Left"
+                                          AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- StringList: existing entries + add-row textbox + Add button. -->
+                                <StackPanel Spacing="4"
+                                            IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsStringList}}">
+                                    <ItemsControl ItemsSource="{Binding StringListValues}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <DockPanel LastChildFill="True" Margin="0,2">
+                                                    <Button DockPanel.Dock="Right"
+                                                            Classes="link"
+                                                            Margin="6,0,0,0"
+                                                            Padding="6,2"
+                                                            Background="Transparent"
+                                                            BorderBrush="Transparent"
+                                                            Foreground="{DynamicResource AppLinkBrush}"
+                                                            Content="{x:Static loc:Strings.LabelEssentialsRemoveListEntry}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:EssentialsCardViewModel)DataContext).RemoveStringListEntryCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            AutomationProperties.Name="{Binding StringFormat='Remove {0}'}" />
+                                                    <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <DockPanel LastChildFill="True">
+                                        <Button DockPanel.Dock="Right"
+                                                Margin="6,0,0,0"
+                                                Content="{x:Static loc:Strings.LabelEssentialsAddListEntry}"
+                                                Command="{Binding AddStringListEntryCommand}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.LabelEssentialsAddListEntry}" />
+                                        <TextBox Text="{Binding NewStringListEntry, Mode=TwoWay}"
+                                                 PlaceholderText="{x:Static loc:Strings.EssentialsCardSandboxDomainsListPlaceholder}"
+                                                 VerticalAlignment="Center"
+                                                 AutomationProperties.Name="{Binding Title, StringFormat='Add new entry to {0}'}" />
+                                    </DockPanel>
+                                </StackPanel>
+
+                                <!-- Env-var "effective source" sub-row.  Hidden on
+                                     non-env cards (IsEnvVarCard=false). -->
+                                <Border IsVisible="{Binding IsEnvVarCard}"
+                                        BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{x:Static loc:Strings.LabelEssentialsEnvSourceHeader}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding EffectiveEnvSourceLabel}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                        </Border>
+
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

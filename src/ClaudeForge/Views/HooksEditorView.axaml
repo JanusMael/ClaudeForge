@@ -1,0 +1,397 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:local="using:Bennewitz.Ninja.ClaudeForge.Views"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.HooksEditorView"
+             x:DataType="vm:HooksEditorViewModel">
+
+    <DockPanel>
+
+        <Grid ColumnDefinitions="190,4,*">
+
+            <!-- Left: event type list with hook-count indicator -->
+            <Border Grid.Column="0"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <ListBox ItemsSource="{Binding EventGroups}"
+                         SelectedItem="{Binding SelectedGroup}"
+                         AutomationProperties.Name="{x:Static loc:Strings.AutoNameHookEventList}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HookEventGroup">
+                            <DockPanel>
+                                <!-- Hook count badge (right-aligned).
+                                 Use an explicit dark-blue background (rather than the theme
+                                 accent, which can be a light tint in Semi light mode where
+                                 white text disappears). Matches the ScopeBadge palette. -->
+                                <Border DockPanel.Dock="Right"
+                                        Background="#1565C0"
+                                        CornerRadius="8" Padding="6,1" Margin="4,0,0,0"
+                                        IsVisible="{Binding Hooks.Count,
+                                        Converter={x:Static conv:IsPositiveConverter.Instance}}">
+                                    <TextBlock Text="{Binding Hooks.Count}"
+                                               FontSize="10" Foreground="White" FontWeight="Bold" />
+                                </Border>
+                                <TextBlock Text="{Binding EventName}" FontSize="12"
+                                           VerticalAlignment="Center" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <!-- Right: DataGrid of hooks for the selected event type -->
+
+            <!-- Placeholder shown when no event is selected -->
+            <TextBlock Grid.Column="2"
+                       Text="{x:Static loc:Strings.TextSelectEventType}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="{Binding SelectedGroup, Converter={x:Static ObjectConverters.IsNull}}" />
+
+            <ContentControl Grid.Column="2" Content="{Binding SelectedGroup}"
+                            IsVisible="{Binding SelectedGroup, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:HookEventGroup">
+                        <DockPanel Margin="12,8">
+
+                            <!-- Toolbar -->
+                            <StackPanel DockPanel.Dock="Top"
+                                        Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+                                <TextBlock Text="{Binding EventName}"
+                                           FontSize="16" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <Button Content="{x:Static loc:Strings.ButtonAddHook}"
+                                        Command="{Binding AddHookCommand}"
+                                        AutomationProperties.Name="{x:Static loc:Strings.ButtonAddHook}" />
+                            </StackPanel>
+
+                            <!-- Guidance paragraph -->
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{x:Static loc:Strings.TextHookMatcherGuidance}"
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                       Margin="0,0,0,4" />
+
+                            <!-- Validation warning: one or more hooks has blank Matcher or Command.
+                             Uses theme-independent fixed-palette colours (pale red bg, dark red fg)
+                             rather than DynamicResource theme brushes — the previous
+                             SystemControlBackgroundChromeMediumLow background blended into the
+                             page background in dark theme, making the banner invisible.
+                             Mirrors the InstallBannerBgBrush / FgBrush pattern in MainWindow.axaml. -->
+                            <Border DockPanel.Dock="Top"
+                                    IsVisible="{Binding HasAnyHookWithWarning}"
+                                    Background="#FFFEE2E2"
+                                    BorderBrush="#FFEF4444"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8,4"
+                                    Margin="0,0,0,8"
+                                    TextElement.Foreground="#FF991B1B">
+                                <TextBlock Text="{x:Static loc:Strings.TextHookValidationWarning}"
+                                           Foreground="#FF991B1B"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+                            </Border>
+
+                            <!-- DataGrid: one row per hook -->
+                            <DataGrid ItemsSource="{Binding Hooks}"
+                                      SelectedItem="{Binding SelectedHook}"
+                                      AutoGenerateColumns="False"
+                                      CanUserResizeColumns="True"
+                                      CanUserSortColumns="True"
+                                      behaviors:CopyValue.IsEnabled="True"
+                                      CanUserReorderColumns="False"
+                                      GridLinesVisibility="Horizontal"
+                                      SelectionMode="Single"
+                                      RowDetailsVisibilityMode="VisibleWhenSelected"
+                                      AutomationProperties.Name="{x:Static loc:Strings.AutoNameHooksGrid}">
+                                <!-- row-details template for the
+                                 URL-hook-only headers + allowedEnvVars editors.
+                                 Visible only when the selected row's CommandType
+                                 is Url (gated via HookEntry.ShowHttpFields).  Other
+                                 hook types still get a row-details panel but it's
+                                 collapsed via IsVisible — the row's height stays
+                                 minimal so the grid doesn't grow noisily.  -->
+                                <DataGrid.RowDetailsTemplate>
+                                    <DataTemplate x:DataType="vm:HookEntry">
+                                        <Border IsVisible="{Binding ShowHttpFields}"
+                                                Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                                                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                                BorderThickness="0,1,0,0"
+                                                Padding="16,8">
+                                            <StackPanel Spacing="8">
+
+                                                <!-- Headers (key/value DataGrid + add row) -->
+                                                <TextBlock Text="{x:Static loc:Strings.LabelHookHeaders}"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{x:Static loc:Strings.TextHookHeadersHint}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                                           TextWrapping="Wrap" />
+                                                <ItemsControl ItemsSource="{Binding Headers}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:HookHeaderEntry">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                                                                <TextBox Grid.Column="0"
+                                                                         Text="{Binding Key}"
+                                                                         Width="180"
+                                                                         FontFamily="Consolas,Menlo,monospace"
+                                                                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkHookHeaderKey}" />
+                                                                <TextBox Grid.Column="1"
+                                                                         Text="{Binding Value}"
+                                                                         Margin="6,0,0,0"
+                                                                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkHookHeaderValue}" />
+                                                                <Button Grid.Column="2"
+                                                                        Content="×"
+                                                                        FontSize="11"
+                                                                        Padding="6,2"
+                                                                        Margin="6,0,0,0"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:HookEntry)DataContext).RemoveHeaderCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        AutomationProperties.Name="{Binding Key, StringFormat='{}{0}: Remove header'}" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <TextBox Grid.Column="0"
+                                                             Text="{Binding NewHeaderKey}"
+                                                             PlaceholderText="{x:Static loc:Strings.WatermarkHookHeaderKey}"
+                                                             Width="180"
+                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewHookHeaderKey}">
+                                                        <TextBox.KeyBindings>
+                                                            <KeyBinding Gesture="Enter"
+                                                                        Command="{Binding AddHeaderCommand}" />
+                                                        </TextBox.KeyBindings>
+                                                    </TextBox>
+                                                    <TextBox Grid.Column="1"
+                                                             Text="{Binding NewHeaderValue}"
+                                                             PlaceholderText="{x:Static loc:Strings.WatermarkHookHeaderValue}"
+                                                             Margin="6,0,0,0"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewHookHeaderValue}">
+                                                        <TextBox.KeyBindings>
+                                                            <KeyBinding Gesture="Enter"
+                                                                        Command="{Binding AddHeaderCommand}" />
+                                                        </TextBox.KeyBindings>
+                                                    </TextBox>
+                                                    <Button Grid.Column="2"
+                                                            Content="+"
+                                                            Margin="6,0,0,0"
+                                                            Command="{Binding AddHeaderCommand}"
+                                                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddHookHeader}" />
+                                                </Grid>
+
+                                                <!-- AllowedEnvVars (string list + add row) -->
+                                                <TextBlock Text="{x:Static loc:Strings.LabelHookAllowedEnvVars}"
+                                                           FontWeight="SemiBold"
+                                                           Margin="0,8,0,0" />
+                                                <TextBlock Text="{x:Static loc:Strings.TextHookAllowedEnvVarsHint}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                                           TextWrapping="Wrap" />
+                                                <ItemsControl ItemsSource="{Binding AllowedEnvVars}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <DockPanel Margin="0,2">
+                                                                <Button DockPanel.Dock="Right"
+                                                                        Content="×"
+                                                                        FontSize="11"
+                                                                        Padding="6,2"
+                                                                        Margin="6,0,0,0"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:HookEntry)DataContext).RemoveAllowedEnvVarCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        AutomationProperties.Name="{Binding StringFormat='{}{0}: Remove allowed environment variable'}" />
+                                                                <TextBlock Text="{Binding}"
+                                                                           FontFamily="Consolas,Menlo,monospace"
+                                                                           VerticalAlignment="Center" />
+                                                            </DockPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBox Text="{Binding NewAllowedEnvVar}"
+                                                             PlaceholderText="{x:Static loc:Strings.WatermarkHookAllowedEnvVar}"
+                                                             Width="280"
+                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkHookAllowedEnvVar}">
+                                                        <TextBox.KeyBindings>
+                                                            <KeyBinding Gesture="Enter"
+                                                                        Command="{Binding AddAllowedEnvVarCommand}" />
+                                                        </TextBox.KeyBindings>
+                                                    </TextBox>
+                                                    <Button Content="+"
+                                                            Command="{Binding AddAllowedEnvVarCommand}"
+                                                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddHookAllowedEnvVar}" />
+                                                </StackPanel>
+
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGrid.RowDetailsTemplate>
+                                <DataGrid.Columns>
+
+                                    <!-- Matcher (tool name pattern, e.g. Bash, Edit, * = all) -->
+                                    <DataGridTemplateColumn Width="160" SortMemberPath="Matcher">
+                                        <DataGridTemplateColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{x:Static loc:Strings.HeaderMatcher}"
+                                                           ToolTip.Tip="{x:Static loc:Strings.TipHookMatcherHeader}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.HeaderTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <ctrl:TipCell Tip="{Binding Matcher}">
+                                                    <TextBlock Text="{Binding Matcher}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="4,0"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </ctrl:TipCell>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <TextBox Text="{Binding Matcher}"
+                                                         BorderThickness="0" Padding="3,0"
+                                                         AutomationProperties.Name="{x:Static loc:Strings.HeaderMatcher}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Type: show text in view mode, ComboBox in edit mode -->
+                                    <DataGridTemplateColumn Width="110" CanUserSort="True" SortMemberPath="CommandType">
+                                        <DataGridTemplateColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{x:Static loc:Strings.HeaderHookType}"
+                                                           ToolTip.Tip="{x:Static loc:Strings.TipHookTypeHeader}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.HeaderTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <ctrl:TipCell Tip="{Binding CommandType}">
+                                                    <TextBlock Text="{Binding CommandType}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="4,0" />
+                                                </ctrl:TipCell>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <ComboBox SelectedItem="{Binding SelectedCommandTypeInfo}"
+                                                          ItemsSource="{x:Static vm:HookEntry.CommandTypeInfos}"
+                                                          HorizontalAlignment="Stretch"
+                                                          AutomationProperties.Name="{x:Static loc:Strings.HeaderHookType}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:HookCommandTypeInfo">
+                                                            <DockPanel ToolTip.Tip="{Binding Description}"
+                                                                       AutomationProperties.Name="{Binding AccessibleName}">
+                                                                <TextBlock DockPanel.Dock="Left"
+                                                                           Text="{Binding DisplayName}"
+                                                                           FontFamily="Consolas,Menlo,monospace"
+                                                                           MinWidth="70" />
+                                                                <TextBlock Text="{Binding Description}"
+                                                                           FontSize="11"
+                                                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                                                           IsVisible="{Binding $parent[ComboBoxItem], Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                            </DockPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Command / Prompt / URL value -->
+                                    <DataGridTemplateColumn Width="*" SortMemberPath="CommandValue">
+                                        <DataGridTemplateColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{x:Static loc:Strings.HeaderCommandPromptUrl}"
+                                                           ToolTip.Tip="{x:Static loc:Strings.TipHookCommandHeader}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.HeaderTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <ctrl:TipCell Tip="{Binding CommandValue}">
+                                                    <TextBlock Text="{Binding CommandValue}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="4,0"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </ctrl:TipCell>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <TextBox Text="{Binding CommandValue}"
+                                                         BorderThickness="0" Padding="3,0"
+                                                         AutomationProperties.Name="{x:Static loc:Strings.HeaderCommandPromptUrl}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- timeout column.  Optional per-hook
+                                     timeout in seconds; null means "use CLI default".
+                                     width bumped from 80 → 120 so the
+                                     "Timeout (s)" header fits without being clipped. -->
+                                    <DataGridTemplateColumn Width="120" SortMemberPath="Timeout">
+                                        <DataGridTemplateColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{x:Static loc:Strings.HeaderHookTimeout}"
+                                                           ToolTip.Tip="{x:Static loc:Strings.TipHookTimeout}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.HeaderTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <TextBlock Text="{Binding Timeout, FallbackValue=''}"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="4,0" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <NumericUpDown Value="{Binding Timeout}"
+                                                               Minimum="0"
+                                                               Maximum="86400"
+                                                               Increment="1"
+                                                               ShowButtonSpinner="False"
+                                                               BorderThickness="0"
+                                                               Padding="3,0"
+                                                               AutomationProperties.Name="{x:Static loc:Strings.HeaderHookTimeout}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- Delete button -->
+                                    <DataGridTemplateColumn Width="70">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:HookEntry">
+                                                <Button Content="{x:Static loc:Strings.ButtonRemoveHook}"
+                                                        FontSize="11" Padding="6,2"
+                                                        HorizontalAlignment="Center"
+                                                        Click="OnRemoveHook"
+                                                        AutomationProperties.Name="{Binding Matcher, StringFormat='{}Remove hook: {0}'}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                        </DockPanel>
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+        </Grid>
+
+    </DockPanel>
+</UserControl>

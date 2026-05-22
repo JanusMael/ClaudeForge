@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']   # every branch push; tag pushes are excluded by GitHub's branch filter
+  pull_request:
+
+# Cancel any in-flight run for the same branch/PR the moment a new commit arrives.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+# ── Variables and secrets mapping ────────────────────────────────────────────
+# Configure under Settings → Secrets and variables → Actions on the repository.
+#
+# Repository secrets (Settings → Secrets → Actions → New repository secret):
+#
+#   CODECOV_TOKEN          Upload token from codecov.io.  Add an "Upload coverage"
+#                          step after "Test" to track per-PR coverage deltas:
+#                            - uses: codecov/codecov-action@v4
+#                              with:
+#                                token: ${{ secrets.CODECOV_TOKEN }}
+#                                files: ./test-results/*.trx
+#
+#   SONAR_TOKEN            Project token from sonarcloud.io.  Add the SonarCloud
+#                          action after the build step to enable SAST and
+#                          code-smell analysis on every PR:
+#                            - uses: sonarsource/sonarcloud-github-action@master
+#                              env:
+#                                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#                                SONAR_TOKEN:  ${{ secrets.SONAR_TOKEN }}
+#
+# Repository variables (Settings → Variables → Actions → New repository variable):
+#
+#   DOTNET_VERSION         .NET SDK version string, e.g. '10.x'.  Replace the
+#                          hardcoded '10.x' in each setup-dotnet step:
+#                            dotnet-version: ${{ vars.DOTNET_VERSION || '10.x' }}
+
+jobs:
+
+  # ── Build & test on all three host OSes ────────────────────────────────────
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false     # let all platforms run even if one fails
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore
+        run: dotnet restore ClaudeForge.slnx
+
+      - name: Build (Debug)
+        run: dotnet build ClaudeForge.slnx --no-restore -c Debug
+
+      - name: Test
+        run: >
+          dotnet test ClaudeForge.slnx
+          --no-build -c Debug
+          --logger "trx;LogFileName=results.trx"
+          --results-directory ./test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: ./test-results/*.trx
+          retention-days: 14
+
+  # ── Verify the trimmed Release build compiles without IL warnings ───────────
+  # Delegates to src/publish/publish.ps1 — the same script the release workflow
+  # uses — so CI exercises the exact production path: bin/obj clean, dotnet
+  # publish --self-contained, IL-warning scan, closure analyzer on any hit,
+  # and archive creation. linux-x64 is the canonical RID for this check; trim
+  # warnings are almost always RID-invariant (Semi.Avalonia closures appear on
+  # every platform), so one RID is representative.
+  trim-check:
+    name: Trim Check (Release linux-x64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Publish via publish.ps1 (linux-x64)
+        shell: pwsh
+        run: pwsh src/publish/publish.ps1 -All -Rids linux-x64

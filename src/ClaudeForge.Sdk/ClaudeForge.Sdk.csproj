@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Sdk</RootNamespace>
+        <AssemblyName>ClaudeForge.Sdk</AssemblyName>
+        <!-- Generate XML documentation file so consumers see the threading and
+             cancellation contracts that live on the public interface.  CS1591 is
+             disabled because we don't require a doc comment on every member at
+             this stub stage; the architectural contracts are what matter. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Sdk depends on Core for the existing settings/backup/profile engines.
+             The reverse must NOT be true — Core remains independent of Sdk so it
+             can be used as primitives, and Sdk owns the public contract on top. -->
+        <ProjectReference Include="..\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Test project needs the in-progress reflection-based surface checks
+             (e.g. asserting every async method requires a non-defaulted CT). -->
+        <InternalsVisibleTo Include="ClaudeForge.Sdk.Tests"/>
+
+        <!-- ClaudeForge (the GUI) is granted internals visibility for the duration
+             of the SDK migration. The GUI uses the
+             internal `FromExistingWorkspace` constructor to wrap a pre-loaded
+             SettingsWorkspace, sharing state with the SDK during the editor-VM
+             migration. After 4.3.7 fully removes the legacy workspace fields
+             from MainWindowViewModel this grant should be removed and the GUI
+             consume only the public SDK surface. -->
+        <InternalsVisibleTo Include="ClaudeForge"/>
+
+        <!-- ClaudeForge.Tests covers VMs that take ClaudeConfigClientCore in
+             their ctor (EffectiveSettingsViewModel, EnvironmentEditorViewModel
+             post-4.3.7-step-11). Tests construct clients via the internal
+             `FromExistingWorkspace` overload so they can wrap an in-memory
+             workspace without doing real disk I/O. Same expiration as the
+             ClaudeForge grant — remove once 4.3.7 fully retires the wrap path. -->
+        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+</Project>

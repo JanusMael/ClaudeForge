@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Services</RootNamespace>
+        <AssemblyName>LayeredEditors.Avalonia.Services</AssemblyName>
+        <Description>
+            Platform-agnostic and Avalonia-backed service implementations that are not specific
+            to any Claude configuration concern: shell launching, file-manager integration,
+            environment-variable access, and the Avalonia dialog service (file/folder pickers,
+            alerts, confirmations, save-changes prompts).
+        </Description>
+        <!-- Add the Windows platform TFM so DefaultShareService can compile with MAUI
+             Essentials on Windows builds. Directory.Build.props sets the singular
+             <TargetFramework>; the plural form here takes precedence. -->
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- Enable MAUI Essentials only for the Windows TFM -->
+        <UseMauiEssentials Condition="$([MSBuild]::IsTargetFrameworkCompatible(
+        '$(TargetFramework)', 'net10.0-windows'))">true
+        </UseMauiEssentials>
+        <!-- Minimum Windows version for Share API availability (Windows 10 v1809) -->
+        <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">
+            10.0.17763.0
+        </SupportedOSPlatformVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
+             ClaudeForge.Sdk so the SDK can produce dialog models that this services
+             library renders.  Couples the services lib to ClaudeForge.Sdk in this
+             codebase; if the lib is ever extracted for another app, the dialog
+             types can be split into a third project at that time. -->
+        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+    </ItemGroup>
+
+    <!-- Explicit MAUI Essentials package reference required for net8+ when UseMauiEssentials=true -->
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0-windows'))">
+        <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.20"/>
+    </ItemGroup>
+</Project>

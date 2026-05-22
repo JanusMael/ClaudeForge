@@ -1,0 +1,50 @@
+# Controls how GitHub auto-generates release notes via --generate-notes.
+# Labels on merged PRs determine which changelog section each entry appears in.
+# PRs with no matching label land in "Other Changes".
+# See: https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release   # maintenance PRs that should not appear in the changelog
+      - dependencies         # Dependabot bumps — tracked separately
+
+  categories:
+
+    - title: "⚠️ Breaking Changes"
+      labels:
+        - breaking-change
+
+    - title: "🎉 New Features"
+      labels:
+        - enhancement
+        - feature
+
+    - title: "🐛 Bug Fixes"
+      labels:
+        - bug
+        - fix
+
+    - title: "⚡ Performance"
+      labels:
+        - performance
+
+    - title: "🔒 Security"
+      labels:
+        - security
+
+    - title: "📝 Documentation"
+      labels:
+        - documentation
+        - docs
+
+    - title: "🔧 Maintenance"
+      labels:
+        - chore
+        - refactor
+        - ci
+        - build
+
+    - title: "Other Changes"
+      labels:
+        - "*"

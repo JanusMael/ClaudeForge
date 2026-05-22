@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.AboutEditorView"
+             x:DataType="vm:AboutEditorViewModel">
+    <ScrollViewer Padding="24,16">
+        <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
+
+            <TextBlock Text="{x:Static loc:Strings.HeadingVersionInfo}" FontSize="22" FontWeight="SemiBold" />
+
+            <!-- Claude Code version.
+                 Two layouts share this block, gated by IsProductInstalled /
+                 the version-string null check: when installed we show the
+                 version number; when not detected we inline the shared
+                 InstallCommandPanel (from MainWindow's banner) to the right of
+                 the "(not detected)" label so the install UX is one click away. -->
+            <StackPanel Spacing="4">
+                <!-- Heading row: product name + green CC chiclet (matches the Profiles
+                     dropdown / Profiles-page styling so the same product mapping is
+                     visually consistent everywhere). -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.LabelClaudeCode}"
+                               FontWeight="SemiBold" FontSize="14"
+                               VerticalAlignment="Center" />
+                    <Border Background="#22BB55"
+                            CornerRadius="3" Padding="4,1"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{x:Static loc:Strings.BadgeLabelCli}"
+                                   FontSize="9" FontWeight="Bold" Foreground="White" />
+                    </Border>
+                </StackPanel>
+                <TextBlock Text="{Binding ClaudeCodeVersion}"
+                           IsVisible="{Binding ClaudeCodeVersion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Orientation="Horizontal" Spacing="12"
+                            IsVisible="{Binding ClaudeCodeVersion, Converter={x:Static StringConverters.IsNullOrEmpty}}">
+                    <TextBlock Text="{x:Static loc:Strings.TargetNullNotDetected}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppCautionBrush}" />
+                    <!-- Claude Code install panel: shell one-liner + terminal launch.
+                         The outer StackPanel's IsVisible gate (ClaudeCodeVersion
+                         is null-or-empty) stays in lockstep with
+                         ClaudeCodeInstallPanel being non-null, because
+                         LoadVersionsAsync falls back to "installed (version
+                         unknown)" whenever the probe fails but
+                         IsClaudeCodeInstalled is true. So by the time this panel
+                         is shown, its DataContext is guaranteed non-null. -->
+                    <controls:InstallCommandPanel DataContext="{Binding ClaudeCodeInstallPanel}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Claude Code PATH warning.
+                 Shown when the binary was found at a canonical install
+                 location (e.g. %APPDATA%\npm\claude.cmd on Windows ARM64)
+                 but the containing directory is not on PATH. Offers a
+                 one-click "Add to PATH" button that writes to HKCU\Environment
+                 without requiring elevation via UserPathEditor. -->
+            <Border IsVisible="{Binding ShowClaudeCodePathWarning}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource AppCautionBrush}"
+                    Background="{DynamicResource AppCautionBackgroundBrush}"
+                    CornerRadius="4"
+                    Padding="12,8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.LabelClaudeCodeNotOnPath}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppCautionBrush}" />
+                    <TextBlock Text="{Binding ClaudeCodeNotOnPathMessage}"
+                               TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{x:Static loc:Strings.ButtonAddClaudeCodeToPath}"
+                                Command="{Binding AddClaudeCodeToPathCommand}"
+                                ToolTip.Tip="{x:Static loc:Strings.TipButtonAddClaudeCodeToPath}"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonAddClaudeCodeToPath}" />
+                        <TextBlock Text="{Binding AddToPathResultText}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding AddToPathResultText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Claude Desktop version — mirror of the Claude Code block above.
+                 When not detected we show the download URL panel (Run = browser-open)
+                 instead of the shell installer. -->
+            <StackPanel Spacing="4">
+                <!-- Heading row: product name + blue Desktop chiclet. -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.LabelClaudeDesktop}"
+                               FontWeight="SemiBold" FontSize="14"
+                               VerticalAlignment="Center" />
+                    <Border Background="#0078D4"
+                            CornerRadius="3" Padding="4,1"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{x:Static loc:Strings.BadgeLabelDesktop}"
+                                   FontSize="9" FontWeight="Bold" Foreground="White" />
+                    </Border>
+                </StackPanel>
+                <TextBlock Text="{Binding ClaudeDesktopVersion}"
+                           IsVisible="{Binding ClaudeDesktopVersion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Orientation="Horizontal" Spacing="12"
+                            IsVisible="{Binding ClaudeDesktopVersion, Converter={x:Static StringConverters.IsNullOrEmpty}}">
+                    <TextBlock Text="{x:Static loc:Strings.TargetNullNotDetected}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppCautionBrush}" />
+                    <!-- Claude Desktop install panel: download URL + browser open.
+                         No shell installer exists for Claude Desktop, so the
+                         ForClaudeDesktop() factory produces a URL-flavoured VM.
+                         The outer StackPanel's null-or-empty ClaudeDesktopVersion
+                         gate is kept in sync with ClaudeDesktopInstallPanel being
+                         non-null by LoadVersionsAsync's "installed (version
+                         unknown)" fallback. -->
+                    <controls:InstallCommandPanel DataContext="{Binding ClaudeDesktopInstallPanel}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Platform -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.LabelPlatform}" FontWeight="SemiBold" FontSize="14" />
+                <TextBlock Text="{Binding PlatformInfo}" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Config file actions -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.LabelConfigFile}" FontWeight="SemiBold" FontSize="14" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{x:Static loc:Strings.ButtonOpenConfig}"
+                            Command="{Binding OpenConfigCommand}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonOpenConfig}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenConfig}" />
+                    <Button Content="{x:Static loc:PlatformLabels.Reveal}"
+                            Command="{Binding RevealConfigCommand}"
+                            ToolTip.Tip="{x:Static loc:PlatformLabels.RevealTooltip}"
+                            AutomationProperties.Name="{x:Static loc:PlatformLabels.Reveal}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Log file -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.LabelLogFile}" FontWeight="SemiBold" FontSize="14" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{x:Static loc:Strings.ButtonShareLog}"
+                            Command="{Binding ShareLogCommand}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonShareLog}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonShareLog}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Links — labels and URLs differ between Claude Code and Claude Desktop -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding DocsLabel}" FontWeight="SemiBold" FontSize="14" />
+                <libctrl:LinkifiedTextBlock SourceText="{Binding DocsUrl}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding ReleaseNotesLabel}" FontWeight="SemiBold" FontSize="14" />
+                <libctrl:LinkifiedTextBlock SourceText="{Binding ReleaseNotesUrl}" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <!--
+          This sample exists to prove the SDK is Avalonia-free and headless-consumable. 
+          It deliberately references
+          ONLY ClaudeForge.Sdk; if a future change accidentally pulls Avalonia into
+          the SDK's transitive reference closure this project will start failing to
+          build with package-version conflicts long before the GUI does.
+        -->
+        <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
+        <PackageId>ClaudeForge.Samples.McpServer</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+</Project>

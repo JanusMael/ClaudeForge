@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Trim-warning suppressions for third-party assemblies that we cannot modify.
+  All of these warnings were surfaced (but do not originate in our code) after
+  Avalonia.Svg.Skia extended ILLink's reachability graph into code paths in
+  Semi.Avalonia and its CSS/SVG dependency chain.
+
+  Semi.Avalonia       – the theme bundle; its compiled AXAML emits reflection
+                         bindings for control-template styles that resolve at
+                         runtime via the style engine. Every warning lives
+                         inside nested types CompiledAvaloniaXaml.!AvaloniaResources/
+                         XamlClosure_N (currently N=13 and N=41). We cannot patch
+                         upstream XAML.
+
+  ExCSS / Svg.Custom  – CSS and SVG parsers used by Svg.Skia. They use
+                         Type.GetType() / TypeDescriptor reflection internally.
+                         All AppIcon rendering is guarded by try/catch so
+                         runtime failures degrade gracefully (no icon shown).
+
+  Avalonia.Controls.
+   DataGrid           – has pre-existing trim-unsafe code paths that become
+                         reachable when Avalonia.Svg.Skia widens the ILLink
+                         analysis graph. DataGrid works correctly at runtime.
+
+  Wiring notes:
+    This file is referenced from ClaudeForge.csproj via
+    `<_ILLinkSuppressions Include="ILLink.Suppressions.xml" />`. That is the
+    MSBuild item that `Microsoft.NET.ILLink.targets` expands into ILLink's
+    `link-attributes` arg — see the `PrepareForILLink` target around line
+    230 of build/Microsoft.NET.ILLink.targets in the
+    Microsoft.NET.ILLink.Tasks NuGet package. The leading underscore is an
+    MSBuild "internal" convention, but no public alias exists.
+
+    Forms that do NOT work:
+
+      * `<LinkAttributesXml>` — referenced in older trimming guides but NOT
+        actually read by the current ILLink targets; silent no-op.
+      * `<TrimmerRootDescriptor>` (maps to `-x`) — parses the file as a
+        preservation descriptor, silently discards every `<attribute>`
+        element, and emits spurious `IL2007: Could not resolve assembly 'X'`
+        warnings for cross-assembly targets.
+      * `<EmbeddedResource>` with `<LogicalName>ILLink.LinkAttributes.xml</LogicalName>`
+        is host-assembly-only; cross-assembly entries emit IL2101.
+
+    Each `<attribute>` below carries `Scope="module"` + `Target="<assembly>"`
+    so the injected `[UnconditionalSuppressMessage]` covers every warning of
+    the given code inside the target assembly, including nested compiler-
+    generated types such as `CompiledAvaloniaXaml.!AvaloniaResources/XamlClosure_N`.
+    `"module"` is a valid `SuppressMessageAttribute.Scope` value (alongside
+    "namespace", "namespaceanddescendants", "resource", "type", "member") —
+    prior sessions' claim that it wasn't was incorrect.
+-->
+<linker>
+
+    <!--
+      Suppress IL2026 across the entire Semi.Avalonia module.
+      Covers every CompiledAvaloniaXaml.!AvaloniaResources/XamlClosure_N.Build_M
+      ReflectionBindingExtension call-site without pinning specific closure
+      numbers (which can shift between theme releases).
+    -->
+    <assembly fullname="Semi.Avalonia">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Semi.Avalonia</property>
+        </attribute>
+    </assembly>
+
+    <!--
+      Suppress IL2104 / IL2026 / IL2067 for ExCSS (Svg.Skia transitive dependency).
+      Not trim-annotated; suppressing is safe because its code is preserved in
+      full by the publish (not trimmed away).
+    -->
+    <assembly fullname="ExCSS">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2104</argument>
+            <property name="Scope">module</property>
+            <property name="Target">ExCSS</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">ExCSS</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2067</argument>
+            <property name="Scope">module</property>
+            <property name="Target">ExCSS</property>
+        </attribute>
+    </assembly>
+
+    <assembly fullname="Svg.Model">
+        <!-- 2026-05-22 — Svg.Skia 3.x moved TypeDescriptor.GetConverter
+             callsites from Svg.Custom (Avalonia 11.x) to Svg.Model.
+             Paired with <TrimmerRootAssembly Include="Svg.Model"/> so
+             the type-converters resolved by string-typed reflection
+             actually survive trimming. See TRIMMING.md "When suppression
+             alone is NOT enough" rule #1. -->
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Svg.Model</property>
+        </attribute>
+    </assembly>
+
+    <!--
+      Suppress IL2026 + IL2067/IL2070/IL2075/IL2104 for Avalonia.Controls.DataGrid.
+      DataGrid has pre-existing trim-unsafe reflection over column types that
+      becomes reachable when Avalonia.Svg.Skia widens the ILLink analysis graph.
+      DataGrid itself works correctly at runtime with trimming — the column
+      metadata it reflects over is rooted by the app's use of typed bindings.
+    -->
+    <assembly fullname="Avalonia.Controls.DataGrid">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2067</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2070</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2075</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2104</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+    </assembly>
+
+    <!--
+      Suppress IL2072 for Serilog.Capturing.PropertyValueConverter.
+      Serilog's capturer reflects over captured object types to build
+      StructureValue instances; this is safe because user code never
+      destructures trim-sensitive types (we log only strings, primitives,
+      exception objects, and our own ViewModels).
+    -->
+    <assembly fullname="Serilog">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2072</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Serilog</property>
+        </attribute>
+    </assembly>
+
+    <!--
+      Markdown.Avalonia (Memory page markdown viewer — package is
+      `Markdown.Avalonia.Tight`, the actual assembly name is literally
+      `Markdown.Avalonia`).
+  
+      SAFETY MODEL: this package is reflection-heavy.  Suppressing the
+      warnings ALONE would not be safe — the package uses
+      `Assembly.GetType(string)` + `Activator.CreateInstance` to load its
+      own BUILT-IN plugins by string-typename in `SetupInfo.Builtin()`,
+      so the trimmer must NOT be allowed to drop those types.
+  
+      The actual safety mechanism is `<TrimmerRootAssembly>` in
+      ClaudeForge.csproj — that roots every type in Markdown.Avalonia and
+      ColorTextBlock.Avalonia, so no code or type inside those assemblies
+      can be trimmed.  The suppressions below are belt-and-suspenders to
+      silence the warnings ILLink emits anyway (warnings describe the
+      call's risk in the abstract, not whether the target type is
+      actually preserved).
+  
+      Warnings observed:
+        - IL2026: StackFrame.GetMethod() in the ctor closure (diagnostic
+          plugin-error reporting); Activator.CreateInstance(Type) in
+          MdAvPlugins.ComputeOrderedPlugins; Assembly.GetType(string) +
+          Activator.CreateInstance in SetupInfo.Builtin().
+        - IL2072: 'type' argument annotation mismatches on the same paths.
+        - IL2075: InterassemblyUtil.InvokeInstanceMethodToGetProperty<T>
+          does cross-assembly reflection to optionally invoke methods on
+          other Markdown.Avalonia.* plugin packages (e.g. SyntaxHigh).
+          We use Tight only — this code path isn't reached at runtime.
+          Cross-assembly types ARE NOT covered by TrimmerRootAssembly on
+          Markdown.Avalonia, so this suppression is the only line of
+          defence; it's safe ONLY because we don't use SyntaxHigh.
+    -->
+    <assembly fullname="Markdown.Avalonia">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Markdown.Avalonia</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2072</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Markdown.Avalonia</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2075</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Markdown.Avalonia</property>
+        </attribute>
+    </assembly>
+
+
+    <!--
+      Microsoft.Maui.ApplicationModel suppressions (Windows Share API) live in
+      ILLink.Suppressions.Windows.xml, which is conditionally included only when
+      building the net10.0-windows TFM.  See the ClaudeForge.csproj ItemGroup
+      that references both files.
+    -->
+
+</linker>

@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Controls.InstallCommandPanel"
+             x:DataType="vm:InstallCommandViewModel">
+
+    <!--
+        Reusable panel that presents a single install/setup command to the user:
+        monospace code block on the left, Copy and Run buttons on the right.
+
+        Hosts: MainWindow install banner (yellow surface) and AboutEditorView
+        "(not detected)" row (neutral surface). To read correctly on both
+        backgrounds, the code block uses theme-neutral dynamic resources
+        (SystemControlBackgroundBaseLowBrush / SystemControlForegroundBaseLowBrush)
+        rather than the banner-specific InstallBanner* brushes — those are
+        scoped to MainWindow and would fail to resolve on the About page.
+    -->
+    <StackPanel Spacing="4">
+
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal" Spacing="8"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+                <Button Content="{x:Static loc:Strings.ButtonCopyInstall}"
+                        x:Name="CopyButton"
+                        Click="OnCopyClick"
+                        Padding="6,2"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding CopyButtonTooltip}"
+                        AutomationProperties.Name="{Binding CopyButtonAutomationName}" />
+                <Button Content="{Binding RunButtonLabel}"
+                        Command="{Binding RunCommand}"
+                        Padding="6,2"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding RunButtonTooltip}"
+                        AutomationProperties.Name="{Binding RunButtonAutomationName}" />
+            </StackPanel>
+
+            <!-- ScrollViewer prevents the code text from being clipped when the
+             panel's available width is constrained by the parent (e.g. the
+             install banner's DockPanel or the About page's horizontal StackPanel).
+             TextWrapping=NoWrap keeps the command on one line; the user can scroll
+             horizontally if the window is very narrow, and the Copy button always
+             provides the full text regardless. -->
+            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4" Padding="8,4"
+                    VerticalAlignment="Center">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled">
+                    <TextBlock Text="{Binding CommandText}"
+                               FontFamily="Cascadia Mono,Consolas,Courier New,monospace"
+                               FontSize="12"
+                               TextWrapping="NoWrap" />
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+
+        <!-- Shown for ~3 s after a terminal launch fails (e.g. no terminal emulator found).
+         Directs the user to the Copy button as the fallback. -->
+        <TextBlock Text="{Binding NoTerminalMessage}"
+                   IsVisible="{Binding NoTerminalMessage,
+                   Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   FontSize="11"
+                   Foreground="{DynamicResource AppCautionBrush}" />
+
+    </StackPanel>
+</UserControl>

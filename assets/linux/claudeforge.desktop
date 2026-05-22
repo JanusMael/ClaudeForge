@@ -1,0 +1,60 @@
+[Desktop Entry]
+# ClaudeForge desktop integration entry.  Install at
+# ~/.local/share/applications/claudeforge.desktop  (per-user)  OR
+# /usr/share/applications/claudeforge.desktop      (system-wide).
+#
+# After installation:
+#   update-desktop-database ~/.local/share/applications/   (per-user)
+#   sudo update-desktop-database /usr/share/applications/  (system-wide)
+#
+# Then ensure icon files exist at one of these locations matching the
+# Icon= name below (or an absolute path).  See
+# docs/LINUX-DESKTOP-INTEGRATION.md for the full procedure including
+# multi-resolution PNG generation from the SVG source.
+
+Type=Application
+Version=1.0
+
+# Visible app name in launchers / Alt-Tab / dock.
+Name=ClaudeForge
+GenericName=Claude Code Configuration Editor
+Comment=Edit Claude Code and Claude Desktop configuration files
+
+# REPLACE the path below with the actual install location of the
+# ClaudeForge binary.  Common patterns:
+#   /usr/local/bin/ClaudeForge          (system-wide)
+#   /opt/claudeforge/ClaudeForge        (vendor install)
+#   $HOME/.local/bin/ClaudeForge        (per-user, unexpanded — desktop-file-spec
+#                                        does not support $HOME; use an absolute path)
+Exec=ClaudeForge
+
+# Icon name (preferred — looked up in the icon theme via XDG_DATA_DIRS),
+# or an absolute path to a PNG / SVG.
+#
+# Per-user install paths the icon name "claudeforge" resolves to:
+#   ~/.local/share/icons/hicolor/256x256/apps/claudeforge.png
+#   ~/.local/share/icons/hicolor/128x128/apps/claudeforge.png
+#   ~/.local/share/icons/hicolor/scalable/apps/claudeforge.svg
+#
+# After dropping the icons in place, refresh the cache:
+#   gtk-update-icon-cache ~/.local/share/icons/hicolor/
+Icon=claudeforge
+
+# StartupWMClass MUST match the Wayland app_id / X11 WM_CLASS that
+# Avalonia sets — derived from the entry-assembly name.  For our build
+# this is literally "ClaudeForge".  When this matches, the compositor
+# associates the launched window with this .desktop entry, picking up
+# the icon for the dock / taskbar / Alt-Tab.
+StartupWMClass=ClaudeForge
+StartupNotify=true
+
+Terminal=false
+# Single freedesktop "main" category — Settings is the most-fitting top-
+# level menu placement for a config editor, and listing only one main
+# category avoids the desktop-file-validate hint about appearing in
+# multiple top-level menus.  DesktopSettings is an "Additional" category
+# under Settings per the freedesktop spec, so it sharpens the menu
+# placement without re-triggering the hint.  Users find the app by
+# Keywords= via launcher search regardless of menu placement.
+Categories=Settings;DesktopSettings;
+Keywords=claude;config;settings;ai;

@@ -1,0 +1,33 @@
+<Solution>
+    <Folder Name="/src/">
+        <Folder Name="/src/publish/">
+            <File Path="src/publish/publish.ps1"/>
+            <File Path="src/publish/Publish-Rid.ps1"/>
+            <File Path="src/publish/Analyze-XamlClosures.ps1"/>
+            <File Path="src/publish/publish-win-x64.ps1"/>
+            <File Path="src/publish/publish-win-arm64.ps1"/>
+            <File Path="src/publish/publish-linux-x64.ps1"/>
+            <File Path="src/publish/publish-linux-arm64.ps1"/>
+            <File Path="src/publish/publish-osx-x64.ps1"/>
+            <File Path="src/publish/publish-osx-arm64.ps1"/>
+        </Folder>
+        <Project Path="src/ClaudeForge/ClaudeForge.csproj"/>
+        <Project Path="src/ClaudeForge.Core/ClaudeForge.Core.csproj"/>
+        <Project Path="src/ClaudeForge.Sdk/ClaudeForge.Sdk.csproj"/>
+        <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
+        <Project Path="src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj"/>
+        <Project Path="src/LayeredEditors.Avalonia.Services/LayeredEditors.Avalonia.Services.csproj"/>
+        <Project Path="src/LayeredEditors.Avalonia.Diagnostics/LayeredEditors.Avalonia.Diagnostics.csproj"/>
+    </Folder>
+    <Folder Name="/samples/">
+        <Project Path="samples/ClaudeForge.Samples.McpServer/ClaudeForge.Samples.McpServer.csproj"/>
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/ClaudeForge.Tests/ClaudeForge.Tests.csproj"/>
+        <Project Path="tests/ClaudeForge.Core.Tests/ClaudeForge.Core.Tests.csproj"/>
+        <Project Path="tests/ClaudeForge.Sdk.Tests/ClaudeForge.Sdk.Tests.csproj"/>
+        <Project Path="tests/LayeredEditors.Avalonia.Tests/LayeredEditors.Avalonia.Tests.csproj"/>
+        <Project
+            Path="tests/LayeredEditors.Avalonia.Diagnostics.Tests/LayeredEditors.Avalonia.Diagnostics.Tests.csproj"/>
+    </Folder>
+</Solution>

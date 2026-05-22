@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia</RootNamespace>
+        <AssemblyName>LayeredEditors.Avalonia</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Description>
+            Avalonia view-models and views for layered-scope settings editors.
+            Depends only on LayeredEditors.Abstractions + Avalonia + CommunityToolkit.Mvvm —
+            no JSON, no domain coupling. Consumers supply IEditorWorkspace / IEditorSchema
+            implementations that adapt their own data source.
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0"/>
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <!--
+          Opt-in Semi.Avalonia theme bundle. Consumers that want Semi styling include
+          avares://LayeredEditors.Avalonia/Themes/SemiBundle.axaml from their App.axaml;
+          consumers that prefer Fluent (or another theme) simply omit that include.
+          PrivateAssets="" lets the Semi assemblies flow transitively to consuming apps.
+        -->
+        <PackageReference Include="Semi.Avalonia" Version="12.0.1" PrivateAssets="" />
+        <PackageReference Include="Semi.Avalonia.DataGrid" Version="12.0.0" PrivateAssets=""/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
+    </ItemGroup>
+</Project>

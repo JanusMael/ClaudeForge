@@ -1,0 +1,244 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:vmroot="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
+             x:Class="Bennewitz.Ninja.ClaudeForge.App"
+             RequestedThemeVariant="Default">
+
+    <!--
+        Opt-in Semi theme via LayeredEditors.Avalonia. Remove this single include
+        to fall back to Avalonia's built-in Fluent theme; add alternate bundles
+        under avares://LayeredEditors.Avalonia/Themes/ to swap looks.
+    -->
+    <Application.Styles>
+        <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/SemiBundle.axaml" />
+        <!-- Allow tooltips to grow wide enough to show long content (e.g. JSON blobs)
+             without excessive line wrapping. MaxWidth is a ceiling, not a forced width,
+             so short tooltips remain compact. Avalonia constrains all popups to the
+             visible screen area, so the tooltip never extends off-screen. -->
+        <Style Selector="ToolTip">
+            <Setter Property="MaxWidth" Value="900" />
+        </Style>
+
+        <!--
+            `back-button` Style class.
+
+            Reusable orange-on-white "Back" button used by every page that needs a
+            return-to-previous affordance: the deep-link Back button at the bottom
+            of the nav sidebar, and the Memory page's Tier 1 file-viewer
+            back-to-inventory button.  Pulled out of MainWindow.axaml's inline
+            Button.Styles block so the two surfaces stay in lockstep visually
+            (matching tone, hover and pressed states).
+
+            Selectors override Semi.Avalonia's button states explicitly because
+            without these the orange background reverts to Semi's default chrome
+            on pointerover / pressed — the "back" affordance would lose its
+            distinctive colour mid-interaction.
+
+            Apply with `Classes="back-button"` on a Button.  The button's
+            Content can be a plain TextBlock; the Foreground=White is set on
+            the ContentPresenter so it cascades to any child text.
+        -->
+        <Style Selector="Button.back-button">
+            <Setter Property="Background" Value="#FFF57C00" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.back-button /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FFF57C00" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.back-button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FFEF6C00" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.back-button:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#FFE65100" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+    </Application.Styles>
+
+    <!-- Claude scope badge colors (consumed by ScopeToBrushConverter via resource lookup) -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://ClaudeForge/Resources/ScopeTheme.axaml" />
+                <ResourceInclude Source="avares://ClaudeForge/Resources/CommonActionKindTheme.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--
+                App-owned theme-adaptive brushes.
+
+                These brushes are defined in ThemeDictionaries so they resolve to the
+                correct value for the active light/dark theme rather than relying on
+                WinUI/Fluent design tokens that Semi.Avalonia may not provide.
+
+                BarButtonBackgroundBrush — slightly darker/lighter than the bar so
+                  toolbar and status-bar buttons have visible contrast in light mode.
+                AppLinkBrush — teal-blue used for "Browse suggestions" expander labels
+                  and other secondary action text (matches LayeredEditors LinkBrush hue).
+                AppCautionBrush — amber warning foreground for the PATH-warning row.
+                AppCautionBackgroundBrush — warm tint for bordered caution panels.
+            -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="BarButtonBackgroundBrush" Color="#FFD0D0D5" />
+                    <!-- Foreground for bar buttons: dark text on the light bar so icons/labels are legible -->
+                    <SolidColorBrush x:Key="BarButtonForegroundBrush" Color="#FF111111" />
+                    <SolidColorBrush x:Key="AppLinkBrush" Color="#005D7F" />
+                    <SolidColorBrush x:Key="AppCautionBrush" Color="#D97706" />
+                    <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#FFFBEB" />
+                    <!-- Group-header labels inside the Browse suggestions picker.
+                         Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
+                         in all theme variants, so we own this token explicitly. -->
+                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#1F1F1F" />
+                    <!-- Muted secondary text (e.g. "Old" column in SaveChangesDialog).
+                         Semi.Avalonia does not guarantee SystemControlForegroundBaseMediumBrush
+                         across all theme variants, so we own this token explicitly. -->
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#666666" />
+                    <!-- Full-contrast primary body text for use wherever
+                         SystemControlForegroundBaseHighBrush was previously used.
+                         Semi.Avalonia maps the SystemControl* family to dark-ish
+                         colours in both themes; this token is explicitly dark in
+                         light mode and light in dark mode. -->
+                    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#1A1A1A" />
+                    <!-- Property-name heading color (2026-05-15).  Used on every per-property
+                         editor row's DisplayName TextBlock (PropertyEditorWrapper) so the
+                         heading reads as a distinct visual layer above the property's
+                         description and editor controls.  Deep teal — picked to:
+                           • Stand out from AppPrimaryTextBrush (body text)
+                           • Stay distinct from AppLinkBrush (#005D7F, "clickable")
+                           • Not collide with the status-pill palette (success/warning/failure/active)
+                           • Read as a structural heading, not a state indicator
+                         Light: #1E5573 ≈ 5.7:1 contrast on white (WCAG AA Large + AA Normal).
+                         Dark:  #74C2DE ≈ 8.3:1 contrast on #1A1A1A (WCAG AAA). -->
+                    <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#1E5573" />
+                    <!-- Property-name PILL background (2026-05-16).  Pairs with
+                         AppPropertyHeadingBrush to render the per-row DisplayName
+                         as a tight-padded chip rather than plain coloured text.
+                         Light: pale teal on white.  Foreground stays
+                         AppPropertyHeadingBrush so the text+bg pair is monochrome
+                         teal at two tone levels.
+
+                         bumped from #E3F1F4 → #B8DCE2.
+                         Original value was so close to white that the chip
+                         visually disappeared against the page background;
+                         user feedback was "the teal is just every so slightly
+                         too light to really pop."  The new value is roughly a
+                         third darker (gives the chip a clearly visible boundary)
+                         while keeping the deep-teal foreground (#1E5573)
+                         comfortably readable (≈4.5:1 contrast, AA Normal). -->
+                    <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#B8DCE2" />
+                    <!-- Markdown code-block tints.  Semi.Avalonia's SystemControlBackgroundBaseLowBrush
+                         resolves to colors that don't reliably contrast with the page background on
+                         either theme; these tokens are explicitly defined per-theme so fenced code
+                         blocks have a visible bg + outline regardless of which Semi/Fluent theme is
+                         active.  Used by the Memory page's markdown viewer. -->
+                    <SolidColorBrush x:Key="AppCodeBlockBackgroundBrush" Color="#F4F4F4" />
+                    <SolidColorBrush x:Key="AppCodeBlockBorderBrush" Color="#D0D0D0" />
+                    <!-- Subtle panel/row divider borders (lighter than the code-block border).
+                         Replaces SystemControlForegroundBaseLowBrush in places where Semi.Avalonia
+                         resolved to a near-invisible tint on one theme or the other.  Used by row
+                         BorderBrush on Memory page list items, viewer container, etc. -->
+                    <SolidColorBrush x:Key="AppPanelBorderBrush" Color="#E0E0E0" />
+                    <!-- Status-bar severity tokens (2026-05-14).  Used by the centre status
+                         text + icon glyphs.  Foreground brushes are picked for adequate
+                         contrast against the bar's mid-gray; background brushes are subtle
+                         tints used by the Border wrapper so a failure/warning row reads as
+                         an actionable pill rather than competing with the bar surrounds. -->
+                    <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#1B7F2A" />
+                    <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#A35200" />
+                    <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#A8071A" />
+                    <SolidColorBrush x:Key="AppStatusActiveForegroundBrush" Color="#0050B3" />
+                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#E8F5EC" />
+                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#FFF4E5" />
+                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#FFE7E7" />
+                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#E6F0FB" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="BarButtonBackgroundBrush" Color="#FF2A2A2E" />
+                    <!-- Foreground for bar buttons: bright text on the near-black bar so icons/labels stand out -->
+                    <SolidColorBrush x:Key="BarButtonForegroundBrush" Color="#FFF2F2F2" />
+                    <SolidColorBrush x:Key="AppLinkBrush" Color="#4DBFE0" />
+                    <SolidColorBrush x:Key="AppCautionBrush" Color="#F59E0B" />
+                    <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#292010" />
+                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
+                    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
+                    <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />
+                    <!-- Dark-theme property heading color (see Light counterpart for rationale). -->
+                    <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#74C2DE" />
+                    <!-- Dark-theme property-name pill background.  Deep desaturated teal
+                         on near-black background reads as a chip without overwhelming
+                         the page; bright-teal foreground stays legible against it
+                         (≈6:1 contrast). -->
+                    <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#1B3A45" />
+                    <SolidColorBrush x:Key="AppCodeBlockBackgroundBrush" Color="#1F1F1F" />
+                    <SolidColorBrush x:Key="AppCodeBlockBorderBrush" Color="#3A3A3A" />
+                    <SolidColorBrush x:Key="AppPanelBorderBrush" Color="#2E2E2E" />
+                    <!-- Status-bar severity tokens — dark-mode counterparts.  Foregrounds
+                         are brightened so the icon/text reads against the bar's
+                         BarButtonBackgroundBrush (near-black); backgrounds are deep tints
+                         that look like a pill, not white-on-black.  Matches the same hue
+                         family as the Light tokens above. -->
+                    <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#5BD17B" />
+                    <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#F0A03A" />
+                    <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#F76262" />
+                    <SolidColorBrush x:Key="AppStatusActiveForegroundBrush" Color="#6BB1F2" />
+                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#143820" />
+                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#3A2B12" />
+                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#3A1717" />
+                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#102B45" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <!--
+        Application-level DataTemplates for the three Claude-specific specialized editors.
+        These are not known by LayeredEditors.Avalonia, so they're registered here and
+        resolved by fall-through when the library's PropertyEditorWrapper.ContentControl
+        encounters a type it doesn't recognise.
+    -->
+    <Application.DataTemplates>
+
+        <DataTemplate DataType="vm:PermissionsEditorViewModel">
+            <views:PermissionsEditorView />
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:McpServersEditorViewModel">
+            <views:McpServersEditorView Height="400" />
+        </DataTemplate>
+
+        <!--
+            MaxHeight (not Height) lets these views shrink to their content when
+            the list is short, so we don't leave a big empty panel below a
+            couple of rows. The ScrollViewer inside each view still handles
+            overflow past 300px.
+        -->
+        <DataTemplate DataType="vm:EnabledPluginsEditorViewModel">
+            <views:EnabledPluginsEditorView MaxHeight="300" />
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:MarketplacesEditorViewModel">
+            <views:MarketplacesEditorView MaxHeight="300" />
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:HooksEditorViewModel">
+            <views:HooksEditorView Height="500" />
+        </DataTemplate>
+
+        <DataTemplate DataType="vmroot:EnvironmentEditorViewModel">
+            <views:EnvironmentEditorView />
+        </DataTemplate>
+
+        <DataTemplate DataType="vmroot:MemoryEditorViewModel">
+            <views:MemoryEditorView />
+        </DataTemplate>
+
+        <DataTemplate DataType="vmroot:EssentialsViewModel">
+            <views:EssentialsView />
+        </DataTemplate>
+
+    </Application.DataTemplates>
+
+</Application>

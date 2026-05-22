@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+
+  # ── NuGet packages ──────────────────────────────────────────────────────────
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    groups:
+      # Avalonia packages are versioned in lockstep — group them so a single PR
+      # bumps all of them together and the project stays in a consistent state.
+      avalonia:
+        patterns:
+          - "Avalonia*"
+          - "Semi.Avalonia*"
+        update-types:
+          - "minor"
+          - "patch"
+      # CommunityToolkit packages are also coordinated.
+      communitytoolkit:
+        patterns:
+          - "CommunityToolkit.*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

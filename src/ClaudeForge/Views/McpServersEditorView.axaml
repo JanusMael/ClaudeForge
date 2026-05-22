@@ -1,0 +1,369 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.McpServersEditorView"
+             x:DataType="vm:McpServersEditorViewModel">
+
+    <!-- Explicit theme-aware colours so server names are legible in all
+         visual states × theme combinations.  We avoid Semi.Avalonia's
+         SystemControlForegroundBaseHighBrush because its resolved value
+         varies across Semi versions and can clash with the ListBox
+         background in dark mode.  The selected-item background is a fixed
+         dark blue so white text is always readable regardless of what
+         Semi maps SystemAccentColorBrush to in the current accent theme. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="McpItemForegroundBrush" Color="#FF1A1A1A" />
+                    <SolidColorBrush x:Key="McpSelectedBgBrush" Color="#FF0055A5" />
+                    <!-- Subtitle / hint text: medium-dark grey, clearly legible on white backgrounds -->
+                    <SolidColorBrush x:Key="McpHintTextBrush" Color="#FF555555" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="McpItemForegroundBrush" Color="#FFE8E8E8" />
+                    <SolidColorBrush x:Key="McpSelectedBgBrush" Color="#FF1E6BB5" />
+                    <!-- Subtitle / hint text: light grey that stands out on dark panel backgrounds -->
+                    <SolidColorBrush x:Key="McpHintTextBrush" Color="#FFCCCCCC" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <Grid ColumnDefinitions="270,4,*">
+
+            <!-- Left panel: server list -->
+            <Border Grid.Column="0"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="6">
+                        <TextBox Text="{Binding NewServerName}"
+                                 PlaceholderText="{x:Static loc:Strings.WatermarkServerName}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.WatermarkServerName}"
+                                 Width="208">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding AddServerCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Content="+" Command="{Binding AddServerCommand}"
+                                AutomationProperties.Name="{x:Static loc:Strings.TipAddServer}"
+                                ToolTip.Tip="{x:Static loc:Strings.TipAddServer}" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding Servers}"
+                             SelectedItem="{Binding SelectedServer}"
+                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameMcpServerList}">
+                        <ListBox.Styles>
+                            <!-- Default (unselected, not-hovered) — use our theme-dict brush
+                             instead of BaseHighBrush to guarantee contrast on both the
+                             light ListBox background and the dark ListBox background. -->
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource McpItemForegroundBrush}" />
+                            </Style>
+                            <!-- Pointer-over: subtle highlight; foreground unchanged. -->
+                            <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+                            </Style>
+                            <Style Selector="ListBoxItem:pointerover">
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource McpItemForegroundBrush}" />
+                            </Style>
+                            <!-- Selected: fixed dark-blue background so white text is always
+                             readable regardless of what Semi maps SystemAccentColorBrush to
+                             in the current accent theme.  TextElement.Foreground on the
+                             ContentPresenter cascades white into all child elements. -->
+                            <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource McpSelectedBgBrush}" />
+                                <Setter Property="TextElement.Foreground" Value="White" />
+                            </Style>
+                            <Style Selector="ListBoxItem:selected">
+                                <Setter Property="Foreground" Value="White" />
+                            </Style>
+                            <!-- Selected + pointer-over: maintain white text when hovering
+                             over an already-selected item. -->
+                            <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background"
+                                        Value="{DynamicResource McpSelectedBgBrush}" />
+                                <Setter Property="TextElement.Foreground" Value="White" />
+                            </Style>
+                            <Style Selector="ListBoxItem:selected:pointerover">
+                                <Setter Property="Foreground" Value="White" />
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:McpServerEntry">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Content="×" Padding="4,1" FontSize="11"
+                                            AutomationProperties.Name="{Binding Name, StringFormat='Remove MCP server {0}'}"
+                                            Click="OnRemoveServer" />
+                                    <!-- TextElement.Foreground inherits from the parent ListBoxItem
+                                     automatically, so we don't need an explicit `$parent[...]`
+                                     binding here. The redundant binding was also the only
+                                     remaining reflection-bound (`ReflectionBindingExtension(String)`)
+                                     expression in this view, so its removal keeps trim analysis clean. -->
+                                    <TextBlock Text="{Binding Name}"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <!-- Right panel: selected server details.
+             Avalonia 11: ContentControl.ContentTemplate always takes precedence over
+             ContentControl.DataTemplates — even when Content is non-null — so a
+             "null-fallback" ContentTemplate breaks the DataTemplate rendering entirely.
+             Fix: use a plain Grid with two children gated by IsVisible bindings. -->
+            <Grid Grid.Column="2">
+
+                <!-- Server editor: visible only when a server is selected. -->
+                <ContentControl Content="{Binding SelectedServer}"
+                                IsVisible="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <ContentControl.DataTemplates>
+                        <DataTemplate DataType="vm:McpServerEntry">
+                            <!-- No inner ScrollViewer — the outer SettingsGroupEditorView
+                             ScrollViewer handles overflow so the detail panel can expand
+                             to its natural height alongside the server list. -->
+                            <StackPanel Spacing="8" Margin="12,8">
+
+                                <!-- Transport type -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelTransportType}" FontWeight="SemiBold" />
+                                <ComboBox SelectedItem="{Binding SelectedTransportInfo}"
+                                          ItemsSource="{x:Static vm:McpServerEntry.TransportInfos}"
+                                          AutomationProperties.Name="{x:Static loc:Strings.LabelTransportType}"
+                                          MinWidth="300">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:McpTransportInfo">
+                                            <DockPanel ToolTip.Tip="{Binding Description}"
+                                                       AutomationProperties.Name="{Binding AccessibleName}">
+                                                <TextBlock DockPanel.Dock="Left"
+                                                           Text="{Binding Value}"
+                                                           FontFamily="Consolas,Menlo,monospace"
+                                                           MinWidth="50" />
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                                           IsVisible="{Binding $parent[ComboBoxItem], Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <!-- Description (Stop C 2026-05-05) — optional human-readable
+                                     blurb for the server.  Plugin-managed servers
+                                     (everything-claude-code etc.) populate this on every
+                                     entry; user-managed servers can leave it blank. -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelMcpDescription}"
+                                           FontWeight="SemiBold" Margin="0,4,0,0" />
+                                <TextBox Text="{Binding Description}"
+                                         PlaceholderText="{x:Static loc:Strings.WatermarkMcpDescription}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.LabelMcpDescription}"
+                                         Width="420" HorizontalAlignment="Left" />
+
+                                <!-- Command -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelCommand}" FontWeight="SemiBold"
+                                           Margin="0,4,0,0" />
+                                <TextBox Text="{Binding Command}"
+                                         PlaceholderText="{x:Static loc:Strings.WatermarkMcpCommand}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.LabelCommand}"
+                                         Width="420" HorizontalAlignment="Left" />
+                                <!-- Validation: command missing for stdio -->
+                                <TextBlock Text="{Binding ValidationMessage}"
+                                           IsVisible="{Binding CommandMissing}"
+                                           Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                                           FontSize="12"
+                                           Margin="0,2,0,0" />
+
+                                <!-- URL -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelUrl}" FontWeight="SemiBold"
+                                           Margin="0,4,0,0" />
+                                <TextBox Text="{Binding Url}"
+                                         PlaceholderText="{x:Static loc:Strings.WatermarkMcpUrl}"
+                                         AutomationProperties.Name="{x:Static loc:Strings.LabelUrl}"
+                                         Width="420" HorizontalAlignment="Left" />
+                                <!-- Validation: URL invalid for sse/http -->
+                                <TextBlock Text="{Binding ValidationMessage}"
+                                           IsVisible="{Binding UrlInvalid}"
+                                           Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                                           FontSize="12"
+                                           Margin="0,2,0,0" />
+
+                                <!-- Arguments — ordered list, editable via DataGrid -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelArguments}" FontWeight="SemiBold"
+                                           Margin="0,8,0,0" />
+                                <DataGrid ItemsSource="{Binding Args}"
+                                          AutoGenerateColumns="False"
+                                          CanUserResizeColumns="True"
+                                          CanUserSortColumns="False"
+                                          behaviors:CopyValue.IsEnabled="True"
+                                          GridLinesVisibility="Horizontal"
+                                          MaxHeight="160"
+                                          HorizontalAlignment="Left"
+                                          AutomationProperties.Name="{x:Static loc:Strings.LabelArguments}"
+                                          Width="420">
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="{x:Static loc:Strings.HeaderArgValue}"
+                                                                Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ArgItem">
+                                                    <ctrl:TipCell Tip="{Binding Value}">
+                                                        <TextBlock Text="{Binding Value}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="4,0"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </ctrl:TipCell>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate x:DataType="vm:ArgItem">
+                                                    <TextBox Text="{Binding Value}"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameEditArgument}"
+                                                             BorderThickness="0" Padding="3,0" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="40">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:ArgItem">
+                                                    <Button Content="×" Padding="4,1" FontSize="11"
+                                                            HorizontalAlignment="Center"
+                                                            AutomationProperties.Name="{Binding Value, StringFormat='Remove argument {0}'}"
+                                                            Click="OnRemoveArg" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding NewArg}"
+                                             PlaceholderText="{x:Static loc:Strings.WatermarkAddArgument}"
+                                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkAddArgument}"
+                                             Width="360">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddArgCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                    <Button Content="+" Command="{Binding AddArgCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddArgument}" />
+                                </StackPanel>
+
+                                <!-- Environment Variables — key-value pairs via DataGrid -->
+                                <TextBlock Text="{x:Static loc:Strings.LabelMcpEnvVars}" FontWeight="SemiBold"
+                                           Margin="0,8,0,0" />
+                                <TextBlock Text="{x:Static loc:Strings.TextMcpEnvVarsHint}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource McpHintTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Width="420" HorizontalAlignment="Left"
+                                           Margin="0,0,0,2" />
+                                <DataGrid ItemsSource="{Binding Env}"
+                                          AutoGenerateColumns="False"
+                                          CanUserResizeColumns="True"
+                                          CanUserSortColumns="True"
+                                          behaviors:CopyValue.IsEnabled="True"
+                                          GridLinesVisibility="Horizontal"
+                                          MaxHeight="200"
+                                          HorizontalAlignment="Left"
+                                          AutomationProperties.Name="{x:Static loc:Strings.LabelMcpEnvVars}"
+                                          Width="420">
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="{x:Static loc:Strings.HeaderEnvKey}" Width="*"
+                                                                SortMemberPath="Key">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:EnvVar">
+                                                    <ctrl:TipCell Tip="{Binding Key}">
+                                                        <TextBlock Text="{Binding Key}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="4,0"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </ctrl:TipCell>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate x:DataType="vm:EnvVar">
+                                                    <TextBox Text="{Binding Key}"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameEditEnvKey}"
+                                                             BorderThickness="0" Padding="3,0" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Header="{x:Static loc:Strings.HeaderEnvValue}"
+                                                                Width="2*"
+                                                                SortMemberPath="Value">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:EnvVar">
+                                                    <ctrl:TipCell Tip="{Binding Value}">
+                                                        <TextBlock Text="{Binding Value}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="4,0"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </ctrl:TipCell>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate x:DataType="vm:EnvVar">
+                                                    <TextBox Text="{Binding Value}"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameEditEnvValue}"
+                                                             BorderThickness="0" Padding="3,0" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTemplateColumn Width="40">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate x:DataType="vm:EnvVar">
+                                                    <Button Content="×" Padding="4,1" FontSize="11"
+                                                            HorizontalAlignment="Center"
+                                                            AutomationProperties.Name="{Binding Key, StringFormat='Remove environment variable {0}'}"
+                                                            Click="OnRemoveEnv" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding NewEnvKey}"
+                                             PlaceholderText="{x:Static loc:Strings.WatermarkEnvKey}"
+                                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkEnvKey}"
+                                             Width="120">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddEnvCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                    <TextBlock Text="=" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding NewEnvValue}"
+                                             PlaceholderText="{x:Static loc:Strings.WatermarkEnvValue}"
+                                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkEnvValue}"
+                                             Width="220">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddEnvCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                    <Button Content="+" Command="{Binding AddEnvCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddEnvVar}" />
+                                </StackPanel>
+
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.DataTemplates>
+                </ContentControl>
+
+            </Grid>
+
+        </Grid>
+
+    </DockPanel>
+</UserControl>

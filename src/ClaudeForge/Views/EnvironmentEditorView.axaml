@@ -1,0 +1,570 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.EnvironmentEditorView"
+             x:DataType="vm:EnvironmentEditorViewModel">
+
+    <UserControl.Resources>
+        <leconv:EnvVarNameToBrushConverter x:Key="EnvVarNameToBrush" />
+        <conv:EnvVarTooltipConverter x:Key="EnvVarTooltip" />
+    </UserControl.Resources>
+
+    <DockPanel>
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Padding="16,10"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonRefreshEnv}"
+                        Command="{Binding RefreshCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.TipRefreshEnv}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameRefreshEnv}" />
+                <!-- Accent-pill heading matching the nav tree's selected-row background.
+                     Same NavSelectedAccentBrush as the other top-level pages. -->
+                <Border Background="{DynamicResource NavSelectedAccentBrush}"
+                        TextElement.Foreground="White"
+                        CornerRadius="6"
+                        Padding="14,8"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.HeadingEnvironmentVariables}"
+                                   FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.TextEnvSubtitle}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="700"
+                                   Opacity="0.92" />
+                    </StackPanel>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Filter / show-all bar ───────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Padding="8,6"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBox Text="{Binding FilterText}"
+                         PlaceholderText="{x:Static loc:Strings.WatermarkFilterVars}"
+                         MinWidth="260"
+                         VerticalAlignment="Center"
+                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterVars}" />
+                <CheckBox IsChecked="{Binding ShowAll}"
+                          Content="{x:Static loc:Strings.CheckboxShowAll}"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="{x:Static loc:Strings.CheckboxShowAll}" />
+                <TextBlock VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           IsVisible="{Binding ShowAll, Converter={x:Static BoolConverters.Not}}"
+                           Text="{x:Static loc:Strings.TextShowCommonVars}" />
+            </StackPanel>
+        </Border>
+
+        <!-- ── Platform note (non-Windows) ───────────────────────────────── -->
+        <Border DockPanel.Dock="Bottom"
+                Padding="12,6"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                IsVisible="{Binding IsPersistentEnvAvailable, Converter={x:Static BoolConverters.Not}}">
+            <TextBlock FontSize="11"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Text="{x:Static loc:Strings.TextMacLinuxNote}" />
+        </Border>
+
+        <!-- ── Status bar ─────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Bottom"
+                Padding="8,4"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0"
+                IsVisible="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="{Binding StatusMessage}"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Border>
+
+        <!-- ── Master / detail split ──────────────────────────────────────── -->
+        <Grid ColumnDefinitions="*,4,400">
+
+            <!-- ── Left: two-section env var list + add-new row ─────────── -->
+            <DockPanel Grid.Column="0">
+
+                <!-- Add-new variable row (pinned to bottom) -->
+                <Border DockPanel.Dock="Bottom"
+                        Padding="8,6"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{x:Static loc:Strings.LabelNewVariable}"
+                                       VerticalAlignment="Center" FontSize="12" />
+                            <TextBox Text="{Binding NewVarName}"
+                                     PlaceholderText="{x:Static loc:Strings.WatermarkVarName}"
+                                     MinWidth="200"
+                                     AutomationProperties.Name="{x:Static loc:Strings.WatermarkVarName}">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding AddNewCommand}" />
+                                </TextBox.KeyBindings>
+                            </TextBox>
+                            <Button Content="{x:Static loc:Strings.ButtonAddVar}"
+                                    Command="{Binding AddNewCommand}"
+                                    AutomationProperties.Name="{x:Static loc:Strings.ButtonAddVar}" />
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Text="{x:Static loc:Strings.TextValueEditedInPane}" />
+                        </StackPanel>
+                        <!-- Inline validation error for invalid env var names -->
+                        <TextBlock Text="{x:Static loc:Strings.ValidationEnvVarName}"
+                                   IsVisible="{Binding NewVarNameIsValid, Converter={x:Static BoolConverters.Not}}"
+                                   Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                                   FontSize="11"
+                                   Margin="4,0,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!--
+                    Two sections in a single shared ScrollViewer.
+                    Both DataGrids share the same SelectedEntry property — selecting
+                    in one deselects the other because the two ItemsSources are disjoint.
+                    Each DataGrid auto-sizes to its content (no internal scroller) so the
+                    outer ScrollViewer provides one unified scroll experience.
+                -->
+                <ScrollViewer>
+                    <StackPanel>
+
+                        <!-- ── Section 1: Claude / Anthropic / Node ────────── -->
+                        <Border Padding="8,4"
+                                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                BorderThickness="0,0,0,1">
+                            <TextBlock Text="{x:Static loc:Strings.SectionClaudeAnthropicNode}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </Border>
+
+                        <DataGrid ItemsSource="{Binding ClaudeSectionEntries}"
+                                  SelectedItem="{Binding SelectedEntry}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  SelectionMode="Single"
+                                  behaviors:CopyValue.IsEnabled="True"
+                                  AutomationProperties.Name="{x:Static loc:Strings.SectionClaudeAnthropicNode}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="Auto" CanUserSort="True" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderEnvName}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEnvName}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding Name, Converter={StaticResource EnvVarTooltip}}">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="{Binding Name, Converter={StaticResource EnvVarNameToBrush}}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="*" CanUserSort="True" SortMemberPath="EffectiveValue">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValue}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValue}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding EffectiveValue}">
+                                                <TextBlock Text="{Binding EffectiveValue}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="80" CanUserSort="True" SortMemberPath="EffectiveSource">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderSource}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderSource}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding EffectiveSource}">
+                                                <TextBlock Text="{Binding EffectiveSource}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="90" CanUserSort="True" SortMemberPath="IsOverridden">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderOverridden}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderOverridden}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent">
+                                                <CheckBox IsChecked="{Binding IsOverridden}"
+                                                          IsEnabled="False"
+                                                          IsHitTestVisible="False"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          AutomationProperties.Name="{x:Static loc:Strings.HeaderOverridden}" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- ── Section 2: General (PATH, shell, OS) ────────── -->
+                        <Border Padding="8,4"
+                                Margin="0,16,0,0"
+                                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                BorderThickness="0,1,0,1">
+                            <TextBlock Text="{x:Static loc:Strings.SectionGeneralPath}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </Border>
+
+                        <DataGrid ItemsSource="{Binding GeneralSectionEntries}"
+                                  SelectedItem="{Binding SelectedEntry}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  SelectionMode="Single"
+                                  behaviors:CopyValue.IsEnabled="True"
+                                  AutomationProperties.Name="{x:Static loc:Strings.SectionGeneralPath}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="Auto" CanUserSort="True" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderEnvName}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEnvName}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding Name, Converter={StaticResource EnvVarTooltip}}">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Foreground="{Binding Name, Converter={StaticResource EnvVarNameToBrush}}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="*" CanUserSort="True" SortMemberPath="EffectiveValue">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValue}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValue}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding EffectiveValue}">
+                                                <TextBlock Text="{Binding EffectiveValue}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="80" CanUserSort="True" SortMemberPath="EffectiveSource">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderSource}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderSource}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent"
+                                                   ToolTip.Tip="{Binding EffectiveSource}">
+                                                <TextBlock Text="{Binding EffectiveSource}"
+                                                           Margin="4,0"
+                                                           VerticalAlignment="Center" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Width="90" CanUserSort="True" SortMemberPath="IsOverridden">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{x:Static loc:Strings.HeaderOverridden}"
+                                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderOverridden}" />
+                                    </DataGridTemplateColumn.Header>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:EnvVarEntry">
+                                            <Panel HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Background="Transparent">
+                                                <CheckBox IsChecked="{Binding IsOverridden}"
+                                                          IsEnabled="False"
+                                                          IsHitTestVisible="False"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          AutomationProperties.Name="{x:Static loc:Strings.HeaderOverridden}" />
+                                            </Panel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
+
+            <!-- ── Splitter ─────────────────────────────────────────────── -->
+            <GridSplitter Grid.Column="1"
+                          ResizeDirection="Columns" />
+
+            <!-- ── Right: Detail pane ───────────────────────────────────── -->
+
+            <!-- Placeholder when nothing is selected -->
+            <TextBlock Grid.Column="2"
+                       Text="{x:Static loc:Strings.TextSelectVariable}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       TextWrapping="Wrap" Margin="24"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="{Binding SelectedEntry, Converter={x:Static ObjectConverters.IsNull}}" />
+
+            <!-- Detail pane shown when an entry is selected -->
+            <ScrollViewer Grid.Column="2"
+                          Padding="14,12"
+                          IsVisible="{Binding SelectedEntry, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <StackPanel Spacing="0">
+
+                    <!-- Variable name.
+                         FallbackValue handles the transition where SelectedEntry has
+                         become null but the binding re-evaluates before the parent
+                         IsVisible takes effect — without it, the binding logs
+                         "Value is null at SelectedEntry" warnings on every deselect. -->
+                    <TextBlock Text="{Binding SelectedEntry.Name, FallbackValue=''}"
+                               FontSize="15" FontWeight="SemiBold"
+                               Margin="0,0,0,4" />
+
+                    <!-- Description for known variables — hidden when not in the known set -->
+                    <TextBlock Text="{Binding SelectedEntryDescription}"
+                               IsVisible="{Binding SelectedEntryDescription, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12" />
+
+                    <!-- Spacer when no description — keeps consistent gap above the edit section -->
+                    <Border
+                        IsVisible="{Binding SelectedEntryDescription, Converter={x:Static ObjectConverters.IsNull}}"
+                        Height="8" />
+
+                    <!-- Edit section (moved above the per-layer value table) -->
+                    <TextBlock Text="{x:Static loc:Strings.LabelEdit}"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Margin="0,0,0,6" />
+
+                    <TextBlock Text="{x:Static loc:Strings.LabelWritingTo}"
+                               FontSize="11"
+                               Margin="0,0,0,4" />
+
+                    <ComboBox ItemsSource="{Binding AvailableScopeInfos}"
+                              SelectedItem="{Binding SelectedScopeInfo}"
+                              HorizontalAlignment="Stretch"
+                              Margin="0,0,0,4"
+                              AutomationProperties.Name="{x:Static loc:Strings.LabelWritingTo}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EnvScopeInfo">
+                                <!-- Description shown as tooltip only — not inline — to keep the
+                                     dropdown compact. Hover over any item to see the full detail. -->
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontFamily="Consolas,Menlo,monospace"
+                                           ToolTip.Tip="{Binding Description}"
+                                           AutomationProperties.Name="{Binding AccessibleName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Text="{Binding ScopeNote}"
+                               FontSize="10"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Margin="0,0,0,8" />
+
+                    <!--
+                        Multi-line so long values (PATH, PYTHONPATH, etc.) wrap
+                        instead of scrolling off a single line; MaxHeight keeps
+                        the panel from dominating the view when the value is
+                        unusually long.
+                    -->
+                    <TextBox Text="{Binding EditValue}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkValueNotSet}"
+                             HorizontalAlignment="Stretch"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="80"
+                             MaxHeight="300"
+                             VerticalContentAlignment="Top"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Margin="0,0,0,8"
+                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameEnvVarEditValue}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{x:Static loc:Strings.ButtonSaveEnvVar}"
+                                Command="{Binding SaveEditCommand}"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonSaveEnvVar}" />
+                        <Button Content="{x:Static loc:Strings.ButtonRemoveFromScope}"
+                                Command="{Binding RemoveFromScopeCommand}"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonRemoveFromScope}" />
+                    </StackPanel>
+
+                    <!-- Process read-only note -->
+                    <TextBlock FontSize="10"
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               IsVisible="{Binding SelectedEntry.ProcessValue,
+                                   Converter={x:Static ObjectConverters.IsNotNull},
+                                   FallbackValue=False}"
+                               Text="{x:Static loc:Strings.TextProcessEnvNote}" />
+
+                    <!-- Per-layer value table (below Edit so the edit controls are immediately reachable) -->
+                    <TextBlock Text="{x:Static loc:Strings.LabelValuesByLayer}"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Margin="0,16,0,4" />
+
+                    <!-- Per-layer value table.
+                         Labels are rendered as small coloured badge chips (coloured
+                         background + white text) so they stand out on both light and
+                         dark themes — the same visual style as the scope chiclets in
+                         the property editors. -->
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1" CornerRadius="4"
+                            Margin="0,0,0,12">
+                        <StackPanel>
+
+                            <!-- Process row (always read-only) -->
+                            <Grid ColumnDefinitions="Auto,*"
+                                  Margin="8,5">
+                                <Border Grid.Column="0"
+                                        Background="{DynamicResource scope-brush-process}"
+                                        CornerRadius="3" Padding="6,2"
+                                        Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Static loc:Strings.LabelProcess}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="White" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedEntry.ProcessValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           FontSize="11" TextWrapping="Wrap"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Rectangle Height="1"
+                                       Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                       Margin="8,0" />
+
+                            <!-- Claude row -->
+                            <Grid ColumnDefinitions="Auto,*"
+                                  Margin="8,5">
+                                <Border Grid.Column="0"
+                                        Background="{DynamicResource scope-brush-claude-env}"
+                                        CornerRadius="3" Padding="6,2"
+                                        Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Static loc:Strings.LabelClaude}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="White" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedEntry.ClaudeValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           FontSize="11" TextWrapping="Wrap"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Rectangle Height="1"
+                                       Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                       Margin="8,0" />
+
+                            <!-- User row -->
+                            <Grid ColumnDefinitions="Auto,*"
+                                  Margin="8,5">
+                                <Border Grid.Column="0"
+                                        Background="{DynamicResource scope-brush-user-env}"
+                                        CornerRadius="3" Padding="6,2"
+                                        Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Static loc:Strings.LabelUser}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="White" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedEntry.UserValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           FontSize="11" TextWrapping="Wrap"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Rectangle Height="1"
+                                       Fill="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                       Margin="8,0" />
+
+                            <!-- Machine row -->
+                            <Grid ColumnDefinitions="Auto,*"
+                                  Margin="8,5">
+                                <Border Grid.Column="0"
+                                        Background="{DynamicResource scope-brush-machine-env}"
+                                        CornerRadius="3" Padding="6,2"
+                                        Margin="0,0,8,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Static loc:Strings.LabelMachine}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="White" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedEntry.MachineValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           FontSize="11" TextWrapping="Wrap"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+    </DockPanel>
+</UserControl>

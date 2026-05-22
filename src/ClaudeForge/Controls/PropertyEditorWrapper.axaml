@@ -1,0 +1,877 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:settings="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
+             xmlns:abs="using:Bennewitz.Ninja.LayeredEditors.Abstractions"
+             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
+             xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:sys="using:System"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Controls.PropertyEditorWrapper"
+             x:DataType="libvm:PropertyEditorViewModel">
+
+    <UserControl.Resources>
+        <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
+        <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
+        <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
+        <libconv:BoolToStatusTextConverter x:Key="BoolToStatusText" />
+        <libconv:BoolToStatusBrushConverter x:Key="BoolToStatusBrush" />
+    </UserControl.Resources>
+
+    <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
+         Instead IsEnabled is applied only to the ContentControl (Row 3 editor) below. -->
+    <Border Padding="16,10"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="0,0,0,1">
+
+        <StackPanel Spacing="4">
+
+            <!-- Row 1: Property name + scope badge + other-scope indicator + reset button -->
+            <DockPanel>
+                <!-- Reset is always present in the layout so rows do not shift when a value
+                     is set or cleared. IsEnabled (not IsVisible) communicates availability:
+                     enabled = "there is an explicit value at this scope you can remove";
+                     disabled = "nothing to reset — field is unset or scope is read-only". -->
+                <Button DockPanel.Dock="Right"
+                        Command="{Binding ResetToInheritedCommand}"
+                        IsEnabled="{Binding CanReset}"
+                        Content="{x:Static loc:Strings.ButtonReset}"
+                        FontSize="11"
+                        Padding="8,2"
+                        ToolTip.Tip="{x:Static loc:Strings.TipResetToInherited}" />
+
+                <!-- Other-scope indicator: visible when HooksEditorViewModel or
+                     McpServersEditorViewModel reports data at other scopes. For all
+                     other editor types the ReflectionBinding resolves to 0/false. -->
+                <Panel DockPanel.Dock="Right"
+                       Margin="0,0,8,0"
+                       IsVisible="{Binding OtherScopesWithData.Count,
+                           Converter={x:Static libconv:IsPositiveConverter.Instance}}">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Static loc:Strings.LabelDefinedInScopes}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        <ItemsControl ItemsSource="{Binding OtherScopesWithData}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <!-- x:DataType = IEditorScope (the items in OtherScopesWithData
+                                     after step 3a moved the property up to the library typed as
+                                     IReadOnlyList<IEditorScope>).  The ScopeTo* converters accept
+                                     either IEditorScope or ConfigScope, so the chiclet rendering
+                                     is unchanged.  Compiled bindings stay in effect because
+                                     IEditorScope is concrete enough for the binding compiler. -->
+                                <DataTemplate x:DataType="abs:IEditorScope">
+                                    <Border Background="{Binding Converter={StaticResource ScopeToBrush}}"
+                                            CornerRadius="4" Padding="6,2"
+                                            ToolTip.Tip="{Binding Converter={StaticResource ScopeToTooltip}}">
+                                        <TextBlock Text="{Binding Converter={StaticResource ScopeToName}}"
+                                                   FontSize="10" Foreground="White" FontWeight="Bold" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Panel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- 2026-05-16 — Property name rendered as a tight-padded pill so the
+                         heading is visually distinct from body text on BOTH themes (the
+                         earlier teal-foreground-only treatment was hard to spot on light
+                         theme — deep teal on white was too close to dark-on-white body
+                         text).  Background + foreground both pull from theme-aware tokens
+                         in App.axaml so the chip looks consistent across light/dark
+                         variants.  Tight padding (8,2) + CornerRadius=3 keep it compact
+                         enough to sit inline with the scope badge / overridden indicator
+                         without inflating the row height. -->
+                    <!-- 2026-05-16 — ToolTip.Tip on BOTH the Border (covers the
+                         padding/fill area) and the inner TextBlock (covers the
+                         text area), per I9 — Avalonia tooltips don't propagate
+                         child→parent.  Tooltip content is the schema path
+                         ({Binding Path}) which is useful even when the visible
+                         DisplayName matches: nested properties have paths like
+                         "permissions.defaultMode" / "mcpServers.foo.headers"
+                         that aren't visible from the pill text alone.
+                         AutomationProperties.Name on the TextBlock is explicit
+                         (rather than relying on auto-derivation) per the
+                         CLAUDE.md guidance — auto-derivation is reliable for
+                         plain text but emoji/mnemonic-prefix gotchas have
+                         bitten us elsewhere; better to be explicit. -->
+                    <Border Background="{DynamicResource AppPropertyHeadingBackgroundBrush}"
+                            CornerRadius="3" Padding="8,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding Path}">
+                        <TextBlock x:Name="PropertyNameLabel"
+                                   Text="{Binding DisplayName}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppPropertyHeadingBrush}"
+                                   VerticalAlignment="Center"
+                                   ToolTip.Tip="{Binding Path}"
+                                   AutomationProperties.Name="{Binding DisplayName}"
+                                   AutomationProperties.HelpText="{Binding Description}" />
+                    </Border>
+
+                    <!-- Scope badge - only shown when a value exists at some scope.
+                         ToolTip is set on BOTH the Border (covers the padding/fill area)
+                         and the inner TextBlock (covers the text area) so the entire
+                         coloured chiclet triggers the tooltip on hover. -->
+                    <Border IsVisible="{Binding EffectiveScope, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Background="{Binding EffectiveScope, Converter={StaticResource ScopeToBrush}}"
+                            CornerRadius="4" Padding="6,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding EffectiveScope, Converter={StaticResource ScopeToTooltip}}">
+                        <TextBlock Text="{Binding EffectiveScope, Converter={StaticResource ScopeToName}}"
+                                   FontSize="10" Foreground="White" FontWeight="Bold"
+                                   ToolTip.Tip="{Binding EffectiveScope, Converter={StaticResource ScopeToTooltip}}" />
+                    </Border>
+
+                    <!-- Override indicator -->
+                    <TextBlock IsVisible="{Binding IsOverridden}"
+                               Text="{x:Static loc:Strings.TextOverridden}"
+                               FontSize="10" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               VerticalAlignment="Center" />
+
+                    <!-- Managed lock icon -->
+                    <TextBlock IsVisible="{Binding IsLocked}"
+                               Text="🔒"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="{x:Static loc:Strings.TipManagedLocked}" />
+
+                    <!-- Undocumented indicator: not in official docs -->
+                    <TextBlock IsVisible="{Binding IsUndocumented}"
+                               Text="🕵"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="{x:Static loc:Strings.TipUndocumented}" />
+
+                    <!-- New-since-last-snapshot badge.
+                         ToolTip on BOTH Border + inner TextBlock — same
+                         pattern as the scope-badge above.  Avalonia
+                         tooltips don't propagate child→parent, so a hover
+                         landing on the "NEW" glyph (the text fill) would
+                         see no tooltip if only the Border had one. -->
+                    <Border IsVisible="{Binding IsNew}"
+                            Background="{DynamicResource SystemAccentColorBrush}"
+                            CornerRadius="4" Padding="6,2"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}">
+                        <TextBlock Text="{x:Static loc:Strings.TextNewBadge}"
+                                   FontSize="9" FontWeight="Bold"
+                                   Foreground="White"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}" />
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- Row 2: Description / help text (URLs are linkified) -->
+            <libctrl:LinkifiedTextBlock SourceText="{Binding Description}"
+                                        IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                        Margin="0,0,0,4" />
+
+            <!-- Row 3: The actual editor control, resolved from DataTemplates.
+                 IsEnabled here (not on the outer Border) so Row 1 (lock icon) keeps
+                 hit-test visibility and can show its tooltip even when locked. -->
+            <ContentControl Content="{Binding}"
+                            IsEnabled="{Binding IsLocked, Converter={x:Static BoolConverters.Not}}">
+                <ContentControl.DataTemplates>
+                    
+                    <!-- Every primary editor input gets
+                         AutomationProperties.Name + HelpText bound to the VM's
+                         DisplayName + Description so screen-reader Tab-navigation
+                         announces "PropertyName, edit text, '…'" rather than
+                         just role+value.  Without these the property name (in
+                         the pill above) is invisible during Tab-navigation
+                         because the TextBlock label isn't focusable. -->
+                    <DataTemplate x:DataType="libvm:BooleanPropertyEditorViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <CheckBox IsChecked="{Binding Value}"
+                                      IsThreeState="True"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{Binding DisplayName}"
+                                      AutomationProperties.HelpText="{Binding Description}" />
+                            <TextBlock Text="{Binding Value, Converter={StaticResource BoolToStatusText}}"
+                                       Foreground="{Binding Value, Converter={StaticResource BoolToStatusBrush}}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:DataType="libvm:StringPropertyEditorViewModel">
+                        <TextBox Text="{Binding Value}"
+                                 PlaceholderText="{Binding Watermark}"
+                                 MinWidth="200"
+                                 MaxWidth="500"
+                                 HorizontalAlignment="Left"
+                                 AutomationProperties.Name="{Binding DisplayName}"
+                                 AutomationProperties.HelpText="{Binding Description}" />
+                    </DataTemplate>
+
+                    <!-- Typed string→string map editor (e.g. modelOverrides).
+                         Each row is an AutoCompleteBox-with-suggestions for the
+                         key + plain TextBox for the value + remove (×). A "+ Add"
+                         row appends new entries. The Key column's suggestions are
+                         passed in via the VM constructor (factory wiring) so the
+                         editor stays generic across maps with the same shape. -->
+                    <DataTemplate x:DataType="vm:StringMapPropertyEditorViewModel">
+                        <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:StringMapEntryViewModel">
+                                        <DockPanel Margin="0,2" LastChildFill="True">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="×"
+                                                    FontSize="12"
+                                                    Padding="6,2"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding $parent[ItemsControl].((vm:StringMapPropertyEditorViewModel)DataContext).RemoveEntryCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <Grid ColumnDefinitions="*,8,*">
+                                                <TextBox Grid.Column="0"
+                                                         Text="{Binding Key}"
+                                                         MinWidth="160" />
+                                                <TextBox Grid.Column="2"
+                                                         Text="{Binding Value}"
+                                                         MinWidth="160" />
+                                            </Grid>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <!-- "+ Add" row: AutoCompleteBox (key, with dropdown) + TextBox (value) + Add button -->
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right"
+                                        Content="{x:Static loc:Strings.ButtonAdd}"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding AddEntryCommand}" />
+                                <Grid ColumnDefinitions="*,8,*">
+                                    <AutoCompleteBox Grid.Column="0"
+                                                     Text="{Binding NewKeyText}"
+                                                     ItemsSource="{Binding KeySuggestions}"
+                                                     PlaceholderText="{Binding NewKeyWatermark}"
+                                                     FilterMode="Contains"
+                                                     MinimumPrefixLength="0"
+                                                     MinWidth="160" />
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding NewValueText}"
+                                             PlaceholderText="{Binding NewValueWatermark}"
+                                             MinWidth="160">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddEntryCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                </Grid>
+                            </DockPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- MCP server allow/deny list editor (allowedMcpServers /
+                         deniedMcpServers). Each row is a 3-variant
+                         discriminated union: a ComboBox picker for Kind
+                         (ByName / ByCommand / ByUrl) + a single TextBox
+                         payload that switches between single-line and
+                         multi-line based on Kind (Command takes one arg per
+                         line). Typed dispatch on save reconstructs the
+                         schema-correct {serverName | serverCommand |
+                         serverUrl: …} JsonObject so the user can't paste a
+                         bare string into the array. -->
+                    <DataTemplate x:DataType="vm:McpServerListEditorViewModel">
+                        <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:McpServerListEntryViewModel">
+                                        <DockPanel Margin="0,2" LastChildFill="True">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="×"
+                                                    FontSize="12"
+                                                    Padding="6,2"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Top"
+                                                    Command="{Binding $parent[ItemsControl].((vm:McpServerListEditorViewModel)DataContext).RemoveEntryCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <Grid ColumnDefinitions="140,8,*">
+                                                <ComboBox Grid.Column="0"
+                                                          ItemsSource="{Binding $parent[ItemsControl].((vm:McpServerListEditorViewModel)DataContext).AvailableKinds}"
+                                                          SelectedItem="{Binding Kind}"
+                                                          MinWidth="120"
+                                                          VerticalAlignment="Top" />
+                                                <TextBox Grid.Column="2"
+                                                         Text="{Binding Text}"
+                                                         PlaceholderText="{Binding InputWatermark}"
+                                                         AcceptsReturn="{Binding IsCommandKind}"
+                                                         FontFamily="Consolas, Menlo, monospace"
+                                                         FontSize="12"
+                                                         MinWidth="240" />
+                                            </Grid>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <!-- "+ Add" row mirrors the row layout (kind picker +
+                                 payload + Add button). -->
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right"
+                                        Content="{x:Static loc:Strings.ButtonAdd}"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Command="{Binding AddEntryCommand}" />
+                                <Grid ColumnDefinitions="140,8,*">
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding AvailableKinds}"
+                                              SelectedItem="{Binding NewKind}"
+                                              MinWidth="120"
+                                              VerticalAlignment="Top" />
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding NewText}"
+                                             PlaceholderText="match payload"
+                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontSize="12"
+                                             MinWidth="240">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddEntryCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                </Grid>
+                            </DockPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Marketplace allow/block list editor
+                         (strictKnownMarketplaces / blockedMarketplaces). Each
+                         row is an 8-variant discriminated union: a ComboBox
+                         picker for Source (github / git / npm / url / file /
+                         directory / hostPattern / pathPattern) + a single
+                         primary-value TextBox whose label changes per source.
+                         Optional fields (ref / path / headers) are preserved
+                         opaquely across the round-trip via the entry's
+                         ExtraFields capture so hand-curated managed entries
+                         don't lose data. -->
+                    <DataTemplate x:DataType="vm:MarketplaceListEditorViewModel">
+                        <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:MarketplaceListEntryViewModel">
+                                        <DockPanel Margin="0,2" LastChildFill="True">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="×"
+                                                    FontSize="12"
+                                                    Padding="6,2"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Top"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MarketplaceListEditorViewModel)DataContext).RemoveEntryCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <StackPanel Spacing="4">
+                                                <Grid ColumnDefinitions="180,8,*">
+                                                    <ComboBox Grid.Column="0"
+                                                              ItemsSource="{x:Static vm:MarketplaceListEditorViewModel.SourceInfos}"
+                                                              SelectedItem="{Binding SelectedSourceInfo}"
+                                                              MinWidth="160"
+                                                              VerticalAlignment="Top">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:MarketplaceListSourceInfo">
+                                                                <TextBlock Text="{Binding Description}" />
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <TextBox Grid.Column="2"
+                                                             Text="{Binding PrimaryValue}"
+                                                             PlaceholderText="{Binding PrimaryValueWatermark}"
+                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontSize="12"
+                                                             MinWidth="240" />
+                                                </Grid>
+                                                <!-- Advanced sub-fields for github / git variants
+                                                     (ShowGitFields toggles visibility based on
+                                                     Source).  Empty values omit the field on save
+                                                     so the user clearing an inherited ref / path
+                                                     truly removes it from the on-disk shape. -->
+                                                <Expander Header="{x:Static loc:Strings.HeaderAdvancedFields}"
+                                                          IsVisible="{Binding ShowGitFields}"
+                                                          Margin="0,2,0,0">
+                                                    <Grid ColumnDefinitions="100,8,*"
+                                                          RowDefinitions="Auto,4,Auto"
+                                                          Margin="0,4,0,0">
+                                                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                                                   Text="{x:Static loc:Strings.LabelMarketplaceRef}"
+                                                                   VerticalAlignment="Center"
+                                                                   Opacity="0.8" />
+                                                        <TextBox Grid.Row="0" Grid.Column="2"
+                                                                 Text="{Binding Ref}"
+                                                                 PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceRef}"
+                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontSize="12" />
+                                                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                                                   Text="{x:Static loc:Strings.LabelMarketplacePath}"
+                                                                   VerticalAlignment="Center"
+                                                                   Opacity="0.8" />
+                                                        <TextBox Grid.Row="2" Grid.Column="2"
+                                                                 Text="{Binding Path}"
+                                                                 PlaceholderText="{x:Static loc:Strings.WatermarkMarketplacePath}"
+                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontSize="12" />
+                                                    </Grid>
+                                                </Expander>
+                                                <!-- HTTP headers sub-editor for the url variant.
+                                                     Mini key-value table — name + value plain
+                                                     TextBoxes per row, "+ Add" appends, × removes.
+                                                     Empty headers map omits the field on save so
+                                                     the user clearing all rows truly removes it. -->
+                                                <Expander Header="{x:Static loc:Strings.HeaderHttpHeaders}"
+                                                          IsVisible="{Binding ShowHeadersField}"
+                                                          Margin="0,2,0,0">
+                                                    <StackPanel Spacing="4" Margin="0,4,0,0">
+                                                        <ItemsControl ItemsSource="{Binding Headers}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:StringMapEntryViewModel">
+                                                                    <DockPanel Margin="0,2" LastChildFill="True">
+                                                                        <Button DockPanel.Dock="Right"
+                                                                                Content="×"
+                                                                                FontSize="11"
+                                                                                Padding="4,1"
+                                                                                Margin="6,0,0,0"
+                                                                                Command="{Binding $parent[ItemsControl].((vm:MarketplaceListEntryViewModel)DataContext).RemoveHeaderCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                        <Grid ColumnDefinitions="160,8,*">
+                                                                            <TextBox Grid.Column="0"
+                                                                                    Text="{Binding Key}"
+                                                                                    PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
+                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontSize="12" />
+                                                                            <TextBox Grid.Column="2"
+                                                                                    Text="{Binding Value}"
+                                                                                    PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
+                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontSize="12" />
+                                                                        </Grid>
+                                                                    </DockPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <DockPanel LastChildFill="True">
+                                                            <Button DockPanel.Dock="Right"
+                                                                    Content="{x:Static loc:Strings.ButtonAdd}"
+                                                                    FontSize="11"
+                                                                    Padding="6,1"
+                                                                    Margin="6,0,0,0"
+                                                                    Command="{Binding AddHeaderCommand}" />
+                                                            <Grid ColumnDefinitions="160,8,*">
+                                                                <TextBox Grid.Column="0"
+                                                                         Text="{Binding NewHeaderName}"
+                                                                         PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
+                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontSize="12" />
+                                                                <TextBox Grid.Column="2"
+                                                                         Text="{Binding NewHeaderValue}"
+                                                                         PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
+                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontSize="12">
+                                                                    <TextBox.KeyBindings>
+                                                                        <KeyBinding Gesture="Enter"
+                                                                                Command="{Binding AddHeaderCommand}" />
+                                                                    </TextBox.KeyBindings>
+                                                                </TextBox>
+                                                            </Grid>
+                                                        </DockPanel>
+                                                    </StackPanel>
+                                                </Expander>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right"
+                                        Content="{x:Static loc:Strings.ButtonAdd}"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Top"
+                                        Command="{Binding AddEntryCommand}" />
+                                <Grid ColumnDefinitions="180,8,*">
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{x:Static vm:MarketplaceListEditorViewModel.SourceInfos}"
+                                              SelectedItem="{Binding SelectedNewSourceInfo}"
+                                              MinWidth="160"
+                                              VerticalAlignment="Top">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:MarketplaceListSourceInfo">
+                                                <TextBlock Text="{Binding Description}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding NewPrimaryValue}"
+                                             PlaceholderText="{Binding NewPrimaryValueWatermark}"
+                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontSize="12"
+                                             MinWidth="240">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding AddEntryCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                </Grid>
+                            </DockPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Raw JSON fallback for Complex / Unknown schema nodes that
+                         no specialised editor handles (anyOf variants etc.).
+                         Multi-line TextBox + inline parse-error label; the VM
+                         refuses to write unparseable text so the user cannot
+                         silently corrupt a typed slot via a stray string.
+                         Replaces the prior String-editor fallback. -->
+                    <DataTemplate x:DataType="vm:JsonRawPropertyEditorViewModel">
+                        <StackPanel Spacing="4" HorizontalAlignment="Stretch">
+                            <TextBox Text="{Binding Text}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="NoWrap"
+                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontSize="12"
+                                     MinHeight="80"
+                                     MaxHeight="240"
+                                     HorizontalAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                            <TextBlock Text="{Binding ParseError}"
+                                       IsVisible="{Binding ParseError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- pluginConfigs — 3-level nested editor:
+                         Plugin (PluginId) → MCP Server (ServerName) → Configs (key/value).
+                         Closes the "every Complex / Object-array property has a typed
+                         editor" goal from the 2026-05-05 audit.  String-typed config
+                         values are surfaced directly; non-string originals (number /
+                         boolean / array) preserve opaquely via per-server ExtraConfigs. -->
+                    <DataTemplate x:DataType="vm:PluginConfigsEditorViewModel">
+                        <StackPanel Spacing="6" HorizontalAlignment="Stretch">
+                            <ItemsControl ItemsSource="{Binding Plugins}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:PluginConfigEntryViewModel">
+                                        <Expander Margin="0,2"
+                                                  IsExpanded="True"
+                                                  HorizontalAlignment="Stretch">
+                                            <Expander.Header>
+                                                <DockPanel LastChildFill="True">
+                                                    <Button DockPanel.Dock="Right"
+                                                            Content="×"
+                                                            FontSize="12"
+                                                            Padding="6,2"
+                                                            Margin="6,0,0,0"
+                                                            Command="{Binding $parent[ItemsControl].((vm:PluginConfigsEditorViewModel)DataContext).RemovePluginCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <TextBox Text="{Binding PluginId}"
+                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
+                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontSize="12"
+                                                             MinWidth="280" />
+                                                </DockPanel>
+                                            </Expander.Header>
+                                            <StackPanel Spacing="6" Margin="0,4,0,0">
+                                                <ItemsControl ItemsSource="{Binding Servers}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:PluginServerConfigViewModel">
+                                                            <Expander Margin="0,2"
+                                                                      IsExpanded="True"
+                                                                      HorizontalAlignment="Stretch">
+                                                                <Expander.Header>
+                                                                    <DockPanel LastChildFill="True">
+                                                                        <Button DockPanel.Dock="Right"
+                                                                                Content="×"
+                                                                                FontSize="11"
+                                                                                Padding="4,1"
+                                                                                Margin="6,0,0,0"
+                                                                                Command="{Binding $parent[ItemsControl].((vm:PluginConfigEntryViewModel)DataContext).RemoveServerCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                        <TextBox Text="{Binding ServerName}"
+                                                                                PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
+                                                                                FontFamily="Consolas, Menlo, monospace"
+                                                                                FontSize="12"
+                                                                                MinWidth="220" />
+                                                                    </DockPanel>
+                                                                </Expander.Header>
+                                                                <StackPanel Spacing="4" Margin="0,4,0,0">
+                                                                    <ItemsControl ItemsSource="{Binding Configs}">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate
+                                                                                x:DataType="vm:StringMapEntryViewModel">
+                                                                                <DockPanel Margin="0,2"
+                                                                                    LastChildFill="True">
+                                                                                    <Button DockPanel.Dock="Right"
+                                                                                        Content="×"
+                                                                                        FontSize="11"
+                                                                                        Padding="4,1"
+                                                                                        Margin="6,0,0,0"
+                                                                                        Command="{Binding $parent[ItemsControl].((vm:PluginServerConfigViewModel)DataContext).RemoveConfigCommand}"
+                                                                                        CommandParameter="{Binding}" />
+                                                                                    <Grid ColumnDefinitions="180,8,*">
+                                                                                        <TextBox Grid.Column="0"
+                                                                                            Text="{Binding Key}"
+                                                                                            PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
+                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontSize="12" />
+                                                                                        <TextBox Grid.Column="2"
+                                                                                            Text="{Binding Value}"
+                                                                                            PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
+                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontSize="12" />
+                                                                                    </Grid>
+                                                                                </DockPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <DockPanel LastChildFill="True">
+                                                                        <Button DockPanel.Dock="Right"
+                                                                                Content="{x:Static loc:Strings.ButtonAdd}"
+                                                                                FontSize="11"
+                                                                                Padding="6,1"
+                                                                                Margin="6,0,0,0"
+                                                                                Command="{Binding AddConfigCommand}" />
+                                                                        <Grid ColumnDefinitions="180,8,*">
+                                                                            <TextBox Grid.Column="0"
+                                                                                    Text="{Binding NewConfigKey}"
+                                                                                    PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
+                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontSize="12" />
+                                                                            <TextBox Grid.Column="2"
+                                                                                    Text="{Binding NewConfigValue}"
+                                                                                    PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
+                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontSize="12">
+                                                                                <TextBox.KeyBindings>
+                                                                                    <KeyBinding Gesture="Enter"
+                                                                                        Command="{Binding AddConfigCommand}" />
+                                                                                </TextBox.KeyBindings>
+                                                                            </TextBox>
+                                                                        </Grid>
+                                                                    </DockPanel>
+                                                                </StackPanel>
+                                                            </Expander>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <DockPanel LastChildFill="True">
+                                                    <Button DockPanel.Dock="Right"
+                                                            Content="{x:Static loc:Strings.ButtonAddServer}"
+                                                            FontSize="11"
+                                                            Padding="6,1"
+                                                            Margin="6,0,0,0"
+                                                            Command="{Binding AddServerCommand}" />
+                                                    <TextBox Text="{Binding NewServerName}"
+                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
+                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontSize="12">
+                                                        <TextBox.KeyBindings>
+                                                            <KeyBinding Gesture="Enter"
+                                                                        Command="{Binding AddServerCommand}" />
+                                                        </TextBox.KeyBindings>
+                                                    </TextBox>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right"
+                                        Content="{x:Static loc:Strings.ButtonAddPlugin}"
+                                        Margin="6,0,0,0"
+                                        Command="{Binding AddPluginCommand}" />
+                                <TextBox Text="{Binding NewPluginId}"
+                                         PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
+                                         FontFamily="Consolas, Menlo, monospace"
+                                         FontSize="12">
+                                    <TextBox.KeyBindings>
+                                        <KeyBinding Gesture="Enter"
+                                                    Command="{Binding AddPluginCommand}" />
+                                    </TextBox.KeyBindings>
+                                </TextBox>
+                            </DockPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:DataType="libvm:PathPropertyEditorViewModel">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{Binding Value}"
+                                     PlaceholderText="{Binding Watermark}"
+                                     Width="360"
+                                     AutomationProperties.Name="{Binding DisplayName}"
+                                     AutomationProperties.HelpText="{Binding Description}" />
+                            <Button Content="{x:Static loc:Strings.ButtonBrowse}"
+                                    Command="{Binding BrowseCommand}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Enum: strict enums (from JSON-Schema "enum") → ComboBox with a
+                         visible chevron so allowed values are discoverable. Free-form
+                         enums (promoted from "examples") → AutoCompleteBox with a ▾
+                         toggle button so custom values are also accepted. -->
+                    <DataTemplate x:DataType="libvm:EnumPropertyEditorViewModel">
+                        <Grid HorizontalAlignment="Left">
+                            <!-- Strict enum: ComboBox restricts to the allowed set. -->
+                            <ComboBox IsVisible="{Binding IsStrictEnum}"
+                                      ItemsSource="{Binding EnumOptions}"
+                                      SelectedItem="{Binding SelectedValue}"
+                                      PlaceholderText="{Binding Watermark}"
+                                      MinWidth="200"
+                                      AutomationProperties.Name="{Binding DisplayName}"
+                                      AutomationProperties.HelpText="{Binding Description}" />
+                            <!-- Free-form enum: AutoCompleteBox with explicit dropdown button. -->
+                            <StackPanel IsVisible="{Binding AllowsFreeForm}"
+                                        Orientation="Horizontal" Spacing="4">
+                                <AutoCompleteBox Name="FreeFormBox"
+                                                 ItemsSource="{Binding EnumOptions}"
+                                                 Text="{Binding SelectedValue}"
+                                                 PlaceholderText="{Binding Watermark}"
+                                                 FilterMode="Contains"
+                                                 MinimumPrefixLength="0"
+                                                 MinWidth="200"
+                                                 AutomationProperties.Name="{Binding DisplayName}"
+                                                 AutomationProperties.HelpText="{Binding Description}" />
+                                <Button Content="▾" Padding="8,4"
+                                        ToolTip.Tip="{x:Static loc:Strings.TipShowSuggestions}"
+                                        Click="OnEnumDropdownToggleClick" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                    
+                    <DataTemplate x:DataType="libvm:NumberPropertyEditorViewModel">
+                        <!-- Minimum/Maximum on the source VM are double? (nullable);
+                             NumericUpDown.Minimum/Maximum are decimal (non-nullable),
+                             so a null source would emit "Could not convert (null) to
+                             System.Decimal" warnings. TargetNullValue substitutes the
+                             decimal sentinels so the spinner is effectively unbounded
+                             when the schema does not specify a range. -->
+                        <NumericUpDown Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Minimum="{Binding Minimum, TargetNullValue={x:Static sys:Decimal.MinValue}}"
+                                       Maximum="{Binding Maximum, TargetNullValue={x:Static sys:Decimal.MaxValue}}"
+                                       PlaceholderText="{Binding Watermark}"
+                                       Increment="1"
+                                       AutomationProperties.Name="{Binding DisplayName}"
+                                       AutomationProperties.HelpText="{Binding Description}"
+                                       HorizontalAlignment="Left"
+                                       Width="200" />
+                    </DataTemplate>
+                    
+                    <DataTemplate x:DataType="libvm:StringArrayPropertyEditorViewModel">
+                        <StackPanel Spacing="6">
+                            <ItemsControl ItemsSource="{Binding Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                                            <TextBlock Text="{Binding}"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="200" />
+                                            <Button Content="×"
+                                                    Padding="6,2"
+                                                    FontSize="12"
+                                                    Click="OnRemoveItem" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding NewItemText}"
+                                         PlaceholderText="{Binding AddItemWatermark}"
+                                         Width="300">
+                                    <TextBox.KeyBindings>
+                                        <KeyBinding Gesture="Enter" Command="{Binding AddItemCommand}" />
+                                    </TextBox.KeyBindings>
+                                </TextBox>
+                                <Button Content="{x:Static loc:Strings.ButtonAdd}"
+                                        Command="{Binding AddItemCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!--
+                        Object: recurse through the App-level wrapper so nested children
+                        get DisplayName + Description + scope badge chrome AND access to
+                        specialized editor dispatch (Permissions/McpServers/Hooks).
+                        A bare ContentControl here would strip the label from every nested
+                        leaf (e.g. the Desktop preferences checkboxes appeared unlabeled).
+                    -->
+                    <DataTemplate x:DataType="vm:ObjectPropertyEditorViewModel">
+                        <!-- Row 1 above already shows DisplayName + Description as the section
+                             label; children are rendered inline without an accordion wrapper.
+                             An Expander was used previously but its blank header (removed to fix
+                             a double-label issue) left a large chunk of dead whitespace. -->
+                        <ItemsControl ItemsSource="{Binding Children}">
+                            <ItemsControl.ItemTemplate>
+                                <!-- x:DataType enables compiled bindings inside the recursive
+                                     PropertyEditorWrapper; without it, trim analysis emits an
+                                     IL2026 ReflectionBinding warning for this closure. -->
+                                <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
+                                    <ctrl:PropertyEditorWrapper />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DataTemplate>
+
+                    <!-- Specialized editors -->
+                    <DataTemplate x:DataType="vm:PermissionsEditorViewModel">
+                        <views:PermissionsEditorView />
+                    </DataTemplate>
+
+                    <DataTemplate x:DataType="vm:McpServersEditorViewModel">
+                        <views:McpServersEditorView />
+                    </DataTemplate>
+
+                    <DataTemplate x:DataType="vm:HooksEditorViewModel">
+                        <views:HooksEditorView />
+                    </DataTemplate>
+
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+            <!-- Row 4: "Currently effective from {scope}: {value}" — single
+                 row BELOW the editor.  Visible only when the editing scope
+                 has NO explicit value AND another real scope (not the
+                 schema default) owns the winning value.  Reads as a hint
+                 about what the editor will fall through to if left
+                 empty.  Renders the source-scope chiclet (same colour
+                 mapping as the Row 1 chiclet so the user maps the
+                 chiclet → scope immediately) followed by the truncated
+                 value text (50-char cap).
+
+                 2026-05-14 — placed AFTER the editor (not above) so the
+                 reading order is: "here's what you're typing into, and
+                 here's what scope feeds it when you leave it blank."
+                 Schema-default fallbacks stay on the watermark
+                 "(inherits: ...)" path inside the editor itself, not
+                 this row.  Visibility gates on HasInheritedFromOtherScope
+                 which requires BOTH a value AND a real source scope. -->
+            <StackPanel Orientation="Horizontal" Spacing="6"
+                        Margin="0,4,0,0"
+                        IsVisible="{Binding HasInheritedFromOtherScope}">
+                <Border Background="{Binding InheritedFromScope, Converter={StaticResource ScopeToBrush}}"
+                        CornerRadius="4" Padding="6,2"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding InheritedFromScope, Converter={StaticResource ScopeToTooltip}}">
+                    <TextBlock Text="{Binding InheritedFromScope, Converter={StaticResource ScopeToName}}"
+                               FontSize="10" Foreground="White" FontWeight="Bold"
+                               ToolTip.Tip="{Binding InheritedFromScope, Converter={StaticResource ScopeToTooltip}}" />
+                </Border>
+                <TextBlock Text="{Binding InheritedDisplay}"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="600" />
+            </StackPanel>
+
+        </StackPanel>
+    </Border>
+</UserControl>

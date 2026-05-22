@@ -1,0 +1,254 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge</RootNamespace>
+        <AssemblyName>ClaudeForge</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Version>1.0.0</Version>
+        <!-- Add Windows platform TFM to pick up the net10.0-windows build of
+             LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
+             Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it. -->
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- Satellite assembly languages. Only en (base) and zh-Hans are packaged in
+             self-contained builds; add more as translations are completed. -->
+        <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+    </PropertyGroup>
+
+    <!-- Expose internal test-seam members to the test project. -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>ClaudeForge.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- App icons: both SVGs are embedded as Avalonia resources.
+             ClaudeForge.svg      — full-detail icon (256×256 WindowIcon, large in-app uses).
+             ClaudeForge-small.svg — simplified icon optimised for small sizes (16×16 popups /
+                                      titlebars). Replace this file with a purpose-drawn variant;
+                                      AppIcon falls back to ClaudeForge.svg if this file is absent
+                                      or fails to render. -->
+        <AvaloniaResource Include="Resources\ClaudeForge.svg"/>
+        <AvaloniaResource Include="Resources\ClaudeForge-small.svg"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Localization: the ResXFileCodeGenerator produces Strings.Designer.cs from Strings.resx
+             in Visual Studio. For dotnet build (non-VS) the Designer.cs is committed to source
+             control and used as-is; VS can regenerate it any time the resx is saved. -->
+        <EmbeddedResource Update="Localization\Strings.resx">
+            <Generator>PublicResXFileCodeGenerator</Generator>
+            <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- 
+      DISTRIBUTION & PUBLISHING CONFIGURATION
+      This section handles the creation of self-contained, single-file executables.
+      Conditionals ensure 'Debug' builds stay fast and lightweight (not self-contained).
+      -->
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <SelfContained>false</SelfContained>
+        <PublishSingleFile>false</PublishSingleFile>
+        <PublishTrimmed>false</PublishTrimmed>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <!-- 
+          SelfContained: Includes the .NET Runtime in the EXE. 
+          The user does NOT need to have .NET 10 installed on their machine. 
+        -->
+        <SelfContained>true</SelfContained>
+
+        <!-- 
+          PublishSingleFile: Bundles all assemblies into one single executable file. 
+        -->
+        <PublishSingleFile>true</PublishSingleFile>
+
+        <!-- 
+          PublishTrimmed: Removes unused code to keep the file size small (~15-20MB).
+        -->
+        <PublishTrimmed>true</PublishTrimmed>
+
+        <!-- 
+          Optimization settings for a clean distribution.
+        -->
+        <TrimMode>link</TrimMode>
+        <DebuggerSupport>false</DebuggerSupport>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+        <!--
+          RuntimeIdentifiers (RIDs): Supported platforms for this project.
+        -->
+        <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+
+        <!--
+          Diagnostic-friendly trim warnings.
+    
+          By default ILLink collapses all IL2026 hits inside a single type into one
+          "single warn" message — for compiled Avalonia XAML that means "all
+          reflection bindings anywhere inside XamlClosure_N" shows up as one line
+          with no file/line info, which makes the source XAML file impossible to
+          identify. The four settings below relax that collapsing and keep enough
+          debug data around that each individual binding warning carries the
+          originating `.axaml` file and line number.
+    
+          Safe to ship: `TrimmerRemoveSymbols=false` and `DebugType=embedded`
+          slightly increase the trimmed binary size but have no runtime cost;
+          `AvaloniaXamlIlVerboseExceptions` only affects build-time output.
+          Revert this block if the publish logs become too chatty after the
+          remaining IL2026s are cleaned up.
+        -->
+        <TrimmerSingleWarn>false</TrimmerSingleWarn>
+        <TrimmerRemoveSymbols>false</TrimmerRemoveSymbols>
+        <DebugType>embedded</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <AvaloniaXamlIlVerboseExceptions>true</AvaloniaXamlIlVerboseExceptions>
+
+        <!--
+          ILLink verbose mode — always on.
+    
+          NOTE: this is NOT the same as MSBuild's `-v:detailed`. MSBuild
+          verbosity dumps every task parameter for the entire build (megabytes
+          of output). ILLink has its own verbose flag (passed as the literal
+          token `[dashdash]verbose` on its command line) which only affects
+          the linker's own log: it prints the final command line, every
+          `link-attributes` / `-x` / `substitutions` file that was consumed,
+          and reasons for each type/method being kept or removed.
+    
+          Wiring: `Microsoft.NET.ILLink.targets` invokes the `<ILLink>` MSBuild
+          task with `ExtraArgs="$(_ExtraTrimmerArgs)"` (around line 180 of the
+          Microsoft.NET.ILLink.Tasks NuGet package's build/.targets). Appending
+          the verbose flag to `_ExtraTrimmerArgs` before the target runs is the
+          supported extension point — the targets themselves append to this
+          property the same way (e.g. the `notrimwarn` flag at line 79, and our
+          `link-attributes` expansion at line 231).
+    
+          Keep this in for the foreseeable future: next time a suppression
+          silently fails to apply, the verbose log is the quickest way to see
+          whether ILLink was actually invoked with the `link-attributes
+          ILLink.Suppressions.xml` args or not.
+        -->
+        <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --verbose</_ExtraTrimmerArgs>
+    </PropertyGroup>
+
+    <!-- Suppress ILLink warnings from third-party assemblies that are not trim-annotated.
+         This file is only consulted during trimmed publishes (Release).
+  
+         Wiring choice — `<_ILLinkSuppressions>` is the item that
+         Microsoft.NET.ILLink.targets reads (see `PrepareForILLink` target in
+         the `Microsoft.NET.ILLink.Tasks` NuGet package, build/Microsoft.NET.ILLink.targets
+         around line 230) and expands into the ILLink `link-attributes` arg:
+  
+             <PropertyGroup Condition="'@(_ILLinkSuppressions->Count())' != '0'">
+               <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) ...link-attributes "@(_ILLinkSuppressions...)"</_ExtraTrimmerArgs>
+             </PropertyGroup>
+  
+         The leading underscore is MSBuild convention for "internal", but no
+         public alias exists — users of the SDK needing cross-assembly
+         attribute injection have to populate this item directly.
+  
+         The three wiring forms we ruled out:
+  
+           1. `<EmbeddedResource><LogicalName>ILLink.LinkAttributes.xml</LogicalName>`
+              is scoped to the host assembly only; ILLink emits IL2101 for
+              every `<assembly fullname="Other">` entry.
+  
+           2. `<TrimmerRootDescriptor>` (passed via the ILLink `-x` arg) makes
+              ILLink parse the file as a PRESERVATION DESCRIPTOR, not as
+              attribute XML. The `<attribute>` elements are silently ignored,
+              and any assemblies named in `<assembly fullname="X">` that are
+              not part of the descriptor-resolution closure produce a spurious
+              `IL2007: Could not resolve assembly 'X'` warning.
+  
+           3. `<LinkAttributesXml>` sounds right and is mentioned in older
+              trimming guides, but it is NOT an item the current
+              Microsoft.NET.ILLink.targets knows about — items with that name
+              get silently ignored. The SDK search-and-replace trail only
+              references `_ILLinkSuppressions`.
+  
+         With `<_ILLinkSuppressions>`, the XML below IS parsed as attribute
+         injection and each entry produces a real
+         `[module: UnconditionalSuppressMessage(...)]` on the target assembly
+         (scoped via `Scope="module"` + `Target="<assembly>"`). `"module"` is
+         a valid `SuppressMessageAttribute.Scope` value. -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
+    </ItemGroup>
+
+    <!-- Windows-only suppression for Microsoft.Maui.ApplicationModel.
+         Included only when publishing against the Windows TFM so the
+         net10.0 TFM publish does not emit IL2007 (assembly not found). -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release' And&#xD;&#xA;                        $([MSBuild]::IsTargetFrameworkCompatible(&#xD;&#xA;                            '$(TargetFramework)', 'net10.0-windows10.0.19041.0'))">
+        <_ILLinkSuppressions Include="ILLink.Suppressions.Windows.xml"/>
+    </ItemGroup>
+
+    <!--
+      Trim-preserve 3rd-party assemblies whose reflection patterns are not
+      safe to silence with mere [UnconditionalSuppressMessage].
+  
+      `<TrimmerRootAssembly>` keeps every type in the named assembly rooted
+      (no method-level trimming) — the runtime equivalent of "this package
+      is opaque to the trimmer".  Adds ~few hundred KB to the published
+      binary in exchange for guaranteed runtime correctness.
+  
+      Markdown.Avalonia / ColorTextBlock.Avalonia (Memory-page markdown
+      renderer) — uses Assembly.GetType(string) + Activator.CreateInstance
+      in SetupInfo.Builtin() to load its OWN BUILT-IN PLUGINS by string-
+      typename.  If the trimmer drops one of those plugin types the whole
+      rendering pipeline silently regresses (no syntax styling, broken
+      code blocks, missing block converters).  The previous IL2026 +
+      IL2072 suppressions silenced the warnings but did NOT preserve the
+      types, so a trimmed publish could break the page at runtime.
+      Rooting the entire assembly is the only safe option for packages
+      that resolve types by string.
+  
+      Note: the IL2026 / IL2072 warnings DO still fire under TrimMode=link
+      even when the assembly is rooted (they describe the call's risk in
+      the abstract, not whether the target type happens to be preserved).
+      The suppressions in ILLink.Suppressions.xml therefore stay — but
+      they are now belt-and-suspenders on top of a real preservation,
+      not the only line of defence.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <TrimmerRootAssembly Include="Markdown.Avalonia"/>
+        <TrimmerRootAssembly Include="ColorTextBlock.Avalonia"/>
+        <TrimmerRootAssembly Include="Svg.Model" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0"/>
+        <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.2.522">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
+        <!-- Avalonia.Svg.Skia has no Avalonia 12 release; Svg.Skia is the underlying
+             standalone package (no Avalonia dependency) and provides the same SKSvg API. -->
+        <PackageReference Include="Svg.Skia" Version="5.0.0" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <!-- Serilog (core + File + Trace sinks) flows transitively from the
+             LayeredEditors.Avalonia.Diagnostics project reference below, which
+             publishes those packages with PrivateAssets="". No direct Serilog
+             package references are required here. -->
+        <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
+             GHSA-xrw6-gwf8-vvr9. Pin explicitly so NU1605 (downgrade-as-error) is satisfied. -->
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
+        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
+        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Diagnostics\LayeredEditors.Avalonia.Diagnostics.csproj"/>
+    </ItemGroup>
+
+</Project>

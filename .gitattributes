@@ -1,0 +1,61 @@
+# .gitattributes — line-ending normalisation policy.
+#
+# Without these rules, Git on Windows (where `core.autocrlf=true` is the
+# default) checks shell scripts out with CRLF. The Linux kernel's `#!/bin/bash`
+# loader rejects `\r` as part of the interpreter path and fails with
+# "/bin/bash^M: bad interpreter: No such file or directory" — even though
+# `bash` is installed and on PATH. The .desktop / .service files used by the
+# Linux desktop-integration helper (`linux-setup.sh`) have a similar problem:
+# `update-desktop-database` accepts them but Wayland compositors silently
+# ignore lines that don't match exactly.
+#
+# Rules below pin EOL per file type. `text=auto` lets Git auto-detect text vs.
+# binary for anything not explicitly listed.
+
+# ── Default ──────────────────────────────────────────────────────────────────
+# Auto-detect text vs binary. Text files get the platform-native EOL on
+# checkout unless overridden below.
+* text=auto
+
+# ── LF-mandatory ─────────────────────────────────────────────────────────────
+# Shell scripts and anything else the kernel exec-loads or that XDG tools
+# expect LF for. Forcing eol=lf means the working tree always has LF on
+# every platform, including Windows.
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.zsh       text eol=lf
+*.fish      text eol=lf
+*.desktop   text eol=lf
+*.service   text eol=lf
+Dockerfile  text eol=lf
+Makefile    text eol=lf
+*.mk        text eol=lf
+
+# ── CRLF-mandatory ───────────────────────────────────────────────────────────
+# Classic Windows scripting hosts (`cmd.exe`, Windows PowerShell 5.1) prefer
+# CRLF. PowerShell 7+ accepts either, but the .bat / .cmd convention is
+# unambiguous so we pin them.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# ── Binary (no normalisation) ────────────────────────────────────────────────
+# Force-mark these so Git never tries to "normalise" them on checkout.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.icns      binary
+*.zip       binary
+*.tar       binary
+*.tar.gz    binary
+*.tgz       binary
+*.gz        binary
+*.7z        binary
+*.pdf       binary
+*.dll       binary
+*.exe       binary
+*.pdb       binary
+*.snk       binary
+*.pfx       binary
+*.p12       binary

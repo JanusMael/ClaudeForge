@@ -1,0 +1,72 @@
+name: CodeQL
+
+# Scan on every branch push and every PR so vulnerabilities surface immediately.
+# The weekly schedule catches newly-discovered CVEs even when the codebase is quiet.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  schedule:
+    - cron: '0 8 * * 1'   # 08:00 UTC every Monday
+
+# CodeQL requires write access to upload SARIF results to the Security tab.
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
+# Cancel any in-flight scan for the same branch/PR when new commits arrive.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Variables and secrets mapping ────────────────────────────────────────────
+# Configure under Settings → Secrets and variables → Actions on the repository.
+#
+# No additional secrets are required — the automatic GITHUB_TOKEN (always
+# available in Actions) already has security-events:write via the permissions
+# block above.
+#
+# Repository variables (Settings → Variables → Actions → New repository variable):
+#
+#   CODEQL_QUERIES         Query suite name.  Replace the hardcoded value below:
+#                            queries: ${{ vars.CODEQL_QUERIES || 'security-and-quality' }}
+#                          Valid values:
+#                            'security-and-quality'   default — good signal/noise ratio
+#                            'security-extended'      broader CWE coverage, more noise
+#                            'security-experimental'  bleeding edge, highest noise
+
+jobs:
+  analyze:
+    name: Analyze (C#)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      # CodeQL must be initialised before the build so it can instrument the
+      # compilation and trace all code paths.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          # Use the default query suite ("security-and-quality").
+          # Swap for "security-extended" to catch a wider (noisier) set of CWEs.
+          queries: security-and-quality
+
+      - name: Restore
+        run: dotnet restore ClaudeForge.slnx
+
+      - name: Build
+        run: dotnet build ClaudeForge.slnx --no-restore -c Debug
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"
