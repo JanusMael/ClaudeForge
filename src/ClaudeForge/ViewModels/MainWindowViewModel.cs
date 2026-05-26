@@ -112,8 +112,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // state.  That notification can cause Avalonia's TwoWay-bound
     // SelectedItem binding to write back through SelectedProfileEntry.set,
     // which sets SelectedProfile, which fires OnSelectedProfileChanged →
-    // _ = ReloadAsync().  Without this guard, every reload re-arms the next
-    // one and the app spins in a tight reload loop (observed 2026-05-13
+    // _ = ReloadCoreAsync().  Without this guard, every reload re-arms the next
+    // one and the app spins in a tight reload loop (observed when switching
     // when switching to a freshly-created profile — the binding wrote back
     // because the new AvailableProfileEntries instance contained a fresh
     // record reference for the selected entry, and the SelectingItemsControl
@@ -615,7 +615,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSchemaErrors))]
     [NotifyPropertyChangedFor(nameof(SchemaErrorsBannerText))]
+    [NotifyPropertyChangedFor(nameof(IsSchemaErrorsBannerVisible))]
     [NotifyCanExecuteChangedFor(nameof(ShowSchemaErrorsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DismissSchemaErrorsBannerCommand))]
     private IReadOnlyList<SchemaValidationError> _schemaErrors = [];
 
     /// <summary>True when <see cref="SchemaErrors"/> has at least one entry.</summary>
@@ -628,6 +630,22 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     public string SchemaErrorsBannerText =>
         string.Format(Strings.LabelSchemaBannerTitleFmt, SchemaErrors.Count);
+
+    /// <summary>
+    /// Drives the schema-errors banner's <c>IsVisible</c> binding. True when
+    /// errors exist AND the user hasn't dismissed the banner for the current
+    /// working session.
+    /// <para>
+    /// The dismiss flag <see cref="_schemaErrorsBannerDismissed"/> resets
+    /// automatically when <see cref="ProjectRoot"/> changes (project load),
+    /// so opening a different project always re-surfaces any schema errors
+    /// that profile carries. It does NOT reset on workspace reload — the
+    /// user has already seen the errors and chosen to ignore them for this
+    /// session; nagging them on every file-watcher reload would be hostile.
+    /// </para>
+    /// </summary>
+    public bool IsSchemaErrorsBannerVisible =>
+        HasSchemaErrors && !_schemaErrorsBannerDismissed;
 
     /// <summary>
     /// True when any loaded workspace has in-memory changes that have not yet been
@@ -805,12 +823,58 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // user later removes both products again.
     private bool _bannerDismissedByUser;
 
+    /// <summary>
+    /// Set to true when the user explicitly dismisses the schema-errors
+    /// banner. Reset to false by <see cref="OnProjectRootChanged"/> so
+    /// opening a new project always re-surfaces that project's schema
+    /// errors. Does NOT reset on workspace reload — see
+    /// <see cref="IsSchemaErrorsBannerVisible"/> for the rationale.
+    /// </summary>
+    private bool _schemaErrorsBannerDismissed;
+
     /// <summary>Hides the install-guidance banner for the rest of this session.</summary>
     [RelayCommand]
     private void DismissInstallBanner()
     {
         _bannerDismissedByUser = true;
         ShowInstallBanner = false;
+    }
+
+    /// <summary>
+    /// Hides the schema-errors banner for the rest of the current working
+    /// session. Resets on next project load via
+    /// <see cref="OnProjectRootChanged"/>. Symmetric with
+    /// <see cref="DismissInstallBanner"/>. CanExecute gates on
+    /// <see cref="HasSchemaErrors"/> so the dismiss button disables when
+    /// errors clear (e.g. the user fixed the file externally and reloaded).
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasSchemaErrors))]
+    private void DismissSchemaErrorsBanner()
+    {
+        _schemaErrorsBannerDismissed = true;
+        OnPropertyChanged(nameof(IsSchemaErrorsBannerVisible));
+    }
+
+    /// <summary>
+    /// Source-gen partial fired when <see cref="ProjectRoot"/> changes
+    /// (user opened a different project). Resets the schema-errors
+    /// banner-dismiss flag so the newly-loaded project's errors surface
+    /// even if the previous project's errors had been dismissed by the
+    /// user.
+    /// <para>
+    /// App-start case is handled naturally: <see cref="_schemaErrorsBannerDismissed"/>
+    /// defaults to <see langword="false"/> on construction so the first
+    /// post-load evaluation of <see cref="IsSchemaErrorsBannerVisible"/>
+    /// always shows the banner if errors exist.
+    /// </para>
+    /// </summary>
+    partial void OnProjectRootChanged(string? value)
+    {
+        if (_schemaErrorsBannerDismissed)
+        {
+            _schemaErrorsBannerDismissed = false;
+            OnPropertyChanged(nameof(IsSchemaErrorsBannerVisible));
+        }
     }
 
     /// <summary>
@@ -1740,12 +1804,57 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         SearchFocusRequestId++;
     }
 
+    /// <summary>
+    /// User-initiated reload — bound to the toolbar Reload Window button and
+    /// the F5 key shortcut via the source-gen <c>ReloadCommand</c>. Treats
+    /// the action as semantically equivalent to "fresh app launch" from the
+    /// banners' perspective: any per-session banner-dismiss flags reset so
+    /// install / schema-errors banners re-surface if they're applicable.
+    /// The actual workspace re-read is delegated to <see cref="ReloadCoreAsync"/>.
+    /// <para>
+    /// Other reload triggers — <see cref="OnSelectedProfileChanged"/> (profile
+    /// switch), <c>OnFileChangedExternally</c> (FileSystemWatcher), and the
+    /// post-restore flow — call <see cref="ReloadCoreAsync"/> directly so
+    /// they keep the conservative no-reset behaviour. The user has already
+    /// seen any dismissed banner; firing it again on every automatic reload
+    /// would be hostile (file watchers can fire many times per minute).
+    /// </para>
+    /// </summary>
     [RelayCommand]
     private async Task ReloadAsync()
     {
+        // Reset per-session banner-dismiss flags. Install banner: clear so
+        // ConfigureInstallBanner inside LoadAllWorkspacesAsync re-evaluates
+        // ShowInstallBanner from scratch (it recomputes based on product-
+        // detection + the dismiss flag every reload). Schema banner: clear
+        // and explicitly raise PropertyChanged because IsSchemaErrorsBannerVisible
+        // is a hand-rolled computed property — the [NotifyPropertyChangedFor]
+        // on _schemaErrors won't fire if SchemaErrors itself doesn't change
+        // during the reload.
+        if (_bannerDismissedByUser)
+        {
+            _bannerDismissedByUser = false;
+        }
+        if (_schemaErrorsBannerDismissed)
+        {
+            _schemaErrorsBannerDismissed = false;
+            OnPropertyChanged(nameof(IsSchemaErrorsBannerVisible));
+        }
+
+        await ReloadCoreAsync();
+    }
+
+    /// <summary>
+    /// Workspace re-read shared by the user-driven Reload Window action
+    /// (<see cref="ReloadAsync"/>) and the automatic triggers (profile
+    /// switch, file watcher, post-restore). Does NOT reset banner-dismiss
+    /// flags — that's the caller's responsibility based on user intent.
+    /// </summary>
+    private async Task ReloadCoreAsync()
+    {
         // Permanent: log every reload entry.  Multiple callers — the toolbar
-        // Reload button (user-driven), OnSelectedProfileChanged (profile
-        // switch), OnFileChangedExternally (FileSystemWatcher), the post-
+        // Reload button (user-driven, via ReloadAsync above), OnSelectedProfileChanged
+        // (profile switch), OnFileChangedExternally (FileSystemWatcher), the post-
         // restore flow.  No source attribution here; surrounding [Profiles]
         // / [FileWatcher] context lines in the log identify which path
         // triggered the reload.
@@ -1958,9 +2067,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Log.Information("[App.UserEdit] action=SelectedProfileChanged newValue=\"{Value}\"", value ?? "(null)");
 
         // Profile change triggers a reload with the new profile context.
+        // Uses ReloadCoreAsync (NOT ReloadAsync) because this is an automatic
+        // trigger, not a user-clicked Reload Window action — dismissed banners
+        // should stay dismissed across profile switches in the same session.
         // Persist before reloading so the selection survives a crash/restart.
         SaveWindowState();
-        _ = ReloadAsync();
+        _ = ReloadCoreAsync();
     }
 
 
@@ -3055,8 +3167,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // the TwoWay-bound ComboBox can write back through
                 // SelectedProfileEntry when ItemsSource refreshes, which
                 // would re-fire OnSelectedProfileChanged → another
-                // SaveWindowState + _ = ReloadAsync() kick.  We're about
-                // to await ReloadAsync() below explicitly; the binding
+                // SaveWindowState + _ = ReloadCoreAsync() kick.  We're about
+                // to await ReloadCoreAsync() below explicitly; the binding
                 // bounce here is redundant work, not user intent.
                 _suppressProfileChangeReload = true;
                 try
@@ -3069,7 +3181,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 }
 
                 // Reload the workspace so the editor reflects the applied profile's content.
-                await ReloadAsync();
+                // Uses ReloadCoreAsync (NOT ReloadAsync) — post-restore is an automatic
+                // continuation of a user action that already happened, not a fresh
+                // user-initiated Reload Window. Dismissed banners stay dismissed.
+                await ReloadCoreAsync();
             };
             _profilesVm.OnProfileDeleted = deletedName =>
             {
@@ -3403,7 +3518,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             }
 
             SetStatusActive(string.Format(Strings.StatusReloadingFileFmt, Path.GetFileName(filePath)));
-            _ = ReloadAsync();
+            // FileSystemWatcher fire — automatic trigger, NOT user-initiated.
+            // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
+            // watcher can fire many times per minute on a busy edit session;
+            // resetting banners on each fire would nag the user constantly).
+            _ = ReloadCoreAsync();
         });
     }
 

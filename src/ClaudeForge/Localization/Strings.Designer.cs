@@ -238,7 +238,34 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("AutoNameButtonDismissInstall", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to ✕.
+        /// </summary>
+        public static string ButtonDismissSchemaBanner {
+            get {
+                return ResourceManager.GetString("ButtonDismissSchemaBanner", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app.
+        /// </summary>
+        public static string TipButtonDismissSchema {
+            get {
+                return ResourceManager.GetString("TipButtonDismissSchema", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Dismiss schema-errors banner.
+        /// </summary>
+        public static string AutoNameButtonDismissSchema {
+            get {
+                return ResourceManager.GetString("AutoNameButtonDismissSchema", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Export effective config.
         /// </summary>
@@ -825,7 +852,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ✕ Dismiss.
+        ///   Looks up a localized string similar to ✕.
         /// </summary>
         public static string ButtonDismissInstallBanner {
             get {

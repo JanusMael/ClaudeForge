@@ -743,19 +743,43 @@
                      IsVisible binds to HasSchemaErrors which auto-clears when
                      a subsequent reload finds no issues. -->
                 <Border Grid.Row="1"
-                        IsVisible="{Binding HasSchemaErrors}"
+                        IsVisible="{Binding IsSchemaErrorsBannerVisible}"
                         Background="{DynamicResource InstallBannerBgBrush}"
                         BorderBrush="{DynamicResource InstallBannerBorderBrush}"
                         BorderThickness="0,0,0,2"
                         Padding="12,8"
                         TextElement.Foreground="{DynamicResource InstallBannerFgBrush}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Content="{x:Static loc:Strings.ButtonShowSchemaDetails}"
-                                Command="{Binding ShowSchemaErrorsCommand}"
-                                Padding="8,4"
-                                VerticalAlignment="Center"
-                                AutomationProperties.Name="{x:Static loc:Strings.ButtonShowSchemaDetails}" />
+                        <!-- Right-edge button cluster: [Show details] [✕].
+                             Order matters: Show details is the primary action and
+                             sits to the LEFT; the small ✕ Dismiss sits at the FAR
+                             RIGHT EDGE so it's easy to find / click without crowding
+                             the primary action.  Dismiss hides the banner for this
+                             working session; it re-surfaces automatically when the
+                             user opens a different project (OnProjectRootChanged),
+                             clicks Reload Window (ReloadAsync), or restarts the app.
+                             Dismiss button content is just the ✕ glyph; the
+                             AutomationProperties.Name and ToolTip.Tip carry the
+                             semantic text for screen readers and sighted hover. -->
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    Spacing="6"
+                                    VerticalAlignment="Center">
+                            <Button Content="{x:Static loc:Strings.ButtonShowSchemaDetails}"
+                                    Command="{Binding ShowSchemaErrorsCommand}"
+                                    Padding="8,4"
+                                    AutomationProperties.Name="{x:Static loc:Strings.ButtonShowSchemaDetails}" />
+                            <!-- Classes="banner-dismiss" gives the icon-only ✕ a
+                                 hover-only goldenrod outline that matches the
+                                 banner's existing border palette.  See the
+                                 `banner-dismiss` Style block in App.axaml. -->
+                            <Button Classes="banner-dismiss"
+                                    Content="{x:Static loc:Strings.ButtonDismissSchemaBanner}"
+                                    Command="{Binding DismissSchemaErrorsBannerCommand}"
+                                    Padding="8,4"
+                                    ToolTip.Tip="{x:Static loc:Strings.TipButtonDismissSchema}"
+                                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonDismissSchema}" />
+                        </StackPanel>
                         <StackPanel Spacing="2" VerticalAlignment="Center">
                             <TextBlock FontWeight="SemiBold"
                                        Text="{Binding SchemaErrorsBannerText}" />

@@ -50,14 +50,34 @@ public class App : Application
 
             SchemaRegistry schemaRegistry = new();
             AvaloniaDialogService dialogService = new();
-            // Propagate the app icon to all programmatic dialogs (alert, input, confirm)
-            // so they all show the correct title-bar / taskbar icon without per-call changes.
-            // uses SmallInstance (64-px render of the simplified
-            // small SVG) instead of Instance (256-px detailed master); dialog
-            // titlebars scale the icon down to ~16-32 px on every platform,
-            // where the simpler design reads more clearly than the detailed
-            // master scaled by the same amount.
-            dialogService.DialogAppIcon = AppIcon.SmallInstance;
+            // The DialogAppIcon assignment below uses SmallInstance (64-px
+            // render of the simplified small SVG) instead of Instance (256-px
+            // detailed master); dialog titlebars scale the icon down to
+            // ~16-32 px on every platform, where the simpler design reads
+            // more clearly than the detailed master scaled by the same amount.
+            //
+            // Why Post instead of a direct assignment:
+            // accessing AppIcon.SmallInstance synchronously here triggers the
+            // first call to AppIcon.EnsureLoaded, which renders the large
+            // 256-px PNG + the 64-px PNG + the 16-px PNG via SKSvg, all on the
+            // dispatcher. The cost is ~one to several hundred ms depending on
+            // the system, and it directly blocks first paint — it shows up
+            // as the AppIcon.Ens... → SKSvg.C... block under
+            // App.OnFrameworkInitializationCompleted in cold-start profiles.
+            //
+            // The dialog service only needs DialogAppIcon populated before a
+            // dialog opens, and the earliest a dialog can open is in response
+            // to a user gesture, which can't happen until MainWindow has
+            // painted and the dispatcher is idle. So we Post the assignment
+            // at Background priority — it lands on the dispatcher's next idle
+            // tick, after first paint, with the SVG render running there
+            // instead of in the synchronous startup path. Window.Icon (set
+            // inside MainWindow.axaml.cs from AppIcon.Instance) does still
+            // trigger the render at MainWindow construction time, but at
+            // least the dialog-service slot doesn't double-charge for it.
+            Dispatcher.UIThread.Post(
+                () => dialogService.DialogAppIcon = AppIcon.SmallInstance,
+                DispatcherPriority.Background);
             dialogService.RegisterSaveChangesDialog(async (prompt, window) =>
             {
                 if (window is null)

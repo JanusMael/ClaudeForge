@@ -74,6 +74,15 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
     private DateTime _currentBucketStart = DateTime.MinValue;
 
     /// <summary>
+    /// The deferred prune-on-construction task. Tests that need to assert
+    /// on the post-prune filesystem state can <c>await</c> this. Production
+    /// code never reads it — the prune is best-effort housekeeping. Held
+    /// as a field rather than discarded so a future caller could observe
+    /// pruning failures via the task's <see cref="Task.Status"/>.
+    /// </summary>
+    internal Task StartupPruneTask { get; private set; } = Task.CompletedTask;
+
+    /// <summary>
     /// Creates the sink backed by <paramref name="logsDirectory"/>.
     /// </summary>
     /// <param name="logsDirectory">Directory where log files are written.
@@ -141,8 +150,28 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
 
         FileNamePrefix = prefix;
 
-        // Clean any stale files from a previous session before emitting anything.
-        PruneOldFiles();
+        // Defer the startup retention sweep to a background task.
+        //
+        // PruneOldFiles only touches files whose embedded bucket stamp is
+        // older than the retention cutoff — never the CURRENT bucket file,
+        // which is opened by Rotate() on the first Emit(). The two paths
+        // operate on disjoint filename sets, so running the prune off-thread
+        // can never race the active log stream.
+        //
+        // Rationale: the constructor runs inside AvaloniaDiagnostics.ConfigureLogging
+        // which is itself near the top of Program.Main. Doing IO (Directory.GetFiles
+        // + per-file timestamp parse + File.Delete) synchronously there blocks the
+        // app's first paint on what is best-effort housekeeping. Backgrounding it
+        // removes that wait from the critical startup path entirely. The next
+        // Rotate() (on first Emit) also calls PruneOldFiles — if a stale file
+        // exists past the startup race, that pass picks it up.
+        //
+        // Race window with Rotate()'s own PruneOldFiles call: both can enumerate
+        // and attempt to delete the same stale file. The per-file try/catch in
+        // PruneOldFiles already swallows the resulting IOException /
+        // UnauthorizedAccessException, so the worst case is one wasted Delete
+        // call. Safe to interleave.
+        StartupPruneTask = Task.Run(PruneOldFiles);
     }
 
     // -----------------------------------------------------------------------
@@ -282,10 +311,16 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
                     {
                         File.Delete(file);
                     }
-                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    catch (Exception ex) when (ex is IOException
+                                                     or UnauthorizedAccessException
+                                                     or FileNotFoundException
+                                                     or DirectoryNotFoundException)
                     {
-                        // File locked or no permission — skip this iteration; the next
-                        // retention pass will pick it up if/when the lock releases.
+                        // File locked, permission denied, or already-gone — skip and
+                        // continue. The deferred startup prune can race with the
+                        // first Rotate()'s own prune over the same stale file set;
+                        // whichever loses the Delete just sees FileNotFoundException.
+                        // The next retention pass picks up anything still left.
                     }
                 }
             }
@@ -303,6 +338,21 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
     /// <see cref="DateTime"/> of the bucket's day at midnight. Returns
     /// <c>false</c> for unrecognised filenames.
     /// </summary>
+    /// <remarks>
+    /// The date portion is parsed by hand from 8 ASCII digits instead of via
+    /// <see cref="DateTime.TryParseExact(string, string, IFormatProvider, DateTimeStyles, out DateTime)"/>
+    /// because the latter — even with <see cref="CultureInfo.InvariantCulture"/>
+    /// — transitively touches <see cref="CultureInfo.CompareInfo"/>, which on
+    /// non-Windows hosts (and modern Windows defaults) triggers a one-time
+    /// <c>IcuInitSortHandle</c> call that loads the ICU sort tables. That init
+    /// is a 150–400 ms cost the very first time any culture-aware string API
+    /// is hit. Because <c>ConfigureLogging</c> runs near the top of
+    /// <c>Program.Main</c>, the original implementation paid that tax on every
+    /// cold start — for no reason, since the filename format is pure ASCII
+    /// digits with no localization possible. The manual parser below has zero
+    /// culture / comparison dependency: just digit math plus the integer
+    /// <see cref="DateTime"/> ctor, which is itself culture-free.
+    /// </remarks>
     internal static bool TryParseBucketStamp(string prefix, string fileName, out DateTime stamp)
     {
         stamp = default;
@@ -324,12 +374,64 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
             return false;
         }
 
-        string datePart = fileName.Substring(prefix.Length + 1, 8); // "20260422"
-        return DateTime.TryParseExact(
-            datePart,
-            "yyyyMMdd",
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-            out stamp);
+        ReadOnlySpan<char> datePart = fileName.AsSpan(prefix.Length + 1, 8); // "20260422"
+
+        int year = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            char c = datePart[i];
+            if (c < '0' || c > '9')
+            {
+                return false;
+            }
+
+            year = (year * 10) + (c - '0');
+        }
+
+        int month = 0;
+        for (int i = 4; i < 6; i++)
+        {
+            char c = datePart[i];
+            if (c < '0' || c > '9')
+            {
+                return false;
+            }
+
+            month = (month * 10) + (c - '0');
+        }
+
+        int day = 0;
+        for (int i = 6; i < 8; i++)
+        {
+            char c = datePart[i];
+            if (c < '0' || c > '9')
+            {
+                return false;
+            }
+
+            day = (day * 10) + (c - '0');
+        }
+
+        // Range-validate the component integers before the DateTime ctor so
+        // we can return false (the contract) instead of letting the ctor
+        // throw. February-30-style impossible-but-in-range dates still fall
+        // through to the ctor's argument validation below.
+        if (month is < 1 or > 12 || day is < 1 or > 31 || year < 1)
+        {
+            return false;
+        }
+
+        try
+        {
+            stamp = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            // Defensive: catches the in-range-per-component-but-impossible-
+            // calendar-day case (Feb 30, Apr 31, …). The pre-fix path also
+            // rejected these via TryParseExact's stricter validation.
+            return false;
+        }
     }
 }

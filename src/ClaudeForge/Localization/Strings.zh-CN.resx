@@ -315,13 +315,25 @@
     <value>运行安装命令</value>
   </data>
   <data name="ButtonDismissInstallBanner" xml:space="preserve">
-    <value>✕ 关闭</value>
+    <value>✕</value>
   </data>
   <data name="TipButtonDismissInstall" xml:space="preserve">
     <value>在本次会话剩余时间内隐藏此消息</value>
   </data>
   <data name="AutoNameButtonDismissInstall" xml:space="preserve">
     <value>关闭安装指引</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>Dismiss schema-errors banner</value>
+    <comment>TODO zh-CN translation</comment>
   </data>
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
     <value>安装完成后：如果 Claude Code 安装到 ~/.local/bin 且该目录不在您的 PATH 中，请在"版本信息"页面上单击"添加到 PATH"（或在 shell 中运行安装程序打印的 export 命令）。然后重启 ClaudeForge 以检测到安装。</value>

@@ -311,13 +311,22 @@
     <value>Run install command</value>
   </data>
   <data name="ButtonDismissInstallBanner" xml:space="preserve">
-    <value>✕ Dismiss</value>
+    <value>✕</value>
   </data>
   <data name="TipButtonDismissInstall" xml:space="preserve">
     <value>Hide this message for the rest of this session</value>
   </data>
   <data name="AutoNameButtonDismissInstall" xml:space="preserve">
     <value>Dismiss install guidance</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app.</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>Dismiss schema-errors banner</value>
   </data>
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
     <value>After installing: if Claude Code lands in ~/.local/bin and that directory isn't on your PATH, click "Add to PATH" on the Version Information page (or run the installer's printed export command in your shell). Then restart ClaudeForge to detect the installation.</value>

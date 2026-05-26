@@ -56,6 +56,65 @@
             <Setter Property="Background" Value="#FFE65100" />
             <Setter Property="TextElement.Foreground" Value="White" />
         </Style>
+
+        <!--
+            `banner-dismiss` Style class.
+
+            Icon-only ✕ button used by the Install banner and the Schema-errors
+            banner.  Inverts Semi.Avalonia's default Button visuals so the
+            button reads as "invisible chrome until you hover":
+
+            - REST       — Background AND BorderBrush both Transparent.  The
+                            button shows only its glyph, blending into the
+                            banner.  Pre-fix Semi's light-theme defaults
+                            painted a visible grey fill + border at rest that
+                            didn't appear in dark-theme (Semi's dark Button
+                            defaults are transparent-ish).  Forcing Transparent
+                            here equalises both themes onto the dark-theme
+                            "invisible chrome" look the user preferred.
+            - POINTEROVER — Background = InstallBannerCodeBgBrush (the slightly
+                            more saturated yellow used by the post-install
+                            note's body) + BorderBrush = InstallBannerBorderBrush
+                            (the goldenrod the banner's own outer border uses).
+                            Both brushes are theme-independent so the hover
+                            look matches in light and dark.
+            - PRESSED    — same as POINTEROVER so the chrome doesn't blink off
+                            mid-click.
+
+            `/template/ ContentPresenter` selectors mirror each Setter as
+            defence-in-depth — Semi paints the visible chrome at the template
+            level on hover, and a plain Button-level :pointerover Setter
+            sometimes loses the specificity race against Semi's own
+            template-internal :pointerover rules (the same problem the
+            `back-button` style above solves the same way).
+
+            Apply with `Classes="banner-dismiss"` on a Button.  Content should
+            be just the ✕ glyph; AutomationProperties.Name + ToolTip.Tip carry
+            the semantic text for screen readers and sighted-hover
+            discoverability respectively.
+        -->
+        <Style Selector="Button.banner-dismiss">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.banner-dismiss /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.banner-dismiss:pointerover">
+            <Setter Property="Background" Value="{DynamicResource InstallBannerCodeBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InstallBannerBorderBrush}" />
+        </Style>
+        <Style Selector="Button.banner-dismiss:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource InstallBannerCodeBgBrush}" />
+        </Style>
+        <Style Selector="Button.banner-dismiss:pressed">
+            <Setter Property="Background" Value="{DynamicResource InstallBannerCodeBgBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InstallBannerBorderBrush}" />
+        </Style>
+        <Style Selector="Button.banner-dismiss:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource InstallBannerCodeBgBrush}" />
+        </Style>
     </Application.Styles>
 
     <!-- Claude scope badge colors (consumed by ScopeToBrushConverter via resource lookup) -->

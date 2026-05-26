@@ -203,8 +203,11 @@ public sealed class BucketedRollingFileSinkTests
             File.WriteAllText(Path.Combine(_dir, f), "data");
         }
 
-        // Clock pinned to 'now'; constructing the sink triggers the startup sweep.
+        // Clock pinned to 'now'; constructing the sink triggers the startup sweep,
+        // which is now deferred to a background task. Block until it completes
+        // so the assertions below see the post-prune filesystem state.
         using BucketedRollingFileSink sink = new(_dir, clock: () => now);
+        sink.StartupPruneTask.GetAwaiter().GetResult();
 
         foreach (string f in oldFiles)
         {
@@ -229,6 +232,7 @@ public sealed class BucketedRollingFileSinkTests
         File.WriteAllText(Path.Combine(_dir, boundaryFile), "data");
 
         using BucketedRollingFileSink sink = new(_dir, clock: () => now);
+        sink.StartupPruneTask.GetAwaiter().GetResult();
 
         Assert.IsTrue(File.Exists(Path.Combine(_dir, boundaryFile)),
             "File exactly at boundary should be retained (strict < cutoff).");
@@ -249,6 +253,7 @@ public sealed class BucketedRollingFileSinkTests
             _dir,
             retention: TimeSpan.FromDays(2),
             clock: () => now);
+        sink.StartupPruneTask.GetAwaiter().GetResult();
 
         Assert.IsFalse(File.Exists(Path.Combine(_dir, oldFile)),
             $"{oldFile} should be pruned under 2-day retention.");
@@ -267,6 +272,7 @@ public sealed class BucketedRollingFileSinkTests
         File.WriteAllText(Path.Combine(_dir, oldOthers), "data");
 
         using BucketedRollingFileSink sink = new(_dir, clock: () => now);
+        sink.StartupPruneTask.GetAwaiter().GetResult();
 
         Assert.IsFalse(File.Exists(Path.Combine(_dir, oldOurs)), "Matching-prefix file should be pruned.");
         Assert.IsTrue(File.Exists(Path.Combine(_dir, oldOthers)), "Foreign-prefix file should be left alone.");
