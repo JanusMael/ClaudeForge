@@ -53,7 +53,7 @@ jobs:
       # CodeQL must be initialised before the build so it can instrument the
       # compilation and trace all code paths.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: csharp
           # Use the default query suite ("security-and-quality").
@@ -67,6 +67,6 @@ jobs:
         run: dotnet build ClaudeForge.slnx --no-restore -c Debug
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:csharp"
