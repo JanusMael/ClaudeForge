@@ -93,7 +93,39 @@
         </attribute>
     </assembly>
 
+    <!--
+      Svg.Model (Svg.Skia 5.x and later). Two known IL2026 sites both reach
+      TypeDescriptor.GetConverter(Type) via string-typed unit / transform
+      resolution:
+        - Svg.Model.Services.SvgGeometryService.GetComputedUnit
+        - Svg.Model.Services.TransformsService.TryResolveTransformOriginComponent
+
+      The csproj pairs this with <TrimmerRootAssembly Include="Svg.Model"/>
+      so the type-converters resolved by string reflection actually survive
+      trimming — see TRIMMING.md "When suppression alone is NOT enough".
+
+      Suppression placement note: IL2026 looks up [UnconditionalSuppressMessage]
+      on the CALLING MEMBER and walks UP to type level, but not reliably to
+      module level under ILLink 10.0.x. So a per-type entry is the safe shape
+      (assembly-wide module-scope works for other warning IDs like IL2072 /
+      IL2075 but not IL2026 specifically). Add a new <type> block here if a
+      future Svg.Model bump surfaces a third IL2026 site in a new service class.
+    -->
     <assembly fullname="Svg.Model">
+        <type fullname="Svg.Model.Services.SvgGeometryService">
+            <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+                <argument>Trimming</argument>
+                <argument>IL2026</argument>
+            </attribute>
+        </type>
+        <type fullname="Svg.Model.Services.TransformsService">
+            <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+                <argument>Trimming</argument>
+                <argument>IL2026</argument>
+            </attribute>
+        </type>
+    </assembly>
+ <!--   <assembly fullname="Svg.Model">
         <!-- 2026-05-22 — Svg.Skia 3.x moved TypeDescriptor.GetConverter
              callsites from Svg.Custom (Avalonia 11.x) to Svg.Model.
              Paired with <TrimmerRootAssembly Include="Svg.Model"/> so
@@ -107,7 +139,7 @@
             <property name="Target">Svg.Model</property>
         </attribute>
     </assembly>
-
+-->
     <!--
       Suppress IL2026 + IL2067/IL2070/IL2075/IL2104 for Avalonia.Controls.DataGrid.
       DataGrid has pre-existing trim-unsafe reflection over column types that
