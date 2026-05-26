@@ -246,6 +246,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private const string NavTitleBackupRestore = "Backup / Restore";
     private const string NavTitleEnvironment = "Environment";
     private const string NavTitleMemory = "Memory";
+    private const string NavTitleAgentsSkills = "Agents & Skills";
 
     /// <summary>
     /// Title of the synthetic top-of-tree "Essentials" node.  Hardcoded
@@ -296,6 +297,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private const string NavDescMemory =
         "Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk.";
+
+    private const string NavDescAgentsSkills =
+        "Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes.";
 
     private const string NavDescEssentialsTooltip =
         "High-importance Claude Code settings — token budgets, sandbox, MCP trust, model and update channel — pinned for quick review and change.";
@@ -3372,6 +3376,19 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 ProjectRoot,
                 DialogServiceForViewAccess,
                 ShellLauncher.Instance),
+            IsTopLevel = true,
+        });
+
+        // --- Agents & Skills (Skills/Sub-agents/Slash-Commands editor) ---
+        // Top-level node — single page with an in-page segmented control
+        // (Sub-agents / Skills / Slash Commands).  Group #2: scope-aware
+        // read-only inventory + structured front-matter card + body viewer.
+        // Read-only in this group, so created inline (not cached) like the
+        // Memory node; group #3 (editing + dirty state) will promote it to
+        // a cached _agentsSkillsVm field per the AGENTS.md nav-page checklist.
+        NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
+        {
+            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance),
             IsTopLevel = true,
         });
 

@@ -1,0 +1,367 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.AgentsSkillsEditorView"
+             x:DataType="vm:AgentsSkillsEditorViewModel">
+
+    <!--
+        "Agents & Skills" page — single nav node, in-page segmented control
+        (Sub-agents / Skills / Slash Commands).  Group #2 (Tier 1): read-only
+        scope-aware inventory + structured front-matter card + body viewer.
+
+        The body is shown in a read-only selectable TextBox rather than a
+        rendered-markdown viewer: it matches what group #3's editor will edit
+        (a plain TextBox), keeps "what you view is what you'll edit" honest,
+        and sidesteps the Markdown.Avalonia dark-theme styling complexity
+        documented in CLAUDE.md "Common gotchas".
+
+        Row commands reach the page VM via
+        $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext) —
+        the same compiled-binding-safe pattern the Memory page uses (the cast
+        keeps it off the IL2026 reflection-binding path).
+
+        Each tab's list is a flat collection of section headers + rows
+        (Yours, then Plugin).  These two DataTemplates are resolved per item
+        by type — Avalonia picks the matching x:DataType automatically — so
+        all three tabs share one virtualizing ItemsControl shape below.
+    -->
+    <UserControl.DataTemplates>
+
+        <!-- Section header — "Yours" / "Plugin".  The Plugin header carries
+             the single read-only badge (replacing the old per-row badge). -->
+        <DataTemplate x:DataType="vm:ArtifactSectionHeaderViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="2,10,0,2">
+                <TextBlock Text="{Binding Header}"
+                           FontWeight="Bold" FontSize="12"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           VerticalAlignment="Center" />
+                <Border Background="{DynamicResource AppStatusWarningBackgroundBrush}"
+                        CornerRadius="3" Padding="5,1" VerticalAlignment="Center"
+                        IsVisible="{Binding IsReadOnly}">
+                    <TextBlock Text="{x:Static loc:Strings.BadgePluginReadOnly}"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppStatusWarningForegroundBrush}" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Artifact row — click to open the detail pane.  Right-side chip
+             shows the Source (User / Project / plugin name) so same-named
+             artifacts from different plugins are distinguishable. -->
+        <DataTemplate x:DataType="vm:ArtifactRowViewModel">
+            <Button HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="10,8"
+                    Margin="0,2"
+                    Background="{DynamicResource BarButtonBackgroundBrush}"
+                    Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).LoadArtifactCommand}"
+                    CommandParameter="{Binding}"
+                    AutomationProperties.Name="{Binding DisplayName}">
+                <DockPanel LastChildFill="True">
+                    <Border DockPanel.Dock="Right"
+                            Background="{DynamicResource AppPanelBorderBrush}"
+                            CornerRadius="3" Padding="5,1" VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding AbsolutePath}">
+                        <TextBlock Text="{Binding Source}" FontSize="10"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                    </Border>
+                    <StackPanel Spacing="1">
+                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Subtitle}" FontSize="11"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DockPanel>
+            </Button>
+        </DataTemplate>
+
+    </UserControl.DataTemplates>
+
+    <Grid>
+        <!-- ── Inventory (segmented lists) — shown when no row is selected ── -->
+        <DockPanel IsVisible="{Binding !IsViewerVisible}">
+            <!-- Header accent pill (matches the other top-level editor pages). -->
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource NavSelectedAccentBrush}"
+                    TextElement.Foreground="White"
+                    CornerRadius="6"
+                    Margin="16,16,16,8"
+                    Padding="14,8">
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            Content="{x:Static loc:Strings.ButtonRefresh}"
+                            Command="{Binding RefreshCommand}"
+                            Foreground="White"
+                            Background="Transparent"
+                            BorderBrush="White"
+                            BorderThickness="1"
+                            Padding="10,2"
+                            VerticalAlignment="Center"
+                            Margin="8,0,0,0"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonRefresh}" />
+                    <!-- Loading spinner — visible while the (brief, stat-only)
+                         directory walk runs.  Sits left of the Refresh button. -->
+                    <ProgressBar DockPanel.Dock="Right"
+                                 IsIndeterminate="True"
+                                 IsVisible="{Binding IsBusy}"
+                                 Width="90" Height="4"
+                                 VerticalAlignment="Center"
+                                 Margin="8,0,0,0"
+                                 ToolTip.Tip="{x:Static loc:Strings.StatusAgentsSkillsLoading}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.StatusAgentsSkillsLoading}" />
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.NavTitleAgentsSkills}"
+                                   FontWeight="SemiBold" FontSize="14"
+                                   AutomationProperties.HeadingLevel="1" />
+                        <TextBlock Text="{x:Static loc:Strings.NavDescAgentsSkills}"
+                                   FontSize="11" Opacity="0.85" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Each tab: a single virtualizing ItemsControl over the flat
+                 [headers + rows] collection, in a ScrollViewer.  The bounded
+                 viewport lets the VirtualizingStackPanel materialise only the
+                 visible rows, so long plugin lists stay responsive. -->
+            <TabControl Margin="16,0,16,16">
+                <TabItem Header="{x:Static loc:Strings.TabAgents}">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding AgentItems}" Margin="0,8,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="{x:Static loc:Strings.TabSkills}">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding SkillItems}" Margin="0,8,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="{x:Static loc:Strings.TabSlashCommands}">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding CommandItems}" Margin="0,8,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </DockPanel>
+
+        <!-- ── Detail pane — shown when a row is selected ──────────────────── -->
+        <DockPanel IsVisible="{Binding IsViewerVisible}" Margin="16">
+            <!-- Toolbar: Back (left); right side = Edit OR Save+Cancel, then
+                 Reveal / Open-externally.  Edit is gated on CanEdit so plugin
+                 (read-only) rows can't enter edit mode. -->
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,8">
+                <Button DockPanel.Dock="Left"
+                        Content="{x:Static loc:Strings.ButtonBack}"
+                        Command="{Binding CloseViewerCommand}"
+                        Padding="10,4"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonBack}" />
+
+                <!-- View-mode actions -->
+                <Button DockPanel.Dock="Left"
+                        Content="{x:Static loc:Strings.ButtonEditArtifact}"
+                        Command="{Binding BeginEditCommand}"
+                        IsVisible="{Binding !IsEditing}"
+                        Margin="8,0,0,0" Padding="10,4"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonEditArtifact}" />
+                <!-- Read-only badge for plugin rows (Edit is disabled by CanExecute). -->
+                <Border DockPanel.Dock="Left"
+                        Background="{DynamicResource AppStatusWarningBackgroundBrush}"
+                        CornerRadius="3" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center"
+                        IsVisible="{Binding !CanEdit}">
+                    <TextBlock Text="{x:Static loc:Strings.BadgePluginReadOnly}"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppStatusWarningForegroundBrush}" />
+                </Border>
+
+                <!-- Edit-mode actions -->
+                <Button DockPanel.Dock="Left"
+                        Content="{x:Static loc:Strings.ButtonSaveArtifact}"
+                        Command="{Binding SaveCommand}"
+                        IsVisible="{Binding IsEditing}"
+                        Margin="8,0,0,0" Padding="10,4"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonSaveArtifact}" />
+                <Button DockPanel.Dock="Left"
+                        Content="{x:Static loc:Strings.ButtonCancel}"
+                        Command="{Binding CancelEditCommand}"
+                        IsVisible="{Binding IsEditing}"
+                        Margin="4,0,0,0" Padding="10,4"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonCancel}" />
+                <!-- Raw front-matter toggle.  IsChecked two-way binds to
+                     IsRawMode (the VM seeds/clears the raw box on change). -->
+                <ToggleButton DockPanel.Dock="Left"
+                              Content="{x:Static loc:Strings.ButtonEditRawYaml}"
+                              IsChecked="{Binding IsRawMode}"
+                              IsVisible="{Binding IsEditing}"
+                              Margin="12,0,0,0" Padding="10,4"
+                              AutomationProperties.Name="{x:Static loc:Strings.ButtonEditRawYaml}" />
+
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonReveal}"
+                        Command="{Binding RevealCommand}"
+                        CommandParameter="{Binding SelectedArtifact.AbsolutePath}"
+                        Padding="10,4" Margin="4,0,0,0"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonReveal}" />
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                        Command="{Binding OpenExternallyCommand}"
+                        CommandParameter="{Binding SelectedArtifact.AbsolutePath}"
+                        Padding="10,4" Margin="4,0,0,0"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}" />
+            </DockPanel>
+
+            <!-- Transient post-save status line. -->
+            <TextBlock DockPanel.Dock="Top"
+                       Text="{Binding LastSaveMessage}"
+                       IsVisible="{Binding LastSaveMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                       FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+
+            <!-- Read-only structured front-matter card (view mode). -->
+            <Border DockPanel.Dock="Top"
+                    IsVisible="{Binding !IsEditing}"
+                    Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowName}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterName}"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterDescription}"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding CardDescription}" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowToolsAndModel}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterTools}"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding CardTools}" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowToolsAndModel}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterModel}"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding CardModel}" TextWrapping="Wrap" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Editable TYPED front-matter card (edit mode, not raw mode). -->
+            <Border DockPanel.Dock="Top"
+                    IsVisible="{Binding IsTypedEditVisible}"
+                    Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowName}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterName}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding EditName}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.LabelFrontMatterName}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterDescription}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding EditDescription}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 AutomationProperties.Name="{x:Static loc:Strings.LabelFrontMatterDescription}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowToolsAndModel}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterTools}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding EditTools}"
+                                 PlaceholderText="{x:Static loc:Strings.WatermarkEditTools}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.LabelFrontMatterTools}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="90,*" IsVisible="{Binding CardShowToolsAndModel}">
+                        <TextBlock Grid.Column="0" Text="{x:Static loc:Strings.LabelFrontMatterModel}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold" Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding EditModel}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.LabelFrontMatterModel}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Editable RAW front-matter card (edit mode + raw toggle on).
+                 Mutually exclusive with the typed card.  The monospace box
+                 carries smart indentation (Tab→spaces, Enter auto-indent,
+                 Shift+Tab dedent) wired in code-behind via OnRawKeyDown. -->
+            <Border DockPanel.Dock="Top"
+                    IsVisible="{Binding IsRawEditVisible}"
+                    Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.LabelRawFrontMatterHint}"
+                               FontSize="11" TextWrapping="Wrap"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                    <!-- Validation message — shown when the raw text can't be parsed on save. -->
+                    <TextBlock Text="{Binding RawValidationMessage}"
+                               IsVisible="{Binding RawValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Foreground="{DynamicResource AppStatusWarningForegroundBrush}" />
+                    <TextBox Name="RawFrontMatterBox"
+                             Text="{Binding EditRawFrontMatter}"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             TextWrapping="NoWrap"
+                             FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                             MinHeight="160"
+                             KeyDown="OnRawKeyDown"
+                             AutomationProperties.Name="{x:Static loc:Strings.ButtonEditRawYaml}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Body — read-only (view mode) or editable (edit mode).  Plain
+                 TextBox, not a rendered-markdown viewer: see the lead comment. -->
+            <TextBox Text="{Binding ViewerBody}"
+                     IsVisible="{Binding !IsEditing}"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                     VerticalAlignment="Stretch"
+                     AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />
+            <TextBox Text="{Binding EditBody}"
+                     IsVisible="{Binding IsEditing}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                     VerticalAlignment="Stretch"
+                     AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />
+        </DockPanel>
+    </Grid>
+
+</UserControl>

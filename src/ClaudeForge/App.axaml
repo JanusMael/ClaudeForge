@@ -294,6 +294,10 @@
             <views:MemoryEditorView />
         </DataTemplate>
 
+        <DataTemplate DataType="vmroot:AgentsSkillsEditorViewModel">
+            <views:AgentsSkillsEditorView />
+        </DataTemplate>
+
         <DataTemplate DataType="vmroot:EssentialsViewModel">
             <views:EssentialsView />
         </DataTemplate>

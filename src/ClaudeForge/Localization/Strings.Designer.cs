@@ -3518,7 +3518,187 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("NavDescMemory", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Agents &amp; Skills.
+        /// </summary>
+        public static string NavTitleAgentsSkills {
+            get {
+                return ResourceManager.GetString("NavTitleAgentsSkills", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes..
+        /// </summary>
+        public static string NavDescAgentsSkills {
+            get {
+                return ResourceManager.GetString("NavDescAgentsSkills", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Sub-agents.
+        /// </summary>
+        public static string TabAgents {
+            get {
+                return ResourceManager.GetString("TabAgents", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Skills.
+        /// </summary>
+        public static string TabSkills {
+            get {
+                return ResourceManager.GetString("TabSkills", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Slash Commands.
+        /// </summary>
+        public static string TabSlashCommands {
+            get {
+                return ResourceManager.GetString("TabSlashCommands", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string LabelFrontMatterName {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterName", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Description.
+        /// </summary>
+        public static string LabelFrontMatterDescription {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Tools.
+        /// </summary>
+        public static string LabelFrontMatterTools {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterTools", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Model.
+        /// </summary>
+        public static string LabelFrontMatterModel {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterModel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin (read-only).
+        /// </summary>
+        public static string BadgePluginReadOnly {
+            get {
+                return ResourceManager.GetString("BadgePluginReadOnly", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit.
+        /// </summary>
+        public static string ButtonEditArtifact {
+            get {
+                return ResourceManager.GetString("ButtonEditArtifact", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Save.
+        /// </summary>
+        public static string ButtonSaveArtifact {
+            get {
+                return ResourceManager.GetString("ButtonSaveArtifact", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Comma-separated, e.g. Read, Grep, Bash.
+        /// </summary>
+        public static string WatermarkEditTools {
+            get {
+                return ResourceManager.GetString("WatermarkEditTools", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Saved..
+        /// </summary>
+        public static string StatusArtifactSaved {
+            get {
+                return ResourceManager.GetString("StatusArtifactSaved", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Saved. Your edits apply to your next Claude Code session.
+        /// </summary>
+        public static string StatusArtifactSavedRestartHint {
+            get {
+                return ResourceManager.GetString("StatusArtifactSavedRestartHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Save failed: {0}.
+        /// </summary>
+        public static string StatusArtifactSaveFailedFmt {
+            get {
+                return ResourceManager.GetString("StatusArtifactSaveFailedFmt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Loading agents, skills, and commands….
+        /// </summary>
+        public static string StatusAgentsSkillsLoading {
+            get {
+                return ResourceManager.GetString("StatusAgentsSkillsLoading", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit raw front-matter.
+        /// </summary>
+        public static string ButtonEditRawYaml {
+            get {
+                return ResourceManager.GetString("ButtonEditRawYaml", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Editing the raw front-matter — the typed fields are ignored until you turn this off….
+        /// </summary>
+        public static string LabelRawFrontMatterHint {
+            get {
+                return ResourceManager.GetString("LabelRawFrontMatterHint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't parse the raw front-matter — fix it before saving.
+        /// </summary>
+        public static string StatusRawFrontMatterInvalid {
+            get {
+                return ResourceManager.GetString("StatusRawFrontMatterInvalid", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch..
         /// </summary>

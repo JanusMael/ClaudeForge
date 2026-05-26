@@ -1385,6 +1385,86 @@
     <value>审计、查看并清理 Claude 在每个会话中读取的文件以及留在磁盘上的行为足迹。</value>
     <comment>Top-level nav node description for the Memory page.</comment>
   </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>Agents &amp; Skills</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>Sub-agents</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>Skills</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>Slash Commands</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>Name</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>Description</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>Tools</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>Model</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>Plugin (read-only)</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>Edit</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>Save</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>Comma-separated, e.g. Read, Grep, Bash</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>Saved.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>Saved. Your edits apply to your next Claude Code session.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>Save failed: {0}</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>Loading agents, skills, and commands…</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>Edit raw front-matter</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>Editing the raw front-matter — the typed fields are ignored until you turn this off. Comments and keys the fields don't cover are preserved.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>Couldn't parse the raw front-matter — fix it before saving.</value>
+    <comment>TODO zh-CN translation</comment>
+  </data>
   <data name="HeaderMemoryCode" xml:space="preserve">
     <value>Claude Code — 内存与足迹</value>
     <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>

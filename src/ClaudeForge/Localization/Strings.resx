@@ -1378,6 +1378,86 @@ Cancel — keep the window open.</value>
     <value>Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
   </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>Agents &amp; Skills</value>
+    <comment>Top-level nav node label for the Agents/Skills/Slash-Commands editor page.</comment>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes.</value>
+    <comment>Top-level nav node description for the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>Sub-agents</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>Skills</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>Slash Commands</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>Name</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>Description</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>Tools</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>Model</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>Plugin (read-only)</value>
+    <comment>Badge on plugin-provided artifacts (Agents &amp; Skills page) — these can't be edited in place.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Enter edit mode on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>Save</value>
+    <comment>Save edits on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>Comma-separated, e.g. Read, Grep, Bash</value>
+    <comment>Placeholder for the tools editor field (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>Saved.</value>
+    <comment>Post-save status on the Agents &amp; Skills detail pane (subsequent saves this session).</comment>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>Saved. Your edits apply to your next Claude Code session.</value>
+    <comment>Post-save status shown once per session — skills/agents load at session start, so edits don't affect a running session.</comment>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>Save failed: {0}</value>
+    <comment>Post-save error on the Agents &amp; Skills detail pane. {0} = exception message.</comment>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>Loading agents, skills, and commands…</value>
+    <comment>Spinner tooltip / label while the Agents &amp; Skills page scans for artifacts.</comment>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>Edit raw front-matter</value>
+    <comment>Toggle on the Agents &amp; Skills editor that swaps the typed fields for a raw YAML front-matter text box.</comment>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>Editing the raw front-matter — the typed fields are ignored until you turn this off. Comments and keys the fields don't cover are preserved.</value>
+    <comment>Hint shown above the raw front-matter text box (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>Couldn't parse the raw front-matter — fix it before saving.</value>
+    <comment>Validation message when the raw front-matter can't be parsed on save (Agents &amp; Skills page).</comment>
+  </data>
   <data name="HeaderMemoryCode" xml:space="preserve">
     <value>Claude Code — Memory &amp; Footprint</value>
     <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>
