@@ -86,7 +86,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -134,7 +134,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -155,7 +155,7 @@ jobs:
         run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-windows
           path: src/dist/*.zip
@@ -173,7 +173,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -187,7 +187,7 @@ jobs:
         run: ./src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-linux
           path: src/dist/*.tar.gz
@@ -205,7 +205,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
@@ -219,7 +219,7 @@ jobs:
         run: ./src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-macos
           path: src/dist/*.tar.gz
@@ -245,7 +245,7 @@ jobs:
 
       # Download all platform artifacts into a flat ./artifacts/ directory.
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
