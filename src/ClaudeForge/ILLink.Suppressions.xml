@@ -125,14 +125,14 @@
             </attribute>
         </type>
     </assembly>
- <!--   <assembly fullname="Svg.Model">
+ <!--   <assembly fullname="Svg.Model"> -->
         <!-- 2026-05-22 — Svg.Skia 3.x moved TypeDescriptor.GetConverter
              callsites from Svg.Custom (Avalonia 11.x) to Svg.Model.
              Paired with <TrimmerRootAssembly Include="Svg.Model"/> so
              the type-converters resolved by string-typed reflection
              actually survive trimming. See TRIMMING.md "When suppression
              alone is NOT enough" rule #1. -->
-        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+ <!---      <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
             <argument>Trimming</argument>
             <argument>IL2026</argument>
             <property name="Scope">module</property>
