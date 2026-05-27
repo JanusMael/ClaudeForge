@@ -228,7 +228,6 @@ Conceptually distinct from debug flags: command-line arguments that run a task a
 | [SECURITY.md](./SECURITY.md) | How to report a vulnerability privately, response timeline, disclosure policy. |
 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Community standards (Contributor Covenant 2.1) and enforcement guidelines. |
 | [DISCLAIMER.md](./DISCLAIMER.md) | What this software does to your machine and what that means for your data. |
-| [CLAUDE.md](./CLAUDE.md) | Development guide — build/run, project layout, architecture decisions. The most thorough single internal reference. |
 | [AGENTS.md](./AGENTS.md) | LLM-shaped operational rules: hard invariants, cross-cutting checklists, anti-patterns, test seams. |
 | [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) | CI / release workflow reference — what each job does, how to trigger a release, secrets and variables map. |
 | [docs/AVALONIA-GOTCHAS.md](./docs/AVALONIA-GOTCHAS.md) | Avalonia 12 + .NET 10 foot-guns hit while building this app. |
