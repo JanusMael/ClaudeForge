@@ -1,31 +1,31 @@
 ### Welcome
-![WelcomePage-Light](.\screenshots\WelcomePage-Light.png)
+![WelcomePage-Light](./screenshots/WelcomePage-Light.png)
 
 ### Permissions
-![PermissionsPage-Light](.\screenshots\PermissionsPage-Light.png)
+![PermissionsPage-Light](./screenshots/PermissionsPage-Light.png)
 
 ### Backup
-![BackupPage-Light](.\screenshots\BackupPage-Light.png)
+![BackupPage-Light](./screenshots/BackupPage-Light.png)
 
 ### Profiles
-![ProfilesPage-Light](.\screenshots\ProfilesPage-Light.png)
+![ProfilesPage-Light](./screenshots/ProfilesPage-Light.png)
 
 ### Memory
-![MemoryPage-Light](.\screenshots\MemoryPage-Light.png)
+![MemoryPage-Light](./screenshots/MemoryPage-Light.png)
 
 ### Environment
-![EnvironmentPage-Light](.\screenshots\EnvironmentPage-Light.png)
+![EnvironmentPage-Light](./screenshots/EnvironmentPage-Light.png)
 
 ### Footprint
-![FootprintPage-Light](.\screenshots\FootprintPage-Light.png)
+![FootprintPage-Light](./screenshots/FootprintPage-Light.png)
 
 ### Hooks
-![HooksPage-Light](.\screenshots\HooksPage-Light.png)
+![HooksPage-Light](./screenshots/HooksPage-Light.png)
 
 ### Effective Settings
-![EffectiveSettingsPage-Light](.\screenshots\EffectiveSettingsPage-Light.png)
+![EffectiveSettingsPage-Light](./screenshots/EffectiveSettingsPage-Light.png)
 
 ### Plugins
-![PluginsPage-Light](.\screenshots\PluginsPage-Light.png)
+![PluginsPage-Light](./screenshots/PluginsPage-Light.png)
 
-### ...and more...
+> ### ... plenty more to see in the app ...
