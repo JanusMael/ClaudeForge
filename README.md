@@ -24,6 +24,16 @@ ClaudeForge is a typed editor for all of that. Every setting shows which scope p
 
 ---
 
+## Pictures are worth 1K words...
+
+### Light theme - (more in gallery [here](docs/screenshots-light.md))
+![WelcomePage-Light](C:\c\ClaudeForge\docs\screenshots\WelcomePage-Light.png)
+
+### Dark theme - (more in gallery [here](docs/screenshots-dark.md))
+![WelcomePage-Dark](C:\c\ClaudeForge\docs\screenshots\WelcomePage-Dark.png)
+
+---
+
 ## Highlights
 
 | Feature | What it does |
