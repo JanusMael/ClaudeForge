@@ -24,11 +24,12 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// includes the workspace.Changed forwarder shipped in step 8 — so editor
 /// direct writes still trigger refresh).
 /// </remarks>
-public partial class EffectiveSettingsViewModel : ObservableObject
+public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
 {
     private readonly ClaudeConfigClientCore _client;
     private readonly string? _projectRoot;
     private readonly IShareService? _shareService;
+    private bool _disposed;
 
     public EffectiveSettingsViewModel(
         ClaudeConfigClientCore client,
@@ -77,9 +78,28 @@ public partial class EffectiveSettingsViewModel : ObservableObject
     /// <summary>True when no project is open; drives an amber warning banner in the view.</summary>
     public bool IsProjectMissing => _projectRoot is null;
 
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _client.Changed -= OnSdkChanged;
+    }
+
     [RelayCommand]
     private void Refresh()
     {
+        // Guard: a queued Dispatcher.Post can fire after the client is disposed
+        // (e.g. a save during window-close posts a Changed event, then the
+        // client is disposed before the dispatcher drains).
+        if (_disposed)
+        {
+            return;
+        }
+
         JsonObject merged = _client.ComputeEffectiveSnapshot();
 
         JsonSerializerOptions opts = new() { WriteIndented = true };
@@ -140,6 +160,16 @@ public partial class EffectiveSettingsViewModel : ObservableObject
         // or from any SDK / workspace.Changed-forwarded write — always
         // dispatch Refresh() onto the UI thread so Avalonia property-change
         // notifications fire on the correct thread.
+        //
+        // Early-exit if already disposed: the event can still fire briefly
+        // after Dispose() is called (race between unsubscription and in-flight
+        // invocations), and Refresh() guards internally anyway, but this
+        // avoids queuing a no-op dispatcher post.
+        if (_disposed)
+        {
+            return;
+        }
+
         if (Dispatcher.UIThread.CheckAccess())
         {
             Refresh();

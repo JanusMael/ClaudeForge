@@ -375,7 +375,7 @@
                          become null but the binding re-evaluates before the parent
                          IsVisible takes effect — without it, the binding logs
                          "Value is null at SelectedEntry" warnings on every deselect. -->
-                    <TextBlock Text="{Binding SelectedEntry.Name, FallbackValue=''}"
+                    <TextBlock Text="{Binding SelectedEntryName}"
                                FontSize="15" FontWeight="SemiBold"
                                Margin="0,0,0,4" />
 
@@ -457,9 +457,7 @@
                                TextWrapping="Wrap"
                                Margin="0,8,0,0"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               IsVisible="{Binding SelectedEntry.ProcessValue,
-                                   Converter={x:Static ObjectConverters.IsNotNull},
-                                   FallbackValue=False}"
+                               IsVisible="{Binding SelectedEntryHasProcessValue}"
                                Text="{x:Static loc:Strings.TextProcessEnvNote}" />
 
                     <!-- Per-layer value table (below Edit so the edit controls are immediately reachable) -->
@@ -490,7 +488,7 @@
                                                Foreground="White" />
                                 </Border>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedEntry.ProcessValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           Text="{Binding SelectedEntryProcessValue, TargetNullValue='(not set)'}"
                                            FontSize="11" TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
                             </Grid>
@@ -511,7 +509,7 @@
                                                Foreground="White" />
                                 </Border>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedEntry.ClaudeValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           Text="{Binding SelectedEntryClaudeValue, TargetNullValue='(not set)'}"
                                            FontSize="11" TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
                             </Grid>
@@ -532,7 +530,7 @@
                                                Foreground="White" />
                                 </Border>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedEntry.UserValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           Text="{Binding SelectedEntryUserValue, TargetNullValue='(not set)'}"
                                            FontSize="11" TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
                             </Grid>
@@ -553,7 +551,7 @@
                                                Foreground="White" />
                                 </Border>
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedEntry.MachineValue, TargetNullValue='(not set)', FallbackValue=''}"
+                                           Text="{Binding SelectedEntryMachineValue, TargetNullValue='(not set)'}"
                                            FontSize="11" TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
                             </Grid>

@@ -143,8 +143,15 @@ public partial class MainWindow : Window
     // Position directly off the Window at flush time, which means the saved
     // value is always the FINAL settled geometry rather than whatever
     // intermediate frame happened to trigger the last event.
-    private void OnSizeChanged(object? sender, SizeChangedEventArgs e) => DebouncedSaveWindowState();
-    private void OnPositionChanged(object? sender, PixelPointEventArgs e) => DebouncedSaveWindowState();
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        DebouncedSaveWindowState();
+    }
+
+    private void OnPositionChanged(object? sender, PixelPointEventArgs e)
+    {
+        DebouncedSaveWindowState();
+    }
 
     /// <summary>
     /// Schedules a window-state save for <see cref="SaveDebounceMs"/> after

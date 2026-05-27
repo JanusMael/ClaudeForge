@@ -56,8 +56,9 @@ internal sealed class McpServersAccessor : IMcpServersAccessor
         ArgumentException.ThrowIfNullOrEmpty(name);
         ArgumentNullException.ThrowIfNull(server);
 
-        JsonObject root = (_client.GetScopeValue("mcpServers", _client.DefaultScope) as JsonObject)?.DeepClone() as JsonObject
-                          ?? new JsonObject();
+        JsonObject root =
+            (_client.GetScopeValue("mcpServers", _client.DefaultScope) as JsonObject)?.DeepClone() as JsonObject
+            ?? new JsonObject();
         root[name] = ToJson(server);
         _client.SetValue("mcpServers", root);
     }
@@ -138,7 +139,8 @@ internal sealed class McpServersAccessor : IMcpServersAccessor
 
     private static McpServer ProjectServer(string name, JsonObject server)
     {
-        McpTransport transport = ParseTransport(server["type"] is JsonValue tv && tv.TryGetValue(out string? t) ? t : null);
+        McpTransport transport =
+            ParseTransport(server["type"] is JsonValue tv && tv.TryGetValue(out string? t) ? t : null);
 
         string? command = server["command"] is JsonValue cv && cv.TryGetValue(out string? cs) ? cs : null;
         string? url = server["url"] is JsonValue uv && uv.TryGetValue(out string? us) ? us : null;

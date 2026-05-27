@@ -78,7 +78,8 @@ public sealed class BackupEngine
         IReadOnlyList<BackupWorktreeEntry> worktrees = [];
         try
         {
-            WorktreeDiscoveryResult discovery = await _worktreeProbe.DiscoverExternalAsync(projects, ct).ConfigureAwait(false);
+            WorktreeDiscoveryResult discovery =
+                await _worktreeProbe.DiscoverExternalAsync(projects, ct).ConfigureAwait(false);
             worktrees = discovery.Worktrees;
             if (discovery.GitMissing)
             {
@@ -700,7 +701,8 @@ public sealed class BackupEngine
         string currentPlatform = PlatformPaths.PlatformId;
         List<BackupEntry> results = [];
 
-        foreach (string file in Directory.EnumerateFiles(backupDirectory, "backup-*.zip", SearchOption.TopDirectoryOnly))
+        foreach (string file in
+                 Directory.EnumerateFiles(backupDirectory, "backup-*.zip", SearchOption.TopDirectoryOnly))
         {
             FileInfo info = new(file);
             BackupManifest? manifest = GetCachedOrParseManifest(file, info.LastWriteTimeUtc, info.Length);

@@ -218,6 +218,20 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
             return;
         }
 
+        // Skip derived/computed properties — they are notified as a side-effect
+        // of changing the backing field (via [NotifyPropertyChangedFor]) and do
+        // not represent independent user edits.  Without this guard MarkModified()
+        // fires once per PropertyChanged notification, so editing Matcher (which
+        // also notifies MatcherIsValid and HasValidationWarning) would log three
+        // [Editor.UserEdit] entries instead of one.
+        if (e.PropertyName is nameof(HookEntry.MatcherIsValid)
+            or nameof(HookEntry.HasValidationWarning)
+            or nameof(HookEntry.SelectedCommandTypeInfo)
+            or nameof(HookEntry.ShowHttpFields))
+        {
+            return;
+        }
+
         MarkModified();
     }
 

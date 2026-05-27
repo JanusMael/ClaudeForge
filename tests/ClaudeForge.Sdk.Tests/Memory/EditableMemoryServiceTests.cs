@@ -135,6 +135,22 @@ public sealed class EditableMemoryServiceTests
     }
 
     [TestMethod]
+    public void Snapshot_PluginSkill_MarketplacesSegmentStripped()
+    {
+        // Claude Code installs marketplace plugins at plugins/marketplaces/<mkt>/<plugin>/…
+        // The "marketplaces" directory level is an installation detail; the UI
+        // should show "<mkt>/<plugin>", not "marketplaces/<mkt>/<plugin>".
+        WriteFile(Path.Combine(Home, "plugins", "marketplaces", "acme-mkt", "cool-plugin", "skills", "widget", "SKILL.md"),
+            "---\nname: widget\ndescription: A plugin skill\n---\n\nBody.\n");
+
+        EditableMemoryEntry skill = EditableMemoryService.Snapshot()
+            .Single(e => e.Category == UserMemoryCategory.Skill && e.Scope == EditableMemoryScope.Plugin);
+
+        Assert.AreEqual("acme-mkt/cool-plugin", skill.Source,
+            "'marketplaces/' prefix must be stripped; only the marketplace name + plugin id are shown.");
+    }
+
+    [TestMethod]
     public void Snapshot_PluginAgentsAndCommands_AreReadOnly()
     {
         WriteFile(Path.Combine(Home, "plugins", "p", "agents", "pa.md"), "---\nname: pa\n---\n\nB.\n");

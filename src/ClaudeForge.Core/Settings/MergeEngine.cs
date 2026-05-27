@@ -130,7 +130,8 @@ public static class MergeEngine
 
             List<ScopeEntry> keyEntries = defined
                                           .Where(e => ((JsonObject)e.Value!).ContainsKey(key))
-                                          .Select(e => new ScopeEntry(e.Scope, ((JsonObject)e.Value!)[key], e.SourceFilePath))
+                                          .Select(e =>
+                                              new ScopeEntry(e.Scope, ((JsonObject)e.Value!)[key], e.SourceFilePath))
                                           .ToList();
 
             // Let the caller-provided arrayPaths set govern array vs. override semantics for

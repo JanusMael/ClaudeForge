@@ -231,9 +231,11 @@ public partial class ProfilesViewModel : ObservableObject
         Log.Information("[Profiles.Command] action=ApplyCli name=\"{Name}\"", name);
 
         DialogMessage msg = DialogMessage.Builder()
-                                         .Text("Apply profile '").Bold(name).Text("' to Claude Code's live settings?\n\n")
+                                         .Text("Apply profile '").Bold(name)
+                                         .Text("' to Claude Code's live settings?\n\n")
                                          .Text("This will overwrite ").Path("~/.claude/settings.json").Text(" (and ")
-                                         .Path("CLAUDE.md").Text(" / MCP servers if present in the profile). Claude Code will ")
+                                         .Path("CLAUDE.md")
+                                         .Text(" / MCP servers if present in the profile). Claude Code will ")
                                          .Text("pick up the new settings on its next run.\n\n")
                                          .Text(
                                              "The current live settings will be auto-saved back to the currently-active profile ")
@@ -302,7 +304,8 @@ public partial class ProfilesViewModel : ObservableObject
                                              .Text("Update profile '").Bold(name)
                                              .Text("' with the current live Claude Code files?\n\n")
                                              .Text("This copies ").Path("~/.claude/settings.json").Text(" (and ")
-                                             .Path("CLAUDE.md").Text(" / mcpServers if present) into the profile directory, ")
+                                             .Path("CLAUDE.md")
+                                             .Text(" / mcpServers if present) into the profile directory, ")
                                              .Text("overwriting what was previously stored.")
                                              .Build();
         bool? confirmed = await _dialogService.ShowConfirmAsync(
@@ -370,7 +373,8 @@ public partial class ProfilesViewModel : ObservableObject
             // distinct prose runs rather than baked into a single string so the
             // path span gets its monospace + clickable treatment.
             DialogMessageBuilder b = DialogMessage.Builder()
-                                                  .Text("Permanently delete profile '").Bold(name).Text("' and all its stored files?");
+                                                  .Text("Permanently delete profile '").Bold(name)
+                                                  .Text("' and all its stored files?");
             if (isCliActive)
             {
                 b.Text("\n\n").Bold($"'{name}'")
@@ -633,9 +637,11 @@ public partial class ProfilesViewModel : ObservableObject
         DialogMessage applyMsg = DialogMessage.Builder()
                                               .Text("Apply Desktop profile '").Bold(name)
                                               .Text("' to Claude Desktop's live config?\n\n")
-                                              .Text("This will overwrite the Desktop config file. Claude Desktop will use ")
+                                              .Text(
+                                                  "This will overwrite the Desktop config file. Claude Desktop will use ")
                                               .Text("the new config on its next launch.\n\n")
-                                              .Text("The current live config will be auto-saved back to the currently-active ")
+                                              .Text(
+                                                  "The current live config will be auto-saved back to the currently-active ")
                                               .Text("Desktop profile first, so no edits are lost.")
                                               .Build();
         bool? confirmed = await _dialogService.ShowConfirmAsync(

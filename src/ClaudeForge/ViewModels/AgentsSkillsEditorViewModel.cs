@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -22,10 +24,16 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// body (post-front-matter) renders below.
 /// </para>
 /// </summary>
-public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
+public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable
 {
     private readonly string? _projectRoot;
     private readonly IShellLauncher? _shellLauncher;
+    private bool _disposed;
+
+    // Defers the initial filesystem scan until the page is first navigated to.
+    // BuildNavigationTree creates a fresh VM on every profile switch; without
+    // this guard the disk walk would fire even if the user never visits the page.
+    private bool _loaded;
 
     // Serialises concurrent refreshes so the Clear+Add rebuild of each
     // ObservableCollection stays atomic across the ctor's fire-and-forget
@@ -37,6 +45,11 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     // writing into rows that are about to be replaced.
     private CancellationTokenSource _descriptionFillCts = new();
 
+    // Cancels the in-flight artifact read when the user clicks a different row
+    // before the previous file-read completes.  Without this, a slow read would
+    // land after the user has already moved on and overwrite the selection.
+    private CancellationTokenSource _loadCts = new();
+
     public AgentsSkillsEditorViewModel(string? projectRoot, IShellLauncher? shellLauncher)
     {
         _projectRoot = projectRoot;
@@ -44,13 +57,34 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         AgentItems = [];
         SkillItems = [];
         CommandItems = [];
-        Refresh();
+        // No eager Refresh() here — the disk walk is deferred until the page
+        // is first selected (EnsureLoaded), so profile switches don't pay the
+        // scan cost when the user never visits this page in that session.
     }
 
     /// <summary>Test/fixture convenience ctor — no shell-launch plumbing.</summary>
     public AgentsSkillsEditorViewModel(string? projectRoot)
         : this(projectRoot, shellLauncher: null)
     {
+    }
+
+    /// <summary>
+    /// Triggers the initial filesystem scan the first time this page is
+    /// navigated to.  Idempotent: subsequent calls after the first load
+    /// are no-ops (explicit <see cref="Refresh"/> or the UI Refresh button
+    /// still work normally after the initial load completes).
+    /// Called by <c>MainWindowViewModel.OnSelectedNodeChanged</c> when this
+    /// editor becomes active.
+    /// </summary>
+    public void EnsureLoaded()
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        _loaded = true;
+        Refresh();
     }
 
     // ── Lists (one per segment) ──────────────────────────────────────────
@@ -71,8 +105,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     /// <summary>Slash-command segment: grouped headers + rows.</summary>
     public ObservableCollection<object> CommandItems { get; }
 
-    [ObservableProperty]
-    private bool _isBusy;
+    [ObservableProperty] private bool _isBusy;
 
     /// <summary>
     /// Test seam: the in-flight lazy description-fill task from the last
@@ -86,6 +119,8 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsViewerVisible))]
     [NotifyPropertyChangedFor(nameof(CanEdit))]
+    [NotifyPropertyChangedFor(nameof(ShowEditButton))]
+    [NotifyPropertyChangedFor(nameof(SelectedArtifactPath))]
     [NotifyCanExecuteChangedFor(nameof(BeginEditCommand))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleRawModeCommand))]
@@ -94,9 +129,17 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     /// <summary><see langword="true"/> when a row is selected and the detail pane should show.</summary>
     public bool IsViewerVisible => SelectedArtifact is not null;
 
+    /// <summary>
+    /// Null-safe path helper for CommandParameter bindings.
+    /// Binding directly to <c>SelectedArtifact.AbsolutePath</c> when
+    /// <c>SelectedArtifact</c> is null makes Avalonia log a binding-traversal
+    /// warning on every deselect. This flattened property avoids the intermediate
+    /// null step.
+    /// </summary>
+    public string? SelectedArtifactPath => SelectedArtifact?.AbsolutePath;
+
     /// <summary>The markdown body (everything after the front-matter) of the selected file.</summary>
-    [ObservableProperty]
-    private string? _viewerBody;
+    [ObservableProperty] private string? _viewerBody;
 
     // Structured front-matter card fields — populated on selection.  Kept as
     // plain strings + visibility flags so the read-only card needs no
@@ -106,8 +149,8 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     [ObservableProperty] private string? _cardDescription;
     [ObservableProperty] private string? _cardModel;
     [ObservableProperty] private string? _cardTools;
-    [ObservableProperty] private bool _cardShowToolsAndModel;   // agents only
-    [ObservableProperty] private bool _cardShowName;            // agents + skills (not commands)
+    [ObservableProperty] private bool _cardShowToolsAndModel; // agents only
+    [ObservableProperty] private bool _cardShowName; // agents + skills (not commands)
 
     // ── Edit state (group #3) ────────────────────────────────────────────
 
@@ -137,6 +180,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTypedEditVisible))]
     [NotifyPropertyChangedFor(nameof(IsRawEditVisible))]
+    [NotifyPropertyChangedFor(nameof(ShowEditButton))]
     private bool _isEditing;
 
     /// <summary>
@@ -145,6 +189,14 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     /// disabled and the read-only badge shows.
     /// </summary>
     public bool CanEdit => SelectedArtifact?.IsWritable == true;
+
+    /// <summary>
+    /// <see langword="true"/> when the Edit button should be shown.
+    /// The button is hidden while in edit mode (Save/Cancel take over)
+    /// AND for plugin (read-only) rows — showing a disabled Edit button
+    /// next to the read-only badge is redundant and confusing.
+    /// </summary>
+    public bool ShowEditButton => !IsEditing && CanEdit;
 
     /// <summary>Typed edit card is shown when editing and NOT in raw mode.</summary>
     public bool IsTypedEditVisible => IsEditing && !IsRawMode;
@@ -155,12 +207,11 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     [ObservableProperty] private string? _editName;
     [ObservableProperty] private string? _editDescription;
     [ObservableProperty] private string? _editModel;
-    [ObservableProperty] private string? _editTools;   // comma- or newline-separated
+    [ObservableProperty] private string? _editTools; // comma- or newline-separated
     [ObservableProperty] private string? _editBody;
 
     /// <summary>Transient post-save status line shown under the detail toolbar.</summary>
-    [ObservableProperty]
-    private string? _lastSaveMessage;
+    [ObservableProperty] private string? _lastSaveMessage;
 
     // ── Raw front-matter editing (mutually exclusive with the typed fields) ──
     //
@@ -183,12 +234,10 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     private bool _isRawMode;
 
     /// <summary>The raw front-matter block text (between the <c>---</c> fences, exclusive) while in raw mode.</summary>
-    [ObservableProperty]
-    private string? _editRawFrontMatter;
+    [ObservableProperty] private string? _editRawFrontMatter;
 
     /// <summary>Validation message shown when the raw front-matter can't be parsed on save.</summary>
-    [ObservableProperty]
-    private string? _rawValidationMessage;
+    [ObservableProperty] private string? _rawValidationMessage;
 
     /// <summary>Typed fields are editable only when in edit mode AND not in raw mode.</summary>
     public bool IsTypedEditEnabled => !IsRawMode;
@@ -206,6 +255,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
             {
                 return;
             }
+
             FrontMatter fm = ApplyEdits(_currentFrontMatter ?? FrontMatter.None(string.Empty), row.Entry.Category);
             EditRawFrontMatter = ExtractFrontMatterBlock(fm);
             RawValidationMessage = null;
@@ -219,8 +269,27 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
 
     // ── Refresh ──────────────────────────────────────────────────────────
 
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        // Cancel and free the in-flight description fill and any pending load.
+        _descriptionFillCts.Cancel();
+        _descriptionFillCts.Dispose();
+        _loadCts.Cancel();
+        _loadCts.Dispose();
+        _refreshLock.Dispose();
+    }
+
     /// <summary>Synchronous shortcut for the ctor — fire-and-forget refresh.</summary>
-    public void Refresh() => _ = RefreshAsync();
+    public void Refresh()
+    {
+        _ = RefreshAsync();
+    }
 
     /// <summary>
     /// Re-walk the scope-aware service and rebuild the three segment lists.
@@ -298,13 +367,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     {
         target.Clear();
 
-        List<ArtifactRowViewModel> Build(Func<EditableMemoryEntry, bool> pred) =>
-            entries
-                .Where(e => e.Category == category && pred(e))
-                .OrderBy(e => e.DisplayName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(e => e.Source, StringComparer.OrdinalIgnoreCase)
-                .Select(e => new ArtifactRowViewModel(e))
-                .ToList();
+        List<ArtifactRowViewModel> Build(Func<EditableMemoryEntry, bool> pred)
+        {
+            return entries
+                   .Where(e => e.Category == category && pred(e))
+                   .OrderBy(e => e.DisplayName, StringComparer.OrdinalIgnoreCase)
+                   .ThenBy(e => e.Source, StringComparer.OrdinalIgnoreCase)
+                   .Select(e => new ArtifactRowViewModel(e))
+                   .ToList();
+        }
 
         List<ArtifactRowViewModel> yours = Build(e => e.Scope != EditableMemoryScope.Plugin);
         List<ArtifactRowViewModel> plugin = Build(e => e.Scope == EditableMemoryScope.Plugin);
@@ -385,13 +456,31 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
             return;
         }
 
-        string? text = await EditableMemoryService.ReadAsync(row.AbsolutePath, CancellationToken.None)
-            .ConfigureAwait(true);
+        // Cancel any in-flight load (e.g. user clicked a second row before the
+        // first file-read completed).  Without this the slow read would land
+        // after the user has moved on and silently overwrite SelectedArtifact.
+        await _loadCts.CancelAsync().ConfigureAwait(true);
+        _loadCts.Dispose();
+        _loadCts = new CancellationTokenSource();
+        CancellationToken loadCt = _loadCts.Token;
 
-        // Opening a new row always exits any in-progress edit + clears the
-        // transient save message.
+        // Opening a new row always exits any in-progress edit, resets raw mode,
+        // and clears the transient save message.
         IsEditing = false;
+        IsRawMode = false;
         LastSaveMessage = null;
+
+        string? text;
+        try
+        {
+            text = await EditableMemoryService.ReadAsync(row.AbsolutePath, loadCt)
+                                              .ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer row was clicked — discard this load silently.
+            return;
+        }
 
         if (text is null)
         {
@@ -436,6 +525,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         ViewerBody = null;
         _currentFrontMatter = null;
         IsEditing = false;
+        IsRawMode = false;
         LastSaveMessage = null;
         ResetCard();
     }
@@ -486,7 +576,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         EditTools = CardTools;
         EditBody = ViewerBody;
         LastSaveMessage = null;
-        IsRawMode = false;   // always start in the typed editor
+        IsRawMode = false; // always start in the typed editor
         IsEditing = true;
 
         Log.Information("[AgentsSkills.Command] action=BeginEdit name={Name}",
@@ -515,6 +605,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         {
             return;
         }
+
         IsRawMode = !IsRawMode;
     }
 
@@ -543,6 +634,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
                 Log.Information("[AgentsSkills.Command] action=Save REJECTED — invalid raw front-matter");
                 return;
             }
+
             RawValidationMessage = null;
             fm = parsed;
         }
@@ -559,12 +651,12 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         try
         {
             await MemoryFileWriter.WriteAsync(row.AbsolutePath, composed, CancellationToken.None)
-                .ConfigureAwait(true);
+                                  .ConfigureAwait(true);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
             LastSaveMessage = string.Format(
-                System.Globalization.CultureInfo.CurrentCulture, Strings.StatusArtifactSaveFailedFmt, ex.Message);
+                CultureInfo.CurrentCulture, Strings.StatusArtifactSaveFailedFmt, ex.Message);
             Log.Warning(ex, "[AgentsSkills.Command] action=Save FAILED path={Path}", row.AbsolutePath);
             return;
         }
@@ -572,7 +664,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         // Re-read from disk so the card / body reflect exactly what was
         // written (confirms the round trip + picks up canonical re-rendering).
         string? written = await EditableMemoryService.ReadAsync(row.AbsolutePath, CancellationToken.None)
-            .ConfigureAwait(true);
+                                                     .ConfigureAwait(true);
         FrontMatter saved = written is not null ? YamlFrontMatter.Parse(written) : fm;
         _currentFrontMatter = saved;
         PopulateCard(row, saved);
@@ -602,10 +694,12 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         {
             composed = composed[fence.Length..];
         }
+
         if (composed.EndsWith(fence, StringComparison.Ordinal))
         {
             composed = composed[..^fence.Length];
         }
+
         return composed.TrimEnd('\n');
     }
 
@@ -649,6 +743,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
                 fm = SetOrRemoveScalar(fm, "description", EditDescription);
                 break;
         }
+
         return fm;
     }
 
@@ -669,14 +764,18 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
     }
 
     /// <summary>Split a comma- or newline-separated tools input into trimmed, non-empty items.</summary>
-    private static List<string> ParseToolsInput(string? input) =>
-        string.IsNullOrWhiteSpace(input)
+    private static List<string> ParseToolsInput(string? input)
+    {
+        return string.IsNullOrWhiteSpace(input)
             ? []
             : input.Split([',', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                    .ToList();
+    }
 
-    private static FrontMatter SetOrRemoveScalar(FrontMatter fm, string key, string? value) =>
-        string.IsNullOrWhiteSpace(value) ? fm.Without(key) : fm.WithScalar(key, value!.Trim());
+    private static FrontMatter SetOrRemoveScalar(FrontMatter fm, string key, string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fm.Without(key) : fm.WithScalar(key, value!.Trim());
+    }
 
     /// <summary>
     /// Ensure the body begins with a single blank line after the closing
@@ -688,6 +787,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         {
             return "\n";
         }
+
         // Compose appends body right after "---\n"; a leading blank line keeps
         // the conventional "---\n\n<content>" separation.
         return body.StartsWith('\n') || body.StartsWith("\r\n", StringComparison.Ordinal)
@@ -706,6 +806,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject
         {
             return Strings.StatusArtifactSaved;
         }
+
         _restartHintShownThisSession = true;
         return Strings.StatusArtifactSavedRestartHint;
     }

@@ -1,5 +1,3 @@
-using System;
-
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 
 /// <summary>

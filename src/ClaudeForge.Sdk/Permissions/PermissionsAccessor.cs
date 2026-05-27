@@ -132,7 +132,8 @@ internal sealed class PermissionsAccessor : IPermissionsAccessor
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
 
-        JsonArray? existing = _client.GetScopeValue("permissions.additionalDirectories", _client.DefaultScope) as JsonArray;
+        JsonArray? existing =
+            _client.GetScopeValue("permissions.additionalDirectories", _client.DefaultScope) as JsonArray;
         JsonArray newArr = existing is not null ? (JsonArray)existing.DeepClone() : new JsonArray();
 
         // De-dup — schema declares the array uniqueItems:true.

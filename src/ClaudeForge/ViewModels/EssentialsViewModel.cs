@@ -132,8 +132,15 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // The danger-state predicates are factored out so they can be
         // unit-tested directly via card reflection (and so the BuildCards
         // body doesn't grow another 50 lines of inline lambdas).
-        bool EnableAllMcpDanger(EssentialsCardViewModel c) => c.BoolValue == true;
-        bool SandboxEnabledDanger(EssentialsCardViewModel c) => c.BoolValue == false;
+        bool EnableAllMcpDanger(EssentialsCardViewModel c)
+        {
+            return c.BoolValue == true;
+        }
+
+        bool SandboxEnabledDanger(EssentialsCardViewModel c)
+        {
+            return c.BoolValue == false;
+        }
 
         // The amber-callout text is the same on every card (it just tells
         // the user "this is the setting your search matched"); applied
@@ -149,7 +156,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // is preserved on each card; only the position in the list moves.
         List<EssentialsCardViewModel> list =
         [
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdAutoMemoryEnabled,
                     title: Strings.EssentialsCardAutoMemoryEnabledTitle,
                     body: Strings.EssentialsCardAutoMemoryEnabledBody,
@@ -163,7 +170,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "autoMemoryEnabled" },
             // 2 — Max Output Tokens (env-var)
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdMaxOutputTokens,
                     title: Strings.EssentialsCardMaxOutputTokensTitle,
                     body: Strings.EssentialsCardMaxOutputTokensBody,
@@ -177,7 +184,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = EnvVarKey.MaxOutputTokens },
             // 3 — Max Thinking Tokens (env-var)
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdMaxThinkingTokens,
                     title: Strings.EssentialsCardMaxThinkingTokensTitle,
                     body: Strings.EssentialsCardMaxThinkingTokensBody,
@@ -191,7 +198,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = EnvVarKey.MaxThinkingTokens },
             // 4 — Effort level
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdEffortLevel,
                     title: Strings.EssentialsCardEffortLevelTitle,
                     body: Strings.EssentialsCardEffortLevelBody,
@@ -206,7 +213,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "effortLevel" },
             // 5 — Fast mode
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdFastMode,
                     title: Strings.EssentialsCardFastModeTitle,
                     body: Strings.EssentialsCardFastModeBody,
@@ -220,7 +227,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "fastMode" },
             // 6 — Model
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdModel,
                     title: Strings.EssentialsCardModelTitle,
                     body: Strings.EssentialsCardModelBody,
@@ -237,7 +244,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "model" },
             // 7 — Disable bypass-permissions mode
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdDisableBypass,
                     title: Strings.EssentialsCardDisableBypassTitle,
                     body: Strings.EssentialsCardDisableBypassBody,
@@ -251,7 +258,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "permissions.disableBypassPermissionsMode" },
             // 8 — Auto-trust project MCP servers
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdEnableAllProjectMcp,
                     title: Strings.EssentialsCardEnableAllMcpTitle,
                     body: Strings.EssentialsCardEnableAllMcpBody,
@@ -267,7 +274,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "enableAllProjectMcpServers" },
             // 9 — Sandbox enabled
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdSandboxEnabled,
                     title: Strings.EssentialsCardSandboxEnabledTitle,
                     body: Strings.EssentialsCardSandboxEnabledBody,
@@ -283,7 +290,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "sandbox.enabled" },
             // 10 — Sandbox allowed domains (sandbox.network.allowedDomains per schema)
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdSandboxDomains,
                     title: Strings.EssentialsCardSandboxDomainsTitle,
                     body: Strings.EssentialsCardSandboxDomainsBody,
@@ -297,7 +304,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 { JsonPathFilter = "sandbox.network.allowedDomains" },
             // 11 — Auto-updates channel
 
-            new EssentialsCardViewModel(
+            new(
                     id: CardIdAutoUpdatesChannel,
                     title: Strings.EssentialsCardAutoUpdatesChannelTitle,
                     body: Strings.EssentialsCardAutoUpdatesChannelBody,
@@ -310,7 +317,6 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     enumOptions: ["stable", "latest"],
                     amberCalloutText: amberText)
                 { JsonPathFilter = "autoUpdatesChannel" },
-
         ];
 
         // 1 — Auto-memory enabled
@@ -443,7 +449,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
             if (card.BoolValue is bool b)
             {
-                _client.SetValue(jsonPath, b);
+                _client.SetValue(jsonPath, b, _client.DefaultScope);
             }
             else
             {
@@ -488,7 +494,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
             }
             else
             {
-                _client.SetValue(jsonPath, value);
+                _client.SetValue(jsonPath, value, _client.DefaultScope);
             }
 
             return Task.CompletedTask;
@@ -557,7 +563,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                         JsonValue.Create(s));
                 }
 
-                _client.SetValue(jsonPath, arr);
+                _client.SetValue(jsonPath, arr, _client.DefaultScope);
             }
 
             return Task.CompletedTask;

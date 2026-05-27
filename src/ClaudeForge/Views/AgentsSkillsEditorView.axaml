@@ -61,7 +61,8 @@
                 <DockPanel LastChildFill="True">
                     <Border DockPanel.Dock="Right"
                             Background="{DynamicResource AppPanelBorderBrush}"
-                            CornerRadius="3" Padding="5,1" VerticalAlignment="Center"
+                            CornerRadius="3" Padding="5,1"
+                            VerticalAlignment="Top" Margin="6,1,0,0"
                             ToolTip.Tip="{Binding AbsolutePath}">
                         <TextBlock Text="{Binding Source}" FontSize="10"
                                    Foreground="{DynamicResource AppSecondaryTextBrush}" />
@@ -99,6 +100,7 @@
                             Padding="10,2"
                             VerticalAlignment="Center"
                             Margin="8,0,0,0"
+                            ToolTip.Tip="{x:Static loc:Strings.TipButtonRefresh}"
                             AutomationProperties.Name="{x:Static loc:Strings.ButtonRefresh}" />
                     <!-- Loading spinner — visible while the (brief, stat-only)
                          directory walk runs.  Sits left of the Refresh button. -->
@@ -176,13 +178,15 @@
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonBack}" />
 
                 <!-- View-mode actions -->
+                <!-- ShowEditButton = !IsEditing && CanEdit — hides the button for
+                     plugin rows so we don't show a disabled Edit next to the badge. -->
                 <Button DockPanel.Dock="Left"
                         Content="{x:Static loc:Strings.ButtonEditArtifact}"
                         Command="{Binding BeginEditCommand}"
-                        IsVisible="{Binding !IsEditing}"
+                        IsVisible="{Binding ShowEditButton}"
                         Margin="8,0,0,0" Padding="10,4"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonEditArtifact}" />
-                <!-- Read-only badge for plugin rows (Edit is disabled by CanExecute). -->
+                <!-- Read-only badge for plugin rows. -->
                 <Border DockPanel.Dock="Left"
                         Background="{DynamicResource AppStatusWarningBackgroundBrush}"
                         CornerRadius="3" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center"
@@ -217,13 +221,13 @@
                 <Button DockPanel.Dock="Right"
                         Content="{x:Static loc:Strings.ButtonReveal}"
                         Command="{Binding RevealCommand}"
-                        CommandParameter="{Binding SelectedArtifact.AbsolutePath}"
+                        CommandParameter="{Binding SelectedArtifactPath}"
                         Padding="10,4" Margin="4,0,0,0"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonReveal}" />
                 <Button DockPanel.Dock="Right"
                         Content="{x:Static loc:Strings.ButtonOpenInEditor}"
                         Command="{Binding OpenExternallyCommand}"
-                        CommandParameter="{Binding SelectedArtifact.AbsolutePath}"
+                        CommandParameter="{Binding SelectedArtifactPath}"
                         Padding="10,4" Margin="4,0,0,0"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}" />
             </DockPanel>

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
@@ -75,6 +72,7 @@ public static class YamlFrontMatter
         {
             first = first[1..];
         }
+
         if (first.Trim() != OpenDelimiter)
         {
             return FrontMatter.None(text);
@@ -155,6 +153,7 @@ public static class YamlFrontMatter
                 {
                     nodes.Add(new FrontMatterField(key, FrontMatterValue.OfScalar(string.Empty), raw));
                 }
+
                 continue;
             }
 
@@ -242,6 +241,7 @@ public static class YamlFrontMatter
             {
                 sb.Append(nl).Append("  - ").Append(QuoteIfNeeded(item));
             }
+
             return sb.ToString();
         }
 
@@ -259,6 +259,7 @@ public static class YamlFrontMatter
         {
             return value[1..^1];
         }
+
         return value;
     }
 
@@ -307,7 +308,9 @@ public static class YamlFrontMatter
     /// plain scalar, force quoting because YAML would otherwise read them as
     /// a structural indicator (list dash, flow open, comment, anchor, etc.).
     /// </summary>
-    private static bool IsYamlIndicatorStart(char c) =>
-        c is '-' or '?' or ':' or ',' or '[' or ']' or '{' or '}' or '#'
-          or '&' or '*' or '!' or '|' or '>' or '\'' or '"' or '%' or '@' or '`';
+    private static bool IsYamlIndicatorStart(char c)
+    {
+        return c is '-' or '?' or ':' or ',' or '[' or ']' or '{' or '}' or '#'
+            or '&' or '*' or '!' or '|' or '>' or '\'' or '"' or '%' or '@' or '`';
+    }
 }

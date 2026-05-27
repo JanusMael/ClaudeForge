@@ -102,10 +102,14 @@ public sealed class CommonActionsTaxonomyTests
     public void KnownDestructiveEntries_AreClassifiedDestructive()
     {
         // git push is irreversible (rewrites remote state visible to others).
-        // Raw Bash / PowerShell wildcard rules grant unrestricted shell access.
+        // Raw Bash wildcard grants unrestricted shell access.
+        // PowerShell and Pwsh bare-name entries are intentionally absent from
+        // AllToolGroups (removed from the catch-all to avoid the misleading
+        // Destructive label — per-command entries in the dedicated PowerShell
+        // expander carry the correct Read/Write/Network kinds instead).
         AssertKindForRules(CommonActionKind.Destructive,
             "Bash(git push *)", "PowerShell(git push *)",
-            "Bash", "PowerShell", "Pwsh");
+            "Bash");
     }
 
     // ── Safe-first group ordering inside each tool ────────────────────
@@ -141,11 +145,11 @@ public sealed class CommonActionsTaxonomyTests
     {
         // The catch-all "All Tools" tier is the most consequential surface
         // because each rule grants its kind across EVERY tool. Listing the
-        // dangerous shell-access wildcards (Bash, PowerShell, Pwsh) first
-        // would be poor pit-of-success design — the user's eye should land
-        // on safe Read rules first and have to scroll past Write + Network
-        // to reach the Destructive bare-tool wildcards. This test asserts
-        // that within-group safety rank is non-decreasing top-to-bottom.
+        // dangerous shell-access wildcard (Bash) first would be poor
+        // pit-of-success design — the user's eye should land on safe Read
+        // rules first and have to scroll past Write + Network to reach the
+        // Destructive bare-tool wildcard. This test asserts that within-group
+        // safety rank is non-decreasing top-to-bottom.
         ToolActionGroup catchAll = All.Single(t => t.IsCatchAll);
         foreach (CommonActionGroup group in catchAll.OperationGroups)
         {
@@ -170,11 +174,15 @@ public sealed class CommonActionsTaxonomyTests
                                      .Select(i => i.Rule)
                                      .ToList();
 
-        // Sanity: at minimum the bare-tool wildcards are present.
+        // Sanity: at minimum the file, web, and bare-shell wildcards are present.
+        // PowerShell and Pwsh are intentionally absent — their per-command entries
+        // in the dedicated PowerShell expander carry the correct kind labels;
+        // duplicating them here as Destructive would be misleading.
         CollectionAssert.Contains(rules, "Bash");
-        CollectionAssert.Contains(rules, "PowerShell");
         CollectionAssert.Contains(rules, "WebFetch");
         CollectionAssert.Contains(rules, "mcp__*");
+        CollectionAssert.DoesNotContain(rules, "PowerShell");
+        CollectionAssert.DoesNotContain(rules, "Pwsh");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

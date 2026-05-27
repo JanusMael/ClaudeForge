@@ -1487,7 +1487,10 @@
   </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>刷新</value>
-    <comment>Generic Refresh button label used on Memory page tabs.</comment>
+    <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>重新扫描文件系统并重新加载列表</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>在资源管理器中显示</value>

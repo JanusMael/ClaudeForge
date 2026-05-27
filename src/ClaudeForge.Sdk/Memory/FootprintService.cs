@@ -343,7 +343,8 @@ public sealed class FootprintService
             {
                 // Three sibling directories — concatenate their walks.
                 IEnumerable<string> sessions = SafeEnumerate(Path.Combine(home, "sessions"), "*", recursive: true);
-                IEnumerable<string> sessionData = SafeEnumerate(Path.Combine(home, "session-data"), "*", recursive: true);
+                IEnumerable<string> sessionData =
+                    SafeEnumerate(Path.Combine(home, "session-data"), "*", recursive: true);
                 IEnumerable<string> sessionEnv = SafeEnumerate(Path.Combine(home, "session-env"), "*", recursive: true);
                 return sessions.Concat(sessionData).Concat(sessionEnv);
             }

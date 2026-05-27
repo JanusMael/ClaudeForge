@@ -574,7 +574,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
             }
         }
     }
-    
+
     /// <summary>
     /// If <paramref name="query"/> begins and ends with a matched pair of
     /// quote characters, returns the unquoted interior. Otherwise returns

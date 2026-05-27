@@ -786,7 +786,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         // re-flush them.  See _userEditedPaths field comment.
         _userEditedPaths.Clear();
 
-        Dictionary<string, LibVm.PropertyEditorViewModel> existingByPath = Editors.ToDictionary(e => e.Path, e => e, StringComparer.Ordinal);
+        Dictionary<string, LibVm.PropertyEditorViewModel> existingByPath =
+            Editors.ToDictionary(e => e.Path, e => e, StringComparer.Ordinal);
 
         List<LibVm.PropertyEditorViewModel> editors = new(SchemaNodes.Count);
         foreach (SchemaNode node in SchemaNodes)

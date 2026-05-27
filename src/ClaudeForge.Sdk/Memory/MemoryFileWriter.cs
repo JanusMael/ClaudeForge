@@ -1,8 +1,4 @@
-using System;
-using System.IO;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 
@@ -59,6 +55,7 @@ public static class MemoryFileWriter
             {
                 // Best-effort cleanup; surface the original failure below.
             }
+
             throw;
         }
     }

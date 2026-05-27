@@ -239,6 +239,17 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
         {
             string s => s,
             bool b => b ? "true" : "false",
+            // Compound objects (permissions, hooks, mcpServers …) normalise to
+            // IReadOnlyDictionary<string,object?>.  Their .ToString() produces a
+            // raw collection representation — unhelpful and visually broken in
+            // the "inherited from <scope>:" row.  Return null to suppress the
+            // row for these types; the "Defined in scopes:" header chiclets
+            // already communicate that other scopes have data.
+            IReadOnlyDictionary<string, object?> => null,
+            // String-array properties (sandbox.network.allowedDomains, etc.)
+            // normalise to IReadOnlyList<object?>.  A compact count is more
+            // readable than the List<T>.ToString() fallback.
+            IReadOnlyList<object?> list => list.Count > 0 ? $"[{list.Count} item(s)]" : null,
             var _ => v?.ToString(),
         };
     }

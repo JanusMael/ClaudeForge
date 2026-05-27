@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 
 /// <summary>
@@ -33,8 +29,10 @@ public sealed record FrontMatter(
     string Body)
 {
     /// <summary>A front-matter-less result wrapping the whole text as body.</summary>
-    public static FrontMatter None(string body) =>
-        new(Present: false, Nodes: [], Body: body);
+    public static FrontMatter None(string body)
+    {
+        return new FrontMatter(Present: false, Nodes: [], Body: body);
+    }
 
     /// <summary>The field nodes only, in source order (skips comments/blanks).</summary>
     public IEnumerable<FrontMatterField> Fields => Nodes.OfType<FrontMatterField>();
@@ -44,8 +42,10 @@ public sealed record FrontMatter(
     /// lower-case but we match tolerantly).  Returns <see langword="null"/>
     /// when absent.
     /// </summary>
-    public FrontMatterValue? Find(string key) =>
-        Fields.FirstOrDefault(f => string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))?.Value;
+    public FrontMatterValue? Find(string key)
+    {
+        return Fields.FirstOrDefault(f => string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))?.Value;
+    }
 
     /// <summary>Scalar value for <paramref name="key"/>, or null if absent / list-valued.</summary>
     public string? FindScalar(string key)
@@ -68,12 +68,16 @@ public sealed record FrontMatter(
     /// touched field's <see cref="FrontMatterField.RawText"/> is cleared so
     /// <see cref="YamlFrontMatter.Compose"/> re-renders just that line.
     /// </summary>
-    public FrontMatter WithScalar(string key, string value) =>
-        WithField(key, FrontMatterValue.OfScalar(value));
+    public FrontMatter WithScalar(string key, string value)
+    {
+        return WithField(key, FrontMatterValue.OfScalar(value));
+    }
 
     /// <summary>List-valued counterpart of <see cref="WithScalar"/>.</summary>
-    public FrontMatter WithList(string key, IReadOnlyList<string> items) =>
-        WithField(key, FrontMatterValue.OfList(items));
+    public FrontMatter WithList(string key, IReadOnlyList<string> items)
+    {
+        return WithField(key, FrontMatterValue.OfList(items));
+    }
 
     /// <summary>
     /// Return a copy with <paramref name="key"/> removed (all matching field
@@ -82,9 +86,9 @@ public sealed record FrontMatter(
     public FrontMatter Without(string key)
     {
         var kept = Nodes
-            .Where(n => n is not FrontMatterField f
-                        || !string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+                   .Where(n => n is not FrontMatterField f
+                               || !string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))
+                   .ToList();
         return this with { Nodes = kept };
     }
 
@@ -92,9 +96,8 @@ public sealed record FrontMatter(
     {
         var updated = new List<FrontMatterNode>(Nodes);
 
-        int existing = updated.FindIndex(
-            n => n is FrontMatterField f
-                 && string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase));
+        int existing = updated.FindIndex(n => n is FrontMatterField f
+                                              && string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase));
 
         // RawText cleared → Compose re-renders this field canonically.
         var field = new FrontMatterField(key, value, RawText: null);
@@ -157,11 +160,16 @@ public sealed class FrontMatterValue : IEquatable<FrontMatterValue>
     public bool IsList => List is not null;
 
     /// <summary>Create a scalar value.</summary>
-    public static FrontMatterValue OfScalar(string value) => new(value, null);
+    public static FrontMatterValue OfScalar(string value)
+    {
+        return new FrontMatterValue(value, null);
+    }
 
     /// <summary>Create a list value (a defensive copy is taken).</summary>
-    public static FrontMatterValue OfList(IReadOnlyList<string> items) =>
-        new(null, items.ToList());
+    public static FrontMatterValue OfList(IReadOnlyList<string> items)
+    {
+        return new FrontMatterValue(null, items.ToList());
+    }
 
     public bool Equals(FrontMatterValue? other)
     {
@@ -169,16 +177,21 @@ public sealed class FrontMatterValue : IEquatable<FrontMatterValue>
         {
             return false;
         }
+
         if (IsList != other.IsList)
         {
             return false;
         }
+
         return IsList
             ? List!.SequenceEqual(other.List!, StringComparer.Ordinal)
             : string.Equals(Scalar, other.Scalar, StringComparison.Ordinal);
     }
 
-    public override bool Equals(object? obj) => Equals(obj as FrontMatterValue);
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as FrontMatterValue);
+    }
 
     public override int GetHashCode()
     {
@@ -189,8 +202,10 @@ public sealed class FrontMatterValue : IEquatable<FrontMatterValue>
             {
                 hash.Add(item, StringComparer.Ordinal);
             }
+
             return hash.ToHashCode();
         }
+
         return Scalar is null ? 0 : StringComparer.Ordinal.GetHashCode(Scalar);
     }
 }

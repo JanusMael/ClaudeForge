@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security;
-using System.Threading;
-using System.Threading.Tasks;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
@@ -153,6 +147,7 @@ public static class EditableMemoryService
         {
             return;
         }
+
         WalkPluginDir(results, pluginsDir, pluginsDir, depth: 0);
     }
 
@@ -198,6 +193,7 @@ public static class EditableMemoryService
             {
                 continue;
             }
+
             WalkPluginDir(results, pluginsRoot, child, depth + 1);
         }
     }
@@ -220,8 +216,19 @@ public static class EditableMemoryService
             {
                 break;
             }
+
+            // Skip the "marketplaces" directory level — it's a Claude Code
+            // installation-layout detail, not meaningful as a display name.
+            // Real path: plugins/marketplaces/<mkt>/<plugin>/agents/…
+            // Displayed as: <mkt>/<plugin>  (not marketplaces/<mkt>/<plugin>)
+            if (part.Equals("marketplaces", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             prefix.Add(part);
         }
+
         return prefix.Count > 0 ? string.Join('/', prefix) : "Plugin";
     }
 
@@ -293,6 +300,7 @@ public static class EditableMemoryService
                 return parent;
             }
         }
+
         return Path.GetFileNameWithoutExtension(fi.Name);
     }
 

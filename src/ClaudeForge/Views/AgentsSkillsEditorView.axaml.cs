@@ -43,14 +43,14 @@ public partial class AgentsSkillsEditorView : UserControl
         }
 
         string text = box.Text ?? string.Empty;
-        int caret = System.Math.Clamp(box.CaretIndex, 0, text.Length);
+        int caret = Math.Clamp(box.CaretIndex, 0, text.Length);
 
         switch (e.Key)
         {
             case Key.Tab when e.KeyModifiers.HasFlag(KeyModifiers.Shift):
             {
                 // Dedent: drop up to IndentUnit leading spaces on the caret's line.
-                int lineStart = text.LastIndexOf('\n', System.Math.Max(0, caret - 1)) + 1;
+                int lineStart = text.LastIndexOf('\n', Math.Max(0, caret - 1)) + 1;
                 int removable = 0;
                 while (removable < IndentUnit.Length
                        && lineStart + removable < text.Length
@@ -58,11 +58,13 @@ public partial class AgentsSkillsEditorView : UserControl
                 {
                     removable++;
                 }
+
                 if (removable > 0)
                 {
                     box.Text = text.Remove(lineStart, removable);
-                    box.CaretIndex = System.Math.Max(lineStart, caret - removable);
+                    box.CaretIndex = Math.Max(lineStart, caret - removable);
                 }
+
                 e.Handled = true;
                 break;
             }
@@ -78,12 +80,13 @@ public partial class AgentsSkillsEditorView : UserControl
             case Key.Enter or Key.Return:
             {
                 // Auto-indent: carry the current line's leading whitespace.
-                int lineStart = text.LastIndexOf('\n', System.Math.Max(0, caret - 1)) + 1;
+                int lineStart = text.LastIndexOf('\n', Math.Max(0, caret - 1)) + 1;
                 int ws = lineStart;
                 while (ws < text.Length && ws < caret && (text[ws] == ' ' || text[ws] == '\t'))
                 {
                     ws++;
                 }
+
                 string indent = text[lineStart..ws];
                 string insert = "\n" + indent;
                 box.Text = text.Insert(caret, insert);

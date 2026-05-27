@@ -13,6 +13,7 @@ using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+
 // Alias the SDK so the SDK client type and Changed event args don't clash
 // with anything else in this file. Mirrors the editor migrations from 4.3.6.
 
@@ -185,6 +186,15 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveFromScopeCommand))]
     [NotifyPropertyChangedFor(nameof(SelectedEntryDescription))]
+    // Flattened helpers below — notified here so the view binds to a single
+    // non-chained property and Avalonia never tries to traverse a null
+    // intermediate (which logs a binding-traversal warning on every deselect).
+    [NotifyPropertyChangedFor(nameof(SelectedEntryName))]
+    [NotifyPropertyChangedFor(nameof(SelectedEntryHasProcessValue))]
+    [NotifyPropertyChangedFor(nameof(SelectedEntryProcessValue))]
+    [NotifyPropertyChangedFor(nameof(SelectedEntryClaudeValue))]
+    [NotifyPropertyChangedFor(nameof(SelectedEntryUserValue))]
+    [NotifyPropertyChangedFor(nameof(SelectedEntryMachineValue))]
     private EnvVarEntry? _selectedEntry;
 
     /// <summary>
@@ -194,6 +204,30 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
     /// </summary>
     public string? SelectedEntryDescription =>
         EnvVarTooltipConverter.GetDescription(SelectedEntry?.Name);
+
+    // ── Flattened SelectedEntry helpers ──────────────────────────────────────
+    // Binding to SelectedEntry.X when SelectedEntry is null logs an Avalonia
+    // "null intermediate" warning on every deselect even with FallbackValue.
+    // These computed properties null-guard internally so the AXAML path is never
+    // a chained navigation through a nullable.
+
+    /// <summary>Null-safe name for the detail-pane header.</summary>
+    public string? SelectedEntryName => SelectedEntry?.Name;
+
+    /// <summary><see langword="true"/> when the selected entry has a process-level value; drives the "process" row's visibility.</summary>
+    public bool SelectedEntryHasProcessValue => SelectedEntry?.ProcessValue is not null;
+
+    /// <summary>Null-safe process value for the detail-pane layer table.</summary>
+    public string? SelectedEntryProcessValue => SelectedEntry?.ProcessValue;
+
+    /// <summary>Null-safe Claude (workspace) value for the detail-pane layer table.</summary>
+    public string? SelectedEntryClaudeValue => SelectedEntry?.ClaudeValue;
+
+    /// <summary>Null-safe user-env value for the detail-pane layer table.</summary>
+    public string? SelectedEntryUserValue => SelectedEntry?.UserValue;
+
+    /// <summary>Null-safe machine-env value for the detail-pane layer table.</summary>
+    public string? SelectedEntryMachineValue => SelectedEntry?.MachineValue;
 
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
     private string? _editValue;
@@ -458,6 +492,14 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Early-exit if already disposed — avoids queuing a no-op dispatcher post.
+        // Rebuild() also guards internally because a Post can slip through
+        // the queue after Dispose() has run.
+        if (_disposed)
+        {
+            return;
+        }
+
         if (Dispatcher.UIThread.CheckAccess())
         {
             Rebuild();
@@ -471,6 +513,15 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
 
         void Rebuild()
         {
+            // Guard: a dispatcher Post can fire after Dispose() has unsubscribed
+            // the event and set _disposed = true but the queued work is already
+            // in the queue and runs anyway. The client is disposed at that point,
+            // so calling RebuildEntries() → GetLayeredValueSnapshot() would throw.
+            if (_disposed)
+            {
+                return;
+            }
+
             string? prevName = SelectedEntry?.Name;
             RebuildEntries();
             if (prevName != null)
@@ -725,6 +776,8 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
         }
     }
 
-    [GeneratedRegex(@"^(ANTHROPIC_|CLAUDE_|DISABLE_AUTOUPDATER|DISABLE_ERROR_REPORTING|DISABLE_FEEDBACK|DISABLE_TELEMETRY|ENABLE_CLAUDEAI_|NODE_|NPM_|npm_|MAX_THINKING_TOKENS|API_TIMEOUT_MS|BASH_|HTTP_PROXY|HTTPS_PROXY|NO_PROXY|GOOGLE_|GCLOUD_|AWS_|CLAUDECODE).*", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    [GeneratedRegex(
+        @"^(ANTHROPIC_|CLAUDE_|DISABLE_AUTOUPDATER|DISABLE_ERROR_REPORTING|DISABLE_FEEDBACK|DISABLE_TELEMETRY|ENABLE_CLAUDEAI_|NODE_|NPM_|npm_|MAX_THINKING_TOKENS|API_TIMEOUT_MS|BASH_|HTTP_PROXY|HTTPS_PROXY|NO_PROXY|GOOGLE_|GCLOUD_|AWS_|CLAUDECODE).*",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
     private static partial Regex MyRegex();
 }

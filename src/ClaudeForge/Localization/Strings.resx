@@ -1480,7 +1480,10 @@ Cancel — keep the window open.</value>
   </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Refresh</value>
-    <comment>Generic Refresh button label used on Memory page tabs.</comment>
+    <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>Re-scan the filesystem and reload the list</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Reveal in Explorer</value>

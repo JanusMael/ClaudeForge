@@ -147,7 +147,8 @@ internal sealed class BackupClient : IBackupClient
         };
 
         IProgress<Core.Backup.BackupProgress>? coreProgress = WrapProgress(onProgress);
-        Core.Backup.RestoreResult result = await _engine.RestoreAsync(coreEntry, coreProgress, ct).ConfigureAwait(false);
+        Core.Backup.RestoreResult
+            result = await _engine.RestoreAsync(coreEntry, coreProgress, ct).ConfigureAwait(false);
 
         return new RestoreResult(
             Success: result.Succeeded,

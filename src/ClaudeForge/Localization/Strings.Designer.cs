@@ -958,7 +958,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("ButtonRefresh", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Re-scan the filesystem and reload the list.
+        /// </summary>
+        public static string TipButtonRefresh {
+            get {
+                return ResourceManager.GetString("TipButtonRefresh", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to ↻ Refresh All.
         /// </summary>

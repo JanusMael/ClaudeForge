@@ -382,20 +382,25 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
             // styled border (NOT a tool Expander) so users don't mistake
             // these broad rules for a per-tool surface. Each entry is
             // classified by the broadest kind the underlying tool supports
-            // (raw Bash/PowerShell can do anything → Destructive).
+            // (raw Bash can do anything → Destructive).
             // The Tool field "All Tools" is never rendered here (the catch-all
             // border uses LabelCommonActionsCatchAll instead), so it stays as
             // a string identifier for consumers' convenience.
+            //
+            // PowerShell and Pwsh are intentionally absent: they have their own
+            // dedicated tool expander above with correctly classified per-command
+            // entries (Read/Write/Network). Duplicating them here as Destructive
+            // (the "worst-case bare-name" heuristic) produces a misleading label
+            // and creates confusing redundancy.
             new ToolActionGroup("All Tools", [
                 // Items ordered safe-first (Read → Write → Network → Destructive)
                 // so the user's eye lands on safe rules first and has to scroll
                 // PAST the safer affordances to reach the dangerous shell-access
                 // wildcards. Within each kind the items follow conventional
                 // command-utility order (Read before Glob/Grep, Edit before Write,
-                // WebFetch before WebSearch, Bash before PowerShell). Coloured
-                // chiclets remain so the kind is still visually obvious — the
-                // rearrangement just discourages dangerous mutations from being
-                // the first thing the user clicks.
+                // WebFetch before WebSearch). Coloured chiclets remain so the kind
+                // is still visually obvious — the rearrangement just discourages
+                // dangerous mutations from being the first thing the user clicks.
                 G(Strings.LabelOperationWildcards,
                     // Read kind — list / search / inspect
                     I("Read", CommonActionKind.Read),
@@ -408,10 +413,8 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                     I("WebFetch", CommonActionKind.Network),
                     I("WebSearch", CommonActionKind.Network),
                     I("mcp__*", CommonActionKind.Network),
-                    // Destructive kind — bare-tool shell wildcards (anything goes)
-                    I("Bash", CommonActionKind.Destructive),
-                    I("PowerShell", CommonActionKind.Destructive),
-                    I("Pwsh", CommonActionKind.Destructive)
+                    // Destructive kind — bare Bash wildcard (any shell command)
+                    I("Bash", CommonActionKind.Destructive)
                 ),
             ], IsCatchAll: true),
         ];

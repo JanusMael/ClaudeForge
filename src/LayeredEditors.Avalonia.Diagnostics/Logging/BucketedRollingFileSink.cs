@@ -312,9 +312,9 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
                         File.Delete(file);
                     }
                     catch (Exception ex) when (ex is IOException
-                                                     or UnauthorizedAccessException
-                                                     or FileNotFoundException
-                                                     or DirectoryNotFoundException)
+                                                   or UnauthorizedAccessException
+                                                   or FileNotFoundException
+                                                   or DirectoryNotFoundException)
                     {
                         // File locked, permission denied, or already-gone — skip and
                         // continue. The deferred startup prune can race with the
@@ -385,7 +385,7 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
                 return false;
             }
 
-            year = (year * 10) + (c - '0');
+            year = year * 10 + (c - '0');
         }
 
         int month = 0;
@@ -397,7 +397,7 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
                 return false;
             }
 
-            month = (month * 10) + (c - '0');
+            month = month * 10 + (c - '0');
         }
 
         int day = 0;
@@ -409,7 +409,7 @@ public sealed class BucketedRollingFileSink : ILogEventSink, IDisposable
                 return false;
             }
 
-            day = (day * 10) + (c - '0');
+            day = day * 10 + (c - '0');
         }
 
         // Range-validate the component integers before the DateTime ctor so

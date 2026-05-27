@@ -142,13 +142,22 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         };
     }
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(IsViewerVisible))]
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsViewerVisible))]
+    [NotifyPropertyChangedFor(nameof(SelectedFilePath))]
     private UserMemoryFile? _selectedFile;
 
     [ObservableProperty] private string? _viewerContent;
 
     /// <summary><see langword="true"/> when a Tier 1 file is open in the viewer pane.</summary>
     public bool IsViewerVisible => SelectedFile is not null;
+
+    /// <summary>
+    /// Null-safe path helper for CommandParameter bindings.
+    /// Binding directly to <c>SelectedFile.AbsolutePath</c> when <c>SelectedFile</c>
+    /// is null logs an Avalonia binding-traversal warning on every deselect.
+    /// </summary>
+    public string? SelectedFilePath => SelectedFile?.AbsolutePath;
 
     [ObservableProperty] private bool _isBusy;
 
@@ -200,18 +209,21 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
                 // blocked the UI thread for the duration of the scan.
                 // Observed 2026-05-13 as the hang amplifier behind the
                 // profile-switch reload-loop bug.
-                IReadOnlyList<UserMemoryFile> tier1 = await Task.Run(() => _codeClient.SnapshotUserMemoryFiles(_projectRoot)
-                ).ConfigureAwait(true);
+                IReadOnlyList<UserMemoryFile> tier1 = await Task
+                                                            .Run(() => _codeClient.SnapshotUserMemoryFiles(_projectRoot)
+                                                            ).ConfigureAwait(true);
                 RebuildTier1Groups(tier1);
 
                 // Tier 2 — async (disk walk).
-                IReadOnlyList<FootprintCategoryStats> tier2 = await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
+                IReadOnlyList<FootprintCategoryStats> tier2 =
+                    await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
                 RebuildFootprintRows(tier2);
 
                 // Tier 2 per-project breakdown — additional async walk; runs
                 // alongside the aggregate stats. Empty when ~/.claude/projects
                 // is empty or absent.
-                IReadOnlyList<ProjectTranscriptStats> perProject = await _codeClient.GetProjectTranscriptStatsAsync(CancellationToken.None).ConfigureAwait(true);
+                IReadOnlyList<ProjectTranscriptStats> perProject =
+                    await _codeClient.GetProjectTranscriptStatsAsync(CancellationToken.None).ConfigureAwait(true);
                 RebuildProjectTranscripts(perProject);
             }
             finally
@@ -241,7 +253,8 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         }
 
         SelectedFile = file;
-        ViewerContent = await _codeClient.ReadMemoryFileAsync(file.AbsolutePath, CancellationToken.None).ConfigureAwait(true);
+        ViewerContent = await _codeClient.ReadMemoryFileAsync(file.AbsolutePath, CancellationToken.None)
+                                         .ConfigureAwait(true);
     }
 
     /// <summary>Close the viewer (return to the inventory list).</summary>
@@ -361,7 +374,8 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
             // every row to capture neighbour changes (the schema doesn't
             // require per-row delete to leave others untouched, but in
             // practice it does).
-            IReadOnlyList<FootprintCategoryStats> stats = await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
+            IReadOnlyList<FootprintCategoryStats> stats =
+                await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
             RebuildFootprintRows(stats);
         }
         finally
@@ -415,14 +429,17 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            await _codeClient.DeleteProjectTranscriptsAsync(row.MangledName, CancellationToken.None).ConfigureAwait(true);
+            await _codeClient.DeleteProjectTranscriptsAsync(row.MangledName, CancellationToken.None)
+                             .ConfigureAwait(true);
 
             // Re-stat both surfaces — the per-project row goes to 0/0 AND
             // the aggregate SessionTranscripts row shrinks accordingly, so
             // both lists should refresh together.
-            IReadOnlyList<FootprintCategoryStats> stats = await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
+            IReadOnlyList<FootprintCategoryStats> stats =
+                await _codeClient.GetFootprintStatsAsync(CancellationToken.None).ConfigureAwait(true);
             RebuildFootprintRows(stats);
-            IReadOnlyList<ProjectTranscriptStats> perProject = await _codeClient.GetProjectTranscriptStatsAsync(CancellationToken.None).ConfigureAwait(true);
+            IReadOnlyList<ProjectTranscriptStats> perProject =
+                await _codeClient.GetProjectTranscriptStatsAsync(CancellationToken.None).ConfigureAwait(true);
             RebuildProjectTranscripts(perProject);
         }
         finally

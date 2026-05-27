@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 
 /// <summary>
@@ -61,7 +57,7 @@ public sealed record AgentFrontMatter(
         }
 
         return scalar
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
+               .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+               .ToList();
     }
 }

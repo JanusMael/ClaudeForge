@@ -44,6 +44,7 @@ public static partial class DescriptionFormatter
         return SentenceBoundary.Replace(source, "$1\n\n");
     }
 
-    [GeneratedRegex(@"(?<![A-Za-z]\.[A-Za-z])([.!?])\s+(?=[A-Z])", RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<![A-Za-z]\.[A-Za-z])([.!?])\s+(?=[A-Z])",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant)]
     private static partial Regex MyRegex();
 }

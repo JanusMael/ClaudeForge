@@ -81,7 +81,8 @@ public partial class PermissionsEditorView : UserControl
             return;
         }
 
-        PermissionsEditorViewModel? vm = btn.FindAncestorOfType<UserControl>()?.DataContext as PermissionsEditorViewModel;
+        PermissionsEditorViewModel? vm =
+            btn.FindAncestorOfType<UserControl>()?.DataContext as PermissionsEditorViewModel;
         if (vm != null)
         {
             getCmd(vm).Execute(rule);

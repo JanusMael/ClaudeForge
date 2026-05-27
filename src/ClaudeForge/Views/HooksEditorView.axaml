@@ -299,7 +299,7 @@
                                                                 <TextBlock Text="{Binding Description}"
                                                                            FontSize="11"
                                                                            Foreground="{DynamicResource AppSecondaryTextBrush}"
-                                                                           IsVisible="{Binding $parent[ComboBoxItem], Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                                           IsVisible="{Binding $parent[ComboBoxItem], Converter={x:Static ObjectConverters.IsNotNull}, FallbackValue=False}"
                                                                            VerticalAlignment="Center"
                                                                            TextTrimming="CharacterEllipsis" />
                                                             </DockPanel>

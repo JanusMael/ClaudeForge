@@ -18,37 +18,35 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// </summary>
 public sealed partial class ArtifactRowViewModel(EditableMemoryEntry entry) : ObservableObject
 {
-    private readonly EditableMemoryEntry _entry = entry;
-
     /// <summary>The underlying discovery entry (path, scope, category, etc.).</summary>
-    public EditableMemoryEntry Entry => _entry;
+    public EditableMemoryEntry Entry { get; } = entry;
 
     /// <summary>Friendly label — file name (agents/commands) or parent dir (skills).</summary>
-    public string DisplayName => _entry.DisplayName;
+    public string DisplayName => Entry.DisplayName;
 
     /// <summary>
     /// Disambiguating origin: "User" / "Project" for writable rows, the
     /// providing plugin's name for plugin rows.  Shown as a per-row chip so
     /// same-named artifacts from different plugins are distinguishable.
     /// </summary>
-    public string Source => _entry.Source;
+    public string Source => Entry.Source;
 
     /// <summary>Absolute path — passed to Reveal / Open-externally commands.</summary>
-    public string AbsolutePath => _entry.AbsolutePath;
+    public string AbsolutePath => Entry.AbsolutePath;
 
     /// <summary><see langword="false"/> for plugin-provided artifacts.</summary>
-    public bool IsWritable => _entry.IsWritable;
+    public bool IsWritable => Entry.IsWritable;
 
     /// <summary><see langword="true"/> for plugin-scoped (read-only) rows.</summary>
-    public bool IsPlugin => _entry.Scope == EditableMemoryScope.Plugin;
+    public bool IsPlugin => Entry.Scope == EditableMemoryScope.Plugin;
 
     /// <summary>Short scope label: "User" / "Project" / "Plugin".</summary>
-    public string ScopeLabel => _entry.Scope switch
+    public string ScopeLabel => Entry.Scope switch
     {
         EditableMemoryScope.User => "User",
         EditableMemoryScope.Project => "Project",
         EditableMemoryScope.Plugin => "Plugin",
-        _ => _entry.Scope.ToString(),
+        _ => Entry.Scope.ToString(),
     };
 
     /// <summary>
@@ -56,6 +54,5 @@ public sealed partial class ArtifactRowViewModel(EditableMemoryEntry entry) : Ob
     /// the page VM's background fill resolves it; then the description, or
     /// "(no description)" if the file has no description key.
     /// </summary>
-    [ObservableProperty]
-    private string? _subtitle;
+    [ObservableProperty] private string? _subtitle;
 }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 
 /// <summary>

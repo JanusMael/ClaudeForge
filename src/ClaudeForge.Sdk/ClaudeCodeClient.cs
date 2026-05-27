@@ -71,7 +71,8 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientCore
         // order takes priority over .mcp.json when both contain mcpServers).
         // profileName=null — profile-aware loading is post-v1 SDK work; for now
         // the SDK always operates against the global ~/.claude/ tree.
-        IReadOnlyList<DiscoveredFile> settings = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(projectRoot, profileName: null);
+        IReadOnlyList<DiscoveredFile> settings =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(projectRoot, profileName: null);
         IReadOnlyList<DiscoveredFile> mcp = ConfigFileDiscoverer.DiscoverMcpFiles(projectRoot, profileName: null);
         return [.. settings, .. mcp];
     }

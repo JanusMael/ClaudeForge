@@ -910,8 +910,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                                          // narration."
                                          .Code(FormatSchemaErrors(SchemaErrors))
                                          .Text("\n\n")
-                                         .Text("These errors are in the loaded files. Fix them in your editor and reload, ")
-                                         .Text("or save other changes from this app — the schema-invalid sections write through ")
+                                         .Text(
+                                             "These errors are in the loaded files. Fix them in your editor and reload, ")
+                                         .Text(
+                                             "or save other changes from this app — the schema-invalid sections write through ")
                                          .Text("verbatim and Claude may reject them at runtime.")
                                          .Build();
 
@@ -1365,7 +1367,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 DialogMessage schemaMsg = DialogMessage.Builder()
                                                        // Monospace body — see ShowSchemaErrorsAsync for rationale.
                                                        .Code(FormatSchemaErrors(schemaErrors))
-                                                       .Text("\n\nThese errors may be in data you didn't change — for example ")
+                                                       .Text(
+                                                           "\n\nThese errors may be in data you didn't change — for example ")
                                                        .Text(
                                                            "hooks of types this editor doesn't natively support, or hand-edited ")
                                                        .Text(
@@ -1395,7 +1398,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // Show a "what you're about to save" confirmation when there are actual changes.
             // If there are no content differences (e.g., Save is pressed twice), or the user
             // previously unchecked "Show this dialog on save", skip the dialog.
-            SaveChangesDialogViewModel? summaryVm = SaveDialogBuilder.Build(ClaudeCodeSdk, ClaudeDesktopSdk, isRestoreContext);
+            SaveChangesDialogViewModel? summaryVm =
+                SaveDialogBuilder.Build(ClaudeCodeSdk, ClaudeDesktopSdk, isRestoreContext);
             // diagnostic logging for the "silent save" bug report.
             // The user reported clicking Save (button enabled => HasUnsavedChanges
             // is true => structural diff is non-empty) but no dialog appearing.
@@ -1640,7 +1644,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // -----------------------------------------------------------------------
     // Save diagnostics (logged before any modal dialog)
     // -----------------------------------------------------------------------
-    
+
     // Diagnostic helpers (LogPendingChanges, IsSensitiveKey, the diff machinery)
     // moved to ClaudeForge.Services.WorkspaceDiagnostics in cleanup.
     // Call sites use the static helpers directly.
@@ -1839,6 +1843,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             _bannerDismissedByUser = false;
         }
+
         if (_schemaErrorsBannerDismissed)
         {
             _schemaErrorsBannerDismissed = false;
@@ -2003,6 +2008,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (value.Editor is SettingsGroupEditorViewModel newGroup)
         {
             newGroup.Activate();
+        }
+        else if (value.Editor is AgentsSkillsEditorViewModel agentsVm)
+        {
+            // Deferred first-load: the VM is constructed without an eager
+            // disk scan so profile switches don't pay the filesystem cost when
+            // the user never visits this page.  EnsureLoaded is idempotent.
+            agentsVm.EnsureLoaded();
         }
 
         _lastNodeTitle = value.Title;
@@ -2849,12 +2861,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // File discovery for both products (resolves which on-disk files
         // contribute to each workspace given the active profile).
         string? cliProfile = (!entry.IsGlobal && entry.HasCli) ? entry.Name : null;
-        IReadOnlyList<DiscoveredFile> settingsFiles = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ProjectRoot, cliProfile);
+        IReadOnlyList<DiscoveredFile> settingsFiles =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ProjectRoot, cliProfile);
         IReadOnlyList<DiscoveredFile> mcpFiles = ConfigFileDiscoverer.DiscoverMcpFiles(ProjectRoot, cliProfile);
         IReadOnlyList<DiscoveredFile> ccFiles = (IReadOnlyList<DiscoveredFile>)[..settingsFiles, ..mcpFiles];
 
         string? dtProfile = (!entry.IsGlobal && entry.HasDesktop) ? entry.Name : null;
-        IReadOnlyList<DiscoveredFile> dtFiles = (IReadOnlyList<DiscoveredFile>)[ConfigFileDiscoverer.DiscoverDesktopConfig(dtProfile)];
+        IReadOnlyList<DiscoveredFile> dtFiles = (IReadOnlyList<DiscoveredFile>)
+            [ConfigFileDiscoverer.DiscoverDesktopConfig(dtProfile)];
 
         // Load BOTH candidate workspaces inside a single try/catch.  If
         // EITHER throws (malformed JSON, IO error, etc.), neither
@@ -3678,6 +3692,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     [GeneratedRegex("""[A-Za-z]:[\\/](?:[^\\/'"\n]+[\\/])*([^\\/'"\n]+)""")]
     private static partial Regex MyRegex();
+
     [GeneratedRegex("""/(?:home|Users|root|tmp|var)/[^\s'"\n]+/([^\s'"\n]+)""")]
     private static partial Regex MyRegex1();
 }

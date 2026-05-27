@@ -654,7 +654,8 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
                 string srcPlatform = row.Entry.Manifest?.Platform ?? "unknown";
                 DialogMessage crossMsg = DialogMessage.Builder()
                                                       .Text(Strings.TextCrossPlatformRestorePrefix).Bold(srcPlatform)
-                                                      .Text(Strings.TextCrossPlatformRestoreMiddle).Bold(PlatformPaths.PlatformId)
+                                                      .Text(Strings.TextCrossPlatformRestoreMiddle)
+                                                      .Bold(PlatformPaths.PlatformId)
                                                       .Text(Strings.TextCrossPlatformRestoreSuffix)
                                                       .Build();
                 bool? proceed = await _dialogService.ShowConfirmAsync(
@@ -864,7 +865,8 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
         try
         {
             DialogMessage deleteMsg = DialogMessage.Builder()
-                                                   .Text("Delete ").Path(row.Entry.FileName).Text("?\n\nThis cannot be undone.")
+                                                   .Text("Delete ").Path(row.Entry.FileName)
+                                                   .Text("?\n\nThis cannot be undone.")
                                                    .Build();
             bool? confirmed = await _dialogService.ShowConfirmAsync(
                 "Delete Backup?", deleteMsg, DialogCategory.Destructive,
@@ -948,8 +950,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
         DialogMessage msixMsg = DialogMessage.Builder()
                                              .Text("Create an NTFS junction from ").Path(MsixStatus.StandardPath)
                                              .Text(" to ").Path(MsixStatus.VirtualisedPath).Text("?\n\n")
-                                             .Text("If a real folder already exists at the standard path, its contents will be ")
-                                             .Text("merged into the MSIX path (MSIX wins on conflict) and then removed. ")
+                                             .Text(
+                                                 "If a real folder already exists at the standard path, its contents will be ")
+                                             .Text(
+                                                 "merged into the MSIX path (MSIX wins on conflict) and then removed. ")
                                              .Text("This does not require admin rights.")
                                              .Build();
         bool? confirm = await _dialogService.ShowConfirmAsync(

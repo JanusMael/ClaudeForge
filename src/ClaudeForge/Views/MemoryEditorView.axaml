@@ -196,7 +196,7 @@
                                              uses for its SelectedEntry.* bindings. -->
                                         <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
                                                 Command="{Binding OpenInEditorCommand}"
-                                                CommandParameter="{Binding SelectedFile.AbsolutePath, FallbackValue=''}"
+                                                CommandParameter="{Binding SelectedFilePath}"
                                                 FontSize="11"
                                                 AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}"
                                                 Padding="8,2" />

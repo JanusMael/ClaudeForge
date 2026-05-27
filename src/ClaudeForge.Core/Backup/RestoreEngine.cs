@@ -151,7 +151,8 @@ internal static class RestoreEngine
             // backup was made), not the schemas installed today.  This catches cases where
             // the backup contained invalid configs BEFORE it was made.  Validation is
             // non-blocking — warnings are logged by the caller; the restore proceeds.
-            IReadOnlyList<string> validationWarnings = await ValidateExtractedConfigsAsync(tempRoot, ct).ConfigureAwait(false);
+            IReadOnlyList<string> validationWarnings =
+                await ValidateExtractedConfigsAsync(tempRoot, ct).ConfigureAwait(false);
 
             // Signal start of the apply phase.
             // applySections counts: claude.json, claude-dir, desktop config, desktop
@@ -188,7 +189,8 @@ internal static class RestoreEngine
             progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring ~/.claude/…", totalExtracted));
 
             {
-                (int r, string? f) = RestoreSection(Path.Combine(tempRoot, "ClaudeDesktop", "claude_desktop_config.json"),
+                (int r, string? f) = RestoreSection(
+                    Path.Combine(tempRoot, "ClaudeDesktop", "claude_desktop_config.json"),
                     PlatformPaths.DesktopConfigPath, stamp);
                 restored += r;
                 if (f != null)
@@ -230,7 +232,8 @@ internal static class RestoreEngine
             progress?.Report(new BackupProgress(restored, restored,
                 "Restore complete", 0));
 
-            string message = $"Restored {restored} item(s). Existing files were moved aside as .pre-restore-{stamp}.bak.";
+            string message =
+                $"Restored {restored} item(s). Existing files were moved aside as .pre-restore-{stamp}.bak.";
             if (skipped.Count > 0)
             {
                 message += $" Skipped {skipped.Count} project/worktree(s) whose paths are not present on this machine: "
@@ -983,7 +986,8 @@ internal static class RestoreEngine
                 yield return (f, true);
             }
 
-            foreach (string f in Directory.EnumerateFiles(claudeDir, "settings.local.json", SearchOption.AllDirectories))
+            foreach (string f in Directory.EnumerateFiles(claudeDir, "settings.local.json",
+                         SearchOption.AllDirectories))
             {
                 yield return (f, true);
             }

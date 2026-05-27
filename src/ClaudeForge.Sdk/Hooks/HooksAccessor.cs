@@ -43,8 +43,9 @@ internal sealed class HooksAccessor : IHooksAccessor
     {
         ArgumentNullException.ThrowIfNull(hook);
 
-        JsonObject hooksObj = (_client.GetScopeValue("hooks", _client.DefaultScope) as JsonObject)?.DeepClone() as JsonObject
-                              ?? new JsonObject();
+        JsonObject hooksObj =
+            (_client.GetScopeValue("hooks", _client.DefaultScope) as JsonObject)?.DeepClone() as JsonObject
+            ?? new JsonObject();
 
         JsonObject inner;
         if (hook.OpaqueInnerJson is { } opaque)
