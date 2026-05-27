@@ -22,15 +22,9 @@ If you use Claude Code or Claude Desktop, you have JSON configuration files in `
 
 ClaudeForge is a typed editor for all of that. Every setting shows which scope provides its current value, where it's coming from, what it does, and what changing it will do. Compound editors (Permissions, Hooks, MCP servers, Marketplaces) replace error-prone freehand JSON with structured forms. The Backup / Restore page captures your entire `~/.claude/` (excluding cache + credentials by default) into a timestamped `.zip` you can roll back to.
 
----
-
-## Pictures are worth 1K words...
-
-### Light theme - (more in gallery [here](docs/screenshots-light.md))
-![WelcomePage-Light](C:\c\ClaudeForge\docs\screenshots\WelcomePage-Light.png)
-
-### Dark theme - (more in gallery [here](docs/screenshots-dark.md))
-![WelcomePage-Dark](C:\c\ClaudeForge\docs\screenshots\WelcomePage-Dark.png)
+|  Light Theme ([gallery](/docs/screenshots-light.md)) | Dark Theme ([gallery](/docs/screenshots-dark.md)) |
+| ---- | ---- |
+| ![WelcomePage-Light](/docs/screenshots/WelcomePage-Light.png) | ![WelcomePage-Dark](/docs/screenshots/WelcomePage-Dark.png) |
 
 ---
 
