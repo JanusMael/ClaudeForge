@@ -1040,7 +1040,7 @@ public sealed class BackupRestoreViewModelTests
             .GetProperty(nameof(vm.IsBusy))!
             .SetValue(vm, true);
 
-        await vm.RestoreFromDroppedArchiveAsync("C:\\does-not-matter.zip");
+        await vm.RestoreFromDroppedArchiveAsync("C:/does-not-matter.zip");
 
         Assert.AreEqual(0, dialog.AlertCalls);
         Assert.AreEqual(0, dialog.ConfirmCalls,
@@ -1385,13 +1385,13 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void CreateBackup_PropagatesInitialProjectRoot_AsExplicitProjectDir()
     {
-        const string projectRoot = @"C:\repos\MyApp";
+        const string projectRoot = @"C:/repos/MyApp";
         BackupRestoreViewModel vm = new(new StubDialogService())
         {
             InitialProjectRoot = projectRoot,
         };
 
-        BackupRequest request = vm.BuildBackupRequest(@"C:\tmp\test-backup.zip");
+        BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
         Assert.IsNotNull(request.ExplicitProjectDirs,
             "ExplicitProjectDirs must never be null — empty array if no project open.");
@@ -1409,7 +1409,7 @@ public sealed class BackupRestoreViewModelTests
             InitialProjectRoot = null,
         };
 
-        BackupRequest request = vm.BuildBackupRequest(@"C:\tmp\test-backup.zip");
+        BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
         Assert.IsNotNull(request.ExplicitProjectDirs,
             "ExplicitProjectDirs must be empty (not null) when no project is open.");
@@ -1436,7 +1436,7 @@ public sealed class BackupRestoreViewModelTests
         vm.PropertyChanged += (_, e) => propertyChanges.Add(e.PropertyName);
 
         // Shape 2: project open.
-        const string projectRoot = @"C:\repos\MyApp";
+        const string projectRoot = @"C:/repos/MyApp";
         vm.InitialProjectRoot = projectRoot;
 
         Assert.AreEqual("MyApp", vm.OpenProjectName,

@@ -84,7 +84,7 @@ file sealed class NullDialogService : IDialogService
 [TestClass]
 public class BackupShareCommandTests
 {
-    private static BackupRowViewModel MakeRow(string path = @"C:\backups\test.zip")
+    private static BackupRowViewModel MakeRow(string path = @"C:/backups/test.zip")
     {
         return new BackupRowViewModel(new BackupEntry
         {
@@ -123,7 +123,7 @@ public class BackupShareCommandTests
     [TestMethod]
     public async Task ShareBackup_CallsServiceWithArchivePath()
     {
-        const string archivePath = @"C:\backups\my-backup-2026.zip";
+        const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
         BackupRestoreViewModel vm = new(new NullDialogService(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
@@ -139,7 +139,7 @@ public class BackupShareCommandTests
     [TestMethod]
     public async Task ShareBackup_TitleIsDisplayName()
     {
-        const string archivePath = @"C:\backups\my-backup-2026.zip";
+        const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
         BackupRestoreViewModel vm = new(new NullDialogService(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
@@ -215,7 +215,7 @@ public class EffectiveSettingsShareCommandTests
 [TestClass]
 public class AboutShareLogCommandTests
 {
-    private const string FakeLogPath = @"C:\logs\claudeforge-20260427.log";
+    private const string FakeLogPath = @"C:/logs/claudeforge-20260427.log";
 
     [TestMethod]
     public void ShareLog_NullService_CommandCannotExecute()
@@ -318,7 +318,7 @@ public class DefaultShareServiceTests
         // Even with a non-existent path, the service must not throw —
         // it silently skips the Process.Start on macOS/Linux when the file is absent.
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareFileAsync("Test Title", @"C:\does\not\exist\file.zip");
+        await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip");
     }
 
     [TestMethod]

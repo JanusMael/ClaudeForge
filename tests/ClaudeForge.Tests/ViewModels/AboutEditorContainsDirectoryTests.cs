@@ -16,8 +16,8 @@ public sealed class AboutEditorContainsDirectoryTests
     [TestMethod]
     public void ContainsDirectory_Empty_ReturnsFalse()
     {
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory("", @"C:\tools"));
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory(@"C:\tools", ""));
+        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory("", @"C:/tools"));
+        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory(@"C:/tools", ""));
     }
 
     [TestMethod]
