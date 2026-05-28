@@ -2366,7 +2366,25 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelArguments", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Includes open project: {0}.
+        /// </summary>
+        public static string LabelBackupIncludesProject {
+            get {
+                return ResourceManager.GetString("LabelBackupIncludesProject", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No project open — user-level config only.
+        /// </summary>
+        public static string LabelBackupNoProjectOpen {
+            get {
+                return ResourceManager.GetString("LabelBackupNoProjectOpen", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Claude.
         /// </summary>

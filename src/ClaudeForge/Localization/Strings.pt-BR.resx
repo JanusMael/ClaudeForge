@@ -2615,4 +2615,92 @@ Alguns caminhos dentro de arquivos de configuração podem precisar de edições
     <value>Bloqueia a configuração permissions.defaultMode contra "bypassPermissions" — o modo que suprime cada prompt de permissão de ferramenta. Equivalente a fixar a segurança; recomendado para ambientes compartilhados / gerenciados.</value>
   </data>
 
+  <!-- ────────────────────────────────────────────────────────────────────────
+       2026-05-23 — drift remediation pass.
+       The 26 entries below were either missing entirely from pt-BR OR were
+       added to zh-CN as TODO placeholders without ever landing in de/es/pt.
+       Closed in one pass alongside the new project-backup keys at the top of
+       this batch.  Tracked from here on by tests/ClaudeForge.Tests/Localization/
+       LocalizationParityTests so the same drift can't recur.
+       ──────────────────────────────────────────────────────────────────────── -->
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>Inclui o projeto aberto: {0}</value>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>Nenhum projeto aberto — apenas configuração de usuário</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>Dispensar o aviso de erros de esquema</value>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>Plugin (somente leitura)</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>Unicode glyph ✕ (U+2715) — identical across locales; carries no translatable text.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>Editar front-matter bruto</value>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>Salvar</value>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>Descrição</value>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>Modelo</value>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>Ferramentas</value>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>Editando o front-matter bruto — os campos tipados são ignorados enquanto isso estiver ativado. Comentários e chaves que os campos não cobrem são preservados.</value>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Navegue pelos subagentes, habilidades e comandos de barra que o Claude Code carrega — nos escopos Usuário, Projeto e Plugin.</value>
+  </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>Agentes e habilidades</value>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>Carregando agentes, habilidades e comandos…</value>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>Falha ao salvar: {0}</value>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>Salvo.</value>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>Salvo. Suas alterações serão aplicadas na próxima sessão do Claude Code.</value>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>Não foi possível analisar o front-matter bruto — corrija antes de salvar.</value>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>Subagentes</value>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>Habilidades</value>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>Comandos de barra</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>Ocultar este aviso. Ele reaparecerá se você abrir outro projeto, clicar em «Recarregar Janela» ou reiniciar o aplicativo.</value>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>Verificar o sistema de arquivos novamente e recarregar a lista</value>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>Separados por vírgula, ex. Read, Grep, Bash</value>
+  </data>
+
 </root>

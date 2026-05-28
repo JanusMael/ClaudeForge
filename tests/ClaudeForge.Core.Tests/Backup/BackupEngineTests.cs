@@ -1266,4 +1266,378 @@ public sealed class BackupEngineTests
         Assert.IsTrue(bytes > 0);
         Assert.IsTrue(File.Exists(dest));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ExplicitProjectDirs end-to-end coverage.
+    //
+    // Pre-fix BackupRestoreViewModel.CreateBackupAsync built the BackupRequest
+    // without setting ExplicitProjectDirs.  AddProjectClaudeData is only
+    // invoked for items in that list — so the open project's `.claude`
+    // directory was silently absent from every backup the app produced.
+    // These tests pin the end-to-end picture (given a populated
+    // ExplicitProjectDirs, the archive contains the project's settings +
+    // CLAUDE.md, and the AdditionalDirectoriesResolver picks up sibling
+    // additionalDirectories declarations).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task CreateAsync_WithExplicitProjectDir_IncludesProjectClaudeDirectory()
+    {
+        // Build a sandboxed project root SEPARATE from _fakeHome so the engine
+        // sees it as a distinct project to back up.  Layout:
+        //   <projectRoot>/.claude/settings.json
+        //   <projectRoot>/CLAUDE.md
+        // Expected archive layout (per BackupEngine.AddProjectClaudeData):
+        //   ClaudeCode/projects/<projectName>/.claude/settings.json
+        //   ClaudeCode/projects/<projectName>/CLAUDE.md
+        string projectRoot = Path.Combine(Path.GetTempPath(), "be-proj-" + Guid.NewGuid().ToString("N"));
+        string projectName = Path.GetFileName(projectRoot);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projectRoot, ".claude"));
+            File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.json"),
+                """{"theme":"project-light"}""");
+            File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# Project memory");
+
+            string dest = Path.Combine(_fakeHome, "with-project.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.SettingsOnly,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+                ExplicitProjectDirs = new[] { projectRoot },
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.IsTrue(File.Exists(dest));
+
+            List<string> entries = ListEntries(dest);
+            string expectedSettingsEntry = $"ClaudeCode/projects/{projectName}/.claude/settings.json";
+            string expectedClaudeMdEntry = $"ClaudeCode/projects/{projectName}/CLAUDE.md";
+
+            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedSettingsEntry, StringComparison.Ordinal)),
+                $"Archive must contain '{expectedSettingsEntry}' — the project's `.claude/settings.json` " +
+                "is the primary file ExplicitProjectDirs exists to surface.  " +
+                $"Archive contained {entries.Count} entries.");
+            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedClaudeMdEntry, StringComparison.Ordinal)),
+                $"Archive must contain '{expectedClaudeMdEntry}' — project-level CLAUDE.md " +
+                "is added by the same code path as the `.claude` directory.");
+        }
+        finally
+        {
+            try { Directory.Delete(projectRoot, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+        }
+    }
+
+    /// <summary>
+    /// Writes a minimal <c>~/.claude.json</c> into the sandbox with the
+    /// given project paths registered in the top-level <c>projects</c>
+    /// map.  Used by the Full-mode multi-project tests so each test
+    /// doesn't have to hand-escape Windows path separators inside a raw
+    /// JSON string template.
+    /// </summary>
+    private void WriteFakeClaudeJson(params string[] projectPaths)
+    {
+        JsonObject projectsMap = new();
+        foreach (string p in projectPaths)
+        {
+            projectsMap[p] = new JsonObject();
+        }
+        JsonObject root = new() { ["projects"] = projectsMap };
+        File.WriteAllText(Path.Combine(_fakeHome, ".claude.json"), root.ToJsonString());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Full-mode multi-project expansion (Part 1.5).
+    //
+    // Pre-fix Full mode only backed up the explicit/discovered project set
+    // (often empty when no project is open).  Per-project hooks, MCP config,
+    // agents, skills, CLAUDE.md, etc. for every OTHER project Claude had
+    // ever seen were silently absent from "Full" archives.  These tests
+    // pin the four contracts that close the gap:
+    //   1. Full mode walks every project in ~/.claude.json's `projects` map.
+    //   2. Non-existent paths are skipped silently + counted in the manifest
+    //      warnings (no path strings logged — could be identifying).
+    //   3. SettingsOnly does NOT expand to known projects (single-project
+    //      contract preserved).
+    //   4. Sanitized does NOT expand to known projects (sharing-mode
+    //      contract preserved — extending it would defeat the redaction
+    //      premise).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task CreateAsync_FullMode_IncludesAllKnownProjectsClaudeDirectories()
+    {
+        // Two project roots on disk, both registered in ~/.claude.json.
+        // Each has a `.claude/` directory with a small file + a CLAUDE.md.
+        // Full mode (no explicit project selected) must back up BOTH.
+        string projA = Path.Combine(Path.GetTempPath(), "be-known-a-" + Guid.NewGuid().ToString("N"));
+        string projB = Path.Combine(Path.GetTempPath(), "be-known-b-" + Guid.NewGuid().ToString("N"));
+        string nameA = Path.GetFileName(projA);
+        string nameB = Path.GetFileName(projB);
+        try
+        {
+            foreach (string p in new[] { projA, projB })
+            {
+                Directory.CreateDirectory(Path.Combine(p, ".claude"));
+                File.WriteAllText(Path.Combine(p, ".claude", "settings.json"), """{"k":"v"}""");
+                File.WriteAllText(Path.Combine(p, "CLAUDE.md"), "# Project memory");
+            }
+
+            // Synthesize ~/.claude.json with a `projects` map keyed by both paths.
+            // The values can be any opaque shape; the discovery helper only
+            // reads the keys.
+            WriteFakeClaudeJson(projA, projB);
+
+            string dest = Path.Combine(_fakeHome, "full-multi.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.Full,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+                // NO explicit project — exercises the "Full backup with no
+                // project selected" path the user asked about.
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            List<string> entries = ListEntries(dest);
+
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameA}/.claude/settings.json", StringComparison.Ordinal)),
+                $"Full mode must include project A's `.claude/settings.json`. " +
+                $"Archive contained {entries.Count} entries.");
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameA}/CLAUDE.md", StringComparison.Ordinal)),
+                "Full mode must include project A's CLAUDE.md.");
+
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameB}/.claude/settings.json", StringComparison.Ordinal)),
+                "Full mode must include project B's `.claude/settings.json` " +
+                "(known via ~/.claude.json — pre-fix this was silently absent).");
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameB}/CLAUDE.md", StringComparison.Ordinal)),
+                "Full mode must include project B's CLAUDE.md.");
+        }
+        finally
+        {
+            foreach (string p in new[] { projA, projB })
+            {
+                try { Directory.Delete(p, recursive: true); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_FullMode_SilentlySkipsNonExistentKnownProjects_WithManifestWarning()
+    {
+        // ~/.claude.json lists two paths: one exists on disk, one doesn't.
+        // Backup must succeed; archive includes only the existing one;
+        // manifest.Warnings carries the skipped count (no path strings —
+        // those could be identifying).
+        string projExisting = Path.Combine(Path.GetTempPath(), "be-known-exists-" + Guid.NewGuid().ToString("N"));
+        string projGhost = Path.Combine(Path.GetTempPath(), "be-known-ghost-" + Guid.NewGuid().ToString("N"));
+        string nameExisting = Path.GetFileName(projExisting);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projExisting, ".claude"));
+            File.WriteAllText(Path.Combine(projExisting, ".claude", "settings.json"), """{"k":"v"}""");
+            // Deliberately do NOT create projGhost on disk.
+            WriteFakeClaudeJson(projExisting, projGhost);
+
+            string dest = Path.Combine(_fakeHome, "full-with-ghost.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.Full,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.IsNotNull(result.Manifest);
+            Assert.IsTrue(result.Manifest!.Warnings.Any(w => w.Contains("skipped 1 known project", StringComparison.OrdinalIgnoreCase)),
+                "Manifest.Warnings must carry the stale-project count.  Found: [" +
+                string.Join(", ", result.Manifest.Warnings) + "]");
+
+            // The existing project's content IS in the archive.
+            List<string> entries = ListEntries(dest);
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameExisting}/.claude/settings.json", StringComparison.Ordinal)),
+                "The existing project's settings.json must still appear in the archive.");
+
+            // The ghost project's name must NOT appear anywhere.
+            string ghostName = Path.GetFileName(projGhost);
+            Assert.IsFalse(entries.Any(e => e.Contains($"projects/{ghostName}/", StringComparison.Ordinal)),
+                "The non-existent project must be silently dropped from the archive.");
+        }
+        finally
+        {
+            try { Directory.Delete(projExisting, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_SettingsOnly_DoesNotExpandToKnownProjects()
+    {
+        // Same ~/.claude.json fixture as Full-mode test, but with
+        // SettingsOnly mode.  Known-projects expansion must NOT fire —
+        // SettingsOnly is the "small, fast, just-my-config" mode.
+        string projKnown = Path.Combine(Path.GetTempPath(), "be-known-so-" + Guid.NewGuid().ToString("N"));
+        string nameKnown = Path.GetFileName(projKnown);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projKnown, ".claude"));
+            File.WriteAllText(Path.Combine(projKnown, ".claude", "settings.json"), """{"k":"v"}""");
+            WriteFakeClaudeJson(projKnown);
+
+            string dest = Path.Combine(_fakeHome, "settings-only.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.SettingsOnly,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            List<string> entries = ListEntries(dest);
+
+            Assert.IsFalse(entries.Any(e =>
+                e.Contains($"projects/{nameKnown}/", StringComparison.Ordinal)),
+                "SettingsOnly mode must NOT expand to known projects from ~/.claude.json — " +
+                "that's a Full-mode-only behaviour by design.  Found unexpected project entries.");
+        }
+        finally
+        {
+            try { Directory.Delete(projKnown, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_FullMode_DedupesExplicitProjectAgainstKnownProjects()
+    {
+        // A single project is both explicitly selected AND listed in
+        // ~/.claude.json.  Result: the project's content appears in the
+        // archive exactly once — no duplicate ClaudeCode/projects/<name>/
+        // entries.  Catches a sloppy union that would back up the same
+        // tree twice.
+        string projShared = Path.Combine(Path.GetTempPath(), "be-known-dedup-" + Guid.NewGuid().ToString("N"));
+        string nameShared = Path.GetFileName(projShared);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projShared, ".claude"));
+            File.WriteAllText(Path.Combine(projShared, ".claude", "settings.json"), """{"k":"v"}""");
+            File.WriteAllText(Path.Combine(projShared, "CLAUDE.md"), "# Shared memory");
+            WriteFakeClaudeJson(projShared);
+
+            string dest = Path.Combine(_fakeHome, "full-dedup.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.Full,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+                ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            List<string> entries = ListEntries(dest);
+
+            // The project's settings.json + CLAUDE.md appear exactly once.
+            int settingsCount = entries.Count(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameShared}/.claude/settings.json", StringComparison.Ordinal));
+            int memoryCount = entries.Count(e =>
+                e.EndsWith($"ClaudeCode/projects/{nameShared}/CLAUDE.md", StringComparison.Ordinal));
+
+            Assert.AreEqual(1, settingsCount,
+                $"Explicit-project + same-path-in-.claude.json must dedup to one settings.json " +
+                $"entry.  Got {settingsCount}.");
+            Assert.AreEqual(1, memoryCount,
+                $"Same dedup contract applies to CLAUDE.md.  Got {memoryCount}.");
+        }
+        finally
+        {
+            try { Directory.Delete(projShared, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WithExplicitProjectDir_DiscoversAdditionalDirectories()
+    {
+        // The project declares `additionalDirectories` in its settings.json
+        // pointing at a sibling folder.  The engine's
+        // AdditionalDirectoriesResolver discovers that path AFTER
+        // ExplicitProjectDirs is populated — pre-fix the resolver received
+        // an empty list of settings files for project context and never saw
+        // the declaration.  Wiring ExplicitProjectDirs through fixes this for
+        // free; this test pins that secondary contract.
+        //
+        // Note on what counts as "discovered": resolver output is merged
+        // into the engine's projects list and each entry runs through
+        // AddProjectClaudeData, which copies ONLY the 4 well-known items
+        // (`.claude`, `.mcp.json`, `CLAUDE.md`, `CLAUDE.local.md`).  So
+        // the sibling needs at least one of those — we give it a CLAUDE.md
+        // — for the test to detect that it was treated as a project root.
+        string projectRoot = Path.Combine(Path.GetTempPath(), "be-proj-addtl-" + Guid.NewGuid().ToString("N"));
+        string siblingDir = Path.Combine(Path.GetTempPath(), "be-sibling-" + Guid.NewGuid().ToString("N"));
+        string projectName = Path.GetFileName(projectRoot);
+        string siblingName = Path.GetFileName(siblingDir);
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(projectRoot, ".claude"));
+            Directory.CreateDirectory(siblingDir);
+            File.WriteAllText(Path.Combine(siblingDir, "CLAUDE.md"),
+                "# Sibling project memory (discovered via additionalDirectories)");
+
+            // settings.json declares additionalDirectories → [siblingDir]
+            string settingsJson = $$"""{"additionalDirectories":["{{siblingDir.Replace("\\", "\\\\")}}"]}""";
+            File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.json"), settingsJson);
+
+            string dest = Path.Combine(_fakeHome, "with-addtl.zip");
+            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            {
+                DestinationZipPath = dest,
+                Mode = BackupMode.SettingsOnly,
+                IncludeClaudeCode = true,
+                IncludeClaudeDesktop = false,
+                ExplicitProjectDirs = new[] { projectRoot },
+            });
+
+            Assert.IsTrue(result.Succeeded, result.Message);
+            List<string> entries = ListEntries(dest);
+
+            // Primary archive entry for the project remains present.
+            Assert.IsTrue(entries.Any(e =>
+                e.EndsWith($"ClaudeCode/projects/{projectName}/.claude/settings.json", StringComparison.Ordinal)),
+                "Primary project settings entry must still appear (sanity check on the additionalDirs test).");
+
+            // The discovered sibling appears as ANOTHER project entry under
+            // ClaudeCode/projects/<siblingName>/ — that's how the engine
+            // treats merged-and-discovered project roots.  Pre-fix the
+            // resolver never saw the declaration (because the project's
+            // settings file was missing from its input list), so this
+            // CLAUDE.md was silently absent from the archive.
+            string expectedSiblingClaude = $"ClaudeCode/projects/{siblingName}/CLAUDE.md";
+            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedSiblingClaude, StringComparison.Ordinal)),
+                $"Archive must contain '{expectedSiblingClaude}' — the sibling's CLAUDE.md.  " +
+                $"AdditionalDirectoriesResolver receives the project's `.claude/settings.json` " +
+                $"via CollectSettingsFilesForDiscovery, picks up the absolute path declaration, " +
+                $"merges it into the projects list, and AddProjectClaudeData copies the CLAUDE.md.  " +
+                $"Archive contained {entries.Count} entries.");
+        }
+        finally
+        {
+            try { Directory.Delete(projectRoot, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+            try { Directory.Delete(siblingDir, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _ = ex; }
+        }
+    }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Spanish (Spain) (es-ES) translation of Strings.resx.
+  Japanese (Japan) (ja-JP) translation of Strings.resx.
   Keep <data name="..."> keys byte-identical to the English source; only translate <value> contents.
 -->
 <root>
@@ -67,70 +67,70 @@
        MainWindow — toolbar
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelEditingProfile" xml:space="preserve">
-    <value>Perfil en edición:</value>
+    <value>編集中のプロファイル:</value>
   </data>
   <data name="TipEditingProfile" xml:space="preserve">
-    <value>Un perfil es un conjunto con nombre de ajustes de Claude. «(global)» usa los ajustes compartidos a nivel de usuario; los perfiles con nombre te permiten alternar entre distintas configuraciones.</value>
+    <value>プロファイルとは、名前付きの Claude 設定のセットです。「(global)」は共有のユーザーレベル設定を使用します。名前付きプロファイルを使うと、異なる構成を切り替えることができます。</value>
   </data>
   <data name="TipProfileSelector" xml:space="preserve">
-    <value>Cambia el perfil activo de Claude. «(global)» usa los ajustes de usuario compartidos; los perfiles con nombre (p. ej. «work») son conjuntos independientes almacenados en ~/.claude/profiles/.</value>
+    <value>アクティブな Claude プロファイルを切り替えます。「(global)」は共有のユーザー設定を使用します。名前付きプロファイル（例: 「work」）は ~/.claude/profiles/ に保存される独立した設定セットです。</value>
   </data>
   <data name="AutoNameActiveProfile" xml:space="preserve">
-    <value>Perfil activo</value>
+    <value>アクティブなプロファイル</value>
   </data>
   <data name="AutoHelpActiveProfile" xml:space="preserve">
-    <value>Selecciona un perfil de ajustes de Claude. Elige (global) para tus ajustes de usuario compartidos, o un perfil con nombre para cambiar de configuración.</value>
+    <value>Claude 設定プロファイルを選択します。共有のユーザー設定を使うには (global) を選択し、構成を切り替えるには名前付きプロファイルを選択してください。</value>
   </data>
   <data name="TipManageProfiles" xml:space="preserve">
-    <value>Abre la sección Perfiles para crear, eliminar, aplicar o sincronizar perfiles con nombre</value>
+    <value>プロファイル セクションを開いて、名前付きプロファイルの作成・削除・適用・同期を行います</value>
   </data>
   <data name="AutoNameManageProfiles" xml:space="preserve">
-    <value>Gestionar perfiles</value>
+    <value>プロファイルを管理</value>
   </data>
   <data name="ButtonOpenProject" xml:space="preserve">
-    <value>📂 _Abrir proyecto</value>
+    <value>📂 プロジェクトを開く(_O)</value>
     <comment>Alt+O — top toolbar button. The underscore is Avalonia's access-key prefix; AccessText underlines the next character when Alt is held.</comment>
   </data>
   <data name="TipButtonOpenProject" xml:space="preserve">
-    <value>Abre una carpeta de proyecto para cargar sus archivos .claude/settings.json</value>
+    <value>プロジェクト フォルダーを開いて、その .claude/settings.json ファイルを読み込みます</value>
   </data>
   <data name="AutoNameButtonOpenProject" xml:space="preserve">
-    <value>Abrir carpeta de proyecto</value>
+    <value>プロジェクト フォルダーを開く</value>
   </data>
   <data name="ButtonSave" xml:space="preserve">
-    <value>💾 _Guardar</value>
+    <value>💾 保存(_S)</value>
     <comment>Alt+S — top toolbar button.</comment>
   </data>
   <data name="TipButtonSave" xml:space="preserve">
-    <value>Guarda en disco todos los ajustes modificados (Ctrl+S)</value>
+    <value>変更されたすべての設定をディスクに保存します (Ctrl+S)</value>
   </data>
   <data name="AutoNameButtonSave" xml:space="preserve">
-    <value>Guardar todos los ajustes</value>
+    <value>すべての設定を保存</value>
   </data>
   <data name="ButtonExport" xml:space="preserve">
-    <value>📤 _Exportar…</value>
+    <value>📤 エクスポート(_E)…</value>
     <comment>Alt+E — top toolbar button.</comment>
   </data>
   <data name="TipButtonExport" xml:space="preserve">
-    <value>Exporta la configuración efectiva completamente fusionada como archivo .zip</value>
+    <value>完全にマージされた有効な構成を .zip ファイルとしてエクスポートします</value>
   </data>
   <data name="AutoNameButtonExport" xml:space="preserve">
-    <value>Exportar configuración efectiva</value>
+    <value>有効な構成をエクスポート</value>
   </data>
 
   <!-- screen-reader names for controls
        that have no naturally-derivable label.  See CLAUDE.md "Accessibility
        — screen-reader names" and AGENTS.md invariant I20. -->
   <data name="AutoNameEffectiveRowsGrid" xml:space="preserve">
-    <value>Lista de ajustes efectivos</value>
+    <value>有効な設定一覧</value>
     <comment>Screen-reader name for the DataGrid that lists the merged property values per scope.</comment>
   </data>
   <data name="AutoHelpEffectiveRowsGrid" xml:space="preserve">
-    <value>Lista de propiedades de ajustes y sus valores efectivos fusionados a través de los ámbitos Gestionado, Local, Proyecto y Usuario. Solo lectura; usa las páginas del editor para cambiar valores.</value>
+    <value>Managed、Local、Project、User の各スコープにわたってマージされた、設定プロパティとその有効な値の一覧です。読み取り専用です。値を変更するにはエディター ページを使用してください。</value>
     <comment>Screen-reader help text describing the EffectiveRows DataGrid's purpose and read-only nature.</comment>
   </data>
   <data name="AutoNameNewPluginRef" xml:space="preserve">
-    <value>Nueva referencia de plugin</value>
+    <value>新しいプラグイン参照</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
 
@@ -139,131 +139,131 @@
 
   <!-- BackupRestoreView -->
   <data name="AutoNameBrowseBackupFolder" xml:space="preserve">
-    <value>Examinar carpeta de salida de copias de seguridad</value>
+    <value>バックアップ出力フォルダーを参照</value>
     <comment>Disambiguates the "Browse" button next to the backup output folder TextBox.</comment>
   </data>
   <data name="AutoNameBrowseRestoreFolder" xml:space="preserve">
-    <value>Examinar carpeta de origen para restaurar</value>
+    <value>リストア元フォルダーを参照</value>
     <comment>Disambiguates the "Browse" button next to the restore source folder TextBox.</comment>
   </data>
   <data name="AutoNameBackupsGrid" xml:space="preserve">
-    <value>Copias de seguridad disponibles</value>
+    <value>利用可能なバックアップ</value>
     <comment>Screen-reader name for the DataGrid listing previously-created backups on the Restore tab.</comment>
   </data>
 
   <!-- ProfilesView -->
   <data name="AutoNameNewCliProfile" xml:space="preserve">
-    <value>Nuevo perfil de la CLI Claude Code</value>
+    <value>新しい Claude Code CLI プロファイル</value>
   </data>
   <data name="AutoNameNewDesktopProfile" xml:space="preserve">
-    <value>Nuevo perfil de Claude Desktop</value>
+    <value>新しい Claude Desktop プロファイル</value>
   </data>
   <data name="AutoNameDeleteDesktopProfile" xml:space="preserve">
-    <value>Eliminar perfil de Desktop</value>
+    <value>Desktop プロファイルを削除</value>
   </data>
   <data name="AutoNameCliProfilesGrid" xml:space="preserve">
-    <value>Perfiles de la CLI Claude Code</value>
+    <value>Claude Code CLI プロファイル</value>
   </data>
   <data name="AutoNameDesktopProfilesGrid" xml:space="preserve">
-    <value>Perfiles de Claude Desktop</value>
+    <value>Claude Desktop プロファイル</value>
   </data>
 
   <!-- PermissionsEditorView -->
   <data name="AutoNameAddAdditionalDirectory" xml:space="preserve">
-    <value>Añadir directorio adicional</value>
+    <value>追加ディレクトリを追加</value>
   </data>
 
   <!-- McpServersEditorView -->
   <data name="AutoNameMcpServerList" xml:space="preserve">
-    <value>Lista de servidores MCP</value>
+    <value>MCP サーバー一覧</value>
   </data>
   <data name="AutoNameEditArgument" xml:space="preserve">
-    <value>Editar valor del argumento</value>
+    <value>引数の値を編集</value>
   </data>
   <data name="AutoNameAddArgument" xml:space="preserve">
-    <value>Añadir argumento</value>
+    <value>引数を追加</value>
   </data>
   <data name="AutoNameEditEnvKey" xml:space="preserve">
-    <value>Editar nombre de variable de entorno</value>
+    <value>環境変数名を編集</value>
   </data>
   <data name="AutoNameEditEnvValue" xml:space="preserve">
-    <value>Editar valor de variable de entorno</value>
+    <value>環境変数の値を編集</value>
   </data>
   <data name="AutoNameAddEnvVar" xml:space="preserve">
-    <value>Añadir variable de entorno</value>
+    <value>環境変数を追加</value>
   </data>
 
   <!-- HooksEditorView -->
   <data name="AutoNameHookEventList" xml:space="preserve">
-    <value>Tipos de eventos de hook</value>
+    <value>フック イベントの種類</value>
   </data>
   <data name="AutoNameHooksGrid" xml:space="preserve">
-    <value>Hooks del evento seleccionado</value>
+    <value>選択したイベントのフック一覧</value>
   </data>
   <data name="AutoNameNewHookHeaderKey" xml:space="preserve">
-    <value>Nombre de la nueva cabecera HTTP</value>
+    <value>新しい HTTP ヘッダー名</value>
   </data>
   <data name="AutoNameNewHookHeaderValue" xml:space="preserve">
-    <value>Valor de la nueva cabecera HTTP</value>
+    <value>新しい HTTP ヘッダー値</value>
   </data>
   <data name="AutoNameAddHookHeader" xml:space="preserve">
-    <value>Añadir cabecera HTTP</value>
+    <value>HTTP ヘッダーを追加</value>
   </data>
   <data name="AutoNameAddHookAllowedEnvVar" xml:space="preserve">
-    <value>Añadir variable de entorno permitida</value>
+    <value>許可された環境変数を追加</value>
   </data>
 
   <!-- MarketplacesEditorView -->
   <data name="AutoNameNewMarketplaceSourceType" xml:space="preserve">
-    <value>Nuevo tipo de fuente de marketplace</value>
+    <value>新しいマーケットプレイス ソースの種類</value>
   </data>
   <data name="AutoNameAddMarketplace" xml:space="preserve">
-    <value>Añadir marketplace</value>
+    <value>マーケットプレイスを追加</value>
   </data>
 
   <!-- EnvironmentEditorView -->
   <data name="AutoNameEnvVarEditValue" xml:space="preserve">
-    <value>Valor de la variable de entorno</value>
+    <value>環境変数の値</value>
   </data>
 
   <data name="WatermarkSearch" xml:space="preserve">
-    <value>Buscar en los ajustes…</value>
+    <value>設定を検索…</value>
   </data>
   <data name="TipSearchBox" xml:space="preserve">
-    <value>Busca en todos los ajustes por nombre o descripción</value>
+    <value>名前または説明ですべての設定を検索します</value>
   </data>
   <data name="AutoNameSearchBox" xml:space="preserve">
-    <value>Buscar ajustes</value>
+    <value>設定を検索</value>
   </data>
   <data name="AutoHelpSearchBox" xml:space="preserve">
-    <value>Escribe para buscar en todos los ajustes por nombre o descripción. Haz clic en un resultado para ir directamente a ese ajuste.</value>
+    <value>入力して、名前または説明ですべての設定を検索します。検索結果をクリックすると、その設定に直接移動できます。</value>
   </data>
   <data name="TipProgressLoading" xml:space="preserve">
-    <value>Cargando ajustes…</value>
+    <value>設定を読み込み中…</value>
   </data>
 
   <!-- MainWindow — status bar -->
   <data name="TipToggleTheme" xml:space="preserve">
-    <value>Alterna entre el tema claro y el oscuro</value>
+    <value>ライト テーマとダーク テーマを切り替えます</value>
   </data>
   <data name="AutoNameToggleTheme" xml:space="preserve">
-    <value>Cambiar tema</value>
+    <value>テーマを切り替え</value>
   </data>
   <data name="ButtonReloadWindow" xml:space="preserve">
-    <value>_Recargar ventana</value>
+    <value>ウィンドウを再読み込み(_R)</value>
     <comment>Alt+R — status bar button. (F5 also reloads via the Window.KeyBindings.)</comment>
   </data>
   <data name="TipReloadWindow" xml:space="preserve">
-    <value>Descarta los cambios sin guardar y recarga desde disco todos los archivos de ajustes</value>
+    <value>未保存の変更を破棄し、すべての設定ファイルをディスクから再読み込みします</value>
   </data>
   <data name="AutoNameReloadWindow" xml:space="preserve">
-    <value>Recargar ajustes desde disco</value>
+    <value>設定をディスクから再読み込み</value>
   </data>
   <data name="TipCliActiveBadge" xml:space="preserve">
-    <value>La CLI de Claude Code está leyendo los ajustes de este perfil (establecido mediante «Aplicar» en el panel Perfiles o por la CLI claudectx). Abre la sección Perfiles para aplicar uno distinto.</value>
+    <value>Claude Code CLI はこのプロファイルから設定を読み込んでいます（プロファイル パネルの「適用」または claudectx CLI で設定されます）。別のプロファイルを適用するには、プロファイル セクションを開いてください。</value>
   </data>
   <data name="TipDesktopActiveBadge" xml:space="preserve">
-    <value>Claude Desktop está leyendo su configuración de este perfil (establecido mediante «Aplicar» en el panel Perfiles). Abre la sección Perfiles para aplicar un perfil de Desktop distinto.</value>
+    <value>Claude Desktop はこのプロファイルから構成を読み込んでいます（プロファイル パネルの「適用」で設定されます）。別の Desktop プロファイルを適用するには、プロファイル セクションを開いてください。</value>
   </data>
   <data name="StringFormatCliActive" xml:space="preserve">
     <value>Claude Code: {0}</value>
@@ -272,314 +272,323 @@
     <value>Claude Desktop: {0}</value>
   </data>
   <data name="TipAppVersion" xml:space="preserve">
-    <value>Versión de ClaudeForge</value>
+    <value>ClaudeForge のバージョン</value>
   </data>
 
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
-    <value>Volver a la página en la que estabas antes de llegar aquí</value>
+    <value>ここに来る前に表示していたページに戻ります</value>
   </data>
   <data name="AutoNameNavigateBack" xml:space="preserve">
-    <value>Navegar hacia atrás</value>
+    <value>戻る</value>
   </data>
   <data name="AutoHelpNavigateBack" xml:space="preserve">
-    <value>Vuelve a la página que estabas viendo antes de pulsar un enlace directo</value>
+    <value>ディープリンクをクリックする前に表示していたページに戻ります</value>
   </data>
   <data name="ButtonBack" xml:space="preserve">
-    <value>← Atrás</value>
+    <value>← 戻る</value>
   </data>
 
   <!-- MainWindow — install guidance banner -->
   <data name="LabelInstallBannerTitle" xml:space="preserve">
-    <value>No se ha detectado ninguna instalación de Claude</value>
+    <value>Claude のインストールが検出されませんでした</value>
   </data>
   <data name="TextInstallBannerDesc" xml:space="preserve">
-    <value>No se encontró Claude Code en este sistema. Aún puedes examinar, crear y exportar archivos de configuración: resulta útil para preparar otros equipos o compartir configuraciones con compañeros.</value>
+    <value>このシステムで Claude Code が見つかりませんでした。引き続き構成ファイルの閲覧・作成・エクスポートは可能です。他のマシンのセットアップや同僚との構成共有に便利です。</value>
   </data>
   <data name="LabelInstallCommand" xml:space="preserve">
-    <value>Instálalo en este equipo con el comando:</value>
+    <value>このマシンにインストールするコマンド:</value>
   </data>
   <data name="ButtonCopyInstall" xml:space="preserve">
-    <value>📋 Copiar</value>
+    <value>📋 コピー</value>
   </data>
   <data name="TipButtonCopyInstall" xml:space="preserve">
-    <value>Copia el comando de instalación al portapapeles</value>
+    <value>インストール コマンドをクリップボードにコピーします</value>
   </data>
   <data name="AutoNameButtonCopyInstall" xml:space="preserve">
-    <value>Copiar comando de instalación</value>
+    <value>インストール コマンドをコピー</value>
   </data>
   <data name="TipButtonRunInstall" xml:space="preserve">
-    <value>Abre una terminal y ejecuta el comando de instalación</value>
+    <value>ターミナルを開いてインストール コマンドを実行します</value>
   </data>
   <data name="AutoNameButtonRunInstall" xml:space="preserve">
-    <value>Ejecutar comando de instalación</value>
+    <value>インストール コマンドを実行</value>
   </data>
   <data name="ButtonDismissInstallBanner" xml:space="preserve">
-    <value>✕ Descartar</value>
+    <value>✕</value>
   </data>
   <data name="TipButtonDismissInstall" xml:space="preserve">
-    <value>Oculta este mensaje durante el resto de esta sesión</value>
+    <value>このセッションの残りの間、このメッセージを非表示にします</value>
   </data>
   <data name="AutoNameButtonDismissInstall" xml:space="preserve">
-    <value>Descartar la guía de instalación</value>
+    <value>インストール案内を閉じる</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>このバナーを非表示にします。別のプロジェクトを開く、「ウィンドウを再読み込み」をクリックする、またはアプリを再起動すると再表示されます。</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>スキーマ エラー バナーを閉じる</value>
   </data>
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
-    <value>Tras instalar: si Claude Code se ubica en ~/.local/bin y ese directorio no está en tu PATH, haz clic en «Añadir al PATH» en la página de Información de versión (o ejecuta en tu shell el comando export que imprime el instalador). Después reinicia ClaudeForge para detectar la instalación.</value>
+    <value>インストール後: Claude Code が ~/.local/bin に配置され、そのディレクトリが PATH に含まれていない場合は、バージョン情報ページの「PATH に追加」をクリックしてください（または、インストーラーが表示する export コマンドをシェルで実行してください）。その後、ClaudeForge を再起動してインストールを検出させてください。</value>
   </data>
   <data name="TextInstallPostInstallNoteWindows" xml:space="preserve">
-    <value>Tras instalar: reinicia ClaudeForge para detectar la nueva instalación (la aplicación en ejecución ve el PATH antiguo).</value>
+    <value>インストール後: ClaudeForge を再起動して新しいインストールを検出させてください（実行中のアプリは古い PATH を参照しています）。</value>
   </data>
   <data name="LabelLearnMore" xml:space="preserve">
-    <value>Más información:</value>
+    <value>詳細情報:</value>
   </data>
   <data name="LinkClaudeOverview" xml:space="preserve">
-    <value>Visión general de Claude</value>
+    <value>Claude の概要</value>
   </data>
   <data name="TipLinkClaudeOverview" xml:space="preserve">
-    <value>Abre la página de visión general de Claude en tu navegador</value>
+    <value>Claude の概要ページをブラウザーで開きます</value>
   </data>
   <data name="LinkQuickStart" xml:space="preserve">
-    <value>Guía de inicio rápido</value>
+    <value>クイック スタート ガイド</value>
   </data>
   <data name="TipLinkQuickStart" xml:space="preserve">
-    <value>Abre la guía de inicio rápido de Claude Code en tu navegador</value>
+    <value>Claude Code のクイック スタート ガイドをブラウザーで開きます</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        WelcomeView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="WelcomeHeading" xml:space="preserve">
-    <value>Te damos la bienvenida a ClaudeForge</value>
+    <value>ClaudeForge へようこそ</value>
     <comment>title-bar AppTitle is now "ClaudeForge" alone; the Welcome page heading still uses a longer-form descriptor since it has the visual space.</comment>
   </data>
   <data name="WelcomeSubtitle" xml:space="preserve">
-    <value>Editor de ajustes multiplataforma y consciente de ámbitos para Claude Code y Claude Desktop.</value>
+    <value>Claude Code と Claude Desktop 向けの、クロスプラットフォームでスコープ対応の設定エディターです。</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
   <data name="WelcomeHint" xml:space="preserve">
-    <value>Los ajustes se aplican por capas: Gestionado &gt; Usuario &gt; Proyecto &gt; Local</value>
+    <value>設定はレイヤー構造です: Managed &gt; User &gt; Project &gt; Local</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="ButtonRefreshAll" xml:space="preserve">
-    <value>↻ Actualizar todo</value>
+    <value>↻ すべて更新</value>
   </data>
   <data name="TipRefreshAll" xml:space="preserve">
-    <value>Vuelve a explorar ambos directorios de perfiles y actualiza las dos listas.</value>
+    <value>両方のプロファイル ディレクトリを再スキャンし、両方の一覧を更新します。</value>
   </data>
   <data name="HeadingProfiles" xml:space="preserve">
-    <value>Perfiles</value>
+    <value>プロファイル</value>
   </data>
   <data name="ButtonNewProfile" xml:space="preserve">
-    <value>+ Nuevo</value>
+    <value>+ 新規</value>
   </data>
   <data name="TipNewCliProfile" xml:space="preserve">
-    <value>Crea un nuevo perfil de CLI, inicializado a partir de los ajustes activos actuales en ~/.claude/.</value>
+    <value>現在の ~/.claude/ 設定をもとに、新しい CLI プロファイルを作成します。</value>
   </data>
   <data name="BadgeLabelCli" xml:space="preserve">
     <value>Claude Code</value>
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
-    <value>Perfiles de Claude Code</value>
+    <value>Claude Code プロファイル</value>
   </data>
   <data name="LabelRunSelected" xml:space="preserve">
-    <value>Seleccionado: </value>
+    <value>選択中: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
-    <value>▶ Aplicar a la CLI</value>
+    <value>▶ CLI に適用</value>
   </data>
   <data name="TipApplyToCli" xml:space="preserve">
-    <value>Copia los archivos de este perfil a ~/.claude/ para que la CLI de Claude Code los lea en su próxima ejecución. Guarda automáticamente primero el perfil actualmente activo.</value>
+    <value>このプロファイルのファイルを ~/.claude/ にコピーし、次回実行時に Claude Code CLI が読み込むようにします。現在アクティブなプロファイルは先に自動保存されます。</value>
   </data>
   <data name="ButtonSyncFromLive" xml:space="preserve">
-    <value>⇅ Sincronizar desde activo</value>
+    <value>⇅ Live から同期</value>
   </data>
   <data name="TipSyncFromLive" xml:space="preserve">
-    <value>Actualiza los archivos almacenados de este perfil con los actuales ~/.claude/settings.json, CLAUDE.md y mcpServers.</value>
+    <value>このプロファイルに保存されているファイルを、現在の ~/.claude/settings.json、CLAUDE.md、および mcpServers の内容で更新します。</value>
   </data>
   <data name="ButtonDeleteProfile" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>削除</value>
   </data>
   <data name="TipDeleteCliProfile" xml:space="preserve">
-    <value>Elimina permanentemente el directorio de este perfil. Los archivos activos en ~/.claude/ no se ven afectados.</value>
+    <value>このプロファイル ディレクトリを完全に削除します。~/.claude/ のライブ ファイルには影響しません。</value>
   </data>
   <data name="ButtonExportProfile" xml:space="preserve">
-    <value>Exportar…</value>
+    <value>エクスポート…</value>
   </data>
   <data name="TipButtonExportProfile" xml:space="preserve">
-    <value>Exporta este perfil a un único archivo JSON. Usa el mismo formato que la herramienta CLI claudectx, por lo que el archivo resultante puede importarse desde cualquiera de las dos aplicaciones.</value>
+    <value>このプロファイルを単一の JSON ファイルにエクスポートします。claudectx CLI ツールと同じ形式を使うため、どちらのアプリでもインポート可能です。</value>
   </data>
   <data name="ButtonImportProfile" xml:space="preserve">
-    <value>Importar…</value>
+    <value>インポート…</value>
   </data>
   <data name="TipButtonImportProfile" xml:space="preserve">
-    <value>Importa un perfil desde un archivo JSON. Acepta archivos exportados por ClaudeForge o por la herramienta CLI claudectx (https://github.com/foxj77/claudectx).</value>
+    <value>JSON ファイルからプロファイルをインポートします。ClaudeForge または claudectx CLI ツール (https://github.com/foxj77/claudectx) のいずれかでエクスポートされたファイルを受け付けます。</value>
   </data>
   <data name="DialogTitleExportProfileFailed" xml:space="preserve">
-    <value>Error al exportar</value>
+    <value>エクスポートに失敗しました</value>
   </data>
   <data name="DialogTitleImportProfileFailed" xml:space="preserve">
-    <value>Error al importar</value>
+    <value>インポートに失敗しました</value>
   </data>
   <data name="StatusProfileExportedFmt" xml:space="preserve">
-    <value>«{0}» exportado a {1}</value>
+    <value>'{0}' を {1} にエクスポートしました</value>
     <comment>{0} is the profile name, {1} is the destination file path.</comment>
   </data>
   <data name="StatusProfileImportedFmt" xml:space="preserve">
-    <value>Perfil «{0}» importado</value>
+    <value>プロファイル '{0}' をインポートしました</value>
     <comment>{0} is the resolved profile name (after override resolution).</comment>
   </data>
   <data name="HeadingClaudectxBanner" xml:space="preserve">
-    <value>Compatibilidad con claudectx</value>
+    <value>claudectx 互換性</value>
   </data>
   <data name="TextClaudectxBannerBody" xml:space="preserve">
-    <value>El botón «Aplicar a la CLI» de abajo cambia los archivos activos en ~/.claude/ (settings.json, CLAUDE.md, mcpServers en ~/.claude.json) usando E/S de archivos pura, sin necesidad de herramientas externas. La herramienta CLI claudectx es una alternativa OPCIONAL desde la terminal que realiza el mismo cambio mediante el puntero de perfil activo compartido en ~/.claude/.claudectx-current; instálala solo si quieres un flujo basado en CLI. Un perfil creado con cualquiera de las dos herramientas es inmediatamente utilizable por la otra. Exportar/Importar abajo produce y consume el formato JSON de archivo único de claudectx para compartir.</value>
+    <value>下の「CLI に適用」ボタンは、純粋なファイル I/O のみで ~/.claude/ のライブ ファイル (settings.json、CLAUDE.md、~/.claude.json 内の mcpServers) を切り替えます — 外部ツールは不要です。claudectx CLI ツールは、~/.claude/.claudectx-current にある共有のアクティブ プロファイル ポインターを介して同じ切り替えを行う、任意のターミナル代替手段です。CLI ワークフローを使いたい場合にのみインストールしてください。どちらのツールで作成されたプロファイルも、もう一方ですぐに利用できます。下のエクスポート/インポートは、claudectx の単一ファイル JSON 共有形式を生成・読み込みます。</value>
   </data>
   <data name="LinkClaudectxRepo" xml:space="preserve">
     <value>https://github.com/foxj77/claudectx</value>
     <comment>Public URL of the claudectx repository — surfaces on the Profiles page banner as a clickable link.</comment>
   </data>
   <data name="FilePickerProfileJson" xml:space="preserve">
-    <value>JSON de perfil</value>
+    <value>プロファイル JSON</value>
     <comment>File picker filter display name for *.json profile export/import files.</comment>
   </data>
   <data name="HeaderProfileName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>名前</value>
   </data>
   <data name="TipHeaderProfileName" xml:space="preserve">
-    <value>Nombre del perfil — coincide con el subdirectorio dentro de ~/.claude/profiles/</value>
+    <value>プロファイル名 — ~/.claude/profiles/ 配下のサブディレクトリと一致します</value>
   </data>
   <data name="HeaderCliActive" xml:space="preserve">
-    <value>CLI activa</value>
+    <value>CLI アクティブ</value>
   </data>
   <data name="TipHeaderCliActive" xml:space="preserve">
-    <value>Distintivo verde: este perfil está aplicado actualmente a ~/.claude/ — la CLI de Claude Code lee de él.</value>
+    <value>緑のバッジ: このプロファイルが現在 ~/.claude/ に適用されています — Claude Code CLI はこのプロファイルから読み込みます。</value>
   </data>
   <data name="BadgeCliActive" xml:space="preserve">
     <value>● Claude Code</value>
   </data>
   <data name="TipCliActivePill" xml:space="preserve">
-    <value>Los archivos de este perfil están actualmente en ~/.claude/ — la CLI de Claude Code está leyendo de este perfil.</value>
+    <value>このプロファイルのファイルは現在 ~/.claude/ にあります — Claude Code CLI はこのプロファイルから読み込んでいます。</value>
   </data>
   <data name="HeaderClaudeMd" xml:space="preserve">
     <value>CLAUDE.md</value>
   </data>
   <data name="TipHeaderClaudeMd" xml:space="preserve">
-    <value>Este perfil incluye un archivo de instrucciones globales CLAUDE.md personalizado</value>
+    <value>このプロファイルにはカスタムの CLAUDE.md グローバル指示ファイルが含まれます</value>
   </data>
   <data name="HeaderMcpServers" xml:space="preserve">
-    <value>Servidores MCP</value>
+    <value>MCP サーバー</value>
   </data>
   <data name="TipHeaderMcpServers" xml:space="preserve">
-    <value>Este perfil incluye definiciones personalizadas de servidores MCP</value>
+    <value>このプロファイルにはカスタムの MCP サーバー定義が含まれます</value>
   </data>
   <data name="BadgeLabelDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
   </data>
   <data name="HeadingDesktopProfiles" xml:space="preserve">
-    <value>Perfiles de Claude Desktop</value>
+    <value>Claude Desktop プロファイル</value>
   </data>
   <data name="TipNewDesktopProfile" xml:space="preserve">
-    <value>Crea un nuevo perfil de Desktop, inicializado a partir del claude_desktop_config.json activo actual.</value>
+    <value>現在の claude_desktop_config.json をもとに、新しい Desktop プロファイルを作成します。</value>
   </data>
   <data name="TextDesktopNotInstalled" xml:space="preserve">
-    <value>No parece que Claude Desktop esté instalado en este equipo. Los perfiles de Desktop estarán disponibles una vez que se instale Claude Desktop.</value>
+    <value>このマシンには Claude Desktop がインストールされていないようです。Claude Desktop をインストールすると、Desktop プロファイルが利用可能になります。</value>
   </data>
   <data name="ButtonApplyToDesktop" xml:space="preserve">
-    <value>▶ Aplicar a Desktop</value>
+    <value>▶ Desktop に適用</value>
   </data>
   <data name="TipApplyToDesktop" xml:space="preserve">
-    <value>Copia el claude_desktop_config.json de este perfil a la ubicación activa de Desktop. Claude Desktop adoptará el cambio en su próximo arranque. Guarda automáticamente primero el perfil de Desktop actualmente activo.</value>
+    <value>このプロファイルの claude_desktop_config.json を Desktop のライブ場所にコピーします。Claude Desktop は次回起動時に変更を反映します。現在アクティブな Desktop プロファイルは先に自動保存されます。</value>
   </data>
   <data name="ButtonSyncDesktopFromLive" xml:space="preserve">
-    <value>⇅ Sincronizar desde activo</value>
+    <value>⇅ Live から同期</value>
   </data>
   <data name="TipSyncDesktopFromLive" xml:space="preserve">
-    <value>Actualiza este perfil con el claude_desktop_config.json activo actual.</value>
+    <value>このプロファイルを、現在のライブの claude_desktop_config.json で更新します。</value>
   </data>
   <data name="TipDeleteDesktopProfile" xml:space="preserve">
-    <value>Elimina permanentemente este perfil de Desktop. La configuración activa de Desktop no se ve afectada.</value>
+    <value>この Desktop プロファイルを完全に削除します。ライブの Desktop 構成には影響しません。</value>
   </data>
   <data name="HeaderDesktopActive" xml:space="preserve">
-    <value>Desktop activo</value>
+    <value>Desktop アクティブ</value>
   </data>
   <data name="TipHeaderDesktopActive" xml:space="preserve">
-    <value>Distintivo azul: la configuración de este perfil está aplicada actualmente a la ubicación activa de la configuración de Desktop.</value>
+    <value>青のバッジ: このプロファイルの構成が現在、ライブの Desktop 構成場所に適用されています。</value>
   </data>
   <data name="BadgeDesktopActive" xml:space="preserve">
     <value>● Claude Desktop</value>
   </data>
   <data name="TipDesktopActivePill" xml:space="preserve">
-    <value>La configuración de este perfil está aplicada actualmente a la ubicación de la configuración activa de Claude Desktop.</value>
+    <value>このプロファイルの構成は現在、ライブの Claude Desktop 構成場所に適用されています。</value>
   </data>
   <data name="HeaderDesktopProfileName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>名前</value>
   </data>
   <data name="TipHeaderDesktopProfileName" xml:space="preserve">
-    <value>Nombre del perfil — coincide con el subdirectorio dentro del directorio de perfiles de Desktop</value>
+    <value>プロファイル名 — Desktop プロファイル ディレクトリ配下のサブディレクトリと一致します</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        BackupRestoreView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingBackupRestore" xml:space="preserve">
-    <value>Copia de seguridad / Restaurar</value>
+    <value>バックアップ / リストア</value>
   </data>
   <data name="ButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>キャンセル</value>
   </data>
   <data name="TipButtonCancel" xml:space="preserve">
-    <value>Cancela la operación actual</value>
+    <value>現在の操作をキャンセルします</value>
   </data>
   <data name="TabBackup" xml:space="preserve">
-    <value>Copia de seguridad</value>
+    <value>バックアップ</value>
   </data>
   <data name="TabRestore" xml:space="preserve">
-    <value>Restaurar</value>
+    <value>リストア</value>
   </data>
   <data name="TabMsixFix" xml:space="preserve">
-    <value>Arreglo de MSIX en Windows</value>
+    <value>Windows MSIX 修正</value>
   </data>
   <data name="LabelOutputFolder" xml:space="preserve">
-    <value>Carpeta de salida</value>
+    <value>出力フォルダー</value>
   </data>
   <data name="ButtonBrowse" xml:space="preserve">
-    <value>Examinar…</value>
+    <value>参照…</value>
   </data>
   <data name="WatermarkBackupDir" xml:space="preserve">
-    <value>No se ha elegido carpeta — haz clic en Examinar para definir una</value>
+    <value>フォルダーが選択されていません — 設定するには「参照」をクリックしてください</value>
   </data>
   <data name="TextBackupDirHint" xml:space="preserve">
-    <value>Los archivos de copia de seguridad (.zip) se escriben en esta carpeta. La pestaña de restauración puede analizar otra carpeta distinta.</value>
+    <value>バックアップ アーカイブ (.zip) はこのフォルダーに書き込まれます。リストア タブは別のフォルダーをスキャンできます。</value>
   </data>
   <data name="TextNoBackupDirWarning" xml:space="preserve">
-    <value>⚠ No hay carpeta de salida seleccionada. Haz clic en Examinar para elegir dónde se guardarán las copias de seguridad.</value>
+    <value>⚠ 出力フォルダーが選択されていません。バックアップ ファイルの保存先を選ぶには「参照」をクリックしてください。</value>
   </data>
   <data name="LabelScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>スコープ</value>
   </data>
   <data name="RadioSettingsOnly" xml:space="preserve">
-    <value>Solo ajustes (rápido, opción por defecto)</value>
+    <value>設定のみ (高速、既定)</value>
   </data>
   <data name="RadioFullBackup" xml:space="preserve">
-    <value>Completa (incluye ~/.claude/projects — transcripciones de sesión, memoria)</value>
+    <value>フル (~/.claude/projects — セッション履歴、メモリを含む)</value>
   </data>
   <data name="RadioSanitizedBackup" xml:space="preserve">
-    <value>Saneada para compartir (secretos redactados — no se puede restaurar)</value>
+    <value>共有用にサニタイズ (シークレットは伏字化 — リストア不可)</value>
   </data>
   <data name="TipRadioSanitizedBackup" xml:space="preserve">
-    <value>Mismo ámbito de archivos que «Solo ajustes», pero cada valor *.json cuya clave coincida con el clasificador de claves sensibles (env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer) se sustituye por la cadena literal «[redacted]». Está pensada para compartir la forma de tu configuración con soporte, la comunidad o un informe de error sin filtrar claves de API, cabeceras de autenticación MCP o tokens OAuth. Los archivos saneados no se pueden restaurar — elige «Solo ajustes» o «Completa» si necesitas una copia recuperable.</value>
+    <value>ファイルのスコープは「設定のみ」と同じですが、機密キー分類器 (env、headers、credentials、auth、*token、*secret、*password、*apikey、bearer) に一致するキーを持つすべての *.json の値が、リテラル文字列 "[redacted]" に置き換えられます。API キー、MCP 認証ヘッダー、OAuth トークンを漏らすことなく、サポート、コミュニティ、バグ レポートに構成の形を共有する用途を想定しています。サニタイズ アーカイブはリストアできません — 復元可能なバックアップが必要な場合は「設定のみ」または「フル」を選択してください。</value>
   </data>
   <data name="TextBackupSecretsWarning" xml:space="preserve">
-    <value>⚠ Este modo conserva los secretos tal cual. Las claves de API, los tokens OAuth y las cabeceras de autorización MCP se almacenarán en texto plano dentro del archivo. Mantén el .zip en un lugar privado; elige el modo Saneado debajo si necesitas compartir la copia.</value>
+    <value>⚠ このモードはシークレットをそのまま保持します。API キー、OAuth トークン、MCP 認証ヘッダーがプレーンテキストでアーカイブ内に保存されます。.zip ファイルは非公開に保ち、バックアップを共有する必要がある場合は下の「サニタイズ」モードを選んでください。</value>
   </data>
   <data name="TextSanitizedModeExplainer" xml:space="preserve">
-    <value>Copia saneada: los valores que contienen secretos se sustituirán por «[redacted]» para que el archivo sea seguro al compartirse. Las credenciales se omiten por completo. El resultado NO se puede restaurar — es un artefacto para compartir, no un punto de recuperación.</value>
+    <value>サニタイズ バックアップ: シークレットを含む値は "[redacted]" に置き換えられ、アーカイブを安全に共有できます。資格情報は完全に除外されます。結果はリストアできません — これは共有用のアーティファクトであり、リカバリ ポイントではありません。</value>
   </data>
   <data name="LabelClients" xml:space="preserve">
-    <value>Clientes</value>
+    <value>クライアント</value>
   </data>
   <data name="CheckboxClaudeCode" xml:space="preserve">
     <value>Claude Code</value>
@@ -588,234 +597,234 @@
     <value>Claude Desktop</value>
   </data>
   <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>Incluir credenciales de API (~/.claude/.credentials.json)</value>
+    <value>API 資格情報を含める (~/.claude/.credentials.json)</value>
   </data>
   <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Marca esta opción solo si la copia de seguridad permanecerá en un almacenamiento de confianza. Cualquiera con la copia podrá iniciar sesión como tú mientras esos tokens sigan siendo válidos.</value>
+    <value>バックアップ ファイルが信頼できるストレージに置かれる場合にのみ有効にしてください。これらのトークンが有効な間、バックアップを持つ誰もがあなたとしてログインできます。</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
-    <value>Retención</value>
+    <value>保持</value>
   </data>
   <data name="LabelKeepLast" xml:space="preserve">
-    <value>Conservar las últimas</value>
+    <value>最新の</value>
   </data>
   <data name="LabelKeepAll" xml:space="preserve">
-    <value>copias (0 = conservar todas)</value>
+    <value>個のバックアップを保持 (0 = すべて保持)</value>
   </data>
   <data name="ButtonCreateBackup" xml:space="preserve">
-    <value>Crear copia de seguridad</value>
+    <value>バックアップを作成</value>
   </data>
   <data name="LabelRestoreFolder" xml:space="preserve">
-    <value>Carpeta de restauración</value>
+    <value>リストア フォルダー</value>
   </data>
   <data name="WatermarkRestoreDir" xml:space="preserve">
-    <value>No se ha elegido carpeta — haz clic en Examinar para localizar copias</value>
+    <value>フォルダーが選択されていません — バックアップを探すには「参照」をクリックしてください</value>
   </data>
   <data name="TextNoRestoreDirWarning" xml:space="preserve">
-    <value>⚠ No hay carpeta seleccionada. Haz clic en Examinar para elegir la carpeta que contiene tus copias de seguridad.</value>
+    <value>⚠ フォルダーが選択されていません。バックアップ アーカイブが含まれるフォルダーを選ぶには「参照」をクリックしてください。</value>
   </data>
   <data name="TextChooseRestoreFolder" xml:space="preserve">
-    <value>Elige una carpeta arriba para ver las copias de seguridad disponibles.</value>
+    <value>利用可能なバックアップを表示するには、上のフォルダーを選択してください。</value>
   </data>
   <data name="TextRestoreInstructions" xml:space="preserve">
-    <value>Selecciona una copia para restaurar. Los archivos existentes se moverán a un lado como .pre-restore-*.bak antes de ser sobrescritos.</value>
+    <value>リストアするバックアップを選んでください。既存ファイルは上書きされる前に .pre-restore-*.bak として退避されます。</value>
   </data>
   <data name="MenuOpenFileLocation" xml:space="preserve">
-    <value>Abrir ubicación del archivo</value>
+    <value>ファイルの場所を開く</value>
   </data>
   <data name="HeaderBackupDate" xml:space="preserve">
-    <value>Fecha</value>
+    <value>日付</value>
   </data>
   <data name="TipHeaderBackupDate" xml:space="preserve">
-    <value>Fecha y hora en la que se creó esta copia (hora local)</value>
+    <value>このバックアップが作成された日時 (ローカル時刻)</value>
   </data>
   <data name="HeaderBackupFile" xml:space="preserve">
-    <value>Archivo</value>
+    <value>ファイル</value>
   </data>
   <data name="TipHeaderBackupFile" xml:space="preserve">
-    <value>Nombre del archivo de copia de seguridad en disco</value>
+    <value>ディスク上のバックアップ アーカイブ ファイル名</value>
   </data>
   <data name="HeaderBackupPlatform" xml:space="preserve">
-    <value>Plataforma</value>
+    <value>プラットフォーム</value>
   </data>
   <data name="TipHeaderBackupPlatform" xml:space="preserve">
-    <value>Sistema operativo que creó esta copia: windows, macos o linux. Restaurar una copia desde una plataforma distinta puede requerir editar rutas manualmente.</value>
+    <value>このバックアップを作成した OS プラットフォーム: windows、macos、または linux。異なるプラットフォームのバックアップをリストアすると、パスの手動編集が必要になる場合があります。</value>
   </data>
   <data name="HeaderBackupMode" xml:space="preserve">
-    <value>Modo</value>
+    <value>モード</value>
   </data>
   <data name="TipHeaderBackupMode" xml:space="preserve">
-    <value>Ámbito de la copia — SettingsOnly excluye las transcripciones de sesión y la memoria del proyecto; Full incluye todo lo que hay bajo ~/.claude/.</value>
+    <value>バックアップ スコープ — SettingsOnly はセッション履歴やプロジェクト メモリを除外します。Full は ~/.claude/ 配下のすべてを含みます。</value>
   </data>
   <data name="HeaderBackupClients" xml:space="preserve">
-    <value>Clientes</value>
+    <value>クライアント</value>
   </data>
   <data name="TipHeaderBackupClients" xml:space="preserve">
-    <value>Qué clientes de Claude se incluyeron: ClaudeCode o ClaudeDesktop</value>
+    <value>含まれている Claude クライアント: ClaudeCode と ClaudeDesktop のいずれか、または両方</value>
   </data>
   <data name="HeaderBackupSize" xml:space="preserve">
-    <value>Tamaño</value>
+    <value>サイズ</value>
   </data>
   <data name="TipHeaderBackupSize" xml:space="preserve">
-    <value>Tamaño comprimido del archivo de copia de seguridad</value>
+    <value>バックアップ アーカイブの圧縮サイズ</value>
   </data>
   <data name="HeaderBackupActions" xml:space="preserve">
-    <value>Acciones</value>
+    <value>アクション</value>
   </data>
   <data name="TipHeaderBackupActions" xml:space="preserve">
-    <value>Restaurar sobrescribe tus ajustes activos con esta copia (los archivos existentes se guardan como .pre-restore-*.bak). Eliminar quita el archivo de forma permanente.</value>
+    <value>リストアは、このバックアップでライブ設定を上書きします (既存ファイルは .pre-restore-*.bak として退避されます)。削除はアーカイブを完全に削除します。</value>
   </data>
   <data name="ButtonRestore" xml:space="preserve">
-    <value>Restaurar</value>
+    <value>リストア</value>
   </data>
   <data name="ButtonDeleteBackup" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>削除</value>
   </data>
   <data name="ButtonShareBackup" xml:space="preserve">
-    <value>Compartir</value>
+    <value>共有</value>
   </data>
   <data name="TipButtonShareBackup" xml:space="preserve">
-    <value>Envía este archivo de copia de seguridad a otra aplicación o dispositivo mediante el panel de compartir del sistema operativo</value>
+    <value>OS の共有パネルを介して、このバックアップ アーカイブを別のアプリやデバイスに送信します</value>
   </data>
   <data name="HeadingMsixFix" xml:space="preserve">
-    <value>Ruta virtualizada de MSIX detectada</value>
+    <value>MSIX 仮想化パスを検出しました</value>
   </data>
   <data name="TextMsixDesc" xml:space="preserve">
-    <value>Claude Desktop está instalado como paquete MSIX. Windows virtualiza las escrituras de la aplicación a una ruta de AppData por paquete. Eso provoca que el botón «Editar configuración» abra el archivo equivocado y que las herramientas (incluida esta aplicación) vean una copia obsoleta. Crear una unión (junction) NTFS desde la ruta estándar a la ruta virtualizada soluciona ambos problemas.</value>
+    <value>Claude Desktop は MSIX パッケージとしてインストールされています。Windows はアプリの書き込みをパッケージごとの AppData パスに仮想化します。そのため「Edit Config」ボタンが誤ったファイルを開き、ツール (このアプリを含む) は古いコピーを参照します。標準パスから仮想化パスへの NTFS ジャンクションを作成すると両方が解決されます。</value>
   </data>
   <data name="LabelMsixVirtualisedPath" xml:space="preserve">
-    <value>Ruta virtualizada (ubicación real):</value>
+    <value>仮想化パス (実際の場所):</value>
   </data>
   <data name="LabelMsixStandardPath" xml:space="preserve">
-    <value>Ruta estándar (la que las herramientas consultan):</value>
+    <value>標準パス (ツールが参照する場所):</value>
   </data>
   <data name="ButtonCreateJunction" xml:space="preserve">
-    <value>Crear unión (junction)</value>
+    <value>ジャンクションを作成</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        EnvironmentEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingEnvironmentVariables" xml:space="preserve">
-    <value>Variables de entorno</value>
+    <value>環境変数</value>
   </data>
   <data name="TextEnvSubtitle" xml:space="preserve">
-    <value>Entorno del propio proceso de Claude. Para credenciales por servidor (claves de API, etc.), usa en su lugar la sección env dentro de cada servidor MCP.</value>
+    <value>Claude 自身のプロセス環境です。サーバーごとの資格情報 (API キーなど) は、各 MCP サーバー内の env セクションを使用してください。</value>
   </data>
   <data name="ButtonRefreshEnv" xml:space="preserve">
-    <value>Actualizar</value>
+    <value>更新</value>
   </data>
   <data name="TipRefreshEnv" xml:space="preserve">
-    <value>Vuelve a leer el entorno del proceso actual y recarga todos los valores almacenados desde disco</value>
+    <value>現在のプロセス環境を再読み込みし、ディスクから保存済みの値もすべて再読み込みします</value>
   </data>
   <data name="AutoNameRefreshEnv" xml:space="preserve">
-    <value>Actualizar variables de entorno</value>
+    <value>環境変数を更新</value>
   </data>
   <data name="WatermarkFilterVars" xml:space="preserve">
-    <value>Filtrar variables…</value>
+    <value>変数を絞り込み…</value>
   </data>
   <data name="CheckboxShowAll" xml:space="preserve">
-    <value>Mostrar todas</value>
+    <value>すべて表示</value>
   </data>
   <data name="TextShowCommonVars" xml:space="preserve">
-    <value>Mostrando variables habituales de desarrollo. Marca «Mostrar todas» para verlo todo.</value>
+    <value>一般的な開発用変数を表示中です。すべてを表示するには「すべて表示」をオンにしてください。</value>
   </data>
   <data name="TextMacLinuxNote" xml:space="preserve">
-    <value>ℹ  En macOS / Linux, los almacenes de entorno de Usuario y Equipo no son escribibles de forma persistente desde .NET. Solo el ámbito env de Claude está disponible para edición.</value>
+    <value>ℹ  macOS / Linux では、User と Machine の環境ストアは .NET 経由で永続的に書き込めません。Claude env スコープのみ編集可能です。</value>
   </data>
   <data name="SectionClaudeAnthropicNode" xml:space="preserve">
     <value>Claude / Anthropic / Node</value>
   </data>
   <data name="SectionGeneralPath" xml:space="preserve">
-    <value>General (PATH, shell, SO)</value>
+    <value>一般 (PATH、シェル、OS)</value>
   </data>
   <data name="HeaderEnvName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>名前</value>
   </data>
   <data name="TipHeaderEnvName" xml:space="preserve">
-    <value>Nombre de la variable de entorno. Pasa el cursor para ver una descripción; haz clic para verla o editarla en el panel de detalle.</value>
+    <value>環境変数名。ホバーで説明を表示します。クリックすると詳細ペインで表示/編集できます。</value>
   </data>
   <data name="HeaderEffectiveValue" xml:space="preserve">
-    <value>Valor efectivo</value>
+    <value>有効値</value>
   </data>
   <data name="TipHeaderEffectiveValue" xml:space="preserve">
-    <value>El valor resuelto que Claude lee, después de aplicar todos los ámbitos de entorno (el proceso gana al usuario, y el usuario gana al almacenado por Claude)</value>
+    <value>すべての環境スコープが適用された後に Claude が読み取る解決済みの値 (process が user より優先、user が Claude 保存値より優先)</value>
   </data>
   <data name="HeaderSource" xml:space="preserve">
-    <value>Origen</value>
+    <value>ソース</value>
   </data>
   <data name="TipHeaderSource" xml:space="preserve">
-    <value>Qué ámbito proporciona el valor efectivo: process (entorno del SO), claude (almacenado en la configuración env de claude), user (entorno de usuario de Windows) o machine (entorno de equipo de Windows)</value>
+    <value>有効値を提供しているスコープ: process (OS env)、claude (claude env 構成に保存)、user (Windows ユーザー env)、machine (Windows マシン env)</value>
   </data>
   <data name="HeaderOverridden" xml:space="preserve">
-    <value>Sobrescrita</value>
+    <value>上書きされた</value>
   </data>
   <data name="TipHeaderOverridden" xml:space="preserve">
-    <value>Se marca cuando un ámbito más estrecho (process o claude) define esta variable explícitamente, prevaleciendo sobre los valores almacenados</value>
+    <value>より狭いスコープ (process または claude) がこの変数を明示的に設定し、保存済みの値より優先される場合にチェックされます</value>
   </data>
   <data name="LabelNewVariable" xml:space="preserve">
-    <value>Nueva variable:</value>
+    <value>新しい変数:</value>
   </data>
   <data name="WatermarkVarName" xml:space="preserve">
-    <value>NOMBRE_DE_VARIABLE</value>
+    <value>VARIABLE_NAME</value>
   </data>
   <data name="ButtonAddVar" xml:space="preserve">
-    <value>Añadir</value>
+    <value>追加</value>
   </data>
   <data name="TextValueEditedInPane" xml:space="preserve">
-    <value>(valor editado en el panel de detalle)</value>
+    <value>(値は詳細ペインで編集されました)</value>
   </data>
   <data name="TextSelectVariable" xml:space="preserve">
-    <value>Selecciona una variable para ver sus valores por ámbito.</value>
+    <value>スコープごとの値を表示するには変数を選択してください。</value>
   </data>
   <data name="LabelEdit" xml:space="preserve">
-    <value>Editar</value>
+    <value>編集</value>
   </data>
   <data name="LabelWritingTo" xml:space="preserve">
-    <value>Escribiendo en:</value>
+    <value>書き込み先:</value>
   </data>
   <data name="WatermarkValueNotSet" xml:space="preserve">
-    <value>(sin definir)</value>
+    <value>(未設定)</value>
   </data>
   <data name="ButtonSaveEnvVar" xml:space="preserve">
-    <value>Guardar</value>
+    <value>保存</value>
   </data>
   <data name="ButtonRemoveFromScope" xml:space="preserve">
-    <value>Quitar del ámbito</value>
+    <value>スコープから削除</value>
   </data>
   <data name="TextProcessEnvNote" xml:space="preserve">
-    <value>ℹ  Esta variable está definida en el entorno del proceso y no se puede editar aquí. Tendrá prioridad sobre cualquier valor almacenado.</value>
+    <value>ℹ  この変数はプロセス環境に設定されているため、ここでは編集できません。保存されたあらゆる値より優先されます。</value>
   </data>
   <data name="LabelValuesByLayer" xml:space="preserve">
-    <value>Valores por capa</value>
+    <value>レイヤー別の値</value>
   </data>
   <data name="LabelProcess" xml:space="preserve">
-    <value>Proceso</value>
+    <value>Process</value>
   </data>
   <data name="LabelClaude" xml:space="preserve">
     <value>Claude</value>
   </data>
   <data name="LabelUser" xml:space="preserve">
-    <value>Usuario</value>
+    <value>User</value>
   </data>
   <data name="LabelMachine" xml:space="preserve">
-    <value>Equipo</value>
+    <value>Machine</value>
   </data>
   <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(sin definir)</value>
+    <value>(未設定)</value>
   </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
-    <value>«{0}» no es un nombre válido de variable de entorno.</value>
+    <value>'{0}' は有効な環境変数名ではありません。</value>
   </data>
   <data name="StatusEnvAccessDeniedFmt" xml:space="preserve">
-    <value>Acceso denegado al escribir «{0}»: {1}</value>
+    <value>'{0}' の書き込みでアクセスが拒否されました: {1}</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        AboutEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingVersionInfo" xml:space="preserve">
-    <value>Información de versión</value>
+    <value>バージョン情報</value>
   </data>
   <data name="LabelClaudeCode" xml:space="preserve">
     <value>Claude Code</value>
@@ -824,23 +833,23 @@
     <value>Claude Desktop</value>
   </data>
   <data name="LabelPlatform" xml:space="preserve">
-    <value>Plataforma</value>
+    <value>プラットフォーム</value>
   </data>
   <data name="LabelConfigFile" xml:space="preserve">
-    <value>Archivo de configuración</value>
+    <value>構成ファイル</value>
   </data>
   <data name="ButtonOpenConfig" xml:space="preserve">
-    <value>Abrir configuración</value>
+    <value>構成を開く</value>
   </data>
   <data name="TipButtonOpenConfig" xml:space="preserve">
-    <value>Abre el archivo principal de configuración en el editor de texto predeterminado</value>
+    <value>既定のテキスト エディターでメインの構成ファイルを開きます</value>
   </data>
   <data name="ButtonManageProfiles" xml:space="preserve">
-    <value>_Gestionar…</value>
+    <value>管理(_M)…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
   <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>エクスプローラーで表示</value>
     <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
   </data>
 
@@ -849,52 +858,52 @@
        based on PlatformInfo.Current.  Direct AXAML bindings should use
        the PlatformLabels static, not these resx entries. -->
   <data name="ButtonRevealWindows" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>エクスプローラーで表示</value>
   </data>
   <data name="ButtonRevealMac" xml:space="preserve">
-    <value>Mostrar en el Finder</value>
+    <value>Finder で表示</value>
   </data>
   <data name="ButtonRevealLinux" xml:space="preserve">
-    <value>Mostrar en Archivos</value>
+    <value>ファイル マネージャーで表示</value>
   </data>
   <data name="TipButtonRevealWindows" xml:space="preserve">
-    <value>Mostrar en el Explorador de Windows</value>
+    <value>Windows エクスプローラーで表示します</value>
   </data>
   <data name="TipButtonRevealMac" xml:space="preserve">
-    <value>Mostrar en el Finder</value>
+    <value>Finder で表示します</value>
   </data>
   <data name="TipButtonRevealLinux" xml:space="preserve">
-    <value>Mostrar en el gestor de archivos</value>
+    <value>ファイル マネージャーで表示します</value>
   </data>
 
   <!-- platform-resolved variants of the Memory-page viewer
        edit hint.  Same approach as ButtonReveal* above. -->
   <data name="TextMemoryViewerEditHintWindows" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Explorador».</value>
+    <value>編集するには、テキスト エディターで開いてください — 「エクスプローラーで表示」をクリックしてください。</value>
   </data>
   <data name="TextMemoryViewerEditHintMac" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Finder».</value>
+    <value>編集するには、テキスト エディターで開いてください — 「Finder で表示」をクリックしてください。</value>
   </data>
   <data name="TextMemoryViewerEditHintLinux" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en Archivos».</value>
+    <value>編集するには、テキスト エディターで開いてください — 「ファイル マネージャーで表示」をクリックしてください。</value>
   </data>
   <data name="LabelLogFile" xml:space="preserve">
-    <value>Archivo de registro</value>
+    <value>ログ ファイル</value>
   </data>
   <data name="ButtonShareLog" xml:space="preserve">
-    <value>Compartir registro</value>
+    <value>ログを共有</value>
   </data>
   <data name="TipButtonShareLog" xml:space="preserve">
-    <value>Comparte el archivo de registro actual (útil para informes de error)</value>
+    <value>現在のログ ファイルを共有します (バグ レポートに便利)</value>
   </data>
   <data name="ButtonShareConfig" xml:space="preserve">
-    <value>Compartir configuración</value>
+    <value>構成を共有</value>
   </data>
   <data name="TipButtonShareConfig" xml:space="preserve">
-    <value>Comparte los ajustes efectivos como texto JSON</value>
+    <value>有効な設定を JSON テキストとして共有します</value>
   </data>
   <data name="TargetNullNotDetected" xml:space="preserve">
-    <value>(no detectado)</value>
+    <value>(未検出)</value>
   </data>
 
   <!-- Claude Code PATH-warning block (AboutEditorView): appears when the
@@ -902,67 +911,67 @@
        user's PATH does not expose it (common on Windows ARM64 after an
        `npm i -g` into %APPDATA%\npm). -->
   <data name="LabelClaudeCodeNotOnPath" xml:space="preserve">
-    <value>Instalado, pero no está en el PATH</value>
+    <value>インストール済みですが、PATH に含まれていません</value>
   </data>
   <data name="TextClaudeCodeNotOnPath" xml:space="preserve">
-    <value>Se ha encontrado en {0}, pero el directorio que lo contiene no está en tu PATH. Ejecutar `claude` desde una terminal fallará hasta que se actualice el PATH.</value>
+    <value>{0} で見つかりましたが、それを含むディレクトリは PATH に含まれていません。PATH が更新されるまで、ターミナルから `claude` を実行することはできません。</value>
   </data>
   <data name="ButtonAddClaudeCodeToPath" xml:space="preserve">
-    <value>Añadir al PATH</value>
+    <value>PATH に追加</value>
   </data>
   <data name="TipButtonAddClaudeCodeToPath" xml:space="preserve">
-    <value>Añade el directorio que contiene claude a tu PATH de usuario (no requiere permisos de administrador). Abre una nueva terminal para que el cambio surta efecto.</value>
+    <value>claude を含むディレクトリをユーザー PATH に追加します (管理者権限は不要)。変更を反映するには新しいターミナルを開いてください。</value>
   </data>
   <data name="TextAddToPathAdded" xml:space="preserve">
-    <value>Añadido al PATH de usuario. Abre una nueva terminal para usar `claude`.</value>
+    <value>ユーザー PATH に追加しました。`claude` を使うには新しいターミナルを開いてください。</value>
   </data>
   <data name="TextAddToPathAlreadyPresent" xml:space="preserve">
-    <value>El directorio ya estaba en el PATH (tu sesión actual puede estar obsoleta).</value>
+    <value>ディレクトリは既に PATH に含まれていました (現在のセッションは古い可能性があります)。</value>
   </data>
   <data name="TextAddToPathFailed" xml:space="preserve">
-    <value>No se ha podido actualizar el PATH — edita `HKCU\Environment\Path` manualmente o contacta con soporte.</value>
+    <value>PATH を更新できませんでした — `HKCU\Environment\Path` を手動で編集するか、サポートにお問い合わせください。</value>
   </data>
   <data name="TextAddToPathUnsupported" xml:space="preserve">
-    <value>La edición automática del PATH no es compatible en esta plataforma. Añade el directorio manualmente al archivo rc de tu shell.</value>
+    <value>このプラットフォームでは PATH の自動編集はサポートされていません。シェルの rc ファイルにディレクトリを手動で追加してください。</value>
   </data>
   <data name="DialogTitleAddClaudeCodeToPath" xml:space="preserve">
-    <value>¿Añadir Claude Code al PATH?</value>
+    <value>Claude Code を PATH に追加しますか?</value>
   </data>
   <data name="DialogMessageAddClaudeCodeToPath" xml:space="preserve">
-    <value>Esto añadirá el siguiente directorio a tu variable de entorno PATH de usuario (no requiere permisos de administrador):
+    <value>これにより、次のディレクトリがユーザーの PATH 環境変数に追加されます (管理者権限は不要):
 
 {0}
 
-Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reiniciarse. ¿Continuar?</value>
+新しいターミナルは変更を反映します。既存のターミナルは再起動が必要です。続行しますか?</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        SaveChangesDialog
        ═══════════════════════════════════════════════════════════════ -->
   <data name="ButtonCopyAllChanges" xml:space="preserve">
-    <value>Copiar todo</value>
+    <value>すべてコピー</value>
   </data>
   <data name="TipButtonCopyAllChanges" xml:space="preserve">
-    <value>Copia al portapapeles un resumen en texto plano de todos los cambios (sin descripciones)</value>
+    <value>すべての変更のプレーンテキスト概要をクリップボードにコピーします (説明なし)</value>
   </data>
   <data name="CheckboxShowDialog" xml:space="preserve">
-    <value>Mostrar este diálogo al guardar</value>
+    <value>保存時にこのダイアログを表示</value>
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
-    <value>Desmárcalo para omitir este diálogo de confirmación y guardar directamente en el futuro</value>
+    <value>オフにすると、今後はこの確認ダイアログをスキップしてすぐに保存します</value>
   </data>
   <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Descartar cambios</value>
+    <value>変更を破棄</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
-    <value>Guardar</value>
+    <value>保存</value>
   </data>
   <data name="DialogTitleSaveChanges" xml:space="preserve">
-    <value>Guardar cambios</value>
+    <value>変更を保存</value>
     <comment>Window title for the SaveChangesDialog when shown in Save mode (regular save flow + pre-Backup save guard).</comment>
   </data>
   <data name="DialogTitleRestorePreview" xml:space="preserve">
-    <value>Vista previa de restauración</value>
+    <value>リストア プレビュー</value>
     <comment>Window title for the SaveChangesDialog when shown in Restore mode (pre-Restore save guard).</comment>
   </data>
 
@@ -970,334 +979,334 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
        McpServersEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="WatermarkServerName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>名前</value>
   </data>
   <data name="TipAddServer" xml:space="preserve">
-    <value>Añadir servidor</value>
+    <value>サーバーを追加</value>
   </data>
   <data name="LabelTransportType" xml:space="preserve">
-    <value>Tipo de transporte</value>
+    <value>トランスポートの種類</value>
   </data>
   <data name="LabelCommand" xml:space="preserve">
-    <value>Comando</value>
+    <value>コマンド</value>
   </data>
   <data name="WatermarkMcpCommand" xml:space="preserve">
-    <value>p. ej. npx, python, /ruta/al/servidor</value>
+    <value>例: npx、python、/path/to/server</value>
   </data>
   <data name="LabelMcpDescription" xml:space="preserve">
-    <value>Descripción</value>
+    <value>説明</value>
     <comment>MCP server description field (optional human-readable blurb).</comment>
   </data>
   <data name="WatermarkMcpDescription" xml:space="preserve">
-    <value>Opcional — breve descripción que se muestra en las descripciones emergentes</value>
+    <value>任意 — ツールチップに表示される短い説明</value>
   </data>
   <data name="LabelDisableBypassPermissionsMode" xml:space="preserve">
-    <value>Desactivar el modo bypassPermissions</value>
+    <value>bypassPermissions モードを無効化</value>
     <comment>Permissions toggle that prevents `defaultMode = bypassPermissions` from taking effect; managed-scope org policy.</comment>
   </data>
   <data name="LabelDisableBypassPermissionsModeCheckbox" xml:space="preserve">
-    <value>Bloquear todos los valores predeterminados bypassPermissions</value>
+    <value>すべての bypassPermissions の既定値をブロック</value>
   </data>
   <data name="TextDisableBypassPermissionsModeHint" xml:space="preserve">
-    <value>Cuando está activo, Claude se niega a ejecutarse en modo bypassPermissions independientemente de cualquier sobreescritura a nivel de usuario. Suele configurarse en el ámbito Gestionado mediante política de la organización.</value>
+    <value>有効にすると、Claude はユーザー スコープの上書きにかかわらず bypassPermissions モードでの実行を拒否します。通常、組織ポリシーにより Managed スコープで設定されます。</value>
   </data>
   <data name="LabelAdditionalDirectories" xml:space="preserve">
-    <value>Directorios adicionales</value>
+    <value>追加ディレクトリ</value>
     <comment>Extra directories the permission scope extends into.</comment>
   </data>
   <data name="TextAdditionalDirectoriesHint" xml:space="preserve">
-    <value>Rutas fuera de la raíz del proyecto que Claude tiene permitido considerar dentro de su ámbito. Una ruta absoluta por fila.</value>
+    <value>Claude が範囲内とみなすことを許可される、プロジェクト ルート外のパス。1 行につき 1 つの絶対パスを指定してください。</value>
   </data>
   <data name="WatermarkAdditionalDirectory" xml:space="preserve">
-    <value>p. ej. /ruta/a/otro/dir</value>
+    <value>例: /path/to/another/dir</value>
   </data>
   <data name="HeaderHookTimeout" xml:space="preserve">
-    <value>Tiempo de espera (s)</value>
+    <value>タイムアウト (秒)</value>
     <comment>Per-hook timeout column header in the hooks DataGrid.</comment>
   </data>
   <data name="TipHookTimeout" xml:space="preserve">
-    <value>Tiempo de espera opcional por hook en segundos. Déjalo en blanco para usar el valor predeterminado de la CLI.</value>
+    <value>フックごとの任意のタイムアウト (秒単位)。CLI の既定値を使うには空欄にしてください。</value>
   </data>
   <data name="LabelHookHeaders" xml:space="preserve">
-    <value>Cabeceras HTTP</value>
+    <value>HTTP ヘッダー</value>
     <comment>Header row for the URL-hook headers editor.</comment>
   </data>
   <data name="TextHookHeadersHint" xml:space="preserve">
-    <value>Cabeceras HTTP personalizadas que se añaden a la solicitud cuando se dispara este hook de URL. Usa ${VARNAME} para interpolar valores de las variables de entorno listadas abajo.</value>
+    <value>この URL フックが発火するときにリクエストに追加されるカスタム HTTP ヘッダーです。下に列挙された環境変数の値を展開するには ${VARNAME} を使用してください。</value>
   </data>
   <data name="WatermarkHookHeaderKey" xml:space="preserve">
-    <value>Nombre de la cabecera (p. ej. Authorization)</value>
+    <value>ヘッダー名 (例: Authorization)</value>
   </data>
   <data name="WatermarkHookHeaderValue" xml:space="preserve">
-    <value>Valor de la cabecera (o Bearer ${TOKEN})</value>
+    <value>ヘッダー値 (または Bearer ${TOKEN})</value>
   </data>
   <data name="LabelHookAllowedEnvVars" xml:space="preserve">
-    <value>Variables de entorno permitidas</value>
+    <value>許可された環境変数</value>
     <comment>Header row for the URL-hook allowed-env-vars editor.</comment>
   </data>
   <data name="TextHookAllowedEnvVarsHint" xml:space="preserve">
-    <value>Nombres de variables de entorno cuyos valores pueden interpolarse en los valores de cabecera mediante ${VARNAME}. Los nombres no listados aquí no se sustituirán.</value>
+    <value>${VARNAME} を介してヘッダー値に展開できる環境変数の名前。ここに列挙されていない名前は置換されません。</value>
   </data>
   <data name="WatermarkHookAllowedEnvVar" xml:space="preserve">
-    <value>Nombre de variable (p. ej. API_TOKEN)</value>
+    <value>変数名 (例: API_TOKEN)</value>
   </data>
   <data name="LabelUrl" xml:space="preserve">
     <value>URL</value>
   </data>
   <data name="WatermarkMcpUrl" xml:space="preserve">
-    <value>p. ej. http://localhost:3000/sse</value>
+    <value>例: http://localhost:3000/sse</value>
   </data>
   <data name="LabelArguments" xml:space="preserve">
-    <value>Argumentos</value>
+    <value>引数</value>
   </data>
   <data name="HeaderArgValue" xml:space="preserve">
-    <value>Valor</value>
+    <value>値</value>
   </data>
   <data name="WatermarkAddArgument" xml:space="preserve">
-    <value>Añadir argumento…</value>
+    <value>引数を追加…</value>
   </data>
   <data name="LabelMcpEnvVars" xml:space="preserve">
-    <value>Variables de entorno</value>
+    <value>環境変数</value>
   </data>
   <data name="TextMcpEnvVarsHint" xml:space="preserve">
-    <value>Se inyectan únicamente en el subproceso de este servidor — no son visibles para Claude ni para otros servidores. Úsalo para las claves de API y credenciales que esta herramienta necesite.</value>
+    <value>このサーバーのサブプロセスにのみ注入されます — Claude や他のサーバーからは見えません。このツールが必要とする API キーや資格情報に使用してください。</value>
   </data>
   <data name="HeaderEnvKey" xml:space="preserve">
-    <value>Clave</value>
+    <value>キー</value>
   </data>
   <data name="HeaderEnvValue" xml:space="preserve">
-    <value>Valor</value>
+    <value>値</value>
   </data>
   <data name="WatermarkEnvKey" xml:space="preserve">
-    <value>CLAVE</value>
+    <value>KEY</value>
   </data>
   <data name="WatermarkEnvValue" xml:space="preserve">
-    <value>valor</value>
+    <value>value</value>
   </data>
   <data name="ValidationMcpCommandRequired" xml:space="preserve">
-    <value>El comando es obligatorio para el transporte stdio.</value>
+    <value>stdio トランスポートではコマンドが必須です。</value>
   </data>
   <data name="ValidationMcpUrlInvalid" xml:space="preserve">
-    <value>La URL debe ser una dirección http:// o https:// válida.</value>
+    <value>URL は有効な http:// または https:// アドレスである必要があります。</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HooksEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextSelectEventType" xml:space="preserve">
-    <value>Selecciona un tipo de evento</value>
+    <value>イベントの種類を選択してください</value>
   </data>
   <data name="ButtonAddHook" xml:space="preserve">
-    <value>+ Añadir hook</value>
+    <value>+ フックを追加</value>
   </data>
   <data name="HeaderMatcher" xml:space="preserve">
-    <value>Coincidencia</value>
+    <value>マッチャー</value>
   </data>
   <data name="HeaderHookType" xml:space="preserve">
-    <value>Tipo</value>
+    <value>種類</value>
   </data>
   <data name="HeaderCommandPromptUrl" xml:space="preserve">
-    <value>Comando / Prompt / URL</value>
+    <value>コマンド / プロンプト / URL</value>
   </data>
   <data name="ButtonRemoveHook" xml:space="preserve">
-    <value>Quitar</value>
+    <value>削除</value>
   </data>
   <data name="TextHookValidationWarning" xml:space="preserve">
-    <value>Uno o varios hooks tienen una coincidencia o un comando vacíos — esos hooks no se dispararán.</value>
+    <value>マッチャーまたはコマンドが空のフックが 1 つ以上あります — それらのフックは発火しません。</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        PermissionsEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelDefaultMode" xml:space="preserve">
-    <value>Modo predeterminado</value>
+    <value>既定モード</value>
   </data>
   <data name="TextDefaultModeHint" xml:space="preserve">
-    <value>Controla cómo gestiona Claude las llamadas a herramientas no cubiertas por ninguna regla Permitir, Denegar o Preguntar. Pasa el cursor sobre cada opción para ver una descripción.</value>
+    <value>Allow、Deny、Ask のいずれのルールにも該当しないツール呼び出しを Claude がどう扱うかを制御します。各オプションにホバーして説明を確認してください。</value>
   </data>
   <data name="PlaceholderDefaultMode" xml:space="preserve">
-    <value>(sin definir — se hereda)</value>
+    <value>(未設定 — 継承)</value>
   </data>
   <data name="HeaderAllow" xml:space="preserve">
-    <value>Permitir</value>
+    <value>Allow</value>
   </data>
   <data name="HeaderDeny" xml:space="preserve">
-    <value>Denegar</value>
+    <value>Deny</value>
   </data>
   <data name="HeaderAsk" xml:space="preserve">
-    <value>Preguntar</value>
+    <value>Ask</value>
   </data>
   <data name="TextPermissionsExplainer" xml:space="preserve">
-    <value>Las reglas de permisos controlan qué herramientas de Claude Code pueden ejecutarse sin solicitar confirmación. Una regla puede ser un nombre simple de herramienta —como Read o Bash—, que concede acceso sin restricciones a esa herramienta, o una forma parametrizada como Bash(git *) o Read(./**/*.ts), que solo se aplica a invocaciones cuyo argumento encaja en el patrón. Las reglas de Permitir se ejecutan en silencio; las de Denegar quedan bloqueadas; las de Preguntar siempre disparan una confirmación, independientemente del Modo predeterminado.</value>
+    <value>権限ルールは、プロンプトなしで実行できる Claude Code ツールを制御します。ルールは、Read や Bash のような素のツール名 (そのツールへの無制限アクセスを付与) か、Bash(git *) や Read(./**/*.ts) のような引数がパターンに一致する呼び出しのみに一致するパラメーター化された形式のいずれかです。Allow のルールは静かに実行され、Deny のルールは直ちにブロックされ、Ask のルールは Default Mode 設定に関係なく常に確認プロンプトをトリガーします。</value>
   </data>
   <data name="TextExamplesHeader" xml:space="preserve">
-    <value>Ejemplos:</value>
+    <value>例:</value>
   </data>
   <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Acciones habituales</value>
+    <value>よく使うアクション</value>
   </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
-    <value>Filtrado para ocultar las reglas que ya están presentes en algún ámbito.</value>
+    <value>いずれかのスコープに既に存在するルールは非表示にしています。</value>
   </data>
   <data name="TextCommonActionsEmpty" xml:space="preserve">
-    <value>Todas las reglas habituales ya están configuradas.</value>
+    <value>よく使うルールはすべて設定済みです。</value>
   </data>
   <data name="TextCommonActionsWslHint" xml:space="preserve">
-    <value>Consejo para Windows: la herramienta Bash de Claude se ejecuta por defecto a través de Git Bash / MSYS, lo que puede deformar las rutas en comandos intensivos en sistema de archivos. Permite el grupo WSL de abajo (p. ej. Bash(wsl git status)) y Claude preferirá automáticamente la vía WSL cuando esas reglas estén presentes.</value>
+    <value>Windows のヒント: Claude の Bash ツールは既定で Git Bash / MSYS 経由で実行されるため、ファイルシステムを多用するコマンドでパスが壊れる場合があります。下の WSL グループ (例: Bash(wsl git status)) を許可リストに追加しておくと、これらのルールがあるとき Claude は WSL パスを自動的に優先します。</value>
     <comment>Permissions page Common Actions contextual hint — shown only when PlatformInfo.Current.IsWindows is true. Explains why the WSL group is there and how to use it. Paired with TextWelcomeWslHint on the Welcome page for cross-discoverability.</comment>
   </data>
   <data name="WatermarkAllowRule" xml:space="preserve">
-    <value>p. ej. Read o Bash(git *)</value>
+    <value>例: Read または Bash(git *)</value>
   </data>
   <data name="TipPermissionRule" xml:space="preserve">
-    <value>Introduce una regla: nombre simple de herramienta (p. ej. Read) o forma parametrizada (p. ej. Bash(git *)). Mira los ejemplos abajo.</value>
+    <value>ルールを入力します: 素のツール名 (例: Read) またはパラメーター化された形式 (例: Bash(git *))。下の例を参照してください。</value>
   </data>
   <data name="TipAddAllowRule" xml:space="preserve">
-    <value>Añadir esta regla de permitir</value>
+    <value>この allow ルールを追加します</value>
   </data>
   <data name="WatermarkDenyRule" xml:space="preserve">
-    <value>p. ej. Write o Bash(rm *)</value>
+    <value>例: Write または Bash(rm *)</value>
   </data>
   <data name="TipAddDenyRule" xml:space="preserve">
-    <value>Añadir esta regla de denegar</value>
+    <value>この deny ルールを追加します</value>
   </data>
   <data name="WatermarkAskRule" xml:space="preserve">
-    <value>p. ej. Bash(npm install *)</value>
+    <value>例: Bash(npm install *)</value>
   </data>
   <data name="TipAddAskRule" xml:space="preserve">
-    <value>Añadir esta regla de preguntar</value>
+    <value>この ask ルールを追加します</value>
   </data>
   <data name="TipRemoveRule" xml:space="preserve">
-    <value>Quitar regla</value>
+    <value>ルールを削除</value>
   </data>
   <data name="TipCommonAddAllow" xml:space="preserve">
-    <value>Añade esta regla a la lista Permitir — se ejecuta en silencio sin solicitar confirmación</value>
+    <value>このルールを Allow 一覧に追加します — 確認なしで静かに実行されます</value>
   </data>
   <data name="TipCommonAddDeny" xml:space="preserve">
-    <value>Añade esta regla a la lista Denegar — queda bloqueada por completo</value>
+    <value>このルールを Deny 一覧に追加します — 直ちにブロックされます</value>
   </data>
   <data name="TipCommonAddAsk" xml:space="preserve">
-    <value>Añade esta regla a la lista Preguntar — siempre dispara una confirmación</value>
+    <value>このルールを Ask 一覧に追加します — 常に確認プロンプトがトリガーされます</value>
   </data>
   <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} regla(s))</value>
+    <value>({0} 件のルール)</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelDefinedInScopes" xml:space="preserve">
-    <value>Definido en los ámbitos:</value>
+    <value>定義されているスコープ:</value>
   </data>
   <data name="TipResetToInherited" xml:space="preserve">
-    <value>Quita este ajuste en el ámbito actual (hereda del ámbito inferior)</value>
+    <value>現在のスコープでこの設定を削除します (より下位のスコープから継承)</value>
   </data>
   <data name="ButtonReset" xml:space="preserve">
-    <value>Restablecer</value>
+    <value>リセット</value>
   </data>
   <data name="TextOverridden" xml:space="preserve">
-    <value>(sobrescrito)</value>
+    <value>(上書きされた)</value>
   </data>
   <data name="TipShowSuggestions" xml:space="preserve">
-    <value>Mostrar el desplegable de sugerencias</value>
+    <value>候補のドロップダウンを表示します</value>
   </data>
   <data name="TipManagedLocked" xml:space="preserve">
-    <value>Gestionado por el administrador — solo lectura</value>
+    <value>管理者により管理されています — 読み取り専用</value>
   </data>
   <data name="TipUndocumented" xml:space="preserve">
-    <value>Ajuste no documentado — no figura en la documentación oficial de Claude</value>
+    <value>ドキュメント化されていない設定 — 公式の Claude ドキュメントには記載がありません</value>
   </data>
   <data name="TipNewSetting" xml:space="preserve">
-    <value>Ajuste nuevo — añadido desde tu última sesión</value>
+    <value>新しい設定 — 前回のセッション以降に追加されました</value>
   </data>
   <data name="TextNewBadge" xml:space="preserve">
-    <value>✨ NUEVO</value>
+    <value>✨ NEW</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
-    <value>Añadir</value>
+    <value>追加</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        EffectiveSettingsView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingEffectiveSettings" xml:space="preserve">
-    <value>Ajustes efectivos (fusionados)</value>
+    <value>有効な設定 (マージ済み)</value>
   </data>
   <data name="ButtonRefreshEffective" xml:space="preserve">
-    <value>Actualizar</value>
+    <value>更新</value>
   </data>
   <data name="TabProperties" xml:space="preserve">
-    <value>Propiedades</value>
+    <value>プロパティ</value>
   </data>
   <data name="TabJson" xml:space="preserve">
     <value>JSON</value>
   </data>
   <data name="WatermarkFilterProps" xml:space="preserve">
-    <value>Filtrar propiedades…</value>
+    <value>プロパティを絞り込み…</value>
   </data>
   <data name="HeaderEffectiveProperty" xml:space="preserve">
-    <value>Propiedad</value>
+    <value>プロパティ</value>
   </data>
   <data name="TipHeaderEffectiveProperty" xml:space="preserve">
-    <value>Nombre del ajuste (clave JSON) tal y como se usa en settings.json</value>
+    <value>settings.json で使用される設定名 (JSON キー)</value>
   </data>
   <data name="HeaderEffectiveValueCol" xml:space="preserve">
-    <value>Valor</value>
+    <value>値</value>
   </data>
   <data name="TipHeaderEffectiveValueCol" xml:space="preserve">
-    <value>El valor efectivo fusionado — el valor real que Claude lee, después de aplicar todas las capas</value>
+    <value>マージされた有効値 — すべてのレイヤーが適用された後に Claude が実際に読み取る値</value>
   </data>
   <data name="HeaderEffectiveScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>スコープ</value>
   </data>
   <data name="TipHeaderEffectiveScope" xml:space="preserve">
-    <value>Qué capa de configuración define este valor: local (solo en este equipo) &gt; project (compartido en el repositorio) &gt; user (valor por defecto personal) &gt; managed (política de la organización)</value>
+    <value>この値を定義している構成レイヤー: local (マシン専用) &gt; project (リポジトリで共有) &gt; user (個人の既定) &gt; managed (組織ポリシー)</value>
   </data>
   <data name="HeaderEffectiveOverridden" xml:space="preserve">
-    <value>Sobrescrita</value>
+    <value>上書きされた</value>
   </data>
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
-    <value>Se marca cuando un ámbito más estrecho (p. ej. local o project) define esta propiedad explícitamente, sobrescribiendo el valor de esta fila</value>
+    <value>より狭いスコープ (例: local または project) がこのプロパティを明示的に設定し、この行の値を上書きしている場合にチェックされます</value>
   </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
-    <value>Copiar al portapapeles</value>
+    <value>クリップボードにコピー</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        ViewModel — status messages (MainWindowViewModel)
        ═══════════════════════════════════════════════════════════════ -->
   <data name="StatusLoadingSettings" xml:space="preserve">
-    <value>Cargando esquema y ajustes…</value>
+    <value>スキーマと設定を読み込み中…</value>
   </data>
   <data name="StatusReady" xml:space="preserve">
-    <value>Listo</value>
+    <value>準備完了</value>
   </data>
   <data name="StatusNothingToSave" xml:space="preserve">
-    <value>Nada que guardar — los ajustes aún no se han cargado.</value>
+    <value>保存対象がありません — 設定がまだ読み込まれていません。</value>
   </data>
   <data name="StatusSaved" xml:space="preserve">
-    <value>Guardado.</value>
+    <value>保存しました。</value>
   </data>
   <data name="StatusReloading" xml:space="preserve">
-    <value>Recargando…</value>
+    <value>再読み込み中…</value>
   </data>
   <data name="StatusReloaded" xml:space="preserve">
-    <value>Recargado.</value>
+    <value>再読み込みしました。</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
-    <value>Nada que exportar — los ajustes aún no se han cargado.</value>
+    <value>エクスポート対象がありません — 設定がまだ読み込まれていません。</value>
   </data>
   <data name="StatusErrorFmt" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>エラー: {0}</value>
   </data>
   <data name="StatusSaveFailedFmt" xml:space="preserve">
-    <value>Error al guardar: {0}</value>
+    <value>保存に失敗しました: {0}</value>
   </data>
   <data name="StatusSchemaValidationFailed" xml:space="preserve">
-    <value>Guardado bloqueado: la validación del esquema ha fallado</value>
+    <value>保存をブロックしました: スキーマ検証に失敗しました</value>
   </data>
   <data name="TitleUnsavedChangesOnClose" xml:space="preserve">
-    <value>Cambios sin guardar</value>
+    <value>未保存の変更</value>
     <comment>Window title of the modal that appears when the user closes the main window with pending edits.</comment>
   </data>
   <data name="AppTitle" xml:space="preserve">
@@ -1305,76 +1314,156 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
     <comment>Main window title prefix.  MainWindowViewModel.WindowTitle appends " — &lt;branch|folder|No Project Loaded&gt;" and a " *" suffix when there are unsaved edits.</comment>
   </data>
   <data name="TitleNoProjectLoaded" xml:space="preserve">
-    <value>Sin proyecto cargado</value>
+    <value>プロジェクトが読み込まれていません</value>
     <comment>Appended to the AppTitle in the window titlebar when no project root is set (user has not opened a project folder).  Format: "ClaudeForge — No Project Loaded".</comment>
   </data>
   <data name="TextUnsavedChangesOnClose" xml:space="preserve">
-    <value>Tienes cambios sin guardar. ¿Qué quieres hacer?
+    <value>未保存の変更があります。どうしますか?
 
-Guardar — escribir tus modificaciones en disco y cerrar.
-No guardar — descartar tus modificaciones y cerrar.
-Cancelar — mantener la ventana abierta.</value>
+保存 — 変更をディスクに書き込み、ウィンドウを閉じます。
+保存しない — 変更を破棄してウィンドウを閉じます。
+キャンセル — ウィンドウを開いたままにします。</value>
     <comment>Body of the unsaved-changes-on-close modal.  Three explicit choices so the user can't accidentally lose work.</comment>
   </data>
   <data name="TipDismissStatus" xml:space="preserve">
-    <value>Descarta este mensaje de estado.</value>
+    <value>このステータス メッセージを閉じます。</value>
   </data>
   <data name="AutoNameDismissStatus" xml:space="preserve">
-    <value>Descartar mensaje de estado</value>
+    <value>ステータス メッセージを閉じる</value>
   </data>
   <data name="BadgeSaveDialogOff" xml:space="preserve">
-    <value>Diálogo de guardado desactivado</value>
+    <value>保存ダイアログ オフ</value>
   </data>
   <data name="TipBadgeSaveDialogOff" xml:space="preserve">
-    <value>La preferencia «Mostrar este diálogo al guardar» está desmarcada en esta sesión — los guardados escribirán directamente sin mostrar un diálogo de confirmación. Haz clic en «Recargar ventana» para reactivarla, o guarda una vez más y vuelve a marcar la casilla.</value>
+    <value>このセッションでは「保存時にこのダイアログを表示」がオフになっています — 保存は確認ダイアログなしに直接書き込まれます。再度有効にするには「ウィンドウを再読み込み」をクリックするか、もう一度保存してチェックボックスをオンに戻してください。</value>
   </data>
   <data name="TitleSchemaValidationFailed" xml:space="preserve">
-    <value>No se puede guardar — Error de validación del esquema</value>
+    <value>保存できません — スキーマ検証エラー</value>
   </data>
   <data name="LabelSchemaBannerTitleFmt" xml:space="preserve">
-    <value>⚠ Se han encontrado {0} problema(s) de esquema en la configuración cargada</value>
+    <value>⚠ 読み込まれた構成で {0} 件のスキーマ問題が見つかりました</value>
     <comment>{0} is the integer count of validation errors. Banner at the top of the main window when validation fails after a workspace reload.</comment>
   </data>
   <data name="LabelSchemaBannerDesc" xml:space="preserve">
-    <value>Uno o más valores en disco no coinciden con el esquema esperado. La aplicación sigue funcionando — puedes guardar otros cambios —, pero Claude puede rechazar los campos infractores en tiempo de ejecución. Haz clic en «Mostrar detalles» para ver la lista campo a campo.</value>
+    <value>ディスク上の 1 つ以上の値が想定スキーマに一致しません。アプリは引き続き動作します — 他の変更は保存できます — が、Claude は実行時に問題のあるフィールドを拒否する可能性があります。フィールド単位の一覧を表示するには「詳細を表示」をクリックしてください。</value>
   </data>
   <data name="ButtonShowSchemaDetails" xml:space="preserve">
-    <value>Mostrar detalles</value>
+    <value>詳細を表示</value>
   </data>
   <data name="TitleSchemaValidationDetails" xml:space="preserve">
-    <value>Problemas de validación del esquema</value>
+    <value>スキーマ検証の問題</value>
   </data>
   <data name="LabelCommonActionKindRead" xml:space="preserve">
-    <value>Lectura</value>
+    <value>Read</value>
     <comment>Chiclet label for non-mutating Common Actions rules (cat, ls, git status, Read).</comment>
   </data>
   <data name="LabelCommonActionKindWrite" xml:space="preserve">
-    <value>Escritura</value>
+    <value>Write</value>
     <comment>Chiclet label for local-state-mutating Common Actions rules (edit, git add, git commit).</comment>
   </data>
   <data name="LabelCommonActionKindNetwork" xml:space="preserve">
-    <value>Red</value>
+    <value>Network</value>
     <comment>Chiclet label for external-I/O Common Actions rules (npm, dotnet, curl, WebFetch, mcp__*).</comment>
   </data>
   <data name="LabelCommonActionKindDestructive" xml:space="preserve">
-    <value>Destructiva</value>
+    <value>Destructive</value>
     <comment>Chiclet label for irreversible / broad-blast-radius Common Actions rules (git push, raw Bash).</comment>
   </data>
   <data name="LabelCommonActionsCatchAll" xml:space="preserve">
-    <value>Todas las herramientas — reglas comodín que se aplican a todas las herramientas</value>
+    <value>すべてのツール — すべてのツールに適用されるワイルドカード ルール</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
   <data name="NavTitleMemory" xml:space="preserve">
-    <value>Memoria</value>
+    <value>メモリ</value>
     <comment>Top-level nav node label for the Memory page.</comment>
   </data>
   <data name="NavDescMemory" xml:space="preserve">
-    <value>Audita, consulta y limpia los archivos que Claude lee en cada sesión y la huella conductual que deja en disco.</value>
+    <value>すべてのセッションで Claude が読み取るファイルと、ディスクに残る振る舞いのフットプリントを監査・表示・クリーンアップします。</value>
     <comment>Top-level nav node description for the Memory page.</comment>
   </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>エージェント &amp; スキル</value>
+    <comment>Top-level nav node label for the Agents/Skills/Slash-Commands editor page.</comment>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Claude Code が読み込むサブエージェント、スキル、スラッシュ コマンドを — User、Project、Plugin のスコープにわたって — 閲覧します。</value>
+    <comment>Top-level nav node description for the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>サブエージェント</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>スキル</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>スラッシュ コマンド</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>名前</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>説明</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>ツール</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>モデル</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>プラグイン (読み取り専用)</value>
+    <comment>Badge on plugin-provided artifacts (Agents &amp; Skills page) — these can't be edited in place.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>編集</value>
+    <comment>Enter edit mode on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>保存</value>
+    <comment>Save edits on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>カンマ区切り、例: Read, Grep, Bash</value>
+    <comment>Placeholder for the tools editor field (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>保存しました。</value>
+    <comment>Post-save status on the Agents &amp; Skills detail pane (subsequent saves this session).</comment>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>保存しました。変更は次の Claude Code セッションに適用されます。</value>
+    <comment>Post-save status shown once per session — skills/agents load at session start, so edits don't affect a running session.</comment>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>保存に失敗しました: {0}</value>
+    <comment>Post-save error on the Agents &amp; Skills detail pane. {0} = exception message.</comment>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>エージェント、スキル、コマンドを読み込み中…</value>
+    <comment>Spinner tooltip / label while the Agents &amp; Skills page scans for artifacts.</comment>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>生のフロント マターを編集</value>
+    <comment>Toggle on the Agents &amp; Skills editor that swaps the typed fields for a raw YAML front-matter text box.</comment>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>生のフロント マターを編集中です — これをオフにするまで、型付きフィールドは無視されます。フィールドでカバーされていないコメントとキーは保持されます。</value>
+    <comment>Hint shown above the raw front-matter text box (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>生のフロント マターを解析できませんでした — 保存する前に修正してください。</value>
+    <comment>Validation message when the raw front-matter can't be parsed on save (Agents &amp; Skills page).</comment>
+  </data>
   <data name="HeaderMemoryCode" xml:space="preserve">
-    <value>Claude Code — Memoria y huella</value>
+    <value>Claude Code — メモリ &amp; フットプリント</value>
     <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>
   </data>
   <data name="HeaderMemoryDesktop" xml:space="preserve">
@@ -1382,199 +1471,202 @@ Cancelar — mantener la ventana abierta.</value>
     <comment>Section header above the Desktop explainer panel on the Memory page.</comment>
   </data>
   <data name="HeaderTabUserMemory" xml:space="preserve">
-    <value>Memoria del usuario</value>
+    <value>ユーザー メモリ</value>
     <comment>Tab header for the Tier 1 (read-only) user-memory inventory.</comment>
   </data>
   <data name="HeaderTabFootprint" xml:space="preserve">
-    <value>Huella</value>
+    <value>フットプリント</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
   <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Explorador».</value>
+    <value>編集するには、テキスト エディターで開いてください — 「エクスプローラーで表示」をクリックしてください。</value>
     <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
   </data>
   <data name="ButtonRefresh" xml:space="preserve">
-    <value>Actualizar</value>
-    <comment>Generic Refresh button label used on Memory page tabs.</comment>
+    <value>更新</value>
+    <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>ファイルシステムを再スキャンして一覧を再読み込みします</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>エクスプローラーで表示</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
   <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Volver a la lista</value>
+    <value>一覧に戻る</value>
     <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
   </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
-    <value>Copiar markdown</value>
+    <value>Markdown をコピー</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
   </data>
   <data name="ButtonOpenInEditor" xml:space="preserve">
-    <value>Abrir en el editor</value>
+    <value>エディターで開く</value>
     <comment>Button that opens a file in the platform's registered default editor for the file's type. Used on the Memory page Tier 1 file viewer toolbar, Tier 1 inventory rows, Tier 2 footprint rows, and per-project transcript rows.</comment>
   </data>
   <data name="LabelMemoryCategoryPrimary" xml:space="preserve">
-    <value>Memoria principal (CLAUDE.md / AGENTS.md)</value>
+    <value>プライマリ メモリ (CLAUDE.md / AGENTS.md)</value>
   </data>
   <data name="LabelMemoryCategoryProject" xml:space="preserve">
-    <value>Memoria del proyecto</value>
+    <value>プロジェクト メモリ</value>
   </data>
   <data name="LabelMemoryCategorySubagents" xml:space="preserve">
-    <value>Subagentes personalizados</value>
+    <value>カスタム サブエージェント</value>
   </data>
   <data name="LabelMemoryCategoryCommands" xml:space="preserve">
-    <value>Comandos de barra</value>
+    <value>スラッシュ コマンド</value>
   </data>
   <data name="LabelMemoryCategoryHooks" xml:space="preserve">
-    <value>Scripts de hook</value>
+    <value>フック スクリプト</value>
   </data>
   <data name="LabelMemoryCategoryPlans" xml:space="preserve">
-    <value>Planes guardados</value>
+    <value>保存済みプラン</value>
   </data>
   <data name="LabelMemoryCategoryRules" xml:space="preserve">
-    <value>Archivos de reglas</value>
+    <value>ルール ファイル</value>
   </data>
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
-    <value>Habilidades personalizadas</value>
+    <value>カスタム スキル</value>
   </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
-    <value>Memoria entre herramientas (Codex, Gemini, OpenCode)</value>
+    <value>クロスツール メモリ (Codex、Gemini、OpenCode)</value>
   </data>
   <data name="LabelFootprintCategoryTranscripts" xml:space="preserve">
-    <value>Transcripciones de sesión</value>
+    <value>セッション履歴</value>
   </data>
   <data name="LabelFootprintCategorySessions" xml:space="preserve">
-    <value>Metadatos de sesión</value>
+    <value>セッション メタデータ</value>
   </data>
   <data name="LabelFootprintCategoryHistory" xml:space="preserve">
-    <value>Historial de prompts</value>
+    <value>プロンプト履歴</value>
   </data>
   <data name="LabelFootprintCategoryBashLog" xml:space="preserve">
-    <value>Registro de comandos bash</value>
+    <value>Bash コマンド ログ</value>
   </data>
   <data name="LabelFootprintCategoryCostLog" xml:space="preserve">
-    <value>Registro del seguimiento de costes</value>
+    <value>コスト トラッカー ログ</value>
   </data>
   <data name="LabelFootprintCategoryTodos" xml:space="preserve">
-    <value>Listas de tareas</value>
+    <value>Todo リスト</value>
   </data>
   <data name="LabelFootprintCategoryFileHistory" xml:space="preserve">
-    <value>Historial de edición de archivos</value>
+    <value>ファイル編集履歴</value>
   </data>
   <data name="LabelFileCountFmt" xml:space="preserve">
-    <value>({0} archivo(s))</value>
+    <value>({0} 個のファイル)</value>
     <comment>Inline summary on a Tier 1 group expander header. {0} = file count.</comment>
   </data>
   <data name="LabelYes" xml:space="preserve">
-    <value>Sí</value>
+    <value>はい</value>
   </data>
   <data name="LabelNo" xml:space="preserve">
-    <value>No</value>
+    <value>いいえ</value>
   </data>
   <data name="HeaderInStandardBackup" xml:space="preserve">
-    <value>¿En la copia estándar?</value>
+    <value>標準バックアップに含まれる?</value>
     <comment>Tier 2 footprint table column header.</comment>
   </data>
   <data name="TitleDeleteFootprintFmt" xml:space="preserve">
-    <value>¿Eliminar {0}?</value>
+    <value>{0} を削除しますか?</value>
     <comment>Destructive dialog title. {0} = footprint category human label.</comment>
   </data>
   <data name="MsgDeleteFootprintConfirmFmt" xml:space="preserve">
-    <value>Esto eliminará permanentemente {0} archivo(s) con un total de {1} del disco:</value>
+    <value>{0} 個のファイル (合計 {1}) をディスクから完全に削除します:</value>
     <comment>Destructive dialog body. {0} = file count, {1} = humanised size.</comment>
   </data>
   <data name="ButtonDeleteFootprint" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>削除</value>
     <comment>Confirm-button label on the Destructive footprint-delete dialog.</comment>
   </data>
   <data name="LabelDesktopMemoryExplainerTitle" xml:space="preserve">
-    <value>Claude Desktop no tiene un archivo equivalente de memoria de usuario.</value>
+    <value>Claude Desktop には同等のユーザー メモリ ファイルはありません。</value>
   </data>
   <data name="LabelDesktopMemoryExplainerBody" xml:space="preserve">
-    <value>Claude Desktop lee su configuración de un único config.json y almacena el historial de conversación dentro de un almacén opaco IndexedDB gestionado por Chromium. La página de Memoria muestra únicamente la memoria creada por el usuario en Claude Code; para Desktop, usa el comando «Borrar historial de chat» de la propia aplicación para las acciones de privacidad.</value>
+    <value>Claude Desktop は単一の config.json から構成を読み込み、会話履歴は Chromium が管理する不透明な IndexedDB ストア内に保存します。メモリ ページがユーザー作成のメモリを表示するのは Claude Code のみです。Desktop については、プライバシー対応にはアプリ自体の「Clear chat history」コマンドを使用してください。</value>
   </data>
   <!-- Memory page Tier 1 / Tier 2 row tooltips. -->
   <data name="TipMemoryCategoryPrimary" xml:space="preserve">
-    <value>CLAUDE.md (o AGENTS.md) de nivel superior que Claude lee al inicio de cada sesión de Code — tus preferencias independientes del proyecto e instrucciones permanentes.</value>
+    <value>Claude が Code セッションの開始時に毎回読み込むトップレベルの CLAUDE.md (または AGENTS.md) — プロジェクトを問わない設定と常設の指示です。</value>
   </data>
   <data name="TipMemoryCategoryProject" xml:space="preserve">
-    <value>CLAUDE.md (o AGENTS.md) en la raíz del proyecto abierto — preferencias acotadas al proyecto actual, superpuestas sobre la memoria principal.</value>
+    <value>開いているプロジェクトのルートにある CLAUDE.md (または AGENTS.md) — プライマリ メモリの上に重ねられる、現在のプロジェクト固有の設定です。</value>
   </data>
   <data name="TipMemoryCategorySubagents" xml:space="preserve">
-    <value>Definiciones de subagentes personalizados en ~/.claude/agents/. Cada archivo .md describe un agente con nombre, con su propio prompt de sistema, herramientas y condiciones de activación.</value>
+    <value>~/.claude/agents/ にあるカスタム サブエージェントの定義です。各 .md ファイルは、独自のシステム プロンプト、ツール、トリガー条件を持つ名前付きエージェントを記述します。</value>
   </data>
   <data name="TipMemoryCategoryCommands" xml:space="preserve">
-    <value>Comandos de barra personalizados en ~/.claude/commands/. Cada archivo .md asocia una invocación /nombre con un prompt parametrizado.</value>
+    <value>~/.claude/commands/ にあるカスタム スラッシュ コマンドです。各 .md ファイルは /name 呼び出しをパラメーター化されたプロンプトにマッピングします。</value>
   </data>
   <data name="TipMemoryCategoryHooks" xml:space="preserve">
-    <value>Scripts ejecutados por el sistema de hooks en eventos del ciclo de vida de la sesión (PreToolUse, PostToolUse, etc.). Se almacenan en ~/.claude/hooks/ — se acepta cualquier extensión de archivo ejecutable.</value>
+    <value>セッション ライフサイクル イベント (PreToolUse、PostToolUse など) でフック システムが実行するスクリプトです。~/.claude/hooks/ に保存され、実行可能なファイル拡張子であれば受け付けられます。</value>
   </data>
   <data name="TipMemoryCategoryPlans" xml:space="preserve">
-    <value>Planes guardados en ~/.claude/plans/. Cada .md captura un plan de implementación estructurado que sobrevive entre sesiones.</value>
+    <value>~/.claude/plans/ にある保存済みプランです。各 .md は、セッションをまたいで残る構造化された実装計画を保持します。</value>
   </data>
   <data name="TipMemoryCategoryRules" xml:space="preserve">
-    <value>Archivos de reglas en ~/.claude/rules/ (recursivo). Documentos Markdown que describen convenciones de código, políticas de seguridad y estándares personales que Claude sigue.</value>
+    <value>~/.claude/rules/ (再帰) にあるルール ファイルです。Claude が従うコーディング規約、セキュリティ ポリシー、個人標準を記述した Markdown 文書です。</value>
   </data>
   <data name="TipMemoryCategorySkills" xml:space="preserve">
-    <value>Habilidades personalizadas en ~/.claude/skills/&lt;nombre&gt;/SKILL.md. Cada habilidad agrupa conocimiento específico de una tarea que Claude puede invocar cuando su descripción coincide con la intención del usuario.</value>
+    <value>~/.claude/skills/&lt;name&gt;/SKILL.md にあるカスタム スキルです。各スキルは、その説明がユーザーの意図と一致したときに Claude が呼び出せる、タスク固有の知識をまとめたものです。</value>
   </data>
   <data name="TipMemoryCategoryCrossTool" xml:space="preserve">
-    <value>Archivos de memoria para herramientas de IA hermanas (.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md) que Claude lee como contexto entre herramientas.</value>
+    <value>Claude がクロスツール コンテキストとして読み取る、兄弟 AI ツールのメモリ ファイル (.codex/AGENTS.md、.gemini/GEMINI.md、.opencode/*.md) です。</value>
   </data>
   <data name="TipFootprintCategoryTranscripts" xml:space="preserve">
-    <value>Transcripción completa de la conversación de cada sesión almacenada como JSONL en ~/.claude/projects/&lt;mangled&gt;/. Principal contribuyente al uso de disco; no se conserva en las copias de seguridad estándar.</value>
+    <value>~/.claude/projects/&lt;mangled&gt;/ 配下に JSONL として保存される、各セッションの完全な会話履歴です。ディスク使用量への最大の単一寄与者であり、標準バックアップには保存されません。</value>
   </data>
   <data name="TipFootprintCategorySessions" xml:space="preserve">
-    <value>Metadatos por sesión: ~/.claude/sessions/, session-data/, session-env/. Estado acotado a la sesión, capturas de entorno y pistas para reanudar.</value>
+    <value>セッションごとのメタデータ: ~/.claude/sessions/、session-data/、session-env/。セッション スコープの状態、環境キャプチャ、再開ヒントです。</value>
   </data>
   <data name="TipFootprintCategoryHistory" xml:space="preserve">
-    <value>~/.claude/history.jsonl — cada prompt interactivo que has enviado, persistido entre sesiones para que la flecha Arriba recupere entradas pasadas.</value>
+    <value>~/.claude/history.jsonl — あなたが送信したすべての対話プロンプトです。セッションをまたいで保持されるため、上向き矢印で過去の入力を呼び出せます。</value>
   </data>
   <data name="TipFootprintCategoryBashLog" xml:space="preserve">
-    <value>~/.claude/bash-commands.log — registro de las invocaciones bash que Claude ha ejecutado en tu nombre, útil para auditar la actividad de shell que ha ocurrido.</value>
+    <value>~/.claude/bash-commands.log — Claude があなたに代わって実行した Bash 呼び出しのログ。どのシェル活動があったかを監査するのに便利です。</value>
   </data>
   <data name="TipFootprintCategoryCostLog" xml:space="preserve">
-    <value>~/.claude/cost-tracker.log — telemetría de coste de tokens por sesión, para análisis de costes.</value>
+    <value>~/.claude/cost-tracker.log — コスト分析のためのセッションごとのトークン コスト テレメトリです。</value>
   </data>
   <data name="TipFootprintCategoryTodos" xml:space="preserve">
-    <value>~/.claude/todos/ — instantáneas de listas de tareas de la herramienta TodoWrite, acotadas por sesión.</value>
+    <value>~/.claude/todos/ — TodoWrite ツールからのセッション スコープの Todo リスト スナップショットです。</value>
   </data>
   <data name="TipFootprintCategoryFileHistory" xml:space="preserve">
-    <value>~/.claude/file-history/ — instantáneas antes/después de los archivos que Claude ha editado, usadas por la vista de diff de la herramienta Edit.</value>
+    <value>~/.claude/file-history/ — Claude が編集したファイルの編集前/編集後スナップショット。Edit ツールの差分表示で使われます。</value>
   </data>
   <!-- per-project transcript drilldown. -->
   <data name="HeaderProjectTranscriptBreakdown" xml:space="preserve">
-    <value>Desglose por proyecto</value>
+    <value>プロジェクト別の内訳</value>
     <comment>Expander header for the per-project transcript drilldown on the Footprint tab.</comment>
   </data>
   <data name="TipProjectTranscriptBreakdown" xml:space="preserve">
-    <value>Una fila por proyecto dentro de ~/.claude/projects/. Te permite borrar las transcripciones de un solo proyecto sin tocar las demás — más granular que el borrado a nivel de categoría «Transcripciones de sesión» de arriba.</value>
+    <value>~/.claude/projects/ 配下の 1 プロジェクトにつき 1 行表示します。上の「セッション履歴」カテゴリ単位の削除よりも細かい単位で、他に影響を与えずに 1 つのプロジェクトの履歴だけを消去できます。</value>
     <comment>Tooltip on the per-project breakdown Expander header.</comment>
   </data>
   <data name="TitleDeleteProjectTranscriptsFmt" xml:space="preserve">
-    <value>¿Eliminar las transcripciones de {0}?</value>
+    <value>{0} の履歴を削除しますか?</value>
     <comment>Destructive dialog title when deleting a single project's transcripts. {0} = decoded project display name.</comment>
   </data>
   <data name="MsgDeleteProjectTranscriptsConfirmFmt" xml:space="preserve">
-    <value>Esto eliminará permanentemente {0} archivo(s) de transcripción con un total de {1} del directorio de este proyecto:</value>
+    <value>このプロジェクトのディレクトリから {0} 個の履歴ファイル (合計 {1}) を完全に削除します:</value>
     <comment>Destructive dialog body for per-project transcript delete. {0} = file count, {1} = humanised size.</comment>
   </data>
   <data name="HeaderProjectColumnLastSeen" xml:space="preserve">
-    <value>Última actividad</value>
+    <value>最終アクティビティ</value>
     <comment>Column header for the relative-time column in the per-project breakdown.</comment>
   </data>
   <!-- Footprint warning banner (size threshold). -->
   <data name="HeaderFootprintLargeWarning" xml:space="preserve">
-    <value>Huella grande</value>
+    <value>大きなフットプリント</value>
     <comment>Banner header on the Footprint tab when total disk usage exceeds the warning threshold.</comment>
   </data>
   <data name="MsgFootprintLargeWarningFmt" xml:space="preserve">
-    <value>La huella de Claude es actualmente de {0}. Considera desplegar el «Desglose por proyecto» de abajo para borrar transcripciones de proyectos en los que ya no trabajas.</value>
+    <value>現在の Claude フットプリントは {0} です。下の「プロジェクト別の内訳」を展開して、もう取り組んでいないプロジェクトの履歴を消去することを検討してください。</value>
     <comment>Banner body. {0} = humanised aggregate size (e.g. "12.4 GB").</comment>
   </data>
   <!-- Marketplace list per-row Advanced sub-fields. -->
   <data name="HeaderAdvancedFields" xml:space="preserve">
-    <value>Avanzado</value>
+    <value>詳細</value>
     <comment>Per-row Expander header surfacing optional ref / path sub-fields on github / git Marketplace variants.</comment>
   </data>
   <data name="LabelMarketplaceRef" xml:space="preserve">
@@ -1590,144 +1682,144 @@ Cancelar — mantener la ventana abierta.</value>
     <comment>Label for the optional subdirectory path sub-field on a Marketplace row.</comment>
   </data>
   <data name="WatermarkMarketplacePath" xml:space="preserve">
-    <value>marketplace.json o ruta/al/dir</value>
+    <value>marketplace.json または path/to/dir</value>
     <comment>Placeholder text for the path TextBox.</comment>
   </data>
   <data name="HeaderHttpHeaders" xml:space="preserve">
-    <value>Cabeceras HTTP</value>
+    <value>HTTP ヘッダー</value>
     <comment>Per-row Expander header surfacing the HTTP headers sub-editor on a Marketplace url variant.</comment>
   </data>
   <data name="WatermarkHeaderName" xml:space="preserve">
-    <value>Nombre de la cabecera</value>
+    <value>ヘッダー名</value>
     <comment>Placeholder for the new-header name TextBox (e.g. Authorization).</comment>
   </data>
   <data name="WatermarkHeaderValue" xml:space="preserve">
-    <value>Valor de la cabecera</value>
+    <value>ヘッダー値</value>
     <comment>Placeholder for the new-header value TextBox (e.g. Bearer xyz).</comment>
   </data>
   <!-- pluginConfigs typed editor (audit closure). -->
   <data name="WatermarkPluginId" xml:space="preserve">
-    <value>id-plugin@marketplace</value>
+    <value>plugin-id@marketplace</value>
     <comment>Placeholder for the per-row plugin id TextBox (format: plugin-name@marketplace-id).</comment>
   </data>
   <data name="WatermarkPluginMcpServerName" xml:space="preserve">
-    <value>Nombre del servidor MCP (p. ej. github)</value>
+    <value>MCP サーバー名 (例: github)</value>
     <comment>Placeholder for the per-server name TextBox inside a plugin's mcpServers map.</comment>
   </data>
   <data name="WatermarkPluginConfigKey" xml:space="preserve">
-    <value>Clave de configuración</value>
+    <value>設定キー</value>
     <comment>Placeholder for the per-config key TextBox inside an MCP server config map.</comment>
   </data>
   <data name="WatermarkPluginConfigValue" xml:space="preserve">
-    <value>Valor de configuración</value>
+    <value>設定値</value>
     <comment>Placeholder for the per-config value TextBox.</comment>
   </data>
   <data name="ButtonAddPlugin" xml:space="preserve">
-    <value>Añadir plugin</value>
+    <value>プラグインを追加</value>
     <comment>Add-button label for adding a new plugin entry to pluginConfigs.</comment>
   </data>
   <data name="ButtonAddServer" xml:space="preserve">
-    <value>Añadir servidor</value>
+    <value>サーバーを追加</value>
     <comment>Add-button label for adding a new MCP server entry inside a plugin.</comment>
   </data>
   <data name="TipCommonActionKindRead" xml:space="preserve">
-    <value>Lectura — sin modificaciones: listar, buscar, ver, estado. La herramienta puede inspeccionar contenido pero no cambiar nada en disco ni llamar a la red.</value>
+    <value>Read — 非変更系: list、search、view、status。コンテンツを検査できますが、ディスク上で何かを変更したり、ネットワークを呼び出したりはできません。</value>
     <comment>Tooltip on the green Read chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindWrite" xml:space="preserve">
-    <value>Escritura — modifica el estado local: editar, guardar, añadir, commit. Los cambios permanecen en este equipo y se pueden deshacer con control de versiones o copias de seguridad.</value>
+    <value>Write — ローカル状態を変更します: edit、save、add、commit。変更はこのマシン上にとどまり、バージョン管理またはバックアップで取り消せます。</value>
     <comment>Tooltip on the amber Write chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindNetwork" xml:space="preserve">
-    <value>Red — llama a servicios remotos: instalación de paquetes, descargas web, servidores MCP. Concederlo permite a la herramienta llegar a internet.</value>
+    <value>Network — リモート サービスを呼び出します: パッケージのインストール、Web フェッチ、MCP サーバー。これを許可すると、ツールはインターネットに到達できます。</value>
     <comment>Tooltip on the blue Network chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindDestructive" xml:space="preserve">
-    <value>Destructiva — irreversible o de gran impacto: git push, comodines de shell sin restricciones. Una vez concedida, la recuperación puede requerir intervención externa.</value>
+    <value>Destructive — 元に戻せない、または影響範囲が広い操作です: git push、生のシェル ワイルドカードなど。一度許可すると、復旧には外部対応が必要になる場合があります。</value>
     <comment>Tooltip on the red Destructive chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="LabelEditingScope" xml:space="preserve">
-    <value>Ámbito de edición:</value>
+    <value>編集スコープ:</value>
     <comment>Caption above the scope combo box on every settings page.</comment>
   </data>
   <data name="TipEditingScopeLabel" xml:space="preserve">
-    <value>El ámbito (capa) determina en qué archivo de configuración se escribirá este ajuste. Los ámbitos más bajos prevalecen sobre los más altos: local &gt; project &gt; user &gt; managed.</value>
+    <value>スコープ (レイヤー) は、この設定がどの構成ファイルに書き込まれるかを決定します。より下位のスコープは上位のスコープを上書きします: local &gt; project &gt; user &gt; managed。</value>
     <comment>Tooltip on the "Editing scope:" label.</comment>
   </data>
   <data name="TipEditingScopeCombo" xml:space="preserve">
-    <value>Elige la capa de configuración en la que escribir. «local» solo afecta a tu equipo actual; «project» se comparte con el repositorio; «user» es tu valor por defecto personal; «managed» está controlado por la organización y es de solo lectura.</value>
+    <value>書き込み先の構成レイヤーを選択します。「local」は現在のマシンにのみ影響し、「project」はリポジトリで共有され、「user」は個人の既定、「managed」は組織が制御し読み取り専用です。</value>
     <comment>Tooltip on the scope ComboBox.</comment>
   </data>
   <data name="AutoNameEditingScope" xml:space="preserve">
-    <value>Ámbito de edición</value>
+    <value>編集スコープ</value>
     <comment>AutomationProperties.Name on the scope ComboBox.</comment>
   </data>
   <data name="AutoHelpEditingScope" xml:space="preserve">
-    <value>Selecciona la capa de configuración en la que aplicar los cambios. Los ámbitos más estrechos tienen prioridad sobre los más amplios.</value>
+    <value>変更を書き込む構成レイヤーを選択します。より狭いスコープは、より広いスコープより優先されます。</value>
     <comment>AutomationProperties.HelpText on the scope ComboBox.</comment>
   </data>
   <data name="TipEditorErrorCopy" xml:space="preserve">
-    <value>Haz clic y pulsa Ctrl+A y luego Ctrl+C para copiar este error</value>
+    <value>クリックして Ctrl+A 、続いて Ctrl+C でこのエラーをコピー</value>
     <comment>Tooltip on the inline editor-error SelectableTextBlock that appears next to the scope combo when a SetValue throws.</comment>
   </data>
   <data name="HeaderTabProperties" xml:space="preserve">
-    <value>Propiedades</value>
+    <value>プロパティ</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
-    <value>✕ Limpiar filtro de propiedades</value>
+    <value>✕ プロパティ フィルターをクリア</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
   </data>
   <data name="TipClearPropertyFilter" xml:space="preserve">
-    <value>Limpia el filtro de propiedades y muestra todas las propiedades</value>
+    <value>プロパティ フィルターをクリアしてすべてのプロパティを表示します</value>
     <comment>Tooltip on the clear-property-filter button.</comment>
   </data>
   <data name="AutoNameClearPropertyFilter" xml:space="preserve">
-    <value>Limpiar filtro de propiedades</value>
+    <value>プロパティ フィルターをクリア</value>
     <comment>AutomationProperties.Name on the clear-property-filter button.</comment>
   </data>
   <data name="HeaderTabEffective" xml:space="preserve">
-    <value>Efectivos</value>
+    <value>有効</value>
     <comment>Tab header on the SettingsGroupEditor view (Effective Values tab).</comment>
   </data>
   <data name="LabelCopyToClipboard" xml:space="preserve">
-    <value>Copiar al portapapeles</value>
+    <value>クリップボードにコピー</value>
     <comment>Generic copy-to-clipboard button label, reused across editor JSON views.</comment>
   </data>
   <data name="TipCopyJsonClipboard" xml:space="preserve">
-    <value>Copia el JSON que se muestra abajo al portapapeles</value>
+    <value>下に表示されている JSON をクリップボードにコピーします</value>
     <comment>Tooltip on the copy-JSON-to-clipboard button on the JSON tab of SettingsGroupEditor.</comment>
   </data>
   <data name="AutoNameCopyJsonClipboard" xml:space="preserve">
-    <value>Copiar JSON al portapapeles</value>
+    <value>JSON をクリップボードにコピー</value>
     <comment>AutomationProperties.Name on the copy-JSON-to-clipboard button.</comment>
   </data>
   <data name="LabelShowAllSchemaProps" xml:space="preserve">
-    <value>Mostrar todas las propiedades del esquema (incluyendo valores predeterminados no definidos)</value>
+    <value>すべてのスキーマ プロパティを表示 (未設定の既定値も含む)</value>
     <comment>Checkbox label on the JSON tab of SettingsGroupEditor that toggles whether unset defaults are rendered.</comment>
   </data>
   <data name="TipShowAllSchemaProps" xml:space="preserve">
-    <value>Marcado: muestra todas las propiedades definidas en el esquema con su valor predeterminado o un marcador, útil como referencia. Desmarcado: muestra únicamente las propiedades que tienen un valor establecido en el ámbito activo.</value>
+    <value>オン: スキーマで定義されたすべてのプロパティを、既定値またはプレースホルダーとともに表示します。リファレンスとして便利です。オフ: アクティブなスコープで値が設定されているプロパティのみを表示します。</value>
     <comment>Tooltip on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="AutoNameShowAllSchemaProps" xml:space="preserve">
-    <value>Mostrar todas las propiedades del esquema</value>
+    <value>すべてのスキーマ プロパティを表示</value>
     <comment>AutomationProperties.Name on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="AutoHelpShowAllSchemaProps" xml:space="preserve">
-    <value>Cuando está marcado, la vista JSON incluye todas las propiedades del esquema con valores predeterminados o de marcador. Cuando está desmarcado, solo se muestran los valores establecidos.</value>
+    <value>オンの場合、JSON ビューはすべてのスキーマ プロパティを既定値またはプレースホルダー値とともに表示します。オフの場合、設定されている値のみが表示されます。</value>
     <comment>AutomationProperties.HelpText on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="HeaderSaveDialogProperty" xml:space="preserve">
-    <value>Propiedad</value>
+    <value>プロパティ</value>
     <comment>Save-confirmation dialog: "Property" column header.</comment>
   </data>
   <data name="HeaderSaveDialogOld" xml:space="preserve">
-    <value>Anterior</value>
+    <value>変更前</value>
     <comment>Save-confirmation dialog: "Old value" column header.</comment>
   </data>
   <data name="HeaderSaveDialogNew" xml:space="preserve">
-    <value>Nuevo</value>
+    <value>変更後</value>
     <comment>Save-confirmation dialog: "New value" column header.</comment>
   </data>
 
@@ -1737,325 +1829,333 @@ Cancelar — mantener la ventana abierta.</value>
        hear the bare glyph (which announces as "Plus sign" / "Minus" / "Tilde")
        and have no idea what the row's nature is. -->
   <data name="SaveDialogKindAdded" xml:space="preserve">
-    <value>Propiedad añadida</value>
+    <value>追加されたプロパティ</value>
     <comment>Tooltip + screen-reader name for the green '+' kind pill in the Save-changes dialog.</comment>
   </data>
   <data name="SaveDialogKindRemoved" xml:space="preserve">
-    <value>Propiedad eliminada</value>
+    <value>削除されたプロパティ</value>
     <comment>Tooltip + screen-reader name for the red '-' kind pill in the Save-changes dialog.</comment>
   </data>
   <data name="SaveDialogKindModified" xml:space="preserve">
-    <value>Propiedad modificada</value>
+    <value>変更されたプロパティ</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
-    <value>Copiar</value>
+    <value>コピー</value>
     <comment>Generic "Copy" context-menu item label, used in SaveChangesDialog cell context-flyouts and EffectiveSettings cells.</comment>
   </data>
   <data name="WatermarkMarketplaceName" xml:space="preserve">
-    <value>Nombre del marketplace</value>
+    <value>マーケットプレイス名</value>
     <comment>Marketplaces editor: placeholder text for the marketplace-name field (both new-row and existing-row inline).</comment>
   </data>
   <data name="WatermarkMarketplaceSource" xml:space="preserve">
-    <value>URL / repo / ruta / paquete</value>
+    <value>URL / repo / path / package</value>
     <comment>Marketplaces editor: placeholder text for the marketplace source/url field.</comment>
   </data>
   <data name="LabelMarketplaceAdd" xml:space="preserve">
-    <value>Añadir</value>
+    <value>追加</value>
     <comment>Marketplaces editor: button text for adding a new marketplace.</comment>
   </data>
   <data name="WatermarkMarketplaceNameInline" xml:space="preserve">
-    <value>Nombre</value>
+    <value>名前</value>
     <comment>Marketplaces editor: shorter placeholder text for the inline name field on existing rows.</comment>
   </data>
   <data name="LabelOperationReadOnly" xml:space="preserve">
-    <value>Solo lectura</value>
+    <value>読み取り専用</value>
     <comment>Common Actions operation-group header for non-mutating File-tool rules.</comment>
   </data>
   <data name="LabelOperationWrite" xml:space="preserve">
-    <value>Escritura</value>
+    <value>書き込み</value>
     <comment>Common Actions operation-group header for File-tool write rules.</comment>
   </data>
   <data name="LabelOperationSearchView" xml:space="preserve">
-    <value>Buscar y ver</value>
+    <value>検索 &amp; 表示</value>
     <comment>Common Actions operation-group header for shell-tool view/search commands.</comment>
   </data>
   <data name="LabelOperationGitRead" xml:space="preserve">
-    <value>Git (lectura)</value>
+    <value>Git (読み取り)</value>
     <comment>Common Actions operation-group header for git status/log/diff.</comment>
   </data>
   <data name="LabelOperationGitWrite" xml:space="preserve">
-    <value>Git (escritura)</value>
+    <value>Git (書き込み)</value>
     <comment>Common Actions operation-group header for git add/commit/push.</comment>
   </data>
   <data name="LabelOperationRuntimes" xml:space="preserve">
-    <value>Entornos de ejecución</value>
+    <value>ランタイム</value>
     <comment>Common Actions operation-group header for interpreter/runtime invocations (dotnet/npm/python/node).</comment>
   </data>
   <data name="LabelOperationNetwork" xml:space="preserve">
-    <value>Red</value>
+    <value>ネットワーク</value>
     <comment>Common Actions operation-group header for outbound network commands (curl, wget, Invoke-WebRequest).</comment>
   </data>
   <data name="LabelOperationFetchSearch" xml:space="preserve">
-    <value>Descargar y buscar</value>
+    <value>取得 &amp; 検索</value>
     <comment>Common Actions operation-group header for the Web tool's WebFetch/WebSearch operations.</comment>
   </data>
   <data name="LabelOperationWildcards" xml:space="preserve">
-    <value>Comodines</value>
+    <value>ワイルドカード</value>
     <comment>Common Actions operation-group header inside the catch-all wildcard tier.</comment>
   </data>
   <data name="ThemeLabelLight" xml:space="preserve">
-    <value>☀ Claro</value>
+    <value>☀ ライト</value>
   </data>
   <data name="ThemeLabelDark" xml:space="preserve">
-    <value>&#x263E; Oscuro</value>
+    <value>&#x263E; ダーク</value>
   </data>
   <data name="InstallRunPowerShell" xml:space="preserve">
-    <value>▶ Ejecutar en PowerShell</value>
+    <value>▶ PowerShell で実行</value>
   </data>
   <data name="InstallRunTerminal" xml:space="preserve">
-    <value>▶ Ejecutar en la terminal</value>
+    <value>▶ ターミナルで実行</value>
   </data>
   <data name="TextNoTerminalFound" xml:space="preserve">
-    <value>No se ha encontrado una terminal — usa Copiar en su lugar</value>
+    <value>ターミナルが見つかりません — 代わりにコピーを使用してください</value>
   </data>
   <data name="InstallRunBrowser" xml:space="preserve">
-    <value>▶ Abrir en el navegador</value>
+    <value>▶ ブラウザーで開く</value>
   </data>
   <data name="TipButtonOpenDownload" xml:space="preserve">
-    <value>Abre la página de descarga de Claude Desktop en tu navegador predeterminado</value>
+    <value>既定のブラウザーで Claude Desktop ダウンロード ページを開きます</value>
   </data>
   <data name="AutoNameButtonOpenDownload" xml:space="preserve">
-    <value>Abrir página de descarga</value>
+    <value>ダウンロード ページを開く</value>
   </data>
   <data name="TipButtonCopyUrl" xml:space="preserve">
-    <value>Copia la URL de descarga al portapapeles</value>
+    <value>ダウンロード URL をクリップボードにコピーします</value>
   </data>
   <data name="AutoNameButtonCopyUrl" xml:space="preserve">
-    <value>Copiar URL de descarga</value>
+    <value>ダウンロード URL をコピー</value>
   </data>
 
   <!-- Dialog strings (MainWindowViewModel) -->
   <data name="DialogTitleNewProfile" xml:space="preserve">
-    <value>Nuevo perfil</value>
+    <value>新しいプロファイル</value>
   </data>
   <data name="DialogPromptNewProfile" xml:space="preserve">
-    <value>Introduce un nombre para el nuevo perfil:</value>
+    <value>新しいプロファイルの名前を入力してください:</value>
   </data>
   <data name="DialogPlaceholderNewProfile" xml:space="preserve">
-    <value>p. ej. trabajo, personal, casa</value>
+    <value>例: work、personal、home</value>
   </data>
   <data name="DialogTitleInvalidName" xml:space="preserve">
-    <value>Nombre no válido</value>
+    <value>無効な名前</value>
   </data>
   <data name="MsgReservedProfileName" xml:space="preserve">
-    <value>«{0}» es un nombre reservado. Elige otro nombre de perfil.</value>
+    <value>'{0}' は予約された名前です。別のプロファイル名を選択してください。</value>
   </data>
   <data name="MsgDotProfileName" xml:space="preserve">
-    <value>El nombre del perfil no puede ser «.» ni «..».</value>
+    <value>プロファイル名を '.' または '..' にすることはできません。</value>
   </data>
   <data name="MsgInvalidPathChars" xml:space="preserve">
-    <value>El nombre del perfil contiene caracteres no permitidos en nombres de archivo.</value>
+    <value>プロファイル名にファイル名に使えない文字が含まれています。</value>
   </data>
   <data name="DialogTitleProfileExists" xml:space="preserve">
-    <value>El perfil ya existe</value>
+    <value>プロファイルが存在します</value>
   </data>
   <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>Ya existe un perfil llamado «{0}». Elige un nombre distinto.</value>
+    <value>'{0}' という名前のプロファイルは既に存在します。別の名前を選択してください。</value>
   </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
-    <value>Eliminar perfil</value>
+    <value>プロファイルを削除</value>
   </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
-    <value>¿Eliminar el perfil «{0}» y todos sus ajustes? Esta acción no se puede deshacer.</value>
+    <value>プロファイル '{0}' とそのすべての設定を削除しますか? この操作は取り消せません。</value>
   </data>
   <data name="DialogTitleError" xml:space="preserve">
-    <value>Error</value>
+    <value>エラー</value>
   </data>
   <data name="MsgCannotCreateProfile" xml:space="preserve">
-    <value>No se ha podido crear el perfil: {0}</value>
+    <value>プロファイルを作成できませんでした: {0}</value>
   </data>
   <data name="MsgCannotDeleteProfile" xml:space="preserve">
-    <value>No se ha podido eliminar el perfil: {0}</value>
+    <value>プロファイルを削除できませんでした: {0}</value>
   </data>
   <data name="WorkspaceNameClaudeCode" xml:space="preserve">
-    <value>Ajustes de Claude Code</value>
+    <value>Claude Code 設定</value>
   </data>
   <data name="WorkspaceNameClaudeDesktop" xml:space="preserve">
-    <value>Configuración de Claude Desktop</value>
+    <value>Claude Desktop 構成</value>
   </data>
   <data name="DialogTitleOpenProject" xml:space="preserve">
-    <value>Abrir carpeta de proyecto</value>
+    <value>プロジェクト フォルダーを開く</value>
   </data>
   <data name="DialogTitleExportConfigs" xml:space="preserve">
-    <value>Exportar configuraciones efectivas</value>
+    <value>有効な構成をエクスポート</value>
   </data>
   <data name="FileFilterZipArchive" xml:space="preserve">
-    <value>Archivo Zip</value>
+    <value>Zip アーカイブ</value>
   </data>
 
   <!-- ViewModel — status messages (MainWindowViewModel) — format strings -->
   <data name="StatusReloadFailedFmt" xml:space="preserve">
-    <value>Error al recargar: {0}</value>
+    <value>再読み込みに失敗しました: {0}</value>
   </data>
   <data name="StatusReloadingFileFmt" xml:space="preserve">
-    <value>Recargando ({0} modificado(s))…</value>
+    <value>再読み込み中 ({0} 件変更)…</value>
   </data>
   <data name="StatusOpeningProjectFmt" xml:space="preserve">
-    <value>Abriendo proyecto: {0}…</value>
+    <value>プロジェクトを開いています: {0}…</value>
   </data>
   <data name="StatusProjectOpenFmt" xml:space="preserve">
-    <value>Proyecto: {0}</value>
+    <value>プロジェクト: {0}</value>
   </data>
   <data name="StatusOpenProjectFailedFmt" xml:space="preserve">
-    <value>No se ha podido abrir el proyecto: {0}</value>
+    <value>プロジェクトを開けませんでした: {0}</value>
   </data>
   <data name="StatusExportedFmt" xml:space="preserve">
-    <value>Exportado a {0}</value>
+    <value>{0} にエクスポートしました</value>
   </data>
   <data name="StatusExportFailedFmt" xml:space="preserve">
-    <value>Error al exportar: {0}</value>
+    <value>エクスポートに失敗しました: {0}</value>
   </data>
   <data name="StatusProfileCreatedFmt" xml:space="preserve">
-    <value>Perfil «{0}» creado a partir de los ajustes activos actuales.</value>
+    <value>現在のライブ設定からプロファイル '{0}' を作成しました。</value>
   </data>
   <data name="StatusProfileDeletedFmt" xml:space="preserve">
-    <value>Perfil «{0}» eliminado.</value>
+    <value>プロファイル '{0}' を削除しました。</value>
   </data>
 
   <!-- ViewModel — status messages (BackupRestoreViewModel) -->
   <data name="StatusChooseBackupFolder" xml:space="preserve">
-    <value>Elige primero una carpeta de salida (haz clic en Examinar junto a la ruta de la carpeta).</value>
+    <value>まず出力フォルダーを選択してください (フォルダー パスの隣の「参照」をクリックしてください)。</value>
   </data>
   <data name="ProgressPreparing" xml:space="preserve">
-    <value>Preparando…</value>
+    <value>準備中…</value>
   </data>
   <data name="ProgressStarting" xml:space="preserve">
-    <value>Iniciando…</value>
+    <value>開始中…</value>
   </data>
   <data name="ProgressRestoring" xml:space="preserve">
-    <value>Restaurando…</value>
+    <value>リストア中…</value>
   </data>
   <data name="ProgressCreatingJunction" xml:space="preserve">
-    <value>Creando unión (junction)…</value>
+    <value>ジャンクションを作成中…</value>
   </data>
   <data name="LabelLastBackupNever" xml:space="preserve">
-    <value>Aún no hay copia de seguridad</value>
+    <value>バックアップなし</value>
   </data>
   <data name="LabelLastBackupJustNow" xml:space="preserve">
-    <value>Última copia: hace un momento</value>
+    <value>前回のバックアップ: たった今</value>
   </data>
   <data name="LabelLastBackupMinutesFmt" xml:space="preserve">
-    <value>Última copia: hace {0} minuto(s)</value>
+    <value>前回のバックアップ: {0} 分前</value>
   </data>
   <data name="LabelLastBackupHoursFmt" xml:space="preserve">
-    <value>Última copia: hace {0} hora(s)</value>
+    <value>前回のバックアップ: {0} 時間前</value>
   </data>
   <data name="LabelLastBackupDaysFmt" xml:space="preserve">
-    <value>Última copia: hace {0} día(s)</value>
+    <value>前回のバックアップ: {0} 日前</value>
+  </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>開いているプロジェクトを含む: {0}</value>
+    <comment>Backup tab inclusion label shown when a project is open. {0} = bare folder name of the open project (BackupRestoreViewModel.OpenProjectName). Confirms to the user that the project's `.claude` directory, CLAUDE.md, etc. will be added to the archive alongside the user-level config.</comment>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>開いているプロジェクトはありません — ユーザー レベルの構成のみ</value>
+    <comment>Backup tab inclusion label shown when no project is open. The em-dash (—) is intentional and matches the dash convention used by similar status labels elsewhere in the app.</comment>
   </data>
   <data name="StatusBackupWarningsFmt" xml:space="preserve">
-    <value>  [!] {0} aviso(s) — consulta el manifiesto.</value>
+    <value>  [!] {0} 件の警告 — マニフェストを参照してください。</value>
   </data>
   <data name="StatusBackupDeletedFmt" xml:space="preserve">
-    <value>Eliminado {0}.</value>
+    <value>{0} を削除しました。</value>
   </data>
   <data name="StatusBackupDeleteFailedFmt" xml:space="preserve">
-    <value>No se ha podido eliminar {0}.</value>
+    <value>{0} を削除できませんでした。</value>
   </data>
   <data name="StatusClaudeRunningFmt" xml:space="preserve">
-    <value>[!] Claude se está ejecutando actualmente ({0} proceso(s)). Algunos archivos pueden estar bloqueados durante la restauración.</value>
+    <value>[!] Claude が現在実行中です ({0} 個のプロセス)。リストア中に一部のファイルがロックされている可能性があります。</value>
   </data>
 
   <!-- ViewModel — status messages (ProfilesViewModel) -->
   <data name="StatusNoCliProfiles" xml:space="preserve">
-    <value>No se han encontrado perfiles de CLI. Crea uno con el botón Nuevo.</value>
+    <value>CLI プロファイルが見つかりませんでした。「新規」ボタンで作成してください。</value>
   </data>
   <data name="StatusCreatingProfileFmt" xml:space="preserve">
-    <value>Creando perfil «{0}»…</value>
+    <value>プロファイル '{0}' を作成中…</value>
   </data>
   <data name="StatusApplyingProfileFmt" xml:space="preserve">
-    <value>Aplicando perfil «{0}»…</value>
+    <value>プロファイル '{0}' を適用中…</value>
   </data>
   <data name="StatusProfileAppliedFmt" xml:space="preserve">
-    <value>Perfil «{0}» aplicado. Claude Code usará estos ajustes en su próxima ejecución.</value>
+    <value>プロファイル '{0}' を適用しました。Claude Code は次回実行時にこれらの設定を使用します。</value>
   </data>
   <data name="StatusSyncingProfileFmt" xml:space="preserve">
-    <value>Sincronizando archivos activos en el perfil «{0}»…</value>
+    <value>ライブ ファイルをプロファイル '{0}' に同期中…</value>
   </data>
   <data name="StatusProfileSyncedFmt" xml:space="preserve">
-    <value>Perfil «{0}» actualizado a partir de los ajustes activos.</value>
+    <value>プロファイル '{0}' をライブ設定から更新しました。</value>
   </data>
   <data name="StatusApplyTimedOut" xml:space="preserve">
-    <value>Se agotó el tiempo de espera al aplicar.</value>
+    <value>適用がタイムアウトしました。</value>
   </data>
   <data name="StatusSyncTimedOut" xml:space="preserve">
-    <value>Se agotó el tiempo de espera al sincronizar.</value>
+    <value>同期がタイムアウトしました。</value>
   </data>
   <data name="StatusNoDesktopProfiles" xml:space="preserve">
-    <value>No se han encontrado perfiles de Desktop. Crea uno con el botón Nuevo.</value>
+    <value>Desktop プロファイルが見つかりませんでした。「新規」ボタンで作成してください。</value>
   </data>
   <data name="StatusCreatingDesktopProfileFmt" xml:space="preserve">
-    <value>Creando perfil de Desktop «{0}»…</value>
+    <value>Desktop プロファイル '{0}' を作成中…</value>
   </data>
   <data name="StatusDesktopProfileCreatedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» creado a partir de la configuración activa actual.</value>
+    <value>現在のライブ構成から Desktop プロファイル '{0}' を作成しました。</value>
   </data>
   <data name="StatusApplyingDesktopProfileFmt" xml:space="preserve">
-    <value>Aplicando perfil de Desktop «{0}»…</value>
+    <value>Desktop プロファイル '{0}' を適用中…</value>
   </data>
   <data name="StatusDesktopProfileAppliedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» aplicado.</value>
+    <value>Desktop プロファイル '{0}' を適用しました。</value>
   </data>
   <data name="StatusSyncingDesktopProfileFmt" xml:space="preserve">
-    <value>Sincronizando la configuración activa de Desktop en el perfil «{0}»…</value>
+    <value>ライブの Desktop 構成をプロファイル '{0}' に同期中…</value>
   </data>
   <data name="StatusDesktopProfileSyncedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» actualizado a partir de la configuración activa.</value>
+    <value>Desktop プロファイル '{0}' をライブ構成から更新しました。</value>
   </data>
   <data name="StatusDesktopProfileDeletedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» eliminado.</value>
+    <value>Desktop プロファイル '{0}' を削除しました。</value>
   </data>
 
   <!-- ViewModel — status messages (EnvironmentEditorViewModel) -->
   <data name="StatusCannotSaveClaude" xml:space="preserve">
-    <value>No se puede guardar en el ámbito de Claude — no se ha detectado ninguna instalación de Claude Code.</value>
+    <value>Claude スコープに保存できません — Claude Code のインストールが検出されませんでした。</value>
   </data>
   <data name="StatusEnvSavedFmt" xml:space="preserve">
-    <value>Guardado {0} → {1}.</value>
+    <value>{0} → {1} を保存しました。</value>
   </data>
   <data name="StatusEnvRemovedFmt" xml:space="preserve">
-    <value>Quitado {0} de {1}.</value>
+    <value>{1} から {0} を削除しました。</value>
   </data>
   <data name="StatusEnvAddedFmt" xml:space="preserve">
-    <value>Añadido {0} a {1}.</value>
+    <value>{1} に {0} を追加しました。</value>
   </data>
   <data name="StatusCannotWriteEnvFmt" xml:space="preserve">
-    <value>No se puede escribir en el env de Claude: {0}</value>
+    <value>Claude env に書き込めません: {0}</value>
   </data>
   <data name="ScopeNoteClaude" xml:space="preserve">
-    <value>Escribe en el diccionario env de Claude Code (se guarda con el botón principal Guardar).</value>
+    <value>Claude Code env 辞書に書き込みます (メインの「保存」ボタンで保存されます)。</value>
   </data>
   <data name="ScopeNoteUser" xml:space="preserve">
-    <value>Escribe inmediatamente en el registro de variables de entorno de usuario de Windows.</value>
+    <value>Windows のユーザー環境レジストリに即座に書き込みます。</value>
   </data>
   <data name="ScopeNoteMachine" xml:space="preserve">
-    <value>Escribe inmediatamente en el registro de variables de entorno de equipo de Windows (requiere permisos elevados).</value>
+    <value>Windows のマシン環境レジストリに即座に書き込みます (昇格された権限が必要です)。</value>
   </data>
 
   <!-- ViewModel — labels (AboutEditorViewModel) -->
   <data name="LabelDocumentation" xml:space="preserve">
-    <value>Documentación</value>
+    <value>ドキュメント</value>
   </data>
   <data name="LabelSupport" xml:space="preserve">
-    <value>Soporte</value>
+    <value>サポート</value>
   </data>
   <data name="LabelReleaseNotes" xml:space="preserve">
-    <value>Notas de la versión</value>
+    <value>リリース ノート</value>
   </data>
   <data name="LabelDownloadUpdates" xml:space="preserve">
-    <value>Descargas / actualizaciones</value>
+    <value>ダウンロード / 更新</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -2066,77 +2166,77 @@ Cancelar — mantener la ventana abierta.</value>
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
   <data name="LabelEditingContext" xml:space="preserve">
-    <value>Editando</value>
+    <value>編集中</value>
   </data>
   <data name="HeadingEditingContext" xml:space="preserve">
-    <value>Lo que estás editando ahora</value>
+    <value>現在編集している対象</value>
   </data>
   <data name="TextEditingContextNoProject" xml:space="preserve">
-    <value>Configuración de usuario — sin proyecto abierto</value>
+    <value>ユーザー構成 — プロジェクトは開いていません</value>
   </data>
   <data name="TextEditingContextWithProject" xml:space="preserve">
-    <value>Usuario + Proyecto + Local — proyecto: {0}</value>
+    <value>User + Project + Local — プロジェクト: {0}</value>
   </data>
   <data name="TextOpenProjectHint" xml:space="preserve">
-    <value>Abre una carpeta de proyecto para editar los ámbitos Proyecto y Local.</value>
+    <value>Project と Local のスコープを編集するには、プロジェクト フォルダーを開いてください。</value>
   </data>
   <data name="LinkOpenProject" xml:space="preserve">
-    <value>Abrir proyecto…</value>
+    <value>プロジェクトを開く…</value>
   </data>
   <data name="LinkShowScopes" xml:space="preserve">
-    <value>Mostrar ámbitos</value>
+    <value>スコープを表示</value>
   </data>
 
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
-    <value>Ámbitos de configuración</value>
+    <value>構成スコープ</value>
   </data>
   <data name="TextScopeMeaningManaged" xml:space="preserve">
-    <value>Política de la organización. Solo lectura; prevalece sobre todo lo demás.</value>
+    <value>組織ポリシー。読み取り専用で、すべてを上書きします。</value>
   </data>
   <data name="TextScopeMeaningLocal" xml:space="preserve">
-    <value>Sobrescrituras solo para tu equipo en este proyecto. Máxima prioridad para el usuario.</value>
+    <value>このプロジェクトのマシン専用の上書き。ユーザー最優先です。</value>
   </data>
   <data name="TextScopeMeaningProject" xml:space="preserve">
-    <value>Compartido con el equipo vía git. Prevalece sobre Usuario.</value>
+    <value>git でチームと共有されます。User を上書きします。</value>
   </data>
   <data name="TextScopeMeaningUser" xml:space="preserve">
-    <value>Tu valor por defecto personal para cada proyecto.</value>
+    <value>すべてのプロジェクトの個人既定値です。</value>
   </data>
   <data name="TextScopePathManaged" xml:space="preserve">
     <value>~/.claude/managed-settings.json</value>
   </data>
   <data name="TextScopePathLocal" xml:space="preserve">
-    <value>&lt;proyecto&gt;/.claude/settings.local.json</value>
+    <value>&lt;project&gt;/.claude/settings.local.json</value>
   </data>
   <data name="TextScopePathProject" xml:space="preserve">
-    <value>&lt;proyecto&gt;/.claude/settings.json</value>
+    <value>&lt;project&gt;/.claude/settings.json</value>
   </data>
   <data name="TextScopePathUser" xml:space="preserve">
     <value>~/.claude/settings.json</value>
   </data>
   <data name="TipScopeLegendButton" xml:space="preserve">
-    <value>¿Qué significa cada ámbito?</value>
+    <value>各スコープの意味は?</value>
   </data>
 
   <!-- Backup contents explainer (Welcome + BackupRestoreView header) -->
   <data name="HeadingBackupContents" xml:space="preserve">
-    <value>Qué incluyen las copias de seguridad</value>
+    <value>バックアップに含まれるもの</value>
   </data>
   <data name="TextBackupContentsLine1" xml:space="preserve">
-    <value>Todo lo que hay en ~/.claude/ — ajustes, perfiles, hooks, servidores MCP.</value>
+    <value>~/.claude/ 全体 — 設定、プロファイル、フック、MCP サーバー。</value>
   </data>
   <data name="TextBackupContentsLine2" xml:space="preserve">
-    <value>~/.claude.json (configuración raíz de Claude Code).</value>
+    <value>~/.claude.json (Claude Code のルート構成)。</value>
   </data>
   <data name="TextBackupContentsLine3" xml:space="preserve">
-    <value>Configuración y perfiles de Desktop.</value>
+    <value>Desktop 構成と Desktop プロファイル。</value>
   </data>
   <data name="TextBackupContentsExcluded" xml:space="preserve">
-    <value>Excluidos por defecto: cache/, projects/, .credentials.json.</value>
+    <value>既定で除外: cache/、projects/、.credentials.json。</value>
   </data>
   <data name="TextBackupContentsProjectNote" xml:space="preserve">
-    <value>Los archivos del proyecto (.claude/ en tu repositorio) solo se incluyen cuando hay un proyecto abierto en el momento de la copia, o se añaden explícitamente.</value>
+    <value>プロジェクト ファイル (リポジトリ内の .claude/) は、バックアップ作成時にプロジェクトが開いている場合、または明示的に追加された場合にのみ含まれます。</value>
   </data>
 
   <!-- Welcome-page "Things to know" section.  Concise pointers
@@ -2144,86 +2244,86 @@ Cancelar — mantener la ventana abierta.</value>
        deliberately — frugal so the section doesn't compete with the
        primary "what you're editing" guidance. -->
   <data name="HeadingThingsToKnow" xml:space="preserve">
-    <value>Cosas que conviene saber</value>
+    <value>知っておくべきこと</value>
   </data>
   <data name="TextWelcomeAutoReload" xml:space="preserve">
-    <value>Recarga automática — cuando otra herramienta o editor cambia un archivo de configuración en disco (p. ej. claudectx al cambiar de perfil, o una edición manual en tu editor de texto), esta aplicación lo detecta automáticamente y refresca el editor.</value>
+    <value>自動再読み込み — 別のツールやエディターがディスク上の構成ファイルを変更したとき (例: claudectx によるプロファイル切り替え、テキスト エディターでの手動編集など)、本アプリは自動的に検出してエディターを更新します。</value>
   </data>
   <data name="TextWelcomeEssentials" xml:space="preserve">
-    <value>★ Esenciales (en la parte superior del árbol de navegación) reúne los ajustes de alto impacto — presupuestos de tokens, sandbox, confianza en MCP, selección de modelo — para una revisión rápida en una instalación nueva.</value>
+    <value>★ Essentials (ナビゲーション ツリーの一番上) は、影響度の高いノブ — トークン予算、サンドボックス、MCP の信頼、モデル選択 — を集約し、新規インストール時にすばやく確認できるようにしたものです。</value>
   </data>
   <data name="TextWelcomeMemory" xml:space="preserve">
-    <value>🧠 Memoria muestra lo que Claude sabe sobre ti (transcripciones de sesión, historial de prompts, tareas pendientes, seguimiento de costes, registros de edición de archivos) y te permite borrar cualquiera de esos datos — útil para la higiene de privacidad antes de compartir tu equipo, grabar una demo o hacer capturas de pantalla.</value>
+    <value>🧠 Memory は Claude があなたについて知っていること (セッション履歴、プロンプト履歴、Todo、コスト トラッカー、ファイル編集ログ) を表示し、必要に応じてそのいずれかを消去できます — マシンを共有する前、デモを録画する前、スクリーンショットを撮る前のプライバシー対応に便利です。</value>
   </data>
   <data name="TextWelcomeWslHint" xml:space="preserve">
-    <value>🪟 Consejo para Windows — si Claude se atasca por la deformación de rutas de Git Bash / MSYS (barras invertidas, globs con barra normal, etc.) en operaciones intensivas en sistema de archivos, Permisos → Acciones habituales → WSL ofrece patrones de lista de permitidos con un solo clic para las variantes envueltas en WSL (p. ej. Bash(wsl git status)). Claude preferirá la vía WSL cuando esas reglas estén presentes.</value>
+    <value>🪟 Windows のヒント — ファイルシステムを多用する操作で Claude が Git Bash / MSYS のパス変換 (バックスラッシュ、フォワード スラッシュの glob など) につまずく場合は、Permissions → Common Actions → WSL に WSL ラッピング版 (例: Bash(wsl git status)) のワンクリック許可リスト パターンが用意されています。これらのルールがあるとき、Claude は WSL パスを優先します。</value>
     <comment>Welcome page "Things to know" bullet — shown only when PlatformInfo.Current.IsWindows is true. Points Windows users at the WSL Common Actions group added as a solution to MSYS path-mangling friction.</comment>
   </data>
   <data name="TextSaveSilentSaveSafetyNet" xml:space="preserve">
-    <value>Tienes cambios sin guardar, pero no se ha podido construir la vista previa de cambios propiedad a propiedad. ¿Guardar de todos modos?</value>
+    <value>未保存の変更がありますが、プロパティ単位の変更プレビューを作成できませんでした。それでも保存しますか?</value>
     <comment>Fallback dialog body shown by the silent-save safety net (SaveCoreAsync) when SDK reports HasUnsavedChanges=true but SaveDialogBuilder.Build returns null. The user-visible wording is intentionally vague — internal diagnostic context lives in the rolling log, not in the dialog.</comment>
   </data>
 
   <!-- Save / Restore confirmation dialog destination paths -->
   <data name="LabelWillBeWrittenTo" xml:space="preserve">
-    <value>Se escribirá en:</value>
+    <value>書き込み先:</value>
   </data>
   <data name="LabelWillBeRestoredTo" xml:space="preserve">
-    <value>Se restaurará en:</value>
+    <value>リストア先:</value>
   </data>
   <data name="TextSaveSummary" xml:space="preserve">
-    <value>Guardando {0} cambio(s) en {1} archivo(s):</value>
+    <value>{1} 個のファイルにまたがる {0} 件の変更を保存中:</value>
   </data>
   <data name="TextRestoreSummary" xml:space="preserve">
-    <value>Restaurando {0} cambio(s) en {1} archivo(s):</value>
+    <value>{1} 個のファイルにまたがる {0} 件の変更をリストア中:</value>
   </data>
 
   <!-- Effective Settings tab — descriptive subtitle above the grid + cell tooltip strings -->
   <data name="TextEffectiveSettingsSubtitle" xml:space="preserve">
-    <value>Los valores completamente fusionados que Claude ve en tiempo de ejecución, tras aplicar las capas Gestionado &gt; Local &gt; Proyecto &gt; Usuario. Cada fila muestra el valor ganador, el ámbito del que procede y si un ámbito de mayor prioridad está sobrescribiendo a uno inferior.</value>
+    <value>Managed &gt; Local &gt; Project &gt; User のレイヤリング後に、実行時に Claude が実際に参照する完全マージ済みの値です。各行は、勝った値、その値が由来したスコープ、より優先度の高いスコープが下位を上書きしているかどうかを表示します。</value>
   </data>
   <data name="TextEffectiveTabSubtitle" xml:space="preserve">
-    <value>Los valores reales en tiempo de ejecución que Claude lee para los ajustes de esta página, tras aplicar las capas. Las propiedades sin valor en ningún ámbito quedan ocultas.</value>
+    <value>このページの設定に対する、レイヤリング後に Claude が実際に読み取る実行時の値です。どのスコープにも値がないプロパティは非表示になります。</value>
   </data>
 
   <!-- Clear App Data button (status bar) -->
   <data name="ButtonClearAppData" xml:space="preserve">
-    <value>Borrar _datos de la aplicación</value>
+    <value>アプリ データをクリア(_D)</value>
     <comment>Alt+D — status bar button.  "D" rather than "C" to avoid conflict with common Cancel/Close mnemonics in dialogs.</comment>
   </data>
   <data name="TipClearAppData" xml:space="preserve">
-    <value>Elimina la posición y dimensiones guardadas de la ventana, el tema, la última página seleccionada y demás estado persistido de la interfaz. NO afecta a tus archivos de configuración de Claude. ClaudeForge se cerrará.</value>
+    <value>保存されたウィンドウ位置、寸法、テーマ、最後に選択したページ、その他の永続化された UI 状態を削除します。Claude の構成ファイルには影響しません。ClaudeForge は終了します。</value>
   </data>
   <data name="AutoNameClearAppData" xml:space="preserve">
-    <value>Borrar datos de la aplicación y salir</value>
+    <value>アプリ データをクリアして終了</value>
   </data>
   <data name="TitleClearAppDataConfirm" xml:space="preserve">
-    <value>¿Borrar los datos de la aplicación?</value>
+    <value>アプリ データをクリアしますか?</value>
   </data>
   <data name="TextClearAppDataConfirm" xml:space="preserve">
-    <value>Esto eliminará el archivo de estado persistido de la interfaz en ~/.claude/cache/ClaudeForge-gui-state.json (posición y dimensiones de la ventana, tema, última página seleccionada, perfil elegido, preferencias de copia de seguridad). Tus archivos de configuración de Claude (~/.claude/settings.json y similares) NO se ven afectados. ClaudeForge se cerrará. ¿Continuar?</value>
+    <value>これにより、~/.claude/cache/ClaudeForge-gui-state.json にある永続化された UI 状態ファイル (ウィンドウ位置、寸法、テーマ、最後に選択したページ、プロファイル選択、バックアップ設定) が削除されます。Claude の構成ファイル (~/.claude/settings.json など) には影響しません。ClaudeForge は終了します。続行しますか?</value>
   </data>
   <data name="ConfirmClearAppData" xml:space="preserve">
-    <value>Borrar y salir</value>
+    <value>クリアして終了</value>
   </data>
 
   <!-- Page-heading subtitles for top-level pages that get the accent-pill heading -->
   <data name="TextProfilesSubtitle" xml:space="preserve">
-    <value>Perfiles de ajustes con nombre para Claude Code y Claude Desktop. Alterna entre configuraciones, sincronízalas entre productos o elimina las antiguas.</value>
+    <value>Claude Code と Claude Desktop の名前付き設定プロファイル。構成を切り替えたり、製品間で同期したり、古いものを削除したりできます。</value>
   </data>
   <data name="TextBackupRestoreSubtitle" xml:space="preserve">
-    <value>Crea archivos de copia de seguridad con marca de tiempo de tu configuración de Claude y restáuralos más tarde. Inclusión opcional de proyectos y credenciales.</value>
+    <value>Claude 構成のタイムスタンプ付きバックアップ アーカイブを作成し、後でそれらからリストアします。プロジェクトと資格情報の任意の組み込みに対応しています。</value>
   </data>
   <data name="TipEffectiveOverriddenTrue" xml:space="preserve">
-    <value>Esta propiedad también está definida en un ámbito de menor prioridad, pero uno de mayor prioridad está prevaleciendo.</value>
+    <value>このプロパティはより優先度の低いスコープでも定義されていますが、より優先度の高いスコープが勝っています。</value>
   </data>
   <data name="TipEffectiveOverriddenFalse" xml:space="preserve">
-    <value>Esta propiedad está definida en un único ámbito.</value>
+    <value>このプロパティは 1 つのスコープにのみ定義されています。</value>
   </data>
 
   <!-- Navigation tree tooltips for the section descriptions in the left pane -->
   <data name="TipNavigationDefault" xml:space="preserve">
-    <value>Haz clic para abrir esta sección.</value>
+    <value>クリックしてこのセクションを開きます。</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -2233,68 +2333,68 @@ Cancelar — mantener la ventana abierta.</value>
        PermissionsEditorView — bypassPermissions danger banner
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextBypassPermissionsWarning" xml:space="preserve">
-    <value>Establecer defaultMode en bypassPermissions equivale a iniciar Claude Code con el flag --dangerouslySkipPermissions. Se suprimen todas las confirmaciones de permisos de herramientas — Claude puede leer, escribir y ejecutar sin preguntar. Úsalo únicamente en entornos completamente aislados o automatizados en los que controles todas las entradas.</value>
+    <value>defaultMode を bypassPermissions に設定することは、Claude Code を --dangerouslySkipPermissions フラグ付きで起動することと同等です。すべてのツール権限プロンプトが抑制され、Claude は確認なしに読み取り、書き込み、実行を行えます。すべての入力を制御する完全に隔離された、または自動化された環境でのみ使用してください。</value>
   </data>
 
   <data name="TextNoBackupYetDescription" xml:space="preserve">
-    <value>Usa «Hacer copia ahora» para crear tu primera instantánea. Las copias son archivos zip que pueden restaurarse desde la pestaña Restaurar.</value>
+    <value>「今すぐバックアップ」を使って最初のスナップショットを作成してください。バックアップは zip ファイルで、リストア タブから復元できます。</value>
   </data>
   <data name="TextRestoreDescription" xml:space="preserve">
-    <value>Selecciona una carpeta de copia de seguridad y elige un archivo zip para restaurar. Esto sobrescribirá tus archivos de configuración actuales.</value>
+    <value>バックアップ フォルダーを選択し、リストアする zip ファイルを選んでください。これにより現在の構成ファイルが上書きされます。</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HooksEditorView — guidance + column header tooltips
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextHookMatcherGuidance" xml:space="preserve">
-    <value>La coincidencia es un patrón de nombre de herramienta (p. ej. Bash, Edit, * coincide con todas las herramientas). Cada hook se ejecuta cuando una llamada a una herramienta que coincide dispara el evento seleccionado.</value>
+    <value>マッチャーはツール名のパターンです (例: Bash、Edit、* はすべてのツールに一致)。各フックは、一致するツール呼び出しが選択されたイベントを発火させたときに実行されます。</value>
   </data>
   <data name="TipHookMatcherHeader" xml:space="preserve">
-    <value>Patrón de nombre de herramienta — usa * para coincidir con todas las herramientas</value>
+    <value>ツール名パターン — すべてのツールに一致させるには * を使用してください</value>
   </data>
   <data name="TipHookTypeHeader" xml:space="preserve">
-    <value>Tipo de hook: command ejecuta un comando de shell, prompt inyecta un prompt de sistema, url envía a un webhook</value>
+    <value>フックの種類: command はシェル コマンドを実行、prompt はシステム プロンプトを注入、url は Webhook に POST します</value>
   </data>
   <data name="TipHookCommandHeader" xml:space="preserve">
-    <value>El comando de shell, el texto del prompt o la URL que se va a invocar</value>
+    <value>呼び出すシェル コマンド、プロンプト テキスト、または URL</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        AboutDialog — GitHub links
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LinkGitHubRepo" xml:space="preserve">
-    <value>Repositorio de GitHub</value>
+    <value>GitHub リポジトリ</value>
   </data>
   <data name="LinkReportIssue" xml:space="preserve">
-    <value>Informar de un problema</value>
+    <value>問題を報告</value>
   </data>
 
   <!-- About modal -->
   <data name="MenuAbout" xml:space="preserve">
-    <value>Acerca de ClaudeForge</value>
+    <value>ClaudeForge について</value>
   </data>
   <data name="TipVersionLabel" xml:space="preserve">
-    <value>Haz clic para abrir el diálogo «Acerca de ClaudeForge».</value>
+    <value>クリックして「ClaudeForge について」ダイアログを開きます。</value>
   </data>
   <data name="LabelAboutAppName" xml:space="preserve">
     <value>ClaudeForge</value>
   </data>
   <data name="LabelAboutTagline" xml:space="preserve">
-    <value>Editor de ajustes multiplataforma y consciente de ámbitos para Claude Code y Claude Desktop.</value>
+    <value>Claude Code と Claude Desktop 向けの、クロスプラットフォームでスコープ対応の設定エディターです。</value>
   </data>
   <data name="LabelAboutVersion" xml:space="preserve">
-    <value>Versión</value>
+    <value>バージョン</value>
   </data>
   <data name="HeadingAboutLinks" xml:space="preserve">
-    <value>Recursos</value>
+    <value>リソース</value>
   </data>
   <data name="ButtonClose" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>閉じる</value>
   </data>
 
   <!-- EnabledPluginsEditorView.axaml — toggle row tooltip -->
   <data name="TipPluginToggle" xml:space="preserve">
-    <value>Alternar habilitado / deshabilitado</value>
+    <value>有効 / 無効を切り替え</value>
   </data>
 
   <!-- PermissionsEditorView.axaml — synthetic-rule banner header.
@@ -2302,142 +2402,142 @@ Cancelar — mantener la ventana abierta.</value>
        is intentionally left in-line as English: it is the actual flag
        name, not a translatable label. -->
   <data name="LabelEquivalentToBypass" xml:space="preserve">
-    <value>Equivalente a --dangerouslySkipPermissions</value>
+    <value>--dangerouslySkipPermissions と同等です</value>
   </data>
 
   <!-- EnvironmentEditorView.axaml — inline validation message. -->
   <data name="ValidationEnvVarName" xml:space="preserve">
-    <value>El nombre debe empezar por una letra o _ y contener solo letras, dígitos y _.</value>
+    <value>名前は文字または _ で始まり、英数字と _ のみを含む必要があります。</value>
   </data>
 
   <!-- ScopeLegend.axaml — three column headers for the 4-row legend. -->
   <data name="HeaderScopeLegendScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>スコープ</value>
   </data>
   <data name="HeaderScopeLegendFile" xml:space="preserve">
-    <value>Archivo</value>
+    <value>ファイル</value>
   </data>
   <data name="HeaderScopeLegendMeaning" xml:space="preserve">
-    <value>Significado</value>
+    <value>意味</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        Backup / Restore dialogs (BackupRestoreViewModel.cs) — Phase 2.2
        ═══════════════════════════════════════════════════════════════ -->
   <data name="DialogTitleUnsavedChanges" xml:space="preserve">
-    <value>Cambios sin guardar</value>
+    <value>未保存の変更</value>
     <comment>Dialog title shown when the user starts Backup or Restore with dirty workspace edits.</comment>
   </data>
   <data name="DialogTitleBackupWithoutSaving" xml:space="preserve">
-    <value>¿Hacer copia de seguridad sin guardar?</value>
+    <value>保存せずにバックアップしますか?</value>
   </data>
   <data name="DialogTitleIncludeCredentials" xml:space="preserve">
-    <value>¿Incluir las credenciales de API?</value>
+    <value>API 資格情報を含めますか?</value>
   </data>
   <data name="DialogTitleBackupFailed" xml:space="preserve">
-    <value>Error en la copia de seguridad</value>
+    <value>バックアップに失敗しました</value>
   </data>
   <data name="DialogTitleRestoreFailed" xml:space="preserve">
-    <value>Error al restaurar</value>
+    <value>リストアに失敗しました</value>
   </data>
   <data name="DialogTitleDiscardUnsavedEdits" xml:space="preserve">
-    <value>¿Descartar los cambios sin guardar?</value>
+    <value>未保存の編集を破棄しますか?</value>
   </data>
   <data name="DialogTitleCrossPlatformRestore" xml:space="preserve">
-    <value>Restauración entre plataformas</value>
+    <value>クロスプラットフォーム リストア</value>
   </data>
   <data name="DialogTitleRestoreCompletedSkippedFmt" xml:space="preserve">
-    <value>Restauración completada — {0} archivo(s) omitido(s)</value>
+    <value>リストア完了 — {0} 個のファイルをスキップしました</value>
     <comment>{0} is the count of files that could not be written (locked or inaccessible).</comment>
   </data>
 
   <!-- drag-drop a backup zip onto the Restore tab.  Confirm
        prompt before routing to the existing RestoreCommand path. -->
   <data name="DialogTitleDropRestore" xml:space="preserve">
-    <value>¿Restaurar desde la copia soltada?</value>
+    <value>ドロップされたバックアップからリストアしますか?</value>
     <comment>Title of the confirm prompt shown after a backup .zip is dropped onto the Restore tab.</comment>
   </data>
   <data name="DialogTitleDropRestoreInvalid" xml:space="preserve">
-    <value>No se puede restaurar desde el archivo soltado</value>
+    <value>ドロップされたファイルからリストアできません</value>
     <comment>Error-alert title when the dropped file is not a valid backup archive.</comment>
   </data>
   <data name="TextDropRestorePromptPrefix" xml:space="preserve">
-    <value>¿Restaurar desde </value>
+    <value>次からリストアしますか: </value>
     <comment>Body text: leading half of the drop-restore confirm prompt.  Followed by the filename, then TextDropRestorePromptSuffix.  Trailing space intentional.</comment>
   </data>
   <data name="TextDropRestorePromptSuffix" xml:space="preserve">
     <value>?
 
-Esto sobrescribirá tus ajustes actuales con el contenido del archivo de copia soltado.</value>
+これにより、現在の設定がドロップされたバックアップ アーカイブの内容で上書きされます。</value>
     <comment>Body text: trailing half of the drop-restore confirm prompt.  Follows the filename.</comment>
   </data>
   <data name="TextDropRestoreNotZip" xml:space="preserve">
-    <value>Aquí solo pueden soltarse archivos .zip de copia de seguridad para restaurar.</value>
+    <value>リストアするには、バックアップの .zip ファイルのみをここにドロップできます。</value>
     <comment>Error-alert body when the dropped file is not a .zip.</comment>
   </data>
   <data name="TextDropRestoreNotABackup" xml:space="preserve">
-    <value>El archivo soltado no es un archivo de copia de seguridad de ClaudeForge válido. Puede estar dañado, ser de una versión más reciente o ser otro tipo de zip.</value>
+    <value>ドロップされたファイルは有効な ClaudeForge バックアップ アーカイブではありません。破損しているか、より新しいバージョンのものか、別の種類の zip である可能性があります。</value>
     <comment>Error-alert body when the dropped zip has no valid manifest.json of Kind=backup.</comment>
   </data>
 
   <data name="ButtonContinueWithoutSaving" xml:space="preserve">
-    <value>Continuar sin guardar</value>
+    <value>保存せずに続行</value>
   </data>
   <data name="ButtonIncludeCredentialsConfirm" xml:space="preserve">
-    <value>Incluir credenciales</value>
+    <value>資格情報を含める</value>
     <comment>Confirm-button label on the credentials prompt.  Distinct from the checkbox label CheckboxIncludeCredentials.</comment>
   </data>
   <data name="ButtonOmitCredentials" xml:space="preserve">
-    <value>Omitir credenciales</value>
+    <value>資格情報を含めない</value>
   </data>
   <data name="ButtonDiscardAndRestore" xml:space="preserve">
-    <value>Descartar y restaurar</value>
+    <value>破棄してリストア</value>
   </data>
   <data name="ButtonRestoreAnyway" xml:space="preserve">
-    <value>Restaurar de todos modos</value>
+    <value>それでもリストア</value>
   </data>
 
   <data name="TextSaveBeforeBackupPrompt" xml:space="preserve">
-    <value>Tienes cambios sin guardar en el espacio de trabajo activo. ¿Quieres guardarlos antes de hacer la copia de seguridad? De lo contrario, la copia solo contendrá lo que esté actualmente en disco — tus cambios sin guardar no se incluirán.</value>
+    <value>アクティブなワークスペースに未保存の編集があります。バックアップする前に保存しますか? そうでなければ、バックアップには現在ディスク上にあるものだけが含まれます — 未保存の編集は含まれません。</value>
   </data>
   <data name="TextProceedWithoutSavingBackup" xml:space="preserve">
-    <value>¿Continuar con la copia de seguridad? Tus cambios sin guardar no estarán en esta copia, pero permanecerán en memoria y podrás guardarlos más tarde.</value>
+    <value>バックアップを続行しますか? 未保存の編集はこのバックアップには含まれませんが、メモリ上に保持され、後で保存できます。</value>
   </data>
   <data name="TextSaveBeforeRestorePrompt" xml:space="preserve">
-    <value>Tienes cambios sin guardar en el espacio de trabajo activo. ¿Guardarlos antes de restaurar?</value>
+    <value>アクティブなワークスペースに未保存の編集があります。リストアする前に保存しますか?</value>
   </data>
   <data name="TextDiscardUnsavedForRestore" xml:space="preserve">
-    <value>Restaurar sobrescribirá tus ajustes actuales. ¿Descartar tus cambios sin guardar y continuar con la restauración?</value>
+    <value>リストアすると現在の設定が上書きされます。未保存の編集を破棄してリストアを続行しますか?</value>
   </data>
   <data name="TextCredentialsExplainer" xml:space="preserve">
-    <value> contiene tokens OAuth. Cualquiera con este archivo de copia de seguridad podrá iniciar sesión como tú mientras esos tokens sigan siendo válidos.
+    <value> には OAuth トークンが含まれます。これらのトークンが有効な間、このバックアップ ファイルを持つ誰もがあなたとしてログインできます。
 
-Incluye las credenciales solo si la copia permanecerá en almacenamiento de confianza.
+バックアップが信頼できるストレージに置かれる場合にのみ、資格情報を含めてください。
 
-¿Incluir las credenciales en esta copia?</value>
+このバックアップに資格情報を含めますか?</value>
     <comment>Trailing text after the credentials path in the credentials confirmation prompt.  Leading space is intentional — it follows a path segment.</comment>
   </data>
   <data name="TextRestoreSkippedExplainer" xml:space="preserve">
-    <value>La restauración ha terminado, pero el/los siguiente(s) archivo(s) no se ha(n) podido escribir (puede que estén bloqueados por un proceso de Claude en ejecución). Cierra Claude y vuelve a restaurar si es necesario:
+    <value>リストアは完了しましたが、次のファイルを書き込めませんでした (実行中の Claude プロセスによってロックされている可能性があります)。必要に応じて Claude を閉じてから再度リストアしてください:
 
 </value>
     <comment>Trailing blank line is intentional — the file list is appended to this text.</comment>
   </data>
   <data name="TextRestoreSkippedTrailerFmt" xml:space="preserve">
     <value>
-  … y {0} más (consulta el registro para ver la lista completa)</value>
+  … 他に {0} 件 (完全な一覧はログを参照してください)</value>
     <comment>{0} is the count of files beyond the first 10 shown.  Leading newline is intentional.</comment>
   </data>
   <data name="TextCrossPlatformRestorePrefix" xml:space="preserve">
-    <value>Esta copia de seguridad se hizo en «</value>
+    <value>このバックアップは '</value>
   </data>
   <data name="TextCrossPlatformRestoreMiddle" xml:space="preserve">
-    <value>», pero estás en «</value>
+    <value>' で作成されましたが、現在のシステムは '</value>
   </data>
   <data name="TextCrossPlatformRestoreSuffix" xml:space="preserve">
-    <value>».
+    <value>' です。
 
-Es posible que algunas rutas dentro de los archivos de configuración requieran ediciones manuales después. ¿Continuar?</value>
+構成ファイル内の一部のパスは、後で手動編集が必要になる場合があります。続行しますか?</value>
   </data>
 
   <!-- ════════════════════════════════════════════════════════════════════════════
@@ -2448,259 +2548,170 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
   <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Bienvenida</value>
+    <value>ようこそ</value>
     <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
   </data>
   <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientación sobre el editor — qué se edita, cómo se aplican las capas de ámbitos y dónde encontrar los ajustes de alto impacto. Se muestra por defecto en el primer arranque.</value>
+    <value>エディターの使い方 — 何が編集されるのか、スコープがどう重なるか、影響度の高い設定がどこにあるかの案内です。初回起動時に既定で表示されます。</value>
     <comment>Tooltip / description for the Welcome nav node.</comment>
   </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
-    <value>Mostrar esta página al arrancar</value>
+    <value>起動時にこのページを表示</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
   </data>
   <data name="TipShowWelcomeOnLaunch" xml:space="preserve">
-    <value>Cuando se desmarca, la entrada Bienvenida desaparece del árbol de navegación y no volverá en el próximo arranque. Aún puedes llegar a esta página haciendo clic en las cabeceras «Claude Code» o «Claude Desktop» del árbol. Borrar los datos de la aplicación restablece esta preferencia.</value>
+    <value>オフにすると、Welcome エントリがナビゲーション ツリーから消え、次回起動時にも戻りません。ツリー内の「Claude Code」または「Claude Desktop」見出しをクリックすることで、引き続きこのページに到達できます。アプリ データをクリアするとこの設定はリセットされます。</value>
     <comment>Tooltip / accessibility description for the Show-on-launch checkbox on the Welcome page.</comment>
   </data>
   <data name="NavTitleEssentials" xml:space="preserve">
-    <value>Esenciales</value>
+    <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
   </data>
   <data name="NavDescEssentials" xml:space="preserve">
-    <value>Ajustes de alto impacto de Claude Code — presupuestos de tokens, sandbox, confianza en MCP, modelo y canal de actualización — fijados para una revisión y modificación rápidas.</value>
+    <value>影響度の高い Claude Code 設定 — トークン予算、サンドボックス、MCP の信頼、モデルと更新チャネル — をすばやく確認・変更できるようにピン留めしています。</value>
     <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
-    <value>Esenciales — ajustes de alto impacto</value>
+    <value>Essentials — 影響度の高い設定</value>
     <comment>Heading rendered at the top of the Essentials editor view.</comment>
   </data>
   <data name="HeaderEssentialsBody" xml:space="preserve">
-    <value>Estos ajustes tienen un impacto desproporcionado en el coste, la calidad, la seguridad o el comportamiento. Revísalos al configurar un proyecto nuevo o al actualizar Claude Code.</value>
+    <value>これらの設定は、コスト、品質、セキュリティ、または挙動に大きな影響を与えます。新しいプロジェクトをセットアップしたり Claude Code をアップグレードしたりするときに確認してください。</value>
     <comment>Sub-header explainer for the Essentials editor view.</comment>
   </data>
 
   <data name="LabelEssentialsViewInGroupFmt" xml:space="preserve">
-    <value>Ver en {0}</value>
+    <value>{0} で表示</value>
     <comment>"View in &lt;group&gt;" deep-link button label.  {0} is the home-group title (e.g. "Permissions", "Environment").</comment>
   </data>
   <data name="LabelEssentialsAddListEntry" xml:space="preserve">
-    <value>Añadir</value>
+    <value>追加</value>
     <comment>Label for the Add button on StringList cards (e.g. sandbox.allowedDomains).</comment>
   </data>
   <data name="LabelEssentialsRemoveListEntry" xml:space="preserve">
-    <value>Quitar</value>
+    <value>削除</value>
     <comment>Label for the per-row Remove button on StringList cards.</comment>
   </data>
   <data name="LabelEssentialsAmberCallout" xml:space="preserve">
-    <value>Has llegado aquí desde la búsqueda — este es el ajuste que coincide con tu consulta. Edita el valor debajo.</value>
+    <value>検索結果から到達しました — これがあなたのクエリに一致する設定です。下で値を編集してください。</value>
     <comment>One-time amber callout shown when a card is opened via a synthetic search hit.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceHeader" xml:space="preserve">
-    <value>Origen efectivo</value>
+    <value>有効なソース</value>
     <comment>Header for the env-var "effective source" sub-row showing which of (settings.json env, OS user, OS machine) is contributing.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceSettings" xml:space="preserve">
-    <value>env de settings.json</value>
+    <value>settings.json の env</value>
     <comment>Source label: the value comes from the env map in settings.json.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceUser" xml:space="preserve">
-    <value>Entorno de usuario del SO</value>
+    <value>OS ユーザー環境</value>
     <comment>Source label: the value comes from the user-scope OS environment variable.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceMachine" xml:space="preserve">
-    <value>Entorno de equipo del SO</value>
+    <value>OS マシン環境</value>
     <comment>Source label: the value comes from the machine-scope OS environment variable.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceNone" xml:space="preserve">
-    <value>sin definir</value>
+    <value>未設定</value>
     <comment>Source label: the variable is not set in any scope.</comment>
   </data>
 
   <!-- Card 1 — Max Thinking Tokens -->
   <data name="EssentialsCardMaxThinkingTokensTitle" xml:space="preserve">
-    <value>Máximo de tokens de razonamiento</value>
+    <value>最大思考トークン数</value>
   </data>
   <data name="EssentialsCardMaxThinkingTokensBody" xml:space="preserve">
-    <value>Limita cuántos tokens puede dedicar Claude al razonamiento extendido por turno (env: MAX_THINKING_TOKENS). El valor predeterminado puede truncar razonamientos complejos; súbelo a 32000 o más para trabajo arquitectónico exigente.</value>
+    <value>Claude が 1 ターンあたりの拡張思考に使えるトークン数の上限です (env: MAX_THINKING_TOKENS)。既定値では複雑な推論が途中で切られる場合があります。難しいアーキテクチャ作業には 32000 以上に引き上げてください。</value>
   </data>
 
   <!-- Card 2 — Max Output Tokens -->
   <data name="EssentialsCardMaxOutputTokensTitle" xml:space="preserve">
-    <value>Máximo de tokens de salida</value>
+    <value>最大出力トークン数</value>
   </data>
   <data name="EssentialsCardMaxOutputTokensBody" xml:space="preserve">
-    <value>Limita la longitud de la respuesta que Claude puede emitir (env: CLAUDE_CODE_MAX_OUTPUT_TOKENS). El valor predeterminado puede truncar ediciones largas de archivos o código generado; súbelo cuando veas «[output truncated]».</value>
+    <value>Claude が生成できる応答の長さの上限です (env: CLAUDE_CODE_MAX_OUTPUT_TOKENS)。既定値では長いファイル編集や生成コードが切り詰められる場合があります。「[output truncated]」が表示されたら引き上げてください。</value>
   </data>
 
   <!-- Card 3 — Auto-trust project MCP servers -->
   <data name="EssentialsCardEnableAllMcpTitle" xml:space="preserve">
-    <value>Confiar automáticamente en los servidores MCP del proyecto</value>
+    <value>プロジェクトの MCP サーバーを自動で信頼</value>
   </data>
   <data name="EssentialsCardEnableAllMcpBody" xml:space="preserve">
-    <value>Cuando está activo, Claude confía en todos los servidores MCP definidos en el archivo .mcp.json de un proyecto sin pedir confirmación. Es cómodo — pero un repositorio de proyecto hostil puede incluir un servidor MCP malicioso. Déjalo desactivado y aprueba los servidores uno por uno.</value>
+    <value>有効にすると、Claude はプロジェクトの .mcp.json で定義されたすべての MCP サーバーを確認なしに信頼します。便利ですが — 敵対的なプロジェクト リポジトリは悪意のある MCP サーバーを混入させる可能性があります。無効のままにし、サーバーを個別に承認してください。</value>
   </data>
   <data name="EssentialsCardEnableAllMcpDanger" xml:space="preserve">
-    <value>Peligro: todos los servidores MCP de cada proyecto que abras se ejecutarán con tus herramientas y credenciales. Activa esto únicamente en entornos completamente aislados.</value>
+    <value>危険: 開くプロジェクトの MCP サーバーすべてが、あなたのツールと資格情報で実行されます。完全に隔離された環境でのみ有効にしてください。</value>
   </data>
 
   <!-- Card 4 — Sandbox enabled -->
   <data name="EssentialsCardSandboxEnabledTitle" xml:space="preserve">
-    <value>Sandbox activado</value>
+    <value>サンドボックス有効</value>
   </data>
   <data name="EssentialsCardSandboxEnabledBody" xml:space="preserve">
-    <value>Cuando está activo, el sandbox de bash restringe las escrituras en el sistema de archivos y la salida de red a una lista de permitidos. Desactivar el sandbox permite que cualquier comando de shell que ejecute Claude toque archivos arbitrarios y llegue a hosts arbitrarios.</value>
+    <value>有効にすると、Bash サンドボックスはファイルシステムへの書き込みとネットワーク アウトバウンドを許可リストに制限します。サンドボックスを無効にすると、Claude が実行するすべてのシェル コマンドが任意のファイルに触れ、任意のホストに到達できるようになります。</value>
   </data>
   <data name="EssentialsCardSandboxEnabledDanger" xml:space="preserve">
-    <value>Peligro: con el sandbox desactivado, cualquier llamada a herramienta que ejecute un comando de shell tiene acceso sin restricciones al sistema de archivos y a la red.</value>
+    <value>危険: サンドボックスを無効にすると、シェル コマンドを実行するすべてのツール呼び出しが、ファイルシステムとネットワークに無制限にアクセスできます。</value>
   </data>
 
   <!-- Card 5 — Sandbox allowed domains -->
   <data name="EssentialsCardSandboxDomainsTitle" xml:space="preserve">
-    <value>Dominios permitidos del sandbox</value>
+    <value>サンドボックスが許可するドメイン</value>
   </data>
   <data name="EssentialsCardSandboxDomainsBody" xml:space="preserve">
-    <value>Hosts salientes a los que el sandbox tiene permitido llegar (p. ej. github.com, registry.npmjs.org). Sin entradas aquí, las operaciones de red dentro del sandbox fallan.</value>
+    <value>サンドボックスが到達を許可されるアウトバウンド ホスト (例: github.com、registry.npmjs.org)。ここにエントリがないと、サンドボックス内のネットワーク操作は失敗します。</value>
   </data>
   <data name="EssentialsCardSandboxDomainsListPlaceholder" xml:space="preserve">
-    <value>p. ej. github.com</value>
+    <value>例: github.com</value>
     <comment>Placeholder text for the Add-entry textbox on the sandbox.allowedDomains card.</comment>
   </data>
 
   <!-- Card 6 — Model -->
   <data name="EssentialsCardModelTitle" xml:space="preserve">
-    <value>Modelo</value>
+    <value>モデル</value>
   </data>
   <data name="EssentialsCardModelBody" xml:space="preserve">
-    <value>Modelo predeterminado para las sesiones de Claude Code. Elige un modelo más pequeño (haiku) para reducir coste en el trabajo rutinario; elige el más grande (opus) para razonamiento arquitectónico exigente.</value>
+    <value>Claude Code セッションの既定モデル。日常作業のコストを抑えるには小さなモデル (haiku) を、難しいアーキテクチャ推論には最大モデル (opus) を選んでください。</value>
   </data>
 
   <!-- Card 7 — Effort level -->
   <data name="EssentialsCardEffortLevelTitle" xml:space="preserve">
-    <value>Nivel de esfuerzo</value>
+    <value>努力レベル</value>
   </data>
   <data name="EssentialsCardEffortLevelBody" xml:space="preserve">
-    <value>Cuánto presupuesto de razonamiento extendido está dispuesto Claude a gastar por turno. Niveles más altos pueden producir mejores respuestas en problemas difíciles, pero cuestan más.</value>
+    <value>Claude が 1 ターンあたりに費やす拡張思考の予算量です。より高いレベルは難しい問題に対してより良い回答を生み出す可能性がありますが、コストも増えます。</value>
   </data>
 
   <!-- Card 8 — Fast mode -->
   <data name="EssentialsCardFastModeTitle" xml:space="preserve">
-    <value>Modo rápido</value>
+    <value>高速モード</value>
   </data>
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
-    <value>Omite algunas pasadas opcionales de razonamiento para obtener respuestas más ágiles. Compromiso: calidad ligeramente inferior en tareas complejas a cambio de menor latencia y coste.</value>
+    <value>応答を速くするために一部の任意推論パスをスキップします。トレードオフ: 複雑なタスクでわずかに品質が下がる代わりに、レイテンシとコストが下がります。</value>
   </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">
-    <value>Canal de actualizaciones automáticas</value>
+    <value>自動更新チャネル</value>
   </data>
   <data name="EssentialsCardAutoUpdatesChannelBody" xml:space="preserve">
-    <value>Desde qué flujo de versiones de Claude Code se actualiza automáticamente el binario (stable, latest). «latest» recibe nuevas funciones antes, pero incluye regresiones ocasionales.</value>
+    <value>バイナリが自動更新を受け取る Claude Code のリリース ストリーム (stable、latest)。「latest」は新機能をより早く受け取りますが、まれにリグレッションが含まれることがあります。</value>
   </data>
 
   <!-- Card 10 — Auto-memory enabled -->
   <data name="EssentialsCardAutoMemoryEnabledTitle" xml:space="preserve">
-    <value>Memoria automática activada</value>
+    <value>自動メモリ有効</value>
   </data>
   <data name="EssentialsCardAutoMemoryEnabledBody" xml:space="preserve">
-    <value>Cuando está activo, Claude captura automáticamente «hechos» de memoria a nivel de sesión (convenciones del proyecto, entorno, tus preferencias). Desactívalo en sesiones donde no quieras contexto persistente.</value>
+    <value>有効にすると、Claude はセッション レベルの「メモリ」事実 (プロジェクトの規約、環境、あなたの設定) を自動的にキャプチャします。永続的なコンテキストを望まないセッションでは無効にしてください。</value>
   </data>
 
   <!-- Card 11 — Disable bypass-permissions mode -->
   <data name="EssentialsCardDisableBypassTitle" xml:space="preserve">
-    <value>Desactivar el modo bypass-permissions</value>
+    <value>bypass-permissions モードを無効化</value>
   </data>
   <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
-    <value>Bloquea el ajuste permissions.defaultMode para que no pueda valer «bypassPermissions» — el modo que suprime todas las confirmaciones de permisos de herramientas. Equivale a fijar la seguridad; recomendado en entornos compartidos o gestionados.</value>
+    <value>permissions.defaultMode 設定を「bypassPermissions」 — すべてのツール権限プロンプトを抑制するモード — に切り替えられないようロックします。安全側に固定する操作で、共有 / 管理された環境で推奨されます。</value>
   </data>
-
-  <!-- ────────────────────────────────────────────────────────────────────────
-       2026-05-23 — drift remediation pass.
-       The 26 entries below were either missing entirely from es-ES OR were
-       added to zh-CN as TODO placeholders without ever landing in de/es/pt.
-       Closed in one pass alongside the new project-backup keys at the top of
-       this batch.  Tracked from here on by tests/ClaudeForge.Tests/Localization/
-       LocalizationParityTests so the same drift can't recur.
-       ──────────────────────────────────────────────────────────────────────── -->
-  <data name="LabelBackupIncludesProject" xml:space="preserve">
-    <value>Incluye el proyecto abierto: {0}</value>
-  </data>
-  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
-    <value>Sin proyecto abierto — solo configuración a nivel de usuario</value>
-  </data>
-  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
-    <value>Cerrar el aviso de errores de esquema</value>
-  </data>
-  <data name="BadgePluginReadOnly" xml:space="preserve">
-    <value>Complemento (solo lectura)</value>
-  </data>
-  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
-    <value>✕</value>
-    <comment>Unicode glyph ✕ (U+2715) — identical across locales; carries no translatable text.</comment>
-  </data>
-  <data name="ButtonEditArtifact" xml:space="preserve">
-    <value>Editar</value>
-  </data>
-  <data name="ButtonEditRawYaml" xml:space="preserve">
-    <value>Editar front-matter sin procesar</value>
-  </data>
-  <data name="ButtonSaveArtifact" xml:space="preserve">
-    <value>Guardar</value>
-  </data>
-  <data name="LabelFrontMatterDescription" xml:space="preserve">
-    <value>Descripción</value>
-  </data>
-  <data name="LabelFrontMatterModel" xml:space="preserve">
-    <value>Modelo</value>
-  </data>
-  <data name="LabelFrontMatterName" xml:space="preserve">
-    <value>Nombre</value>
-  </data>
-  <data name="LabelFrontMatterTools" xml:space="preserve">
-    <value>Herramientas</value>
-  </data>
-  <data name="LabelRawFrontMatterHint" xml:space="preserve">
-    <value>Editando el front-matter sin procesar — los campos tipados se ignoran mientras esto esté activado. Los comentarios y las claves que los campos no cubren se conservan.</value>
-  </data>
-  <data name="NavDescAgentsSkills" xml:space="preserve">
-    <value>Examina los subagentes, habilidades y comandos de barra que carga Claude Code — en los ámbitos Usuario, Proyecto y Complemento.</value>
-  </data>
-  <data name="NavTitleAgentsSkills" xml:space="preserve">
-    <value>Agentes y habilidades</value>
-  </data>
-  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
-    <value>Cargando agentes, habilidades y comandos…</value>
-  </data>
-  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
-    <value>No se pudo guardar: {0}</value>
-  </data>
-  <data name="StatusArtifactSaved" xml:space="preserve">
-    <value>Guardado.</value>
-  </data>
-  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
-    <value>Guardado. Tus cambios se aplicarán en la próxima sesión de Claude Code.</value>
-  </data>
-  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
-    <value>No se pudo analizar el front-matter sin procesar — corrígelo antes de guardar.</value>
-  </data>
-  <data name="TabAgents" xml:space="preserve">
-    <value>Subagentes</value>
-  </data>
-  <data name="TabSkills" xml:space="preserve">
-    <value>Habilidades</value>
-  </data>
-  <data name="TabSlashCommands" xml:space="preserve">
-    <value>Comandos de barra</value>
-  </data>
-  <data name="TipButtonDismissSchema" xml:space="preserve">
-    <value>Ocultar este aviso. Reaparecerá si abres otro proyecto, haces clic en «Recargar ventana» o reinicias la aplicación.</value>
-  </data>
-  <data name="TipButtonRefresh" xml:space="preserve">
-    <value>Volver a escanear el sistema de archivos y recargar la lista</value>
-  </data>
-  <data name="WatermarkEditTools" xml:space="preserve">
-    <value>Separados por comas, p. ej. Read, Grep, Bash</value>
-  </data>
-
 </root>

@@ -2043,6 +2043,14 @@ Cancel — keep the window open.</value>
   <data name="LabelLastBackupDaysFmt" xml:space="preserve">
     <value>Last backup: {0} day(s) ago</value>
   </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>Includes open project: {0}</value>
+    <comment>Backup tab inclusion label shown when a project is open. {0} = bare folder name of the open project (BackupRestoreViewModel.OpenProjectName). Confirms to the user that the project's `.claude` directory, CLAUDE.md, etc. will be added to the archive alongside the user-level config.</comment>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>No project open — user-level config only</value>
+    <comment>Backup tab inclusion label shown when no project is open. The em-dash (—) is intentional and matches the dash convention used by similar status labels elsewhere in the app.</comment>
+  </data>
   <data name="StatusBackupWarningsFmt" xml:space="preserve">
     <value>  [!] {0} warning(s) — see manifest.</value>
   </data>

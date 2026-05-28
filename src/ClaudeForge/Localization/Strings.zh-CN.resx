@@ -325,15 +325,13 @@
   </data>
   <data name="ButtonDismissSchemaBanner" xml:space="preserve">
     <value>✕</value>
-    <comment>TODO zh-CN translation</comment>
+    <comment>Unicode glyph ✕ (U+2715) — identical across locales; carries no translatable text.</comment>
   </data>
   <data name="TipButtonDismissSchema" xml:space="preserve">
-    <value>Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>隐藏此横幅。如果您打开其他项目、点击"重新加载窗口"或重启应用，它将重新出现。</value>
   </data>
   <data name="AutoNameButtonDismissSchema" xml:space="preserve">
-    <value>Dismiss schema-errors banner</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>关闭架构错误横幅</value>
   </data>
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
     <value>安装完成后：如果 Claude Code 安装到 ~/.local/bin 且该目录不在您的 PATH 中，请在"版本信息"页面上单击"添加到 PATH"（或在 shell 中运行安装程序打印的 export 命令）。然后重启 ClaudeForge 以检测到安装。</value>
@@ -1386,84 +1384,64 @@
     <comment>Top-level nav node description for the Memory page.</comment>
   </data>
   <data name="NavTitleAgentsSkills" xml:space="preserve">
-    <value>Agents &amp; Skills</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>代理和技能</value>
   </data>
   <data name="NavDescAgentsSkills" xml:space="preserve">
-    <value>Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>浏览 Claude Code 加载的子代理、技能和斜杠命令 — 涵盖用户、项目和插件范围。</value>
   </data>
   <data name="TabAgents" xml:space="preserve">
-    <value>Sub-agents</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>子代理</value>
   </data>
   <data name="TabSkills" xml:space="preserve">
-    <value>Skills</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>技能</value>
   </data>
   <data name="TabSlashCommands" xml:space="preserve">
-    <value>Slash Commands</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>斜杠命令</value>
   </data>
   <data name="LabelFrontMatterName" xml:space="preserve">
-    <value>Name</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>名称</value>
   </data>
   <data name="LabelFrontMatterDescription" xml:space="preserve">
-    <value>Description</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>描述</value>
   </data>
   <data name="LabelFrontMatterTools" xml:space="preserve">
-    <value>Tools</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>工具</value>
   </data>
   <data name="LabelFrontMatterModel" xml:space="preserve">
-    <value>Model</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>模型</value>
   </data>
   <data name="BadgePluginReadOnly" xml:space="preserve">
-    <value>Plugin (read-only)</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>插件（只读）</value>
   </data>
   <data name="ButtonEditArtifact" xml:space="preserve">
-    <value>Edit</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>编辑</value>
   </data>
   <data name="ButtonSaveArtifact" xml:space="preserve">
-    <value>Save</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>保存</value>
   </data>
   <data name="WatermarkEditTools" xml:space="preserve">
-    <value>Comma-separated, e.g. Read, Grep, Bash</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>用逗号分隔，例如 Read、Grep、Bash</value>
   </data>
   <data name="StatusArtifactSaved" xml:space="preserve">
-    <value>Saved.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>已保存。</value>
   </data>
   <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
-    <value>Saved. Your edits apply to your next Claude Code session.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>已保存。您的更改将在下次 Claude Code 会话中生效。</value>
   </data>
   <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
-    <value>Save failed: {0}</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>保存失败：{0}</value>
   </data>
   <data name="StatusAgentsSkillsLoading" xml:space="preserve">
-    <value>Loading agents, skills, and commands…</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>正在加载代理、技能和命令…</value>
   </data>
   <data name="ButtonEditRawYaml" xml:space="preserve">
-    <value>Edit raw front-matter</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>编辑原始前导信息</value>
   </data>
   <data name="LabelRawFrontMatterHint" xml:space="preserve">
-    <value>Editing the raw front-matter — the typed fields are ignored until you turn this off. Comments and keys the fields don't cover are preserved.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>正在编辑原始前导信息 — 启用此项时类型化字段将被忽略。注释和字段未涵盖的键将被保留。</value>
   </data>
   <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
-    <value>Couldn't parse the raw front-matter — fix it before saving.</value>
-    <comment>TODO zh-CN translation</comment>
+    <value>无法解析原始前导信息 — 请在保存前修复。</value>
   </data>
   <data name="HeaderMemoryCode" xml:space="preserve">
     <value>Claude Code — 内存与足迹</value>
@@ -2049,6 +2027,12 @@
   </data>
   <data name="LabelLastBackupDaysFmt" xml:space="preserve">
     <value>上次备份：{0} 天前</value>
+  </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>包含已打开的项目：{0}</value>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>未打开项目 — 仅用户级配置</value>
   </data>
   <data name="StatusBackupWarningsFmt" xml:space="preserve">
     <value>  [!] {0} 项警告 — 详见清单。</value>

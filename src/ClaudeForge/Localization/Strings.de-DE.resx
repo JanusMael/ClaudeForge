@@ -2615,4 +2615,92 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
     <value>Sperrt die Einstellung permissions.defaultMode gegen „bypassPermissions“ — den Modus, der jede Tool-Berechtigungsabfrage unterdrückt. Entspricht dem Festpinnen der Sicherheit; empfohlen für gemeinsam genutzte / verwaltete Umgebungen.</value>
   </data>
 
+  <!-- ────────────────────────────────────────────────────────────────────────
+       2026-05-23 — drift remediation pass.
+       The 26 entries below were either missing entirely from de-DE OR were
+       added to zh-CN as TODO placeholders without ever landing in de/es/pt.
+       Closed in one pass alongside the new project-backup keys at the top of
+       this batch.  Tracked from here on by tests/ClaudeForge.Tests/Localization/
+       LocalizationParityTests so the same drift can't recur.
+       ──────────────────────────────────────────────────────────────────────── -->
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>Enthält offenes Projekt: {0}</value>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>Kein Projekt geöffnet — nur Konfiguration auf Benutzerebene</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>Schema-Fehler-Banner schließen</value>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>Plugin (schreibgeschützt)</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>Unicode glyph ✕ (U+2715) — identical across locales; carries no translatable text.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>Bearbeiten</value>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>Rohes Front-Matter bearbeiten</value>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>Modell</value>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>Werkzeuge</value>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>Du bearbeitest das rohe Front-Matter — die typisierten Felder werden ignoriert, solange dies aktiv ist. Kommentare und Schlüssel, die die Felder nicht abdecken, bleiben erhalten.</value>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Durchsuche die Subagenten, Fähigkeiten und Slash-Befehle, die Claude Code lädt — über die Bereiche Benutzer, Projekt und Plugin hinweg.</value>
+  </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>Agenten &amp; Fähigkeiten</value>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>Lade Agenten, Fähigkeiten und Befehle…</value>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>Speichern fehlgeschlagen: {0}</value>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>Gespeichert.</value>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>Gespeichert. Deine Änderungen werden in der nächsten Claude-Code-Sitzung wirksam.</value>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>Das rohe Front-Matter konnte nicht geparst werden — bitte vor dem Speichern korrigieren.</value>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>Subagenten</value>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>Fähigkeiten</value>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>Slash-Befehle</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>Banner ausblenden. Es erscheint erneut, wenn du ein anderes Projekt öffnest, auf „Fenster neu laden“ klickst oder die App neu startest.</value>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>Dateisystem neu durchsuchen und die Liste neu laden</value>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>Komma-getrennt, z. B. Read, Grep, Bash</value>
+  </data>
+
 </root>

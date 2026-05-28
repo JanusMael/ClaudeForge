@@ -1,0 +1,2718 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Russian (Russia) (ru-RU) translation of Strings.resx.
+  Keep <data name="..."> keys byte-identical to the English source; only translate <value> contents.
+-->
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — toolbar
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelEditingProfile" xml:space="preserve">
+    <value>Редактируемый профиль:</value>
+  </data>
+  <data name="TipEditingProfile" xml:space="preserve">
+    <value>Профиль — это именованный набор параметров Claude. «(global)» использует ваши общие пользовательские настройки; именованные профили позволяют переключаться между разными конфигурациями.</value>
+  </data>
+  <data name="TipProfileSelector" xml:space="preserve">
+    <value>Переключить активный профиль Claude. «(global)» использует общие пользовательские настройки; именованные профили (например, «work») — это отдельные наборы параметров, хранящиеся в ~/.claude/profiles/.</value>
+  </data>
+  <data name="AutoNameActiveProfile" xml:space="preserve">
+    <value>Активный профиль</value>
+  </data>
+  <data name="AutoHelpActiveProfile" xml:space="preserve">
+    <value>Выберите профиль параметров Claude. Выберите (global) для общих пользовательских настроек или именованный профиль для смены конфигурации.</value>
+  </data>
+  <data name="TipManageProfiles" xml:space="preserve">
+    <value>Открыть раздел «Профили» для создания, удаления, применения или синхронизации именованных профилей</value>
+  </data>
+  <data name="AutoNameManageProfiles" xml:space="preserve">
+    <value>Управление профилями</value>
+  </data>
+  <data name="ButtonOpenProject" xml:space="preserve">
+    <value>📂 _Открыть проект</value>
+    <comment>Alt+O — top toolbar button. The underscore is Avalonia's access-key prefix; AccessText underlines the next character when Alt is held.</comment>
+  </data>
+  <data name="TipButtonOpenProject" xml:space="preserve">
+    <value>Открыть папку проекта для загрузки его файлов .claude/settings.json</value>
+  </data>
+  <data name="AutoNameButtonOpenProject" xml:space="preserve">
+    <value>Открыть папку проекта</value>
+  </data>
+  <data name="ButtonSave" xml:space="preserve">
+    <value>💾 _Сохранить</value>
+    <comment>Alt+S — top toolbar button.</comment>
+  </data>
+  <data name="TipButtonSave" xml:space="preserve">
+    <value>Сохранить все изменённые параметры на диск (Ctrl+S)</value>
+  </data>
+  <data name="AutoNameButtonSave" xml:space="preserve">
+    <value>Сохранить все параметры</value>
+  </data>
+  <data name="ButtonExport" xml:space="preserve">
+    <value>📤 _Экспорт…</value>
+    <comment>Alt+E — top toolbar button.</comment>
+  </data>
+  <data name="TipButtonExport" xml:space="preserve">
+    <value>Экспортировать полностью объединённую действующую конфигурацию в виде ZIP-файла</value>
+  </data>
+  <data name="AutoNameButtonExport" xml:space="preserve">
+    <value>Экспорт действующей конфигурации</value>
+  </data>
+
+  <!-- screen-reader names for controls
+       that have no naturally-derivable label.  See CLAUDE.md "Accessibility
+       — screen-reader names" and AGENTS.md invariant I20. -->
+  <data name="AutoNameEffectiveRowsGrid" xml:space="preserve">
+    <value>Список действующих параметров</value>
+    <comment>Screen-reader name for the DataGrid that lists the merged property values per scope.</comment>
+  </data>
+  <data name="AutoHelpEffectiveRowsGrid" xml:space="preserve">
+    <value>Список свойств параметров и их действующих объединённых значений по областям Managed, Local, Project и User. Только для чтения; используйте страницы редактора для изменения значений.</value>
+    <comment>Screen-reader help text describing the EffectiveRows DataGrid's purpose and read-only nature.</comment>
+  </data>
+  <data name="AutoNameNewPluginRef" xml:space="preserve">
+    <value>Новая ссылка на плагин</value>
+    <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
+  </data>
+
+  <!-- screen-reader names for controls
+       in the larger editor views.  Sorted by view file. -->
+
+  <!-- BackupRestoreView -->
+  <data name="AutoNameBrowseBackupFolder" xml:space="preserve">
+    <value>Выбрать папку для сохранения резервных копий</value>
+    <comment>Disambiguates the "Browse" button next to the backup output folder TextBox.</comment>
+  </data>
+  <data name="AutoNameBrowseRestoreFolder" xml:space="preserve">
+    <value>Выбрать папку с резервными копиями для восстановления</value>
+    <comment>Disambiguates the "Browse" button next to the restore source folder TextBox.</comment>
+  </data>
+  <data name="AutoNameBackupsGrid" xml:space="preserve">
+    <value>Доступные резервные копии</value>
+    <comment>Screen-reader name for the DataGrid listing previously-created backups on the Restore tab.</comment>
+  </data>
+
+  <!-- ProfilesView -->
+  <data name="AutoNameNewCliProfile" xml:space="preserve">
+    <value>Новый профиль Claude Code CLI</value>
+  </data>
+  <data name="AutoNameNewDesktopProfile" xml:space="preserve">
+    <value>Новый профиль Claude Desktop</value>
+  </data>
+  <data name="AutoNameDeleteDesktopProfile" xml:space="preserve">
+    <value>Удалить профиль Desktop</value>
+  </data>
+  <data name="AutoNameCliProfilesGrid" xml:space="preserve">
+    <value>Профили Claude Code CLI</value>
+  </data>
+  <data name="AutoNameDesktopProfilesGrid" xml:space="preserve">
+    <value>Профили Claude Desktop</value>
+  </data>
+
+  <!-- PermissionsEditorView -->
+  <data name="AutoNameAddAdditionalDirectory" xml:space="preserve">
+    <value>Добавить дополнительный каталог</value>
+  </data>
+
+  <!-- McpServersEditorView -->
+  <data name="AutoNameMcpServerList" xml:space="preserve">
+    <value>Список серверов MCP</value>
+  </data>
+  <data name="AutoNameEditArgument" xml:space="preserve">
+    <value>Изменить значение аргумента</value>
+  </data>
+  <data name="AutoNameAddArgument" xml:space="preserve">
+    <value>Добавить аргумент</value>
+  </data>
+  <data name="AutoNameEditEnvKey" xml:space="preserve">
+    <value>Изменить имя переменной окружения</value>
+  </data>
+  <data name="AutoNameEditEnvValue" xml:space="preserve">
+    <value>Изменить значение переменной окружения</value>
+  </data>
+  <data name="AutoNameAddEnvVar" xml:space="preserve">
+    <value>Добавить переменную окружения</value>
+  </data>
+
+  <!-- HooksEditorView -->
+  <data name="AutoNameHookEventList" xml:space="preserve">
+    <value>Типы событий хуков</value>
+  </data>
+  <data name="AutoNameHooksGrid" xml:space="preserve">
+    <value>Хуки для выбранного события</value>
+  </data>
+  <data name="AutoNameNewHookHeaderKey" xml:space="preserve">
+    <value>Имя нового HTTP-заголовка</value>
+  </data>
+  <data name="AutoNameNewHookHeaderValue" xml:space="preserve">
+    <value>Значение нового HTTP-заголовка</value>
+  </data>
+  <data name="AutoNameAddHookHeader" xml:space="preserve">
+    <value>Добавить HTTP-заголовок</value>
+  </data>
+  <data name="AutoNameAddHookAllowedEnvVar" xml:space="preserve">
+    <value>Добавить разрешённую переменную окружения</value>
+  </data>
+
+  <!-- MarketplacesEditorView -->
+  <data name="AutoNameNewMarketplaceSourceType" xml:space="preserve">
+    <value>Тип источника нового маркетплейса</value>
+  </data>
+  <data name="AutoNameAddMarketplace" xml:space="preserve">
+    <value>Добавить маркетплейс</value>
+  </data>
+
+  <!-- EnvironmentEditorView -->
+  <data name="AutoNameEnvVarEditValue" xml:space="preserve">
+    <value>Значение переменной окружения</value>
+  </data>
+
+  <data name="WatermarkSearch" xml:space="preserve">
+    <value>Поиск по параметрам…</value>
+  </data>
+  <data name="TipSearchBox" xml:space="preserve">
+    <value>Поиск по всем параметрам по имени или описанию</value>
+  </data>
+  <data name="AutoNameSearchBox" xml:space="preserve">
+    <value>Поиск параметров</value>
+  </data>
+  <data name="AutoHelpSearchBox" xml:space="preserve">
+    <value>Введите текст для поиска по всем параметрам по имени или описанию. Щёлкните результат, чтобы перейти прямо к этому параметру.</value>
+  </data>
+  <data name="TipProgressLoading" xml:space="preserve">
+    <value>Загрузка параметров…</value>
+  </data>
+
+  <!-- MainWindow — status bar -->
+  <data name="TipToggleTheme" xml:space="preserve">
+    <value>Переключение между светлой и тёмной темой</value>
+  </data>
+  <data name="AutoNameToggleTheme" xml:space="preserve">
+    <value>Переключить тему</value>
+  </data>
+  <data name="ButtonReloadWindow" xml:space="preserve">
+    <value>Пе_резагрузить окно</value>
+    <comment>Alt+R — status bar button. (F5 also reloads via the Window.KeyBindings.)</comment>
+  </data>
+  <data name="TipReloadWindow" xml:space="preserve">
+    <value>Отменить несохранённые изменения и перезагрузить все файлы параметров с диска</value>
+  </data>
+  <data name="AutoNameReloadWindow" xml:space="preserve">
+    <value>Перезагрузить параметры с диска</value>
+  </data>
+  <data name="TipCliActiveBadge" xml:space="preserve">
+    <value>Claude Code CLI читает параметры из этого профиля (установлен через «Применить» на панели «Профили» или через CLI claudectx). Откройте раздел «Профили», чтобы применить другой профиль.</value>
+  </data>
+  <data name="TipDesktopActiveBadge" xml:space="preserve">
+    <value>Claude Desktop читает свою конфигурацию из этого профиля (установлен через «Применить» на панели «Профили»). Откройте раздел «Профили», чтобы применить другой профиль Desktop.</value>
+  </data>
+  <data name="StringFormatCliActive" xml:space="preserve">
+    <value>Claude Code: {0}</value>
+  </data>
+  <data name="StringFormatDesktopActive" xml:space="preserve">
+    <value>Claude Desktop: {0}</value>
+  </data>
+  <data name="TipAppVersion" xml:space="preserve">
+    <value>Версия ClaudeForge</value>
+  </data>
+
+  <!-- MainWindow — navigation sidebar -->
+  <data name="TipNavigateBack" xml:space="preserve">
+    <value>Вернуться на страницу, на которой вы были до перехода сюда</value>
+  </data>
+  <data name="AutoNameNavigateBack" xml:space="preserve">
+    <value>Перейти назад</value>
+  </data>
+  <data name="AutoHelpNavigateBack" xml:space="preserve">
+    <value>Возвращает на страницу, которую вы просматривали до перехода по глубокой ссылке</value>
+  </data>
+  <data name="ButtonBack" xml:space="preserve">
+    <value>← Назад</value>
+  </data>
+
+  <!-- MainWindow — install guidance banner -->
+  <data name="LabelInstallBannerTitle" xml:space="preserve">
+    <value>Установка Claude не обнаружена</value>
+  </data>
+  <data name="TextInstallBannerDesc" xml:space="preserve">
+    <value>Claude Code не найден в этой системе. Вы по-прежнему можете просматривать, создавать и экспортировать файлы конфигурации — это полезно для настройки других компьютеров или обмена конфигурациями с коллегами.</value>
+  </data>
+  <data name="LabelInstallCommand" xml:space="preserve">
+    <value>Установить на этой машине командой:</value>
+  </data>
+  <data name="ButtonCopyInstall" xml:space="preserve">
+    <value>📋 Копировать</value>
+  </data>
+  <data name="TipButtonCopyInstall" xml:space="preserve">
+    <value>Скопировать команду установки в буфер обмена</value>
+  </data>
+  <data name="AutoNameButtonCopyInstall" xml:space="preserve">
+    <value>Скопировать команду установки</value>
+  </data>
+  <data name="TipButtonRunInstall" xml:space="preserve">
+    <value>Открыть терминал и выполнить команду установки</value>
+  </data>
+  <data name="AutoNameButtonRunInstall" xml:space="preserve">
+    <value>Выполнить команду установки</value>
+  </data>
+  <data name="ButtonDismissInstallBanner" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonDismissInstall" xml:space="preserve">
+    <value>Скрыть это сообщение до конца текущего сеанса</value>
+  </data>
+  <data name="AutoNameButtonDismissInstall" xml:space="preserve">
+    <value>Закрыть подсказку по установке</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>Скрыть этот баннер. Он появится снова при открытии другого проекта, нажатии «Перезагрузить окно» или перезапуске приложения.</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>Закрыть баннер ошибок схемы</value>
+  </data>
+  <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
+    <value>После установки: если Claude Code попадёт в ~/.local/bin и этот каталог отсутствует в PATH, нажмите «Добавить в PATH» на странице «Информация о версии» (или выполните команду export, выведенную установщиком, в вашей оболочке). Затем перезапустите ClaudeForge для обнаружения установки.</value>
+  </data>
+  <data name="TextInstallPostInstallNoteWindows" xml:space="preserve">
+    <value>После установки: перезапустите ClaudeForge для обнаружения новой установки (запущенное приложение видит старый PATH).</value>
+  </data>
+  <data name="LabelLearnMore" xml:space="preserve">
+    <value>Подробнее:</value>
+  </data>
+  <data name="LinkClaudeOverview" xml:space="preserve">
+    <value>Обзор Claude</value>
+  </data>
+  <data name="TipLinkClaudeOverview" xml:space="preserve">
+    <value>Открыть страницу обзора Claude в браузере</value>
+  </data>
+  <data name="LinkQuickStart" xml:space="preserve">
+    <value>Краткое руководство</value>
+  </data>
+  <data name="TipLinkQuickStart" xml:space="preserve">
+    <value>Открыть краткое руководство Claude Code в браузере</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WelcomeView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="WelcomeHeading" xml:space="preserve">
+    <value>Добро пожаловать в ClaudeForge</value>
+    <comment>title-bar AppTitle is now "ClaudeForge" alone; the Welcome page heading still uses a longer-form descriptor since it has the visual space.</comment>
+  </data>
+  <data name="WelcomeSubtitle" xml:space="preserve">
+    <value>Кроссплатформенный редактор параметров с поддержкой областей для Claude Code и Claude Desktop.</value>
+    <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
+  </data>
+  <data name="WelcomeHint" xml:space="preserve">
+    <value>Параметры наслаиваются: Managed &gt; User &gt; Project &gt; Local</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ProfilesView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="ButtonRefreshAll" xml:space="preserve">
+    <value>↻ Обновить всё</value>
+  </data>
+  <data name="TipRefreshAll" xml:space="preserve">
+    <value>Повторно просканировать оба каталога профилей и обновить оба списка.</value>
+  </data>
+  <data name="HeadingProfiles" xml:space="preserve">
+    <value>Профили</value>
+  </data>
+  <data name="ButtonNewProfile" xml:space="preserve">
+    <value>+ Создать</value>
+  </data>
+  <data name="TipNewCliProfile" xml:space="preserve">
+    <value>Создать новый профиль CLI на основе текущих рабочих настроек ~/.claude/.</value>
+  </data>
+  <data name="BadgeLabelCli" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="HeadingCliProfiles" xml:space="preserve">
+    <value>Профили Claude Code</value>
+  </data>
+  <data name="LabelRunSelected" xml:space="preserve">
+    <value>Выбрано: </value>
+  </data>
+  <data name="ButtonApplyToCli" xml:space="preserve">
+    <value>▶ Применить к CLI</value>
+  </data>
+  <data name="TipApplyToCli" xml:space="preserve">
+    <value>Скопировать файлы этого профиля в ~/.claude/, чтобы Claude Code CLI читал их при следующем запуске. Сначала автоматически сохраняет текущий активный профиль.</value>
+  </data>
+  <data name="ButtonSyncFromLive" xml:space="preserve">
+    <value>⇅ Синхронизировать с рабочими</value>
+  </data>
+  <data name="TipSyncFromLive" xml:space="preserve">
+    <value>Обновить хранящиеся файлы этого профиля текущими рабочими ~/.claude/settings.json, CLAUDE.md и mcpServers.</value>
+  </data>
+  <data name="ButtonDeleteProfile" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="TipDeleteCliProfile" xml:space="preserve">
+    <value>Безвозвратно удалить каталог этого профиля. Рабочие файлы ~/.claude/ не затрагиваются.</value>
+  </data>
+  <data name="ButtonExportProfile" xml:space="preserve">
+    <value>Экспорт…</value>
+  </data>
+  <data name="TipButtonExportProfile" xml:space="preserve">
+    <value>Экспортировать этот профиль в один JSON-файл. Использует тот же формат, что и CLI-утилита claudectx, поэтому полученный файл может быть импортирован любым из приложений.</value>
+  </data>
+  <data name="ButtonImportProfile" xml:space="preserve">
+    <value>Импорт…</value>
+  </data>
+  <data name="TipButtonImportProfile" xml:space="preserve">
+    <value>Импортировать профиль из JSON-файла. Принимает файлы, экспортированные либо ClaudeForge, либо CLI-утилитой claudectx (https://github.com/foxj77/claudectx).</value>
+  </data>
+  <data name="DialogTitleExportProfileFailed" xml:space="preserve">
+    <value>Сбой экспорта</value>
+  </data>
+  <data name="DialogTitleImportProfileFailed" xml:space="preserve">
+    <value>Сбой импорта</value>
+  </data>
+  <data name="StatusProfileExportedFmt" xml:space="preserve">
+    <value>Профиль «{0}» экспортирован в {1}</value>
+    <comment>{0} is the profile name, {1} is the destination file path.</comment>
+  </data>
+  <data name="StatusProfileImportedFmt" xml:space="preserve">
+    <value>Профиль «{0}» импортирован</value>
+    <comment>{0} is the resolved profile name (after override resolution).</comment>
+  </data>
+  <data name="HeadingClaudectxBanner" xml:space="preserve">
+    <value>Совместимость с claudectx</value>
+  </data>
+  <data name="TextClaudectxBannerBody" xml:space="preserve">
+    <value>Кнопка «Применить к CLI» ниже переключает рабочие файлы ~/.claude/ (settings.json, CLAUDE.md, mcpServers в ~/.claude.json) с помощью обычных файловых операций — внешний инструмент не требуется. CLI-утилита claudectx — это ОПЦИОНАЛЬНАЯ терминальная альтернатива, выполняющая то же переключение через общий указатель активного профиля в ~/.claude/.claudectx-current; устанавливайте её только если вам нужен CLI-сценарий работы. Профиль, созданный любым из инструментов, сразу же пригоден для использования другим. Экспорт/Импорт ниже создаёт и принимает однофайловый JSON-формат claudectx.</value>
+  </data>
+  <data name="LinkClaudectxRepo" xml:space="preserve">
+    <value>https://github.com/foxj77/claudectx</value>
+    <comment>Public URL of the claudectx repository — surfaces on the Profiles page banner as a clickable link.</comment>
+  </data>
+  <data name="FilePickerProfileJson" xml:space="preserve">
+    <value>JSON-файл профиля</value>
+    <comment>File picker filter display name for *.json profile export/import files.</comment>
+  </data>
+  <data name="HeaderProfileName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="TipHeaderProfileName" xml:space="preserve">
+    <value>Имя профиля — соответствует подкаталогу в ~/.claude/profiles/</value>
+  </data>
+  <data name="HeaderCliActive" xml:space="preserve">
+    <value>Активен в CLI</value>
+  </data>
+  <data name="TipHeaderCliActive" xml:space="preserve">
+    <value>Зелёный значок: этот профиль в настоящее время применён к ~/.claude/ — Claude Code CLI читает из этого профиля.</value>
+  </data>
+  <data name="BadgeCliActive" xml:space="preserve">
+    <value>● Claude Code</value>
+  </data>
+  <data name="TipCliActivePill" xml:space="preserve">
+    <value>Файлы этого профиля в настоящее время находятся в ~/.claude/ — Claude Code CLI читает из этого профиля.</value>
+  </data>
+  <data name="HeaderClaudeMd" xml:space="preserve">
+    <value>CLAUDE.md</value>
+  </data>
+  <data name="TipHeaderClaudeMd" xml:space="preserve">
+    <value>Этот профиль содержит пользовательский файл глобальных инструкций CLAUDE.md</value>
+  </data>
+  <data name="HeaderMcpServers" xml:space="preserve">
+    <value>Серверы MCP</value>
+  </data>
+  <data name="TipHeaderMcpServers" xml:space="preserve">
+    <value>Этот профиль содержит пользовательские определения серверов MCP</value>
+  </data>
+  <data name="BadgeLabelDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="HeadingDesktopProfiles" xml:space="preserve">
+    <value>Профили Claude Desktop</value>
+  </data>
+  <data name="TipNewDesktopProfile" xml:space="preserve">
+    <value>Создать новый профиль Desktop на основе текущего рабочего claude_desktop_config.json.</value>
+  </data>
+  <data name="TextDesktopNotInstalled" xml:space="preserve">
+    <value>Похоже, что Claude Desktop не установлен на этой машине. Профили Desktop станут доступны после установки Claude Desktop.</value>
+  </data>
+  <data name="ButtonApplyToDesktop" xml:space="preserve">
+    <value>▶ Применить к Desktop</value>
+  </data>
+  <data name="TipApplyToDesktop" xml:space="preserve">
+    <value>Скопировать claude_desktop_config.json этого профиля в рабочее расположение Desktop. Claude Desktop подхватит изменение при следующем запуске. Сначала автоматически сохраняет текущий активный профиль Desktop.</value>
+  </data>
+  <data name="ButtonSyncDesktopFromLive" xml:space="preserve">
+    <value>⇅ Синхронизировать с рабочими</value>
+  </data>
+  <data name="TipSyncDesktopFromLive" xml:space="preserve">
+    <value>Обновить этот профиль текущим рабочим claude_desktop_config.json.</value>
+  </data>
+  <data name="TipDeleteDesktopProfile" xml:space="preserve">
+    <value>Безвозвратно удалить этот профиль Desktop. Рабочая конфигурация Desktop не затрагивается.</value>
+  </data>
+  <data name="HeaderDesktopActive" xml:space="preserve">
+    <value>Активен в Desktop</value>
+  </data>
+  <data name="TipHeaderDesktopActive" xml:space="preserve">
+    <value>Синий значок: конфигурация этого профиля в настоящее время применена к рабочему расположению конфигурации Desktop.</value>
+  </data>
+  <data name="BadgeDesktopActive" xml:space="preserve">
+    <value>● Claude Desktop</value>
+  </data>
+  <data name="TipDesktopActivePill" xml:space="preserve">
+    <value>Конфигурация этого профиля в настоящее время применена к рабочему расположению конфигурации Claude Desktop.</value>
+  </data>
+  <data name="HeaderDesktopProfileName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="TipHeaderDesktopProfileName" xml:space="preserve">
+    <value>Имя профиля — соответствует подкаталогу в каталоге профилей Desktop</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BackupRestoreView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingBackupRestore" xml:space="preserve">
+    <value>Резервное копирование / Восстановление</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="TipButtonCancel" xml:space="preserve">
+    <value>Отменить текущую операцию</value>
+  </data>
+  <data name="TabBackup" xml:space="preserve">
+    <value>Резервная копия</value>
+  </data>
+  <data name="TabRestore" xml:space="preserve">
+    <value>Восстановление</value>
+  </data>
+  <data name="TabMsixFix" xml:space="preserve">
+    <value>Исправление Windows MSIX</value>
+  </data>
+  <data name="LabelOutputFolder" xml:space="preserve">
+    <value>Папка вывода</value>
+  </data>
+  <data name="ButtonBrowse" xml:space="preserve">
+    <value>Обзор…</value>
+  </data>
+  <data name="WatermarkBackupDir" xml:space="preserve">
+    <value>Папка не выбрана — нажмите «Обзор», чтобы выбрать</value>
+  </data>
+  <data name="TextBackupDirHint" xml:space="preserve">
+    <value>Архивы резервных копий (.zip) сохраняются в эту папку. Вкладка восстановления может сканировать другую папку.</value>
+  </data>
+  <data name="TextNoBackupDirWarning" xml:space="preserve">
+    <value>⚠ Папка вывода не выбрана. Нажмите «Обзор», чтобы выбрать, куда будут сохраняться файлы резервных копий.</value>
+  </data>
+  <data name="LabelScope" xml:space="preserve">
+    <value>Область</value>
+  </data>
+  <data name="RadioSettingsOnly" xml:space="preserve">
+    <value>Только параметры (быстро, по умолчанию)</value>
+  </data>
+  <data name="RadioFullBackup" xml:space="preserve">
+    <value>Полная (включает ~/.claude/projects — стенограммы сеансов, память)</value>
+  </data>
+  <data name="RadioSanitizedBackup" xml:space="preserve">
+    <value>Безопасная для обмена (секреты скрыты — не подлежит восстановлению)</value>
+  </data>
+  <data name="TipRadioSanitizedBackup" xml:space="preserve">
+    <value>Та же область файлов, что и «Только параметры», но каждое значение *.json, ключ которого соответствует классификатору чувствительных ключей (env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer), заменяется буквальной строкой «[redacted]». Предназначено для обмена структурой конфигурации со службой поддержки, сообществом или в отчёте об ошибке без утечки API-ключей, заголовков аутентификации MCP или токенов OAuth. Безопасные архивы не подлежат восстановлению — выберите «Только параметры» или «Полная» для восстанавливаемой резервной копии.</value>
+  </data>
+  <data name="TextBackupSecretsWarning" xml:space="preserve">
+    <value>⚠ Этот режим сохраняет секреты в исходном виде. API-ключи, токены OAuth и заголовки авторизации MCP будут сохранены в открытом виде внутри архива. Храните ZIP-файл в безопасном месте; выберите режим «Безопасная» ниже, если вам нужно поделиться резервной копией.</value>
+  </data>
+  <data name="TextSanitizedModeExplainer" xml:space="preserve">
+    <value>Безопасная резервная копия: значения, содержащие секреты, будут заменены на «[redacted]», поэтому архивом безопасно делиться. Учётные данные пропускаются полностью. Результат НЕ может быть восстановлен — это артефакт для обмена, а не точка восстановления.</value>
+  </data>
+  <data name="LabelClients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="CheckboxClaudeCode" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="CheckboxClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="CheckboxIncludeCredentials" xml:space="preserve">
+    <value>Включить учётные данные API (~/.claude/.credentials.json)</value>
+  </data>
+  <data name="TipIncludeCredentials" xml:space="preserve">
+    <value>Отмечайте этот пункт только если резервный файл останется в надёжном хранилище. Любой, у кого есть резервная копия, сможет войти в систему от вашего имени, пока эти токены остаются действительными.</value>
+  </data>
+  <data name="LabelRetention" xml:space="preserve">
+    <value>Хранение</value>
+  </data>
+  <data name="LabelKeepLast" xml:space="preserve">
+    <value>Сохранить последние</value>
+  </data>
+  <data name="LabelKeepAll" xml:space="preserve">
+    <value>резервных копий (0 = сохранять все)</value>
+  </data>
+  <data name="ButtonCreateBackup" xml:space="preserve">
+    <value>Создать резервную копию</value>
+  </data>
+  <data name="LabelRestoreFolder" xml:space="preserve">
+    <value>Папка восстановления</value>
+  </data>
+  <data name="WatermarkRestoreDir" xml:space="preserve">
+    <value>Папка не выбрана — нажмите «Обзор», чтобы найти резервные копии</value>
+  </data>
+  <data name="TextNoRestoreDirWarning" xml:space="preserve">
+    <value>⚠ Папка не выбрана. Нажмите «Обзор», чтобы выбрать папку с архивами резервных копий.</value>
+  </data>
+  <data name="TextChooseRestoreFolder" xml:space="preserve">
+    <value>Выберите папку выше, чтобы увидеть доступные резервные копии.</value>
+  </data>
+  <data name="TextRestoreInstructions" xml:space="preserve">
+    <value>Выберите резервную копию для восстановления. Существующие файлы будут перемещены с расширением .pre-restore-*.bak перед перезаписью.</value>
+  </data>
+  <data name="MenuOpenFileLocation" xml:space="preserve">
+    <value>Открыть расположение файла</value>
+  </data>
+  <data name="HeaderBackupDate" xml:space="preserve">
+    <value>Дата</value>
+  </data>
+  <data name="TipHeaderBackupDate" xml:space="preserve">
+    <value>Дата и время создания этой резервной копии (по местному времени)</value>
+  </data>
+  <data name="HeaderBackupFile" xml:space="preserve">
+    <value>Файл</value>
+  </data>
+  <data name="TipHeaderBackupFile" xml:space="preserve">
+    <value>Имя файла архива резервной копии на диске</value>
+  </data>
+  <data name="HeaderBackupPlatform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="TipHeaderBackupPlatform" xml:space="preserve">
+    <value>Платформа ОС, создавшая эту резервную копию: windows, macos или linux. Восстановление резервной копии с другой платформы может потребовать ручного редактирования путей.</value>
+  </data>
+  <data name="HeaderBackupMode" xml:space="preserve">
+    <value>Режим</value>
+  </data>
+  <data name="TipHeaderBackupMode" xml:space="preserve">
+    <value>Область резервной копии — SettingsOnly исключает стенограммы сеансов и память проекта; Full включает всё в ~/.claude/.</value>
+  </data>
+  <data name="HeaderBackupClients" xml:space="preserve">
+    <value>Клиенты</value>
+  </data>
+  <data name="TipHeaderBackupClients" xml:space="preserve">
+    <value>Какие клиенты Claude были включены: ClaudeCode и/или ClaudeDesktop</value>
+  </data>
+  <data name="HeaderBackupSize" xml:space="preserve">
+    <value>Размер</value>
+  </data>
+  <data name="TipHeaderBackupSize" xml:space="preserve">
+    <value>Сжатый размер архива резервной копии</value>
+  </data>
+  <data name="HeaderBackupActions" xml:space="preserve">
+    <value>Действия</value>
+  </data>
+  <data name="TipHeaderBackupActions" xml:space="preserve">
+    <value>«Восстановить» перезаписывает ваши рабочие настройки этой резервной копией (существующие файлы сохраняются как .pre-restore-*.bak). «Удалить» безвозвратно удаляет архив.</value>
+  </data>
+  <data name="ButtonRestore" xml:space="preserve">
+    <value>Восстановить</value>
+  </data>
+  <data name="ButtonDeleteBackup" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ButtonShareBackup" xml:space="preserve">
+    <value>Поделиться</value>
+  </data>
+  <data name="TipButtonShareBackup" xml:space="preserve">
+    <value>Отправить этот архив резервной копии в другое приложение или на другое устройство через панель общего доступа ОС</value>
+  </data>
+  <data name="HeadingMsixFix" xml:space="preserve">
+    <value>Обнаружен виртуализованный путь MSIX</value>
+  </data>
+  <data name="TextMsixDesc" xml:space="preserve">
+    <value>Claude Desktop установлен как пакет MSIX. Windows виртуализирует записи приложения в путь AppData, специфичный для пакета. Из-за этого кнопка «Редактировать конфигурацию» открывает не тот файл, а инструменты (включая это приложение) видят устаревшую копию. Создание NTFS-соединения (junction) из стандартного пути на виртуализованный путь устраняет обе проблемы.</value>
+  </data>
+  <data name="LabelMsixVirtualisedPath" xml:space="preserve">
+    <value>Виртуализованный путь (реальное расположение):</value>
+  </data>
+  <data name="LabelMsixStandardPath" xml:space="preserve">
+    <value>Стандартный путь (на который смотрят инструменты):</value>
+  </data>
+  <data name="ButtonCreateJunction" xml:space="preserve">
+    <value>Создать соединение</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EnvironmentEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingEnvironmentVariables" xml:space="preserve">
+    <value>Переменные окружения</value>
+  </data>
+  <data name="TextEnvSubtitle" xml:space="preserve">
+    <value>Собственное окружение процесса Claude. Для учётных данных отдельных серверов (API-ключи и т. д.) используйте раздел env внутри каждого сервера MCP.</value>
+  </data>
+  <data name="ButtonRefreshEnv" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="TipRefreshEnv" xml:space="preserve">
+    <value>Перечитать текущее окружение процесса и перезагрузить все сохранённые значения с диска</value>
+  </data>
+  <data name="AutoNameRefreshEnv" xml:space="preserve">
+    <value>Обновить переменные окружения</value>
+  </data>
+  <data name="WatermarkFilterVars" xml:space="preserve">
+    <value>Фильтр переменных…</value>
+  </data>
+  <data name="CheckboxShowAll" xml:space="preserve">
+    <value>Показать все</value>
+  </data>
+  <data name="TextShowCommonVars" xml:space="preserve">
+    <value>Показаны распространённые переменные разработки. Установите флажок «Показать все», чтобы увидеть всё.</value>
+  </data>
+  <data name="TextMacLinuxNote" xml:space="preserve">
+    <value>ℹ  В macOS / Linux хранилища окружения User и Machine не доступны для постоянной записи через .NET. Для редактирования доступна только область окружения Claude.</value>
+  </data>
+  <data name="SectionClaudeAnthropicNode" xml:space="preserve">
+    <value>Claude / Anthropic / Node</value>
+  </data>
+  <data name="SectionGeneralPath" xml:space="preserve">
+    <value>Общие (PATH, оболочка, ОС)</value>
+  </data>
+  <data name="HeaderEnvName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="TipHeaderEnvName" xml:space="preserve">
+    <value>Имя переменной окружения. Наведите для описания; щёлкните, чтобы просмотреть/изменить в панели подробностей.</value>
+  </data>
+  <data name="HeaderEffectiveValue" xml:space="preserve">
+    <value>Действующее значение</value>
+  </data>
+  <data name="TipHeaderEffectiveValue" xml:space="preserve">
+    <value>Итоговое значение, которое читает Claude после применения всех областей окружения (process имеет приоритет над user, user — над claude-stored)</value>
+  </data>
+  <data name="HeaderSource" xml:space="preserve">
+    <value>Источник</value>
+  </data>
+  <data name="TipHeaderSource" xml:space="preserve">
+    <value>Какая область задаёт действующее значение: process (окружение ОС), claude (хранится в конфиге окружения claude), user (окружение пользователя Windows) или machine (окружение машины Windows)</value>
+  </data>
+  <data name="HeaderOverridden" xml:space="preserve">
+    <value>Переопределено</value>
+  </data>
+  <data name="TipHeaderOverridden" xml:space="preserve">
+    <value>Отмечено, когда более узкая область (process или claude) явно задаёт эту переменную, имея приоритет над сохранёнными значениями</value>
+  </data>
+  <data name="LabelNewVariable" xml:space="preserve">
+    <value>Новая переменная:</value>
+  </data>
+  <data name="WatermarkVarName" xml:space="preserve">
+    <value>ИМЯ_ПЕРЕМЕННОЙ</value>
+  </data>
+  <data name="ButtonAddVar" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+  <data name="TextValueEditedInPane" xml:space="preserve">
+    <value>(значение изменено в панели подробностей)</value>
+  </data>
+  <data name="TextSelectVariable" xml:space="preserve">
+    <value>Выберите переменную, чтобы увидеть её значения по областям.</value>
+  </data>
+  <data name="LabelEdit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="LabelWritingTo" xml:space="preserve">
+    <value>Запись в:</value>
+  </data>
+  <data name="WatermarkValueNotSet" xml:space="preserve">
+    <value>(не задано)</value>
+  </data>
+  <data name="ButtonSaveEnvVar" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="ButtonRemoveFromScope" xml:space="preserve">
+    <value>Удалить из области</value>
+  </data>
+  <data name="TextProcessEnvNote" xml:space="preserve">
+    <value>ℹ  Эта переменная задана в окружении процесса и не может быть изменена здесь. Она переопределит любое сохранённое значение.</value>
+  </data>
+  <data name="LabelValuesByLayer" xml:space="preserve">
+    <value>Значения по слоям</value>
+  </data>
+  <data name="LabelProcess" xml:space="preserve">
+    <value>Процесс</value>
+  </data>
+  <data name="LabelClaude" xml:space="preserve">
+    <value>Claude</value>
+  </data>
+  <data name="LabelUser" xml:space="preserve">
+    <value>Пользователь</value>
+  </data>
+  <data name="LabelMachine" xml:space="preserve">
+    <value>Машина</value>
+  </data>
+  <data name="TargetNullNotSet" xml:space="preserve">
+    <value>(не задано)</value>
+  </data>
+  <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
+    <value>«{0}» — недопустимое имя переменной окружения.</value>
+  </data>
+  <data name="StatusEnvAccessDeniedFmt" xml:space="preserve">
+    <value>Отказано в доступе при записи «{0}»: {1}</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       AboutEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingVersionInfo" xml:space="preserve">
+    <value>Информация о версии</value>
+  </data>
+  <data name="LabelClaudeCode" xml:space="preserve">
+    <value>Claude Code</value>
+  </data>
+  <data name="LabelClaudeDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+  </data>
+  <data name="LabelPlatform" xml:space="preserve">
+    <value>Платформа</value>
+  </data>
+  <data name="LabelConfigFile" xml:space="preserve">
+    <value>Файл конфигурации</value>
+  </data>
+  <data name="ButtonOpenConfig" xml:space="preserve">
+    <value>Открыть конфиг</value>
+  </data>
+  <data name="TipButtonOpenConfig" xml:space="preserve">
+    <value>Открыть основной файл конфигурации в текстовом редакторе по умолчанию</value>
+  </data>
+  <data name="ButtonManageProfiles" xml:space="preserve">
+    <value>_Управление…</value>
+    <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
+  </data>
+  <data name="ButtonRevealInExplorer" xml:space="preserve">
+    <value>Показать в проводнике</value>
+    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
+  </data>
+
+  <!-- platform-resolved Reveal-in-Files-app labels.
+       PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
+       based on PlatformInfo.Current.  Direct AXAML bindings should use
+       the PlatformLabels static, not these resx entries. -->
+  <data name="ButtonRevealWindows" xml:space="preserve">
+    <value>Показать в проводнике</value>
+  </data>
+  <data name="ButtonRevealMac" xml:space="preserve">
+    <value>Показать в Finder</value>
+  </data>
+  <data name="ButtonRevealLinux" xml:space="preserve">
+    <value>Показать в файловом менеджере</value>
+  </data>
+  <data name="TipButtonRevealWindows" xml:space="preserve">
+    <value>Показать в проводнике Windows</value>
+  </data>
+  <data name="TipButtonRevealMac" xml:space="preserve">
+    <value>Показать в Finder</value>
+  </data>
+  <data name="TipButtonRevealLinux" xml:space="preserve">
+    <value>Показать в файловом менеджере</value>
+  </data>
+
+  <!-- platform-resolved variants of the Memory-page viewer
+       edit hint.  Same approach as ButtonReveal* above. -->
+  <data name="TextMemoryViewerEditHintWindows" xml:space="preserve">
+    <value>Для редактирования откройте в текстовом редакторе — нажмите «Показать в проводнике».</value>
+  </data>
+  <data name="TextMemoryViewerEditHintMac" xml:space="preserve">
+    <value>Для редактирования откройте в текстовом редакторе — нажмите «Показать в Finder».</value>
+  </data>
+  <data name="TextMemoryViewerEditHintLinux" xml:space="preserve">
+    <value>Для редактирования откройте в текстовом редакторе — нажмите «Показать в файловом менеджере».</value>
+  </data>
+  <data name="LabelLogFile" xml:space="preserve">
+    <value>Файл журнала</value>
+  </data>
+  <data name="ButtonShareLog" xml:space="preserve">
+    <value>Поделиться журналом</value>
+  </data>
+  <data name="TipButtonShareLog" xml:space="preserve">
+    <value>Поделиться текущим файлом журнала (полезно для отчётов об ошибках)</value>
+  </data>
+  <data name="ButtonShareConfig" xml:space="preserve">
+    <value>Поделиться конфигом</value>
+  </data>
+  <data name="TipButtonShareConfig" xml:space="preserve">
+    <value>Поделиться действующими параметрами в виде JSON-текста</value>
+  </data>
+  <data name="TargetNullNotDetected" xml:space="preserve">
+    <value>(не обнаружено)</value>
+  </data>
+
+  <!-- Claude Code PATH-warning block (AboutEditorView): appears when the
+       binary is present on disk at a canonical install location but the
+       user's PATH does not expose it (common on Windows ARM64 after an
+       `npm i -g` into %APPDATA%\npm). -->
+  <data name="LabelClaudeCodeNotOnPath" xml:space="preserve">
+    <value>Установлено, но отсутствует в PATH</value>
+  </data>
+  <data name="TextClaudeCodeNotOnPath" xml:space="preserve">
+    <value>Найдено в {0}, но содержащий каталог отсутствует в PATH. Запуск `claude` из терминала будет завершаться ошибкой, пока PATH не будет обновлён.</value>
+  </data>
+  <data name="ButtonAddClaudeCodeToPath" xml:space="preserve">
+    <value>Добавить в PATH</value>
+  </data>
+  <data name="TipButtonAddClaudeCodeToPath" xml:space="preserve">
+    <value>Добавить каталог с claude в ваш пользовательский PATH (права администратора не требуются). Откройте новый терминал, чтобы изменение вступило в силу.</value>
+  </data>
+  <data name="TextAddToPathAdded" xml:space="preserve">
+    <value>Добавлено в пользовательский PATH. Откройте новый терминал, чтобы использовать `claude`.</value>
+  </data>
+  <data name="TextAddToPathAlreadyPresent" xml:space="preserve">
+    <value>Каталог уже был в PATH (ваш текущий сеанс может быть устаревшим).</value>
+  </data>
+  <data name="TextAddToPathFailed" xml:space="preserve">
+    <value>Не удалось обновить PATH — измените `HKCU\Environment\Path` вручную или обратитесь в поддержку.</value>
+  </data>
+  <data name="TextAddToPathUnsupported" xml:space="preserve">
+    <value>Автоматическое редактирование PATH не поддерживается на этой платформе. Добавьте каталог в rc-файл вашей оболочки вручную.</value>
+  </data>
+  <data name="DialogTitleAddClaudeCodeToPath" xml:space="preserve">
+    <value>Добавить Claude Code в PATH?</value>
+  </data>
+  <data name="DialogMessageAddClaudeCodeToPath" xml:space="preserve">
+    <value>Это добавит следующий каталог в вашу пользовательскую переменную окружения PATH (права администратора не требуются):
+
+{0}
+
+Новые терминалы подхватят изменение; существующие терминалы необходимо перезапустить. Продолжить?</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SaveChangesDialog
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="ButtonCopyAllChanges" xml:space="preserve">
+    <value>Копировать всё</value>
+  </data>
+  <data name="TipButtonCopyAllChanges" xml:space="preserve">
+    <value>Скопировать в буфер обмена обычный текстовый сводный список всех изменений (без описаний)</value>
+  </data>
+  <data name="CheckboxShowDialog" xml:space="preserve">
+    <value>Показывать это окно при сохранении</value>
+  </data>
+  <data name="TipCheckboxShowDialog" xml:space="preserve">
+    <value>Снимите флажок, чтобы пропустить это окно подтверждения и сразу сохранять в будущем</value>
+  </data>
+  <data name="ButtonDiscardChanges" xml:space="preserve">
+    <value>Отменить изменения</value>
+  </data>
+  <data name="ButtonSaveDialog" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="DialogTitleSaveChanges" xml:space="preserve">
+    <value>Сохранить изменения</value>
+    <comment>Window title for the SaveChangesDialog when shown in Save mode (regular save flow + pre-Backup save guard).</comment>
+  </data>
+  <data name="DialogTitleRestorePreview" xml:space="preserve">
+    <value>Предпросмотр восстановления</value>
+    <comment>Window title for the SaveChangesDialog when shown in Restore mode (pre-Restore save guard).</comment>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       McpServersEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="WatermarkServerName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="TipAddServer" xml:space="preserve">
+    <value>Добавить сервер</value>
+  </data>
+  <data name="LabelTransportType" xml:space="preserve">
+    <value>Тип транспорта</value>
+  </data>
+  <data name="LabelCommand" xml:space="preserve">
+    <value>Команда</value>
+  </data>
+  <data name="WatermarkMcpCommand" xml:space="preserve">
+    <value>напр. npx, python, /path/to/server</value>
+  </data>
+  <data name="LabelMcpDescription" xml:space="preserve">
+    <value>Описание</value>
+    <comment>MCP server description field (optional human-readable blurb).</comment>
+  </data>
+  <data name="WatermarkMcpDescription" xml:space="preserve">
+    <value>Необязательно — короткое описание, отображаемое в подсказках</value>
+  </data>
+  <data name="LabelDisableBypassPermissionsMode" xml:space="preserve">
+    <value>Отключить режим bypassPermissions</value>
+    <comment>Permissions toggle that prevents `defaultMode = bypassPermissions` from taking effect; managed-scope org policy.</comment>
+  </data>
+  <data name="LabelDisableBypassPermissionsModeCheckbox" xml:space="preserve">
+    <value>Блокировать любые значения bypassPermissions по умолчанию</value>
+  </data>
+  <data name="TextDisableBypassPermissionsModeHint" xml:space="preserve">
+    <value>Если установлено, Claude откажется работать в режиме bypassPermissions независимо от каких-либо переопределений в пользовательской области. Обычно настраивается на уровне Managed корпоративной политикой.</value>
+  </data>
+  <data name="LabelAdditionalDirectories" xml:space="preserve">
+    <value>Дополнительные каталоги</value>
+    <comment>Extra directories the permission scope extends into.</comment>
+  </data>
+  <data name="TextAdditionalDirectoriesHint" xml:space="preserve">
+    <value>Пути за пределами корня проекта, которые Claude может рассматривать как входящие в область. По одному абсолютному пути на строку.</value>
+  </data>
+  <data name="WatermarkAdditionalDirectory" xml:space="preserve">
+    <value>напр. /path/to/another/dir</value>
+  </data>
+  <data name="HeaderHookTimeout" xml:space="preserve">
+    <value>Тайм-аут (с)</value>
+    <comment>Per-hook timeout column header in the hooks DataGrid.</comment>
+  </data>
+  <data name="TipHookTimeout" xml:space="preserve">
+    <value>Необязательный тайм-аут для отдельного хука в секундах. Оставьте пустым, чтобы использовать значение по умолчанию из CLI.</value>
+  </data>
+  <data name="LabelHookHeaders" xml:space="preserve">
+    <value>HTTP-заголовки</value>
+    <comment>Header row for the URL-hook headers editor.</comment>
+  </data>
+  <data name="TextHookHeadersHint" xml:space="preserve">
+    <value>Пользовательские HTTP-заголовки, добавляемые к запросу при срабатывании этого URL-хука. Используйте ${VARNAME} для подстановки значений из переменных окружения, перечисленных ниже.</value>
+  </data>
+  <data name="WatermarkHookHeaderKey" xml:space="preserve">
+    <value>Имя заголовка (напр. Authorization)</value>
+  </data>
+  <data name="WatermarkHookHeaderValue" xml:space="preserve">
+    <value>Значение заголовка (или Bearer ${TOKEN})</value>
+  </data>
+  <data name="LabelHookAllowedEnvVars" xml:space="preserve">
+    <value>Разрешённые переменные окружения</value>
+    <comment>Header row for the URL-hook allowed-env-vars editor.</comment>
+  </data>
+  <data name="TextHookAllowedEnvVarsHint" xml:space="preserve">
+    <value>Имена переменных окружения, значения которых можно подставлять в значения заголовков через ${VARNAME}. Имена, не перечисленные здесь, подставлены не будут.</value>
+  </data>
+  <data name="WatermarkHookAllowedEnvVar" xml:space="preserve">
+    <value>Имя переменной (напр. API_TOKEN)</value>
+  </data>
+  <data name="LabelUrl" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="WatermarkMcpUrl" xml:space="preserve">
+    <value>напр. http://localhost:3000/sse</value>
+  </data>
+  <data name="LabelArguments" xml:space="preserve">
+    <value>Аргументы</value>
+  </data>
+  <data name="HeaderArgValue" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+  <data name="WatermarkAddArgument" xml:space="preserve">
+    <value>Добавить аргумент…</value>
+  </data>
+  <data name="LabelMcpEnvVars" xml:space="preserve">
+    <value>Переменные окружения</value>
+  </data>
+  <data name="TextMcpEnvVarsHint" xml:space="preserve">
+    <value>Внедряются только в подпроцесс этого сервера — не видны Claude или другим серверам. Используйте для API-ключей и учётных данных, нужных этому инструменту.</value>
+  </data>
+  <data name="HeaderEnvKey" xml:space="preserve">
+    <value>Ключ</value>
+  </data>
+  <data name="HeaderEnvValue" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+  <data name="WatermarkEnvKey" xml:space="preserve">
+    <value>КЛЮЧ</value>
+  </data>
+  <data name="WatermarkEnvValue" xml:space="preserve">
+    <value>значение</value>
+  </data>
+  <data name="ValidationMcpCommandRequired" xml:space="preserve">
+    <value>Для транспорта stdio требуется команда.</value>
+  </data>
+  <data name="ValidationMcpUrlInvalid" xml:space="preserve">
+    <value>URL должен быть действительным адресом http:// или https://.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HooksEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextSelectEventType" xml:space="preserve">
+    <value>Выберите тип события</value>
+  </data>
+  <data name="ButtonAddHook" xml:space="preserve">
+    <value>+ Добавить хук</value>
+  </data>
+  <data name="HeaderMatcher" xml:space="preserve">
+    <value>Сопоставитель</value>
+  </data>
+  <data name="HeaderHookType" xml:space="preserve">
+    <value>Тип</value>
+  </data>
+  <data name="HeaderCommandPromptUrl" xml:space="preserve">
+    <value>Команда / Prompt / URL</value>
+  </data>
+  <data name="ButtonRemoveHook" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="TextHookValidationWarning" xml:space="preserve">
+    <value>У одного или нескольких хуков пустой Matcher или Command — эти хуки не сработают.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PermissionsEditorView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelDefaultMode" xml:space="preserve">
+    <value>Режим по умолчанию</value>
+  </data>
+  <data name="TextDefaultModeHint" xml:space="preserve">
+    <value>Управляет тем, как Claude обрабатывает вызовы инструментов, не охваченные ни одним правилом Allow, Deny или Ask. Наведите на каждый вариант, чтобы увидеть описание.</value>
+  </data>
+  <data name="PlaceholderDefaultMode" xml:space="preserve">
+    <value>(не задано — наследуется)</value>
+  </data>
+  <data name="HeaderAllow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="HeaderDeny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+  <data name="HeaderAsk" xml:space="preserve">
+    <value>Ask</value>
+  </data>
+  <data name="TextPermissionsExplainer" xml:space="preserve">
+    <value>Правила разрешений управляют тем, какие инструменты Claude Code могут выполняться без запроса. Правило — это либо чистое имя инструмента (например, Read или Bash), дающее неограниченный доступ к этому инструменту, либо параметризованная форма вроде Bash(git *) или Read(./**/*.ts), которая соответствует только вызовам, чьи аргументы подходят под шаблон. Правила в Allow выполняются без уведомления; правила Deny блокируются полностью; правила Ask всегда вызывают окно подтверждения независимо от настройки «Режим по умолчанию».</value>
+  </data>
+  <data name="TextExamplesHeader" xml:space="preserve">
+    <value>Примеры:</value>
+  </data>
+  <data name="HeaderCommonActions" xml:space="preserve">
+    <value>Распространённые действия</value>
+  </data>
+  <data name="TextCommonActionsNote" xml:space="preserve">
+    <value>Отфильтровано так, чтобы скрыть правила, уже присутствующие в какой-либо области.</value>
+  </data>
+  <data name="TextCommonActionsEmpty" xml:space="preserve">
+    <value>Все распространённые правила уже настроены.</value>
+  </data>
+  <data name="TextCommonActionsWslHint" xml:space="preserve">
+    <value>Подсказка для Windows: инструмент Bash в Claude по умолчанию работает через Git Bash / MSYS, который может искажать пути при операциях, активно использующих файловую систему. Добавьте в список разрешённых группу WSL ниже (напр. Bash(wsl git status)), и Claude будет автоматически предпочитать путь WSL при наличии этих правил.</value>
+    <comment>Permissions page Common Actions contextual hint — shown only when PlatformInfo.Current.IsWindows is true. Explains why the WSL group is there and how to use it. Paired with TextWelcomeWslHint on the Welcome page for cross-discoverability.</comment>
+  </data>
+  <data name="WatermarkAllowRule" xml:space="preserve">
+    <value>напр. Read или Bash(git *)</value>
+  </data>
+  <data name="TipPermissionRule" xml:space="preserve">
+    <value>Введите правило: чистое имя инструмента (напр. Read) или параметризованную форму (напр. Bash(git *)). См. примеры ниже.</value>
+  </data>
+  <data name="TipAddAllowRule" xml:space="preserve">
+    <value>Добавить это правило разрешения</value>
+  </data>
+  <data name="WatermarkDenyRule" xml:space="preserve">
+    <value>напр. Write или Bash(rm *)</value>
+  </data>
+  <data name="TipAddDenyRule" xml:space="preserve">
+    <value>Добавить это правило запрета</value>
+  </data>
+  <data name="WatermarkAskRule" xml:space="preserve">
+    <value>напр. Bash(npm install *)</value>
+  </data>
+  <data name="TipAddAskRule" xml:space="preserve">
+    <value>Добавить это правило запроса</value>
+  </data>
+  <data name="TipRemoveRule" xml:space="preserve">
+    <value>Удалить правило</value>
+  </data>
+  <data name="TipCommonAddAllow" xml:space="preserve">
+    <value>Добавить это правило в список Allow — выполняется без уведомления</value>
+  </data>
+  <data name="TipCommonAddDeny" xml:space="preserve">
+    <value>Добавить это правило в список Deny — блокируется полностью</value>
+  </data>
+  <data name="TipCommonAddAsk" xml:space="preserve">
+    <value>Добавить это правило в список Ask — всегда вызывает окно подтверждения</value>
+  </data>
+  <data name="StringFormatRuleCount" xml:space="preserve">
+    <value>(правил: {0})</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PropertyEditorWrapper
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LabelDefinedInScopes" xml:space="preserve">
+    <value>Задано в областях:</value>
+  </data>
+  <data name="TipResetToInherited" xml:space="preserve">
+    <value>Удалить этот параметр в текущей области (наследовать из нижней области)</value>
+  </data>
+  <data name="ButtonReset" xml:space="preserve">
+    <value>Сбросить</value>
+  </data>
+  <data name="TextOverridden" xml:space="preserve">
+    <value>(переопределено)</value>
+  </data>
+  <data name="TipShowSuggestions" xml:space="preserve">
+    <value>Показать выпадающий список подсказок</value>
+  </data>
+  <data name="TipManagedLocked" xml:space="preserve">
+    <value>Управляется администратором — только для чтения</value>
+  </data>
+  <data name="TipUndocumented" xml:space="preserve">
+    <value>Недокументированный параметр — не описан в официальной документации Claude</value>
+  </data>
+  <data name="TipNewSetting" xml:space="preserve">
+    <value>Новый параметр — добавлен с момента вашего последнего сеанса</value>
+  </data>
+  <data name="TextNewBadge" xml:space="preserve">
+    <value>✨ НОВОЕ</value>
+  </data>
+  <data name="ButtonAdd" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EffectiveSettingsView
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="HeadingEffectiveSettings" xml:space="preserve">
+    <value>Действующие параметры (объединённые)</value>
+  </data>
+  <data name="ButtonRefreshEffective" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="TabProperties" xml:space="preserve">
+    <value>Свойства</value>
+  </data>
+  <data name="TabJson" xml:space="preserve">
+    <value>JSON</value>
+  </data>
+  <data name="WatermarkFilterProps" xml:space="preserve">
+    <value>Фильтр свойств…</value>
+  </data>
+  <data name="HeaderEffectiveProperty" xml:space="preserve">
+    <value>Свойство</value>
+  </data>
+  <data name="TipHeaderEffectiveProperty" xml:space="preserve">
+    <value>Имя параметра (ключ JSON) в том виде, в котором оно используется в settings.json</value>
+  </data>
+  <data name="HeaderEffectiveValueCol" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+  <data name="TipHeaderEffectiveValueCol" xml:space="preserve">
+    <value>Объединённое действующее значение — фактическое значение, которое читает Claude после применения всех слоёв</value>
+  </data>
+  <data name="HeaderEffectiveScope" xml:space="preserve">
+    <value>Область</value>
+  </data>
+  <data name="TipHeaderEffectiveScope" xml:space="preserve">
+    <value>Какой слой конфигурации задаёт это значение: local (только машина) &gt; project (общий в репозитории) &gt; user (личный по умолчанию) &gt; managed (корпоративная политика)</value>
+  </data>
+  <data name="HeaderEffectiveOverridden" xml:space="preserve">
+    <value>Переопределено</value>
+  </data>
+  <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
+    <value>Отмечено, когда более узкая область (напр. local или project) явно задаёт это свойство, переопределяя значение в этой строке</value>
+  </data>
+  <data name="ButtonCopyToClipboard" xml:space="preserve">
+    <value>Копировать в буфер обмена</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ViewModel — status messages (MainWindowViewModel)
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="StatusLoadingSettings" xml:space="preserve">
+    <value>Загрузка схемы и параметров…</value>
+  </data>
+  <data name="StatusReady" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="StatusNothingToSave" xml:space="preserve">
+    <value>Нечего сохранять — параметры ещё не загружены.</value>
+  </data>
+  <data name="StatusSaved" xml:space="preserve">
+    <value>Сохранено.</value>
+  </data>
+  <data name="StatusReloading" xml:space="preserve">
+    <value>Перезагрузка…</value>
+  </data>
+  <data name="StatusReloaded" xml:space="preserve">
+    <value>Перезагружено.</value>
+  </data>
+  <data name="StatusNothingToExport" xml:space="preserve">
+    <value>Нечего экспортировать — параметры ещё не загружены.</value>
+  </data>
+  <data name="StatusErrorFmt" xml:space="preserve">
+    <value>Ошибка: {0}</value>
+  </data>
+  <data name="StatusSaveFailedFmt" xml:space="preserve">
+    <value>Сбой сохранения: {0}</value>
+  </data>
+  <data name="StatusSchemaValidationFailed" xml:space="preserve">
+    <value>Сохранение заблокировано: ошибка проверки схемы</value>
+  </data>
+  <data name="TitleUnsavedChangesOnClose" xml:space="preserve">
+    <value>Несохранённые изменения</value>
+    <comment>Window title of the modal that appears when the user closes the main window with pending edits.</comment>
+  </data>
+  <data name="AppTitle" xml:space="preserve">
+    <value>ClaudeForge</value>
+    <comment>Main window title prefix.  MainWindowViewModel.WindowTitle appends " — &lt;branch|folder|No Project Loaded&gt;" and a " *" suffix when there are unsaved edits.</comment>
+  </data>
+  <data name="TitleNoProjectLoaded" xml:space="preserve">
+    <value>Проект не загружен</value>
+    <comment>Appended to the AppTitle in the window titlebar when no project root is set (user has not opened a project folder).  Format: "ClaudeForge — No Project Loaded".</comment>
+  </data>
+  <data name="TextUnsavedChangesOnClose" xml:space="preserve">
+    <value>У вас есть несохранённые изменения. Что вы хотите сделать?
+
+Сохранить — записать ваши изменения на диск и закрыть.
+Не сохранять — отменить ваши изменения и закрыть.
+Отмена — оставить окно открытым.</value>
+    <comment>Body of the unsaved-changes-on-close modal.  Three explicit choices so the user can't accidentally lose work.</comment>
+  </data>
+  <data name="TipDismissStatus" xml:space="preserve">
+    <value>Закрыть это сообщение состояния.</value>
+  </data>
+  <data name="AutoNameDismissStatus" xml:space="preserve">
+    <value>Закрыть сообщение состояния</value>
+  </data>
+  <data name="BadgeSaveDialogOff" xml:space="preserve">
+    <value>Диалог сохранения отключён</value>
+  </data>
+  <data name="TipBadgeSaveDialogOff" xml:space="preserve">
+    <value>Флажок «Показывать это окно при сохранении» снят в этом сеансе — сохранения будут выполняться сразу, без показа окна подтверждения. Нажмите «Перезагрузить окно», чтобы включить заново, или сохраните ещё раз и установите флажок снова.</value>
+  </data>
+  <data name="TitleSchemaValidationFailed" xml:space="preserve">
+    <value>Невозможно сохранить — ошибка проверки схемы</value>
+  </data>
+  <data name="LabelSchemaBannerTitleFmt" xml:space="preserve">
+    <value>⚠ Обнаружено проблем со схемой в загруженной конфигурации: {0}</value>
+    <comment>{0} is the integer count of validation errors. Banner at the top of the main window when validation fails after a workspace reload.</comment>
+  </data>
+  <data name="LabelSchemaBannerDesc" xml:space="preserve">
+    <value>Одно или несколько значений на диске не соответствуют ожидаемой схеме. Приложение продолжает работать — вы можете сохранять другие изменения — но Claude может отклонить проблемные поля во время выполнения. Нажмите «Показать подробности», чтобы увидеть список по полям.</value>
+  </data>
+  <data name="ButtonShowSchemaDetails" xml:space="preserve">
+    <value>Показать подробности</value>
+  </data>
+  <data name="TitleSchemaValidationDetails" xml:space="preserve">
+    <value>Проблемы проверки схемы</value>
+  </data>
+  <data name="LabelCommonActionKindRead" xml:space="preserve">
+    <value>Чтение</value>
+    <comment>Chiclet label for non-mutating Common Actions rules (cat, ls, git status, Read).</comment>
+  </data>
+  <data name="LabelCommonActionKindWrite" xml:space="preserve">
+    <value>Запись</value>
+    <comment>Chiclet label for local-state-mutating Common Actions rules (edit, git add, git commit).</comment>
+  </data>
+  <data name="LabelCommonActionKindNetwork" xml:space="preserve">
+    <value>Сеть</value>
+    <comment>Chiclet label for external-I/O Common Actions rules (npm, dotnet, curl, WebFetch, mcp__*).</comment>
+  </data>
+  <data name="LabelCommonActionKindDestructive" xml:space="preserve">
+    <value>Разрушительные</value>
+    <comment>Chiclet label for irreversible / broad-blast-radius Common Actions rules (git push, raw Bash).</comment>
+  </data>
+  <data name="LabelCommonActionsCatchAll" xml:space="preserve">
+    <value>Все инструменты — правила-шаблоны, применяемые ко всем инструментам</value>
+    <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
+  </data>
+  <!-- Phase 5 — Memory & Footprint page -->
+  <data name="NavTitleMemory" xml:space="preserve">
+    <value>Память</value>
+    <comment>Top-level nav node label for the Memory page.</comment>
+  </data>
+  <data name="NavDescMemory" xml:space="preserve">
+    <value>Аудит, просмотр и очистка файлов, которые Claude читает в каждом сеансе, и поведенческого следа, оставленного на диске.</value>
+    <comment>Top-level nav node description for the Memory page.</comment>
+  </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>Агенты и навыки</value>
+    <comment>Top-level nav node label for the Agents/Skills/Slash-Commands editor page.</comment>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Просмотр субагентов, навыков и слеш-команд, которые загружает Claude Code — в областях User, Project и Plugin.</value>
+    <comment>Top-level nav node description for the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>Субагенты</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>Навыки</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>Слеш-команды</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>Имя</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>Описание</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>Инструменты</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>Модель</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>Плагин (только чтение)</value>
+    <comment>Badge on plugin-provided artifacts (Agents &amp; Skills page) — these can't be edited in place.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>Изменить</value>
+    <comment>Enter edit mode on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>Сохранить</value>
+    <comment>Save edits on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>Через запятую, напр. Read, Grep, Bash</value>
+    <comment>Placeholder for the tools editor field (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>Сохранено.</value>
+    <comment>Post-save status on the Agents &amp; Skills detail pane (subsequent saves this session).</comment>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>Сохранено. Ваши изменения применятся к следующему сеансу Claude Code.</value>
+    <comment>Post-save status shown once per session — skills/agents load at session start, so edits don't affect a running session.</comment>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>Сбой сохранения: {0}</value>
+    <comment>Post-save error on the Agents &amp; Skills detail pane. {0} = exception message.</comment>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>Загрузка агентов, навыков и команд…</value>
+    <comment>Spinner tooltip / label while the Agents &amp; Skills page scans for artifacts.</comment>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>Редактировать YAML напрямую</value>
+    <comment>Toggle on the Agents &amp; Skills editor that swaps the typed fields for a raw YAML front-matter text box.</comment>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>Редактирование исходного front-matter — типизированные поля игнорируются, пока вы не отключите этот режим. Комментарии и ключи, не охваченные полями, сохраняются.</value>
+    <comment>Hint shown above the raw front-matter text box (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>Не удалось разобрать исходный front-matter — исправьте его перед сохранением.</value>
+    <comment>Validation message when the raw front-matter can't be parsed on save (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="HeaderMemoryCode" xml:space="preserve">
+    <value>Claude Code — память и след</value>
+    <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>
+  </data>
+  <data name="HeaderMemoryDesktop" xml:space="preserve">
+    <value>Claude Desktop</value>
+    <comment>Section header above the Desktop explainer panel on the Memory page.</comment>
+  </data>
+  <data name="HeaderTabUserMemory" xml:space="preserve">
+    <value>Пользовательская память</value>
+    <comment>Tab header for the Tier 1 (read-only) user-memory inventory.</comment>
+  </data>
+  <data name="HeaderTabFootprint" xml:space="preserve">
+    <value>След</value>
+    <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
+  </data>
+  <data name="LabelMemoryViewerNote" xml:space="preserve">
+    <value>Для редактирования откройте в текстовом редакторе — нажмите «Показать в проводнике».</value>
+    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
+  </data>
+  <data name="ButtonRefresh" xml:space="preserve">
+    <value>Обновить</value>
+    <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>Повторно просканировать файловую систему и перезагрузить список</value>
+  </data>
+  <data name="ButtonReveal" xml:space="preserve">
+    <value>Показать в проводнике</value>
+    <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
+  </data>
+  <data name="ButtonCloseViewer" xml:space="preserve">
+    <value>Назад к списку</value>
+    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
+  </data>
+  <data name="ButtonCopyMarkdown" xml:space="preserve">
+    <value>Копировать markdown</value>
+    <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
+  </data>
+  <data name="ButtonOpenInEditor" xml:space="preserve">
+    <value>Открыть в редакторе</value>
+    <comment>Button that opens a file in the platform's registered default editor for the file's type. Used on the Memory page Tier 1 file viewer toolbar, Tier 1 inventory rows, Tier 2 footprint rows, and per-project transcript rows.</comment>
+  </data>
+  <data name="LabelMemoryCategoryPrimary" xml:space="preserve">
+    <value>Основная память (CLAUDE.md / AGENTS.md)</value>
+  </data>
+  <data name="LabelMemoryCategoryProject" xml:space="preserve">
+    <value>Память проекта</value>
+  </data>
+  <data name="LabelMemoryCategorySubagents" xml:space="preserve">
+    <value>Пользовательские субагенты</value>
+  </data>
+  <data name="LabelMemoryCategoryCommands" xml:space="preserve">
+    <value>Слеш-команды</value>
+  </data>
+  <data name="LabelMemoryCategoryHooks" xml:space="preserve">
+    <value>Скрипты-хуки</value>
+  </data>
+  <data name="LabelMemoryCategoryPlans" xml:space="preserve">
+    <value>Сохранённые планы</value>
+  </data>
+  <data name="LabelMemoryCategoryRules" xml:space="preserve">
+    <value>Файлы правил</value>
+  </data>
+  <data name="LabelMemoryCategorySkills" xml:space="preserve">
+    <value>Пользовательские навыки</value>
+  </data>
+  <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
+    <value>Память для других инструментов (Codex, Gemini, OpenCode)</value>
+  </data>
+  <data name="LabelFootprintCategoryTranscripts" xml:space="preserve">
+    <value>Стенограммы сеансов</value>
+  </data>
+  <data name="LabelFootprintCategorySessions" xml:space="preserve">
+    <value>Метаданные сеансов</value>
+  </data>
+  <data name="LabelFootprintCategoryHistory" xml:space="preserve">
+    <value>История запросов</value>
+  </data>
+  <data name="LabelFootprintCategoryBashLog" xml:space="preserve">
+    <value>Журнал команд Bash</value>
+  </data>
+  <data name="LabelFootprintCategoryCostLog" xml:space="preserve">
+    <value>Журнал отслеживания стоимости</value>
+  </data>
+  <data name="LabelFootprintCategoryTodos" xml:space="preserve">
+    <value>Списки задач</value>
+  </data>
+  <data name="LabelFootprintCategoryFileHistory" xml:space="preserve">
+    <value>История правок файлов</value>
+  </data>
+  <data name="LabelFileCountFmt" xml:space="preserve">
+    <value>(файлов: {0})</value>
+    <comment>Inline summary on a Tier 1 group expander header. {0} = file count.</comment>
+  </data>
+  <data name="LabelYes" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="LabelNo" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="HeaderInStandardBackup" xml:space="preserve">
+    <value>В стандартной резервной копии?</value>
+    <comment>Tier 2 footprint table column header.</comment>
+  </data>
+  <data name="TitleDeleteFootprintFmt" xml:space="preserve">
+    <value>Удалить {0}?</value>
+    <comment>Destructive dialog title. {0} = footprint category human label.</comment>
+  </data>
+  <data name="MsgDeleteFootprintConfirmFmt" xml:space="preserve">
+    <value>Это безвозвратно удалит {0} файл(ов) общим размером {1} с диска:</value>
+    <comment>Destructive dialog body. {0} = file count, {1} = humanised size.</comment>
+  </data>
+  <data name="ButtonDeleteFootprint" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Confirm-button label on the Destructive footprint-delete dialog.</comment>
+  </data>
+  <data name="LabelDesktopMemoryExplainerTitle" xml:space="preserve">
+    <value>У Claude Desktop нет эквивалентного файла пользовательской памяти.</value>
+  </data>
+  <data name="LabelDesktopMemoryExplainerBody" xml:space="preserve">
+    <value>Claude Desktop читает свою конфигурацию из единственного config.json и хранит историю разговоров в непрозрачном хранилище IndexedDB, управляемом Chromium. Страница «Память» отображает пользовательскую память только для Claude Code; для Desktop используйте собственную команду «Очистить историю чата» приложения для действий по обеспечению приватности.</value>
+  </data>
+  <!-- Memory page Tier 1 / Tier 2 row tooltips. -->
+  <data name="TipMemoryCategoryPrimary" xml:space="preserve">
+    <value>Верхнеуровневый CLAUDE.md (или AGENTS.md), который Claude читает в начале каждого сеанса Code — ваши предпочтения, не зависящие от проекта, и постоянные инструкции.</value>
+  </data>
+  <data name="TipMemoryCategoryProject" xml:space="preserve">
+    <value>CLAUDE.md (или AGENTS.md) в корне открытого проекта — предпочтения, ограниченные текущим проектом, наслаиваемые поверх основной памяти.</value>
+  </data>
+  <data name="TipMemoryCategorySubagents" xml:space="preserve">
+    <value>Пользовательские определения субагентов в ~/.claude/agents/. Каждый файл .md описывает именованного агента с собственной системной подсказкой, инструментами и условиями срабатывания.</value>
+  </data>
+  <data name="TipMemoryCategoryCommands" xml:space="preserve">
+    <value>Пользовательские слеш-команды в ~/.claude/commands/. Каждый файл .md связывает вызов /name с параметризованной подсказкой.</value>
+  </data>
+  <data name="TipMemoryCategoryHooks" xml:space="preserve">
+    <value>Скрипты, запускаемые системой хуков на событиях жизненного цикла сеанса (PreToolUse, PostToolUse и т. д.). Хранятся в ~/.claude/hooks/ — принимается любое расширение исполняемого файла.</value>
+  </data>
+  <data name="TipMemoryCategoryPlans" xml:space="preserve">
+    <value>Сохранённые планы в ~/.claude/plans/. Каждый файл .md содержит структурированный план реализации, сохраняющийся между сеансами.</value>
+  </data>
+  <data name="TipMemoryCategoryRules" xml:space="preserve">
+    <value>Файлы правил в ~/.claude/rules/ (рекурсивно). Markdown-документы, описывающие соглашения по кодированию, политики безопасности и личные стандарты, которым следует Claude.</value>
+  </data>
+  <data name="TipMemoryCategorySkills" xml:space="preserve">
+    <value>Пользовательские навыки в ~/.claude/skills/&lt;name&gt;/SKILL.md. Каждый навык объединяет специфические для задачи знания, которые Claude может вызвать, когда его описание соответствует намерению пользователя.</value>
+  </data>
+  <data name="TipMemoryCategoryCrossTool" xml:space="preserve">
+    <value>Файлы памяти для родственных ИИ-инструментов (.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md), которые Claude читает как межинструментальный контекст.</value>
+  </data>
+  <data name="TipFootprintCategoryTranscripts" xml:space="preserve">
+    <value>Полные стенограммы разговоров каждого сеанса, хранящиеся в формате JSONL в ~/.claude/projects/&lt;mangled&gt;/. Крупнейший вклад в использование диска; не сохраняется в стандартных резервных копиях.</value>
+  </data>
+  <data name="TipFootprintCategorySessions" xml:space="preserve">
+    <value>Метаданные сеансов: ~/.claude/sessions/, session-data/, session-env/. Состояние, ограниченное сеансом, снимки окружения и подсказки для возобновления.</value>
+  </data>
+  <data name="TipFootprintCategoryHistory" xml:space="preserve">
+    <value>~/.claude/history.jsonl — каждая интерактивная подсказка, которую вы отправляли, сохраняемая между сеансами, чтобы стрелка вверх вызывала прошлые вводы.</value>
+  </data>
+  <data name="TipFootprintCategoryBashLog" xml:space="preserve">
+    <value>~/.claude/bash-commands.log — журнал вызовов bash, которые Claude выполнял от вашего имени; полезно для аудита того, какая активность в оболочке имела место.</value>
+  </data>
+  <data name="TipFootprintCategoryCostLog" xml:space="preserve">
+    <value>~/.claude/cost-tracker.log — телеметрия стоимости токенов по сеансам для анализа затрат.</value>
+  </data>
+  <data name="TipFootprintCategoryTodos" xml:space="preserve">
+    <value>~/.claude/todos/ — снимки списков задач из инструмента TodoWrite, ограниченные сеансом.</value>
+  </data>
+  <data name="TipFootprintCategoryFileHistory" xml:space="preserve">
+    <value>~/.claude/file-history/ — снимки «до/после» файлов, изменённых Claude, используются для отображения различий инструментом Edit.</value>
+  </data>
+  <!-- per-project transcript drilldown. -->
+  <data name="HeaderProjectTranscriptBreakdown" xml:space="preserve">
+    <value>Разбивка по проектам</value>
+    <comment>Expander header for the per-project transcript drilldown on the Footprint tab.</comment>
+  </data>
+  <data name="TipProjectTranscriptBreakdown" xml:space="preserve">
+    <value>Одна строка на каждый проект в ~/.claude/projects/. Позволяет удалить стенограммы одного проекта, не затрагивая другие — точнее, чем удаление на уровне категории «Стенограммы сеансов» выше.</value>
+    <comment>Tooltip on the per-project breakdown Expander header.</comment>
+  </data>
+  <data name="TitleDeleteProjectTranscriptsFmt" xml:space="preserve">
+    <value>Удалить стенограммы для {0}?</value>
+    <comment>Destructive dialog title when deleting a single project's transcripts. {0} = decoded project display name.</comment>
+  </data>
+  <data name="MsgDeleteProjectTranscriptsConfirmFmt" xml:space="preserve">
+    <value>Это безвозвратно удалит {0} файл(ов) стенограмм общим размером {1} из каталога этого проекта:</value>
+    <comment>Destructive dialog body for per-project transcript delete. {0} = file count, {1} = humanised size.</comment>
+  </data>
+  <data name="HeaderProjectColumnLastSeen" xml:space="preserve">
+    <value>Последняя активность</value>
+    <comment>Column header for the relative-time column in the per-project breakdown.</comment>
+  </data>
+  <!-- Footprint warning banner (size threshold). -->
+  <data name="HeaderFootprintLargeWarning" xml:space="preserve">
+    <value>Большой след</value>
+    <comment>Banner header on the Footprint tab when total disk usage exceeds the warning threshold.</comment>
+  </data>
+  <data name="MsgFootprintLargeWarningFmt" xml:space="preserve">
+    <value>Текущий след Claude составляет {0}. Рассмотрите возможность развернуть «Разбивку по проектам» ниже, чтобы удалить стенограммы из проектов, над которыми вы больше не работаете.</value>
+    <comment>Banner body. {0} = humanised aggregate size (e.g. "12.4 GB").</comment>
+  </data>
+  <!-- Marketplace list per-row Advanced sub-fields. -->
+  <data name="HeaderAdvancedFields" xml:space="preserve">
+    <value>Расширенные</value>
+    <comment>Per-row Expander header surfacing optional ref / path sub-fields on github / git Marketplace variants.</comment>
+  </data>
+  <data name="LabelMarketplaceRef" xml:space="preserve">
+    <value>ref</value>
+    <comment>Label for the optional git ref (branch / tag / SHA) sub-field on a Marketplace row.</comment>
+  </data>
+  <data name="WatermarkMarketplaceRef" xml:space="preserve">
+    <value>main / v1.2.3 / 8a3f2c1</value>
+    <comment>Placeholder text for the ref TextBox.</comment>
+  </data>
+  <data name="LabelMarketplacePath" xml:space="preserve">
+    <value>path</value>
+    <comment>Label for the optional subdirectory path sub-field on a Marketplace row.</comment>
+  </data>
+  <data name="WatermarkMarketplacePath" xml:space="preserve">
+    <value>marketplace.json или path/to/dir</value>
+    <comment>Placeholder text for the path TextBox.</comment>
+  </data>
+  <data name="HeaderHttpHeaders" xml:space="preserve">
+    <value>HTTP-заголовки</value>
+    <comment>Per-row Expander header surfacing the HTTP headers sub-editor on a Marketplace url variant.</comment>
+  </data>
+  <data name="WatermarkHeaderName" xml:space="preserve">
+    <value>Имя заголовка</value>
+    <comment>Placeholder for the new-header name TextBox (e.g. Authorization).</comment>
+  </data>
+  <data name="WatermarkHeaderValue" xml:space="preserve">
+    <value>Значение заголовка</value>
+    <comment>Placeholder for the new-header value TextBox (e.g. Bearer xyz).</comment>
+  </data>
+  <!-- pluginConfigs typed editor (audit closure). -->
+  <data name="WatermarkPluginId" xml:space="preserve">
+    <value>plugin-id@marketplace</value>
+    <comment>Placeholder for the per-row plugin id TextBox (format: plugin-name@marketplace-id).</comment>
+  </data>
+  <data name="WatermarkPluginMcpServerName" xml:space="preserve">
+    <value>Имя сервера MCP (напр. github)</value>
+    <comment>Placeholder for the per-server name TextBox inside a plugin's mcpServers map.</comment>
+  </data>
+  <data name="WatermarkPluginConfigKey" xml:space="preserve">
+    <value>Ключ настройки</value>
+    <comment>Placeholder for the per-config key TextBox inside an MCP server config map.</comment>
+  </data>
+  <data name="WatermarkPluginConfigValue" xml:space="preserve">
+    <value>Значение настройки</value>
+    <comment>Placeholder for the per-config value TextBox.</comment>
+  </data>
+  <data name="ButtonAddPlugin" xml:space="preserve">
+    <value>Добавить плагин</value>
+    <comment>Add-button label for adding a new plugin entry to pluginConfigs.</comment>
+  </data>
+  <data name="ButtonAddServer" xml:space="preserve">
+    <value>Добавить сервер</value>
+    <comment>Add-button label for adding a new MCP server entry inside a plugin.</comment>
+  </data>
+  <data name="TipCommonActionKindRead" xml:space="preserve">
+    <value>Чтение — без изменений: list, search, view, status. Инструмент может просматривать содержимое, но не изменять что-либо на диске и не обращаться к сети.</value>
+    <comment>Tooltip on the green Read chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindWrite" xml:space="preserve">
+    <value>Запись — изменяет локальное состояние: edit, save, add, commit. Изменения остаются на этой машине и могут быть отменены с помощью системы контроля версий или резервных копий.</value>
+    <comment>Tooltip on the amber Write chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindNetwork" xml:space="preserve">
+    <value>Сеть — обращения к удалённым сервисам: установка пакетов, веб-запросы, серверы MCP. Предоставление этого позволяет инструменту обращаться в Интернет.</value>
+    <comment>Tooltip on the blue Network chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="TipCommonActionKindDestructive" xml:space="preserve">
+    <value>Разрушительные — необратимые или с большой областью воздействия: git push, шаблоны в чистом shell. После предоставления восстановление может потребовать внешних действий.</value>
+    <comment>Tooltip on the red Destructive chiclet shown on every Common Actions row.</comment>
+  </data>
+  <data name="LabelEditingScope" xml:space="preserve">
+    <value>Редактируемая область:</value>
+    <comment>Caption above the scope combo box on every settings page.</comment>
+  </data>
+  <data name="TipEditingScopeLabel" xml:space="preserve">
+    <value>Область (слой) определяет, в какой файл конфигурации будет записан этот параметр. Более узкие области переопределяют более широкие: local &gt; project &gt; user &gt; managed.</value>
+    <comment>Tooltip on the "Editing scope:" label.</comment>
+  </data>
+  <data name="TipEditingScopeCombo" xml:space="preserve">
+    <value>Выберите слой конфигурации для записи. «local» влияет только на вашу текущую машину; «project» совместно используется с репозиторием; «user» — ваш личный по умолчанию; «managed» контролируется организацией и доступен только для чтения.</value>
+    <comment>Tooltip on the scope ComboBox.</comment>
+  </data>
+  <data name="AutoNameEditingScope" xml:space="preserve">
+    <value>Редактируемая область</value>
+    <comment>AutomationProperties.Name on the scope ComboBox.</comment>
+  </data>
+  <data name="AutoHelpEditingScope" xml:space="preserve">
+    <value>Выберите слой конфигурации для записи изменений. Более узкие области имеют приоритет над более широкими.</value>
+    <comment>AutomationProperties.HelpText on the scope ComboBox.</comment>
+  </data>
+  <data name="TipEditorErrorCopy" xml:space="preserve">
+    <value>Щёлкните и нажмите Ctrl+A, затем Ctrl+C, чтобы скопировать эту ошибку</value>
+    <comment>Tooltip on the inline editor-error SelectableTextBlock that appears next to the scope combo when a SetValue throws.</comment>
+  </data>
+  <data name="HeaderTabProperties" xml:space="preserve">
+    <value>Свойства</value>
+    <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="LabelClearPropertyFilter" xml:space="preserve">
+    <value>✕ Очистить фильтр свойств</value>
+    <comment>Button text for the clear-filter button on the property-filter bar.</comment>
+  </data>
+  <data name="TipClearPropertyFilter" xml:space="preserve">
+    <value>Очистить фильтр свойств и показать все свойства</value>
+    <comment>Tooltip on the clear-property-filter button.</comment>
+  </data>
+  <data name="AutoNameClearPropertyFilter" xml:space="preserve">
+    <value>Очистить фильтр свойств</value>
+    <comment>AutomationProperties.Name on the clear-property-filter button.</comment>
+  </data>
+  <data name="HeaderTabEffective" xml:space="preserve">
+    <value>Действующие</value>
+    <comment>Tab header on the SettingsGroupEditor view (Effective Values tab).</comment>
+  </data>
+  <data name="LabelCopyToClipboard" xml:space="preserve">
+    <value>Копировать в буфер обмена</value>
+    <comment>Generic copy-to-clipboard button label, reused across editor JSON views.</comment>
+  </data>
+  <data name="TipCopyJsonClipboard" xml:space="preserve">
+    <value>Скопировать показанный ниже JSON в буфер обмена</value>
+    <comment>Tooltip on the copy-JSON-to-clipboard button on the JSON tab of SettingsGroupEditor.</comment>
+  </data>
+  <data name="AutoNameCopyJsonClipboard" xml:space="preserve">
+    <value>Копировать JSON в буфер обмена</value>
+    <comment>AutomationProperties.Name on the copy-JSON-to-clipboard button.</comment>
+  </data>
+  <data name="LabelShowAllSchemaProps" xml:space="preserve">
+    <value>Показать все свойства схемы (включая незаданные значения по умолчанию)</value>
+    <comment>Checkbox label on the JSON tab of SettingsGroupEditor that toggles whether unset defaults are rendered.</comment>
+  </data>
+  <data name="TipShowAllSchemaProps" xml:space="preserve">
+    <value>Установлено: показывает каждое определённое в схеме свойство с его значением по умолчанию или заполнителем, что полезно как справочник. Снято: показывает только свойства, для которых задано значение в активной области.</value>
+    <comment>Tooltip on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="AutoNameShowAllSchemaProps" xml:space="preserve">
+    <value>Показать все свойства схемы</value>
+    <comment>AutomationProperties.Name on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="AutoHelpShowAllSchemaProps" xml:space="preserve">
+    <value>Когда установлен, представление JSON включает каждое свойство схемы со значениями по умолчанию или заполнителями. Когда снят, показываются только заданные значения.</value>
+    <comment>AutomationProperties.HelpText on the "Show all schema properties" checkbox.</comment>
+  </data>
+  <data name="HeaderSaveDialogProperty" xml:space="preserve">
+    <value>Свойство</value>
+    <comment>Save-confirmation dialog: "Property" column header.</comment>
+  </data>
+  <data name="HeaderSaveDialogOld" xml:space="preserve">
+    <value>Старое</value>
+    <comment>Save-confirmation dialog: "Old value" column header.</comment>
+  </data>
+  <data name="HeaderSaveDialogNew" xml:space="preserve">
+    <value>Новое</value>
+    <comment>Save-confirmation dialog: "New value" column header.</comment>
+  </data>
+
+  <!-- Save-changes dialog kind-pill labels — drive both the
+       hover tooltip and AutomationProperties.Name on the coloured + / - / ~
+       pill in the leftmost column.  Without these, screen-reader users only
+       hear the bare glyph (which announces as "Plus sign" / "Minus" / "Tilde")
+       and have no idea what the row's nature is. -->
+  <data name="SaveDialogKindAdded" xml:space="preserve">
+    <value>Добавленное свойство</value>
+    <comment>Tooltip + screen-reader name for the green '+' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="SaveDialogKindRemoved" xml:space="preserve">
+    <value>Удалённое свойство</value>
+    <comment>Tooltip + screen-reader name for the red '-' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="SaveDialogKindModified" xml:space="preserve">
+    <value>Изменённое свойство</value>
+    <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+
+  <data name="LabelMenuCopy" xml:space="preserve">
+    <value>Копировать</value>
+    <comment>Generic "Copy" context-menu item label, used in SaveChangesDialog cell context-flyouts and EffectiveSettings cells.</comment>
+  </data>
+  <data name="WatermarkMarketplaceName" xml:space="preserve">
+    <value>Имя маркетплейса</value>
+    <comment>Marketplaces editor: placeholder text for the marketplace-name field (both new-row and existing-row inline).</comment>
+  </data>
+  <data name="WatermarkMarketplaceSource" xml:space="preserve">
+    <value>URL / репозиторий / путь / пакет</value>
+    <comment>Marketplaces editor: placeholder text for the marketplace source/url field.</comment>
+  </data>
+  <data name="LabelMarketplaceAdd" xml:space="preserve">
+    <value>Добавить</value>
+    <comment>Marketplaces editor: button text for adding a new marketplace.</comment>
+  </data>
+  <data name="WatermarkMarketplaceNameInline" xml:space="preserve">
+    <value>Имя</value>
+    <comment>Marketplaces editor: shorter placeholder text for the inline name field on existing rows.</comment>
+  </data>
+  <data name="LabelOperationReadOnly" xml:space="preserve">
+    <value>Только чтение</value>
+    <comment>Common Actions operation-group header for non-mutating File-tool rules.</comment>
+  </data>
+  <data name="LabelOperationWrite" xml:space="preserve">
+    <value>Запись</value>
+    <comment>Common Actions operation-group header for File-tool write rules.</comment>
+  </data>
+  <data name="LabelOperationSearchView" xml:space="preserve">
+    <value>Поиск и просмотр</value>
+    <comment>Common Actions operation-group header for shell-tool view/search commands.</comment>
+  </data>
+  <data name="LabelOperationGitRead" xml:space="preserve">
+    <value>Git (чтение)</value>
+    <comment>Common Actions operation-group header for git status/log/diff.</comment>
+  </data>
+  <data name="LabelOperationGitWrite" xml:space="preserve">
+    <value>Git (запись)</value>
+    <comment>Common Actions operation-group header for git add/commit/push.</comment>
+  </data>
+  <data name="LabelOperationRuntimes" xml:space="preserve">
+    <value>Среды выполнения</value>
+    <comment>Common Actions operation-group header for interpreter/runtime invocations (dotnet/npm/python/node).</comment>
+  </data>
+  <data name="LabelOperationNetwork" xml:space="preserve">
+    <value>Сеть</value>
+    <comment>Common Actions operation-group header for outbound network commands (curl, wget, Invoke-WebRequest).</comment>
+  </data>
+  <data name="LabelOperationFetchSearch" xml:space="preserve">
+    <value>Запрос и поиск</value>
+    <comment>Common Actions operation-group header for the Web tool's WebFetch/WebSearch operations.</comment>
+  </data>
+  <data name="LabelOperationWildcards" xml:space="preserve">
+    <value>Шаблоны</value>
+    <comment>Common Actions operation-group header inside the catch-all wildcard tier.</comment>
+  </data>
+  <data name="ThemeLabelLight" xml:space="preserve">
+    <value>☀ Светлая</value>
+  </data>
+  <data name="ThemeLabelDark" xml:space="preserve">
+    <value>&#x263E; Тёмная</value>
+  </data>
+  <data name="InstallRunPowerShell" xml:space="preserve">
+    <value>▶ Запустить в PowerShell</value>
+  </data>
+  <data name="InstallRunTerminal" xml:space="preserve">
+    <value>▶ Запустить в терминале</value>
+  </data>
+  <data name="TextNoTerminalFound" xml:space="preserve">
+    <value>Терминал не найден — используйте «Копировать»</value>
+  </data>
+  <data name="InstallRunBrowser" xml:space="preserve">
+    <value>▶ Открыть в браузере</value>
+  </data>
+  <data name="TipButtonOpenDownload" xml:space="preserve">
+    <value>Открыть страницу загрузки Claude Desktop в браузере по умолчанию</value>
+  </data>
+  <data name="AutoNameButtonOpenDownload" xml:space="preserve">
+    <value>Открыть страницу загрузки</value>
+  </data>
+  <data name="TipButtonCopyUrl" xml:space="preserve">
+    <value>Скопировать URL загрузки в буфер обмена</value>
+  </data>
+  <data name="AutoNameButtonCopyUrl" xml:space="preserve">
+    <value>Скопировать URL загрузки</value>
+  </data>
+
+  <!-- Dialog strings (MainWindowViewModel) -->
+  <data name="DialogTitleNewProfile" xml:space="preserve">
+    <value>Новый профиль</value>
+  </data>
+  <data name="DialogPromptNewProfile" xml:space="preserve">
+    <value>Введите имя для нового профиля:</value>
+  </data>
+  <data name="DialogPlaceholderNewProfile" xml:space="preserve">
+    <value>напр. work, personal, home</value>
+  </data>
+  <data name="DialogTitleInvalidName" xml:space="preserve">
+    <value>Недопустимое имя</value>
+  </data>
+  <data name="MsgReservedProfileName" xml:space="preserve">
+    <value>«{0}» — зарезервированное имя. Выберите другое имя профиля.</value>
+  </data>
+  <data name="MsgDotProfileName" xml:space="preserve">
+    <value>Имя профиля не может быть «.» или «..».</value>
+  </data>
+  <data name="MsgInvalidPathChars" xml:space="preserve">
+    <value>Имя профиля содержит символы, недопустимые в именах файлов.</value>
+  </data>
+  <data name="DialogTitleProfileExists" xml:space="preserve">
+    <value>Профиль существует</value>
+  </data>
+  <data name="MsgProfileAlreadyExists" xml:space="preserve">
+    <value>Профиль с именем «{0}» уже существует. Выберите другое имя.</value>
+  </data>
+  <data name="DialogTitleDeleteProfile" xml:space="preserve">
+    <value>Удалить профиль</value>
+  </data>
+  <data name="MsgConfirmDeleteProfile" xml:space="preserve">
+    <value>Удалить профиль «{0}» и все его настройки? Это действие нельзя отменить.</value>
+  </data>
+  <data name="DialogTitleError" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="MsgCannotCreateProfile" xml:space="preserve">
+    <value>Не удалось создать профиль: {0}</value>
+  </data>
+  <data name="MsgCannotDeleteProfile" xml:space="preserve">
+    <value>Не удалось удалить профиль: {0}</value>
+  </data>
+  <data name="WorkspaceNameClaudeCode" xml:space="preserve">
+    <value>Параметры Claude Code</value>
+  </data>
+  <data name="WorkspaceNameClaudeDesktop" xml:space="preserve">
+    <value>Конфигурация Claude Desktop</value>
+  </data>
+  <data name="DialogTitleOpenProject" xml:space="preserve">
+    <value>Открыть папку проекта</value>
+  </data>
+  <data name="DialogTitleExportConfigs" xml:space="preserve">
+    <value>Экспорт действующих конфигураций</value>
+  </data>
+  <data name="FileFilterZipArchive" xml:space="preserve">
+    <value>ZIP-архив</value>
+  </data>
+
+  <!-- ViewModel — status messages (MainWindowViewModel) — format strings -->
+  <data name="StatusReloadFailedFmt" xml:space="preserve">
+    <value>Сбой перезагрузки: {0}</value>
+  </data>
+  <data name="StatusReloadingFileFmt" xml:space="preserve">
+    <value>Перезагрузка (изменено: {0})…</value>
+  </data>
+  <data name="StatusOpeningProjectFmt" xml:space="preserve">
+    <value>Открытие проекта: {0}…</value>
+  </data>
+  <data name="StatusProjectOpenFmt" xml:space="preserve">
+    <value>Проект: {0}</value>
+  </data>
+  <data name="StatusOpenProjectFailedFmt" xml:space="preserve">
+    <value>Не удалось открыть проект: {0}</value>
+  </data>
+  <data name="StatusExportedFmt" xml:space="preserve">
+    <value>Экспортировано в {0}</value>
+  </data>
+  <data name="StatusExportFailedFmt" xml:space="preserve">
+    <value>Сбой экспорта: {0}</value>
+  </data>
+  <data name="StatusProfileCreatedFmt" xml:space="preserve">
+    <value>Профиль «{0}» создан на основе текущих рабочих настроек.</value>
+  </data>
+  <data name="StatusProfileDeletedFmt" xml:space="preserve">
+    <value>Профиль «{0}» удалён.</value>
+  </data>
+
+  <!-- ViewModel — status messages (BackupRestoreViewModel) -->
+  <data name="StatusChooseBackupFolder" xml:space="preserve">
+    <value>Сначала выберите папку вывода (нажмите «Обзор» рядом с путём к папке).</value>
+  </data>
+  <data name="ProgressPreparing" xml:space="preserve">
+    <value>Подготовка…</value>
+  </data>
+  <data name="ProgressStarting" xml:space="preserve">
+    <value>Запуск…</value>
+  </data>
+  <data name="ProgressRestoring" xml:space="preserve">
+    <value>Восстановление…</value>
+  </data>
+  <data name="ProgressCreatingJunction" xml:space="preserve">
+    <value>Создание соединения…</value>
+  </data>
+  <data name="LabelLastBackupNever" xml:space="preserve">
+    <value>Резервных копий ещё нет</value>
+  </data>
+  <data name="LabelLastBackupJustNow" xml:space="preserve">
+    <value>Последняя резервная копия: только что</value>
+  </data>
+  <data name="LabelLastBackupMinutesFmt" xml:space="preserve">
+    <value>Последняя резервная копия: {0} мин. назад</value>
+  </data>
+  <data name="LabelLastBackupHoursFmt" xml:space="preserve">
+    <value>Последняя резервная копия: {0} ч. назад</value>
+  </data>
+  <data name="LabelLastBackupDaysFmt" xml:space="preserve">
+    <value>Последняя резервная копия: {0} дн. назад</value>
+  </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>Включает открытый проект: {0}</value>
+    <comment>Backup tab inclusion label shown when a project is open. {0} = bare folder name of the open project (BackupRestoreViewModel.OpenProjectName). Confirms to the user that the project's `.claude` directory, CLAUDE.md, etc. will be added to the archive alongside the user-level config.</comment>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>Проект не открыт — только пользовательская конфигурация</value>
+    <comment>Backup tab inclusion label shown when no project is open. The em-dash (—) is intentional and matches the dash convention used by similar status labels elsewhere in the app.</comment>
+  </data>
+  <data name="StatusBackupWarningsFmt" xml:space="preserve">
+    <value>  [!] предупреждений: {0} — см. manifest.</value>
+  </data>
+  <data name="StatusBackupDeletedFmt" xml:space="preserve">
+    <value>Удалено: {0}.</value>
+  </data>
+  <data name="StatusBackupDeleteFailedFmt" xml:space="preserve">
+    <value>Не удалось удалить {0}.</value>
+  </data>
+  <data name="StatusClaudeRunningFmt" xml:space="preserve">
+    <value>[!] Claude сейчас запущен (процессов: {0}). Некоторые файлы могут быть заблокированы во время восстановления.</value>
+  </data>
+
+  <!-- ViewModel — status messages (ProfilesViewModel) -->
+  <data name="StatusNoCliProfiles" xml:space="preserve">
+    <value>Профили CLI не найдены. Создайте один кнопкой «Создать».</value>
+  </data>
+  <data name="StatusCreatingProfileFmt" xml:space="preserve">
+    <value>Создание профиля «{0}»…</value>
+  </data>
+  <data name="StatusApplyingProfileFmt" xml:space="preserve">
+    <value>Применение профиля «{0}»…</value>
+  </data>
+  <data name="StatusProfileAppliedFmt" xml:space="preserve">
+    <value>Профиль «{0}» применён. Claude Code будет использовать эти настройки при следующем запуске.</value>
+  </data>
+  <data name="StatusSyncingProfileFmt" xml:space="preserve">
+    <value>Синхронизация рабочих файлов в профиль «{0}»…</value>
+  </data>
+  <data name="StatusProfileSyncedFmt" xml:space="preserve">
+    <value>Профиль «{0}» обновлён из рабочих настроек.</value>
+  </data>
+  <data name="StatusApplyTimedOut" xml:space="preserve">
+    <value>Тайм-аут применения.</value>
+  </data>
+  <data name="StatusSyncTimedOut" xml:space="preserve">
+    <value>Тайм-аут синхронизации.</value>
+  </data>
+  <data name="StatusNoDesktopProfiles" xml:space="preserve">
+    <value>Профили Desktop не найдены. Создайте один кнопкой «Создать».</value>
+  </data>
+  <data name="StatusCreatingDesktopProfileFmt" xml:space="preserve">
+    <value>Создание профиля Desktop «{0}»…</value>
+  </data>
+  <data name="StatusDesktopProfileCreatedFmt" xml:space="preserve">
+    <value>Профиль Desktop «{0}» создан на основе текущей рабочей конфигурации.</value>
+  </data>
+  <data name="StatusApplyingDesktopProfileFmt" xml:space="preserve">
+    <value>Применение профиля Desktop «{0}»…</value>
+  </data>
+  <data name="StatusDesktopProfileAppliedFmt" xml:space="preserve">
+    <value>Профиль Desktop «{0}» применён.</value>
+  </data>
+  <data name="StatusSyncingDesktopProfileFmt" xml:space="preserve">
+    <value>Синхронизация рабочей конфигурации Desktop в профиль «{0}»…</value>
+  </data>
+  <data name="StatusDesktopProfileSyncedFmt" xml:space="preserve">
+    <value>Профиль Desktop «{0}» обновлён из рабочей конфигурации.</value>
+  </data>
+  <data name="StatusDesktopProfileDeletedFmt" xml:space="preserve">
+    <value>Профиль Desktop «{0}» удалён.</value>
+  </data>
+
+  <!-- ViewModel — status messages (EnvironmentEditorViewModel) -->
+  <data name="StatusCannotSaveClaude" xml:space="preserve">
+    <value>Не удаётся сохранить в область Claude — установка Claude Code не обнаружена.</value>
+  </data>
+  <data name="StatusEnvSavedFmt" xml:space="preserve">
+    <value>Сохранено {0} → {1}.</value>
+  </data>
+  <data name="StatusEnvRemovedFmt" xml:space="preserve">
+    <value>Удалено {0} из {1}.</value>
+  </data>
+  <data name="StatusEnvAddedFmt" xml:space="preserve">
+    <value>Добавлено {0} в {1}.</value>
+  </data>
+  <data name="StatusCannotWriteEnvFmt" xml:space="preserve">
+    <value>Не удаётся записать в окружение Claude: {0}</value>
+  </data>
+  <data name="ScopeNoteClaude" xml:space="preserve">
+    <value>Записывает в словарь окружения Claude Code (сохраняется главной кнопкой «Сохранить»).</value>
+  </data>
+  <data name="ScopeNoteUser" xml:space="preserve">
+    <value>Немедленно записывает в реестр окружения пользователя Windows.</value>
+  </data>
+  <data name="ScopeNoteMachine" xml:space="preserve">
+    <value>Немедленно записывает в реестр окружения машины Windows (требуются повышенные привилегии).</value>
+  </data>
+
+  <!-- ViewModel — labels (AboutEditorViewModel) -->
+  <data name="LabelDocumentation" xml:space="preserve">
+    <value>Документация</value>
+  </data>
+  <data name="LabelSupport" xml:space="preserve">
+    <value>Поддержка</value>
+  </data>
+  <data name="LabelReleaseNotes" xml:space="preserve">
+    <value>Примечания к выпуску</value>
+  </data>
+  <data name="LabelDownloadUpdates" xml:space="preserve">
+    <value>Загрузка / обновления</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Scope semantics & editing-context surfacing (WelcomeView,
+       MainWindow status row, SettingsGroupEditorView ? popup,
+       BackupRestoreView header, SaveChangesDialog destination paths).
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
+  <data name="LabelEditingContext" xml:space="preserve">
+    <value>Редактирование</value>
+  </data>
+  <data name="HeadingEditingContext" xml:space="preserve">
+    <value>Что вы сейчас редактируете</value>
+  </data>
+  <data name="TextEditingContextNoProject" xml:space="preserve">
+    <value>Пользовательская конфигурация — проект не открыт</value>
+  </data>
+  <data name="TextEditingContextWithProject" xml:space="preserve">
+    <value>User + Project + Local — проект: {0}</value>
+  </data>
+  <data name="TextOpenProjectHint" xml:space="preserve">
+    <value>Откройте папку проекта, чтобы редактировать области Project и Local.</value>
+  </data>
+  <data name="LinkOpenProject" xml:space="preserve">
+    <value>Открыть проект…</value>
+  </data>
+  <data name="LinkShowScopes" xml:space="preserve">
+    <value>Показать области</value>
+  </data>
+
+  <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
+  <data name="HeadingScopes" xml:space="preserve">
+    <value>Области конфигурации</value>
+  </data>
+  <data name="TextScopeMeaningManaged" xml:space="preserve">
+    <value>Политика организации. Только для чтения; переопределяет всё.</value>
+  </data>
+  <data name="TextScopeMeaningLocal" xml:space="preserve">
+    <value>Ваши переопределения только для этой машины в этом проекте. Высший пользовательский приоритет.</value>
+  </data>
+  <data name="TextScopeMeaningProject" xml:space="preserve">
+    <value>Совместно используется командой через git. Переопределяет User.</value>
+  </data>
+  <data name="TextScopeMeaningUser" xml:space="preserve">
+    <value>Ваше личное значение по умолчанию для каждого проекта.</value>
+  </data>
+  <data name="TextScopePathManaged" xml:space="preserve">
+    <value>~/.claude/managed-settings.json</value>
+  </data>
+  <data name="TextScopePathLocal" xml:space="preserve">
+    <value>&lt;project&gt;/.claude/settings.local.json</value>
+  </data>
+  <data name="TextScopePathProject" xml:space="preserve">
+    <value>&lt;project&gt;/.claude/settings.json</value>
+  </data>
+  <data name="TextScopePathUser" xml:space="preserve">
+    <value>~/.claude/settings.json</value>
+  </data>
+  <data name="TipScopeLegendButton" xml:space="preserve">
+    <value>Что означает каждая область?</value>
+  </data>
+
+  <!-- Backup contents explainer (Welcome + BackupRestoreView header) -->
+  <data name="HeadingBackupContents" xml:space="preserve">
+    <value>Что входит в резервные копии</value>
+  </data>
+  <data name="TextBackupContentsLine1" xml:space="preserve">
+    <value>Всё в ~/.claude/ — параметры, профили, хуки, серверы MCP.</value>
+  </data>
+  <data name="TextBackupContentsLine2" xml:space="preserve">
+    <value>~/.claude.json (корневая конфигурация Claude Code).</value>
+  </data>
+  <data name="TextBackupContentsLine3" xml:space="preserve">
+    <value>Конфигурация Desktop и профили Desktop.</value>
+  </data>
+  <data name="TextBackupContentsExcluded" xml:space="preserve">
+    <value>Исключено по умолчанию: cache/, projects/, .credentials.json.</value>
+  </data>
+  <data name="TextBackupContentsProjectNote" xml:space="preserve">
+    <value>Файлы проекта (.claude/ в вашем репозитории) включаются только когда проект открыт во время резервного копирования или добавлен явно.</value>
+  </data>
+
+  <!-- Welcome-page "Things to know" section.  Concise pointers
+       to behaviours / features a new user might overlook.  Three bullets
+       deliberately — frugal so the section doesn't compete with the
+       primary "what you're editing" guidance. -->
+  <data name="HeadingThingsToKnow" xml:space="preserve">
+    <value>Полезно знать</value>
+  </data>
+  <data name="TextWelcomeAutoReload" xml:space="preserve">
+    <value>Автоматическая перезагрузка — когда другой инструмент или редактор изменяет файл конфигурации на диске (например, claudectx переключает профили или ручная правка в вашем текстовом редакторе), это приложение автоматически подхватывает изменения и обновляет редактор.</value>
+  </data>
+  <data name="TextWelcomeEssentials" xml:space="preserve">
+    <value>★ Раздел «Основное» (вверху дерева навигации) собирает важнейшие параметры — бюджеты токенов, песочница, доверие MCP, выбор модели — для быстрого обзора при свежей установке.</value>
+  </data>
+  <data name="TextWelcomeMemory" xml:space="preserve">
+    <value>🧠 «Память» показывает, что Claude знает о вас (стенограммы сеансов, история запросов, списки задач, журнал отслеживания стоимости, журналы правок файлов) и позволяет удалить любые из этих данных — полезно для гигиены приватности перед тем, как поделиться машиной, записать демонстрацию или сделать скриншоты.</value>
+  </data>
+  <data name="TextWelcomeWslHint" xml:space="preserve">
+    <value>🪟 Подсказка для Windows — если Claude спотыкается о искажение путей Git Bash / MSYS (обратные слеши, прямые слеши в шаблонах и т. д.) при операциях, активно использующих файловую систему, в разделе «Разрешения» → «Распространённые действия» → WSL есть готовые шаблоны для добавления в список разрешённых для WSL-обёрнутых вариантов (напр. Bash(wsl git status)). Claude будет предпочитать путь WSL, как только эти правила появятся.</value>
+    <comment>Welcome page "Things to know" bullet — shown only when PlatformInfo.Current.IsWindows is true. Points Windows users at the WSL Common Actions group added as a solution to MSYS path-mangling friction.</comment>
+  </data>
+  <data name="TextSaveSilentSaveSafetyNet" xml:space="preserve">
+    <value>У вас есть несохранённые изменения, но не удалось построить предпросмотр изменений по каждому свойству. Всё равно сохранить?</value>
+    <comment>Fallback dialog body shown by the silent-save safety net (SaveCoreAsync) when SDK reports HasUnsavedChanges=true but SaveDialogBuilder.Build returns null. The user-visible wording is intentionally vague — internal diagnostic context lives in the rolling log, not in the dialog.</comment>
+  </data>
+
+  <!-- Save / Restore confirmation dialog destination paths -->
+  <data name="LabelWillBeWrittenTo" xml:space="preserve">
+    <value>Будет записано в:</value>
+  </data>
+  <data name="LabelWillBeRestoredTo" xml:space="preserve">
+    <value>Будет восстановлено в:</value>
+  </data>
+  <data name="TextSaveSummary" xml:space="preserve">
+    <value>Сохранение {0} изменений в {1} файлах:</value>
+  </data>
+  <data name="TextRestoreSummary" xml:space="preserve">
+    <value>Восстановление {0} изменений в {1} файлах:</value>
+  </data>
+
+  <!-- Effective Settings tab — descriptive subtitle above the grid + cell tooltip strings -->
+  <data name="TextEffectiveSettingsSubtitle" xml:space="preserve">
+    <value>Полностью объединённые значения, которые Claude фактически видит во время выполнения после наслоения Managed &gt; Local &gt; Project &gt; User. В каждой строке показано побеждающее значение, область, из которой оно пришло, и не переопределяет ли его область с более высоким приоритетом.</value>
+  </data>
+  <data name="TextEffectiveTabSubtitle" xml:space="preserve">
+    <value>Фактические значения, которые Claude читает для параметров на этой странице после наслоения. Свойства без значения ни в одной области скрыты.</value>
+  </data>
+
+  <!-- Clear App Data button (status bar) -->
+  <data name="ButtonClearAppData" xml:space="preserve">
+    <value>Очистить _данные приложения</value>
+    <comment>Alt+D — status bar button.  "D" rather than "C" to avoid conflict with common Cancel/Close mnemonics in dialogs.</comment>
+  </data>
+  <data name="TipClearAppData" xml:space="preserve">
+    <value>Удалить сохранённое положение окна, размеры, тему, последнюю выбранную страницу и другое сохранённое состояние интерфейса. НЕ затрагивает ваши файлы конфигурации Claude. ClaudeForge закроется.</value>
+  </data>
+  <data name="AutoNameClearAppData" xml:space="preserve">
+    <value>Очистить данные приложения и выйти</value>
+  </data>
+  <data name="TitleClearAppDataConfirm" xml:space="preserve">
+    <value>Очистить данные приложения?</value>
+  </data>
+  <data name="TextClearAppDataConfirm" xml:space="preserve">
+    <value>Это удалит сохранённый файл состояния интерфейса в ~/.claude/cache/ClaudeForge-gui-state.json (положение окна, размеры, тема, последняя выбранная страница, выбор профиля, настройки резервного копирования). Ваши файлы конфигурации Claude (~/.claude/settings.json и сопутствующие) НЕ затрагиваются. ClaudeForge закроется. Продолжить?</value>
+  </data>
+  <data name="ConfirmClearAppData" xml:space="preserve">
+    <value>Очистить и выйти</value>
+  </data>
+
+  <!-- Page-heading subtitles for top-level pages that get the accent-pill heading -->
+  <data name="TextProfilesSubtitle" xml:space="preserve">
+    <value>Именованные профили параметров для Claude Code и Claude Desktop. Переключайтесь между конфигурациями, синхронизируйте между продуктами или удаляйте старые.</value>
+  </data>
+  <data name="TextBackupRestoreSubtitle" xml:space="preserve">
+    <value>Создавайте архивы резервных копий вашей конфигурации Claude с метками времени и восстанавливайте из них позже. Опциональное включение проектов и учётных данных.</value>
+  </data>
+  <data name="TipEffectiveOverriddenTrue" xml:space="preserve">
+    <value>Это свойство также задано в области с более низким приоритетом, но побеждает область с более высоким приоритетом.</value>
+  </data>
+  <data name="TipEffectiveOverriddenFalse" xml:space="preserve">
+    <value>Это свойство задано только в одной области.</value>
+  </data>
+
+  <!-- Navigation tree tooltips for the section descriptions in the left pane -->
+  <data name="TipNavigationDefault" xml:space="preserve">
+    <value>Щёлкните, чтобы открыть этот раздел.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BackupRestoreView — new UI polish strings
+       ═══════════════════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════════════════════
+       PermissionsEditorView — bypassPermissions danger banner
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextBypassPermissionsWarning" xml:space="preserve">
+    <value>Установка defaultMode в bypassPermissions эквивалентна запуску Claude Code с флагом --dangerouslySkipPermissions. Все запросы разрешений инструментов подавляются — Claude может читать, записывать и выполнять без запросов. Используйте это только в полностью изолированных или автоматизированных средах, где вы контролируете все входные данные.</value>
+  </data>
+
+  <data name="TextNoBackupYetDescription" xml:space="preserve">
+    <value>Используйте «Создать резервную копию», чтобы создать первый снимок. Резервные копии — это ZIP-файлы, которые можно восстановить с вкладки «Восстановление».</value>
+  </data>
+  <data name="TextRestoreDescription" xml:space="preserve">
+    <value>Выберите папку с резервными копиями и ZIP-файл для восстановления. Это перезапишет ваши текущие файлы конфигурации.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HooksEditorView — guidance + column header tooltips
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="TextHookMatcherGuidance" xml:space="preserve">
+    <value>Сопоставитель — это шаблон имени инструмента (напр. Bash, Edit, * соответствует всем инструментам). Каждый хук срабатывает, когда соответствующий вызов инструмента порождает выбранное событие.</value>
+  </data>
+  <data name="TipHookMatcherHeader" xml:space="preserve">
+    <value>Шаблон имени инструмента — используйте * для соответствия всем инструментам</value>
+  </data>
+  <data name="TipHookTypeHeader" xml:space="preserve">
+    <value>Тип хука: command выполняет команду оболочки, prompt внедряет системную подсказку, url отправляет POST на веб-перехватчик</value>
+  </data>
+  <data name="TipHookCommandHeader" xml:space="preserve">
+    <value>Команда оболочки, текст подсказки или URL для вызова</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       AboutDialog — GitHub links
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="LinkGitHubRepo" xml:space="preserve">
+    <value>Репозиторий GitHub</value>
+  </data>
+  <data name="LinkReportIssue" xml:space="preserve">
+    <value>Сообщить о проблеме</value>
+  </data>
+
+  <!-- About modal -->
+  <data name="MenuAbout" xml:space="preserve">
+    <value>О ClaudeForge</value>
+  </data>
+  <data name="TipVersionLabel" xml:space="preserve">
+    <value>Щёлкните, чтобы открыть окно «О ClaudeForge».</value>
+  </data>
+  <data name="LabelAboutAppName" xml:space="preserve">
+    <value>ClaudeForge</value>
+  </data>
+  <data name="LabelAboutTagline" xml:space="preserve">
+    <value>Кроссплатформенный редактор параметров с поддержкой областей для Claude Code и Claude Desktop.</value>
+  </data>
+  <data name="LabelAboutVersion" xml:space="preserve">
+    <value>Версия</value>
+  </data>
+  <data name="HeadingAboutLinks" xml:space="preserve">
+    <value>Ресурсы</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+
+  <!-- EnabledPluginsEditorView.axaml — toggle row tooltip -->
+  <data name="TipPluginToggle" xml:space="preserve">
+    <value>Включить / отключить</value>
+  </data>
+
+  <!-- PermissionsEditorView.axaml — synthetic-rule banner header.
+       The CLI flag literal (the dangerously-skip-permissions flag name)
+       is intentionally left in-line as English: it is the actual flag
+       name, not a translatable label. -->
+  <data name="LabelEquivalentToBypass" xml:space="preserve">
+    <value>Эквивалентно --dangerouslySkipPermissions</value>
+  </data>
+
+  <!-- EnvironmentEditorView.axaml — inline validation message. -->
+  <data name="ValidationEnvVarName" xml:space="preserve">
+    <value>Имя должно начинаться с буквы или _ и содержать только буквы, цифры и _.</value>
+  </data>
+
+  <!-- ScopeLegend.axaml — three column headers for the 4-row legend. -->
+  <data name="HeaderScopeLegendScope" xml:space="preserve">
+    <value>Область</value>
+  </data>
+  <data name="HeaderScopeLegendFile" xml:space="preserve">
+    <value>Файл</value>
+  </data>
+  <data name="HeaderScopeLegendMeaning" xml:space="preserve">
+    <value>Значение</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Backup / Restore dialogs (BackupRestoreViewModel.cs) — Phase 2.2
+       ═══════════════════════════════════════════════════════════════ -->
+  <data name="DialogTitleUnsavedChanges" xml:space="preserve">
+    <value>Несохранённые изменения</value>
+    <comment>Dialog title shown when the user starts Backup or Restore with dirty workspace edits.</comment>
+  </data>
+  <data name="DialogTitleBackupWithoutSaving" xml:space="preserve">
+    <value>Создать резервную копию без сохранения?</value>
+  </data>
+  <data name="DialogTitleIncludeCredentials" xml:space="preserve">
+    <value>Включить учётные данные API?</value>
+  </data>
+  <data name="DialogTitleBackupFailed" xml:space="preserve">
+    <value>Сбой резервного копирования</value>
+  </data>
+  <data name="DialogTitleRestoreFailed" xml:space="preserve">
+    <value>Сбой восстановления</value>
+  </data>
+  <data name="DialogTitleDiscardUnsavedEdits" xml:space="preserve">
+    <value>Отменить несохранённые изменения?</value>
+  </data>
+  <data name="DialogTitleCrossPlatformRestore" xml:space="preserve">
+    <value>Кроссплатформенное восстановление</value>
+  </data>
+  <data name="DialogTitleRestoreCompletedSkippedFmt" xml:space="preserve">
+    <value>Восстановление завершено — пропущено файлов: {0}</value>
+    <comment>{0} is the count of files that could not be written (locked or inaccessible).</comment>
+  </data>
+
+  <!-- drag-drop a backup zip onto the Restore tab.  Confirm
+       prompt before routing to the existing RestoreCommand path. -->
+  <data name="DialogTitleDropRestore" xml:space="preserve">
+    <value>Восстановить из перетащенной резервной копии?</value>
+    <comment>Title of the confirm prompt shown after a backup .zip is dropped onto the Restore tab.</comment>
+  </data>
+  <data name="DialogTitleDropRestoreInvalid" xml:space="preserve">
+    <value>Не удаётся восстановить из перетащенного файла</value>
+    <comment>Error-alert title when the dropped file is not a valid backup archive.</comment>
+  </data>
+  <data name="TextDropRestorePromptPrefix" xml:space="preserve">
+    <value>Восстановить из </value>
+    <comment>Body text: leading half of the drop-restore confirm prompt.  Followed by the filename, then TextDropRestorePromptSuffix.  Trailing space intentional.</comment>
+  </data>
+  <data name="TextDropRestorePromptSuffix" xml:space="preserve">
+    <value>?
+
+Это перезапишет ваши текущие настройки содержимым перетащенного архива резервной копии.</value>
+    <comment>Body text: trailing half of the drop-restore confirm prompt.  Follows the filename.</comment>
+  </data>
+  <data name="TextDropRestoreNotZip" xml:space="preserve">
+    <value>Сюда можно перетаскивать только ZIP-файлы резервных копий для восстановления.</value>
+    <comment>Error-alert body when the dropped file is not a .zip.</comment>
+  </data>
+  <data name="TextDropRestoreNotABackup" xml:space="preserve">
+    <value>Перетащенный файл не является действительным архивом резервной копии ClaudeForge. Он может быть повреждён, создан более новой версией или быть ZIP-архивом другого типа.</value>
+    <comment>Error-alert body when the dropped zip has no valid manifest.json of Kind=backup.</comment>
+  </data>
+
+  <data name="ButtonContinueWithoutSaving" xml:space="preserve">
+    <value>Продолжить без сохранения</value>
+  </data>
+  <data name="ButtonIncludeCredentialsConfirm" xml:space="preserve">
+    <value>Включить учётные данные</value>
+    <comment>Confirm-button label on the credentials prompt.  Distinct from the checkbox label CheckboxIncludeCredentials.</comment>
+  </data>
+  <data name="ButtonOmitCredentials" xml:space="preserve">
+    <value>Не включать учётные данные</value>
+  </data>
+  <data name="ButtonDiscardAndRestore" xml:space="preserve">
+    <value>Отменить и восстановить</value>
+  </data>
+  <data name="ButtonRestoreAnyway" xml:space="preserve">
+    <value>Восстановить всё равно</value>
+  </data>
+
+  <data name="TextSaveBeforeBackupPrompt" xml:space="preserve">
+    <value>У вас есть несохранённые изменения в активном рабочем пространстве. Сохранить их перед резервным копированием? Иначе резервная копия будет содержать только то, что сейчас на диске — ваши несохранённые изменения в неё не попадут.</value>
+  </data>
+  <data name="TextProceedWithoutSavingBackup" xml:space="preserve">
+    <value>Продолжить резервное копирование? Ваши несохранённые изменения не попадут в эту резервную копию, но останутся в памяти, и вы сможете сохранить их позже.</value>
+  </data>
+  <data name="TextSaveBeforeRestorePrompt" xml:space="preserve">
+    <value>У вас есть несохранённые изменения в активном рабочем пространстве. Сохранить их перед восстановлением?</value>
+  </data>
+  <data name="TextDiscardUnsavedForRestore" xml:space="preserve">
+    <value>Восстановление перезапишет ваши текущие настройки. Отменить ваши несохранённые изменения и продолжить восстановление?</value>
+  </data>
+  <data name="TextCredentialsExplainer" xml:space="preserve">
+    <value> содержит токены OAuth. Любой, у кого есть этот файл резервной копии, сможет войти в систему от вашего имени, пока эти токены остаются действительными.
+
+Включайте учётные данные только если резервная копия останется в надёжном хранилище.
+
+Включить учётные данные в эту резервную копию?</value>
+    <comment>Trailing text after the credentials path in the credentials confirmation prompt.  Leading space is intentional — it follows a path segment.</comment>
+  </data>
+  <data name="TextRestoreSkippedExplainer" xml:space="preserve">
+    <value>Восстановление завершилось, но следующие файлы не удалось записать (они могут быть заблокированы запущенным процессом Claude). Закройте Claude и повторите восстановление при необходимости:
+
+</value>
+    <comment>Trailing blank line is intentional — the file list is appended to this text.</comment>
+  </data>
+  <data name="TextRestoreSkippedTrailerFmt" xml:space="preserve">
+    <value>
+  … и ещё {0} (полный список см. в журнале)</value>
+    <comment>{0} is the count of files beyond the first 10 shown.  Leading newline is intentional.</comment>
+  </data>
+  <data name="TextCrossPlatformRestorePrefix" xml:space="preserve">
+    <value>Эта резервная копия была создана на «</value>
+  </data>
+  <data name="TextCrossPlatformRestoreMiddle" xml:space="preserve">
+    <value>», а вы находитесь на «</value>
+  </data>
+  <data name="TextCrossPlatformRestoreSuffix" xml:space="preserve">
+    <value>».
+
+Некоторые пути в файлах конфигурации могут потребовать ручного редактирования после восстановления. Продолжить?</value>
+  </data>
+
+  <!-- ════════════════════════════════════════════════════════════════════════════
+       Essentials page — pinned high-importance settings.
+       Each card has: Title, Body ("why this matters"), and (where applicable)
+       a DangerBanner when the value is in a known-unsafe state.  AmberCallout
+       text is shared across cards (same message regardless of which card the
+       user arrived at via a synthetic search hit).
+       ════════════════════════════════════════════════════════════════════════════ -->
+  <data name="NavTitleWelcome" xml:space="preserve">
+    <value>Добро пожаловать</value>
+    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
+  </data>
+  <data name="NavDescWelcome" xml:space="preserve">
+    <value>Ориентация по редактору — что редактируется, как наслаиваются области и где найти важнейшие параметры. Показывается по умолчанию при первом запуске.</value>
+    <comment>Tooltip / description for the Welcome nav node.</comment>
+  </data>
+  <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
+    <value>Показывать эту страницу при запуске</value>
+    <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
+  </data>
+  <data name="TipShowWelcomeOnLaunch" xml:space="preserve">
+    <value>Когда флажок снят, запись «Добро пожаловать» исчезает из дерева навигации и не появится при следующем запуске. Вы по-прежнему можете попасть на эту страницу, щёлкнув заголовки «Claude Code» или «Claude Desktop» в дереве. Очистка данных приложения сбрасывает эту настройку.</value>
+    <comment>Tooltip / accessibility description for the Show-on-launch checkbox on the Welcome page.</comment>
+  </data>
+  <data name="NavTitleEssentials" xml:space="preserve">
+    <value>Основное</value>
+    <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
+  </data>
+  <data name="NavDescEssentials" xml:space="preserve">
+    <value>Важнейшие параметры Claude Code — бюджеты токенов, песочница, доверие MCP, модель и канал обновлений — закреплены для быстрого обзора и изменения.</value>
+    <comment>Tooltip / description for the Essentials nav node.</comment>
+  </data>
+  <data name="HeaderEssentials" xml:space="preserve">
+    <value>Основное — параметры с большим влиянием</value>
+    <comment>Heading rendered at the top of the Essentials editor view.</comment>
+  </data>
+  <data name="HeaderEssentialsBody" xml:space="preserve">
+    <value>Эти параметры оказывают непропорционально большое влияние на стоимость, качество, безопасность или поведение. Просмотрите их при настройке нового проекта или обновлении Claude Code.</value>
+    <comment>Sub-header explainer for the Essentials editor view.</comment>
+  </data>
+
+  <data name="LabelEssentialsViewInGroupFmt" xml:space="preserve">
+    <value>Открыть в разделе {0}</value>
+    <comment>"View in &lt;group&gt;" deep-link button label.  {0} is the home-group title (e.g. "Permissions", "Environment").</comment>
+  </data>
+  <data name="LabelEssentialsAddListEntry" xml:space="preserve">
+    <value>Добавить</value>
+    <comment>Label for the Add button on StringList cards (e.g. sandbox.allowedDomains).</comment>
+  </data>
+  <data name="LabelEssentialsRemoveListEntry" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Label for the per-row Remove button on StringList cards.</comment>
+  </data>
+  <data name="LabelEssentialsAmberCallout" xml:space="preserve">
+    <value>Вы попали сюда из поиска — это параметр, соответствующий вашему запросу. Измените значение ниже.</value>
+    <comment>One-time amber callout shown when a card is opened via a synthetic search hit.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceHeader" xml:space="preserve">
+    <value>Действующий источник</value>
+    <comment>Header for the env-var "effective source" sub-row showing which of (settings.json env, OS user, OS machine) is contributing.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceSettings" xml:space="preserve">
+    <value>env в settings.json</value>
+    <comment>Source label: the value comes from the env map in settings.json.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceUser" xml:space="preserve">
+    <value>окружение пользователя ОС</value>
+    <comment>Source label: the value comes from the user-scope OS environment variable.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceMachine" xml:space="preserve">
+    <value>окружение машины ОС</value>
+    <comment>Source label: the value comes from the machine-scope OS environment variable.</comment>
+  </data>
+  <data name="LabelEssentialsEnvSourceNone" xml:space="preserve">
+    <value>не задано</value>
+    <comment>Source label: the variable is not set in any scope.</comment>
+  </data>
+
+  <!-- Card 1 — Max Thinking Tokens -->
+  <data name="EssentialsCardMaxThinkingTokensTitle" xml:space="preserve">
+    <value>Максимум токенов на размышление</value>
+  </data>
+  <data name="EssentialsCardMaxThinkingTokensBody" xml:space="preserve">
+    <value>Ограничивает, сколько токенов Claude может потратить на расширенное размышление за один ход (env: MAX_THINKING_TOKENS). Значение по умолчанию может обрезать сложные рассуждения; увеличьте до 32000 или выше для серьёзной архитектурной работы.</value>
+  </data>
+
+  <!-- Card 2 — Max Output Tokens -->
+  <data name="EssentialsCardMaxOutputTokensTitle" xml:space="preserve">
+    <value>Максимум выходных токенов</value>
+  </data>
+  <data name="EssentialsCardMaxOutputTokensBody" xml:space="preserve">
+    <value>Ограничивает длину ответа, который может выдать Claude (env: CLAUDE_CODE_MAX_OUTPUT_TOKENS). Значение по умолчанию может обрезать длинные правки файлов или сгенерированный код; увеличьте его, когда видите «[output truncated]».</value>
+  </data>
+
+  <!-- Card 3 — Auto-trust project MCP servers -->
+  <data name="EssentialsCardEnableAllMcpTitle" xml:space="preserve">
+    <value>Автоматическое доверие к серверам MCP проекта</value>
+  </data>
+  <data name="EssentialsCardEnableAllMcpBody" xml:space="preserve">
+    <value>Когда включено, Claude доверяет каждому серверу MCP, определённому в .mcp.json проекта, без запроса. Удобно — но враждебный репозиторий проекта может поставить вредоносный сервер MCP. Оставьте отключённым и одобряйте серверы по отдельности.</value>
+  </data>
+  <data name="EssentialsCardEnableAllMcpDanger" xml:space="preserve">
+    <value>Опасность: каждый сервер MCP в каждом проекте, который вы открываете, будет выполняться с вашими инструментами и учётными данными. Включайте это только в полностью изолированных средах.</value>
+  </data>
+
+  <!-- Card 4 — Sandbox enabled -->
+  <data name="EssentialsCardSandboxEnabledTitle" xml:space="preserve">
+    <value>Песочница включена</value>
+  </data>
+  <data name="EssentialsCardSandboxEnabledBody" xml:space="preserve">
+    <value>Когда включено, песочница bash ограничивает запись в файловую систему и исходящие сетевые соединения списком разрешённых. Отключение песочницы позволяет каждой команде оболочки, которую запускает Claude, обращаться к произвольным файлам и достигать произвольных хостов.</value>
+  </data>
+  <data name="EssentialsCardSandboxEnabledDanger" xml:space="preserve">
+    <value>Опасность: при отключённой песочнице любой вызов инструмента, выполняющий команду оболочки, имеет неограниченный доступ к файловой системе и сети.</value>
+  </data>
+
+  <!-- Card 5 — Sandbox allowed domains -->
+  <data name="EssentialsCardSandboxDomainsTitle" xml:space="preserve">
+    <value>Разрешённые домены песочницы</value>
+  </data>
+  <data name="EssentialsCardSandboxDomainsBody" xml:space="preserve">
+    <value>Исходящие хосты, к которым песочница имеет право обращаться (например, github.com, registry.npmjs.org). Без записей здесь сетевые операции внутри песочницы завершаются неудачей.</value>
+  </data>
+  <data name="EssentialsCardSandboxDomainsListPlaceholder" xml:space="preserve">
+    <value>напр. github.com</value>
+    <comment>Placeholder text for the Add-entry textbox on the sandbox.allowedDomains card.</comment>
+  </data>
+
+  <!-- Card 6 — Model -->
+  <data name="EssentialsCardModelTitle" xml:space="preserve">
+    <value>Модель</value>
+  </data>
+  <data name="EssentialsCardModelBody" xml:space="preserve">
+    <value>Модель по умолчанию для сеансов Claude Code. Выбирайте меньшую модель (haiku), чтобы снизить стоимость рутинной работы; выбирайте крупнейшую (opus) для серьёзных архитектурных рассуждений.</value>
+  </data>
+
+  <!-- Card 7 — Effort level -->
+  <data name="EssentialsCardEffortLevelTitle" xml:space="preserve">
+    <value>Уровень усилий</value>
+  </data>
+  <data name="EssentialsCardEffortLevelBody" xml:space="preserve">
+    <value>Какой бюджет расширенного размышления Claude готов потратить за один ход. Более высокие уровни могут давать лучшие ответы на сложные проблемы, но стоят больше.</value>
+  </data>
+
+  <!-- Card 8 — Fast mode -->
+  <data name="EssentialsCardFastModeTitle" xml:space="preserve">
+    <value>Быстрый режим</value>
+  </data>
+  <data name="EssentialsCardFastModeBody" xml:space="preserve">
+    <value>Пропускает некоторые необязательные проходы рассуждений ради более быстрых ответов. Компромисс: немного более низкое качество на сложных задачах в обмен на меньшую задержку и стоимость.</value>
+  </data>
+
+  <!-- Card 9 — Auto-updates channel -->
+  <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">
+    <value>Канал автоматических обновлений</value>
+  </data>
+  <data name="EssentialsCardAutoUpdatesChannelBody" xml:space="preserve">
+    <value>Из какого потока выпусков Claude Code двоичный файл автоматически обновляется (stable, latest). «latest» получает новые функции раньше, но иногда привносит регрессии.</value>
+  </data>
+
+  <!-- Card 10 — Auto-memory enabled -->
+  <data name="EssentialsCardAutoMemoryEnabledTitle" xml:space="preserve">
+    <value>Автоматическая память включена</value>
+  </data>
+  <data name="EssentialsCardAutoMemoryEnabledBody" xml:space="preserve">
+    <value>Когда включено, Claude автоматически фиксирует факты «памяти» на уровне сеанса (соглашения проекта, окружение, ваши предпочтения). Отключите для сеансов, где вам не нужен сохраняющийся контекст.</value>
+  </data>
+
+  <!-- Card 11 — Disable bypass-permissions mode -->
+  <data name="EssentialsCardDisableBypassTitle" xml:space="preserve">
+    <value>Отключить режим bypass-permissions</value>
+  </data>
+  <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
+    <value>Блокирует параметру permissions.defaultMode возможность принимать значение «bypassPermissions» — режим, который подавляет все запросы разрешений инструментов. Эквивалент закрепления безопасности на месте; рекомендуется для общих или управляемых сред.</value>
+  </data>
+
+</root>

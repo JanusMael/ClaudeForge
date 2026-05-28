@@ -162,6 +162,24 @@
                             TextWrapping="Wrap"
                             IsVisible="{Binding BackupDirectory, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
 
+                        <!-- Inclusion advisory: tells the user whether the
+                             open project's `.claude` directory will travel
+                             inside the next archive.  Two shapes (see
+                             BackupRestoreViewModel.BackupIncludesProjectLabel):
+                                 - "Includes open project: {name}"
+                                 - "No project open — user-level config only"
+                             Reacts to mid-session project switches without
+                             requiring a Refresh() — InitialProjectRoot is
+                             an [ObservableProperty] with NotifyPropertyChangedFor
+                             on the label. -->
+                        <TextBlock
+                            Text="{Binding BackupIncludesProjectLabel}"
+                            FontSize="11"
+                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                            TextWrapping="Wrap"
+                            Margin="0,2,0,0"
+                            AutomationProperties.Name="{Binding BackupIncludesProjectLabel}" />
+
                         <TextBlock Text="{x:Static loc:Strings.LabelScope}" FontWeight="SemiBold" Margin="0,8,0,0" />
                         <StackPanel Orientation="Vertical" Spacing="4">
                             <RadioButton GroupName="BackupMode"

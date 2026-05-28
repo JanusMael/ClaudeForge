@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Spanish (Spain) (es-ES) translation of Strings.resx.
-  Keep <data name="..."> keys byte-identical to the English source; only translate <value> contents.
+  Korean (ko-KR) translation of Strings.resx.
+  Keep data-name keys byte-identical to the English source; only translate value contents.
 -->
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
@@ -67,70 +67,70 @@
        MainWindow — toolbar
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelEditingProfile" xml:space="preserve">
-    <value>Perfil en edición:</value>
+    <value>편집 중인 프로필:</value>
   </data>
   <data name="TipEditingProfile" xml:space="preserve">
-    <value>Un perfil es un conjunto con nombre de ajustes de Claude. «(global)» usa los ajustes compartidos a nivel de usuario; los perfiles con nombre te permiten alternar entre distintas configuraciones.</value>
+    <value>프로필은 이름이 지정된 Claude 설정 묶음입니다. '(global)'은 공유된 사용자 수준 설정을 사용하며, 이름이 지정된 프로필을 사용하면 서로 다른 구성 사이를 전환할 수 있습니다.</value>
   </data>
   <data name="TipProfileSelector" xml:space="preserve">
-    <value>Cambia el perfil activo de Claude. «(global)» usa los ajustes de usuario compartidos; los perfiles con nombre (p. ej. «work») son conjuntos independientes almacenados en ~/.claude/profiles/.</value>
+    <value>활성 Claude 프로필을 전환합니다. '(global)'은 공유된 사용자 설정을 사용하며, 이름이 지정된 프로필(예: 'work')은 ~/.claude/profiles/에 저장된 별도의 설정 묶음입니다.</value>
   </data>
   <data name="AutoNameActiveProfile" xml:space="preserve">
-    <value>Perfil activo</value>
+    <value>활성 프로필</value>
   </data>
   <data name="AutoHelpActiveProfile" xml:space="preserve">
-    <value>Selecciona un perfil de ajustes de Claude. Elige (global) para tus ajustes de usuario compartidos, o un perfil con nombre para cambiar de configuración.</value>
+    <value>Claude 설정 프로필을 선택합니다. 공유된 사용자 설정을 사용하려면 (global)을, 구성을 전환하려면 이름이 지정된 프로필을 선택하세요.</value>
   </data>
   <data name="TipManageProfiles" xml:space="preserve">
-    <value>Abre la sección Perfiles para crear, eliminar, aplicar o sincronizar perfiles con nombre</value>
+    <value>이름이 지정된 프로필을 만들고, 삭제하고, 적용하거나 동기화하려면 프로필 섹션을 엽니다</value>
   </data>
   <data name="AutoNameManageProfiles" xml:space="preserve">
-    <value>Gestionar perfiles</value>
+    <value>프로필 관리</value>
   </data>
   <data name="ButtonOpenProject" xml:space="preserve">
-    <value>📂 _Abrir proyecto</value>
+    <value>📂 프로젝트 열기(_O)</value>
     <comment>Alt+O — top toolbar button. The underscore is Avalonia's access-key prefix; AccessText underlines the next character when Alt is held.</comment>
   </data>
   <data name="TipButtonOpenProject" xml:space="preserve">
-    <value>Abre una carpeta de proyecto para cargar sus archivos .claude/settings.json</value>
+    <value>프로젝트 폴더를 열어 해당 폴더의 .claude/settings.json 파일을 불러옵니다</value>
   </data>
   <data name="AutoNameButtonOpenProject" xml:space="preserve">
-    <value>Abrir carpeta de proyecto</value>
+    <value>프로젝트 폴더 열기</value>
   </data>
   <data name="ButtonSave" xml:space="preserve">
-    <value>💾 _Guardar</value>
+    <value>💾 저장(_S)</value>
     <comment>Alt+S — top toolbar button.</comment>
   </data>
   <data name="TipButtonSave" xml:space="preserve">
-    <value>Guarda en disco todos los ajustes modificados (Ctrl+S)</value>
+    <value>수정된 모든 설정을 디스크에 저장합니다 (Ctrl+S)</value>
   </data>
   <data name="AutoNameButtonSave" xml:space="preserve">
-    <value>Guardar todos los ajustes</value>
+    <value>모든 설정 저장</value>
   </data>
   <data name="ButtonExport" xml:space="preserve">
-    <value>📤 _Exportar…</value>
+    <value>📤 내보내기(_E)…</value>
     <comment>Alt+E — top toolbar button.</comment>
   </data>
   <data name="TipButtonExport" xml:space="preserve">
-    <value>Exporta la configuración efectiva completamente fusionada como archivo .zip</value>
+    <value>완전히 병합된 유효 구성을 .zip 파일로 내보냅니다</value>
   </data>
   <data name="AutoNameButtonExport" xml:space="preserve">
-    <value>Exportar configuración efectiva</value>
+    <value>유효 구성 내보내기</value>
   </data>
 
   <!-- screen-reader names for controls
        that have no naturally-derivable label.  See CLAUDE.md "Accessibility
        — screen-reader names" and AGENTS.md invariant I20. -->
   <data name="AutoNameEffectiveRowsGrid" xml:space="preserve">
-    <value>Lista de ajustes efectivos</value>
+    <value>유효 설정 목록</value>
     <comment>Screen-reader name for the DataGrid that lists the merged property values per scope.</comment>
   </data>
   <data name="AutoHelpEffectiveRowsGrid" xml:space="preserve">
-    <value>Lista de propiedades de ajustes y sus valores efectivos fusionados a través de los ámbitos Gestionado, Local, Proyecto y Usuario. Solo lectura; usa las páginas del editor para cambiar valores.</value>
+    <value>Managed, Local, Project, User 범위 전반에서 병합된 유효 값과 함께 설정 속성을 나열합니다. 읽기 전용이며, 값을 변경하려면 편집기 페이지를 사용하세요.</value>
     <comment>Screen-reader help text describing the EffectiveRows DataGrid's purpose and read-only nature.</comment>
   </data>
   <data name="AutoNameNewPluginRef" xml:space="preserve">
-    <value>Nueva referencia de plugin</value>
+    <value>새 플러그인 참조</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
 
@@ -139,131 +139,131 @@
 
   <!-- BackupRestoreView -->
   <data name="AutoNameBrowseBackupFolder" xml:space="preserve">
-    <value>Examinar carpeta de salida de copias de seguridad</value>
+    <value>백업 출력 폴더 찾아보기</value>
     <comment>Disambiguates the "Browse" button next to the backup output folder TextBox.</comment>
   </data>
   <data name="AutoNameBrowseRestoreFolder" xml:space="preserve">
-    <value>Examinar carpeta de origen para restaurar</value>
+    <value>복원 원본 폴더 찾아보기</value>
     <comment>Disambiguates the "Browse" button next to the restore source folder TextBox.</comment>
   </data>
   <data name="AutoNameBackupsGrid" xml:space="preserve">
-    <value>Copias de seguridad disponibles</value>
+    <value>사용 가능한 백업</value>
     <comment>Screen-reader name for the DataGrid listing previously-created backups on the Restore tab.</comment>
   </data>
 
   <!-- ProfilesView -->
   <data name="AutoNameNewCliProfile" xml:space="preserve">
-    <value>Nuevo perfil de la CLI Claude Code</value>
+    <value>새 Claude Code CLI 프로필</value>
   </data>
   <data name="AutoNameNewDesktopProfile" xml:space="preserve">
-    <value>Nuevo perfil de Claude Desktop</value>
+    <value>새 Claude Desktop 프로필</value>
   </data>
   <data name="AutoNameDeleteDesktopProfile" xml:space="preserve">
-    <value>Eliminar perfil de Desktop</value>
+    <value>Desktop 프로필 삭제</value>
   </data>
   <data name="AutoNameCliProfilesGrid" xml:space="preserve">
-    <value>Perfiles de la CLI Claude Code</value>
+    <value>Claude Code CLI 프로필</value>
   </data>
   <data name="AutoNameDesktopProfilesGrid" xml:space="preserve">
-    <value>Perfiles de Claude Desktop</value>
+    <value>Claude Desktop 프로필</value>
   </data>
 
   <!-- PermissionsEditorView -->
   <data name="AutoNameAddAdditionalDirectory" xml:space="preserve">
-    <value>Añadir directorio adicional</value>
+    <value>추가 디렉터리 추가</value>
   </data>
 
   <!-- McpServersEditorView -->
   <data name="AutoNameMcpServerList" xml:space="preserve">
-    <value>Lista de servidores MCP</value>
+    <value>MCP 서버 목록</value>
   </data>
   <data name="AutoNameEditArgument" xml:space="preserve">
-    <value>Editar valor del argumento</value>
+    <value>인수 값 편집</value>
   </data>
   <data name="AutoNameAddArgument" xml:space="preserve">
-    <value>Añadir argumento</value>
+    <value>인수 추가</value>
   </data>
   <data name="AutoNameEditEnvKey" xml:space="preserve">
-    <value>Editar nombre de variable de entorno</value>
+    <value>환경 변수 이름 편집</value>
   </data>
   <data name="AutoNameEditEnvValue" xml:space="preserve">
-    <value>Editar valor de variable de entorno</value>
+    <value>환경 변수 값 편집</value>
   </data>
   <data name="AutoNameAddEnvVar" xml:space="preserve">
-    <value>Añadir variable de entorno</value>
+    <value>환경 변수 추가</value>
   </data>
 
   <!-- HooksEditorView -->
   <data name="AutoNameHookEventList" xml:space="preserve">
-    <value>Tipos de eventos de hook</value>
+    <value>훅 이벤트 유형</value>
   </data>
   <data name="AutoNameHooksGrid" xml:space="preserve">
-    <value>Hooks del evento seleccionado</value>
+    <value>선택한 이벤트의 훅</value>
   </data>
   <data name="AutoNameNewHookHeaderKey" xml:space="preserve">
-    <value>Nombre de la nueva cabecera HTTP</value>
+    <value>새 HTTP 헤더 이름</value>
   </data>
   <data name="AutoNameNewHookHeaderValue" xml:space="preserve">
-    <value>Valor de la nueva cabecera HTTP</value>
+    <value>새 HTTP 헤더 값</value>
   </data>
   <data name="AutoNameAddHookHeader" xml:space="preserve">
-    <value>Añadir cabecera HTTP</value>
+    <value>HTTP 헤더 추가</value>
   </data>
   <data name="AutoNameAddHookAllowedEnvVar" xml:space="preserve">
-    <value>Añadir variable de entorno permitida</value>
+    <value>허용된 환경 변수 추가</value>
   </data>
 
   <!-- MarketplacesEditorView -->
   <data name="AutoNameNewMarketplaceSourceType" xml:space="preserve">
-    <value>Nuevo tipo de fuente de marketplace</value>
+    <value>새 마켓플레이스 원본 유형</value>
   </data>
   <data name="AutoNameAddMarketplace" xml:space="preserve">
-    <value>Añadir marketplace</value>
+    <value>마켓플레이스 추가</value>
   </data>
 
   <!-- EnvironmentEditorView -->
   <data name="AutoNameEnvVarEditValue" xml:space="preserve">
-    <value>Valor de la variable de entorno</value>
+    <value>환경 변수 값</value>
   </data>
 
   <data name="WatermarkSearch" xml:space="preserve">
-    <value>Buscar en los ajustes…</value>
+    <value>설정 검색…</value>
   </data>
   <data name="TipSearchBox" xml:space="preserve">
-    <value>Busca en todos los ajustes por nombre o descripción</value>
+    <value>이름 또는 설명으로 모든 설정을 검색합니다</value>
   </data>
   <data name="AutoNameSearchBox" xml:space="preserve">
-    <value>Buscar ajustes</value>
+    <value>설정 검색</value>
   </data>
   <data name="AutoHelpSearchBox" xml:space="preserve">
-    <value>Escribe para buscar en todos los ajustes por nombre o descripción. Haz clic en un resultado para ir directamente a ese ajuste.</value>
+    <value>이름 또는 설명으로 모든 설정을 검색하려면 입력하세요. 결과를 클릭하면 해당 설정으로 바로 이동합니다.</value>
   </data>
   <data name="TipProgressLoading" xml:space="preserve">
-    <value>Cargando ajustes…</value>
+    <value>설정을 불러오는 중…</value>
   </data>
 
   <!-- MainWindow — status bar -->
   <data name="TipToggleTheme" xml:space="preserve">
-    <value>Alterna entre el tema claro y el oscuro</value>
+    <value>밝은 테마와 어두운 테마를 전환합니다</value>
   </data>
   <data name="AutoNameToggleTheme" xml:space="preserve">
-    <value>Cambiar tema</value>
+    <value>테마 전환</value>
   </data>
   <data name="ButtonReloadWindow" xml:space="preserve">
-    <value>_Recargar ventana</value>
+    <value>창 새로 고침(_R)</value>
     <comment>Alt+R — status bar button. (F5 also reloads via the Window.KeyBindings.)</comment>
   </data>
   <data name="TipReloadWindow" xml:space="preserve">
-    <value>Descarta los cambios sin guardar y recarga desde disco todos los archivos de ajustes</value>
+    <value>저장되지 않은 변경 사항을 버리고 모든 설정 파일을 디스크에서 다시 불러옵니다</value>
   </data>
   <data name="AutoNameReloadWindow" xml:space="preserve">
-    <value>Recargar ajustes desde disco</value>
+    <value>디스크에서 설정 다시 불러오기</value>
   </data>
   <data name="TipCliActiveBadge" xml:space="preserve">
-    <value>La CLI de Claude Code está leyendo los ajustes de este perfil (establecido mediante «Aplicar» en el panel Perfiles o por la CLI claudectx). Abre la sección Perfiles para aplicar uno distinto.</value>
+    <value>Claude Code CLI가 이 프로필에서 설정을 읽고 있습니다(프로필 패널의 '적용' 또는 claudectx CLI로 설정됨). 다른 프로필을 적용하려면 프로필 섹션을 여세요.</value>
   </data>
   <data name="TipDesktopActiveBadge" xml:space="preserve">
-    <value>Claude Desktop está leyendo su configuración de este perfil (establecido mediante «Aplicar» en el panel Perfiles). Abre la sección Perfiles para aplicar un perfil de Desktop distinto.</value>
+    <value>Claude Desktop이 이 프로필에서 구성을 읽고 있습니다(프로필 패널의 '적용'으로 설정됨). 다른 Desktop 프로필을 적용하려면 프로필 섹션을 여세요.</value>
   </data>
   <data name="StringFormatCliActive" xml:space="preserve">
     <value>Claude Code: {0}</value>
@@ -272,314 +272,323 @@
     <value>Claude Desktop: {0}</value>
   </data>
   <data name="TipAppVersion" xml:space="preserve">
-    <value>Versión de ClaudeForge</value>
+    <value>ClaudeForge 버전</value>
   </data>
 
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
-    <value>Volver a la página en la que estabas antes de llegar aquí</value>
+    <value>여기로 오기 전에 보던 페이지로 돌아갑니다</value>
   </data>
   <data name="AutoNameNavigateBack" xml:space="preserve">
-    <value>Navegar hacia atrás</value>
+    <value>뒤로 이동</value>
   </data>
   <data name="AutoHelpNavigateBack" xml:space="preserve">
-    <value>Vuelve a la página que estabas viendo antes de pulsar un enlace directo</value>
+    <value>딥 링크를 클릭하기 전에 보던 페이지로 돌아갑니다</value>
   </data>
   <data name="ButtonBack" xml:space="preserve">
-    <value>← Atrás</value>
+    <value>← 뒤로</value>
   </data>
 
   <!-- MainWindow — install guidance banner -->
   <data name="LabelInstallBannerTitle" xml:space="preserve">
-    <value>No se ha detectado ninguna instalación de Claude</value>
+    <value>Claude 설치가 감지되지 않았습니다</value>
   </data>
   <data name="TextInstallBannerDesc" xml:space="preserve">
-    <value>No se encontró Claude Code en este sistema. Aún puedes examinar, crear y exportar archivos de configuración: resulta útil para preparar otros equipos o compartir configuraciones con compañeros.</value>
+    <value>이 시스템에서 Claude Code를 찾을 수 없습니다. 그래도 구성 파일을 탐색하고, 생성하고, 내보낼 수 있습니다. 다른 컴퓨터를 설정하거나 동료와 구성을 공유할 때 유용합니다.</value>
   </data>
   <data name="LabelInstallCommand" xml:space="preserve">
-    <value>Instálalo en este equipo con el comando:</value>
+    <value>다음 명령으로 이 컴퓨터에 설치합니다:</value>
   </data>
   <data name="ButtonCopyInstall" xml:space="preserve">
-    <value>📋 Copiar</value>
+    <value>📋 복사</value>
   </data>
   <data name="TipButtonCopyInstall" xml:space="preserve">
-    <value>Copia el comando de instalación al portapapeles</value>
+    <value>설치 명령을 클립보드에 복사합니다</value>
   </data>
   <data name="AutoNameButtonCopyInstall" xml:space="preserve">
-    <value>Copiar comando de instalación</value>
+    <value>설치 명령 복사</value>
   </data>
   <data name="TipButtonRunInstall" xml:space="preserve">
-    <value>Abre una terminal y ejecuta el comando de instalación</value>
+    <value>터미널을 열고 설치 명령을 실행합니다</value>
   </data>
   <data name="AutoNameButtonRunInstall" xml:space="preserve">
-    <value>Ejecutar comando de instalación</value>
+    <value>설치 명령 실행</value>
   </data>
   <data name="ButtonDismissInstallBanner" xml:space="preserve">
-    <value>✕ Descartar</value>
+    <value>✕</value>
   </data>
   <data name="TipButtonDismissInstall" xml:space="preserve">
-    <value>Oculta este mensaje durante el resto de esta sesión</value>
+    <value>이 세션 동안 이 메시지를 숨깁니다</value>
   </data>
   <data name="AutoNameButtonDismissInstall" xml:space="preserve">
-    <value>Descartar la guía de instalación</value>
+    <value>설치 안내 닫기</value>
+  </data>
+  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonDismissSchema" xml:space="preserve">
+    <value>이 배너를 숨깁니다. 다른 프로젝트를 열거나 창 새로 고침을 클릭하거나 앱을 다시 시작하면 다시 나타납니다.</value>
+  </data>
+  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
+    <value>스키마 오류 배너 닫기</value>
   </data>
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
-    <value>Tras instalar: si Claude Code se ubica en ~/.local/bin y ese directorio no está en tu PATH, haz clic en «Añadir al PATH» en la página de Información de versión (o ejecuta en tu shell el comando export que imprime el instalador). Después reinicia ClaudeForge para detectar la instalación.</value>
+    <value>설치 후: Claude Code가 ~/.local/bin에 설치되었지만 해당 디렉터리가 PATH에 없는 경우, 버전 정보 페이지의 "PATH에 추가"를 클릭하거나 설치 프로그램이 출력한 export 명령을 셸에서 실행하세요. 그런 다음 설치를 감지하려면 ClaudeForge를 다시 시작하세요.</value>
   </data>
   <data name="TextInstallPostInstallNoteWindows" xml:space="preserve">
-    <value>Tras instalar: reinicia ClaudeForge para detectar la nueva instalación (la aplicación en ejecución ve el PATH antiguo).</value>
+    <value>설치 후: 새 설치를 감지하려면 ClaudeForge를 다시 시작하세요(실행 중인 앱은 이전 PATH를 봅니다).</value>
   </data>
   <data name="LabelLearnMore" xml:space="preserve">
-    <value>Más información:</value>
+    <value>자세히 보기:</value>
   </data>
   <data name="LinkClaudeOverview" xml:space="preserve">
-    <value>Visión general de Claude</value>
+    <value>Claude 개요</value>
   </data>
   <data name="TipLinkClaudeOverview" xml:space="preserve">
-    <value>Abre la página de visión general de Claude en tu navegador</value>
+    <value>브라우저에서 Claude 개요 페이지를 엽니다</value>
   </data>
   <data name="LinkQuickStart" xml:space="preserve">
-    <value>Guía de inicio rápido</value>
+    <value>빠른 시작 가이드</value>
   </data>
   <data name="TipLinkQuickStart" xml:space="preserve">
-    <value>Abre la guía de inicio rápido de Claude Code en tu navegador</value>
+    <value>브라우저에서 Claude Code 빠른 시작 가이드를 엽니다</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        WelcomeView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="WelcomeHeading" xml:space="preserve">
-    <value>Te damos la bienvenida a ClaudeForge</value>
+    <value>ClaudeForge에 오신 것을 환영합니다</value>
     <comment>title-bar AppTitle is now "ClaudeForge" alone; the Welcome page heading still uses a longer-form descriptor since it has the visual space.</comment>
   </data>
   <data name="WelcomeSubtitle" xml:space="preserve">
-    <value>Editor de ajustes multiplataforma y consciente de ámbitos para Claude Code y Claude Desktop.</value>
+    <value>Claude Code 및 Claude Desktop을 위한 크로스 플랫폼, 범위 인식 설정 편집기.</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
   <data name="WelcomeHint" xml:space="preserve">
-    <value>Los ajustes se aplican por capas: Gestionado &gt; Usuario &gt; Proyecto &gt; Local</value>
+    <value>설정은 계층화되어 있습니다: Managed &gt; User &gt; Project &gt; Local</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="ButtonRefreshAll" xml:space="preserve">
-    <value>↻ Actualizar todo</value>
+    <value>↻ 모두 새로 고침</value>
   </data>
   <data name="TipRefreshAll" xml:space="preserve">
-    <value>Vuelve a explorar ambos directorios de perfiles y actualiza las dos listas.</value>
+    <value>두 프로필 디렉터리를 모두 다시 검색하고 두 목록을 모두 업데이트합니다.</value>
   </data>
   <data name="HeadingProfiles" xml:space="preserve">
-    <value>Perfiles</value>
+    <value>프로필</value>
   </data>
   <data name="ButtonNewProfile" xml:space="preserve">
-    <value>+ Nuevo</value>
+    <value>+ 새로 만들기</value>
   </data>
   <data name="TipNewCliProfile" xml:space="preserve">
-    <value>Crea un nuevo perfil de CLI, inicializado a partir de los ajustes activos actuales en ~/.claude/.</value>
+    <value>현재 사용 중인 ~/.claude/ 설정을 기반으로 새 CLI 프로필을 만듭니다.</value>
   </data>
   <data name="BadgeLabelCli" xml:space="preserve">
     <value>Claude Code</value>
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
-    <value>Perfiles de Claude Code</value>
+    <value>Claude Code 프로필</value>
   </data>
   <data name="LabelRunSelected" xml:space="preserve">
-    <value>Seleccionado: </value>
+    <value>선택됨: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
-    <value>▶ Aplicar a la CLI</value>
+    <value>▶ CLI에 적용</value>
   </data>
   <data name="TipApplyToCli" xml:space="preserve">
-    <value>Copia los archivos de este perfil a ~/.claude/ para que la CLI de Claude Code los lea en su próxima ejecución. Guarda automáticamente primero el perfil actualmente activo.</value>
+    <value>이 프로필의 파일을 ~/.claude/에 복사하여 Claude Code CLI가 다음 실행 시 읽을 수 있도록 합니다. 먼저 현재 활성 프로필을 자동으로 저장합니다.</value>
   </data>
   <data name="ButtonSyncFromLive" xml:space="preserve">
-    <value>⇅ Sincronizar desde activo</value>
+    <value>⇅ 사용 중인 설정에서 동기화</value>
   </data>
   <data name="TipSyncFromLive" xml:space="preserve">
-    <value>Actualiza los archivos almacenados de este perfil con los actuales ~/.claude/settings.json, CLAUDE.md y mcpServers.</value>
+    <value>이 프로필에 저장된 파일을 현재 사용 중인 ~/.claude/settings.json, CLAUDE.md 및 mcpServers로 업데이트합니다.</value>
   </data>
   <data name="ButtonDeleteProfile" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>삭제</value>
   </data>
   <data name="TipDeleteCliProfile" xml:space="preserve">
-    <value>Elimina permanentemente el directorio de este perfil. Los archivos activos en ~/.claude/ no se ven afectados.</value>
+    <value>이 프로필 디렉터리를 영구적으로 삭제합니다. 사용 중인 ~/.claude/ 파일에는 영향이 없습니다.</value>
   </data>
   <data name="ButtonExportProfile" xml:space="preserve">
-    <value>Exportar…</value>
+    <value>내보내기…</value>
   </data>
   <data name="TipButtonExportProfile" xml:space="preserve">
-    <value>Exporta este perfil a un único archivo JSON. Usa el mismo formato que la herramienta CLI claudectx, por lo que el archivo resultante puede importarse desde cualquiera de las dos aplicaciones.</value>
+    <value>이 프로필을 단일 JSON 파일로 내보냅니다. claudectx CLI 도구와 동일한 형식을 사용하므로 결과 파일은 두 앱에서 모두 가져올 수 있습니다.</value>
   </data>
   <data name="ButtonImportProfile" xml:space="preserve">
-    <value>Importar…</value>
+    <value>가져오기…</value>
   </data>
   <data name="TipButtonImportProfile" xml:space="preserve">
-    <value>Importa un perfil desde un archivo JSON. Acepta archivos exportados por ClaudeForge o por la herramienta CLI claudectx (https://github.com/foxj77/claudectx).</value>
+    <value>JSON 파일에서 프로필을 가져옵니다. ClaudeForge 또는 claudectx CLI 도구(https://github.com/foxj77/claudectx)에서 내보낸 파일을 모두 받아들입니다.</value>
   </data>
   <data name="DialogTitleExportProfileFailed" xml:space="preserve">
-    <value>Error al exportar</value>
+    <value>내보내기 실패</value>
   </data>
   <data name="DialogTitleImportProfileFailed" xml:space="preserve">
-    <value>Error al importar</value>
+    <value>가져오기 실패</value>
   </data>
   <data name="StatusProfileExportedFmt" xml:space="preserve">
-    <value>«{0}» exportado a {1}</value>
+    <value>'{0}'을(를) {1}에 내보냈습니다</value>
     <comment>{0} is the profile name, {1} is the destination file path.</comment>
   </data>
   <data name="StatusProfileImportedFmt" xml:space="preserve">
-    <value>Perfil «{0}» importado</value>
+    <value>프로필 '{0}'을(를) 가져왔습니다</value>
     <comment>{0} is the resolved profile name (after override resolution).</comment>
   </data>
   <data name="HeadingClaudectxBanner" xml:space="preserve">
-    <value>Compatibilidad con claudectx</value>
+    <value>claudectx 호환성</value>
   </data>
   <data name="TextClaudectxBannerBody" xml:space="preserve">
-    <value>El botón «Aplicar a la CLI» de abajo cambia los archivos activos en ~/.claude/ (settings.json, CLAUDE.md, mcpServers en ~/.claude.json) usando E/S de archivos pura, sin necesidad de herramientas externas. La herramienta CLI claudectx es una alternativa OPCIONAL desde la terminal que realiza el mismo cambio mediante el puntero de perfil activo compartido en ~/.claude/.claudectx-current; instálala solo si quieres un flujo basado en CLI. Un perfil creado con cualquiera de las dos herramientas es inmediatamente utilizable por la otra. Exportar/Importar abajo produce y consume el formato JSON de archivo único de claudectx para compartir.</value>
+    <value>아래의 "CLI에 적용" 버튼은 순수한 파일 I/O를 사용해 사용 중인 ~/.claude/ 파일(settings.json, CLAUDE.md, ~/.claude.json의 mcpServers)을 전환합니다. 외부 도구는 필요하지 않습니다. claudectx CLI 도구는 ~/.claude/.claudectx-current에 있는 공유 활성 프로필 포인터를 통해 동일한 전환을 수행하는 선택적 터미널 대안입니다. CLI 워크플로를 원할 때만 설치하세요. 두 도구 중 어느 쪽에서 만든 프로필이든 즉시 다른 쪽에서도 사용할 수 있습니다. 아래의 내보내기/가져오기는 claudectx의 단일 파일 JSON 공유 형식을 생성하고 사용합니다.</value>
   </data>
   <data name="LinkClaudectxRepo" xml:space="preserve">
     <value>https://github.com/foxj77/claudectx</value>
     <comment>Public URL of the claudectx repository — surfaces on the Profiles page banner as a clickable link.</comment>
   </data>
   <data name="FilePickerProfileJson" xml:space="preserve">
-    <value>JSON de perfil</value>
+    <value>프로필 JSON</value>
     <comment>File picker filter display name for *.json profile export/import files.</comment>
   </data>
   <data name="HeaderProfileName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>이름</value>
   </data>
   <data name="TipHeaderProfileName" xml:space="preserve">
-    <value>Nombre del perfil — coincide con el subdirectorio dentro de ~/.claude/profiles/</value>
+    <value>프로필 이름 — ~/.claude/profiles/ 아래의 하위 디렉터리와 일치합니다</value>
   </data>
   <data name="HeaderCliActive" xml:space="preserve">
-    <value>CLI activa</value>
+    <value>CLI 활성</value>
   </data>
   <data name="TipHeaderCliActive" xml:space="preserve">
-    <value>Distintivo verde: este perfil está aplicado actualmente a ~/.claude/ — la CLI de Claude Code lee de él.</value>
+    <value>녹색 배지: 이 프로필은 현재 ~/.claude/에 적용되어 있습니다. Claude Code CLI가 이 프로필에서 읽습니다.</value>
   </data>
   <data name="BadgeCliActive" xml:space="preserve">
     <value>● Claude Code</value>
   </data>
   <data name="TipCliActivePill" xml:space="preserve">
-    <value>Los archivos de este perfil están actualmente en ~/.claude/ — la CLI de Claude Code está leyendo de este perfil.</value>
+    <value>이 프로필의 파일이 현재 ~/.claude/에 있습니다. Claude Code CLI가 이 프로필에서 읽고 있습니다.</value>
   </data>
   <data name="HeaderClaudeMd" xml:space="preserve">
     <value>CLAUDE.md</value>
   </data>
   <data name="TipHeaderClaudeMd" xml:space="preserve">
-    <value>Este perfil incluye un archivo de instrucciones globales CLAUDE.md personalizado</value>
+    <value>이 프로필에는 사용자 지정 CLAUDE.md 전역 지침 파일이 포함됩니다</value>
   </data>
   <data name="HeaderMcpServers" xml:space="preserve">
-    <value>Servidores MCP</value>
+    <value>MCP 서버</value>
   </data>
   <data name="TipHeaderMcpServers" xml:space="preserve">
-    <value>Este perfil incluye definiciones personalizadas de servidores MCP</value>
+    <value>이 프로필에는 사용자 지정 MCP 서버 정의가 포함됩니다</value>
   </data>
   <data name="BadgeLabelDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
   </data>
   <data name="HeadingDesktopProfiles" xml:space="preserve">
-    <value>Perfiles de Claude Desktop</value>
+    <value>Claude Desktop 프로필</value>
   </data>
   <data name="TipNewDesktopProfile" xml:space="preserve">
-    <value>Crea un nuevo perfil de Desktop, inicializado a partir del claude_desktop_config.json activo actual.</value>
+    <value>현재 사용 중인 claude_desktop_config.json을 기반으로 새 Desktop 프로필을 만듭니다.</value>
   </data>
   <data name="TextDesktopNotInstalled" xml:space="preserve">
-    <value>No parece que Claude Desktop esté instalado en este equipo. Los perfiles de Desktop estarán disponibles una vez que se instale Claude Desktop.</value>
+    <value>이 컴퓨터에 Claude Desktop이 설치되어 있지 않은 것으로 보입니다. Claude Desktop이 설치되면 Desktop 프로필을 사용할 수 있습니다.</value>
   </data>
   <data name="ButtonApplyToDesktop" xml:space="preserve">
-    <value>▶ Aplicar a Desktop</value>
+    <value>▶ Desktop에 적용</value>
   </data>
   <data name="TipApplyToDesktop" xml:space="preserve">
-    <value>Copia el claude_desktop_config.json de este perfil a la ubicación activa de Desktop. Claude Desktop adoptará el cambio en su próximo arranque. Guarda automáticamente primero el perfil de Desktop actualmente activo.</value>
+    <value>이 프로필의 claude_desktop_config.json을 사용 중인 Desktop 위치로 복사합니다. Claude Desktop은 다음 시작 시 변경 사항을 적용합니다. 먼저 현재 활성 Desktop 프로필을 자동으로 저장합니다.</value>
   </data>
   <data name="ButtonSyncDesktopFromLive" xml:space="preserve">
-    <value>⇅ Sincronizar desde activo</value>
+    <value>⇅ 사용 중인 설정에서 동기화</value>
   </data>
   <data name="TipSyncDesktopFromLive" xml:space="preserve">
-    <value>Actualiza este perfil con el claude_desktop_config.json activo actual.</value>
+    <value>현재 사용 중인 claude_desktop_config.json으로 이 프로필을 업데이트합니다.</value>
   </data>
   <data name="TipDeleteDesktopProfile" xml:space="preserve">
-    <value>Elimina permanentemente este perfil de Desktop. La configuración activa de Desktop no se ve afectada.</value>
+    <value>이 Desktop 프로필을 영구적으로 삭제합니다. 사용 중인 Desktop 구성에는 영향이 없습니다.</value>
   </data>
   <data name="HeaderDesktopActive" xml:space="preserve">
-    <value>Desktop activo</value>
+    <value>Desktop 활성</value>
   </data>
   <data name="TipHeaderDesktopActive" xml:space="preserve">
-    <value>Distintivo azul: la configuración de este perfil está aplicada actualmente a la ubicación activa de la configuración de Desktop.</value>
+    <value>파란색 배지: 이 프로필의 구성이 현재 사용 중인 Desktop 구성 위치에 적용되어 있습니다.</value>
   </data>
   <data name="BadgeDesktopActive" xml:space="preserve">
     <value>● Claude Desktop</value>
   </data>
   <data name="TipDesktopActivePill" xml:space="preserve">
-    <value>La configuración de este perfil está aplicada actualmente a la ubicación de la configuración activa de Claude Desktop.</value>
+    <value>이 프로필의 구성이 현재 사용 중인 Claude Desktop 구성 위치에 적용되어 있습니다.</value>
   </data>
   <data name="HeaderDesktopProfileName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>이름</value>
   </data>
   <data name="TipHeaderDesktopProfileName" xml:space="preserve">
-    <value>Nombre del perfil — coincide con el subdirectorio dentro del directorio de perfiles de Desktop</value>
+    <value>프로필 이름 — Desktop 프로필 디렉터리 아래의 하위 디렉터리와 일치합니다</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        BackupRestoreView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingBackupRestore" xml:space="preserve">
-    <value>Copia de seguridad / Restaurar</value>
+    <value>백업 / 복원</value>
   </data>
   <data name="ButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>취소</value>
   </data>
   <data name="TipButtonCancel" xml:space="preserve">
-    <value>Cancela la operación actual</value>
+    <value>현재 작업을 취소합니다</value>
   </data>
   <data name="TabBackup" xml:space="preserve">
-    <value>Copia de seguridad</value>
+    <value>백업</value>
   </data>
   <data name="TabRestore" xml:space="preserve">
-    <value>Restaurar</value>
+    <value>복원</value>
   </data>
   <data name="TabMsixFix" xml:space="preserve">
-    <value>Arreglo de MSIX en Windows</value>
+    <value>Windows MSIX 수정</value>
   </data>
   <data name="LabelOutputFolder" xml:space="preserve">
-    <value>Carpeta de salida</value>
+    <value>출력 폴더</value>
   </data>
   <data name="ButtonBrowse" xml:space="preserve">
-    <value>Examinar…</value>
+    <value>찾아보기…</value>
   </data>
   <data name="WatermarkBackupDir" xml:space="preserve">
-    <value>No se ha elegido carpeta — haz clic en Examinar para definir una</value>
+    <value>폴더가 선택되지 않았습니다 — 설정하려면 찾아보기를 클릭하세요</value>
   </data>
   <data name="TextBackupDirHint" xml:space="preserve">
-    <value>Los archivos de copia de seguridad (.zip) se escriben en esta carpeta. La pestaña de restauración puede analizar otra carpeta distinta.</value>
+    <value>백업 아카이브(.zip)는 이 폴더에 기록됩니다. 복원 탭에서는 다른 폴더를 검색할 수 있습니다.</value>
   </data>
   <data name="TextNoBackupDirWarning" xml:space="preserve">
-    <value>⚠ No hay carpeta de salida seleccionada. Haz clic en Examinar para elegir dónde se guardarán las copias de seguridad.</value>
+    <value>⚠ 출력 폴더가 선택되지 않았습니다. 백업 파일을 저장할 위치를 선택하려면 찾아보기를 클릭하세요.</value>
   </data>
   <data name="LabelScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>범위</value>
   </data>
   <data name="RadioSettingsOnly" xml:space="preserve">
-    <value>Solo ajustes (rápido, opción por defecto)</value>
+    <value>설정만 (빠름, 기본값)</value>
   </data>
   <data name="RadioFullBackup" xml:space="preserve">
-    <value>Completa (incluye ~/.claude/projects — transcripciones de sesión, memoria)</value>
+    <value>전체 (~/.claude/projects 포함 — 세션 기록, 메모리)</value>
   </data>
   <data name="RadioSanitizedBackup" xml:space="preserve">
-    <value>Saneada para compartir (secretos redactados — no se puede restaurar)</value>
+    <value>공유용으로 정제 (비밀 정보 마스킹 — 복원 불가)</value>
   </data>
   <data name="TipRadioSanitizedBackup" xml:space="preserve">
-    <value>Mismo ámbito de archivos que «Solo ajustes», pero cada valor *.json cuya clave coincida con el clasificador de claves sensibles (env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer) se sustituye por la cadena literal «[redacted]». Está pensada para compartir la forma de tu configuración con soporte, la comunidad o un informe de error sin filtrar claves de API, cabeceras de autenticación MCP o tokens OAuth. Los archivos saneados no se pueden restaurar — elige «Solo ajustes» o «Completa» si necesitas una copia recuperable.</value>
+    <value>설정만 모드와 같은 파일 범위지만, 키가 민감한 키 분류기와 일치하는 모든 *.json 값(env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer)이 리터럴 문자열 "[redacted]"로 대체됩니다. API 키, MCP 인증 헤더 또는 OAuth 토큰을 유출하지 않고 구성의 형태를 지원팀, 커뮤니티 또는 버그 보고서와 공유할 때 사용합니다. 정제된 아카이브는 복원할 수 없습니다 — 복구 가능한 백업이 필요하면 설정만 또는 전체를 선택하세요.</value>
   </data>
   <data name="TextBackupSecretsWarning" xml:space="preserve">
-    <value>⚠ Este modo conserva los secretos tal cual. Las claves de API, los tokens OAuth y las cabeceras de autorización MCP se almacenarán en texto plano dentro del archivo. Mantén el .zip en un lugar privado; elige el modo Saneado debajo si necesitas compartir la copia.</value>
+    <value>⚠ 이 모드는 비밀 정보를 그대로 보존합니다. API 키, OAuth 토큰 및 MCP 인증 헤더가 아카이브 안에 평문으로 저장됩니다. .zip 파일을 비공개로 유지하세요. 백업을 공유해야 한다면 아래의 정제 모드를 선택하세요.</value>
   </data>
   <data name="TextSanitizedModeExplainer" xml:space="preserve">
-    <value>Copia saneada: los valores que contienen secretos se sustituirán por «[redacted]» para que el archivo sea seguro al compartirse. Las credenciales se omiten por completo. El resultado NO se puede restaurar — es un artefacto para compartir, no un punto de recuperación.</value>
+    <value>정제 백업: 비밀 정보를 담은 값은 "[redacted]"로 대체되므로 아카이브를 안전하게 공유할 수 있습니다. 자격 증명은 완전히 제외됩니다. 결과는 복원할 수 없습니다 — 복구 지점이 아닌 공유용 아티팩트입니다.</value>
   </data>
   <data name="LabelClients" xml:space="preserve">
-    <value>Clientes</value>
+    <value>클라이언트</value>
   </data>
   <data name="CheckboxClaudeCode" xml:space="preserve">
     <value>Claude Code</value>
@@ -588,234 +597,234 @@
     <value>Claude Desktop</value>
   </data>
   <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>Incluir credenciales de API (~/.claude/.credentials.json)</value>
+    <value>API 자격 증명 포함 (~/.claude/.credentials.json)</value>
   </data>
   <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Marca esta opción solo si la copia de seguridad permanecerá en un almacenamiento de confianza. Cualquiera con la copia podrá iniciar sesión como tú mientras esos tokens sigan siendo válidos.</value>
+    <value>백업 파일이 신뢰할 수 있는 저장소에 머무를 때만 이 옵션을 체크하세요. 토큰이 유효한 동안에는 백업을 가진 누구나 사용자로 로그인할 수 있습니다.</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
-    <value>Retención</value>
+    <value>보존</value>
   </data>
   <data name="LabelKeepLast" xml:space="preserve">
-    <value>Conservar las últimas</value>
+    <value>최근 보존</value>
   </data>
   <data name="LabelKeepAll" xml:space="preserve">
-    <value>copias (0 = conservar todas)</value>
+    <value>개 백업 (0 = 모두 보존)</value>
   </data>
   <data name="ButtonCreateBackup" xml:space="preserve">
-    <value>Crear copia de seguridad</value>
+    <value>백업 만들기</value>
   </data>
   <data name="LabelRestoreFolder" xml:space="preserve">
-    <value>Carpeta de restauración</value>
+    <value>복원 폴더</value>
   </data>
   <data name="WatermarkRestoreDir" xml:space="preserve">
-    <value>No se ha elegido carpeta — haz clic en Examinar para localizar copias</value>
+    <value>폴더가 선택되지 않았습니다 — 백업을 찾으려면 찾아보기를 클릭하세요</value>
   </data>
   <data name="TextNoRestoreDirWarning" xml:space="preserve">
-    <value>⚠ No hay carpeta seleccionada. Haz clic en Examinar para elegir la carpeta que contiene tus copias de seguridad.</value>
+    <value>⚠ 폴더가 선택되지 않았습니다. 백업 아카이브가 들어 있는 폴더를 선택하려면 찾아보기를 클릭하세요.</value>
   </data>
   <data name="TextChooseRestoreFolder" xml:space="preserve">
-    <value>Elige una carpeta arriba para ver las copias de seguridad disponibles.</value>
+    <value>사용 가능한 백업을 보려면 위에서 폴더를 선택하세요.</value>
   </data>
   <data name="TextRestoreInstructions" xml:space="preserve">
-    <value>Selecciona una copia para restaurar. Los archivos existentes se moverán a un lado como .pre-restore-*.bak antes de ser sobrescritos.</value>
+    <value>복원할 백업을 선택하세요. 기존 파일은 덮어쓰기 전에 .pre-restore-*.bak로 이동됩니다.</value>
   </data>
   <data name="MenuOpenFileLocation" xml:space="preserve">
-    <value>Abrir ubicación del archivo</value>
+    <value>파일 위치 열기</value>
   </data>
   <data name="HeaderBackupDate" xml:space="preserve">
-    <value>Fecha</value>
+    <value>날짜</value>
   </data>
   <data name="TipHeaderBackupDate" xml:space="preserve">
-    <value>Fecha y hora en la que se creó esta copia (hora local)</value>
+    <value>이 백업이 만들어진 날짜와 시간 (현지 시간)</value>
   </data>
   <data name="HeaderBackupFile" xml:space="preserve">
-    <value>Archivo</value>
+    <value>파일</value>
   </data>
   <data name="TipHeaderBackupFile" xml:space="preserve">
-    <value>Nombre del archivo de copia de seguridad en disco</value>
+    <value>디스크에 있는 백업 아카이브 파일의 이름</value>
   </data>
   <data name="HeaderBackupPlatform" xml:space="preserve">
-    <value>Plataforma</value>
+    <value>플랫폼</value>
   </data>
   <data name="TipHeaderBackupPlatform" xml:space="preserve">
-    <value>Sistema operativo que creó esta copia: windows, macos o linux. Restaurar una copia desde una plataforma distinta puede requerir editar rutas manualmente.</value>
+    <value>이 백업을 만든 OS 플랫폼: windows, macos 또는 linux. 다른 플랫폼의 백업을 복원하려면 수동으로 경로를 편집해야 할 수 있습니다.</value>
   </data>
   <data name="HeaderBackupMode" xml:space="preserve">
-    <value>Modo</value>
+    <value>모드</value>
   </data>
   <data name="TipHeaderBackupMode" xml:space="preserve">
-    <value>Ámbito de la copia — SettingsOnly excluye las transcripciones de sesión y la memoria del proyecto; Full incluye todo lo que hay bajo ~/.claude/.</value>
+    <value>백업 범위 — SettingsOnly는 세션 기록과 프로젝트 메모리를 제외합니다. Full은 ~/.claude/ 아래의 모든 것을 포함합니다.</value>
   </data>
   <data name="HeaderBackupClients" xml:space="preserve">
-    <value>Clientes</value>
+    <value>클라이언트</value>
   </data>
   <data name="TipHeaderBackupClients" xml:space="preserve">
-    <value>Qué clientes de Claude se incluyeron: ClaudeCode o ClaudeDesktop</value>
+    <value>포함된 Claude 클라이언트: ClaudeCode 및/또는 ClaudeDesktop</value>
   </data>
   <data name="HeaderBackupSize" xml:space="preserve">
-    <value>Tamaño</value>
+    <value>크기</value>
   </data>
   <data name="TipHeaderBackupSize" xml:space="preserve">
-    <value>Tamaño comprimido del archivo de copia de seguridad</value>
+    <value>백업 아카이브의 압축된 크기</value>
   </data>
   <data name="HeaderBackupActions" xml:space="preserve">
-    <value>Acciones</value>
+    <value>작업</value>
   </data>
   <data name="TipHeaderBackupActions" xml:space="preserve">
-    <value>Restaurar sobrescribe tus ajustes activos con esta copia (los archivos existentes se guardan como .pre-restore-*.bak). Eliminar quita el archivo de forma permanente.</value>
+    <value>복원은 이 백업으로 사용 중인 설정을 덮어씁니다(기존 파일은 .pre-restore-*.bak로 백업됨). 삭제는 아카이브를 영구적으로 제거합니다.</value>
   </data>
   <data name="ButtonRestore" xml:space="preserve">
-    <value>Restaurar</value>
+    <value>복원</value>
   </data>
   <data name="ButtonDeleteBackup" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>삭제</value>
   </data>
   <data name="ButtonShareBackup" xml:space="preserve">
-    <value>Compartir</value>
+    <value>공유</value>
   </data>
   <data name="TipButtonShareBackup" xml:space="preserve">
-    <value>Envía este archivo de copia de seguridad a otra aplicación o dispositivo mediante el panel de compartir del sistema operativo</value>
+    <value>OS 공유 패널을 통해 이 백업 아카이브를 다른 앱이나 장치로 보냅니다</value>
   </data>
   <data name="HeadingMsixFix" xml:space="preserve">
-    <value>Ruta virtualizada de MSIX detectada</value>
+    <value>MSIX 가상화 경로가 감지되었습니다</value>
   </data>
   <data name="TextMsixDesc" xml:space="preserve">
-    <value>Claude Desktop está instalado como paquete MSIX. Windows virtualiza las escrituras de la aplicación a una ruta de AppData por paquete. Eso provoca que el botón «Editar configuración» abra el archivo equivocado y que las herramientas (incluida esta aplicación) vean una copia obsoleta. Crear una unión (junction) NTFS desde la ruta estándar a la ruta virtualizada soluciona ambos problemas.</value>
+    <value>Claude Desktop은 MSIX 패키지로 설치되어 있습니다. Windows는 앱의 쓰기를 패키지별 AppData 경로로 가상화합니다. 이로 인해 '구성 편집' 버튼이 잘못된 파일을 열고, 도구(이 앱 포함)는 오래된 사본을 보게 됩니다. 표준 경로에서 가상화된 경로로 NTFS 정션을 만들면 둘 다 해결됩니다.</value>
   </data>
   <data name="LabelMsixVirtualisedPath" xml:space="preserve">
-    <value>Ruta virtualizada (ubicación real):</value>
+    <value>가상화된 경로 (실제 위치):</value>
   </data>
   <data name="LabelMsixStandardPath" xml:space="preserve">
-    <value>Ruta estándar (la que las herramientas consultan):</value>
+    <value>표준 경로 (도구가 보는 위치):</value>
   </data>
   <data name="ButtonCreateJunction" xml:space="preserve">
-    <value>Crear unión (junction)</value>
+    <value>정션 만들기</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        EnvironmentEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingEnvironmentVariables" xml:space="preserve">
-    <value>Variables de entorno</value>
+    <value>환경 변수</value>
   </data>
   <data name="TextEnvSubtitle" xml:space="preserve">
-    <value>Entorno del propio proceso de Claude. Para credenciales por servidor (claves de API, etc.), usa en su lugar la sección env dentro de cada servidor MCP.</value>
+    <value>Claude 자체 프로세스의 환경입니다. 서버별 자격 증명(API 키 등)에는 각 MCP 서버 내부의 env 섹션을 사용하세요.</value>
   </data>
   <data name="ButtonRefreshEnv" xml:space="preserve">
-    <value>Actualizar</value>
+    <value>새로 고침</value>
   </data>
   <data name="TipRefreshEnv" xml:space="preserve">
-    <value>Vuelve a leer el entorno del proceso actual y recarga todos los valores almacenados desde disco</value>
+    <value>현재 프로세스 환경을 다시 읽고 저장된 모든 값을 디스크에서 다시 불러옵니다</value>
   </data>
   <data name="AutoNameRefreshEnv" xml:space="preserve">
-    <value>Actualizar variables de entorno</value>
+    <value>환경 변수 새로 고침</value>
   </data>
   <data name="WatermarkFilterVars" xml:space="preserve">
-    <value>Filtrar variables…</value>
+    <value>변수 필터링…</value>
   </data>
   <data name="CheckboxShowAll" xml:space="preserve">
-    <value>Mostrar todas</value>
+    <value>모두 표시</value>
   </data>
   <data name="TextShowCommonVars" xml:space="preserve">
-    <value>Mostrando variables habituales de desarrollo. Marca «Mostrar todas» para verlo todo.</value>
+    <value>일반 개발 변수를 표시 중입니다. 모든 항목을 보려면 '모두 표시'를 체크하세요.</value>
   </data>
   <data name="TextMacLinuxNote" xml:space="preserve">
-    <value>ℹ  En macOS / Linux, los almacenes de entorno de Usuario y Equipo no son escribibles de forma persistente desde .NET. Solo el ámbito env de Claude está disponible para edición.</value>
+    <value>ℹ  macOS / Linux에서는 사용자 및 머신 환경 저장소를 .NET으로 영구적으로 쓸 수 없습니다. Claude env 범위만 편집할 수 있습니다.</value>
   </data>
   <data name="SectionClaudeAnthropicNode" xml:space="preserve">
     <value>Claude / Anthropic / Node</value>
   </data>
   <data name="SectionGeneralPath" xml:space="preserve">
-    <value>General (PATH, shell, SO)</value>
+    <value>일반 (PATH, 셸, OS)</value>
   </data>
   <data name="HeaderEnvName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>이름</value>
   </data>
   <data name="TipHeaderEnvName" xml:space="preserve">
-    <value>Nombre de la variable de entorno. Pasa el cursor para ver una descripción; haz clic para verla o editarla en el panel de detalle.</value>
+    <value>환경 변수 이름입니다. 설명을 보려면 마우스를 올리고, 상세 창에서 보거나 편집하려면 클릭하세요.</value>
   </data>
   <data name="HeaderEffectiveValue" xml:space="preserve">
-    <value>Valor efectivo</value>
+    <value>유효 값</value>
   </data>
   <data name="TipHeaderEffectiveValue" xml:space="preserve">
-    <value>El valor resuelto que Claude lee, después de aplicar todos los ámbitos de entorno (el proceso gana al usuario, y el usuario gana al almacenado por Claude)</value>
+    <value>모든 환경 범위가 적용된 후 Claude가 읽는 결정된 값입니다(프로세스 우선, 사용자, Claude 저장 순)</value>
   </data>
   <data name="HeaderSource" xml:space="preserve">
-    <value>Origen</value>
+    <value>원본</value>
   </data>
   <data name="TipHeaderSource" xml:space="preserve">
-    <value>Qué ámbito proporciona el valor efectivo: process (entorno del SO), claude (almacenado en la configuración env de claude), user (entorno de usuario de Windows) o machine (entorno de equipo de Windows)</value>
+    <value>유효 값을 제공하는 범위: process (OS env), claude (claude env 구성에 저장됨), user (Windows 사용자 env) 또는 machine (Windows 머신 env)</value>
   </data>
   <data name="HeaderOverridden" xml:space="preserve">
-    <value>Sobrescrita</value>
+    <value>재정의됨</value>
   </data>
   <data name="TipHeaderOverridden" xml:space="preserve">
-    <value>Se marca cuando un ámbito más estrecho (process o claude) define esta variable explícitamente, prevaleciendo sobre los valores almacenados</value>
+    <value>더 좁은 범위(process 또는 claude)가 이 변수를 명시적으로 설정하여 저장된 값보다 우선할 때 체크됩니다</value>
   </data>
   <data name="LabelNewVariable" xml:space="preserve">
-    <value>Nueva variable:</value>
+    <value>새 변수:</value>
   </data>
   <data name="WatermarkVarName" xml:space="preserve">
-    <value>NOMBRE_DE_VARIABLE</value>
+    <value>VARIABLE_NAME</value>
   </data>
   <data name="ButtonAddVar" xml:space="preserve">
-    <value>Añadir</value>
+    <value>추가</value>
   </data>
   <data name="TextValueEditedInPane" xml:space="preserve">
-    <value>(valor editado en el panel de detalle)</value>
+    <value>(상세 창에서 편집된 값)</value>
   </data>
   <data name="TextSelectVariable" xml:space="preserve">
-    <value>Selecciona una variable para ver sus valores por ámbito.</value>
+    <value>범위별 값을 보려면 변수를 선택하세요.</value>
   </data>
   <data name="LabelEdit" xml:space="preserve">
-    <value>Editar</value>
+    <value>편집</value>
   </data>
   <data name="LabelWritingTo" xml:space="preserve">
-    <value>Escribiendo en:</value>
+    <value>기록 위치:</value>
   </data>
   <data name="WatermarkValueNotSet" xml:space="preserve">
-    <value>(sin definir)</value>
+    <value>(설정되지 않음)</value>
   </data>
   <data name="ButtonSaveEnvVar" xml:space="preserve">
-    <value>Guardar</value>
+    <value>저장</value>
   </data>
   <data name="ButtonRemoveFromScope" xml:space="preserve">
-    <value>Quitar del ámbito</value>
+    <value>범위에서 제거</value>
   </data>
   <data name="TextProcessEnvNote" xml:space="preserve">
-    <value>ℹ  Esta variable está definida en el entorno del proceso y no se puede editar aquí. Tendrá prioridad sobre cualquier valor almacenado.</value>
+    <value>ℹ  이 변수는 프로세스 환경에 설정되어 있어 여기서 편집할 수 없습니다. 저장된 모든 값을 재정의합니다.</value>
   </data>
   <data name="LabelValuesByLayer" xml:space="preserve">
-    <value>Valores por capa</value>
+    <value>계층별 값</value>
   </data>
   <data name="LabelProcess" xml:space="preserve">
-    <value>Proceso</value>
+    <value>프로세스</value>
   </data>
   <data name="LabelClaude" xml:space="preserve">
     <value>Claude</value>
   </data>
   <data name="LabelUser" xml:space="preserve">
-    <value>Usuario</value>
+    <value>사용자</value>
   </data>
   <data name="LabelMachine" xml:space="preserve">
-    <value>Equipo</value>
+    <value>머신</value>
   </data>
   <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(sin definir)</value>
+    <value>(설정되지 않음)</value>
   </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
-    <value>«{0}» no es un nombre válido de variable de entorno.</value>
+    <value>'{0}'은(는) 유효한 환경 변수 이름이 아닙니다.</value>
   </data>
   <data name="StatusEnvAccessDeniedFmt" xml:space="preserve">
-    <value>Acceso denegado al escribir «{0}»: {1}</value>
+    <value>'{0}' 쓰기 액세스가 거부되었습니다: {1}</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        AboutEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingVersionInfo" xml:space="preserve">
-    <value>Información de versión</value>
+    <value>버전 정보</value>
   </data>
   <data name="LabelClaudeCode" xml:space="preserve">
     <value>Claude Code</value>
@@ -824,23 +833,23 @@
     <value>Claude Desktop</value>
   </data>
   <data name="LabelPlatform" xml:space="preserve">
-    <value>Plataforma</value>
+    <value>플랫폼</value>
   </data>
   <data name="LabelConfigFile" xml:space="preserve">
-    <value>Archivo de configuración</value>
+    <value>구성 파일</value>
   </data>
   <data name="ButtonOpenConfig" xml:space="preserve">
-    <value>Abrir configuración</value>
+    <value>구성 열기</value>
   </data>
   <data name="TipButtonOpenConfig" xml:space="preserve">
-    <value>Abre el archivo principal de configuración en el editor de texto predeterminado</value>
+    <value>기본 텍스트 편집기에서 기본 구성 파일을 엽니다</value>
   </data>
   <data name="ButtonManageProfiles" xml:space="preserve">
-    <value>_Gestionar…</value>
+    <value>관리(_M)…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
   <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>탐색기에서 보기</value>
     <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
   </data>
 
@@ -849,52 +858,52 @@
        based on PlatformInfo.Current.  Direct AXAML bindings should use
        the PlatformLabels static, not these resx entries. -->
   <data name="ButtonRevealWindows" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>탐색기에서 보기</value>
   </data>
   <data name="ButtonRevealMac" xml:space="preserve">
-    <value>Mostrar en el Finder</value>
+    <value>Finder에서 보기</value>
   </data>
   <data name="ButtonRevealLinux" xml:space="preserve">
-    <value>Mostrar en Archivos</value>
+    <value>파일에서 보기</value>
   </data>
   <data name="TipButtonRevealWindows" xml:space="preserve">
-    <value>Mostrar en el Explorador de Windows</value>
+    <value>Windows 탐색기에 표시합니다</value>
   </data>
   <data name="TipButtonRevealMac" xml:space="preserve">
-    <value>Mostrar en el Finder</value>
+    <value>Finder에 표시합니다</value>
   </data>
   <data name="TipButtonRevealLinux" xml:space="preserve">
-    <value>Mostrar en el gestor de archivos</value>
+    <value>파일 관리자에 표시합니다</value>
   </data>
 
   <!-- platform-resolved variants of the Memory-page viewer
        edit hint.  Same approach as ButtonReveal* above. -->
   <data name="TextMemoryViewerEditHintWindows" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Explorador».</value>
+    <value>편집하려면 텍스트 편집기에서 열어 보세요 — "탐색기에서 보기"를 클릭하세요.</value>
   </data>
   <data name="TextMemoryViewerEditHintMac" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Finder».</value>
+    <value>편집하려면 텍스트 편집기에서 열어 보세요 — "Finder에서 보기"를 클릭하세요.</value>
   </data>
   <data name="TextMemoryViewerEditHintLinux" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en Archivos».</value>
+    <value>편집하려면 텍스트 편집기에서 열어 보세요 — "파일에서 보기"를 클릭하세요.</value>
   </data>
   <data name="LabelLogFile" xml:space="preserve">
-    <value>Archivo de registro</value>
+    <value>로그 파일</value>
   </data>
   <data name="ButtonShareLog" xml:space="preserve">
-    <value>Compartir registro</value>
+    <value>로그 공유</value>
   </data>
   <data name="TipButtonShareLog" xml:space="preserve">
-    <value>Comparte el archivo de registro actual (útil para informes de error)</value>
+    <value>현재 로그 파일을 공유합니다 (버그 보고서에 유용)</value>
   </data>
   <data name="ButtonShareConfig" xml:space="preserve">
-    <value>Compartir configuración</value>
+    <value>구성 공유</value>
   </data>
   <data name="TipButtonShareConfig" xml:space="preserve">
-    <value>Comparte los ajustes efectivos como texto JSON</value>
+    <value>유효 설정을 JSON 텍스트로 공유합니다</value>
   </data>
   <data name="TargetNullNotDetected" xml:space="preserve">
-    <value>(no detectado)</value>
+    <value>(감지되지 않음)</value>
   </data>
 
   <!-- Claude Code PATH-warning block (AboutEditorView): appears when the
@@ -902,67 +911,67 @@
        user's PATH does not expose it (common on Windows ARM64 after an
        `npm i -g` into %APPDATA%\npm). -->
   <data name="LabelClaudeCodeNotOnPath" xml:space="preserve">
-    <value>Instalado, pero no está en el PATH</value>
+    <value>설치되었지만 PATH에 없음</value>
   </data>
   <data name="TextClaudeCodeNotOnPath" xml:space="preserve">
-    <value>Se ha encontrado en {0}, pero el directorio que lo contiene no está en tu PATH. Ejecutar `claude` desde una terminal fallará hasta que se actualice el PATH.</value>
+    <value>{0}에서 찾았지만 해당 디렉터리가 PATH에 없습니다. PATH가 업데이트될 때까지 터미널에서 `claude`를 실행하면 실패합니다.</value>
   </data>
   <data name="ButtonAddClaudeCodeToPath" xml:space="preserve">
-    <value>Añadir al PATH</value>
+    <value>PATH에 추가</value>
   </data>
   <data name="TipButtonAddClaudeCodeToPath" xml:space="preserve">
-    <value>Añade el directorio que contiene claude a tu PATH de usuario (no requiere permisos de administrador). Abre una nueva terminal para que el cambio surta efecto.</value>
+    <value>claude가 포함된 디렉터리를 사용자 PATH에 추가합니다(관리자 권한 불필요). 변경 사항을 적용하려면 새 터미널을 여세요.</value>
   </data>
   <data name="TextAddToPathAdded" xml:space="preserve">
-    <value>Añadido al PATH de usuario. Abre una nueva terminal para usar `claude`.</value>
+    <value>사용자 PATH에 추가되었습니다. `claude`를 사용하려면 새 터미널을 여세요.</value>
   </data>
   <data name="TextAddToPathAlreadyPresent" xml:space="preserve">
-    <value>El directorio ya estaba en el PATH (tu sesión actual puede estar obsoleta).</value>
+    <value>디렉터리가 이미 PATH에 있습니다(현재 세션이 오래되었을 수 있음).</value>
   </data>
   <data name="TextAddToPathFailed" xml:space="preserve">
-    <value>No se ha podido actualizar el PATH — edita `HKCU\Environment\Path` manualmente o contacta con soporte.</value>
+    <value>PATH를 업데이트할 수 없습니다 — `HKCU\Environment\Path`를 수동으로 편집하거나 지원팀에 문의하세요.</value>
   </data>
   <data name="TextAddToPathUnsupported" xml:space="preserve">
-    <value>La edición automática del PATH no es compatible en esta plataforma. Añade el directorio manualmente al archivo rc de tu shell.</value>
+    <value>이 플랫폼에서는 자동 PATH 편집이 지원되지 않습니다. 셸 rc 파일에 디렉터리를 수동으로 추가하세요.</value>
   </data>
   <data name="DialogTitleAddClaudeCodeToPath" xml:space="preserve">
-    <value>¿Añadir Claude Code al PATH?</value>
+    <value>Claude Code를 PATH에 추가하시겠습니까?</value>
   </data>
   <data name="DialogMessageAddClaudeCodeToPath" xml:space="preserve">
-    <value>Esto añadirá el siguiente directorio a tu variable de entorno PATH de usuario (no requiere permisos de administrador):
+    <value>다음 디렉터리가 사용자 PATH 환경 변수에 추가됩니다(관리자 권한 불필요):
 
 {0}
 
-Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reiniciarse. ¿Continuar?</value>
+새 터미널은 변경 사항을 적용합니다. 기존 터미널은 다시 시작해야 합니다. 계속하시겠습니까?</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        SaveChangesDialog
        ═══════════════════════════════════════════════════════════════ -->
   <data name="ButtonCopyAllChanges" xml:space="preserve">
-    <value>Copiar todo</value>
+    <value>모두 복사</value>
   </data>
   <data name="TipButtonCopyAllChanges" xml:space="preserve">
-    <value>Copia al portapapeles un resumen en texto plano de todos los cambios (sin descripciones)</value>
+    <value>모든 변경 사항의 일반 텍스트 요약을 클립보드에 복사합니다(설명 제외)</value>
   </data>
   <data name="CheckboxShowDialog" xml:space="preserve">
-    <value>Mostrar este diálogo al guardar</value>
+    <value>저장 시 이 대화 상자 표시</value>
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
-    <value>Desmárcalo para omitir este diálogo de confirmación y guardar directamente en el futuro</value>
+    <value>이 확인 대화 상자를 건너뛰고 앞으로 즉시 저장하려면 체크 해제하세요</value>
   </data>
   <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Descartar cambios</value>
+    <value>변경 사항 버리기</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
-    <value>Guardar</value>
+    <value>저장</value>
   </data>
   <data name="DialogTitleSaveChanges" xml:space="preserve">
-    <value>Guardar cambios</value>
+    <value>변경 사항 저장</value>
     <comment>Window title for the SaveChangesDialog when shown in Save mode (regular save flow + pre-Backup save guard).</comment>
   </data>
   <data name="DialogTitleRestorePreview" xml:space="preserve">
-    <value>Vista previa de restauración</value>
+    <value>복원 미리 보기</value>
     <comment>Window title for the SaveChangesDialog when shown in Restore mode (pre-Restore save guard).</comment>
   </data>
 
@@ -970,334 +979,334 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
        McpServersEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="WatermarkServerName" xml:space="preserve">
-    <value>Nombre</value>
+    <value>이름</value>
   </data>
   <data name="TipAddServer" xml:space="preserve">
-    <value>Añadir servidor</value>
+    <value>서버 추가</value>
   </data>
   <data name="LabelTransportType" xml:space="preserve">
-    <value>Tipo de transporte</value>
+    <value>전송 유형</value>
   </data>
   <data name="LabelCommand" xml:space="preserve">
-    <value>Comando</value>
+    <value>명령</value>
   </data>
   <data name="WatermarkMcpCommand" xml:space="preserve">
-    <value>p. ej. npx, python, /ruta/al/servidor</value>
+    <value>예: npx, python, /path/to/server</value>
   </data>
   <data name="LabelMcpDescription" xml:space="preserve">
-    <value>Descripción</value>
+    <value>설명</value>
     <comment>MCP server description field (optional human-readable blurb).</comment>
   </data>
   <data name="WatermarkMcpDescription" xml:space="preserve">
-    <value>Opcional — breve descripción que se muestra en las descripciones emergentes</value>
+    <value>선택 사항 — 도구 설명에 표시되는 짧은 설명</value>
   </data>
   <data name="LabelDisableBypassPermissionsMode" xml:space="preserve">
-    <value>Desactivar el modo bypassPermissions</value>
+    <value>bypassPermissions 모드 비활성화</value>
     <comment>Permissions toggle that prevents `defaultMode = bypassPermissions` from taking effect; managed-scope org policy.</comment>
   </data>
   <data name="LabelDisableBypassPermissionsModeCheckbox" xml:space="preserve">
-    <value>Bloquear todos los valores predeterminados bypassPermissions</value>
+    <value>모든 bypassPermissions 기본값 차단</value>
   </data>
   <data name="TextDisableBypassPermissionsModeHint" xml:space="preserve">
-    <value>Cuando está activo, Claude se niega a ejecutarse en modo bypassPermissions independientemente de cualquier sobreescritura a nivel de usuario. Suele configurarse en el ámbito Gestionado mediante política de la organización.</value>
+    <value>설정 시 사용자 범위의 재정의와 관계없이 Claude는 bypassPermissions 모드에서 실행을 거부합니다. 일반적으로 조직 정책에 의해 Managed 범위에서 구성됩니다.</value>
   </data>
   <data name="LabelAdditionalDirectories" xml:space="preserve">
-    <value>Directorios adicionales</value>
+    <value>추가 디렉터리</value>
     <comment>Extra directories the permission scope extends into.</comment>
   </data>
   <data name="TextAdditionalDirectoriesHint" xml:space="preserve">
-    <value>Rutas fuera de la raíz del proyecto que Claude tiene permitido considerar dentro de su ámbito. Una ruta absoluta por fila.</value>
+    <value>Claude가 범위에 포함된 것으로 간주할 수 있는 프로젝트 루트 외부의 경로입니다. 한 행에 하나의 절대 경로를 입력하세요.</value>
   </data>
   <data name="WatermarkAdditionalDirectory" xml:space="preserve">
-    <value>p. ej. /ruta/a/otro/dir</value>
+    <value>예: /path/to/another/dir</value>
   </data>
   <data name="HeaderHookTimeout" xml:space="preserve">
-    <value>Tiempo de espera (s)</value>
+    <value>제한 시간 (초)</value>
     <comment>Per-hook timeout column header in the hooks DataGrid.</comment>
   </data>
   <data name="TipHookTimeout" xml:space="preserve">
-    <value>Tiempo de espera opcional por hook en segundos. Déjalo en blanco para usar el valor predeterminado de la CLI.</value>
+    <value>훅별 선택적 제한 시간(초)입니다. CLI 기본값을 사용하려면 비워두세요.</value>
   </data>
   <data name="LabelHookHeaders" xml:space="preserve">
-    <value>Cabeceras HTTP</value>
+    <value>HTTP 헤더</value>
     <comment>Header row for the URL-hook headers editor.</comment>
   </data>
   <data name="TextHookHeadersHint" xml:space="preserve">
-    <value>Cabeceras HTTP personalizadas que se añaden a la solicitud cuando se dispara este hook de URL. Usa ${VARNAME} para interpolar valores de las variables de entorno listadas abajo.</value>
+    <value>이 URL 훅이 실행될 때 요청에 추가되는 사용자 지정 HTTP 헤더입니다. 아래 나열된 환경 변수의 값을 보간하려면 ${VARNAME}을 사용하세요.</value>
   </data>
   <data name="WatermarkHookHeaderKey" xml:space="preserve">
-    <value>Nombre de la cabecera (p. ej. Authorization)</value>
+    <value>헤더 이름 (예: Authorization)</value>
   </data>
   <data name="WatermarkHookHeaderValue" xml:space="preserve">
-    <value>Valor de la cabecera (o Bearer ${TOKEN})</value>
+    <value>헤더 값 (또는 Bearer ${TOKEN})</value>
   </data>
   <data name="LabelHookAllowedEnvVars" xml:space="preserve">
-    <value>Variables de entorno permitidas</value>
+    <value>허용된 환경 변수</value>
     <comment>Header row for the URL-hook allowed-env-vars editor.</comment>
   </data>
   <data name="TextHookAllowedEnvVarsHint" xml:space="preserve">
-    <value>Nombres de variables de entorno cuyos valores pueden interpolarse en los valores de cabecera mediante ${VARNAME}. Los nombres no listados aquí no se sustituirán.</value>
+    <value>${VARNAME}을 통해 헤더 값에 보간될 수 있는 환경 변수 이름입니다. 여기에 나열되지 않은 이름은 대체되지 않습니다.</value>
   </data>
   <data name="WatermarkHookAllowedEnvVar" xml:space="preserve">
-    <value>Nombre de variable (p. ej. API_TOKEN)</value>
+    <value>변수 이름 (예: API_TOKEN)</value>
   </data>
   <data name="LabelUrl" xml:space="preserve">
     <value>URL</value>
   </data>
   <data name="WatermarkMcpUrl" xml:space="preserve">
-    <value>p. ej. http://localhost:3000/sse</value>
+    <value>예: http://localhost:3000/sse</value>
   </data>
   <data name="LabelArguments" xml:space="preserve">
-    <value>Argumentos</value>
+    <value>인수</value>
   </data>
   <data name="HeaderArgValue" xml:space="preserve">
-    <value>Valor</value>
+    <value>값</value>
   </data>
   <data name="WatermarkAddArgument" xml:space="preserve">
-    <value>Añadir argumento…</value>
+    <value>인수 추가…</value>
   </data>
   <data name="LabelMcpEnvVars" xml:space="preserve">
-    <value>Variables de entorno</value>
+    <value>환경 변수</value>
   </data>
   <data name="TextMcpEnvVarsHint" xml:space="preserve">
-    <value>Se inyectan únicamente en el subproceso de este servidor — no son visibles para Claude ni para otros servidores. Úsalo para las claves de API y credenciales que esta herramienta necesite.</value>
+    <value>이 서버의 하위 프로세스에만 주입됩니다 — Claude나 다른 서버에는 보이지 않습니다. 이 도구에 필요한 API 키 및 자격 증명에 사용하세요.</value>
   </data>
   <data name="HeaderEnvKey" xml:space="preserve">
-    <value>Clave</value>
+    <value>키</value>
   </data>
   <data name="HeaderEnvValue" xml:space="preserve">
-    <value>Valor</value>
+    <value>값</value>
   </data>
   <data name="WatermarkEnvKey" xml:space="preserve">
-    <value>CLAVE</value>
+    <value>KEY</value>
   </data>
   <data name="WatermarkEnvValue" xml:space="preserve">
-    <value>valor</value>
+    <value>값</value>
   </data>
   <data name="ValidationMcpCommandRequired" xml:space="preserve">
-    <value>El comando es obligatorio para el transporte stdio.</value>
+    <value>stdio 전송에는 명령이 필요합니다.</value>
   </data>
   <data name="ValidationMcpUrlInvalid" xml:space="preserve">
-    <value>La URL debe ser una dirección http:// o https:// válida.</value>
+    <value>URL은 유효한 http:// 또는 https:// 주소여야 합니다.</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HooksEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextSelectEventType" xml:space="preserve">
-    <value>Selecciona un tipo de evento</value>
+    <value>이벤트 유형을 선택하세요</value>
   </data>
   <data name="ButtonAddHook" xml:space="preserve">
-    <value>+ Añadir hook</value>
+    <value>+ 훅 추가</value>
   </data>
   <data name="HeaderMatcher" xml:space="preserve">
-    <value>Coincidencia</value>
+    <value>매처</value>
   </data>
   <data name="HeaderHookType" xml:space="preserve">
-    <value>Tipo</value>
+    <value>유형</value>
   </data>
   <data name="HeaderCommandPromptUrl" xml:space="preserve">
-    <value>Comando / Prompt / URL</value>
+    <value>명령 / 프롬프트 / URL</value>
   </data>
   <data name="ButtonRemoveHook" xml:space="preserve">
-    <value>Quitar</value>
+    <value>제거</value>
   </data>
   <data name="TextHookValidationWarning" xml:space="preserve">
-    <value>Uno o varios hooks tienen una coincidencia o un comando vacíos — esos hooks no se dispararán.</value>
+    <value>하나 이상의 훅에 매처 또는 명령이 비어 있습니다 — 해당 훅은 실행되지 않습니다.</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        PermissionsEditorView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelDefaultMode" xml:space="preserve">
-    <value>Modo predeterminado</value>
+    <value>기본 모드</value>
   </data>
   <data name="TextDefaultModeHint" xml:space="preserve">
-    <value>Controla cómo gestiona Claude las llamadas a herramientas no cubiertas por ninguna regla Permitir, Denegar o Preguntar. Pasa el cursor sobre cada opción para ver una descripción.</value>
+    <value>Allow, Deny 또는 Ask 규칙으로 처리되지 않는 도구 호출을 Claude가 어떻게 처리할지 제어합니다. 설명을 보려면 각 옵션 위에 마우스를 올리세요.</value>
   </data>
   <data name="PlaceholderDefaultMode" xml:space="preserve">
-    <value>(sin definir — se hereda)</value>
+    <value>(설정되지 않음 — 상속)</value>
   </data>
   <data name="HeaderAllow" xml:space="preserve">
-    <value>Permitir</value>
+    <value>허용</value>
   </data>
   <data name="HeaderDeny" xml:space="preserve">
-    <value>Denegar</value>
+    <value>거부</value>
   </data>
   <data name="HeaderAsk" xml:space="preserve">
-    <value>Preguntar</value>
+    <value>확인</value>
   </data>
   <data name="TextPermissionsExplainer" xml:space="preserve">
-    <value>Las reglas de permisos controlan qué herramientas de Claude Code pueden ejecutarse sin solicitar confirmación. Una regla puede ser un nombre simple de herramienta —como Read o Bash—, que concede acceso sin restricciones a esa herramienta, o una forma parametrizada como Bash(git *) o Read(./**/*.ts), que solo se aplica a invocaciones cuyo argumento encaja en el patrón. Las reglas de Permitir se ejecutan en silencio; las de Denegar quedan bloqueadas; las de Preguntar siempre disparan una confirmación, independientemente del Modo predeterminado.</value>
+    <value>권한 규칙은 어떤 Claude Code 도구가 확인 없이 실행될 수 있는지 제어합니다. 규칙은 Read 또는 Bash 같은 단순 도구 이름(해당 도구에 대한 무제한 액세스를 부여) 또는 Bash(git *) 또는 Read(./**/*.ts) 같이 인수가 패턴에 맞는 호출만 일치시키는 매개변수화된 형식일 수 있습니다. Allow의 규칙은 조용히 실행되고, Deny 규칙은 즉시 차단되며, Ask 규칙은 Default Mode 설정과 관계없이 항상 확인 메시지를 표시합니다.</value>
   </data>
   <data name="TextExamplesHeader" xml:space="preserve">
-    <value>Ejemplos:</value>
+    <value>예:</value>
   </data>
   <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Acciones habituales</value>
+    <value>일반 작업</value>
   </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
-    <value>Filtrado para ocultar las reglas que ya están presentes en algún ámbito.</value>
+    <value>이미 어떤 범위에든 존재하는 규칙은 숨기도록 필터링되었습니다.</value>
   </data>
   <data name="TextCommonActionsEmpty" xml:space="preserve">
-    <value>Todas las reglas habituales ya están configuradas.</value>
+    <value>모든 일반 규칙이 이미 구성되어 있습니다.</value>
   </data>
   <data name="TextCommonActionsWslHint" xml:space="preserve">
-    <value>Consejo para Windows: la herramienta Bash de Claude se ejecuta por defecto a través de Git Bash / MSYS, lo que puede deformar las rutas en comandos intensivos en sistema de archivos. Permite el grupo WSL de abajo (p. ej. Bash(wsl git status)) y Claude preferirá automáticamente la vía WSL cuando esas reglas estén presentes.</value>
+    <value>Windows 팁: Claude의 Bash 도구는 기본적으로 Git Bash / MSYS를 통해 실행되며, 파일 시스템을 많이 사용하는 명령에서 경로를 깨뜨릴 수 있습니다. 아래 WSL 그룹을 허용 목록에 추가하면(예: Bash(wsl git status)) 해당 규칙이 있을 때 Claude는 자동으로 WSL 경로를 선호합니다.</value>
     <comment>Permissions page Common Actions contextual hint — shown only when PlatformInfo.Current.IsWindows is true. Explains why the WSL group is there and how to use it. Paired with TextWelcomeWslHint on the Welcome page for cross-discoverability.</comment>
   </data>
   <data name="WatermarkAllowRule" xml:space="preserve">
-    <value>p. ej. Read o Bash(git *)</value>
+    <value>예: Read 또는 Bash(git *)</value>
   </data>
   <data name="TipPermissionRule" xml:space="preserve">
-    <value>Introduce una regla: nombre simple de herramienta (p. ej. Read) o forma parametrizada (p. ej. Bash(git *)). Mira los ejemplos abajo.</value>
+    <value>규칙을 입력하세요: 단순 도구 이름(예: Read) 또는 매개변수화된 형식(예: Bash(git *)). 아래 예시를 참고하세요.</value>
   </data>
   <data name="TipAddAllowRule" xml:space="preserve">
-    <value>Añadir esta regla de permitir</value>
+    <value>이 허용 규칙을 추가합니다</value>
   </data>
   <data name="WatermarkDenyRule" xml:space="preserve">
-    <value>p. ej. Write o Bash(rm *)</value>
+    <value>예: Write 또는 Bash(rm *)</value>
   </data>
   <data name="TipAddDenyRule" xml:space="preserve">
-    <value>Añadir esta regla de denegar</value>
+    <value>이 거부 규칙을 추가합니다</value>
   </data>
   <data name="WatermarkAskRule" xml:space="preserve">
-    <value>p. ej. Bash(npm install *)</value>
+    <value>예: Bash(npm install *)</value>
   </data>
   <data name="TipAddAskRule" xml:space="preserve">
-    <value>Añadir esta regla de preguntar</value>
+    <value>이 확인 규칙을 추가합니다</value>
   </data>
   <data name="TipRemoveRule" xml:space="preserve">
-    <value>Quitar regla</value>
+    <value>규칙 제거</value>
   </data>
   <data name="TipCommonAddAllow" xml:space="preserve">
-    <value>Añade esta regla a la lista Permitir — se ejecuta en silencio sin solicitar confirmación</value>
+    <value>이 규칙을 허용 목록에 추가합니다 — 확인 없이 조용히 실행됩니다</value>
   </data>
   <data name="TipCommonAddDeny" xml:space="preserve">
-    <value>Añade esta regla a la lista Denegar — queda bloqueada por completo</value>
+    <value>이 규칙을 거부 목록에 추가합니다 — 즉시 차단됩니다</value>
   </data>
   <data name="TipCommonAddAsk" xml:space="preserve">
-    <value>Añade esta regla a la lista Preguntar — siempre dispara una confirmación</value>
+    <value>이 규칙을 확인 목록에 추가합니다 — 항상 확인 메시지를 표시합니다</value>
   </data>
   <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} regla(s))</value>
+    <value>({0}개 규칙)</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LabelDefinedInScopes" xml:space="preserve">
-    <value>Definido en los ámbitos:</value>
+    <value>정의된 범위:</value>
   </data>
   <data name="TipResetToInherited" xml:space="preserve">
-    <value>Quita este ajuste en el ámbito actual (hereda del ámbito inferior)</value>
+    <value>현재 범위에서 이 설정을 제거합니다(하위 범위에서 상속)</value>
   </data>
   <data name="ButtonReset" xml:space="preserve">
-    <value>Restablecer</value>
+    <value>재설정</value>
   </data>
   <data name="TextOverridden" xml:space="preserve">
-    <value>(sobrescrito)</value>
+    <value>(재정의됨)</value>
   </data>
   <data name="TipShowSuggestions" xml:space="preserve">
-    <value>Mostrar el desplegable de sugerencias</value>
+    <value>제안 드롭다운 표시</value>
   </data>
   <data name="TipManagedLocked" xml:space="preserve">
-    <value>Gestionado por el administrador — solo lectura</value>
+    <value>관리자가 관리함 — 읽기 전용</value>
   </data>
   <data name="TipUndocumented" xml:space="preserve">
-    <value>Ajuste no documentado — no figura en la documentación oficial de Claude</value>
+    <value>문서화되지 않은 설정 — 공식 Claude 문서에 없습니다</value>
   </data>
   <data name="TipNewSetting" xml:space="preserve">
-    <value>Ajuste nuevo — añadido desde tu última sesión</value>
+    <value>새 설정 — 마지막 세션 이후 추가됨</value>
   </data>
   <data name="TextNewBadge" xml:space="preserve">
-    <value>✨ NUEVO</value>
+    <value>✨ NEW</value>
   </data>
   <data name="ButtonAdd" xml:space="preserve">
-    <value>Añadir</value>
+    <value>추가</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        EffectiveSettingsView
        ═══════════════════════════════════════════════════════════════ -->
   <data name="HeadingEffectiveSettings" xml:space="preserve">
-    <value>Ajustes efectivos (fusionados)</value>
+    <value>유효 설정 (병합됨)</value>
   </data>
   <data name="ButtonRefreshEffective" xml:space="preserve">
-    <value>Actualizar</value>
+    <value>새로 고침</value>
   </data>
   <data name="TabProperties" xml:space="preserve">
-    <value>Propiedades</value>
+    <value>속성</value>
   </data>
   <data name="TabJson" xml:space="preserve">
     <value>JSON</value>
   </data>
   <data name="WatermarkFilterProps" xml:space="preserve">
-    <value>Filtrar propiedades…</value>
+    <value>속성 필터링…</value>
   </data>
   <data name="HeaderEffectiveProperty" xml:space="preserve">
-    <value>Propiedad</value>
+    <value>속성</value>
   </data>
   <data name="TipHeaderEffectiveProperty" xml:space="preserve">
-    <value>Nombre del ajuste (clave JSON) tal y como se usa en settings.json</value>
+    <value>settings.json에서 사용되는 설정 이름(JSON 키)</value>
   </data>
   <data name="HeaderEffectiveValueCol" xml:space="preserve">
-    <value>Valor</value>
+    <value>값</value>
   </data>
   <data name="TipHeaderEffectiveValueCol" xml:space="preserve">
-    <value>El valor efectivo fusionado — el valor real que Claude lee, después de aplicar todas las capas</value>
+    <value>병합된 유효 값 — 모든 계층이 적용된 후 Claude가 읽는 실제 값</value>
   </data>
   <data name="HeaderEffectiveScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>범위</value>
   </data>
   <data name="TipHeaderEffectiveScope" xml:space="preserve">
-    <value>Qué capa de configuración define este valor: local (solo en este equipo) &gt; project (compartido en el repositorio) &gt; user (valor por defecto personal) &gt; managed (política de la organización)</value>
+    <value>이 값을 정의하는 구성 계층: local (머신 전용) &gt; project (저장소에서 공유) &gt; user (개인 기본값) &gt; managed (조직 정책)</value>
   </data>
   <data name="HeaderEffectiveOverridden" xml:space="preserve">
-    <value>Sobrescrita</value>
+    <value>재정의됨</value>
   </data>
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
-    <value>Se marca cuando un ámbito más estrecho (p. ej. local o project) define esta propiedad explícitamente, sobrescribiendo el valor de esta fila</value>
+    <value>더 좁은 범위(예: local 또는 project)가 이 속성을 명시적으로 설정하여 이 행의 값을 재정의할 때 체크됩니다</value>
   </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
-    <value>Copiar al portapapeles</value>
+    <value>클립보드에 복사</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        ViewModel — status messages (MainWindowViewModel)
        ═══════════════════════════════════════════════════════════════ -->
   <data name="StatusLoadingSettings" xml:space="preserve">
-    <value>Cargando esquema y ajustes…</value>
+    <value>스키마 및 설정을 불러오는 중…</value>
   </data>
   <data name="StatusReady" xml:space="preserve">
-    <value>Listo</value>
+    <value>준비됨</value>
   </data>
   <data name="StatusNothingToSave" xml:space="preserve">
-    <value>Nada que guardar — los ajustes aún no se han cargado.</value>
+    <value>저장할 항목이 없습니다 — 설정이 아직 로드되지 않았습니다.</value>
   </data>
   <data name="StatusSaved" xml:space="preserve">
-    <value>Guardado.</value>
+    <value>저장됨.</value>
   </data>
   <data name="StatusReloading" xml:space="preserve">
-    <value>Recargando…</value>
+    <value>다시 불러오는 중…</value>
   </data>
   <data name="StatusReloaded" xml:space="preserve">
-    <value>Recargado.</value>
+    <value>다시 불러왔습니다.</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
-    <value>Nada que exportar — los ajustes aún no se han cargado.</value>
+    <value>내보낼 항목이 없습니다 — 설정이 아직 로드되지 않았습니다.</value>
   </data>
   <data name="StatusErrorFmt" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>오류: {0}</value>
   </data>
   <data name="StatusSaveFailedFmt" xml:space="preserve">
-    <value>Error al guardar: {0}</value>
+    <value>저장 실패: {0}</value>
   </data>
   <data name="StatusSchemaValidationFailed" xml:space="preserve">
-    <value>Guardado bloqueado: la validación del esquema ha fallado</value>
+    <value>저장 차단됨: 스키마 검증 실패</value>
   </data>
   <data name="TitleUnsavedChangesOnClose" xml:space="preserve">
-    <value>Cambios sin guardar</value>
+    <value>저장되지 않은 변경 사항</value>
     <comment>Window title of the modal that appears when the user closes the main window with pending edits.</comment>
   </data>
   <data name="AppTitle" xml:space="preserve">
@@ -1305,76 +1314,156 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
     <comment>Main window title prefix.  MainWindowViewModel.WindowTitle appends " — &lt;branch|folder|No Project Loaded&gt;" and a " *" suffix when there are unsaved edits.</comment>
   </data>
   <data name="TitleNoProjectLoaded" xml:space="preserve">
-    <value>Sin proyecto cargado</value>
+    <value>프로젝트 로드되지 않음</value>
     <comment>Appended to the AppTitle in the window titlebar when no project root is set (user has not opened a project folder).  Format: "ClaudeForge — No Project Loaded".</comment>
   </data>
   <data name="TextUnsavedChangesOnClose" xml:space="preserve">
-    <value>Tienes cambios sin guardar. ¿Qué quieres hacer?
+    <value>저장되지 않은 변경 사항이 있습니다. 어떻게 하시겠습니까?
 
-Guardar — escribir tus modificaciones en disco y cerrar.
-No guardar — descartar tus modificaciones y cerrar.
-Cancelar — mantener la ventana abierta.</value>
+저장 — 편집한 내용을 디스크에 기록하고 닫습니다.
+저장 안 함 — 편집한 내용을 버리고 닫습니다.
+취소 — 창을 열어 둡니다.</value>
     <comment>Body of the unsaved-changes-on-close modal.  Three explicit choices so the user can't accidentally lose work.</comment>
   </data>
   <data name="TipDismissStatus" xml:space="preserve">
-    <value>Descarta este mensaje de estado.</value>
+    <value>이 상태 메시지를 닫습니다.</value>
   </data>
   <data name="AutoNameDismissStatus" xml:space="preserve">
-    <value>Descartar mensaje de estado</value>
+    <value>상태 메시지 닫기</value>
   </data>
   <data name="BadgeSaveDialogOff" xml:space="preserve">
-    <value>Diálogo de guardado desactivado</value>
+    <value>저장 대화 상자 꺼짐</value>
   </data>
   <data name="TipBadgeSaveDialogOff" xml:space="preserve">
-    <value>La preferencia «Mostrar este diálogo al guardar» está desmarcada en esta sesión — los guardados escribirán directamente sin mostrar un diálogo de confirmación. Haz clic en «Recargar ventana» para reactivarla, o guarda una vez más y vuelve a marcar la casilla.</value>
+    <value>"저장 시 이 대화 상자 표시" 기본 설정이 이번 세션에서 해제되었습니다 — 저장은 확인 대화 상자 없이 직접 기록됩니다. 다시 활성화하려면 "창 새로 고침"을 클릭하거나, 한 번 더 저장한 다음 확인란을 다시 체크하세요.</value>
   </data>
   <data name="TitleSchemaValidationFailed" xml:space="preserve">
-    <value>No se puede guardar — Error de validación del esquema</value>
+    <value>저장할 수 없음 — 스키마 검증 오류</value>
   </data>
   <data name="LabelSchemaBannerTitleFmt" xml:space="preserve">
-    <value>⚠ Se han encontrado {0} problema(s) de esquema en la configuración cargada</value>
+    <value>⚠ 로드된 구성에서 스키마 문제 {0}개 발견됨</value>
     <comment>{0} is the integer count of validation errors. Banner at the top of the main window when validation fails after a workspace reload.</comment>
   </data>
   <data name="LabelSchemaBannerDesc" xml:space="preserve">
-    <value>Uno o más valores en disco no coinciden con el esquema esperado. La aplicación sigue funcionando — puedes guardar otros cambios —, pero Claude puede rechazar los campos infractores en tiempo de ejecución. Haz clic en «Mostrar detalles» para ver la lista campo a campo.</value>
+    <value>디스크의 하나 이상의 값이 예상 스키마와 일치하지 않습니다. 앱은 계속 작동하며 다른 변경 사항을 저장할 수 있지만, Claude는 런타임에 해당 필드를 거부할 수 있습니다. 필드별 목록을 보려면 "세부 정보 표시"를 클릭하세요.</value>
   </data>
   <data name="ButtonShowSchemaDetails" xml:space="preserve">
-    <value>Mostrar detalles</value>
+    <value>세부 정보 표시</value>
   </data>
   <data name="TitleSchemaValidationDetails" xml:space="preserve">
-    <value>Problemas de validación del esquema</value>
+    <value>스키마 검증 문제</value>
   </data>
   <data name="LabelCommonActionKindRead" xml:space="preserve">
-    <value>Lectura</value>
+    <value>Read</value>
     <comment>Chiclet label for non-mutating Common Actions rules (cat, ls, git status, Read).</comment>
   </data>
   <data name="LabelCommonActionKindWrite" xml:space="preserve">
-    <value>Escritura</value>
+    <value>Write</value>
     <comment>Chiclet label for local-state-mutating Common Actions rules (edit, git add, git commit).</comment>
   </data>
   <data name="LabelCommonActionKindNetwork" xml:space="preserve">
-    <value>Red</value>
+    <value>Network</value>
     <comment>Chiclet label for external-I/O Common Actions rules (npm, dotnet, curl, WebFetch, mcp__*).</comment>
   </data>
   <data name="LabelCommonActionKindDestructive" xml:space="preserve">
-    <value>Destructiva</value>
+    <value>Destructive</value>
     <comment>Chiclet label for irreversible / broad-blast-radius Common Actions rules (git push, raw Bash).</comment>
   </data>
   <data name="LabelCommonActionsCatchAll" xml:space="preserve">
-    <value>Todas las herramientas — reglas comodín que se aplican a todas las herramientas</value>
+    <value>모든 도구 — 모든 도구에 적용되는 와일드카드 규칙</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
   <data name="NavTitleMemory" xml:space="preserve">
-    <value>Memoria</value>
+    <value>메모리</value>
     <comment>Top-level nav node label for the Memory page.</comment>
   </data>
   <data name="NavDescMemory" xml:space="preserve">
-    <value>Audita, consulta y limpia los archivos que Claude lee en cada sesión y la huella conductual que deja en disco.</value>
+    <value>Claude가 모든 세션에서 읽는 파일과 디스크에 남긴 동작 흔적을 감사하고, 보고, 정리합니다.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
   </data>
+  <data name="NavTitleAgentsSkills" xml:space="preserve">
+    <value>에이전트 및 스킬</value>
+    <comment>Top-level nav node label for the Agents/Skills/Slash-Commands editor page.</comment>
+  </data>
+  <data name="NavDescAgentsSkills" xml:space="preserve">
+    <value>Claude Code가 로드하는 서브 에이전트, 스킬 및 슬래시 명령을 사용자, 프로젝트 및 플러그인 범위에서 탐색합니다.</value>
+    <comment>Top-level nav node description for the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabAgents" xml:space="preserve">
+    <value>서브 에이전트</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSkills" xml:space="preserve">
+    <value>스킬</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="TabSlashCommands" xml:space="preserve">
+    <value>슬래시 명령</value>
+    <comment>Segmented-control tab header on the Agents &amp; Skills page.</comment>
+  </data>
+  <data name="LabelFrontMatterName" xml:space="preserve">
+    <value>이름</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterDescription" xml:space="preserve">
+    <value>설명</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterTools" xml:space="preserve">
+    <value>도구</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="LabelFrontMatterModel" xml:space="preserve">
+    <value>모델</value>
+    <comment>Front-matter card field label (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="BadgePluginReadOnly" xml:space="preserve">
+    <value>플러그인 (읽기 전용)</value>
+    <comment>Badge on plugin-provided artifacts (Agents &amp; Skills page) — these can't be edited in place.</comment>
+  </data>
+  <data name="ButtonEditArtifact" xml:space="preserve">
+    <value>편집</value>
+    <comment>Enter edit mode on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="ButtonSaveArtifact" xml:space="preserve">
+    <value>저장</value>
+    <comment>Save edits on the Agents &amp; Skills detail pane.</comment>
+  </data>
+  <data name="WatermarkEditTools" xml:space="preserve">
+    <value>쉼표로 구분, 예: Read, Grep, Bash</value>
+    <comment>Placeholder for the tools editor field (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusArtifactSaved" xml:space="preserve">
+    <value>저장됨.</value>
+    <comment>Post-save status on the Agents &amp; Skills detail pane (subsequent saves this session).</comment>
+  </data>
+  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
+    <value>저장됨. 편집한 내용은 다음 Claude Code 세션에 적용됩니다.</value>
+    <comment>Post-save status shown once per session — skills/agents load at session start, so edits don't affect a running session.</comment>
+  </data>
+  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
+    <value>저장 실패: {0}</value>
+    <comment>Post-save error on the Agents &amp; Skills detail pane. {0} = exception message.</comment>
+  </data>
+  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
+    <value>에이전트, 스킬 및 명령을 불러오는 중…</value>
+    <comment>Spinner tooltip / label while the Agents &amp; Skills page scans for artifacts.</comment>
+  </data>
+  <data name="ButtonEditRawYaml" xml:space="preserve">
+    <value>원본 front-matter 편집</value>
+    <comment>Toggle on the Agents &amp; Skills editor that swaps the typed fields for a raw YAML front-matter text box.</comment>
+  </data>
+  <data name="LabelRawFrontMatterHint" xml:space="preserve">
+    <value>원본 front-matter를 편집 중입니다 — 이 옵션을 해제할 때까지 입력 필드는 무시됩니다. 필드에서 다루지 않는 주석과 키는 보존됩니다.</value>
+    <comment>Hint shown above the raw front-matter text box (Agents &amp; Skills page).</comment>
+  </data>
+  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
+    <value>원본 front-matter를 구문 분석할 수 없습니다 — 저장하기 전에 수정하세요.</value>
+    <comment>Validation message when the raw front-matter can't be parsed on save (Agents &amp; Skills page).</comment>
+  </data>
   <data name="HeaderMemoryCode" xml:space="preserve">
-    <value>Claude Code — Memoria y huella</value>
+    <value>Claude Code — 메모리 및 흔적</value>
     <comment>Section header above the Tier 1 / Tier 2 tabs on the Memory page (Code section).</comment>
   </data>
   <data name="HeaderMemoryDesktop" xml:space="preserve">
@@ -1382,199 +1471,202 @@ Cancelar — mantener la ventana abierta.</value>
     <comment>Section header above the Desktop explainer panel on the Memory page.</comment>
   </data>
   <data name="HeaderTabUserMemory" xml:space="preserve">
-    <value>Memoria del usuario</value>
+    <value>사용자 메모리</value>
     <comment>Tab header for the Tier 1 (read-only) user-memory inventory.</comment>
   </data>
   <data name="HeaderTabFootprint" xml:space="preserve">
-    <value>Huella</value>
+    <value>흔적</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
   <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>Para editar, ábrelo en tu editor de texto — haz clic en «Mostrar en el Explorador».</value>
+    <value>편집하려면 텍스트 편집기에서 열어 보세요 — "탐색기에서 보기"를 클릭하세요.</value>
     <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
   </data>
   <data name="ButtonRefresh" xml:space="preserve">
-    <value>Actualizar</value>
-    <comment>Generic Refresh button label used on Memory page tabs.</comment>
+    <value>새로 고침</value>
+    <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
+  </data>
+  <data name="TipButtonRefresh" xml:space="preserve">
+    <value>파일 시스템을 다시 검색하고 목록을 다시 불러옵니다</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
-    <value>Mostrar en el Explorador</value>
+    <value>탐색기에서 보기</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
   <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Volver a la lista</value>
+    <value>목록으로 돌아가기</value>
     <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
   </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
-    <value>Copiar markdown</value>
+    <value>마크다운 복사</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
   </data>
   <data name="ButtonOpenInEditor" xml:space="preserve">
-    <value>Abrir en el editor</value>
+    <value>편집기에서 열기</value>
     <comment>Button that opens a file in the platform's registered default editor for the file's type. Used on the Memory page Tier 1 file viewer toolbar, Tier 1 inventory rows, Tier 2 footprint rows, and per-project transcript rows.</comment>
   </data>
   <data name="LabelMemoryCategoryPrimary" xml:space="preserve">
-    <value>Memoria principal (CLAUDE.md / AGENTS.md)</value>
+    <value>기본 메모리 (CLAUDE.md / AGENTS.md)</value>
   </data>
   <data name="LabelMemoryCategoryProject" xml:space="preserve">
-    <value>Memoria del proyecto</value>
+    <value>프로젝트 메모리</value>
   </data>
   <data name="LabelMemoryCategorySubagents" xml:space="preserve">
-    <value>Subagentes personalizados</value>
+    <value>사용자 지정 서브 에이전트</value>
   </data>
   <data name="LabelMemoryCategoryCommands" xml:space="preserve">
-    <value>Comandos de barra</value>
+    <value>슬래시 명령</value>
   </data>
   <data name="LabelMemoryCategoryHooks" xml:space="preserve">
-    <value>Scripts de hook</value>
+    <value>훅 스크립트</value>
   </data>
   <data name="LabelMemoryCategoryPlans" xml:space="preserve">
-    <value>Planes guardados</value>
+    <value>저장된 계획</value>
   </data>
   <data name="LabelMemoryCategoryRules" xml:space="preserve">
-    <value>Archivos de reglas</value>
+    <value>규칙 파일</value>
   </data>
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
-    <value>Habilidades personalizadas</value>
+    <value>사용자 지정 스킬</value>
   </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
-    <value>Memoria entre herramientas (Codex, Gemini, OpenCode)</value>
+    <value>도구 간 메모리 (Codex, Gemini, OpenCode)</value>
   </data>
   <data name="LabelFootprintCategoryTranscripts" xml:space="preserve">
-    <value>Transcripciones de sesión</value>
+    <value>세션 기록</value>
   </data>
   <data name="LabelFootprintCategorySessions" xml:space="preserve">
-    <value>Metadatos de sesión</value>
+    <value>세션 메타데이터</value>
   </data>
   <data name="LabelFootprintCategoryHistory" xml:space="preserve">
-    <value>Historial de prompts</value>
+    <value>프롬프트 기록</value>
   </data>
   <data name="LabelFootprintCategoryBashLog" xml:space="preserve">
-    <value>Registro de comandos bash</value>
+    <value>Bash 명령 로그</value>
   </data>
   <data name="LabelFootprintCategoryCostLog" xml:space="preserve">
-    <value>Registro del seguimiento de costes</value>
+    <value>비용 추적기 로그</value>
   </data>
   <data name="LabelFootprintCategoryTodos" xml:space="preserve">
-    <value>Listas de tareas</value>
+    <value>할 일 목록</value>
   </data>
   <data name="LabelFootprintCategoryFileHistory" xml:space="preserve">
-    <value>Historial de edición de archivos</value>
+    <value>파일 편집 기록</value>
   </data>
   <data name="LabelFileCountFmt" xml:space="preserve">
-    <value>({0} archivo(s))</value>
+    <value>({0}개 파일)</value>
     <comment>Inline summary on a Tier 1 group expander header. {0} = file count.</comment>
   </data>
   <data name="LabelYes" xml:space="preserve">
-    <value>Sí</value>
+    <value>예</value>
   </data>
   <data name="LabelNo" xml:space="preserve">
-    <value>No</value>
+    <value>아니요</value>
   </data>
   <data name="HeaderInStandardBackup" xml:space="preserve">
-    <value>¿En la copia estándar?</value>
+    <value>표준 백업에 포함됨?</value>
     <comment>Tier 2 footprint table column header.</comment>
   </data>
   <data name="TitleDeleteFootprintFmt" xml:space="preserve">
-    <value>¿Eliminar {0}?</value>
+    <value>{0}을(를) 삭제하시겠습니까?</value>
     <comment>Destructive dialog title. {0} = footprint category human label.</comment>
   </data>
   <data name="MsgDeleteFootprintConfirmFmt" xml:space="preserve">
-    <value>Esto eliminará permanentemente {0} archivo(s) con un total de {1} del disco:</value>
+    <value>총 {1} 크기의 {0}개 파일이 디스크에서 영구적으로 삭제됩니다:</value>
     <comment>Destructive dialog body. {0} = file count, {1} = humanised size.</comment>
   </data>
   <data name="ButtonDeleteFootprint" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>삭제</value>
     <comment>Confirm-button label on the Destructive footprint-delete dialog.</comment>
   </data>
   <data name="LabelDesktopMemoryExplainerTitle" xml:space="preserve">
-    <value>Claude Desktop no tiene un archivo equivalente de memoria de usuario.</value>
+    <value>Claude Desktop에는 사용자 메모리 파일에 해당하는 항목이 없습니다.</value>
   </data>
   <data name="LabelDesktopMemoryExplainerBody" xml:space="preserve">
-    <value>Claude Desktop lee su configuración de un único config.json y almacena el historial de conversación dentro de un almacén opaco IndexedDB gestionado por Chromium. La página de Memoria muestra únicamente la memoria creada por el usuario en Claude Code; para Desktop, usa el comando «Borrar historial de chat» de la propia aplicación para las acciones de privacidad.</value>
+    <value>Claude Desktop은 하나의 config.json에서 구성을 읽고, 대화 기록은 Chromium이 관리하는 불투명한 IndexedDB 저장소에 저장합니다. 메모리 페이지는 Claude Code에서만 사용자가 작성한 메모리를 표시합니다. Desktop의 경우 개인 정보 작업은 앱 자체의 "채팅 기록 지우기" 명령을 사용하세요.</value>
   </data>
   <!-- Memory page Tier 1 / Tier 2 row tooltips. -->
   <data name="TipMemoryCategoryPrimary" xml:space="preserve">
-    <value>CLAUDE.md (o AGENTS.md) de nivel superior que Claude lee al inicio de cada sesión de Code — tus preferencias independientes del proyecto e instrucciones permanentes.</value>
+    <value>모든 Code 세션 시작 시 Claude가 읽는 최상위 CLAUDE.md(또는 AGENTS.md) — 프로젝트와 무관한 기본 설정 및 상시 지침입니다.</value>
   </data>
   <data name="TipMemoryCategoryProject" xml:space="preserve">
-    <value>CLAUDE.md (o AGENTS.md) en la raíz del proyecto abierto — preferencias acotadas al proyecto actual, superpuestas sobre la memoria principal.</value>
+    <value>열려 있는 프로젝트 루트의 CLAUDE.md(또는 AGENTS.md) — 기본 메모리 위에 계층화된 현재 프로젝트 범위의 기본 설정입니다.</value>
   </data>
   <data name="TipMemoryCategorySubagents" xml:space="preserve">
-    <value>Definiciones de subagentes personalizados en ~/.claude/agents/. Cada archivo .md describe un agente con nombre, con su propio prompt de sistema, herramientas y condiciones de activación.</value>
+    <value>~/.claude/agents/의 사용자 지정 서브 에이전트 정의입니다. 각 .md 파일은 자체 시스템 프롬프트, 도구 및 트리거 조건을 가진 이름이 지정된 에이전트를 설명합니다.</value>
   </data>
   <data name="TipMemoryCategoryCommands" xml:space="preserve">
-    <value>Comandos de barra personalizados en ~/.claude/commands/. Cada archivo .md asocia una invocación /nombre con un prompt parametrizado.</value>
+    <value>~/.claude/commands/의 사용자 지정 슬래시 명령입니다. 각 .md 파일은 /name 호출을 매개변수화된 프롬프트에 매핑합니다.</value>
   </data>
   <data name="TipMemoryCategoryHooks" xml:space="preserve">
-    <value>Scripts ejecutados por el sistema de hooks en eventos del ciclo de vida de la sesión (PreToolUse, PostToolUse, etc.). Se almacenan en ~/.claude/hooks/ — se acepta cualquier extensión de archivo ejecutable.</value>
+    <value>세션 수명 주기 이벤트(PreToolUse, PostToolUse 등)에서 훅 시스템이 실행하는 스크립트입니다. ~/.claude/hooks/에 저장되며, 모든 실행 가능한 파일 확장자가 허용됩니다.</value>
   </data>
   <data name="TipMemoryCategoryPlans" xml:space="preserve">
-    <value>Planes guardados en ~/.claude/plans/. Cada .md captura un plan de implementación estructurado que sobrevive entre sesiones.</value>
+    <value>~/.claude/plans/의 저장된 계획입니다. 각 .md는 세션을 가로질러 살아남는 구조화된 구현 계획을 담고 있습니다.</value>
   </data>
   <data name="TipMemoryCategoryRules" xml:space="preserve">
-    <value>Archivos de reglas en ~/.claude/rules/ (recursivo). Documentos Markdown que describen convenciones de código, políticas de seguridad y estándares personales que Claude sigue.</value>
+    <value>~/.claude/rules/의 규칙 파일(재귀)입니다. Claude가 따르는 코딩 규칙, 보안 정책 및 개인 표준을 설명하는 마크다운 문서입니다.</value>
   </data>
   <data name="TipMemoryCategorySkills" xml:space="preserve">
-    <value>Habilidades personalizadas en ~/.claude/skills/&lt;nombre&gt;/SKILL.md. Cada habilidad agrupa conocimiento específico de una tarea que Claude puede invocar cuando su descripción coincide con la intención del usuario.</value>
+    <value>~/.claude/skills/&lt;name&gt;/SKILL.md의 사용자 지정 스킬입니다. 각 스킬은 설명이 사용자 의도와 일치할 때 Claude가 호출할 수 있는 작업별 지식을 묶습니다.</value>
   </data>
   <data name="TipMemoryCategoryCrossTool" xml:space="preserve">
-    <value>Archivos de memoria para herramientas de IA hermanas (.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md) que Claude lee como contexto entre herramientas.</value>
+    <value>Claude가 도구 간 컨텍스트로 읽는 형제 AI 도구의 메모리 파일(.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md)입니다.</value>
   </data>
   <data name="TipFootprintCategoryTranscripts" xml:space="preserve">
-    <value>Transcripción completa de la conversación de cada sesión almacenada como JSONL en ~/.claude/projects/&lt;mangled&gt;/. Principal contribuyente al uso de disco; no se conserva en las copias de seguridad estándar.</value>
+    <value>~/.claude/projects/&lt;mangled&gt;/ 아래 JSONL로 저장된 모든 세션의 전체 대화 기록입니다. 디스크 사용량의 가장 큰 단일 기여자이며, 표준 백업에는 보존되지 않습니다.</value>
   </data>
   <data name="TipFootprintCategorySessions" xml:space="preserve">
-    <value>Metadatos por sesión: ~/.claude/sessions/, session-data/, session-env/. Estado acotado a la sesión, capturas de entorno y pistas para reanudar.</value>
+    <value>세션별 메타데이터: ~/.claude/sessions/, session-data/, session-env/. 세션 범위 상태, 환경 캡처 및 재개 힌트입니다.</value>
   </data>
   <data name="TipFootprintCategoryHistory" xml:space="preserve">
-    <value>~/.claude/history.jsonl — cada prompt interactivo que has enviado, persistido entre sesiones para que la flecha Arriba recupere entradas pasadas.</value>
+    <value>~/.claude/history.jsonl — 위쪽 화살표가 이전 입력을 다시 불러올 수 있도록 세션 전체에서 영속화되는, 사용자가 제출한 모든 대화형 프롬프트입니다.</value>
   </data>
   <data name="TipFootprintCategoryBashLog" xml:space="preserve">
-    <value>~/.claude/bash-commands.log — registro de las invocaciones bash que Claude ha ejecutado en tu nombre, útil para auditar la actividad de shell que ha ocurrido.</value>
+    <value>~/.claude/bash-commands.log — Claude가 사용자를 대신해 실행한 bash 호출 로그로, 발생한 셸 활동을 감사하는 데 유용합니다.</value>
   </data>
   <data name="TipFootprintCategoryCostLog" xml:space="preserve">
-    <value>~/.claude/cost-tracker.log — telemetría de coste de tokens por sesión, para análisis de costes.</value>
+    <value>~/.claude/cost-tracker.log — 비용 분석을 위한 세션별 토큰 비용 텔레메트리입니다.</value>
   </data>
   <data name="TipFootprintCategoryTodos" xml:space="preserve">
-    <value>~/.claude/todos/ — instantáneas de listas de tareas de la herramienta TodoWrite, acotadas por sesión.</value>
+    <value>~/.claude/todos/ — TodoWrite 도구에서 가져온 할 일 목록 스냅샷으로, 세션별로 범위가 지정됩니다.</value>
   </data>
   <data name="TipFootprintCategoryFileHistory" xml:space="preserve">
-    <value>~/.claude/file-history/ — instantáneas antes/después de los archivos que Claude ha editado, usadas por la vista de diff de la herramienta Edit.</value>
+    <value>~/.claude/file-history/ — Claude가 편집한 파일의 전/후 스냅샷으로, Edit 도구의 diff 표시에 사용됩니다.</value>
   </data>
   <!-- per-project transcript drilldown. -->
   <data name="HeaderProjectTranscriptBreakdown" xml:space="preserve">
-    <value>Desglose por proyecto</value>
+    <value>프로젝트별 내역</value>
     <comment>Expander header for the per-project transcript drilldown on the Footprint tab.</comment>
   </data>
   <data name="TipProjectTranscriptBreakdown" xml:space="preserve">
-    <value>Una fila por proyecto dentro de ~/.claude/projects/. Te permite borrar las transcripciones de un solo proyecto sin tocar las demás — más granular que el borrado a nivel de categoría «Transcripciones de sesión» de arriba.</value>
+    <value>~/.claude/projects/ 아래의 프로젝트당 한 행입니다. 다른 프로젝트는 건드리지 않고 단일 프로젝트의 기록을 지울 수 있게 해 줍니다 — 위의 세션 기록 카테고리 수준 삭제보다 더 세밀합니다.</value>
     <comment>Tooltip on the per-project breakdown Expander header.</comment>
   </data>
   <data name="TitleDeleteProjectTranscriptsFmt" xml:space="preserve">
-    <value>¿Eliminar las transcripciones de {0}?</value>
+    <value>{0}의 기록을 삭제하시겠습니까?</value>
     <comment>Destructive dialog title when deleting a single project's transcripts. {0} = decoded project display name.</comment>
   </data>
   <data name="MsgDeleteProjectTranscriptsConfirmFmt" xml:space="preserve">
-    <value>Esto eliminará permanentemente {0} archivo(s) de transcripción con un total de {1} del directorio de este proyecto:</value>
+    <value>이 프로젝트 디렉터리에서 총 {1} 크기의 {0}개 기록 파일이 영구적으로 삭제됩니다:</value>
     <comment>Destructive dialog body for per-project transcript delete. {0} = file count, {1} = humanised size.</comment>
   </data>
   <data name="HeaderProjectColumnLastSeen" xml:space="preserve">
-    <value>Última actividad</value>
+    <value>마지막 활동</value>
     <comment>Column header for the relative-time column in the per-project breakdown.</comment>
   </data>
   <!-- Footprint warning banner (size threshold). -->
   <data name="HeaderFootprintLargeWarning" xml:space="preserve">
-    <value>Huella grande</value>
+    <value>큰 흔적</value>
     <comment>Banner header on the Footprint tab when total disk usage exceeds the warning threshold.</comment>
   </data>
   <data name="MsgFootprintLargeWarningFmt" xml:space="preserve">
-    <value>La huella de Claude es actualmente de {0}. Considera desplegar el «Desglose por proyecto» de abajo para borrar transcripciones de proyectos en los que ya no trabajas.</value>
+    <value>현재 Claude 흔적은 {0}입니다. 더 이상 작업하지 않는 프로젝트의 기록을 지우려면 아래 프로젝트별 내역을 펼쳐 보세요.</value>
     <comment>Banner body. {0} = humanised aggregate size (e.g. "12.4 GB").</comment>
   </data>
   <!-- Marketplace list per-row Advanced sub-fields. -->
   <data name="HeaderAdvancedFields" xml:space="preserve">
-    <value>Avanzado</value>
+    <value>고급</value>
     <comment>Per-row Expander header surfacing optional ref / path sub-fields on github / git Marketplace variants.</comment>
   </data>
   <data name="LabelMarketplaceRef" xml:space="preserve">
@@ -1590,144 +1682,144 @@ Cancelar — mantener la ventana abierta.</value>
     <comment>Label for the optional subdirectory path sub-field on a Marketplace row.</comment>
   </data>
   <data name="WatermarkMarketplacePath" xml:space="preserve">
-    <value>marketplace.json o ruta/al/dir</value>
+    <value>marketplace.json 또는 path/to/dir</value>
     <comment>Placeholder text for the path TextBox.</comment>
   </data>
   <data name="HeaderHttpHeaders" xml:space="preserve">
-    <value>Cabeceras HTTP</value>
+    <value>HTTP 헤더</value>
     <comment>Per-row Expander header surfacing the HTTP headers sub-editor on a Marketplace url variant.</comment>
   </data>
   <data name="WatermarkHeaderName" xml:space="preserve">
-    <value>Nombre de la cabecera</value>
+    <value>헤더 이름</value>
     <comment>Placeholder for the new-header name TextBox (e.g. Authorization).</comment>
   </data>
   <data name="WatermarkHeaderValue" xml:space="preserve">
-    <value>Valor de la cabecera</value>
+    <value>헤더 값</value>
     <comment>Placeholder for the new-header value TextBox (e.g. Bearer xyz).</comment>
   </data>
   <!-- pluginConfigs typed editor (audit closure). -->
   <data name="WatermarkPluginId" xml:space="preserve">
-    <value>id-plugin@marketplace</value>
+    <value>plugin-id@marketplace</value>
     <comment>Placeholder for the per-row plugin id TextBox (format: plugin-name@marketplace-id).</comment>
   </data>
   <data name="WatermarkPluginMcpServerName" xml:space="preserve">
-    <value>Nombre del servidor MCP (p. ej. github)</value>
+    <value>MCP 서버 이름 (예: github)</value>
     <comment>Placeholder for the per-server name TextBox inside a plugin's mcpServers map.</comment>
   </data>
   <data name="WatermarkPluginConfigKey" xml:space="preserve">
-    <value>Clave de configuración</value>
+    <value>구성 키</value>
     <comment>Placeholder for the per-config key TextBox inside an MCP server config map.</comment>
   </data>
   <data name="WatermarkPluginConfigValue" xml:space="preserve">
-    <value>Valor de configuración</value>
+    <value>구성 값</value>
     <comment>Placeholder for the per-config value TextBox.</comment>
   </data>
   <data name="ButtonAddPlugin" xml:space="preserve">
-    <value>Añadir plugin</value>
+    <value>플러그인 추가</value>
     <comment>Add-button label for adding a new plugin entry to pluginConfigs.</comment>
   </data>
   <data name="ButtonAddServer" xml:space="preserve">
-    <value>Añadir servidor</value>
+    <value>서버 추가</value>
     <comment>Add-button label for adding a new MCP server entry inside a plugin.</comment>
   </data>
   <data name="TipCommonActionKindRead" xml:space="preserve">
-    <value>Lectura — sin modificaciones: listar, buscar, ver, estado. La herramienta puede inspeccionar contenido pero no cambiar nada en disco ni llamar a la red.</value>
+    <value>Read — 변경하지 않음: 목록, 검색, 보기, 상태. 도구는 콘텐츠를 검사할 수 있지만 디스크의 무언가를 변경하거나 네트워크를 호출할 수 없습니다.</value>
     <comment>Tooltip on the green Read chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindWrite" xml:space="preserve">
-    <value>Escritura — modifica el estado local: editar, guardar, añadir, commit. Los cambios permanecen en este equipo y se pueden deshacer con control de versiones o copias de seguridad.</value>
+    <value>Write — 로컬 상태 수정: 편집, 저장, 추가, 커밋. 변경 사항은 이 컴퓨터에 남으며 버전 관리 또는 백업으로 되돌릴 수 있습니다.</value>
     <comment>Tooltip on the amber Write chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindNetwork" xml:space="preserve">
-    <value>Red — llama a servicios remotos: instalación de paquetes, descargas web, servidores MCP. Concederlo permite a la herramienta llegar a internet.</value>
+    <value>Network — 원격 서비스 호출: 패키지 설치, 웹 가져오기, MCP 서버. 이를 부여하면 도구가 인터넷에 접근할 수 있습니다.</value>
     <comment>Tooltip on the blue Network chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="TipCommonActionKindDestructive" xml:space="preserve">
-    <value>Destructiva — irreversible o de gran impacto: git push, comodines de shell sin restricciones. Una vez concedida, la recuperación puede requerir intervención externa.</value>
+    <value>Destructive — 되돌릴 수 없거나 영향 범위가 큼: git push, 원시 셸 와일드카드. 한번 부여되면 복구에 외부 조치가 필요할 수 있습니다.</value>
     <comment>Tooltip on the red Destructive chiclet shown on every Common Actions row.</comment>
   </data>
   <data name="LabelEditingScope" xml:space="preserve">
-    <value>Ámbito de edición:</value>
+    <value>편집 범위:</value>
     <comment>Caption above the scope combo box on every settings page.</comment>
   </data>
   <data name="TipEditingScopeLabel" xml:space="preserve">
-    <value>El ámbito (capa) determina en qué archivo de configuración se escribirá este ajuste. Los ámbitos más bajos prevalecen sobre los más altos: local &gt; project &gt; user &gt; managed.</value>
+    <value>범위(계층)는 이 설정이 어떤 구성 파일에 기록될지를 결정합니다. 하위 범위가 상위 범위를 재정의합니다: local &gt; project &gt; user &gt; managed.</value>
     <comment>Tooltip on the "Editing scope:" label.</comment>
   </data>
   <data name="TipEditingScopeCombo" xml:space="preserve">
-    <value>Elige la capa de configuración en la que escribir. «local» solo afecta a tu equipo actual; «project» se comparte con el repositorio; «user» es tu valor por defecto personal; «managed» está controlado por la organización y es de solo lectura.</value>
+    <value>기록할 구성 계층을 선택하세요. 'local'은 현재 컴퓨터에만 영향을 미치고, 'project'는 저장소와 공유되며, 'user'는 개인 기본값이고, 'managed'는 조직이 관리하며 읽기 전용입니다.</value>
     <comment>Tooltip on the scope ComboBox.</comment>
   </data>
   <data name="AutoNameEditingScope" xml:space="preserve">
-    <value>Ámbito de edición</value>
+    <value>편집 범위</value>
     <comment>AutomationProperties.Name on the scope ComboBox.</comment>
   </data>
   <data name="AutoHelpEditingScope" xml:space="preserve">
-    <value>Selecciona la capa de configuración en la que aplicar los cambios. Los ámbitos más estrechos tienen prioridad sobre los más amplios.</value>
+    <value>변경 사항을 기록할 구성 계층을 선택하세요. 더 좁은 범위가 더 넓은 범위보다 우선합니다.</value>
     <comment>AutomationProperties.HelpText on the scope ComboBox.</comment>
   </data>
   <data name="TipEditorErrorCopy" xml:space="preserve">
-    <value>Haz clic y pulsa Ctrl+A y luego Ctrl+C para copiar este error</value>
+    <value>이 오류를 복사하려면 클릭한 다음 Ctrl+A, Ctrl+C를 누르세요</value>
     <comment>Tooltip on the inline editor-error SelectableTextBlock that appears next to the scope combo when a SetValue throws.</comment>
   </data>
   <data name="HeaderTabProperties" xml:space="preserve">
-    <value>Propiedades</value>
+    <value>속성</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
-    <value>✕ Limpiar filtro de propiedades</value>
+    <value>✕ 속성 필터 지우기</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
   </data>
   <data name="TipClearPropertyFilter" xml:space="preserve">
-    <value>Limpia el filtro de propiedades y muestra todas las propiedades</value>
+    <value>속성 필터를 지우고 모든 속성을 표시합니다</value>
     <comment>Tooltip on the clear-property-filter button.</comment>
   </data>
   <data name="AutoNameClearPropertyFilter" xml:space="preserve">
-    <value>Limpiar filtro de propiedades</value>
+    <value>속성 필터 지우기</value>
     <comment>AutomationProperties.Name on the clear-property-filter button.</comment>
   </data>
   <data name="HeaderTabEffective" xml:space="preserve">
-    <value>Efectivos</value>
+    <value>유효</value>
     <comment>Tab header on the SettingsGroupEditor view (Effective Values tab).</comment>
   </data>
   <data name="LabelCopyToClipboard" xml:space="preserve">
-    <value>Copiar al portapapeles</value>
+    <value>클립보드에 복사</value>
     <comment>Generic copy-to-clipboard button label, reused across editor JSON views.</comment>
   </data>
   <data name="TipCopyJsonClipboard" xml:space="preserve">
-    <value>Copia el JSON que se muestra abajo al portapapeles</value>
+    <value>아래에 표시된 JSON을 클립보드에 복사합니다</value>
     <comment>Tooltip on the copy-JSON-to-clipboard button on the JSON tab of SettingsGroupEditor.</comment>
   </data>
   <data name="AutoNameCopyJsonClipboard" xml:space="preserve">
-    <value>Copiar JSON al portapapeles</value>
+    <value>JSON을 클립보드에 복사</value>
     <comment>AutomationProperties.Name on the copy-JSON-to-clipboard button.</comment>
   </data>
   <data name="LabelShowAllSchemaProps" xml:space="preserve">
-    <value>Mostrar todas las propiedades del esquema (incluyendo valores predeterminados no definidos)</value>
+    <value>모든 스키마 속성 표시 (설정되지 않은 기본값 포함)</value>
     <comment>Checkbox label on the JSON tab of SettingsGroupEditor that toggles whether unset defaults are rendered.</comment>
   </data>
   <data name="TipShowAllSchemaProps" xml:space="preserve">
-    <value>Marcado: muestra todas las propiedades definidas en el esquema con su valor predeterminado o un marcador, útil como referencia. Desmarcado: muestra únicamente las propiedades que tienen un valor establecido en el ámbito activo.</value>
+    <value>체크됨: 참고용으로 모든 스키마 정의 속성을 기본값 또는 자리 표시자와 함께 표시합니다. 체크 해제됨: 활성 범위에 값이 설정된 속성만 표시합니다.</value>
     <comment>Tooltip on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="AutoNameShowAllSchemaProps" xml:space="preserve">
-    <value>Mostrar todas las propiedades del esquema</value>
+    <value>모든 스키마 속성 표시</value>
     <comment>AutomationProperties.Name on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="AutoHelpShowAllSchemaProps" xml:space="preserve">
-    <value>Cuando está marcado, la vista JSON incluye todas las propiedades del esquema con valores predeterminados o de marcador. Cuando está desmarcado, solo se muestran los valores establecidos.</value>
+    <value>체크된 경우 JSON 보기에는 기본값 또는 자리 표시자 값이 있는 모든 스키마 속성이 포함됩니다. 체크 해제된 경우 설정된 값만 표시됩니다.</value>
     <comment>AutomationProperties.HelpText on the "Show all schema properties" checkbox.</comment>
   </data>
   <data name="HeaderSaveDialogProperty" xml:space="preserve">
-    <value>Propiedad</value>
+    <value>속성</value>
     <comment>Save-confirmation dialog: "Property" column header.</comment>
   </data>
   <data name="HeaderSaveDialogOld" xml:space="preserve">
-    <value>Anterior</value>
+    <value>이전</value>
     <comment>Save-confirmation dialog: "Old value" column header.</comment>
   </data>
   <data name="HeaderSaveDialogNew" xml:space="preserve">
-    <value>Nuevo</value>
+    <value>새</value>
     <comment>Save-confirmation dialog: "New value" column header.</comment>
   </data>
 
@@ -1737,325 +1829,333 @@ Cancelar — mantener la ventana abierta.</value>
        hear the bare glyph (which announces as "Plus sign" / "Minus" / "Tilde")
        and have no idea what the row's nature is. -->
   <data name="SaveDialogKindAdded" xml:space="preserve">
-    <value>Propiedad añadida</value>
+    <value>추가된 속성</value>
     <comment>Tooltip + screen-reader name for the green '+' kind pill in the Save-changes dialog.</comment>
   </data>
   <data name="SaveDialogKindRemoved" xml:space="preserve">
-    <value>Propiedad eliminada</value>
+    <value>제거된 속성</value>
     <comment>Tooltip + screen-reader name for the red '-' kind pill in the Save-changes dialog.</comment>
   </data>
   <data name="SaveDialogKindModified" xml:space="preserve">
-    <value>Propiedad modificada</value>
+    <value>수정된 속성</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
-    <value>Copiar</value>
+    <value>복사</value>
     <comment>Generic "Copy" context-menu item label, used in SaveChangesDialog cell context-flyouts and EffectiveSettings cells.</comment>
   </data>
   <data name="WatermarkMarketplaceName" xml:space="preserve">
-    <value>Nombre del marketplace</value>
+    <value>마켓플레이스 이름</value>
     <comment>Marketplaces editor: placeholder text for the marketplace-name field (both new-row and existing-row inline).</comment>
   </data>
   <data name="WatermarkMarketplaceSource" xml:space="preserve">
-    <value>URL / repo / ruta / paquete</value>
+    <value>URL / 저장소 / 경로 / 패키지</value>
     <comment>Marketplaces editor: placeholder text for the marketplace source/url field.</comment>
   </data>
   <data name="LabelMarketplaceAdd" xml:space="preserve">
-    <value>Añadir</value>
+    <value>추가</value>
     <comment>Marketplaces editor: button text for adding a new marketplace.</comment>
   </data>
   <data name="WatermarkMarketplaceNameInline" xml:space="preserve">
-    <value>Nombre</value>
+    <value>이름</value>
     <comment>Marketplaces editor: shorter placeholder text for the inline name field on existing rows.</comment>
   </data>
   <data name="LabelOperationReadOnly" xml:space="preserve">
-    <value>Solo lectura</value>
+    <value>읽기 전용</value>
     <comment>Common Actions operation-group header for non-mutating File-tool rules.</comment>
   </data>
   <data name="LabelOperationWrite" xml:space="preserve">
-    <value>Escritura</value>
+    <value>쓰기</value>
     <comment>Common Actions operation-group header for File-tool write rules.</comment>
   </data>
   <data name="LabelOperationSearchView" xml:space="preserve">
-    <value>Buscar y ver</value>
+    <value>검색 및 보기</value>
     <comment>Common Actions operation-group header for shell-tool view/search commands.</comment>
   </data>
   <data name="LabelOperationGitRead" xml:space="preserve">
-    <value>Git (lectura)</value>
+    <value>Git (읽기)</value>
     <comment>Common Actions operation-group header for git status/log/diff.</comment>
   </data>
   <data name="LabelOperationGitWrite" xml:space="preserve">
-    <value>Git (escritura)</value>
+    <value>Git (쓰기)</value>
     <comment>Common Actions operation-group header for git add/commit/push.</comment>
   </data>
   <data name="LabelOperationRuntimes" xml:space="preserve">
-    <value>Entornos de ejecución</value>
+    <value>런타임</value>
     <comment>Common Actions operation-group header for interpreter/runtime invocations (dotnet/npm/python/node).</comment>
   </data>
   <data name="LabelOperationNetwork" xml:space="preserve">
-    <value>Red</value>
+    <value>네트워크</value>
     <comment>Common Actions operation-group header for outbound network commands (curl, wget, Invoke-WebRequest).</comment>
   </data>
   <data name="LabelOperationFetchSearch" xml:space="preserve">
-    <value>Descargar y buscar</value>
+    <value>가져오기 및 검색</value>
     <comment>Common Actions operation-group header for the Web tool's WebFetch/WebSearch operations.</comment>
   </data>
   <data name="LabelOperationWildcards" xml:space="preserve">
-    <value>Comodines</value>
+    <value>와일드카드</value>
     <comment>Common Actions operation-group header inside the catch-all wildcard tier.</comment>
   </data>
   <data name="ThemeLabelLight" xml:space="preserve">
-    <value>☀ Claro</value>
+    <value>☀ 라이트</value>
   </data>
   <data name="ThemeLabelDark" xml:space="preserve">
-    <value>&#x263E; Oscuro</value>
+    <value>&#x263E; 다크</value>
   </data>
   <data name="InstallRunPowerShell" xml:space="preserve">
-    <value>▶ Ejecutar en PowerShell</value>
+    <value>▶ PowerShell에서 실행</value>
   </data>
   <data name="InstallRunTerminal" xml:space="preserve">
-    <value>▶ Ejecutar en la terminal</value>
+    <value>▶ 터미널에서 실행</value>
   </data>
   <data name="TextNoTerminalFound" xml:space="preserve">
-    <value>No se ha encontrado una terminal — usa Copiar en su lugar</value>
+    <value>터미널을 찾을 수 없습니다 — 대신 복사를 사용하세요</value>
   </data>
   <data name="InstallRunBrowser" xml:space="preserve">
-    <value>▶ Abrir en el navegador</value>
+    <value>▶ 브라우저에서 열기</value>
   </data>
   <data name="TipButtonOpenDownload" xml:space="preserve">
-    <value>Abre la página de descarga de Claude Desktop en tu navegador predeterminado</value>
+    <value>기본 브라우저에서 Claude Desktop 다운로드 페이지를 엽니다</value>
   </data>
   <data name="AutoNameButtonOpenDownload" xml:space="preserve">
-    <value>Abrir página de descarga</value>
+    <value>다운로드 페이지 열기</value>
   </data>
   <data name="TipButtonCopyUrl" xml:space="preserve">
-    <value>Copia la URL de descarga al portapapeles</value>
+    <value>다운로드 URL을 클립보드에 복사합니다</value>
   </data>
   <data name="AutoNameButtonCopyUrl" xml:space="preserve">
-    <value>Copiar URL de descarga</value>
+    <value>다운로드 URL 복사</value>
   </data>
 
   <!-- Dialog strings (MainWindowViewModel) -->
   <data name="DialogTitleNewProfile" xml:space="preserve">
-    <value>Nuevo perfil</value>
+    <value>새 프로필</value>
   </data>
   <data name="DialogPromptNewProfile" xml:space="preserve">
-    <value>Introduce un nombre para el nuevo perfil:</value>
+    <value>새 프로필의 이름을 입력하세요:</value>
   </data>
   <data name="DialogPlaceholderNewProfile" xml:space="preserve">
-    <value>p. ej. trabajo, personal, casa</value>
+    <value>예: work, personal, home</value>
   </data>
   <data name="DialogTitleInvalidName" xml:space="preserve">
-    <value>Nombre no válido</value>
+    <value>유효하지 않은 이름</value>
   </data>
   <data name="MsgReservedProfileName" xml:space="preserve">
-    <value>«{0}» es un nombre reservado. Elige otro nombre de perfil.</value>
+    <value>'{0}'은(는) 예약된 이름입니다. 다른 프로필 이름을 선택하세요.</value>
   </data>
   <data name="MsgDotProfileName" xml:space="preserve">
-    <value>El nombre del perfil no puede ser «.» ni «..».</value>
+    <value>프로필 이름은 '.' 또는 '..'일 수 없습니다.</value>
   </data>
   <data name="MsgInvalidPathChars" xml:space="preserve">
-    <value>El nombre del perfil contiene caracteres no permitidos en nombres de archivo.</value>
+    <value>프로필 이름에 파일 이름에 허용되지 않는 문자가 포함되어 있습니다.</value>
   </data>
   <data name="DialogTitleProfileExists" xml:space="preserve">
-    <value>El perfil ya existe</value>
+    <value>프로필이 이미 존재함</value>
   </data>
   <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>Ya existe un perfil llamado «{0}». Elige un nombre distinto.</value>
+    <value>'{0}'(이)라는 이름의 프로필이 이미 존재합니다. 다른 이름을 선택하세요.</value>
   </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
-    <value>Eliminar perfil</value>
+    <value>프로필 삭제</value>
   </data>
   <data name="MsgConfirmDeleteProfile" xml:space="preserve">
-    <value>¿Eliminar el perfil «{0}» y todos sus ajustes? Esta acción no se puede deshacer.</value>
+    <value>프로필 '{0}'과(와) 모든 설정을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.</value>
   </data>
   <data name="DialogTitleError" xml:space="preserve">
-    <value>Error</value>
+    <value>오류</value>
   </data>
   <data name="MsgCannotCreateProfile" xml:space="preserve">
-    <value>No se ha podido crear el perfil: {0}</value>
+    <value>프로필을 만들 수 없습니다: {0}</value>
   </data>
   <data name="MsgCannotDeleteProfile" xml:space="preserve">
-    <value>No se ha podido eliminar el perfil: {0}</value>
+    <value>프로필을 삭제할 수 없습니다: {0}</value>
   </data>
   <data name="WorkspaceNameClaudeCode" xml:space="preserve">
-    <value>Ajustes de Claude Code</value>
+    <value>Claude Code 설정</value>
   </data>
   <data name="WorkspaceNameClaudeDesktop" xml:space="preserve">
-    <value>Configuración de Claude Desktop</value>
+    <value>Claude Desktop 구성</value>
   </data>
   <data name="DialogTitleOpenProject" xml:space="preserve">
-    <value>Abrir carpeta de proyecto</value>
+    <value>프로젝트 폴더 열기</value>
   </data>
   <data name="DialogTitleExportConfigs" xml:space="preserve">
-    <value>Exportar configuraciones efectivas</value>
+    <value>유효 구성 내보내기</value>
   </data>
   <data name="FileFilterZipArchive" xml:space="preserve">
-    <value>Archivo Zip</value>
+    <value>Zip 아카이브</value>
   </data>
 
   <!-- ViewModel — status messages (MainWindowViewModel) — format strings -->
   <data name="StatusReloadFailedFmt" xml:space="preserve">
-    <value>Error al recargar: {0}</value>
+    <value>다시 불러오기 실패: {0}</value>
   </data>
   <data name="StatusReloadingFileFmt" xml:space="preserve">
-    <value>Recargando ({0} modificado(s))…</value>
+    <value>다시 불러오는 중 ({0}개 변경됨)…</value>
   </data>
   <data name="StatusOpeningProjectFmt" xml:space="preserve">
-    <value>Abriendo proyecto: {0}…</value>
+    <value>프로젝트 여는 중: {0}…</value>
   </data>
   <data name="StatusProjectOpenFmt" xml:space="preserve">
-    <value>Proyecto: {0}</value>
+    <value>프로젝트: {0}</value>
   </data>
   <data name="StatusOpenProjectFailedFmt" xml:space="preserve">
-    <value>No se ha podido abrir el proyecto: {0}</value>
+    <value>프로젝트를 열지 못했습니다: {0}</value>
   </data>
   <data name="StatusExportedFmt" xml:space="preserve">
-    <value>Exportado a {0}</value>
+    <value>{0}에 내보냈습니다</value>
   </data>
   <data name="StatusExportFailedFmt" xml:space="preserve">
-    <value>Error al exportar: {0}</value>
+    <value>내보내기 실패: {0}</value>
   </data>
   <data name="StatusProfileCreatedFmt" xml:space="preserve">
-    <value>Perfil «{0}» creado a partir de los ajustes activos actuales.</value>
+    <value>현재 사용 중인 설정에서 프로필 '{0}'이(가) 만들어졌습니다.</value>
   </data>
   <data name="StatusProfileDeletedFmt" xml:space="preserve">
-    <value>Perfil «{0}» eliminado.</value>
+    <value>프로필 '{0}'이(가) 삭제되었습니다.</value>
   </data>
 
   <!-- ViewModel — status messages (BackupRestoreViewModel) -->
   <data name="StatusChooseBackupFolder" xml:space="preserve">
-    <value>Elige primero una carpeta de salida (haz clic en Examinar junto a la ruta de la carpeta).</value>
+    <value>먼저 출력 폴더를 선택하세요(폴더 경로 옆의 찾아보기를 클릭).</value>
   </data>
   <data name="ProgressPreparing" xml:space="preserve">
-    <value>Preparando…</value>
+    <value>준비 중…</value>
   </data>
   <data name="ProgressStarting" xml:space="preserve">
-    <value>Iniciando…</value>
+    <value>시작 중…</value>
   </data>
   <data name="ProgressRestoring" xml:space="preserve">
-    <value>Restaurando…</value>
+    <value>복원 중…</value>
   </data>
   <data name="ProgressCreatingJunction" xml:space="preserve">
-    <value>Creando unión (junction)…</value>
+    <value>정션 만드는 중…</value>
   </data>
   <data name="LabelLastBackupNever" xml:space="preserve">
-    <value>Aún no hay copia de seguridad</value>
+    <value>아직 백업 없음</value>
   </data>
   <data name="LabelLastBackupJustNow" xml:space="preserve">
-    <value>Última copia: hace un momento</value>
+    <value>마지막 백업: 방금</value>
   </data>
   <data name="LabelLastBackupMinutesFmt" xml:space="preserve">
-    <value>Última copia: hace {0} minuto(s)</value>
+    <value>마지막 백업: {0}분 전</value>
   </data>
   <data name="LabelLastBackupHoursFmt" xml:space="preserve">
-    <value>Última copia: hace {0} hora(s)</value>
+    <value>마지막 백업: {0}시간 전</value>
   </data>
   <data name="LabelLastBackupDaysFmt" xml:space="preserve">
-    <value>Última copia: hace {0} día(s)</value>
+    <value>마지막 백업: {0}일 전</value>
+  </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>열려 있는 프로젝트 포함: {0}</value>
+    <comment>Backup tab inclusion label shown when a project is open. {0} = bare folder name of the open project (BackupRestoreViewModel.OpenProjectName). Confirms to the user that the project's `.claude` directory, CLAUDE.md, etc. will be added to the archive alongside the user-level config.</comment>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>열린 프로젝트 없음 — 사용자 수준 구성만</value>
+    <comment>Backup tab inclusion label shown when no project is open. The em-dash (—) is intentional and matches the dash convention used by similar status labels elsewhere in the app.</comment>
   </data>
   <data name="StatusBackupWarningsFmt" xml:space="preserve">
-    <value>  [!] {0} aviso(s) — consulta el manifiesto.</value>
+    <value>  [!] 경고 {0}개 — 매니페스트를 참조하세요.</value>
   </data>
   <data name="StatusBackupDeletedFmt" xml:space="preserve">
-    <value>Eliminado {0}.</value>
+    <value>{0}이(가) 삭제되었습니다.</value>
   </data>
   <data name="StatusBackupDeleteFailedFmt" xml:space="preserve">
-    <value>No se ha podido eliminar {0}.</value>
+    <value>{0}을(를) 삭제할 수 없습니다.</value>
   </data>
   <data name="StatusClaudeRunningFmt" xml:space="preserve">
-    <value>[!] Claude se está ejecutando actualmente ({0} proceso(s)). Algunos archivos pueden estar bloqueados durante la restauración.</value>
+    <value>[!] Claude가 현재 실행 중입니다(프로세스 {0}개). 복원 중에 일부 파일이 잠겨 있을 수 있습니다.</value>
   </data>
 
   <!-- ViewModel — status messages (ProfilesViewModel) -->
   <data name="StatusNoCliProfiles" xml:space="preserve">
-    <value>No se han encontrado perfiles de CLI. Crea uno con el botón Nuevo.</value>
+    <value>CLI 프로필이 없습니다. 새로 만들기 버튼으로 만들어 보세요.</value>
   </data>
   <data name="StatusCreatingProfileFmt" xml:space="preserve">
-    <value>Creando perfil «{0}»…</value>
+    <value>프로필 '{0}' 만드는 중…</value>
   </data>
   <data name="StatusApplyingProfileFmt" xml:space="preserve">
-    <value>Aplicando perfil «{0}»…</value>
+    <value>프로필 '{0}' 적용 중…</value>
   </data>
   <data name="StatusProfileAppliedFmt" xml:space="preserve">
-    <value>Perfil «{0}» aplicado. Claude Code usará estos ajustes en su próxima ejecución.</value>
+    <value>프로필 '{0}'이(가) 적용되었습니다. Claude Code가 다음 실행 시 이 설정을 사용합니다.</value>
   </data>
   <data name="StatusSyncingProfileFmt" xml:space="preserve">
-    <value>Sincronizando archivos activos en el perfil «{0}»…</value>
+    <value>사용 중인 파일을 프로필 '{0}'에 동기화하는 중…</value>
   </data>
   <data name="StatusProfileSyncedFmt" xml:space="preserve">
-    <value>Perfil «{0}» actualizado a partir de los ajustes activos.</value>
+    <value>프로필 '{0}'이(가) 사용 중인 설정에서 업데이트되었습니다.</value>
   </data>
   <data name="StatusApplyTimedOut" xml:space="preserve">
-    <value>Se agotó el tiempo de espera al aplicar.</value>
+    <value>적용이 시간 초과되었습니다.</value>
   </data>
   <data name="StatusSyncTimedOut" xml:space="preserve">
-    <value>Se agotó el tiempo de espera al sincronizar.</value>
+    <value>동기화가 시간 초과되었습니다.</value>
   </data>
   <data name="StatusNoDesktopProfiles" xml:space="preserve">
-    <value>No se han encontrado perfiles de Desktop. Crea uno con el botón Nuevo.</value>
+    <value>Desktop 프로필이 없습니다. 새로 만들기 버튼으로 만들어 보세요.</value>
   </data>
   <data name="StatusCreatingDesktopProfileFmt" xml:space="preserve">
-    <value>Creando perfil de Desktop «{0}»…</value>
+    <value>Desktop 프로필 '{0}' 만드는 중…</value>
   </data>
   <data name="StatusDesktopProfileCreatedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» creado a partir de la configuración activa actual.</value>
+    <value>현재 사용 중인 구성에서 Desktop 프로필 '{0}'이(가) 만들어졌습니다.</value>
   </data>
   <data name="StatusApplyingDesktopProfileFmt" xml:space="preserve">
-    <value>Aplicando perfil de Desktop «{0}»…</value>
+    <value>Desktop 프로필 '{0}' 적용 중…</value>
   </data>
   <data name="StatusDesktopProfileAppliedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» aplicado.</value>
+    <value>Desktop 프로필 '{0}'이(가) 적용되었습니다.</value>
   </data>
   <data name="StatusSyncingDesktopProfileFmt" xml:space="preserve">
-    <value>Sincronizando la configuración activa de Desktop en el perfil «{0}»…</value>
+    <value>사용 중인 Desktop 구성을 프로필 '{0}'에 동기화하는 중…</value>
   </data>
   <data name="StatusDesktopProfileSyncedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» actualizado a partir de la configuración activa.</value>
+    <value>Desktop 프로필 '{0}'이(가) 사용 중인 구성에서 업데이트되었습니다.</value>
   </data>
   <data name="StatusDesktopProfileDeletedFmt" xml:space="preserve">
-    <value>Perfil de Desktop «{0}» eliminado.</value>
+    <value>Desktop 프로필 '{0}'이(가) 삭제되었습니다.</value>
   </data>
 
   <!-- ViewModel — status messages (EnvironmentEditorViewModel) -->
   <data name="StatusCannotSaveClaude" xml:space="preserve">
-    <value>No se puede guardar en el ámbito de Claude — no se ha detectado ninguna instalación de Claude Code.</value>
+    <value>Claude 범위에 저장할 수 없습니다 — Claude Code 설치가 감지되지 않았습니다.</value>
   </data>
   <data name="StatusEnvSavedFmt" xml:space="preserve">
-    <value>Guardado {0} → {1}.</value>
+    <value>{0} → {1}이(가) 저장되었습니다.</value>
   </data>
   <data name="StatusEnvRemovedFmt" xml:space="preserve">
-    <value>Quitado {0} de {1}.</value>
+    <value>{1}에서 {0}이(가) 제거되었습니다.</value>
   </data>
   <data name="StatusEnvAddedFmt" xml:space="preserve">
-    <value>Añadido {0} a {1}.</value>
+    <value>{1}에 {0}이(가) 추가되었습니다.</value>
   </data>
   <data name="StatusCannotWriteEnvFmt" xml:space="preserve">
-    <value>No se puede escribir en el env de Claude: {0}</value>
+    <value>Claude env에 쓸 수 없습니다: {0}</value>
   </data>
   <data name="ScopeNoteClaude" xml:space="preserve">
-    <value>Escribe en el diccionario env de Claude Code (se guarda con el botón principal Guardar).</value>
+    <value>Claude Code env 딕셔너리에 기록합니다(메인 저장 버튼으로 저장됨).</value>
   </data>
   <data name="ScopeNoteUser" xml:space="preserve">
-    <value>Escribe inmediatamente en el registro de variables de entorno de usuario de Windows.</value>
+    <value>Windows 사용자 환경 레지스트리에 즉시 기록합니다.</value>
   </data>
   <data name="ScopeNoteMachine" xml:space="preserve">
-    <value>Escribe inmediatamente en el registro de variables de entorno de equipo de Windows (requiere permisos elevados).</value>
+    <value>Windows 머신 환경 레지스트리에 즉시 기록합니다(관리자 권한 필요).</value>
   </data>
 
   <!-- ViewModel — labels (AboutEditorViewModel) -->
   <data name="LabelDocumentation" xml:space="preserve">
-    <value>Documentación</value>
+    <value>문서</value>
   </data>
   <data name="LabelSupport" xml:space="preserve">
-    <value>Soporte</value>
+    <value>지원</value>
   </data>
   <data name="LabelReleaseNotes" xml:space="preserve">
-    <value>Notas de la versión</value>
+    <value>릴리스 노트</value>
   </data>
   <data name="LabelDownloadUpdates" xml:space="preserve">
-    <value>Descargas / actualizaciones</value>
+    <value>다운로드 / 업데이트</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -2066,77 +2166,77 @@ Cancelar — mantener la ventana abierta.</value>
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
   <data name="LabelEditingContext" xml:space="preserve">
-    <value>Editando</value>
+    <value>편집 중</value>
   </data>
   <data name="HeadingEditingContext" xml:space="preserve">
-    <value>Lo que estás editando ahora</value>
+    <value>지금 편집 중인 것</value>
   </data>
   <data name="TextEditingContextNoProject" xml:space="preserve">
-    <value>Configuración de usuario — sin proyecto abierto</value>
+    <value>사용자 구성 — 열린 프로젝트 없음</value>
   </data>
   <data name="TextEditingContextWithProject" xml:space="preserve">
-    <value>Usuario + Proyecto + Local — proyecto: {0}</value>
+    <value>User + Project + Local — 프로젝트: {0}</value>
   </data>
   <data name="TextOpenProjectHint" xml:space="preserve">
-    <value>Abre una carpeta de proyecto para editar los ámbitos Proyecto y Local.</value>
+    <value>Project 및 Local 범위를 편집하려면 프로젝트 폴더를 여세요.</value>
   </data>
   <data name="LinkOpenProject" xml:space="preserve">
-    <value>Abrir proyecto…</value>
+    <value>프로젝트 열기…</value>
   </data>
   <data name="LinkShowScopes" xml:space="preserve">
-    <value>Mostrar ámbitos</value>
+    <value>범위 표시</value>
   </data>
 
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
-    <value>Ámbitos de configuración</value>
+    <value>구성 범위</value>
   </data>
   <data name="TextScopeMeaningManaged" xml:space="preserve">
-    <value>Política de la organización. Solo lectura; prevalece sobre todo lo demás.</value>
+    <value>조직 정책. 읽기 전용이며 모든 것을 재정의합니다.</value>
   </data>
   <data name="TextScopeMeaningLocal" xml:space="preserve">
-    <value>Sobrescrituras solo para tu equipo en este proyecto. Máxima prioridad para el usuario.</value>
+    <value>이 프로젝트에 대한 머신 전용 재정의. 사용자 우선순위 중 가장 높습니다.</value>
   </data>
   <data name="TextScopeMeaningProject" xml:space="preserve">
-    <value>Compartido con el equipo vía git. Prevalece sobre Usuario.</value>
+    <value>git을 통해 팀과 공유됩니다. User를 재정의합니다.</value>
   </data>
   <data name="TextScopeMeaningUser" xml:space="preserve">
-    <value>Tu valor por defecto personal para cada proyecto.</value>
+    <value>모든 프로젝트에 대한 개인 기본값입니다.</value>
   </data>
   <data name="TextScopePathManaged" xml:space="preserve">
     <value>~/.claude/managed-settings.json</value>
   </data>
   <data name="TextScopePathLocal" xml:space="preserve">
-    <value>&lt;proyecto&gt;/.claude/settings.local.json</value>
+    <value>&lt;project&gt;/.claude/settings.local.json</value>
   </data>
   <data name="TextScopePathProject" xml:space="preserve">
-    <value>&lt;proyecto&gt;/.claude/settings.json</value>
+    <value>&lt;project&gt;/.claude/settings.json</value>
   </data>
   <data name="TextScopePathUser" xml:space="preserve">
     <value>~/.claude/settings.json</value>
   </data>
   <data name="TipScopeLegendButton" xml:space="preserve">
-    <value>¿Qué significa cada ámbito?</value>
+    <value>각 범위는 무엇을 의미합니까?</value>
   </data>
 
   <!-- Backup contents explainer (Welcome + BackupRestoreView header) -->
   <data name="HeadingBackupContents" xml:space="preserve">
-    <value>Qué incluyen las copias de seguridad</value>
+    <value>백업에 포함되는 항목</value>
   </data>
   <data name="TextBackupContentsLine1" xml:space="preserve">
-    <value>Todo lo que hay en ~/.claude/ — ajustes, perfiles, hooks, servidores MCP.</value>
+    <value>~/.claude/ 전체 — 설정, 프로필, 훅, MCP 서버.</value>
   </data>
   <data name="TextBackupContentsLine2" xml:space="preserve">
-    <value>~/.claude.json (configuración raíz de Claude Code).</value>
+    <value>~/.claude.json (Claude Code 루트 구성).</value>
   </data>
   <data name="TextBackupContentsLine3" xml:space="preserve">
-    <value>Configuración y perfiles de Desktop.</value>
+    <value>Desktop 구성 및 Desktop 프로필.</value>
   </data>
   <data name="TextBackupContentsExcluded" xml:space="preserve">
-    <value>Excluidos por defecto: cache/, projects/, .credentials.json.</value>
+    <value>기본적으로 제외됨: cache/, projects/, .credentials.json.</value>
   </data>
   <data name="TextBackupContentsProjectNote" xml:space="preserve">
-    <value>Los archivos del proyecto (.claude/ en tu repositorio) solo se incluyen cuando hay un proyecto abierto en el momento de la copia, o se añaden explícitamente.</value>
+    <value>프로젝트 파일(저장소의 .claude/)은 백업 시점에 프로젝트가 열려 있거나 명시적으로 추가된 경우에만 포함됩니다.</value>
   </data>
 
   <!-- Welcome-page "Things to know" section.  Concise pointers
@@ -2144,86 +2244,86 @@ Cancelar — mantener la ventana abierta.</value>
        deliberately — frugal so the section doesn't compete with the
        primary "what you're editing" guidance. -->
   <data name="HeadingThingsToKnow" xml:space="preserve">
-    <value>Cosas que conviene saber</value>
+    <value>알아두면 좋은 점</value>
   </data>
   <data name="TextWelcomeAutoReload" xml:space="preserve">
-    <value>Recarga automática — cuando otra herramienta o editor cambia un archivo de configuración en disco (p. ej. claudectx al cambiar de perfil, o una edición manual en tu editor de texto), esta aplicación lo detecta automáticamente y refresca el editor.</value>
+    <value>자동 새로 고침 — 다른 도구나 편집기가 디스크의 구성 파일을 변경하면(예: claudectx가 프로필을 전환하거나 텍스트 편집기에서 직접 편집한 경우) 이 앱이 자동으로 이를 감지하고 편집기를 새로 고칩니다.</value>
   </data>
   <data name="TextWelcomeEssentials" xml:space="preserve">
-    <value>★ Esenciales (en la parte superior del árbol de navegación) reúne los ajustes de alto impacto — presupuestos de tokens, sandbox, confianza en MCP, selección de modelo — para una revisión rápida en una instalación nueva.</value>
+    <value>★ Essentials(내비게이션 트리의 맨 위)는 영향력이 큰 노브 — 토큰 예산, 샌드박스, MCP 신뢰, 모델 선택 — 를 모아 새 설치에서 빠르게 검토할 수 있게 합니다.</value>
   </data>
   <data name="TextWelcomeMemory" xml:space="preserve">
-    <value>🧠 Memoria muestra lo que Claude sabe sobre ti (transcripciones de sesión, historial de prompts, tareas pendientes, seguimiento de costes, registros de edición de archivos) y te permite borrar cualquiera de esos datos — útil para la higiene de privacidad antes de compartir tu equipo, grabar una demo o hacer capturas de pantalla.</value>
+    <value>🧠 Memory는 Claude가 당신에 대해 알고 있는 것(세션 기록, 프롬프트 기록, 할 일, 비용 추적기, 파일 편집 로그)을 표시하고 어느 것이든 지울 수 있게 해 줍니다 — 컴퓨터를 공유하기 전, 데모를 녹화하기 전, 스크린샷을 찍기 전 개인 정보 정리에 유용합니다.</value>
   </data>
   <data name="TextWelcomeWslHint" xml:space="preserve">
-    <value>🪟 Consejo para Windows — si Claude se atasca por la deformación de rutas de Git Bash / MSYS (barras invertidas, globs con barra normal, etc.) en operaciones intensivas en sistema de archivos, Permisos → Acciones habituales → WSL ofrece patrones de lista de permitidos con un solo clic para las variantes envueltas en WSL (p. ej. Bash(wsl git status)). Claude preferirá la vía WSL cuando esas reglas estén presentes.</value>
+    <value>🪟 Windows 팁 — Claude가 파일 시스템을 많이 사용하는 작업에서 Git Bash / MSYS 경로 변형(역슬래시, 슬래시 글롭 등)에 걸려 넘어진다면, 권한 → 일반 작업 → WSL에서 WSL로 래핑된 변형(예: Bash(wsl git status))에 대한 원클릭 허용 목록 패턴을 제공합니다. 이러한 규칙이 있으면 Claude는 WSL 경로를 선호합니다.</value>
     <comment>Welcome page "Things to know" bullet — shown only when PlatformInfo.Current.IsWindows is true. Points Windows users at the WSL Common Actions group added as a solution to MSYS path-mangling friction.</comment>
   </data>
   <data name="TextSaveSilentSaveSafetyNet" xml:space="preserve">
-    <value>Tienes cambios sin guardar, pero no se ha podido construir la vista previa de cambios propiedad a propiedad. ¿Guardar de todos modos?</value>
+    <value>저장되지 않은 변경 사항이 있지만 속성별 변경 미리 보기를 만들 수 없습니다. 그래도 저장하시겠습니까?</value>
     <comment>Fallback dialog body shown by the silent-save safety net (SaveCoreAsync) when SDK reports HasUnsavedChanges=true but SaveDialogBuilder.Build returns null. The user-visible wording is intentionally vague — internal diagnostic context lives in the rolling log, not in the dialog.</comment>
   </data>
 
   <!-- Save / Restore confirmation dialog destination paths -->
   <data name="LabelWillBeWrittenTo" xml:space="preserve">
-    <value>Se escribirá en:</value>
+    <value>기록 위치:</value>
   </data>
   <data name="LabelWillBeRestoredTo" xml:space="preserve">
-    <value>Se restaurará en:</value>
+    <value>복원 위치:</value>
   </data>
   <data name="TextSaveSummary" xml:space="preserve">
-    <value>Guardando {0} cambio(s) en {1} archivo(s):</value>
+    <value>{1}개 파일에 걸쳐 {0}개의 변경 사항을 저장합니다:</value>
   </data>
   <data name="TextRestoreSummary" xml:space="preserve">
-    <value>Restaurando {0} cambio(s) en {1} archivo(s):</value>
+    <value>{1}개 파일에 걸쳐 {0}개의 변경 사항을 복원합니다:</value>
   </data>
 
   <!-- Effective Settings tab — descriptive subtitle above the grid + cell tooltip strings -->
   <data name="TextEffectiveSettingsSubtitle" xml:space="preserve">
-    <value>Los valores completamente fusionados que Claude ve en tiempo de ejecución, tras aplicar las capas Gestionado &gt; Local &gt; Proyecto &gt; Usuario. Cada fila muestra el valor ganador, el ámbito del que procede y si un ámbito de mayor prioridad está sobrescribiendo a uno inferior.</value>
+    <value>Managed &gt; Local &gt; Project &gt; User 계층화 후 Claude가 런타임에 실제로 보는 완전히 병합된 값입니다. 각 행은 우선하는 값, 그것이 온 범위, 그리고 더 높은 우선순위의 범위가 낮은 범위를 재정의하는지 여부를 보여줍니다.</value>
   </data>
   <data name="TextEffectiveTabSubtitle" xml:space="preserve">
-    <value>Los valores reales en tiempo de ejecución que Claude lee para los ajustes de esta página, tras aplicar las capas. Las propiedades sin valor en ningún ámbito quedan ocultas.</value>
+    <value>계층화 후 이 페이지의 설정에 대해 Claude가 읽는 실제 런타임 값입니다. 어떤 범위에도 값이 없는 속성은 숨겨집니다.</value>
   </data>
 
   <!-- Clear App Data button (status bar) -->
   <data name="ButtonClearAppData" xml:space="preserve">
-    <value>Borrar _datos de la aplicación</value>
+    <value>앱 데이터 지우기(_D)</value>
     <comment>Alt+D — status bar button.  "D" rather than "C" to avoid conflict with common Cancel/Close mnemonics in dialogs.</comment>
   </data>
   <data name="TipClearAppData" xml:space="preserve">
-    <value>Elimina la posición y dimensiones guardadas de la ventana, el tema, la última página seleccionada y demás estado persistido de la interfaz. NO afecta a tus archivos de configuración de Claude. ClaudeForge se cerrará.</value>
+    <value>저장된 창 위치, 크기, 테마, 마지막 선택한 페이지 및 기타 유지된 UI 상태를 삭제합니다. Claude 구성 파일은 건드리지 않습니다. ClaudeForge가 종료됩니다.</value>
   </data>
   <data name="AutoNameClearAppData" xml:space="preserve">
-    <value>Borrar datos de la aplicación y salir</value>
+    <value>앱 데이터 지우고 종료</value>
   </data>
   <data name="TitleClearAppDataConfirm" xml:space="preserve">
-    <value>¿Borrar los datos de la aplicación?</value>
+    <value>앱 데이터를 지우시겠습니까?</value>
   </data>
   <data name="TextClearAppDataConfirm" xml:space="preserve">
-    <value>Esto eliminará el archivo de estado persistido de la interfaz en ~/.claude/cache/ClaudeForge-gui-state.json (posición y dimensiones de la ventana, tema, última página seleccionada, perfil elegido, preferencias de copia de seguridad). Tus archivos de configuración de Claude (~/.claude/settings.json y similares) NO se ven afectados. ClaudeForge se cerrará. ¿Continuar?</value>
+    <value>이 작업은 ~/.claude/cache/ClaudeForge-gui-state.json(창 위치, 크기, 테마, 마지막 선택한 페이지, 프로필 선택, 백업 기본 설정)에 유지된 UI 상태 파일을 삭제합니다. Claude 구성 파일(~/.claude/settings.json 등)에는 영향이 없습니다. ClaudeForge가 종료됩니다. 계속하시겠습니까?</value>
   </data>
   <data name="ConfirmClearAppData" xml:space="preserve">
-    <value>Borrar y salir</value>
+    <value>지우고 종료</value>
   </data>
 
   <!-- Page-heading subtitles for top-level pages that get the accent-pill heading -->
   <data name="TextProfilesSubtitle" xml:space="preserve">
-    <value>Perfiles de ajustes con nombre para Claude Code y Claude Desktop. Alterna entre configuraciones, sincronízalas entre productos o elimina las antiguas.</value>
+    <value>Claude Code 및 Claude Desktop을 위한 이름이 지정된 설정 프로필입니다. 구성 사이를 전환하고, 제품 간에 동기화하거나, 오래된 항목을 삭제합니다.</value>
   </data>
   <data name="TextBackupRestoreSubtitle" xml:space="preserve">
-    <value>Crea archivos de copia de seguridad con marca de tiempo de tu configuración de Claude y restáuralos más tarde. Inclusión opcional de proyectos y credenciales.</value>
+    <value>Claude 구성의 타임스탬프가 있는 백업 아카이브를 만들고 나중에 복원합니다. 프로젝트 및 자격 증명 포함은 선택 사항입니다.</value>
   </data>
   <data name="TipEffectiveOverriddenTrue" xml:space="preserve">
-    <value>Esta propiedad también está definida en un ámbito de menor prioridad, pero uno de mayor prioridad está prevaleciendo.</value>
+    <value>이 속성은 우선순위가 낮은 범위에도 정의되어 있지만 우선순위가 높은 범위가 우선합니다.</value>
   </data>
   <data name="TipEffectiveOverriddenFalse" xml:space="preserve">
-    <value>Esta propiedad está definida en un único ámbito.</value>
+    <value>이 속성은 하나의 범위에만 정의되어 있습니다.</value>
   </data>
 
   <!-- Navigation tree tooltips for the section descriptions in the left pane -->
   <data name="TipNavigationDefault" xml:space="preserve">
-    <value>Haz clic para abrir esta sección.</value>
+    <value>이 섹션을 열려면 클릭하세요.</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -2233,68 +2333,68 @@ Cancelar — mantener la ventana abierta.</value>
        PermissionsEditorView — bypassPermissions danger banner
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextBypassPermissionsWarning" xml:space="preserve">
-    <value>Establecer defaultMode en bypassPermissions equivale a iniciar Claude Code con el flag --dangerouslySkipPermissions. Se suprimen todas las confirmaciones de permisos de herramientas — Claude puede leer, escribir y ejecutar sin preguntar. Úsalo únicamente en entornos completamente aislados o automatizados en los que controles todas las entradas.</value>
+    <value>defaultMode를 bypassPermissions로 설정하는 것은 --dangerouslySkipPermissions 플래그로 Claude Code를 실행하는 것과 동일합니다. 모든 도구 권한 확인이 억제됩니다 — Claude가 묻지 않고 읽고, 쓰고, 실행할 수 있습니다. 모든 입력을 통제하는 완전히 격리되거나 자동화된 환경에서만 사용하세요.</value>
   </data>
 
   <data name="TextNoBackupYetDescription" xml:space="preserve">
-    <value>Usa «Hacer copia ahora» para crear tu primera instantánea. Las copias son archivos zip que pueden restaurarse desde la pestaña Restaurar.</value>
+    <value>첫 번째 스냅샷을 만들려면 '지금 백업'을 사용하세요. 백업은 복원 탭에서 복원할 수 있는 zip 파일입니다.</value>
   </data>
   <data name="TextRestoreDescription" xml:space="preserve">
-    <value>Selecciona una carpeta de copia de seguridad y elige un archivo zip para restaurar. Esto sobrescribirá tus archivos de configuración actuales.</value>
+    <value>백업 폴더를 선택하고 복원할 zip 파일을 선택하세요. 이 작업은 현재 구성 파일을 덮어씁니다.</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HooksEditorView — guidance + column header tooltips
        ═══════════════════════════════════════════════════════════════ -->
   <data name="TextHookMatcherGuidance" xml:space="preserve">
-    <value>La coincidencia es un patrón de nombre de herramienta (p. ej. Bash, Edit, * coincide con todas las herramientas). Cada hook se ejecuta cuando una llamada a una herramienta que coincide dispara el evento seleccionado.</value>
+    <value>매처는 도구 이름 패턴입니다(예: Bash, Edit, *는 모든 도구와 일치). 일치하는 도구 호출이 선택된 이벤트를 트리거하면 각 훅이 실행됩니다.</value>
   </data>
   <data name="TipHookMatcherHeader" xml:space="preserve">
-    <value>Patrón de nombre de herramienta — usa * para coincidir con todas las herramientas</value>
+    <value>도구 이름 패턴 — 모든 도구와 일치시키려면 *를 사용하세요</value>
   </data>
   <data name="TipHookTypeHeader" xml:space="preserve">
-    <value>Tipo de hook: command ejecuta un comando de shell, prompt inyecta un prompt de sistema, url envía a un webhook</value>
+    <value>훅 유형: command는 셸 명령을 실행하고, prompt는 시스템 프롬프트를 주입하며, url은 웹훅에 게시합니다</value>
   </data>
   <data name="TipHookCommandHeader" xml:space="preserve">
-    <value>El comando de shell, el texto del prompt o la URL que se va a invocar</value>
+    <value>호출할 셸 명령, 프롬프트 텍스트 또는 URL</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        AboutDialog — GitHub links
        ═══════════════════════════════════════════════════════════════ -->
   <data name="LinkGitHubRepo" xml:space="preserve">
-    <value>Repositorio de GitHub</value>
+    <value>GitHub 저장소</value>
   </data>
   <data name="LinkReportIssue" xml:space="preserve">
-    <value>Informar de un problema</value>
+    <value>이슈 보고</value>
   </data>
 
   <!-- About modal -->
   <data name="MenuAbout" xml:space="preserve">
-    <value>Acerca de ClaudeForge</value>
+    <value>ClaudeForge 정보</value>
   </data>
   <data name="TipVersionLabel" xml:space="preserve">
-    <value>Haz clic para abrir el diálogo «Acerca de ClaudeForge».</value>
+    <value>ClaudeForge 정보 대화 상자를 열려면 클릭하세요.</value>
   </data>
   <data name="LabelAboutAppName" xml:space="preserve">
     <value>ClaudeForge</value>
   </data>
   <data name="LabelAboutTagline" xml:space="preserve">
-    <value>Editor de ajustes multiplataforma y consciente de ámbitos para Claude Code y Claude Desktop.</value>
+    <value>Claude Code 및 Claude Desktop을 위한 크로스 플랫폼, 범위 인식 설정 편집기.</value>
   </data>
   <data name="LabelAboutVersion" xml:space="preserve">
-    <value>Versión</value>
+    <value>버전</value>
   </data>
   <data name="HeadingAboutLinks" xml:space="preserve">
-    <value>Recursos</value>
+    <value>리소스</value>
   </data>
   <data name="ButtonClose" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>닫기</value>
   </data>
 
   <!-- EnabledPluginsEditorView.axaml — toggle row tooltip -->
   <data name="TipPluginToggle" xml:space="preserve">
-    <value>Alternar habilitado / deshabilitado</value>
+    <value>활성화 / 비활성화 전환</value>
   </data>
 
   <!-- PermissionsEditorView.axaml — synthetic-rule banner header.
@@ -2302,142 +2402,142 @@ Cancelar — mantener la ventana abierta.</value>
        is intentionally left in-line as English: it is the actual flag
        name, not a translatable label. -->
   <data name="LabelEquivalentToBypass" xml:space="preserve">
-    <value>Equivalente a --dangerouslySkipPermissions</value>
+    <value>--dangerouslySkipPermissions와 동일</value>
   </data>
 
   <!-- EnvironmentEditorView.axaml — inline validation message. -->
   <data name="ValidationEnvVarName" xml:space="preserve">
-    <value>El nombre debe empezar por una letra o _ y contener solo letras, dígitos y _.</value>
+    <value>이름은 문자 또는 _로 시작해야 하며 문자, 숫자 및 _만 포함해야 합니다.</value>
   </data>
 
   <!-- ScopeLegend.axaml — three column headers for the 4-row legend. -->
   <data name="HeaderScopeLegendScope" xml:space="preserve">
-    <value>Ámbito</value>
+    <value>범위</value>
   </data>
   <data name="HeaderScopeLegendFile" xml:space="preserve">
-    <value>Archivo</value>
+    <value>파일</value>
   </data>
   <data name="HeaderScopeLegendMeaning" xml:space="preserve">
-    <value>Significado</value>
+    <value>의미</value>
   </data>
 
   <!-- ═══════════════════════════════════════════════════════════════
        Backup / Restore dialogs (BackupRestoreViewModel.cs) — Phase 2.2
        ═══════════════════════════════════════════════════════════════ -->
   <data name="DialogTitleUnsavedChanges" xml:space="preserve">
-    <value>Cambios sin guardar</value>
+    <value>저장되지 않은 변경 사항</value>
     <comment>Dialog title shown when the user starts Backup or Restore with dirty workspace edits.</comment>
   </data>
   <data name="DialogTitleBackupWithoutSaving" xml:space="preserve">
-    <value>¿Hacer copia de seguridad sin guardar?</value>
+    <value>저장하지 않고 백업하시겠습니까?</value>
   </data>
   <data name="DialogTitleIncludeCredentials" xml:space="preserve">
-    <value>¿Incluir las credenciales de API?</value>
+    <value>API 자격 증명을 포함하시겠습니까?</value>
   </data>
   <data name="DialogTitleBackupFailed" xml:space="preserve">
-    <value>Error en la copia de seguridad</value>
+    <value>백업 실패</value>
   </data>
   <data name="DialogTitleRestoreFailed" xml:space="preserve">
-    <value>Error al restaurar</value>
+    <value>복원 실패</value>
   </data>
   <data name="DialogTitleDiscardUnsavedEdits" xml:space="preserve">
-    <value>¿Descartar los cambios sin guardar?</value>
+    <value>저장되지 않은 편집 내용을 버리시겠습니까?</value>
   </data>
   <data name="DialogTitleCrossPlatformRestore" xml:space="preserve">
-    <value>Restauración entre plataformas</value>
+    <value>크로스 플랫폼 복원</value>
   </data>
   <data name="DialogTitleRestoreCompletedSkippedFmt" xml:space="preserve">
-    <value>Restauración completada — {0} archivo(s) omitido(s)</value>
+    <value>복원 완료 — {0}개 파일 건너뜀</value>
     <comment>{0} is the count of files that could not be written (locked or inaccessible).</comment>
   </data>
 
   <!-- drag-drop a backup zip onto the Restore tab.  Confirm
        prompt before routing to the existing RestoreCommand path. -->
   <data name="DialogTitleDropRestore" xml:space="preserve">
-    <value>¿Restaurar desde la copia soltada?</value>
+    <value>끌어다 놓은 백업에서 복원하시겠습니까?</value>
     <comment>Title of the confirm prompt shown after a backup .zip is dropped onto the Restore tab.</comment>
   </data>
   <data name="DialogTitleDropRestoreInvalid" xml:space="preserve">
-    <value>No se puede restaurar desde el archivo soltado</value>
+    <value>끌어다 놓은 파일에서 복원할 수 없습니다</value>
     <comment>Error-alert title when the dropped file is not a valid backup archive.</comment>
   </data>
   <data name="TextDropRestorePromptPrefix" xml:space="preserve">
-    <value>¿Restaurar desde </value>
+    <value>다음에서 복원하시겠습니까: </value>
     <comment>Body text: leading half of the drop-restore confirm prompt.  Followed by the filename, then TextDropRestorePromptSuffix.  Trailing space intentional.</comment>
   </data>
   <data name="TextDropRestorePromptSuffix" xml:space="preserve">
     <value>?
 
-Esto sobrescribirá tus ajustes actuales con el contenido del archivo de copia soltado.</value>
+이 작업은 끌어다 놓은 백업 아카이브의 내용으로 현재 설정을 덮어씁니다.</value>
     <comment>Body text: trailing half of the drop-restore confirm prompt.  Follows the filename.</comment>
   </data>
   <data name="TextDropRestoreNotZip" xml:space="preserve">
-    <value>Aquí solo pueden soltarse archivos .zip de copia de seguridad para restaurar.</value>
+    <value>복원하려면 백업 .zip 파일만 여기에 끌어다 놓을 수 있습니다.</value>
     <comment>Error-alert body when the dropped file is not a .zip.</comment>
   </data>
   <data name="TextDropRestoreNotABackup" xml:space="preserve">
-    <value>El archivo soltado no es un archivo de copia de seguridad de ClaudeForge válido. Puede estar dañado, ser de una versión más reciente o ser otro tipo de zip.</value>
+    <value>끌어다 놓은 파일은 유효한 ClaudeForge 백업 아카이브가 아닙니다. 손상되었거나, 더 새 버전의 것이거나, 다른 종류의 zip일 수 있습니다.</value>
     <comment>Error-alert body when the dropped zip has no valid manifest.json of Kind=backup.</comment>
   </data>
 
   <data name="ButtonContinueWithoutSaving" xml:space="preserve">
-    <value>Continuar sin guardar</value>
+    <value>저장하지 않고 계속</value>
   </data>
   <data name="ButtonIncludeCredentialsConfirm" xml:space="preserve">
-    <value>Incluir credenciales</value>
+    <value>자격 증명 포함</value>
     <comment>Confirm-button label on the credentials prompt.  Distinct from the checkbox label CheckboxIncludeCredentials.</comment>
   </data>
   <data name="ButtonOmitCredentials" xml:space="preserve">
-    <value>Omitir credenciales</value>
+    <value>자격 증명 제외</value>
   </data>
   <data name="ButtonDiscardAndRestore" xml:space="preserve">
-    <value>Descartar y restaurar</value>
+    <value>버리고 복원</value>
   </data>
   <data name="ButtonRestoreAnyway" xml:space="preserve">
-    <value>Restaurar de todos modos</value>
+    <value>그래도 복원</value>
   </data>
 
   <data name="TextSaveBeforeBackupPrompt" xml:space="preserve">
-    <value>Tienes cambios sin guardar en el espacio de trabajo activo. ¿Quieres guardarlos antes de hacer la copia de seguridad? De lo contrario, la copia solo contendrá lo que esté actualmente en disco — tus cambios sin guardar no se incluirán.</value>
+    <value>활성 작업 공간에 저장되지 않은 편집 내용이 있습니다. 백업 전에 저장하시겠습니까? 그렇지 않으면 백업에는 현재 디스크에 있는 내용만 포함됩니다 — 저장되지 않은 편집 내용은 포함되지 않습니다.</value>
   </data>
   <data name="TextProceedWithoutSavingBackup" xml:space="preserve">
-    <value>¿Continuar con la copia de seguridad? Tus cambios sin guardar no estarán en esta copia, pero permanecerán en memoria y podrás guardarlos más tarde.</value>
+    <value>백업을 계속하시겠습니까? 저장되지 않은 편집 내용은 이 백업에 포함되지 않지만 메모리에 남아 있어 나중에 저장할 수 있습니다.</value>
   </data>
   <data name="TextSaveBeforeRestorePrompt" xml:space="preserve">
-    <value>Tienes cambios sin guardar en el espacio de trabajo activo. ¿Guardarlos antes de restaurar?</value>
+    <value>활성 작업 공간에 저장되지 않은 편집 내용이 있습니다. 복원 전에 저장하시겠습니까?</value>
   </data>
   <data name="TextDiscardUnsavedForRestore" xml:space="preserve">
-    <value>Restaurar sobrescribirá tus ajustes actuales. ¿Descartar tus cambios sin guardar y continuar con la restauración?</value>
+    <value>복원은 현재 설정을 덮어씁니다. 저장되지 않은 편집 내용을 버리고 복원을 계속하시겠습니까?</value>
   </data>
   <data name="TextCredentialsExplainer" xml:space="preserve">
-    <value> contiene tokens OAuth. Cualquiera con este archivo de copia de seguridad podrá iniciar sesión como tú mientras esos tokens sigan siendo válidos.
+    <value>에는 OAuth 토큰이 포함됩니다. 토큰이 유효한 동안에는 이 백업 파일을 가진 누구나 사용자로 로그인할 수 있습니다.
 
-Incluye las credenciales solo si la copia permanecerá en almacenamiento de confianza.
+백업이 신뢰할 수 있는 저장소에 머무를 때만 자격 증명을 포함하세요.
 
-¿Incluir las credenciales en esta copia?</value>
+이 백업에 자격 증명을 포함하시겠습니까?</value>
     <comment>Trailing text after the credentials path in the credentials confirmation prompt.  Leading space is intentional — it follows a path segment.</comment>
   </data>
   <data name="TextRestoreSkippedExplainer" xml:space="preserve">
-    <value>La restauración ha terminado, pero el/los siguiente(s) archivo(s) no se ha(n) podido escribir (puede que estén bloqueados por un proceso de Claude en ejecución). Cierra Claude y vuelve a restaurar si es necesario:
+    <value>복원은 완료되었지만 다음 파일을 쓸 수 없었습니다(실행 중인 Claude 프로세스에 의해 잠겨 있을 수 있음). 필요한 경우 Claude를 닫고 다시 복원하세요:
 
 </value>
     <comment>Trailing blank line is intentional — the file list is appended to this text.</comment>
   </data>
   <data name="TextRestoreSkippedTrailerFmt" xml:space="preserve">
     <value>
-  … y {0} más (consulta el registro para ver la lista completa)</value>
+  … 그리고 {0}개 더 (전체 목록은 로그를 참조하세요)</value>
     <comment>{0} is the count of files beyond the first 10 shown.  Leading newline is intentional.</comment>
   </data>
   <data name="TextCrossPlatformRestorePrefix" xml:space="preserve">
-    <value>Esta copia de seguridad se hizo en «</value>
+    <value>이 백업은 '</value>
   </data>
   <data name="TextCrossPlatformRestoreMiddle" xml:space="preserve">
-    <value>», pero estás en «</value>
+    <value>'에서 만들어졌지만 현재는 '</value>
   </data>
   <data name="TextCrossPlatformRestoreSuffix" xml:space="preserve">
-    <value>».
+    <value>'에 있습니다.
 
-Es posible que algunas rutas dentro de los archivos de configuración requieran ediciones manuales después. ¿Continuar?</value>
+구성 파일 내부의 일부 경로는 나중에 수동으로 편집해야 할 수 있습니다. 계속하시겠습니까?</value>
   </data>
 
   <!-- ════════════════════════════════════════════════════════════════════════════
@@ -2448,259 +2548,171 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
   <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Bienvenida</value>
+    <value>환영합니다</value>
     <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
   </data>
   <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientación sobre el editor — qué se edita, cómo se aplican las capas de ámbitos y dónde encontrar los ajustes de alto impacto. Se muestra por defecto en el primer arranque.</value>
+    <value>편집기 안내 — 무엇이 편집되는지, 범위가 어떻게 계층화되는지, 영향력 큰 설정을 어디서 찾는지. 첫 실행 시 기본적으로 표시됩니다.</value>
     <comment>Tooltip / description for the Welcome nav node.</comment>
   </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
-    <value>Mostrar esta página al arrancar</value>
+    <value>시작 시 이 페이지 표시</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
   </data>
   <data name="TipShowWelcomeOnLaunch" xml:space="preserve">
-    <value>Cuando se desmarca, la entrada Bienvenida desaparece del árbol de navegación y no volverá en el próximo arranque. Aún puedes llegar a esta página haciendo clic en las cabeceras «Claude Code» o «Claude Desktop» del árbol. Borrar los datos de la aplicación restablece esta preferencia.</value>
+    <value>체크 해제 시 환영 항목이 내비게이션 트리에서 사라지고 다음 시작 시에도 다시 나타나지 않습니다. 트리에서 "Claude Code" 또는 "Claude Desktop" 헤더를 클릭하여 여전히 이 페이지에 도달할 수 있습니다. 앱 데이터를 지우면 이 기본 설정이 재설정됩니다.</value>
     <comment>Tooltip / accessibility description for the Show-on-launch checkbox on the Welcome page.</comment>
   </data>
   <data name="NavTitleEssentials" xml:space="preserve">
-    <value>Esenciales</value>
+    <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
   </data>
   <data name="NavDescEssentials" xml:space="preserve">
-    <value>Ajustes de alto impacto de Claude Code — presupuestos de tokens, sandbox, confianza en MCP, modelo y canal de actualización — fijados para una revisión y modificación rápidas.</value>
+    <value>영향력이 큰 Claude Code 설정 — 토큰 예산, 샌드박스, MCP 신뢰, 모델 및 업데이트 채널 — 을 빠른 검토와 변경을 위해 고정합니다.</value>
     <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
-    <value>Esenciales — ajustes de alto impacto</value>
+    <value>Essentials — 영향력이 큰 설정</value>
     <comment>Heading rendered at the top of the Essentials editor view.</comment>
   </data>
   <data name="HeaderEssentialsBody" xml:space="preserve">
-    <value>Estos ajustes tienen un impacto desproporcionado en el coste, la calidad, la seguridad o el comportamiento. Revísalos al configurar un proyecto nuevo o al actualizar Claude Code.</value>
+    <value>이 설정들은 비용, 품질, 보안 또는 동작에 큰 영향을 미칩니다. 새 프로젝트를 설정하거나 Claude Code를 업그레이드할 때 검토하세요.</value>
     <comment>Sub-header explainer for the Essentials editor view.</comment>
   </data>
 
   <data name="LabelEssentialsViewInGroupFmt" xml:space="preserve">
-    <value>Ver en {0}</value>
+    <value>{0}에서 보기</value>
     <comment>"View in &lt;group&gt;" deep-link button label.  {0} is the home-group title (e.g. "Permissions", "Environment").</comment>
   </data>
   <data name="LabelEssentialsAddListEntry" xml:space="preserve">
-    <value>Añadir</value>
+    <value>추가</value>
     <comment>Label for the Add button on StringList cards (e.g. sandbox.allowedDomains).</comment>
   </data>
   <data name="LabelEssentialsRemoveListEntry" xml:space="preserve">
-    <value>Quitar</value>
+    <value>제거</value>
     <comment>Label for the per-row Remove button on StringList cards.</comment>
   </data>
   <data name="LabelEssentialsAmberCallout" xml:space="preserve">
-    <value>Has llegado aquí desde la búsqueda — este es el ajuste que coincide con tu consulta. Edita el valor debajo.</value>
+    <value>검색에서 여기로 왔습니다 — 이것이 쿼리와 일치하는 설정입니다. 아래에서 값을 편집하세요.</value>
     <comment>One-time amber callout shown when a card is opened via a synthetic search hit.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceHeader" xml:space="preserve">
-    <value>Origen efectivo</value>
+    <value>유효 원본</value>
     <comment>Header for the env-var "effective source" sub-row showing which of (settings.json env, OS user, OS machine) is contributing.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceSettings" xml:space="preserve">
-    <value>env de settings.json</value>
+    <value>settings.json env</value>
     <comment>Source label: the value comes from the env map in settings.json.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceUser" xml:space="preserve">
-    <value>Entorno de usuario del SO</value>
+    <value>OS 사용자 환경</value>
     <comment>Source label: the value comes from the user-scope OS environment variable.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceMachine" xml:space="preserve">
-    <value>Entorno de equipo del SO</value>
+    <value>OS 머신 환경</value>
     <comment>Source label: the value comes from the machine-scope OS environment variable.</comment>
   </data>
   <data name="LabelEssentialsEnvSourceNone" xml:space="preserve">
-    <value>sin definir</value>
+    <value>설정되지 않음</value>
     <comment>Source label: the variable is not set in any scope.</comment>
   </data>
 
   <!-- Card 1 — Max Thinking Tokens -->
   <data name="EssentialsCardMaxThinkingTokensTitle" xml:space="preserve">
-    <value>Máximo de tokens de razonamiento</value>
+    <value>최대 사고 토큰</value>
   </data>
   <data name="EssentialsCardMaxThinkingTokensBody" xml:space="preserve">
-    <value>Limita cuántos tokens puede dedicar Claude al razonamiento extendido por turno (env: MAX_THINKING_TOKENS). El valor predeterminado puede truncar razonamientos complejos; súbelo a 32000 o más para trabajo arquitectónico exigente.</value>
+    <value>Claude가 한 턴당 확장 사고에 사용할 수 있는 토큰 수의 상한을 정합니다(env: MAX_THINKING_TOKENS). 기본값은 복잡한 추론을 잘라낼 수 있습니다. 까다로운 아키텍처 작업의 경우 32000 이상으로 높이세요.</value>
   </data>
 
   <!-- Card 2 — Max Output Tokens -->
   <data name="EssentialsCardMaxOutputTokensTitle" xml:space="preserve">
-    <value>Máximo de tokens de salida</value>
+    <value>최대 출력 토큰</value>
   </data>
   <data name="EssentialsCardMaxOutputTokensBody" xml:space="preserve">
-    <value>Limita la longitud de la respuesta que Claude puede emitir (env: CLAUDE_CODE_MAX_OUTPUT_TOKENS). El valor predeterminado puede truncar ediciones largas de archivos o código generado; súbelo cuando veas «[output truncated]».</value>
+    <value>Claude가 생성할 수 있는 응답 길이의 상한을 정합니다(env: CLAUDE_CODE_MAX_OUTPUT_TOKENS). 기본값은 긴 파일 편집이나 생성된 코드를 잘라낼 수 있습니다. "[output truncated]"이 보이면 값을 높이세요.</value>
   </data>
 
   <!-- Card 3 — Auto-trust project MCP servers -->
   <data name="EssentialsCardEnableAllMcpTitle" xml:space="preserve">
-    <value>Confiar automáticamente en los servidores MCP del proyecto</value>
+    <value>프로젝트 MCP 서버 자동 신뢰</value>
   </data>
   <data name="EssentialsCardEnableAllMcpBody" xml:space="preserve">
-    <value>Cuando está activo, Claude confía en todos los servidores MCP definidos en el archivo .mcp.json de un proyecto sin pedir confirmación. Es cómodo — pero un repositorio de proyecto hostil puede incluir un servidor MCP malicioso. Déjalo desactivado y aprueba los servidores uno por uno.</value>
+    <value>활성화하면 Claude는 프로젝트의 .mcp.json에 정의된 모든 MCP 서버를 확인 없이 신뢰합니다. 편리하지만 — 악의적인 프로젝트 저장소는 악성 MCP 서버를 포함할 수 있습니다. 비활성화 상태로 두고 서버를 개별적으로 승인하세요.</value>
   </data>
   <data name="EssentialsCardEnableAllMcpDanger" xml:space="preserve">
-    <value>Peligro: todos los servidores MCP de cada proyecto que abras se ejecutarán con tus herramientas y credenciales. Activa esto únicamente en entornos completamente aislados.</value>
+    <value>위험: 여는 모든 프로젝트의 모든 MCP 서버가 당신의 도구와 자격 증명으로 실행됩니다. 완전히 격리된 환경에서만 활성화하세요.</value>
   </data>
 
   <!-- Card 4 — Sandbox enabled -->
   <data name="EssentialsCardSandboxEnabledTitle" xml:space="preserve">
-    <value>Sandbox activado</value>
+    <value>샌드박스 활성화</value>
   </data>
   <data name="EssentialsCardSandboxEnabledBody" xml:space="preserve">
-    <value>Cuando está activo, el sandbox de bash restringe las escrituras en el sistema de archivos y la salida de red a una lista de permitidos. Desactivar el sandbox permite que cualquier comando de shell que ejecute Claude toque archivos arbitrarios y llegue a hosts arbitrarios.</value>
+    <value>활성화하면 bash 샌드박스가 파일 시스템 쓰기와 네트워크 송신을 허용 목록으로 제한합니다. 샌드박스를 비활성화하면 Claude가 실행하는 모든 셸 명령이 임의의 파일을 건드리고 임의의 호스트에 도달할 수 있습니다.</value>
   </data>
   <data name="EssentialsCardSandboxEnabledDanger" xml:space="preserve">
-    <value>Peligro: con el sandbox desactivado, cualquier llamada a herramienta que ejecute un comando de shell tiene acceso sin restricciones al sistema de archivos y a la red.</value>
+    <value>위험: 샌드박스가 비활성화되면 셸 명령을 실행하는 모든 도구 호출이 무제한의 파일 시스템 및 네트워크 액세스 권한을 가집니다.</value>
   </data>
 
   <!-- Card 5 — Sandbox allowed domains -->
   <data name="EssentialsCardSandboxDomainsTitle" xml:space="preserve">
-    <value>Dominios permitidos del sandbox</value>
+    <value>샌드박스 허용 도메인</value>
   </data>
   <data name="EssentialsCardSandboxDomainsBody" xml:space="preserve">
-    <value>Hosts salientes a los que el sandbox tiene permitido llegar (p. ej. github.com, registry.npmjs.org). Sin entradas aquí, las operaciones de red dentro del sandbox fallan.</value>
+    <value>샌드박스가 접근하도록 허용된 송신 호스트입니다(예: github.com, registry.npmjs.org). 여기에 항목이 없으면 샌드박스 내부의 네트워크 작업은 실패합니다.</value>
   </data>
   <data name="EssentialsCardSandboxDomainsListPlaceholder" xml:space="preserve">
-    <value>p. ej. github.com</value>
+    <value>예: github.com</value>
     <comment>Placeholder text for the Add-entry textbox on the sandbox.allowedDomains card.</comment>
   </data>
 
   <!-- Card 6 — Model -->
   <data name="EssentialsCardModelTitle" xml:space="preserve">
-    <value>Modelo</value>
+    <value>모델</value>
   </data>
   <data name="EssentialsCardModelBody" xml:space="preserve">
-    <value>Modelo predeterminado para las sesiones de Claude Code. Elige un modelo más pequeño (haiku) para reducir coste en el trabajo rutinario; elige el más grande (opus) para razonamiento arquitectónico exigente.</value>
+    <value>Claude Code 세션의 기본 모델입니다. 일상적인 작업의 비용을 줄이려면 더 작은 모델(haiku)을 선택하고, 어려운 아키텍처 추론에는 가장 큰 모델(opus)을 선택하세요.</value>
   </data>
 
   <!-- Card 7 — Effort level -->
   <data name="EssentialsCardEffortLevelTitle" xml:space="preserve">
-    <value>Nivel de esfuerzo</value>
+    <value>노력 수준</value>
   </data>
   <data name="EssentialsCardEffortLevelBody" xml:space="preserve">
-    <value>Cuánto presupuesto de razonamiento extendido está dispuesto Claude a gastar por turno. Niveles más altos pueden producir mejores respuestas en problemas difíciles, pero cuestan más.</value>
+    <value>Claude가 한 턴당 확장 사고에 기꺼이 사용할 예산입니다. 더 높은 수준은 어려운 문제에서 더 나은 답을 낼 수 있지만 비용이 더 듭니다.</value>
   </data>
 
   <!-- Card 8 — Fast mode -->
   <data name="EssentialsCardFastModeTitle" xml:space="preserve">
-    <value>Modo rápido</value>
+    <value>빠른 모드</value>
   </data>
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
-    <value>Omite algunas pasadas opcionales de razonamiento para obtener respuestas más ágiles. Compromiso: calidad ligeramente inferior en tareas complejas a cambio de menor latencia y coste.</value>
+    <value>더 빠른 응답을 위해 일부 선택적 추론 단계를 건너뜁니다. 트레이드오프: 더 낮은 지연 시간과 비용을 위해 복잡한 작업에서 품질이 약간 낮아집니다.</value>
   </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">
-    <value>Canal de actualizaciones automáticas</value>
+    <value>자동 업데이트 채널</value>
   </data>
   <data name="EssentialsCardAutoUpdatesChannelBody" xml:space="preserve">
-    <value>Desde qué flujo de versiones de Claude Code se actualiza automáticamente el binario (stable, latest). «latest» recibe nuevas funciones antes, pero incluye regresiones ocasionales.</value>
+    <value>바이너리가 자동으로 업데이트되는 Claude Code 릴리스 스트림입니다(stable, latest). "latest"는 새 기능을 더 빨리 받지만 가끔 회귀가 포함됩니다.</value>
   </data>
 
   <!-- Card 10 — Auto-memory enabled -->
   <data name="EssentialsCardAutoMemoryEnabledTitle" xml:space="preserve">
-    <value>Memoria automática activada</value>
+    <value>자동 메모리 활성화</value>
   </data>
   <data name="EssentialsCardAutoMemoryEnabledBody" xml:space="preserve">
-    <value>Cuando está activo, Claude captura automáticamente «hechos» de memoria a nivel de sesión (convenciones del proyecto, entorno, tus preferencias). Desactívalo en sesiones donde no quieras contexto persistente.</value>
+    <value>활성화하면 Claude가 세션 수준의 "메모리" 정보(프로젝트 관례, 환경, 사용자의 선호 사항)를 자동으로 캡처합니다. 지속적인 컨텍스트를 원하지 않는 세션에서는 비활성화하세요.</value>
   </data>
 
   <!-- Card 11 — Disable bypass-permissions mode -->
   <data name="EssentialsCardDisableBypassTitle" xml:space="preserve">
-    <value>Desactivar el modo bypass-permissions</value>
+    <value>bypass-permissions 모드 비활성화</value>
   </data>
   <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
-    <value>Bloquea el ajuste permissions.defaultMode para que no pueda valer «bypassPermissions» — el modo que suprime todas las confirmaciones de permisos de herramientas. Equivale a fijar la seguridad; recomendado en entornos compartidos o gestionados.</value>
-  </data>
-
-  <!-- ────────────────────────────────────────────────────────────────────────
-       2026-05-23 — drift remediation pass.
-       The 26 entries below were either missing entirely from es-ES OR were
-       added to zh-CN as TODO placeholders without ever landing in de/es/pt.
-       Closed in one pass alongside the new project-backup keys at the top of
-       this batch.  Tracked from here on by tests/ClaudeForge.Tests/Localization/
-       LocalizationParityTests so the same drift can't recur.
-       ──────────────────────────────────────────────────────────────────────── -->
-  <data name="LabelBackupIncludesProject" xml:space="preserve">
-    <value>Incluye el proyecto abierto: {0}</value>
-  </data>
-  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
-    <value>Sin proyecto abierto — solo configuración a nivel de usuario</value>
-  </data>
-  <data name="AutoNameButtonDismissSchema" xml:space="preserve">
-    <value>Cerrar el aviso de errores de esquema</value>
-  </data>
-  <data name="BadgePluginReadOnly" xml:space="preserve">
-    <value>Complemento (solo lectura)</value>
-  </data>
-  <data name="ButtonDismissSchemaBanner" xml:space="preserve">
-    <value>✕</value>
-    <comment>Unicode glyph ✕ (U+2715) — identical across locales; carries no translatable text.</comment>
-  </data>
-  <data name="ButtonEditArtifact" xml:space="preserve">
-    <value>Editar</value>
-  </data>
-  <data name="ButtonEditRawYaml" xml:space="preserve">
-    <value>Editar front-matter sin procesar</value>
-  </data>
-  <data name="ButtonSaveArtifact" xml:space="preserve">
-    <value>Guardar</value>
-  </data>
-  <data name="LabelFrontMatterDescription" xml:space="preserve">
-    <value>Descripción</value>
-  </data>
-  <data name="LabelFrontMatterModel" xml:space="preserve">
-    <value>Modelo</value>
-  </data>
-  <data name="LabelFrontMatterName" xml:space="preserve">
-    <value>Nombre</value>
-  </data>
-  <data name="LabelFrontMatterTools" xml:space="preserve">
-    <value>Herramientas</value>
-  </data>
-  <data name="LabelRawFrontMatterHint" xml:space="preserve">
-    <value>Editando el front-matter sin procesar — los campos tipados se ignoran mientras esto esté activado. Los comentarios y las claves que los campos no cubren se conservan.</value>
-  </data>
-  <data name="NavDescAgentsSkills" xml:space="preserve">
-    <value>Examina los subagentes, habilidades y comandos de barra que carga Claude Code — en los ámbitos Usuario, Proyecto y Complemento.</value>
-  </data>
-  <data name="NavTitleAgentsSkills" xml:space="preserve">
-    <value>Agentes y habilidades</value>
-  </data>
-  <data name="StatusAgentsSkillsLoading" xml:space="preserve">
-    <value>Cargando agentes, habilidades y comandos…</value>
-  </data>
-  <data name="StatusArtifactSaveFailedFmt" xml:space="preserve">
-    <value>No se pudo guardar: {0}</value>
-  </data>
-  <data name="StatusArtifactSaved" xml:space="preserve">
-    <value>Guardado.</value>
-  </data>
-  <data name="StatusArtifactSavedRestartHint" xml:space="preserve">
-    <value>Guardado. Tus cambios se aplicarán en la próxima sesión de Claude Code.</value>
-  </data>
-  <data name="StatusRawFrontMatterInvalid" xml:space="preserve">
-    <value>No se pudo analizar el front-matter sin procesar — corrígelo antes de guardar.</value>
-  </data>
-  <data name="TabAgents" xml:space="preserve">
-    <value>Subagentes</value>
-  </data>
-  <data name="TabSkills" xml:space="preserve">
-    <value>Habilidades</value>
-  </data>
-  <data name="TabSlashCommands" xml:space="preserve">
-    <value>Comandos de barra</value>
-  </data>
-  <data name="TipButtonDismissSchema" xml:space="preserve">
-    <value>Ocultar este aviso. Reaparecerá si abres otro proyecto, haces clic en «Recargar ventana» o reinicias la aplicación.</value>
-  </data>
-  <data name="TipButtonRefresh" xml:space="preserve">
-    <value>Volver a escanear el sistema de archivos y recargar la lista</value>
-  </data>
-  <data name="WatermarkEditTools" xml:space="preserve">
-    <value>Separados por comas, p. ej. Read, Grep, Bash</value>
+    <value>permissions.defaultMode 설정이 "bypassPermissions"가 되지 못하도록 잠급니다 — 이 모드는 모든 도구 권한 확인을 억제합니다. 안전을 고정하는 것과 동일하며, 공유 / 관리 환경에서 권장됩니다.</value>
   </data>
 
 </root>

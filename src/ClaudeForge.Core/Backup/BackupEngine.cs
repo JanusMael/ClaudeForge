@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
@@ -75,6 +77,90 @@ public sealed class BackupEngine
         IReadOnlyList<string> projects = MergeExplicitAndDiscovered(request.ExplicitProjectDirs, discovered);
 
         List<string> warnings = [];
+
+        // Full-mode multi-project expansion (2026-05-23):
+        //
+        // Pre-fix, Full mode included the user-level ~/.claude/ tree
+        // (incl. session transcripts via AddClaudeHome) but ONLY backed
+        // up the explicitly-open project's `.claude/` directory.  Per-
+        // project hooks, MCP config, agents, skills, CLAUDE.md, etc. for
+        // every OTHER project Claude had ever seen were silently absent
+        // from the archive — even though a disaster-recovery user
+        // restoring this same backup would expect "Full" to mean
+        // comprehensive.
+        //
+        // For Full mode only, expand `projects` to include every known
+        // project from ~/.claude.json's top-level `projects` map (the
+        // canonical list of paths Claude Code has opened).  SettingsOnly
+        // and Sanitized modes deliberately retain the single-project
+        // contract:
+        //   - SettingsOnly is the "small, fast, just-my-config" mode.
+        //   - Sanitized exists for sharing with support / community /
+        //     bug reports — extending it to include every project the
+        //     user has ever worked on would defeat the redaction
+        //     premise.
+        if (request.Mode == BackupMode.Full)
+        {
+            KnownProjectsDiscovery.DiscoveryResult known =
+                KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);
+
+            if (known.ExistingProjectRoots.Count > 0)
+            {
+                // Dedup the discovered known-projects against what's
+                // already in `projects` (explicit + additionalDirectories
+                // discovered).  Use Path.GetFullPath to normalise so
+                // "C:\foo\" and "C:/foo" don't both appear; pick the
+                // platform-appropriate comparer (Windows is path-case-
+                // insensitive, Linux / macOS are case-sensitive —
+                // matches AdditionalDirectoriesResolver's convention).
+                StringComparer pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? StringComparer.OrdinalIgnoreCase
+                    : StringComparer.Ordinal;
+
+                HashSet<string> seen = new(pathComparer);
+                foreach (string existing in projects)
+                {
+                    try
+                    {
+                        seen.Add(Path.GetFullPath(existing));
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException)
+                    {
+                        // Malformed path in `projects`; don't dedup against it.
+                        _ = ex;
+                    }
+                }
+
+                List<string> merged = projects.ToList();
+                foreach (string knownRoot in known.ExistingProjectRoots)
+                {
+                    string normalised;
+                    try
+                    {
+                        normalised = Path.GetFullPath(knownRoot);
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException)
+                    {
+                        // Skip malformed paths in ~/.claude.json's projects map.
+                        _ = ex;
+                        continue;
+                    }
+
+                    if (seen.Add(normalised))
+                    {
+                        merged.Add(knownRoot);
+                    }
+                }
+                projects = merged;
+            }
+
+            if (known.SkippedNonExistentCount > 0)
+            {
+                warnings.Add(string.Format(CultureInfo.InvariantCulture,
+                    "Full-mode backup skipped {0} known project(s) whose path no longer exists on disk.",
+                    known.SkippedNonExistentCount));
+            }
+        }
         IReadOnlyList<BackupWorktreeEntry> worktrees = [];
         try
         {

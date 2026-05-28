@@ -1372,6 +1372,90 @@ public sealed class BackupRestoreViewModelTests
             "Corrupt backups (no manifest) must not be restorable.");
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // InitialProjectRoot → BackupRequest.ExplicitProjectDirs contract.
+    //
+    // Pre-fix the open project's `.claude` directory was silently absent from
+    // every backup because `BackupRequest.ExplicitProjectDirs` was always
+    // `Array.Empty<string>()`.  These tests pin the wiring at the field-
+    // projection layer via the `BuildBackupRequest` internal seam, avoiding
+    // a dependency on the real BackupEngine / filesystem sandbox.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void CreateBackup_PropagatesInitialProjectRoot_AsExplicitProjectDir()
+    {
+        const string projectRoot = @"C:\repos\MyApp";
+        BackupRestoreViewModel vm = new(new StubDialogService())
+        {
+            InitialProjectRoot = projectRoot,
+        };
+
+        BackupRequest request = vm.BuildBackupRequest(@"C:\tmp\test-backup.zip");
+
+        Assert.IsNotNull(request.ExplicitProjectDirs,
+            "ExplicitProjectDirs must never be null — empty array if no project open.");
+        CollectionAssert.AreEqual(new[] { projectRoot }, request.ExplicitProjectDirs.ToArray(),
+            "When InitialProjectRoot is set, BuildBackupRequest must thread it into " +
+            "ExplicitProjectDirs verbatim — that's how BackupEngine.AddProjectClaudeData " +
+            "learns to include the project's `.claude` directory.");
+    }
+
+    [TestMethod]
+    public void CreateBackup_WithNullProjectRoot_PassesEmptyExplicitProjectDirs()
+    {
+        BackupRestoreViewModel vm = new(new StubDialogService())
+        {
+            InitialProjectRoot = null,
+        };
+
+        BackupRequest request = vm.BuildBackupRequest(@"C:\tmp\test-backup.zip");
+
+        Assert.IsNotNull(request.ExplicitProjectDirs,
+            "ExplicitProjectDirs must be empty (not null) when no project is open.");
+        Assert.AreEqual(0, request.ExplicitProjectDirs.Count,
+            "No project open → no entries in ExplicitProjectDirs " +
+            "(preserves pre-fix behaviour for user-level-only backups).");
+    }
+
+    [TestMethod]
+    public void BackupIncludesProjectLabel_RendersBothShapes()
+    {
+        BackupRestoreViewModel vm = new(new StubDialogService());
+
+        // Shape 1: no project open.
+        Assert.IsNull(vm.OpenProjectName,
+            "OpenProjectName must be null when InitialProjectRoot is unset.");
+        Assert.AreEqual(Strings.LabelBackupNoProjectOpen, vm.BackupIncludesProjectLabel,
+            "With no project open the label must render the resx string for the " +
+            "user-level-only state.");
+
+        // Capture PropertyChanged emissions so we can prove the [ObservableProperty] +
+        // [NotifyPropertyChangedFor] decoration actually fires the label-refresh signal.
+        List<string?> propertyChanges = new();
+        vm.PropertyChanged += (_, e) => propertyChanges.Add(e.PropertyName);
+
+        // Shape 2: project open.
+        const string projectRoot = @"C:\repos\MyApp";
+        vm.InitialProjectRoot = projectRoot;
+
+        Assert.AreEqual("MyApp", vm.OpenProjectName,
+            "OpenProjectName must be the bare folder name (Path.GetFileName) of the trimmed root.");
+        Assert.AreEqual(
+            string.Format(CultureInfo.CurrentCulture, Strings.LabelBackupIncludesProject, "MyApp"),
+            vm.BackupIncludesProjectLabel,
+            "With a project open the label must format the resx template with the project name.");
+
+        // The [NotifyPropertyChangedFor] decorators on InitialProjectRoot MUST raise
+        // PropertyChanged for both computed properties — that's how the Backup-tab
+        // TextBlock re-renders without a Refresh() call.
+        Assert.IsTrue(propertyChanges.Contains(nameof(BackupRestoreViewModel.OpenProjectName)),
+            "Setting InitialProjectRoot must raise PropertyChanged for OpenProjectName.");
+        Assert.IsTrue(propertyChanges.Contains(nameof(BackupRestoreViewModel.BackupIncludesProjectLabel)),
+            "Setting InitialProjectRoot must raise PropertyChanged for BackupIncludesProjectLabel — " +
+            "this is what drives the mid-session project-switch refresh on the Backup tab.");
+    }
+
     private sealed class AlertCountingDialogService : IDialogService
     {
         public int AlertCalls { get; private set; }

@@ -109,6 +109,61 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     /// </summary>
     public string? InitialRestoreDirectory { get; set; }
 
+    /// <summary>
+    /// Absolute path of the currently-open project (i.e. <c>MainWindowViewModel.ProjectRoot</c>),
+    /// or <see langword="null"/> when no project is open.  Seeded by the host in the
+    /// ctor initializer and re-pushed by <c>MainWindowViewModel.OnProjectRootChanged</c>
+    /// so mid-session project switches are reflected immediately.
+    ///
+    /// <para>
+    /// Threaded into <see cref="BackupRequest.ExplicitProjectDirs"/> in
+    /// <see cref="CreateBackupAsync"/>.  Pre-fix, that field was always empty —
+    /// <see cref="BackupEngine.AddProjectClaudeData"/> is only invoked for items in
+    /// the list, so the open project's <c>.claude</c> directory (settings.json,
+    /// settings.local.json, hooks, MCP config, permissions, …) was silently absent
+    /// from every backup archive the app produced.
+    /// </para>
+    ///
+    /// <para>
+    /// Diverges from the plain <c>{ get; set; }</c> shape of the other <c>Initial*</c>
+    /// properties: this one is an <see cref="ObservableProperty"/> so the Backup-tab
+    /// inclusion label can react to mid-session project switches without requiring an
+    /// explicit <see cref="Refresh"/> call.
+    /// </para>
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OpenProjectName))]
+    [NotifyPropertyChangedFor(nameof(BackupIncludesProjectLabel))]
+    private string? _initialProjectRoot;
+
+    /// <summary>
+    /// Bare folder name of <see cref="InitialProjectRoot"/> for display purposes —
+    /// e.g. <c>C:\repos\MyApp</c> → <c>MyApp</c>.  Returns <see langword="null"/>
+    /// when no project is open.
+    /// </summary>
+    public string? OpenProjectName
+    {
+        get
+        {
+            string? root = InitialProjectRoot?.Trim();
+            return string.IsNullOrEmpty(root) ? null : Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        }
+    }
+
+    /// <summary>
+    /// Human-readable label rendered on the Backup tab so the user knows whether
+    /// the currently-open project's <c>.claude</c> directory will be included in
+    /// the next backup.  Two shapes:
+    /// <list type="bullet">
+    ///   <item>Project open  → "Includes open project: {name}" (resx: <c>LabelBackupIncludesProject</c>)</item>
+    ///   <item>No project    → "No project open — user-level config only" (resx: <c>LabelBackupNoProjectOpen</c>)</item>
+    /// </list>
+    /// </summary>
+    public string BackupIncludesProjectLabel =>
+        string.IsNullOrEmpty(OpenProjectName)
+            ? Strings.LabelBackupNoProjectOpen
+            : string.Format(CultureInfo.CurrentCulture, Strings.LabelBackupIncludesProject, OpenProjectName);
+
     /// <summary>Raised when either persisted value changes so the host can flush state.</summary>
     public event EventHandler? PersistentStateChanged;
 
@@ -530,15 +585,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
             string prefix = IncludeCredentials ? "backup-with-creds" : "backup";
             string destPath = Path.Combine(BackupDirectory, $"{prefix}-{stamp}.zip");
 
-            BackupRequest request = new()
-            {
-                DestinationZipPath = destPath,
-                Mode = Mode,
-                IncludeClaudeCode = IncludeClaudeCode,
-                IncludeClaudeDesktop = IncludeClaudeDesktop,
-                IncludeCredentials = IncludeCredentials,
-                KeepLast = KeepLast,
-            };
+            BackupRequest request = BuildBackupRequest(destPath);
 
             ProgressMessage = Strings.ProgressStarting;
             Progress<BackupProgress> progress = new(p =>
@@ -586,6 +633,41 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
             ProgressMessage = null;
         }
     }
+
+    /// <summary>
+    /// Builds the <see cref="BackupRequest"/> from the current VM state for the
+    /// given destination archive path.  Extracted as an <c>internal</c> seam so
+    /// the test project can verify the field-projection contract directly
+    /// without spinning up a real <see cref="BackupEngine"/> or filesystem
+    /// sandbox.
+    ///
+    /// <para>
+    /// Pre-existing call site: <see cref="BackupAsync"/> at the request-build
+    /// step (formerly an inline initializer).  Lifting the construction into
+    /// a named method also documents the field mapping in one place — every
+    /// future addition to <see cref="BackupRequest"/> that the VM should drive
+    /// goes here.
+    /// </para>
+    /// </summary>
+    internal BackupRequest BuildBackupRequest(string destinationZipPath) => new()
+    {
+        DestinationZipPath = destinationZipPath,
+        Mode = Mode,
+        IncludeClaudeCode = IncludeClaudeCode,
+        IncludeClaudeDesktop = IncludeClaudeDesktop,
+        IncludeCredentials = IncludeCredentials,
+        KeepLast = KeepLast,
+
+        // Open project's `.claude` directory (settings.json,
+        // settings.local.json, hooks, MCP config, permissions, …) is added
+        // to the archive by `BackupEngine.AddProjectClaudeData`, which is
+        // ONLY invoked for items in this list.  Pre-fix the field was
+        // always `Array.Empty<string>()`, so the project's own settings
+        // were silently absent from every backup the app produced.
+        ExplicitProjectDirs = string.IsNullOrEmpty(InitialProjectRoot)
+            ? Array.Empty<string>()
+            : new[] { InitialProjectRoot },
+    };
 
     [RelayCommand]
     private async Task RestoreAsync(BackupRowViewModel row)

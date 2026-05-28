@@ -879,6 +879,18 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _schemaErrorsBannerDismissed = false;
             OnPropertyChanged(nameof(IsSchemaErrorsBannerVisible));
         }
+
+        // Push the new project root into the Backup VM so the Backup-tab's
+        // "Includes open project" label refreshes immediately (the field is
+        // an [ObservableProperty] with NotifyPropertyChangedFor on
+        // OpenProjectName + BackupIncludesProjectLabel).  Defensive against
+        // any future code path that mutates ProjectRoot without going
+        // through a full nav-tree rebuild; the ctor + pre-Refresh re-sync
+        // already cover the canonical paths.
+        if (_backupVm is not null)
+        {
+            _backupVm.InitialProjectRoot = value;
+        }
     }
 
     /// <summary>
@@ -3314,6 +3326,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 LastBackupUtc = _cachedState.LastBackupUtc,
                 InitialBackupDirectory = _cachedState.BackupDirectory,
                 InitialRestoreDirectory = _cachedState.RestoreDirectory,
+                // Drives BackupRequest.ExplicitProjectDirs so the open project's
+                // `.claude` directory is included in the archive.  Pre-fix this
+                // field was always unset → BackupEngine.AddProjectClaudeData
+                // was never invoked → project settings were silently absent.
+                InitialProjectRoot = ProjectRoot,
                 // 4.3.7 step 15: route through SDK.HasUnsavedChanges (structural diff)
                 // for parity with the rest of the dirty-tracking flow. Pre-load both
                 // clients are null → returns false (nothing to be dirty).
@@ -3354,6 +3371,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _backupVm.InitialRestoreDirectory = _cachedState.RestoreDirectory;
         _backupVm.CredentialsPreference = _cachedState.IncludeCredentialsInBackup;
         _backupVm.LastBackupUtc = _cachedState.LastBackupUtc;
+        // Re-sync so Reload-Window picks up project-root changes since ctor time.
+        _backupVm.InitialProjectRoot = ProjectRoot;
         _backupVm.Refresh();
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleBackupRestore, "💾", NavDescBackupRestore)
         {
