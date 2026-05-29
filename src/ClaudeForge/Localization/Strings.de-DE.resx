@@ -2703,4 +2703,53 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
     <value>Komma-getrennt, z. B. Read, Grep, Bash</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Update verfügbar: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>Eine neuere Version von ClaudeForge ist auf GitHub verfügbar.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Release anzeigen</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>GitHub-Release-Seite für diese Version öffnen</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Banner für diese Version ausblenden. Das Banner erscheint erneut, wenn eine neuere Version veröffentlicht wird.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Update-verfügbar-Banner ausblenden</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Beim Start nach Updates suchen</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>Bei Aktivierung fragt ClaudeForge GitHub einmal pro Start ab, um zu prüfen, ob eine neuere Version verfügbar ist, und zeigt gegebenenfalls ein schließbares Banner. Bei Netzwerkfehlern bleibt die Prüfung stumm. Jede Version wird unabhängig geschlossen — wenn eine neuere Version erscheint, wird das Banner erneut angezeigt.</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Nach Updates suchen</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>GitHub nach der neuesten Version abfragen. Funktioniert auch, wenn die automatische Prüfung beim Start deaktiviert ist.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Suche läuft…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>Du verwendest die aktuelle Version.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Update verfügbar: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>GitHub konnte nicht erreicht werden. Bitte später erneut versuchen.</value>
+  </data>
 </root>

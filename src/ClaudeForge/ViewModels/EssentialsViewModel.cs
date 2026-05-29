@@ -69,14 +69,48 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     public const string CardIdAutoMemoryEnabled = "autoMemoryEnabled";
     public const string CardIdDisableBypass = "permissions.disableBypassPermissionsMode";
 
+    /// <summary>
+    /// ID for the auto-update-check toggle card.  NOT a JSON path (the
+    /// preference is backed by WindowState, not settings.json) — just
+    /// a synthetic identifier the deep-link search uses.
+    /// </summary>
+    public const string CardIdCheckForUpdates = "checkForUpdatesOnLaunch";
+
     private IClaudeConfigClient? _client;
     private readonly IEnvironmentProvider _envProvider;
+    private readonly Func<bool>? _checkForUpdatesRead;
+    private readonly Action<bool>? _checkForUpdatesWrite;
     private bool _disposed;
 
-    public EssentialsViewModel(IClaudeConfigClient? client, IEnvironmentProvider envProvider)
+    /// <summary>
+    /// Construct an EssentialsViewModel.
+    /// </summary>
+    /// <param name="client">SDK client for the settings.json-backed cards.</param>
+    /// <param name="envProvider">Environment-variable provider for the env-var cards.</param>
+    /// <param name="checkForUpdatesRead">
+    /// Optional read delegate for the auto-update-check Essentials card.
+    /// Typically <c>() =&gt; mwvm.CheckForUpdatesOnLaunch</c>.  When
+    /// non-null (and paired with <paramref name="checkForUpdatesWrite"/>),
+    /// the card is added to <see cref="Cards"/>; when null, the card is
+    /// omitted (tests / non-MWVM-rooted callers see the rest of the
+    /// page unaffected).
+    /// </param>
+    /// <param name="checkForUpdatesWrite">
+    /// Optional write delegate paired with <paramref name="checkForUpdatesRead"/>.
+    /// Typically <c>v =&gt; mwvm.CheckForUpdatesOnLaunch = v</c>.  Routes
+    /// the user's toggle through MWVM's ObservableProperty so
+    /// persistence + <c>_cachedState</c> stay consistent.
+    /// </param>
+    public EssentialsViewModel(
+        IClaudeConfigClient? client,
+        IEnvironmentProvider envProvider,
+        Func<bool>? checkForUpdatesRead = null,
+        Action<bool>? checkForUpdatesWrite = null)
     {
         _client = client;
         _envProvider = envProvider ?? throw new ArgumentNullException(nameof(envProvider));
+        _checkForUpdatesRead = checkForUpdatesRead;
+        _checkForUpdatesWrite = checkForUpdatesWrite;
         Cards = new ObservableCollection<EssentialsCardViewModel>(BuildCards());
         // Initial read; ignore the Task — the cards render with default
         // (empty / null) values until the read populates them.  Any read
@@ -341,7 +375,88 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
         // 11 — Auto-updates channel
 
+        // 12 — Check for updates on launch.  ClaudeForge-APP preference,
+        //      not a Claude Code setting — backed by WindowState, not
+        //      settings.json.  Only added when the constructor was given
+        //      both read + write delegates (typically MWVM passes them;
+        //      tests omit them, which keeps the rest of the page testable
+        //      in isolation).
+        if (_checkForUpdatesRead is not null && _checkForUpdatesWrite is not null)
+        {
+            list.Add(new EssentialsCardViewModel(
+                id: CardIdCheckForUpdates,
+                title: Strings.EssentialsCardCheckForUpdatesTitle,
+                body: Strings.EssentialsCardCheckForUpdatesBody,
+                severityColor: "#1976D2", // blue — behaviour (same as auto-memory / channel)
+                kind: EssentialsCardKind.Bool,
+                viewInGroupTitle: GroupTitleGeneral,
+                isEnvVarCard: false,
+                readAsync: ReadWindowStateBoolAsync(_checkForUpdatesRead),
+                writeAsync: WriteWindowStateBoolAsync(_checkForUpdatesWrite),
+                amberCalloutText: amberText));
+        }
+
         return list;
+    }
+
+    /// <summary>
+    /// Build a readAsync delegate that reads a bool out of an external
+    /// store (e.g. WindowState) via the supplied <paramref name="read"/>
+    /// closure rather than from the SDK client.  Used by the
+    /// "Check for updates on launch" card.
+    /// </summary>
+    private static Func<EssentialsCardViewModel, Task> ReadWindowStateBoolAsync(Func<bool> read)
+    {
+        return card =>
+        {
+            card.IsLoading = true;
+            try
+            {
+                card.BoolValue = read();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or NullReferenceException)
+            {
+                // Defensive: a stale closure (e.g. MWVM disposed) should
+                // not crash the page.  Leave BoolValue at null so the
+                // ToggleSwitch shows its indeterminate state until a
+                // subsequent refresh picks up a valid read.
+                Log.Information(
+                    ex,
+                    "[Essentials] ReadWindowStateBool delegate threw; card stays in null state.");
+            }
+            finally
+            {
+                card.IsLoading = false;
+            }
+            return Task.CompletedTask;
+        };
+    }
+
+    /// <summary>
+    /// Build a writeAsync delegate that pushes a bool to an external
+    /// store via the supplied <paramref name="write"/> closure.  Used
+    /// by the "Check for updates on launch" card.
+    /// </summary>
+    private static Func<EssentialsCardViewModel, Task> WriteWindowStateBoolAsync(Action<bool> write)
+    {
+        return card =>
+        {
+            try
+            {
+                // Card binds a ToggleSwitch to BoolValue; the toggle
+                // produces non-null values when user-driven, so a null
+                // here is unexpected.  Coerce defensively to true (the
+                // initialiser default) rather than crash.
+                write(card.BoolValue ?? true);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or NullReferenceException)
+            {
+                Log.Information(
+                    ex,
+                    "[Essentials] WriteWindowStateBool delegate threw; user toggle dropped.");
+            }
+            return Task.CompletedTask;
+        };
     }
 
     // ── Read / write delegate factories ──────────────────────────────────

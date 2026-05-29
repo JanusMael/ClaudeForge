@@ -2703,4 +2703,53 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
     <value>Separados por comas, p. ej. Read, Grep, Bash</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Actualización disponible: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>Hay una nueva versión de ClaudeForge disponible en GitHub.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Ver versión</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Abrir la página de GitHub de esta versión</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Ocultar este banner para esta versión. El banner reaparecerá cuando se publique una versión más reciente.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Ocultar banner de actualización disponible</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Buscar actualizaciones al iniciar</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>Cuando está activado, ClaudeForge consulta GitHub una vez por inicio para comprobar si hay una nueva versión disponible y muestra un banner que se puede cerrar. La comprobación es silenciosa si falla la red. Cada versión se cierra de forma independiente — cuando aparece una versión más reciente, el banner se muestra de nuevo.</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Buscar actualizaciones</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>Consultar GitHub para ver la versión más reciente. Funciona aunque la comprobación automática al inicio esté desactivada.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Comprobando…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>Estás en la versión más reciente.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Actualización disponible: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>No se pudo conectar con GitHub. Inténtalo de nuevo en un momento.</value>
+  </data>
 </root>

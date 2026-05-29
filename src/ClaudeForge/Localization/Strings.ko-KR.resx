@@ -2715,4 +2715,53 @@
     <value>permissions.defaultMode 설정이 "bypassPermissions"가 되지 못하도록 잠급니다 — 이 모드는 모든 도구 권한 확인을 억제합니다. 안전을 고정하는 것과 동일하며, 공유 / 관리 환경에서 권장됩니다.</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>업데이트 사용 가능: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>GitHub에 ClaudeForge의 새 릴리스가 있습니다.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>릴리스 보기</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>이 버전의 GitHub 릴리스 페이지 열기</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>이 버전의 배너를 숨깁니다. 새 릴리스가 게시되면 배너가 다시 나타납니다.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>업데이트 사용 가능 배너 닫기</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>시작 시 업데이트 확인</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>활성화되면 ClaudeForge는 시작할 때마다 GitHub를 한 번 조회하여 새 릴리스가 있는지 확인하고, 있으면 닫을 수 있는 배너를 표시합니다. 네트워크 오류 시 확인은 조용히 진행됩니다. 각 버전은 독립적으로 닫힙니다 — 새 릴리스가 나오면 배너가 다시 표시됩니다.</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>GitHub에 최신 릴리스를 조회합니다. 시작 시 자동 확인이 비활성화되어 있어도 작동합니다.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>확인 중…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>최신 버전을 사용 중입니다.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>업데이트 사용 가능: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>GitHub에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.</value>
+  </data>
 </root>

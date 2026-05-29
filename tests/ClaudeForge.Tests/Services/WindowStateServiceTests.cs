@@ -180,6 +180,115 @@ public sealed class WindowStateServiceTests
     }
 
     // -------------------------------------------------------------------------
+    // Update-check persistence — new in 2026-05-28.
+    //
+    // Auto-update-check has two persisted fields on WindowState:
+    //   CheckForUpdatesOnLaunch (bool, default true) — user-facing toggle.
+    //   DismissedUpdateVersions (List<string>) — per-tag dismiss
+    //                                            persistence.
+    // These tests pin the defaults + round-trip through Save/Load.
+    // -------------------------------------------------------------------------
+
+    [TestMethod]
+    public void CheckForUpdatesOnLaunch_DefaultsToTrue()
+    {
+        // Fresh WindowState on a clean install (no file on disk yet) —
+        // the user should get the auto-check behaviour by default.  If
+        // they want it off they toggle the Essentials card; the default
+        // should match the user's reasonable expectation that an app
+        // tells them when it's out of date.
+        WindowState state = WindowStateService.Load();
+        Assert.IsTrue(state.CheckForUpdatesOnLaunch,
+            "CheckForUpdatesOnLaunch default must be true on a fresh install. " +
+            "If you change this default, also update the Essentials card's expected initial state.");
+    }
+
+    [TestMethod]
+    public void DismissedUpdateVersions_DefaultsToEmpty()
+    {
+        WindowState state = WindowStateService.Load();
+        Assert.IsNotNull(state.DismissedUpdateVersions,
+            "List must be initialised, not null — the Dismiss command path " +
+            "calls .Add(tag) directly without a null-check.");
+        Assert.AreEqual(0, state.DismissedUpdateVersions.Count,
+            "No tags dismissed on a clean install.");
+    }
+
+    [TestMethod]
+    public void CheckForUpdatesOnLaunch_RoundTripsThroughSaveAndLoad()
+    {
+        // User toggles the Essentials card off → Save → next launch →
+        // Load → reads back as false.  Locks the persistence contract.
+        WindowState toSave = new() { CheckForUpdatesOnLaunch = false };
+        WindowStateService.Save(toSave);
+
+        WindowState loaded = WindowStateService.Load();
+        Assert.IsFalse(loaded.CheckForUpdatesOnLaunch,
+            "The user's 'check disabled' choice must survive a save-then-load cycle.");
+    }
+
+    [TestMethod]
+    public void DismissedUpdateVersions_RoundTripsAllEntriesInOrder()
+    {
+        // User dismisses two consecutive releases (rare in practice but
+        // the contract must hold) — both tags must survive a save-then-
+        // load round-trip with their content byte-exact (tag comparison
+        // is byte-exact, not normalised).
+        WindowState toSave = new()
+        {
+            DismissedUpdateVersions = ["v2026.5.523", "v2026.6.524"],
+        };
+        WindowStateService.Save(toSave);
+
+        WindowState loaded = WindowStateService.Load();
+        CollectionAssert.AreEqual(
+            new[] { "v2026.5.523", "v2026.6.524" },
+            loaded.DismissedUpdateVersions,
+            "Dismissed-versions list must round-trip in full — duplicates / order " +
+            "are managed by the caller, not by the serializer.");
+    }
+
+    [TestMethod]
+    public void DismissedUpdateVersions_NullJsonField_DeserialisesToEmptyList()
+    {
+        // Defensive: a pre-fix state file (written before this field
+        // existed) has no `dismissedUpdateVersions` JSON property.
+        // System.Text.Json should leave the property at its default
+        // (empty List).  Locking this protects against the symptom we
+        // hit on the ShowWelcomeNode field — a missing field
+        // deserialising to false / null and breaking the runtime
+        // contract.
+        string statePath = Path.Combine(_sandbox, ".claude", "cache", "ClaudeForge-gui-state.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        // Write a minimal state file with NO dismissedUpdateVersions field.
+        File.WriteAllText(statePath, """{"width":1200,"height":900}""");
+
+        WindowState loaded = WindowStateService.Load();
+        Assert.IsNotNull(loaded.DismissedUpdateVersions,
+            "Old state files (pre-fix) MUST deserialise to a non-null list — " +
+            "the Dismiss command path does .Add(tag) without null-checking.");
+        Assert.AreEqual(0, loaded.DismissedUpdateVersions.Count,
+            "Empty list, not garbage from prior runs.");
+    }
+
+    [TestMethod]
+    public void CheckForUpdatesOnLaunch_MissingJsonField_DefaultsToTrueOnLoad()
+    {
+        // Same defensive contract as above: a pre-fix state file
+        // missing the field should deserialise the property to its
+        // default value — which is `true` (auto-check on).  System.Text.Json
+        // leaves missing fields at their C# property initialiser value.
+        string statePath = Path.Combine(_sandbox, ".claude", "cache", "ClaudeForge-gui-state.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(statePath, """{"width":1200,"height":900}""");
+
+        WindowState loaded = WindowStateService.Load();
+        Assert.IsTrue(loaded.CheckForUpdatesOnLaunch,
+            "Old state files (pre-fix) MUST deserialise to the new field's default — true.  " +
+            "Otherwise existing users would silently lose the auto-check behaviour after upgrade.");
+    }
+
+    // -------------------------------------------------------------------------
     // Test doubles
     // -------------------------------------------------------------------------
 

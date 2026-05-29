@@ -664,8 +664,13 @@
             <!-- Drag splitter -->
             <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 
-            <!-- Editor area: install banner (row 0) + content (row 1) -->
-            <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*">
+            <!-- Editor area: install banner (row 0) + schema-error
+                 banner (row 1) + update-available banner (row 2) +
+                 content (row 3).  Update banner is least-prominent of
+                 the three banners (matches its informational nature
+                 vs the install / schema-error banners which surface
+                 actionable problems). -->
+            <Grid Grid.Column="2" RowDefinitions="Auto,Auto,Auto,*">
 
                 <!-- Install-guidance banner: shown only when Claude Code is not detected.
                      Pale-goldenrod background with forced dark foreground ensures the
@@ -790,10 +795,17 @@
                     </DockPanel>
                 </Border>
 
+                <!-- "Update available" banner (Row 2).  Surfaces on
+                     launch when GithubReleaseChecker reports a newer
+                     release tag.  Per-version dismiss persists across
+                     launches; when a NEWER tag arrives the dismiss is
+                     irrelevant and the banner fires again. -->
+                <views:UpdateBanner Grid.Row="2" DataContext="{Binding UpdateBanner}" />
+
                 <!-- Content area: welcome screen or active editor.
                      Right margin gives a few pixels of breathing room between
                      the editor content and the window's right edge. -->
-                <Panel Grid.Row="2" Margin="0,0,6,0">
+                <Panel Grid.Row="3" Margin="0,0,6,0">
 
                     <!--
                         Welcome screen when no editor is selected. The user

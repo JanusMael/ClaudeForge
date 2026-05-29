@@ -204,4 +204,31 @@ public sealed class WindowState
     /// </summary>
     [JsonPropertyName("showWelcomeNode")]
     public bool ShowWelcomeNode { get; set; } = true;
+
+    /// <summary>
+    /// User preference for the once-per-launch check that queries
+    /// GitHub for a newer ClaudeForge release.  Default <c>true</c> —
+    /// users want to know when a new release is out, and the check is
+    /// silent on failure so there's no downside to leaving it on.
+    /// Toggled via the Essentials page card "Check for updates on
+    /// launch".  Clearing app data resets to <c>true</c>.
+    /// </summary>
+    [JsonPropertyName("checkForUpdatesOnLaunch")]
+    public bool CheckForUpdatesOnLaunch { get; set; } = true;
+
+    /// <summary>
+    /// Set of release tags the user has explicitly dismissed via the
+    /// "Update available" banner's Dismiss button (or X-close).
+    /// Stored as a flat list keyed by the raw GitHub tag string
+    /// (e.g. <c>"v2026.5.524"</c>) so the comparison is byte-exact.
+    /// On the next launch, the auto-check still runs and still fetches
+    /// the latest release — but if the latest tag is in this list, the
+    /// banner stays suppressed.  When a NEWER release supersedes the
+    /// dismissed tag, the banner fires again (per-version
+    /// persistence — not "dismiss forever").  Clearing app data
+    /// resets to an empty list, so the next applicable release will
+    /// surface the banner again.
+    /// </summary>
+    [JsonPropertyName("dismissedUpdateVersions")]
+    public List<string> DismissedUpdateVersions { get; set; } = new();
 }

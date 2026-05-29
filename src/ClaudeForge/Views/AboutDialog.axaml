@@ -88,6 +88,39 @@
                            Text="{Binding AppCopyright, Mode=OneTime}"
                            IsVisible="{Binding AppCopyright, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            TextWrapping="Wrap" />
+
+                <!-- 2026-05-29: explicit "Check for updates" row.
+                     Placed directly under the version line so the
+                     button is the obvious next thing to click after
+                     reading the version.  Bypasses the auto-check
+                     opt-out + the once-per-launch latch (the click
+                     IS consent).  Result text appears inline below
+                     the button after the check completes; an optional
+                     "View release" hyperlink surfaces when an
+                     UpdateAvailable result included an html_url.
+                     IsEnabled=!IsCheckingForUpdate disables the
+                     button mid-check so re-clicks queue cleanly. -->
+                <StackPanel Spacing="4" Margin="0,8,0,0">
+                    <Button Content="{x:Static loc:Strings.ButtonCheckForUpdates}"
+                            Click="OnCheckForUpdatesClick"
+                            IsEnabled="{Binding !IsCheckingForUpdate}"
+                            Padding="10,4"
+                            HorizontalAlignment="Left"
+                            ToolTip.Tip="{x:Static loc:Strings.TipCheckForUpdates}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCheckForUpdates}" />
+                    <TextBlock FontSize="11"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               IsVisible="{Binding HasUpdateCheckResult}"
+                               Text="{Binding UpdateCheckResultText}" />
+                    <Button Classes="link"
+                            Content="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}"
+                            Click="OnViewUpdateReleaseClick"
+                            HorizontalAlignment="Left"
+                            IsVisible="{Binding UpdateCheckHasReleaseUrl}"
+                            ToolTip.Tip="{Binding UpdateCheckReleaseUrl}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
+                </StackPanel>
             </StackPanel>
 
             <!-- Vertical separator -->

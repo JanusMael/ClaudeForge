@@ -2715,4 +2715,53 @@
     <value>Блокирует параметру permissions.defaultMode возможность принимать значение «bypassPermissions» — режим, который подавляет все запросы разрешений инструментов. Эквивалент закрепления безопасности на месте; рекомендуется для общих или управляемых сред.</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Доступно обновление: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>На GitHub доступна более новая версия ClaudeForge.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Просмотреть выпуск</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Открыть страницу выпуска GitHub для этой версии</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Скрыть этот баннер для этой версии. Баннер появится снова, когда будет опубликована более новая версия.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Скрыть баннер о доступном обновлении</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Проверять обновления при запуске</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>Если включено, ClaudeForge один раз за запуск запрашивает GitHub, чтобы проверить наличие более новой версии, и показывает закрываемый баннер, если она доступна. При сбое сети проверка проходит молча. Каждая версия скрывается независимо — при появлении более новой версии баннер снова отображается.</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Проверить обновления</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>Запросить у GitHub последнюю версию. Работает, даже если автоматическая проверка при запуске отключена.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Проверка…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>Вы используете последнюю версию.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Доступно обновление: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>Не удалось подключиться к GitHub. Повторите попытку чуть позже.</value>
+  </data>
 </root>

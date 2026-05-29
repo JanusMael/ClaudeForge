@@ -328,6 +328,56 @@
   <data name="AutoNameButtonDismissSchema" xml:space="preserve">
     <value>Dismiss schema-errors banner</value>
   </data>
+
+  <!-- Auto-update banner: surfaces on launch when a newer ClaudeForge
+       release is published.  Reuses the InstallBanner palette and
+       chrome.  See AppUpdateService.cs for the once-per-launch +
+       dismiss-per-version contract. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Update available: {0}</value>
+    <comment>Banner title.  {0} is the raw GitHub tag, e.g. "v2026.5.524".</comment>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>A newer release of ClaudeForge is available on GitHub.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>View release</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Open the GitHub release page for this version</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Hide this banner for this version. The banner will reappear when a newer release is published.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Dismiss update-available banner</value>
+  </data>
+
+  <!-- Explicit "Check for updates" button on the About dialog.
+       Bypasses the auto-check opt-out (clicking IS consent). -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>Query GitHub for the latest release.  Works even when the auto-check on launch is disabled.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>You're on the latest version.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Update available: {0}</value>
+    <comment>{0} is the raw GitHub tag, e.g. "v2026.5.524".  Same shape as LabelUpdateBannerTitleFmt for visual parity.</comment>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>Couldn't reach GitHub.  Try again in a moment.</value>
+  </data>
+
   <data name="TextInstallPostInstallNoteUnix" xml:space="preserve">
     <value>After installing: if Claude Code lands in ~/.local/bin and that directory isn't on your PATH, click "Add to PATH" on the Version Information page (or run the installer's printed export command in your shell). Then restart ClaudeForge to detect the installation.</value>
   </data>
@@ -2709,6 +2759,15 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   </data>
   <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
     <value>Locks the permissions.defaultMode setting away from "bypassPermissions" — the mode that suppresses every tool-permission prompt. Equivalent of pinning safety on; recommended for shared / managed environments.</value>
+  </data>
+
+  <!-- Card 12 — Check for updates on launch.  ClaudeForge-app preference
+       (NOT a Claude Code setting) — backed by WindowState, not settings.json. -->
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Check for updates on launch</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again.</value>
   </data>
 
 </root>

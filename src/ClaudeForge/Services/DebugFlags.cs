@@ -110,6 +110,32 @@ public static class DebugFlags
     public static string? CultureOverride { get; private set; }
 
     /// <summary>
+    /// When <see langword="true"/> (set by passing <c>--simulate-update</c>
+    /// on the command line), the auto-update check skips the GitHub HTTP
+    /// call and synthesises a "newer release found" result by taking the
+    /// running app's <see cref="System.Reflection.AssemblyName.Version"/>
+    /// and incrementing its rightmost segment by one.  For an app version
+    /// of <c>2026.2.523</c>, the synthesised tag becomes
+    /// <c>v2026.2.524</c>.
+    /// <para>
+    /// 2026-05-29 — was previously <c>SimulatedUpdateVersion: string?</c>
+    /// requiring a tag argument
+    /// (<c>--simulate-update v99.0.0</c>).  Switching to a zero-argument
+    /// boolean removes the QA pain of picking a tag that is actually
+    /// newer than the running build — the synth path now always produces
+    /// a tag that compares greater than the current
+    /// <see cref="System.Version"/>, so a simulated update is always
+    /// visible regardless of what version the auto-versioning source
+    /// generator emitted into the assembly.
+    /// </para>
+    /// <para>
+    /// <see langword="false"/> means "no simulation; check GitHub for
+    /// real."
+    /// </para>
+    /// </summary>
+    public static bool SimulateUpdate { get; private set; }
+
+    /// <summary>
     /// Parse-time validation messages accumulated during <see cref="Initialize"/>
     /// — emitted by <see cref="LogActiveFlags"/> after the Serilog pipeline
     /// is configured.  We can't log directly during <see cref="Initialize"/>
@@ -201,6 +227,15 @@ public static class DebugFlags
 
                     break;
 
+                // Zero-argument boolean — the synthesised tag is computed
+                // at check time by incrementing the running app's
+                // assembly-version's rightmost segment.  See the
+                // SimulateUpdate docstring + AppUpdateService's
+                // SynthesiseSimulatedNextVersion for the synth logic.
+                case "--simulate-update":
+                    SimulateUpdate = true;
+                    break;
+
                 // Help / discovery: defer the help message so it surfaces in the log
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
@@ -208,6 +243,7 @@ public static class DebugFlags
                     _deferredWarnings.Add(
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
+                        "--simulate-update, " +
                         "--cleanup-restore-sidecars, --debug-help");
                     break;
             }
@@ -285,6 +321,7 @@ public static class DebugFlags
         EmulatedPlatform = null;
         ShowAllNewBadges = false;
         CultureOverride = null;
+        SimulateUpdate = false;
         _deferredWarnings.Clear();
         PlatformInfo.ResetForTesting();
     }
@@ -309,6 +346,11 @@ public static class DebugFlags
         if (CultureOverride != null)
         {
             yield return "--culture " + CultureOverride;
+        }
+
+        if (SimulateUpdate)
+        {
+            yield return "--simulate-update";
         }
     }
 }

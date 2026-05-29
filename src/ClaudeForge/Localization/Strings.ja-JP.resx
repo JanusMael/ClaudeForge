@@ -2714,4 +2714,53 @@
   <data name="EssentialsCardDisableBypassBody" xml:space="preserve">
     <value>permissions.defaultMode 設定を「bypassPermissions」 — すべてのツール権限プロンプトを抑制するモード — に切り替えられないようロックします。安全側に固定する操作で、共有 / 管理された環境で推奨されます。</value>
   </data>
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>更新が利用可能: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>ClaudeForge の新しいリリースが GitHub で利用可能です。</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>リリースを表示</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>このバージョンの GitHub リリースページを開く</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>このバージョンのバナーを非表示にします。より新しいリリースが公開されると、バナーは再表示されます。</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>更新利用可能バナーを閉じる</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>起動時に更新を確認</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>有効にすると、ClaudeForge は起動ごとに GitHub に一度問い合わせて新しいリリースがあるかを確認し、ある場合は閉じることができるバナーを表示します。ネットワーク失敗時はチェックは静かに行われます。各バージョンは個別に閉じられます — より新しいリリースが公開されると、バナーが再表示されます。</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>更新を確認</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>GitHub に最新リリースを問い合わせます。起動時の自動チェックが無効になっていても動作します。</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>確認中…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>最新バージョンを使用しています。</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>更新が利用可能: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>GitHub に接続できませんでした。しばらくしてからもう一度お試しください。</value>
+  </data>
 </root>

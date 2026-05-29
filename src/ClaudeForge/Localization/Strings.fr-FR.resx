@@ -2715,4 +2715,53 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
     <value>Verrouille le paramètre permissions.defaultMode pour qu'il ne puisse pas prendre la valeur « bypassPermissions » — le mode qui supprime toutes les confirmations d'outils. Équivalent à épingler la sécurité ; recommandé pour les environnements partagés ou gérés.</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Mise à jour disponible : {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>Une nouvelle version de ClaudeForge est disponible sur GitHub.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Voir la version</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Ouvrir la page GitHub de cette version</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Masquer cette bannière pour cette version. La bannière réapparaîtra lorsqu'une version plus récente sera publiée.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Masquer la bannière de mise à jour disponible</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Vérifier les mises à jour au démarrage</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>Lorsque cette option est activée, ClaudeForge interroge GitHub une fois par démarrage pour voir si une nouvelle version est disponible, et affiche une bannière fermable le cas échéant. La vérification est silencieuse en cas d'échec réseau. Chaque version est masquée indépendamment — lorsqu'une version plus récente paraît, la bannière s'affiche à nouveau.</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Vérifier les mises à jour</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>Interroger GitHub pour connaître la dernière version. Fonctionne même lorsque la vérification automatique au démarrage est désactivée.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Vérification…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>Vous utilisez la dernière version.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Mise à jour disponible : {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>Impossible de joindre GitHub. Veuillez réessayer dans un instant.</value>
+  </data>
 </root>

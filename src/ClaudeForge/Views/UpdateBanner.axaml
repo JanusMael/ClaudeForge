@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.UpdateBanner"
+             x:DataType="vm:UpdateBannerViewModel">
+
+    <!--
+        "Update available" banner.
+
+        DataContext for this control is a UpdateBannerViewModel — set
+        via `<views:UpdateBanner DataContext="{Binding UpdateBanner}" />`
+        at the MainWindow slot.  Reuses the existing InstallBanner
+        amber/yellow palette so all three top-of-window banners
+        (install, schema-error, update) read as the same "advisory,
+        not blocking" affordance.
+
+        Banner content (mirrors the SchemaErrorBanner layout):
+          - Left: bold title text including the new version tag, plus
+                  a one-line description.
+          - Right (DockPanel.Dock=Right): a "View release" HyperlinkButton
+                  that uses Avalonia's native NavigateUri to launch the
+                  user's default browser at the GitHub release page —
+                  same mechanism the InstallBanner uses for its docs
+                  links — followed by a small ✕ Dismiss button that
+                  routes to the VM's DismissCommand.
+
+        The HyperlinkButton's IsVisible is bound to HasReleaseUrl so
+        when the GitHub API didn't return an html_url (rare but
+        documented) the button hides cleanly rather than launching an
+        empty URL.
+    -->
+    <Border IsVisible="{Binding IsVisible}"
+            Background="{DynamicResource InstallBannerBgBrush}"
+            BorderBrush="{DynamicResource InstallBannerBorderBrush}"
+            BorderThickness="0,0,0,2"
+            Padding="12,8"
+            TextElement.Foreground="{DynamicResource InstallBannerFgBrush}">
+        <DockPanel>
+            <!-- Right-edge button cluster: [View release] [✕].
+                 Mirrors the SchemaErrorBanner cluster for visual
+                 consistency.  Order matters: primary action on the
+                 LEFT of the cluster; the small ✕ Dismiss sits at the
+                 FAR RIGHT EDGE so it's easy to find / click without
+                 crowding the primary action. -->
+            <!-- Both buttons are regular Buttons (the View-release one
+                 styled as a link via Classes="link", matching the
+                 GitHub / Report-issue button pattern in
+                 AboutDialog.axaml).  HyperlinkButton has a different
+                 control template that applies its own internal
+                 vertical centering and overrides external
+                 VerticalAlignment, producing visible baseline drift
+                 next to a regular Button.  Using the same control
+                 type for both members of the cluster eliminates the
+                 drift at the source — the previous Top-alignment
+                 fix only worked at the StackPanel level, not inside
+                 the HyperlinkButton's own template.
+
+                 URL is launched via the Click handler in code-behind
+                 instead of HyperlinkButton.NavigateUri — same
+                 Process.Start cross-platform shape AboutDialog uses
+                 for its link buttons. -->
+            <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal"
+                        Spacing="6"
+                        VerticalAlignment="Top">
+                <Button Classes="link"
+                        Content="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}"
+                        Click="OnViewReleaseClick"
+                        IsVisible="{Binding HasReleaseUrl}"
+                        Padding="8,4"
+                        VerticalAlignment="Top"
+                        Foreground="{DynamicResource InstallBannerLinkBrush}"
+                        ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerOpenRelease}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
+                <!-- Classes="banner-dismiss" reuses the existing
+                     hover-only goldenrod outline defined in
+                     App.axaml.  See the SchemaErrorBanner block in
+                     MainWindow.axaml for the original consumer. -->
+                <Button Classes="banner-dismiss"
+                        Content="{x:Static loc:Strings.ButtonUpdateBannerDismiss}"
+                        Command="{Binding DismissCommand}"
+                        Padding="8,4"
+                        VerticalAlignment="Top"
+                        ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerDismiss}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonUpdateBannerDismiss}" />
+            </StackPanel>
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock FontWeight="SemiBold"
+                           Text="{Binding LatestTagName, StringFormat={x:Static loc:Strings.LabelUpdateBannerTitleFmt}}" />
+                <TextBlock TextWrapping="Wrap"
+                           FontSize="11"
+                           Text="{x:Static loc:Strings.LabelUpdateBannerDesc}" />
+            </StackPanel>
+        </DockPanel>
+    </Border>
+
+</UserControl>

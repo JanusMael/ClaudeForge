@@ -266,6 +266,145 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
 
+        // ── Auto-update banner (2026-05-28) ──────────────────────────────────
+
+        /// <summary>
+        ///   Looks up a localized string similar to Update available: {0}.
+        /// </summary>
+        public static string LabelUpdateBannerTitleFmt {
+            get {
+                return ResourceManager.GetString("LabelUpdateBannerTitleFmt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to A newer release of ClaudeForge is available on GitHub.
+        /// </summary>
+        public static string LabelUpdateBannerDesc {
+            get {
+                return ResourceManager.GetString("LabelUpdateBannerDesc", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to View release.
+        /// </summary>
+        public static string ButtonUpdateBannerOpenRelease {
+            get {
+                return ResourceManager.GetString("ButtonUpdateBannerOpenRelease", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Open the GitHub release page for this version.
+        /// </summary>
+        public static string TipButtonUpdateBannerOpenRelease {
+            get {
+                return ResourceManager.GetString("TipButtonUpdateBannerOpenRelease", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to ✕.
+        /// </summary>
+        public static string ButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("ButtonUpdateBannerDismiss", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Hide this banner for this version. The banner will reappear when a newer release is published.
+        /// </summary>
+        public static string TipButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("TipButtonUpdateBannerDismiss", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Dismiss update-available banner.
+        /// </summary>
+        public static string AutoNameButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("AutoNameButtonUpdateBannerDismiss", resourceCulture);
+            }
+        }
+
+        // ── About-dialog "Check for updates" button (2026-05-29) ─────────────
+
+        /// <summary>
+        ///   Looks up a localized string similar to Check for updates.
+        /// </summary>
+        public static string ButtonCheckForUpdates {
+            get {
+                return ResourceManager.GetString("ButtonCheckForUpdates", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Query GitHub for the latest release.
+        /// </summary>
+        public static string TipCheckForUpdates {
+            get {
+                return ResourceManager.GetString("TipCheckForUpdates", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Checking….
+        /// </summary>
+        public static string LabelCheckForUpdatesChecking {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesChecking", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to You're on the latest version.
+        /// </summary>
+        public static string LabelCheckForUpdatesUpToDate {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesUpToDate", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Update available: {0}.
+        /// </summary>
+        public static string LabelCheckForUpdatesAvailableFmt {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesAvailableFmt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't reach GitHub. Try again in a moment.
+        /// </summary>
+        public static string LabelCheckForUpdatesFailed {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesFailed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Check for updates on launch.
+        /// </summary>
+        public static string EssentialsCardCheckForUpdatesTitle {
+            get {
+                return ResourceManager.GetString("EssentialsCardCheckForUpdatesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so.
+        /// </summary>
+        public static string EssentialsCardCheckForUpdatesBody {
+            get {
+                return ResourceManager.GetString("EssentialsCardCheckForUpdatesBody", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Export effective config.
         /// </summary>

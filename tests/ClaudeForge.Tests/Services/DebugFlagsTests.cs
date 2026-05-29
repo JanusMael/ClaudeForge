@@ -277,4 +277,64 @@ public sealed class DebugFlagsTests
 
         Assert.IsNull(DebugFlags.CultureOverride);
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // --simulate-update — QA / dev-loop flag for the auto-update banner.
+    //
+    // 2026-05-29 — was previously a two-token flag (--simulate-update vX.Y.Z)
+    // that captured a tag string.  Switched to a zero-argument boolean
+    // so QA never has to pick a version that's actually newer than the
+    // running auto-versioned build.  The synth path now computes the
+    // "next" tag at check time by incrementing the assembly version's
+    // rightmost segment — see AppUpdateService.SynthesiseSimulatedNextVersion.
+    // ──────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Initialize_SimulateUpdate_SetsTheBooleanFlag()
+    {
+        DebugFlags.Initialize(["--simulate-update"]);
+        Assert.IsTrue(DebugFlags.SimulateUpdate,
+            "--simulate-update must set the boolean flag — no argument required.");
+    }
+
+    [TestMethod]
+    public void Initialize_SimulateUpdate_CaseInsensitiveFlagName()
+    {
+        DebugFlags.Initialize(["--SIMULATE-UPDATE"]);
+        Assert.IsTrue(DebugFlags.SimulateUpdate,
+            "Flag name matching is case-insensitive (matches the parser's general convention).");
+    }
+
+    [TestMethod]
+    public void Initialize_SimulateUpdate_FollowedByOtherFlag_BothApply()
+    {
+        // Post-change: --simulate-update no longer consumes a following
+        // argument.  An arg that looks like another flag should now be
+        // processed normally by the outer loop.
+        DebugFlags.Initialize(["--simulate-update", "--linux"]);
+        Assert.IsTrue(DebugFlags.SimulateUpdate,
+            "--simulate-update is consumed independently of any following args.");
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "A following --linux must be processed as its own platform flag — " +
+            "no greedy two-token consumption.");
+    }
+
+    [TestMethod]
+    public void Initialize_NoSimulateUpdate_LeavesFlagFalse()
+    {
+        DebugFlags.Initialize(["--showAllNew"]);
+        Assert.IsFalse(DebugFlags.SimulateUpdate,
+            "SimulateUpdate defaults to false when the flag is absent.");
+    }
+
+    [TestMethod]
+    public void ResetForTesting_ClearsSimulateUpdate()
+    {
+        DebugFlags.Initialize(["--simulate-update"]);
+        Assert.IsTrue(DebugFlags.SimulateUpdate);
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsFalse(DebugFlags.SimulateUpdate);
+    }
 }

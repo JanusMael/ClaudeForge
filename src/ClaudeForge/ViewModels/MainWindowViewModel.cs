@@ -344,6 +344,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // clearer about intent).
         _showWelcomeOnLaunch = _cachedState.ShowWelcomeNode;
 
+        // Seed the auto-update-check preference from persisted state.
+        // Same pattern as _showWelcomeOnLaunch above — backing-field
+        // assignment avoids triggering OnCheckForUpdatesOnLaunchChanged
+        // during construction.
+        _checkForUpdatesOnLaunch = _cachedState.CheckForUpdatesOnLaunch;
+
         // Seed geometry cache so no-arg SaveWindowState() calls preserve the
         // restored dimensions instead of falling back to 1200×750 defaults.
         _savedWidth = _cachedState.Width;
@@ -1119,6 +1125,109 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             ApplyWelcomeNodeVisibility();
         }
+    }
+
+    /// <summary>
+    /// User preference: when <see langword="true"/>, ClaudeForge
+    /// queries GitHub once per launch to see if a newer release is
+    /// available (silent on failure).  Toggled via the
+    /// "Check for updates on launch" Essentials card.  Persisted via
+    /// <c>WindowState.CheckForUpdatesOnLaunch</c>.
+    /// </summary>
+    [ObservableProperty] private bool _checkForUpdatesOnLaunch;
+
+    partial void OnCheckForUpdatesOnLaunchChanged(bool value)
+    {
+        // Same persistence pattern as OnShowWelcomeOnLaunchChanged.
+        // The check itself ALREADY fired (once per launch) by the
+        // time the user is in a position to toggle this card, so the
+        // change takes effect on the NEXT launch — exactly the
+        // behaviour the body text on the Essentials card describes.
+        _cachedState.CheckForUpdatesOnLaunch = value;
+        SaveWindowState();
+        Log.Information(
+            "[UpdateCheck] User changed CheckForUpdatesOnLaunch to {Value}.",
+            value);
+    }
+
+    /// <summary>
+    /// Backing VM for the "Update available" banner.  Constructed once
+    /// in the MWVM ctor and bound to the
+    /// <c>&lt;views:UpdateBanner DataContext="{Binding UpdateBanner}" /&gt;</c>
+    /// slot in <c>MainWindow.axaml</c>.  Starts hidden — surfaces only
+    /// after <see cref="AppUpdateService.CheckOncePerLaunchAsync"/>
+    /// resolves with an UpdateAvailable result that hasn't been
+    /// previously dismissed.
+    /// </summary>
+    public UpdateBannerViewModel UpdateBanner { get; } = new();
+
+    /// <summary>
+    /// Process-static latch: <see langword="true"/> once the
+    /// once-per-launch update check has been kicked off by this MWVM.
+    /// Subsequent re-binds (profile switches, file-watcher reloads,
+    /// etc.) do NOT re-trigger the check.  The
+    /// <see cref="AppUpdateService"/> has its own once-per-process
+    /// latch as well, but this one short-circuits BEFORE the async
+    /// task is even kicked — saving a tiny amount of work on every
+    /// secondary load.
+    /// </summary>
+    private static int _updateCheckKickedThisProcess;
+
+    /// <summary>
+    /// Test seam: reset the once-per-process update-check latch so a
+    /// test can re-exercise the launch-time kick path.  Paired with
+    /// <see cref="AppUpdateService.ResetForTesting"/>; tests typically
+    /// call both.
+    /// </summary>
+    internal static void ResetUpdateCheckLatchForTesting()
+    {
+        Interlocked.Exchange(ref _updateCheckKickedThisProcess, 0);
+    }
+
+    /// <summary>
+    /// Kick the once-per-launch GitHub update check.  Fire-and-forget;
+    /// the resulting Task is discarded.  The check is silent on every
+    /// failure mode — caller doesn't await and doesn't need to.
+    ///
+    /// <para>
+    /// Called from the first successful return of
+    /// <see cref="LoadAllWorkspacesAsync"/>.  Process-static latch
+    /// guards against re-firing on subsequent reloads (profile switch,
+    /// file-watcher, etc.) within the same process.
+    /// </para>
+    /// </summary>
+    private void KickOnceLaunchUpdateCheck()
+    {
+        if (Interlocked.CompareExchange(ref _updateCheckKickedThisProcess, 1, 0) != 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                Core.Updates.UpdateCheckResult result =
+                    await AppUpdateService.CheckOncePerLaunchAsync().ConfigureAwait(true);
+                // Marshal the apply to the UI thread — UpdateBannerViewModel
+                // raises PropertyChanged events that must hit the UI sync
+                // context.
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    UpdateBanner.ApplyResult(result);
+                });
+            }
+            catch (Exception ex)
+            {
+                // AppUpdateService has its own try/catch around every
+                // network path — anything escaping here is a real bug
+                // (e.g. an unhandled exception in ApplyResult).  Log it
+                // but don't propagate; the banner just stays hidden.
+                Log.Information(
+                    ex,
+                    "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden.");
+            }
+        });
     }
 
     /// <summary>
@@ -2992,6 +3101,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Log.Warning(ex, "[Schema] Post-reload validation threw; banner suppressed");
             SchemaErrors = [];
         }
+
+        // Once-per-launch GitHub update check.  Fire-and-forget; runs on
+        // the thread pool with its own try/catch wall.  Guarded by an
+        // Interlocked latch so subsequent reloads within the same
+        // process (profile switch, file-watcher reload, etc.) do NOT
+        // re-trigger the check.
+        KickOnceLaunchUpdateCheck();
     }
 
     /// <summary>
@@ -3058,7 +3174,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             _essentialsVm = new EssentialsViewModel(
                 ClaudeCodeSdk,
-                new DefaultEnvironmentProvider());
+                new DefaultEnvironmentProvider(),
+                // WindowState-backed "Check for updates on launch" toggle.
+                // The card writes back through MWVM's ObservableProperty
+                // so persistence + _cachedState stay consistent — the
+                // card itself doesn't know about WindowStateService.
+                checkForUpdatesRead: () => CheckForUpdatesOnLaunch,
+                checkForUpdatesWrite: v => CheckForUpdatesOnLaunch = v);
         }
         else
         {

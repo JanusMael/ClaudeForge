@@ -2694,4 +2694,53 @@
     <value>将 permissions.defaultMode 设置锁定在 "bypassPermissions" 模式之外 — 该模式会抑制每一次工具权限提示。相当于固定开启安全开关；建议在共享 / 托管环境中使用。</value>
   </data>
 
+  <!-- Auto-update banner + Essentials card.  Added 2026-05-28 alongside
+       the auto-update-check feature. -->
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>有可用更新：{0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>GitHub 上有 ClaudeForge 的新版本。</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>查看版本</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>打开此版本的 GitHub 发布页面</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>隐藏此版本的横幅。当发布更新的版本时，横幅将重新出现。</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>关闭"有可用更新"横幅</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>启动时检查更新</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>启用后，ClaudeForge 在每次启动时查询 GitHub 一次，以查看是否有更新的版本，如有则显示可关闭的横幅。网络失败时检查保持静默。每个版本独立关闭——当出现更新的版本时，横幅会再次出现。</value>
+  </data>
+
+  <!-- About-dialog "Check for updates" button.  Added 2026-05-29. -->
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>检查更新</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>查询 GitHub 上的最新版本。即使启动时的自动检查已禁用也可使用。</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>检查中…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>您正在使用最新版本。</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>有可用更新：{0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>无法连接到 GitHub。请稍后再试。</value>
+  </data>
 </root>
