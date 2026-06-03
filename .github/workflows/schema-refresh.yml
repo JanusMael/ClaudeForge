@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # pwsh is preinstalled on the ubuntu-latest runner image; no setup
       # step needed. The script uses only Invoke-WebRequest + Get-Content
