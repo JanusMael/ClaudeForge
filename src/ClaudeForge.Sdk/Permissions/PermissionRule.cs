@@ -64,4 +64,12 @@ public sealed partial record PermissionRule(string Value)
         rule = null;
         return false;
     }
+
+    /// <summary>
+    /// Decompose this (shape-valid) rule into its structural parts for matching.
+    /// See <see cref="ParsedPermissionRule"/> for the parsed shape and the
+    /// rationale for keeping the strict shape gate (this type) separate from the
+    /// permissive evaluation parser.
+    /// </summary>
+    public ParsedPermissionRule Decompose() => ParsedPermissionRule.Parse(Value);
 }

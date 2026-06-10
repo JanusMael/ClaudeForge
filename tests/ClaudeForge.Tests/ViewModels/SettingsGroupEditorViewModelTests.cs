@@ -43,6 +43,42 @@ public partial class SettingsGroupEditorViewModelTests
     }
 
     [TestMethod]
+    public void SelectedTab_DefaultsToFirstTab()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        Assert.IsNotNull(vm.SelectedTab);
+        Assert.AreEqual(GroupTab.PropertiesId, vm.SelectedTab.Id);
+    }
+
+    [TestMethod]
+    public void SelectTab_SelectsById()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.SelectTab(GroupTab.JsonId);
+
+        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
+    }
+
+    [TestMethod]
+    public void SelectedTab_PreservedAcrossRebuild()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.Activate(); // so EditingScope changes rebuild immediately
+
+        vm.SelectTab(GroupTab.JsonId);
+        vm.EditingScope = ConfigScope.Project; // triggers RebuildEditors → RebuildTabs
+
+        // The remembered tab survives the rebuild (Tabs is rebuilt with fresh
+        // instances, matched back by Id).
+        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
+    }
+
+    [TestMethod]
     public void FilterText_Empty_ReturnsAllEditors()
     {
         List<SchemaNode> nodes =

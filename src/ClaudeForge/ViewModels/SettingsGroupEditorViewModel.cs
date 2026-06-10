@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -7,6 +8,7 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -38,6 +40,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     private readonly Func<Task<string?>>? _browseDialog;
     private readonly DefaultEditorFactory _factory;
     private readonly SharedScopeContext _sharedScope;
+
+    // Per-group tab-strip exception hook (insert/hide tabs). Null ⇒ built-ins only.
+    private readonly IGroupTabCustomizer? _tabCustomizer;
 
     // Lazy-rebuild support: when this VM is not the active page, shared-scope
     // changes are deferred until Activate() is called.
@@ -102,7 +107,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         Func<Task<string?>>? browseDialog = null,
         DefaultEditorFactory? factory = null,
         string groupDescription = "",
-        ClaudeConfigClientCore? sdkClient = null)
+        ClaudeConfigClientCore? sdkClient = null,
+        IGroupTabCustomizer? tabCustomizer = null)
     {
         GroupName = groupName;
         GroupDescription = groupDescription;
@@ -112,10 +118,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         _browseDialog = browseDialog;
         _factory = factory ?? ClaudeEditorFactoryConfig.CreateDefault();
         _sharedScope = sharedScope;
+        _tabCustomizer = tabCustomizer;
         _editingScope = sharedScope.EditingScope; // initialise from shared state
         sharedScope.PropertyChanged += OnSharedScopePropertyChanged;
         Editors = [];
-        RebuildEditors();
+        Tabs = [];
+        RebuildEditors(); // also calls RebuildTabs()
 
         // Auto-refresh when the workspace changes externally (file watcher, another editor, etc.).
         // Own-writes are guarded by _selfWriting to prevent destroying the user's in-progress edits.
@@ -141,6 +149,36 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     }
 
     public string GroupName { get; }
+
+    /// <summary>
+    /// The top-level tab strip, data-driven so groups can contribute extra tabs
+    /// at any index and hide the built-ins via an <see cref="IGroupTabCustomizer"/>.
+    /// Seeded with Properties / Effective / JSON; rebuilt whenever the editors
+    /// are (see <see cref="RebuildTabs"/>).
+    /// </summary>
+    public ObservableCollection<GroupTab> Tabs { get; }
+
+    /// <summary>
+    /// The selected tab. Two-way bound to the view's <c>TabControl.SelectedItem</c>
+    /// (replacing a hardcoded <c>SelectedIndex=0</c>), so the selection is
+    /// remembered across rebuilds (see <see cref="RebuildTabs"/>) and navigation
+    /// away and back. Deep-links set it explicitly via <see cref="SelectTab"/>.
+    /// </summary>
+    [ObservableProperty] private GroupTab? _selectedTab;
+
+    /// <summary>
+    /// Select the tab with <paramref name="tabId"/> when present; no-op otherwise.
+    /// Used by deep-link navigation to land on a specific tab (e.g. Overview, so
+    /// the permissions "Advanced" accordion it expands is on screen).
+    /// </summary>
+    public void SelectTab(string tabId)
+    {
+        GroupTab? tab = Tabs.FirstOrDefault(t => t.Id == tabId);
+        if (tab is not null)
+        {
+            SelectedTab = tab;
+        }
+    }
 
     /// <summary>
     /// One-line page description shown in the editor header next to
@@ -349,6 +387,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     partial void OnShowJsonPlaceholdersChanged(bool value)
     {
         RebuildJsonPreview();
+        // Keep the data-driven JSON tab's header in sync ("JSON (all)" / "(active)").
+        GroupTab? jsonTab = Tabs.FirstOrDefault(t => t.Id == GroupTab.JsonId);
+        if (jsonTab is not null)
+        {
+            jsonTab.Header = JsonTabHeader;
+        }
     }
 
     public string JsonTabHeader => ShowJsonPlaceholders ? "JSON (all)" : "JSON (active)";
@@ -825,6 +869,44 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         OnPropertyChanged(nameof(ShowFilterBar));
         RebuildEffectiveRows();
         RebuildJsonPreview();
+        RebuildTabs();
+    }
+
+    /// <summary>
+    /// Rebuilds <see cref="Tabs"/>: seeds the built-in Properties / Effective /
+    /// JSON tabs (content = this group VM), then applies the per-group
+    /// <see cref="IGroupTabCustomizer"/> so a group can insert/hide tabs. Called
+    /// at the end of <see cref="RebuildEditors"/> so contributed tabs always
+    /// reference the current editor instances.
+    /// </summary>
+    private void RebuildTabs()
+    {
+        // Remember which tab was selected so it survives this rebuild (Tabs is
+        // cleared + repopulated with fresh GroupTab instances on every save /
+        // reload / scope change). Matched back by Id below.
+        string? priorId = SelectedTab?.Id;
+
+        List<GroupTab> seed =
+        [
+            new() { Id = GroupTab.PropertiesId, Header = Strings.HeaderTabProperties, Content = this },
+            new() { Id = GroupTab.EffectiveId, Header = Strings.HeaderTabEffective, Content = this },
+            new() { Id = GroupTab.JsonId, Header = JsonTabHeader, Content = this },
+        ];
+
+        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList());
+
+        Tabs.Clear();
+        foreach (GroupTab tab in seed)
+        {
+            Tabs.Add(tab);
+        }
+
+        // Initial selection (when this is NOT a deep-link, which overrides via
+        // SelectTab afterward): the remembered tab → the customizer's default tab
+        // → the first tab.
+        SelectedTab = Tabs.FirstOrDefault(t => t.Id == priorId)
+                      ?? Tabs.FirstOrDefault(t => t.IsDefaultTab)
+                      ?? Tabs.FirstOrDefault();
     }
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)

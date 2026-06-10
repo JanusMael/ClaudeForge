@@ -38,4 +38,93 @@
         </ItemGroup>
     </Target>
 
+    <!--
+      Dead string-resource guard (build error).
+
+      The C# compiler cannot flag an unused .resx key: its generated Strings.<Key>
+      accessor is public, so the compiler never sees it as unused. This target is
+      the build-time equivalent — for every project carrying a neutral
+      Localization/Strings.resx, it asserts each key is referenced as
+      Strings.<Key> somewhere in the project's own source OR the test projects,
+      and emits a build error otherwise.
+
+      Coverage is automatic: any project (today the app + ClaudeForge.Avalonia)
+      that has Localization/Strings.resx is checked; no per-project opt-in.
+      Scanning the project dir + the repo's tests/ keeps test-only references from
+      false-positiving while never producing a false error (an unrelated match
+      only marks a key "used"). Skipped on design-time (IDE) builds.
+    -->
+    <UsingTask TaskName="CheckUnusedResxKeys"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <ResxPath ParameterType="System.String" Required="true" />
+            <ScanRoots ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+public class CheckUnusedResxKeys : Task
+{
+    public string ResxPath { get; set; }
+    public string ScanRoots { get; set; }
+
+    public override bool Execute()
+    {
+        var keys = XDocument.Load(ResxPath).Root.Elements("data")
+            .Select(d => (string)d.Attribute("name"))
+            .Where(n => !string.IsNullOrEmpty(n))
+            .ToList();
+
+        var sb = new StringBuilder();
+        foreach (var root in ScanRoots.Split(';'))
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
+            foreach (var f in Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
+            {
+                bool ext = f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                           || f.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase);
+                if (!ext) continue;
+                var s = Path.DirectorySeparatorChar;
+                if (f.IndexOf(s + "obj" + s, StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (f.IndexOf(s + "bin" + s, StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (f.EndsWith("Strings.Designer.cs", StringComparison.OrdinalIgnoreCase)) continue;
+                sb.Append(File.ReadAllText(f)).Append('\n');
+            }
+        }
+
+        var corpus = sb.ToString();
+        bool ok = true;
+        foreach (var k in keys)
+        {
+            if (!Regex.IsMatch(corpus, @"Strings\." + Regex.Escape(k) + @"\b"))
+            {
+                Log.LogError(
+                    "Unused string resource '{0}' ({1}). Remove the <data> entry from the .resx " +
+                    "(and the locale copies) plus its Strings.Designer.cs accessor, or reference it as Strings.{0}.",
+                    k, Path.GetFileName(ResxPath));
+                ok = false;
+            }
+        }
+        return ok;
+    }
+}
+]]></Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GuardUnusedResxKeys" AfterTargets="Build"
+            Condition="'$(DesignTimeBuild)' != 'true' And Exists('$(MSBuildProjectDirectory)/Localization/Strings.resx')">
+        <CheckUnusedResxKeys ResxPath="$(MSBuildProjectDirectory)/Localization/Strings.resx"
+                             ScanRoots="$(MSBuildProjectDirectory);$(MSBuildThisFileDirectory)tests" />
+    </Target>
+
 </Project>

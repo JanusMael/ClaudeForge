@@ -1128,6 +1128,72 @@
   <data name="PlaceholderDefaultMode" xml:space="preserve">
     <value>（未设置 — 继承）</value>
   </data>
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>常用</value>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>构建</value>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>列表</value>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>测试此规则</value>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>打开试运行测试器（已根据此规则预填充），查看 Claude Code 在你所有规则和作用域下实际会执行的操作。</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>测试规则（试运行）</value>
+  </data>
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>先询问</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>接受编辑</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>计划</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>自动</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>不询问</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>绕过权限检查</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>委派</value>
+  </data>
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>每个工具首次使用时提示你（标准行为）</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>自动接受文件编辑；其他工具仍会提示</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>只读 — Claude 无法进行修改或产生副作用</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>自动批准工具调用，并在后台进行安全检查</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>自动拒绝任何未在“允许”中预先批准的工具</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>跳过所有提示 — 仅在隔离/受信任的环境中使用</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>仅供代理团队负责人进行协调</value>
+  </data>
   <data name="HeaderAllow" xml:space="preserve">
     <value>允许</value>
   </data>
@@ -1469,6 +1535,34 @@
   </data>
   <data name="TipButtonRefresh" xml:space="preserve">
     <value>重新扫描文件系统并重新加载列表</value>
+  </data>
+  <data name="LabelUpdateBannerTextFmt" xml:space="preserve">
+    <value>ClaudeForge {0} 可用。</value>
+    <comment>Headline of the "update available" banner. {0} substitutes the version.</comment>
+  </data>
+  <data name="ButtonViewReleaseNotes" xml:space="preserve">
+    <value>查看发布说明</value>
+    <comment>Primary action on the update-available banner.</comment>
+  </data>
+  <data name="TipButtonViewReleaseNotes" xml:space="preserve">
+    <value>在默认浏览器中打开 GitHub 上的发布页面</value>
+  </data>
+  <data name="ButtonDismissUpdateBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>Icon-only dismiss button on the update-available banner.</comment>
+  </data>
+  <data name="TipButtonDismissUpdate" xml:space="preserve">
+    <value>隐藏此横幅。它不会再次显示此版本，但更新的发布版本会重新显示它。</value>
+  </data>
+  <data name="AutoNameButtonDismissUpdate" xml:space="preserve">
+    <value>关闭更新提示横幅</value>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesTitle" xml:space="preserve">
+    <value>检查更新</value>
+    <comment>Essentials-page card title for the auto-update-check toggle.</comment>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesDescription" xml:space="preserve">
+    <value>定期在 GitHub 上检查 ClaudeForge 的新版本，发现可用更新时显示横幅。</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>在资源管理器中显示</value>

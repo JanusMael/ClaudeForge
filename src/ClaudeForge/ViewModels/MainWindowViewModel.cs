@@ -1146,7 +1146,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _cachedState.CheckForUpdatesOnLaunch = value;
         SaveWindowState();
         Log.Information(
-            "[UpdateCheck] User changed CheckForUpdatesOnLaunch to {Value}.",
+            "[UpdateCheck] User changed CheckForUpdatesOnLaunch to {Value}",
             value);
     }
 
@@ -1212,7 +1212,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // Marshal the apply to the UI thread — UpdateBannerViewModel
                 // raises PropertyChanged events that must hit the UI sync
                 // context.
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     UpdateBanner.ApplyResult(result);
                 });
@@ -1225,7 +1225,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // but don't propagate; the banner just stays hidden.
                 Log.Information(
                     ex,
-                    "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden.");
+                    "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden");
             }
         });
     }
@@ -2234,14 +2234,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             groupEditor.FilterText = result.PropertyKey;
 
+            PermissionsEditorViewModel? permEditor = groupEditor.Editors
+                                                                .OfType<PermissionsEditorViewModel>()
+                                                                .FirstOrDefault();
+
             // For the synthetic --dangerouslySkipPermissions result, activate the
-            // contextual amber hint banner on the PermissionsEditorViewModel.
-            if (result.IsSynthetic)
+            // contextual amber hint banner AND open the Advanced accordion — the
+            // related safety control (disableBypassPermissionsMode) lives there, and
+            // the synthetic hit carries an empty PropertyKey so the filter-based
+            // check below won't catch it.
+            if (result.IsSynthetic && permEditor is not null)
             {
-                PermissionsEditorViewModel? permEditor = groupEditor.Editors
-                                                                    .OfType<PermissionsEditorViewModel>()
-                                                                    .FirstOrDefault();
-                permEditor?.ActivateDangerHint();
+                permEditor.ActivateDangerHint();
+                // Land on Overview (the Advanced accordion + Default Mode live there)
+                // regardless of the remembered tab, then expand Advanced.
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+                RequestExpandPermissionsAdvanced(permEditor);
+            }
+
+            // A hit on an advanced permission setting (disableBypassPermissionsMode /
+            // additionalDirectories) must pop the Overview "Advanced" accordion so
+            // the deep-linked control is visible, not hidden behind a closed section.
+            if (permEditor is not null && IsAdvancedPermissionFilter(result.PropertyKey))
+            {
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+                RequestExpandPermissionsAdvanced(permEditor);
             }
         }
         // Essentials page deep-link.  Synthetic search hits
@@ -2254,6 +2271,27 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             essentials.ActivateAmberCalloutFor(result.PropertyKey);
         }
+    }
+
+    /// <summary>
+    /// Open the permissions "Advanced" accordion for a deep-link. Sets the flag
+    /// immediately AND re-applies once the navigation's view rebuild has settled
+    /// (<see cref="DispatcherPriority.Loaded"/>): selecting a node triggers an
+    /// editor/tab rebuild that re-materializes the bound Expander, which can land
+    /// AFTER the synchronous set and leave it collapsed. The deferred re-apply
+    /// runs after layout so the final state is expanded.
+    /// </summary>
+    private static void RequestExpandPermissionsAdvanced(PermissionsEditorViewModel? perms)
+    {
+        if (perms is null)
+        {
+            Log.Information("[DeepLink] Permissions editor not found; cannot expand Advanced accordion.");
+            return;
+        }
+
+        perms.IsAdvancedExpanded = true;
+        Dispatcher.UIThread.Post(() => perms.IsAdvancedExpanded = true, DispatcherPriority.Loaded);
+        Log.Information("[DeepLink] Requested permissions Advanced accordion expansion.");
     }
 
     /// <summary>
@@ -2332,6 +2370,19 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             if (target.Editor is SettingsGroupEditorViewModel groupEditor)
             {
                 groupEditor.FilterText = msg.PropertyFilter;
+
+                // Advanced permission settings (disableBypassPermissionsMode,
+                // additionalDirectories) live inside the permissions compound
+                // editor's collapsed "Advanced" accordion on the Overview tab.
+                // The filter surfaces the editor (sub-path fallback), but the
+                // accordion would stay closed — expand it so the deep-linked
+                // control is actually visible.
+                if (IsAdvancedPermissionFilter(msg.PropertyFilter))
+                {
+                    groupEditor.SelectTab(GroupTab.PropertiesId);
+                    RequestExpandPermissionsAdvanced(
+                        groupEditor.Editors.OfType<PermissionsEditorViewModel>().FirstOrDefault());
+                }
             }
             else if (target.Editor is EnvironmentEditorViewModel envEditor)
             {
@@ -2371,6 +2422,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// whose Title matches <paramref name="title"/> exactly.  Used by the
     /// <c>NavigateToNavGroupMessage</c> handler.
     /// </summary>
+    // The permissions "Advanced" accordion houses these keys; a deep-link to one
+    // should pop the accordion open (see OnNavigateToNavGroup).
+    private static bool IsAdvancedPermissionFilter(string? filter) =>
+        filter is not null &&
+        (filter.Contains("disableBypassPermissionsMode", StringComparison.Ordinal) ||
+         filter.Contains("additionalDirectories", StringComparison.Ordinal));
+
     private NavigationNodeViewModel? FindNavNodeByTitle(string title)
     {
         // Top-level pass — synthetic nodes (Essentials, Effective Settings,

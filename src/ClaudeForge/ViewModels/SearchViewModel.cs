@@ -405,7 +405,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
             ],
             [EssentialsViewModel.CardIdModel] =
             [
-                "model", "opus", "haiku", "sonnet",
+                "model", "opus", "haiku", "sonnet", "fable",
             ],
             [EssentialsViewModel.CardIdEffortLevel] =
             [

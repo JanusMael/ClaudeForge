@@ -10,8 +10,11 @@ using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
+using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching.PermissionBucket;
 using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionDefaultMode;
 using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRule;
+using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRuleNormalizer;
 
 // Alias the SDK to disambiguate ConfigScope and reach the typed Permissions
 // accessor at every call site. Mirrors the previous editor migrations.
@@ -54,15 +57,27 @@ public sealed record CommonActionItem(string Rule, CommonActionKind Kind);
 /// description sourced from the schema.  Exposed on the ComboBox so the UI can show
 /// descriptions and tooltips without changing the underlying <c>string?</c> serialisation.
 /// </summary>
-public sealed record DefaultModeInfo(string Value, string Description, bool IsExperimental = false)
+public sealed record DefaultModeInfo(
+    string Value,
+    string ClaudeLabel,
+    string Description,
+    bool IsExperimental = false)
 {
     /// <summary>
-    /// Concatenated value + description used as the <c>AutomationProperties.Name</c>
-    /// so screen readers announce what the mode actually does.
+    /// Friendly wording (Claude's own label, e.g. "Bypass Permission Checks")
+    /// plus the description, shown in the ComboBox item tooltip alongside the
+    /// raw <see cref="Value"/>. Pre-joined for a single-binding tooltip.
+    /// </summary>
+    public string TooltipText => $"{ClaudeLabel}\n{Description}";
+
+    /// <summary>
+    /// Value + friendly label + description used as the
+    /// <c>AutomationProperties.Name</c> so screen readers announce both the raw
+    /// mode key and what it actually does.
     /// </summary>
     public string AccessibleName => IsExperimental
-        ? $"{Value}: {Description} (experimental)"
-        : $"{Value}: {Description}";
+        ? $"{Value} — {ClaudeLabel}: {Description} (experimental)"
+        : $"{Value} — {ClaudeLabel}: {Description}";
 }
 
 /// <summary>
@@ -143,15 +158,24 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     /// Allow, Deny, or Ask rule.  The three rule lists take priority over this setting.
     /// </para>
     /// </summary>
-    public static readonly IReadOnlyList<DefaultModeInfo> AllDefaultModeInfos =
+    /// <summary>
+    /// Builds the default-mode catalog with localized friendly labels +
+    /// descriptions. Built per-instance (see <see cref="DefaultModeInfos"/>)
+    /// rather than a <c>static readonly</c> so the <see cref="Strings"/> lookups
+    /// resolve at the correct UI culture — a static initializer can run before
+    /// <c>Program.Main</c> applies the culture, capturing the wrong language.
+    /// The raw <c>Value</c> strings are the camelCase keys Claude Code persists;
+    /// the schema/SDK enum are the source of truth for which modes exist.
+    /// </summary>
+    private static IReadOnlyList<DefaultModeInfo> BuildDefaultModeInfos() =>
     [
-        new("default", "Prompts you on first use of each tool (standard behavior)"),
-        new("acceptEdits", "Auto-accepts file edits; other tools still prompt"),
-        new("plan", "Read-only — Claude cannot make modifications or side effects"),
-        new("auto", "Auto-approves tool calls, with background safety checks"),
-        new("dontAsk", "Auto-denies any tool not explicitly pre-approved in Allow"),
-        new("bypassPermissions", "Skips all prompts — use only in isolated/trusted environments"),
-        new("delegate", "Coordination-only for agent team leads", IsExperimental: true),
+        new("default", Strings.DefaultModeClaudeDefault, Strings.DefaultModeDescDefault),
+        new("acceptEdits", Strings.DefaultModeClaudeAcceptEdits, Strings.DefaultModeDescAcceptEdits),
+        new("plan", Strings.DefaultModeClaudePlan, Strings.DefaultModeDescPlan),
+        new("auto", Strings.DefaultModeClaudeAuto, Strings.DefaultModeDescAuto),
+        new("dontAsk", Strings.DefaultModeClaudeDontAsk, Strings.DefaultModeDescDontAsk),
+        new("bypassPermissions", Strings.DefaultModeClaudeBypass, Strings.DefaultModeDescBypass),
+        new("delegate", Strings.DefaultModeClaudeDelegate, Strings.DefaultModeDescDelegate, IsExperimental: true),
     ];
 
     // -----------------------------------------------------------------------
@@ -486,6 +510,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         : base(schema, editingScope)
     {
         _client = client;
+        DefaultModeInfos = BuildDefaultModeInfos();
         AllowList = [];
         DenyList = [];
         AskList = [];
@@ -503,10 +528,12 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Instance accessor for <see cref="AllDefaultModeInfos"/> used by the AXAML ComboBox
-    /// <c>ItemsSource</c> binding (compiled bindings require an instance member path).
+    /// The default-mode catalog bound by the AXAML ComboBox <c>ItemsSource</c>.
+    /// Built once per instance in the constructor (localized at the correct
+    /// culture — see <see cref="BuildDefaultModeInfos"/>). Stable reference so
+    /// <see cref="SelectedModeInfo"/> identity comparisons hold.
     /// </summary>
-    public IReadOnlyList<DefaultModeInfo> DefaultModeInfos => AllDefaultModeInfos;
+    public IReadOnlyList<DefaultModeInfo> DefaultModeInfos { get; }
 
     [ObservableProperty] private string? _defaultMode;
 
@@ -517,7 +544,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     /// </summary>
     public DefaultModeInfo? SelectedModeInfo
     {
-        get => AllDefaultModeInfos.FirstOrDefault(o => o.Value == DefaultMode);
+        get => DefaultModeInfos.FirstOrDefault(o => o.Value == DefaultMode);
         set
         {
             string? newMode = value?.Value;
@@ -672,7 +699,16 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         OnPropertyChanged(nameof(IsInBypassMode));
         // User interacted with the dropdown — the hint has served its purpose; dismiss it.
         ShowDangerCliHint = false;
+        // Default mode feeds the tester's "no rule matched" branch — re-resolve.
+        RefreshTester();
         MarkModified();
+
+        // Log user-driven changes only (the partial also fires during the bulk
+        // LoadFromLayered, which would otherwise be noise).
+        if (!_isLoading)
+        {
+            Log.Information("[Permissions.DefaultMode] set to {Mode}", value ?? "(unset)");
+        }
     }
 
     // mark dirty on the new typed properties.
@@ -684,6 +720,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         }
 
         MarkModified();
+        Log.Information("[Permissions.DisableBypass] set to {Value}", value?.ToString() ?? "(unset)");
     }
 
     /// <summary>
@@ -702,6 +739,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
         if (AdditionalDirectories.Contains(path))
         {
+            Log.Information("[Permissions.AdditionalDir] add path=\"{Path}\" skipped=duplicate", path);
             return;
         }
 
@@ -711,6 +749,8 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         {
             MarkModified();
         }
+
+        Log.Information("[Permissions.AdditionalDir] added path=\"{Path}\"", path);
     }
 
     /// <summary>
@@ -728,6 +768,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         if (AdditionalDirectories.Remove(path) && !_isLoading)
         {
             MarkModified();
+            Log.Information("[Permissions.AdditionalDir] removed path=\"{Path}\"", path);
         }
     }
 
@@ -780,6 +821,9 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         // Rebuild the filtered candidate list (LoadFromLayered calls it explicitly at the end).
         RebuildCommonActions();
 
+        // Keep the dry-run tester verdict current as rules are added/removed.
+        RefreshTester();
+
         MarkModified();
     }
 
@@ -805,39 +849,42 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     private void AddAllow()
     {
         TryAddRule(
-            () => NewAllowText, v => NewAllowText = v, e => NewAllowError = e, AllowList);
+            () => NewAllowText, v => NewAllowText = v, e => NewAllowError = e, AllowList, "Allow");
     }
 
     [RelayCommand]
     private void RemoveAllow(PermissionRuleViewModel item)
     {
         AllowList.Remove(item);
+        Log.Information("[Permissions.Remove] bucket=Allow rule=\"{Rule}\"", item.Rule);
     }
 
     [RelayCommand]
     private void AddDeny()
     {
         TryAddRule(
-            () => NewDenyText, v => NewDenyText = v, e => NewDenyError = e, DenyList);
+            () => NewDenyText, v => NewDenyText = v, e => NewDenyError = e, DenyList, "Deny");
     }
 
     [RelayCommand]
     private void RemoveDeny(PermissionRuleViewModel item)
     {
         DenyList.Remove(item);
+        Log.Information("[Permissions.Remove] bucket=Deny rule=\"{Rule}\"", item.Rule);
     }
 
     [RelayCommand]
     private void AddAsk()
     {
         TryAddRule(
-            () => NewAskText, v => NewAskText = v, e => NewAskError = e, AskList);
+            () => NewAskText, v => NewAskText = v, e => NewAskError = e, AskList, "Ask");
     }
 
     [RelayCommand]
     private void RemoveAsk(PermissionRuleViewModel item)
     {
         AskList.Remove(item);
+        Log.Information("[Permissions.Remove] bucket=Ask rule=\"{Rule}\"", item.Rule);
     }
 
     /// <summary>
@@ -854,16 +901,24 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         Func<string> getText,
         Action<string> setText,
         Action<string> setError,
-        ObservableCollection<PermissionRuleViewModel> list)
+        ObservableCollection<PermissionRuleViewModel> list,
+        string bucket)
     {
-        string t = getText().Trim();
-        if (string.IsNullOrEmpty(t))
+        string raw = getText().Trim();
+        if (string.IsNullOrEmpty(raw))
         {
             return;
         }
 
+        // Canonicalize on add (colon-form wildcard, forward-slash paths) so the
+        // stored list matches Claude's documented syntax regardless of how it
+        // was typed.
+        string t = PermissionRuleNormalizer.Normalize(raw);
+
         if (list.Any(e => e.Rule == t))
         {
+            Log.Information(
+                "[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=manual skipped=duplicate", bucket, t);
             setText(string.Empty);
             return;
         }
@@ -871,6 +926,9 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         string err = PermissionRuleViewModel.Diagnose(t);
         if (!string.IsNullOrEmpty(err))
         {
+            Log.Information(
+                "[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=manual skipped=invalid error=\"{Error}\"",
+                bucket, t, err);
             setError(err);
             return;
         }
@@ -878,6 +936,18 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         setError(string.Empty);
         list.Add(new PermissionRuleViewModel(t));
         setText(string.Empty);
+
+        // Log the canonical form, and the raw input too when normalization changed
+        // it — so a user puzzled by "I typed X but the list shows Y" can see why.
+        if (string.Equals(raw, t, StringComparison.Ordinal))
+        {
+            Log.Information("[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=manual", bucket, t);
+        }
+        else
+        {
+            Log.Information(
+                "[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=manual normalizedFrom=\"{Raw}\"", bucket, t, raw);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -886,39 +956,124 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
     /// <summary>Appends <paramref name="rule"/> to the Allow list (no-op if already present).</summary>
     [RelayCommand]
-    private void AddToAllow(string rule)
-    {
-        if (string.IsNullOrEmpty(rule) || AllowList.Any(e => e.Rule == rule))
-        {
-            return;
-        }
-
-        AllowList.Add(new PermissionRuleViewModel(rule));
-    }
+    private void AddToAllow(string rule) => AddRuleToBucket(rule, PermissionBucket.Allow);
 
     /// <summary>Appends <paramref name="rule"/> to the Deny list (no-op if already present).</summary>
     [RelayCommand]
-    private void AddToDeny(string rule)
-    {
-        if (string.IsNullOrEmpty(rule) || DenyList.Any(e => e.Rule == rule))
-        {
-            return;
-        }
-
-        DenyList.Add(new PermissionRuleViewModel(rule));
-    }
+    private void AddToDeny(string rule) => AddRuleToBucket(rule, PermissionBucket.Deny);
 
     /// <summary>Appends <paramref name="rule"/> to the Ask list (no-op if already present).</summary>
     [RelayCommand]
-    private void AddToAsk(string rule)
+    private void AddToAsk(string rule) => AddRuleToBucket(rule, PermissionBucket.Ask);
+
+    /// <summary>
+    /// Transient note describing an automatic cross-bucket conflict resolution
+    /// (a lower-precedence duplicate was pruned, or the add was skipped because a
+    /// higher-precedence bucket already holds the identical rule). Empty when the
+    /// last add sat cleanly. Surfaced on the Build tab.
+    /// </summary>
+    [ObservableProperty]
+    private string _conflictResolutionMessage = string.Empty;
+
+    /// <summary>
+    /// Shared add path for all three buckets. Normalizes, de-dupes within the
+    /// target bucket, and resolves an EXACT cross-bucket conflict by the
+    /// deny &gt; ask &gt; allow precedence: an identical rule may live in only the
+    /// highest-precedence bucket, so adding to a higher bucket prunes the
+    /// lower-precedence copy, and adding to a lower bucket is skipped (the
+    /// higher one already decides). Non-exact overlaps are left to the collision
+    /// detector's advisory note.
+    /// </summary>
+    private void AddRuleToBucket(string rule, PermissionBucket target)
     {
-        if (string.IsNullOrEmpty(rule) || AskList.Any(e => e.Rule == rule))
+        ConflictResolutionMessage = string.Empty;
+        string raw = rule;
+        rule = PermissionRuleNormalizer.Normalize(rule);
+        if (string.IsNullOrEmpty(rule))
         {
             return;
         }
 
-        AskList.Add(new PermissionRuleViewModel(rule));
+        ObservableCollection<PermissionRuleViewModel> targetList = ListFor(target);
+        if (targetList.Any(e => e.Rule == rule))
+        {
+            Log.Information(
+                "[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=preset skipped=duplicate", target, rule);
+            return; // already in this bucket
+        }
+
+        foreach (PermissionBucket other in AllBuckets)
+        {
+            if (other == target)
+            {
+                continue;
+            }
+
+            ObservableCollection<PermissionRuleViewModel> otherList = ListFor(other);
+            PermissionRuleViewModel? dup = otherList.FirstOrDefault(e => e.Rule == rule);
+            if (dup is null)
+            {
+                continue;
+            }
+
+            if (Precedence(other) > Precedence(target))
+            {
+                // A higher-precedence bucket already decides this rule — adding it
+                // to a lower bucket would be dead. Skip, and say why.
+                ConflictResolutionMessage = string.Format(
+                    Strings.TextPermConflictSkipped, rule, BucketName(other), BucketName(target));
+                Log.Information(
+                    "[Permissions.Conflict] skipped rule=\"{Rule}\" existingIn={Higher} attempted={Target}",
+                    rule, other, target);
+                return;
+            }
+
+            // The target bucket outranks the existing copy — prune the loser.
+            otherList.Remove(dup);
+            ConflictResolutionMessage = string.Format(
+                Strings.TextPermConflictPruned, rule, BucketName(other), BucketName(target));
+            Log.Information(
+                "[Permissions.Conflict] pruned rule=\"{Rule}\" from={From} keptIn={Kept}", rule, other, target);
+        }
+
+        targetList.Add(new PermissionRuleViewModel(rule));
+
+        if (string.Equals(raw, rule, StringComparison.Ordinal))
+        {
+            Log.Information("[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=preset", target, rule);
+        }
+        else
+        {
+            Log.Information(
+                "[Permissions.Add] bucket={Bucket} rule=\"{Rule}\" via=preset normalizedFrom=\"{Raw}\"",
+                target, rule, raw);
+        }
     }
+
+    private static readonly PermissionBucket[] AllBuckets =
+        [PermissionBucket.Deny, PermissionBucket.Ask, PermissionBucket.Allow];
+
+    private ObservableCollection<PermissionRuleViewModel> ListFor(PermissionBucket bucket) => bucket switch
+    {
+        PermissionBucket.Deny => DenyList,
+        PermissionBucket.Ask => AskList,
+        var _ => AllowList,
+    };
+
+    // deny > ask > allow (mirrors PermissionResolver evaluation order).
+    private static int Precedence(PermissionBucket bucket) => bucket switch
+    {
+        PermissionBucket.Deny => 3,
+        PermissionBucket.Ask => 2,
+        var _ => 1,
+    };
+
+    private static string BucketName(PermissionBucket bucket) => bucket switch
+    {
+        PermissionBucket.Deny => Strings.HeaderDeny,
+        PermissionBucket.Ask => Strings.HeaderAsk,
+        var _ => Strings.HeaderAllow,
+    };
 
     // -----------------------------------------------------------------------
     // Serialization
@@ -1198,10 +1353,14 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     private void RebuildCommonActions()
     {
         // 1. Collect rules currently shown in the editing-scope lists.
+        //    Normalize so the comparison is form-invariant: stored rules are
+        //    canonicalized on add (colon-form wildcard, forward-slash paths),
+        //    while the taxonomy candidates below are authored in space form —
+        //    normalize both sides so "already set" still matches after add.
         HashSet<string> alreadySet = new(StringComparer.OrdinalIgnoreCase);
         foreach (PermissionRuleViewModel r in AllowList.Concat(DenyList).Concat(AskList))
         {
-            alreadySet.Add(r.Rule);
+            alreadySet.Add(PermissionRuleNormalizer.Normalize(r.Rule));
         }
 
         // 2. Sweep all scope entries in the layered value so rules inherited from
@@ -1227,7 +1386,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                     {
                         if (item is JsonValue jv && jv.TryGetValue(out string? s))
                         {
-                            alreadySet.Add(s);
+                            alreadySet.Add(PermissionRuleNormalizer.Normalize(s));
                         }
                     }
                 }
@@ -1247,7 +1406,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                                t.OperationGroups
                                 .Select(g => new CommonActionGroup(
                                     g.Header,
-                                    g.Items.Where(i => !alreadySet.Contains(i.Rule)).ToList()))
+                                    g.Items.Where(i => !alreadySet.Contains(PermissionRuleNormalizer.Normalize(i.Rule))).ToList()))
                                 .Where(g => g.Items.Count > 0)
                                 .ToList(),
                                t.IsCatchAll))
@@ -1308,7 +1467,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
     /// <summary>
     /// SDK enum → editor's string-typed <see cref="DefaultMode"/>. The editor's
-    /// ComboBox is bound to the camelCase strings via <see cref="AllDefaultModeInfos"/>;
+    /// ComboBox is bound to the camelCase strings via <see cref="DefaultModeInfos"/>;
     /// keeping the mapping explicit prevents a future SDK-side enum addition
     /// from silently rendering a blank dropdown.
     /// </summary>

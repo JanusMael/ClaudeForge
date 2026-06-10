@@ -1118,6 +1118,72 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   <data name="PlaceholderDefaultMode" xml:space="preserve">
     <value>(sin definir — se hereda)</value>
   </data>
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>Resumen</value>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>Comunes</value>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>Crear</value>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>Listas</value>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>Avanzado</value>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>Probar esta regla</value>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>Abre el probador de simulación, rellenado a partir de esta regla, para ver qué haría realmente Claude Code — en todas tus reglas y ámbitos.</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>Probar una regla (simulación)</value>
+  </data>
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>Preguntar primero</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>Aceptar ediciones</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>No preguntar</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>Omitir comprobaciones de permisos</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>Delegar</value>
+  </data>
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>Te pregunta la primera vez que se usa cada herramienta (comportamiento estándar)</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>Acepta automáticamente las ediciones de archivos; las demás herramientas siguen preguntando</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>Solo lectura — Claude no puede hacer modificaciones ni efectos secundarios</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>Aprueba automáticamente las llamadas a herramientas, con comprobaciones de seguridad en segundo plano</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>Deniega automáticamente cualquier herramienta no aprobada previamente en Permitir</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>Omite todas las confirmaciones — úsalo solo en entornos aislados/de confianza</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>Solo coordinación para responsables de equipos de agentes</value>
+  </data>
   <data name="HeaderAllow" xml:space="preserve">
     <value>Permitir</value>
   </data>
@@ -1396,6 +1462,34 @@ Cancelar — mantener la ventana abierta.</value>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Actualizar</value>
     <comment>Generic Refresh button label used on Memory page tabs.</comment>
+  </data>
+  <data name="LabelUpdateBannerTextFmt" xml:space="preserve">
+    <value>ClaudeForge {0} está disponible.</value>
+    <comment>Headline of the "update available" banner. {0} substitutes the version.</comment>
+  </data>
+  <data name="ButtonViewReleaseNotes" xml:space="preserve">
+    <value>Ver notas de la versión</value>
+    <comment>Primary action on the update-available banner.</comment>
+  </data>
+  <data name="TipButtonViewReleaseNotes" xml:space="preserve">
+    <value>Abrir la página de la versión en GitHub en su navegador predeterminado</value>
+  </data>
+  <data name="ButtonDismissUpdateBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>Icon-only dismiss button on the update-available banner.</comment>
+  </data>
+  <data name="TipButtonDismissUpdate" xml:space="preserve">
+    <value>Ocultar este aviso. No volverá a aparecer para esta versión, pero una versión más reciente lo mostrará de nuevo.</value>
+  </data>
+  <data name="AutoNameButtonDismissUpdate" xml:space="preserve">
+    <value>Cerrar aviso de actualización disponible</value>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesTitle" xml:space="preserve">
+    <value>Comprobar actualizaciones</value>
+    <comment>Essentials-page card title for the auto-update-check toggle.</comment>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesDescription" xml:space="preserve">
+    <value>Comprobar periódicamente en GitHub si hay versiones más recientes de ClaudeForge y mostrar un aviso cuando haya una disponible.</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Mostrar en el Explorador</value>

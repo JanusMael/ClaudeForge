@@ -1,0 +1,300 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Localization"
+             xmlns:behaviors="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Behaviors"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions.GuidedRuleBuilderView"
+             x:DataType="vm:GuidedRuleBuilderViewModel">
+
+    <UserControl.Styles>
+        <!-- Segmented switch for the hint groups: flat by default, accent fill on
+             the active segment. The /template/ ContentPresenter setters beat the
+             Semi.Avalonia button-template defaults (same approach the app's
+             banner-dismiss class uses). -->
+        <Style Selector="Button.hint-segment">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="10,2" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="MinWidth" Value="0" />
+        </Style>
+        <Style Selector="Button.hint-segment.active">
+            <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.hint-segment.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.hint-segment.active:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
+            <Setter Property="TextElement.Foreground" Value="White" />
+        </Style>
+    </UserControl.Styles>
+
+    <!--
+        Guided rule builder. The user picks a tool, fills the tool-specific
+        field(s), watches the live preview + plain-English gloss, and adds the
+        rule to Allow/Ask/Deny. Every interactive control carries a ToolTip and
+        an AutomationProperties.Name; dynamic outputs bind their Name to the live
+        text so a screen reader announces them on focus.
+
+        Layout: two columns. The form (left, *-width) and the hint box (right,
+        Auto-width). The hint box lives in its OWN column so its height never
+        inflates the form's rows — it just top-aligns with the "Build a rule"
+        heading and floats beside the form. When no hint applies (WebFetch/Mcp/
+        Agent) the column collapses and the form takes the full width.
+    -->
+    <Grid ColumnDefinitions="*,Auto">
+
+        <!-- ── Column 0: the form ─────────────────────────────────────────── -->
+        <StackPanel Grid.Column="0" Spacing="10">
+            <TextBlock Text="{x:Static loc:Strings.PermBuilderHeading}"
+                       FontWeight="SemiBold" FontSize="14"
+                       AutomationProperties.HeadingLevel="2" />
+
+            <!-- Tool selector -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderToolLabel}" />
+                <ComboBox ItemsSource="{Binding AvailableTools}"
+                          SelectedItem="{Binding SelectedTool}"
+                          MinWidth="160"
+                          ToolTip.Tip="{x:Static loc:Strings.PermBuilderToolTip}"
+                          AutomationProperties.Name="{x:Static loc:Strings.PermBuilderToolLabel}" />
+            </StackPanel>
+
+            <!-- Bash / PowerShell -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowCommandInput}">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderCommandLabel}" />
+                <TextBox Text="{Binding CommandText}"
+                         ToolTip.Tip="{x:Static loc:Strings.PermBuilderCommandTip}"
+                         AutomationProperties.Name="{x:Static loc:Strings.PermBuilderCommandLabel}" />
+                <CheckBox IsChecked="{Binding MatchPrefix}"
+                          Content="{x:Static loc:Strings.PermBuilderPrefixLabel}"
+                          ToolTip.Tip="{x:Static loc:Strings.PermBuilderPrefixTip}"
+                          AutomationProperties.Name="{x:Static loc:Strings.PermBuilderPrefixLabel}" />
+            </StackPanel>
+
+            <!-- Read / Edit / Write -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowPathInput}">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderPathLabel}" />
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            Content="{x:Static loc:Strings.PermBuilderBrowseFile}"
+                            Command="{Binding BrowseFileCommand}"
+                            IsVisible="{Binding ShowBrowse}"
+                            Margin="6,0,0,0"
+                            ToolTip.Tip="{x:Static loc:Strings.PermBuilderBrowseFile}"
+                            AutomationProperties.Name="{x:Static loc:Strings.PermBuilderBrowseFile}" />
+                    <Button DockPanel.Dock="Right"
+                            Content="{x:Static loc:Strings.PermBuilderBrowseFolder}"
+                            Command="{Binding BrowseFolderCommand}"
+                            IsVisible="{Binding ShowBrowse}"
+                            Margin="6,0,0,0"
+                            ToolTip.Tip="{x:Static loc:Strings.PermBuilderBrowseFolder}"
+                            AutomationProperties.Name="{x:Static loc:Strings.PermBuilderBrowseFolder}" />
+                    <TextBox Text="{Binding PathText}"
+                             ToolTip.Tip="{x:Static loc:Strings.PermBuilderPathTip}"
+                             AutomationProperties.Name="{x:Static loc:Strings.PermBuilderPathLabel}" />
+                </DockPanel>
+                <CheckBox IsChecked="{Binding Recursive}"
+                          Content="{x:Static loc:Strings.PermBuilderRecursiveLabel}"
+                          ToolTip.Tip="{x:Static loc:Strings.PermBuilderRecursiveTip}"
+                          AutomationProperties.Name="{x:Static loc:Strings.PermBuilderRecursiveLabel}" />
+            </StackPanel>
+
+            <!-- WebFetch -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowDomainInput}">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderDomainLabel}" />
+                <TextBox Text="{Binding Domain}"
+                         ToolTip.Tip="{x:Static loc:Strings.PermBuilderDomainTip}"
+                         AutomationProperties.Name="{x:Static loc:Strings.PermBuilderDomainLabel}" />
+            </StackPanel>
+
+            <!-- MCP -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowMcpInput}">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderMcpServerLabel}" />
+                <!-- Type-or-pick: works whether or not the host supplied known
+                     server names. Free text is required because MCP servers can be
+                     added outside this editor. -->
+                <AutoCompleteBox ItemsSource="{Binding McpServers}"
+                                 Text="{Binding SelectedMcpServer, Mode=TwoWay}"
+                                 MinWidth="160"
+                                 FilterMode="Contains"
+                                 ToolTip.Tip="{x:Static loc:Strings.PermBuilderMcpServerTip}"
+                                 AutomationProperties.Name="{x:Static loc:Strings.PermBuilderMcpServerLabel}" />
+                <CheckBox IsChecked="{Binding McpAllTools}"
+                          Content="{x:Static loc:Strings.PermBuilderMcpAllToolsLabel}"
+                          AutomationProperties.Name="{x:Static loc:Strings.PermBuilderMcpAllToolsLabel}" />
+                <TextBox Text="{Binding McpTool}"
+                         PlaceholderText="{x:Static loc:Strings.PermBuilderMcpToolLabel}"
+                         IsEnabled="{Binding !McpAllTools}"
+                         ToolTip.Tip="{x:Static loc:Strings.PermBuilderMcpToolTip}"
+                         AutomationProperties.Name="{x:Static loc:Strings.PermBuilderMcpToolLabel}" />
+            </StackPanel>
+
+            <!-- Agent -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowAgentInput}">
+                <TextBlock Text="{x:Static loc:Strings.PermBuilderAgentLabel}" />
+                <TextBox Text="{Binding AgentName}"
+                         ToolTip.Tip="{x:Static loc:Strings.PermBuilderAgentTip}"
+                         AutomationProperties.Name="{x:Static loc:Strings.PermBuilderAgentLabel}" />
+            </StackPanel>
+
+            <!-- Preview + gloss + validation -->
+            <Border Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1" CornerRadius="4" Padding="8,6">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{x:Static loc:Strings.PermBuilderPreviewLabel}"
+                               FontSize="11" Opacity="0.8" />
+                    <TextBox Text="{Binding PreviewRule, Mode=OneWay}"
+                             IsReadOnly="True"
+                             FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                             ToolTip.Tip="{x:Static loc:Strings.PermBuilderPreviewTip}"
+                             AutomationProperties.Name="{Binding PreviewRule}" />
+                    <!-- Plain-English gloss: tinted callout chip so the "what this
+                         matches" explanation stands out from the preview text above. -->
+                    <Border Background="{DynamicResource AppStatusActiveBackgroundBrush}"
+                            BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="8,5">
+                        <TextBlock behaviors:CodeInline.Markup="{Binding PlainEnglishGloss}"
+                                   TextWrapping="Wrap" FontSize="12"
+                                   FontWeight="Medium"
+                                   Foreground="{DynamicResource AppStatusActiveForegroundBrush}"
+                                   AutomationProperties.Name="{Binding PlainEnglishGloss}" />
+                    </Border>
+                    <TextBlock Text="{Binding ValidationMessage}"
+                               IsVisible="{Binding !IsValid}"
+                               Foreground="{DynamicResource AppStatusWarningForegroundBrush}"
+                               TextWrapping="Wrap" FontSize="11"
+                               AutomationProperties.Name="{Binding ValidationMessage}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Add actions.  Glyph + label mirror the app's Common Actions
+                 chiclets (✓ allow / ✗ deny / ? ask) for visual consistency; order
+                 Allow → Deny → Ask matches the taxonomy rows. Labels reuse the
+                 tester's PermOutcome* strings. -->
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button FontSize="11" Padding="6,2"
+                        Command="{Binding AddAllowCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.PermBuilderAddAllowTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.PermBuilderAddAllowTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="✓" Foreground="#388E3C" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.PermOutcomeAllow}" />
+                    </StackPanel>
+                </Button>
+                <Button FontSize="11" Padding="6,2"
+                        Command="{Binding AddDenyCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.PermBuilderAddDenyTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.PermBuilderAddDenyTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="✗" Foreground="#D32F2F" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.PermOutcomeDeny}" />
+                    </StackPanel>
+                </Button>
+                <Button FontSize="11" Padding="6,2"
+                        Command="{Binding AddAskCommand}"
+                        ToolTip.Tip="{x:Static loc:Strings.PermBuilderAddAskTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.PermBuilderAddAskTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="?" Foreground="#F57F17" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static loc:Strings.PermOutcomeAsk}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Transient add confirmation + non-blocking collision note. Both bind
+                 their AutomationProperties.Name to the live text so screen readers
+                 announce them; they auto-clear a few seconds after an add. -->
+            <TextBlock Text="{Binding LastAddMessage}"
+                       IsVisible="{Binding LastAddMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       FontSize="11"
+                       Foreground="{DynamicResource AppStatusSuccessForegroundBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.Name="{Binding LastAddMessage}" />
+            <TextBlock behaviors:CodeInline.Markup="{Binding CollisionWarning}"
+                       IsVisible="{Binding CollisionWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       FontSize="11"
+                       Foreground="{DynamicResource AppStatusWarningForegroundBrush}"
+                       TextWrapping="Wrap"
+                       AutomationProperties.Name="{Binding CollisionWarning}" />
+        </StackPanel>
+
+        <!-- ── Column 1: hint box (top-aligned; height ignored by the form) ── -->
+        <Border Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0"
+                MaxWidth="320"
+                IsVisible="{Binding ShowAnyHint}"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                BorderThickness="1" CornerRadius="4" Padding="8,5">
+            <StackPanel Spacing="4">
+                <!-- Segmented switch (path tools only). -->
+                <Border IsVisible="{Binding ShowHintToggle}"
+                        HorizontalAlignment="Left"
+                        CornerRadius="4" Padding="1"
+                        BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                        BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" Spacing="1">
+                        <Button Classes="hint-segment"
+                                Classes.active="{Binding ShowPathGlobHints}"
+                                Command="{Binding SelectWildcardHintsCommand}"
+                                Content="{x:Static loc:Strings.PermBuilderHintGroupWildcards}"
+                                AutomationProperties.Name="{x:Static loc:Strings.PermBuilderHintGroupWildcards}" />
+                        <Button Classes="hint-segment"
+                                Classes.active="{Binding ShowPathAnchorHints}"
+                                Command="{Binding SelectAnchorHintsCommand}"
+                                Content="{x:Static loc:Strings.PermBuilderHintGroupAnchors}"
+                                AutomationProperties.Name="{x:Static loc:Strings.PermBuilderHintGroupAnchors}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Single-hint tools (no switch). -->
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintStarShell}"
+                           IsVisible="{Binding ShowShellWildcardHint}"
+                           FontSize="11" TextWrapping="Wrap" />
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintWebDomain}"
+                           IsVisible="{Binding ShowWebHint}"
+                           FontSize="11" TextWrapping="Wrap" />
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintMcpAll}"
+                           IsVisible="{Binding ShowMcpHint}"
+                           FontSize="11" TextWrapping="Wrap" />
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintMcpOne}"
+                           IsVisible="{Binding ShowMcpHint}"
+                           FontSize="11" TextWrapping="Wrap" />
+
+                <!-- Path groups overlaid (both measured → box sizes to the larger
+                     Anchors group; opacity cross-fades, so no resize on switch). -->
+                <Panel IsVisible="{Binding ShowHintToggle}">
+                    <StackPanel Spacing="2"
+                                Opacity="{Binding GlobGroupOpacity}"
+                                IsHitTestVisible="{Binding ShowPathGlobHints}">
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintStarPath}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintDoubleStarPath}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintQuestionPath}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Spacing="2"
+                                Opacity="{Binding AnchorGroupOpacity}"
+                                IsHitTestVisible="{Binding ShowPathAnchorHints}">
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintAnchorProject}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintAnchorAbsolute}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintAnchorHome}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                        <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermBuilderHintAnchorCwd}"
+                                   FontSize="11" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Panel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -8,6 +8,7 @@
              xmlns:core="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.SettingsGroupEditorView"
              x:DataType="vm:SettingsGroupEditorViewModel">
 
@@ -208,191 +209,25 @@
             </DockPanel>
         </Border>
 
-        <!-- Properties / JSON tabs -->
-        <TabControl>
-
-            <!-- Tab 1: Property editors -->
-            <TabItem Header="{x:Static loc:Strings.HeaderTabProperties}">
-                <DockPanel>
-                    <!-- Filter bar (hidden when there are only a handful of properties,
-                         but always visible when FilterText is non-empty so that a
-                         deep-link-activated filter can always be cleared). -->
-                    <Border DockPanel.Dock="Top" Padding="8,4"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="0,0,0,1"
-                            IsVisible="{Binding ShowFilterBar}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBox Text="{Binding FilterText}"
-                                     PlaceholderText="{x:Static loc:Strings.WatermarkFilterProps}"
-                                     Width="300"
-                                     AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterProps}" />
-                            <!-- Clear button: only visible while a filter is active -->
-                            <Button Content="{x:Static loc:Strings.LabelClearPropertyFilter}"
-                                    Command="{Binding ClearFilterCommand}"
-                                    Padding="8,4"
-                                    FontSize="11"
-                                    VerticalAlignment="Center"
-                                    IsVisible="{Binding FilterText,
-                                        Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                    ToolTip.Tip="{x:Static loc:Strings.TipClearPropertyFilter}"
-                                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameClearPropertyFilter}" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Scrollable property list.
-
-                         PERF / DROPDOWN-SWITCH NOTE:
-                         This is the hottest items-host in the app.  Large Claude Code
-                         setting groups ship 50–100+ properties, each rendered by a
-                         heavy PropertyEditorWrapper template (nested controls, badges,
-                         description panes, and for `permissions` an entire
-                         PermissionsEditorView with three rule lists).  Because the
-                         profile ComboBox at the top of MainWindow causes this view to
-                         get re-populated with a fresh FilteredEditors on every switch,
-                         an unvirtualized StackPanel forces every property template to
-                         be rebuilt every time the user flips profiles — visibly laggy
-                         on groups with many properties.
-
-                         Switching to VirtualizingStackPanel means only the viewport-
-                         worth of PropertyEditorWrappers are materialized.  The enclosing
-                         ScrollViewer gives VSP a bounded viewport so virtualization
-                         actually engages (not just a no-op fallback). -->
-                    <ScrollViewer Padding="0">
-                        <ItemsControl ItemsSource="{Binding FilteredEditors}" Margin="0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <!-- x:DataType enables compiled bindings and avoids the
-                                     IL2026 ReflectionBinding warning for this closure. -->
-                                <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
-                                    <controls:PropertyEditorWrapper />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </DockPanel>
-            </TabItem>
-
-            <!-- Tab 2: Effective values — same as global Effective Settings but scoped to
-                 this group's properties only. Read-only: shows the merged value and the
-                 scope it comes from. Updated whenever editors or workspace change.
-                 Properties with no value at any scope are filtered out by
-                 SettingsGroupEditorViewModel.RebuildEffectiveRows so the table is purely
-                 "what Claude actually reads at runtime". -->
-            <TabItem Header="{x:Static loc:Strings.HeaderTabEffective}">
-                <DockPanel>
-                    <!--
-                        Subtitle above the grid explaining what the table contains.
-                        Mirrors the standalone Effective Settings page's subtitle so
-                        users get the same context whichever surface they hit.
-                    -->
-                    <Border DockPanel.Dock="Top"
-                            Padding="14,8"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="0,0,0,1">
-                        <TextBlock Text="{x:Static loc:Strings.TextEffectiveTabSubtitle}"
-                                   FontSize="11"
-                                   TextWrapping="Wrap"
-                                   MaxWidth="800"
-                                   HorizontalAlignment="Left"
-                                   TextAlignment="Left"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                    </Border>
-
-                    <DataGrid ItemsSource="{Binding EffectiveRows}"
-                              IsReadOnly="True"
-                              AutoGenerateColumns="False"
-                              GridLinesVisibility="Horizontal"
-                              CanUserReorderColumns="True"
-                              CanUserResizeColumns="True"
-                              CanUserSortColumns="True"
-                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}"
-                              AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpEffectiveRowsGrid}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Property}" Width="200">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveProperty}"
-                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
-                                </DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding DisplayValue}" Width="*">
-                                <DataGridTextColumn.Header>
-                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValue}"
-                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
-                                </DataGridTextColumn.Header>
-                            </DataGridTextColumn>
-                            <DataGridTemplateColumn Width="Auto"
-                                                    CanUserSort="True"
-                                                    SortMemberPath="Scope">
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveScope}"
-                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
-                                </DataGridTemplateColumn.Header>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
-                                        <Border Background="{Binding Scope, Converter={StaticResource ScopeToBrush}}"
-                                                TextElement.Foreground="White"
-                                                CornerRadius="3" Padding="6,2" Margin="4,2"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                IsVisible="{Binding Scope, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                                ToolTip.Tip="{Binding Scope, Converter={StaticResource ScopeToTooltip}}">
-                                            <TextBlock Text="{Binding Scope, Converter={StaticResource ScopeToName}}"
-                                                       FontSize="10" FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       ToolTip.Tip="{Binding Scope, Converter={StaticResource ScopeToTooltip}}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridCheckBoxColumn Binding="{Binding IsOverridden}" Width="90">
-                                <DataGridCheckBoxColumn.Header>
-                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveOverridden}"
-                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveOverridden}" />
-                                </DataGridCheckBoxColumn.Header>
-                            </DataGridCheckBoxColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <!-- Tab 3: JSON preview (header is dynamic: "JSON (active)" / "JSON (all)") -->
-            <TabItem Header="{Binding JsonTabHeader}">
-                <DockPanel>
-                    <!-- Toggle bar -->
-                    <Border DockPanel.Dock="Top"
-                            Padding="8,6"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="0,0,0,1">
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right"
-                                    Content="{x:Static loc:Strings.LabelCopyToClipboard}"
-                                    Command="{Binding CopyJsonCommand}"
-                                    Padding="8,4"
-                                    FontSize="11"
-                                    VerticalAlignment="Center"
-                                    ToolTip.Tip="{x:Static loc:Strings.TipCopyJsonClipboard}"
-                                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameCopyJsonClipboard}" />
-                            <CheckBox IsChecked="{Binding ShowJsonPlaceholders}"
-                                      FontSize="11"
-                                      VerticalAlignment="Center"
-                                      Content="{x:Static loc:Strings.LabelShowAllSchemaProps}"
-                                      ToolTip.Tip="{x:Static loc:Strings.TipShowAllSchemaProps}"
-                                      AutomationProperties.Name="{x:Static loc:Strings.AutoNameShowAllSchemaProps}"
-                                      AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpShowAllSchemaProps}" />
-                        </DockPanel>
-                    </Border>
-
-                    <!-- JsonHighlightBlock provides its own ScrollViewer and
-                         selectable monospace display with JSON syntax colouring.
-                         Colours switch automatically when the app theme changes. -->
-                    <lecontrols:JsonHighlightBlock Json="{Binding JsonPreview}" />
-                </DockPanel>
-            </TabItem>
-
+        <!-- Data-driven tab strip. Items come from SettingsGroupEditorViewModel.Tabs
+             (built-ins Properties/Effective/JSON, seeded by RebuildTabs, plus any
+             contributed tabs an IGroupTabCustomizer inserted — e.g. the Permissions
+             group's Common/Build/Lists/Advanced). The header is GroupTab.Header; the
+             body is chosen by GroupTabBodyTemplate keyed on GroupTab.Id, with the
+             body's DataContext set to GroupTab.Content. SelectedItem is two-way
+             bound so the choice is remembered across rebuilds / navigation; the
+             VM seeds it from the remembered tab → customizer default → first. -->
+        <TabControl ItemsSource="{Binding Tabs}"
+                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+            <TabControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:GroupTab">
+                    <TextBlock Text="{Binding Header}"
+                               AutomationProperties.Name="{Binding AutomationName}" />
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <views:GroupTabBodyTemplate />
+            </TabControl.ContentTemplate>
         </TabControl>
 
     </DockPanel>

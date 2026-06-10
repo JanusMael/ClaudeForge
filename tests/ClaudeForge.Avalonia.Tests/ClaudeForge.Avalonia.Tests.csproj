@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Avalonia.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\ClaudeForge.Avalonia\ClaudeForge.Avalonia.csproj"/>
+    </ItemGroup>
+</Project>

@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.PermissionsAdvancedView"
+             x:DataType="vm:PermissionsEditorViewModel">
+
+    <!-- "Advanced" permissions tab body: disableBypassPermissionsMode +
+         additionalDirectories. Extracted from PermissionsEditorView.
+         DataContext = PermissionsEditorViewModel. -->
+    <StackPanel Spacing="12" Margin="0,8,0,0">
+
+        <!-- disableBypassPermissionsMode — managed-scope org-policy gate.
+             Three-state CheckBox (null = not set, true = disable, false = explicit allow). -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.LabelDisableBypassPermissionsMode}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="{x:Static loc:Strings.TextDisableBypassPermissionsModeHint}"
+                       FontSize="11"
+                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                       TextWrapping="Wrap" />
+            <CheckBox IsChecked="{Binding DisableBypassPermissionsMode}"
+                      IsThreeState="True"
+                      AutomationProperties.Name="{x:Static loc:Strings.LabelDisableBypassPermissionsMode}"
+                      Content="{x:Static loc:Strings.LabelDisableBypassPermissionsModeCheckbox}" />
+        </StackPanel>
+
+        <!-- additionalDirectories — extra paths Claude is allowed to consider
+             in scope. Add via the textbox + button; remove via the per-row × . -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="{x:Static loc:Strings.LabelAdditionalDirectories}"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="{x:Static loc:Strings.TextAdditionalDirectoriesHint}"
+                       FontSize="11"
+                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                       TextWrapping="Wrap" />
+            <ItemsControl ItemsSource="{Binding AdditionalDirectories}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="0,2">
+                            <Button DockPanel.Dock="Right"
+                                    Content="×"
+                                    FontSize="11"
+                                    Padding="6,2"
+                                    Margin="6,0,0,0"
+                                    Command="{Binding $parent[ItemsControl].((vm:PermissionsEditorViewModel)DataContext).RemoveAdditionalDirectoryCommand}"
+                                    CommandParameter="{Binding}"
+                                    AutomationProperties.Name="{Binding StringFormat='Remove additional directory {0}'}" />
+                            <TextBlock Text="{Binding}"
+                                       FontFamily="Consolas,Menlo,monospace"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBox Text="{Binding NewAdditionalDirectory}"
+                         PlaceholderText="{x:Static loc:Strings.WatermarkAdditionalDirectory}"
+                         AutomationProperties.Name="{x:Static loc:Strings.LabelAdditionalDirectories}"
+                         Width="420">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter"
+                                    Command="{Binding AddAdditionalDirectoryCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button Content="+"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddAdditionalDirectory}"
+                        Command="{Binding AddAdditionalDirectoryCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -1173,6 +1173,89 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="PlaceholderDefaultMode" xml:space="preserve">
     <value>(not set — inherits)</value>
   </data>
+
+  <!-- ── Permissions page: tab headers ────────────────────────────────── -->
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>Overview</value>
+    <comment>Permissions page tab: relabel of the built-in Properties tab for the Permissions group; shows the explainer + Default Mode + help link.</comment>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>Common</value>
+    <comment>Permissions page tab: one-click taxonomy presets.</comment>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>Build</value>
+    <comment>Permissions page tab: guided rule builder + dry-run tester.</comment>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>Lists</value>
+    <comment>Permissions page tab: Allow/Deny/Ask rule lists + tester.</comment>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>Advanced</value>
+    <comment>Permissions page: header of the Advanced accordion (disableBypass + additionalDirectories) on the Overview tab.</comment>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>Test this rule</value>
+    <comment>Button under the guided rule builder; seeds the dry-run tester from the builder inputs and reveals it.</comment>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>Open the dry-run tester, pre-filled from this rule, to see what Claude Code would actually do — across all your rules and scopes.</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>Test a rule (dry run)</value>
+    <comment>Header of the collapsed dry-run-tester accordion on the Build tab.</comment>
+  </data>
+
+  <!-- ── Permissions page: "How rules work" help link ─────────────────── -->
+
+  <!-- ── Default-mode friendly (Claude) labels — shown in the item tooltip
+       + screen-reader name, alongside the raw camelCase value. ────────── -->
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>Ask First</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>Accept Edits</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>Don't Ask</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>Bypass Permission Checks</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>Delegate</value>
+  </data>
+
+  <!-- ── Default-mode descriptions (localized; moved out of C#). ───────── -->
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>Prompts you on first use of each tool (standard behavior)</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>Auto-accepts file edits; other tools still prompt</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>Read-only — Claude cannot make modifications or side effects</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>Auto-approves tool calls, with background safety checks</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>Auto-denies any tool not explicitly pre-approved in Allow</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>Skips all prompts — use only in isolated/trusted environments</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>Coordination-only for agent team leads</value>
+  </data>
+
   <data name="HeaderAllow" xml:space="preserve">
     <value>Allow</value>
   </data>
@@ -1184,6 +1267,14 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   </data>
   <data name="TextPermissionsExplainer" xml:space="preserve">
     <value>Permission rules control which Claude Code tools can run without prompting. A rule is either a bare tool name — such as Read or Bash — granting unrestricted access to that tool, or a parameterized form such as Bash(git *) or Read(./**/*.ts) that matches only invocations whose argument fits the pattern. Rules in Allow run silently; Deny rules are blocked outright; Ask rules always trigger a confirmation prompt regardless of the Default Mode setting.</value>
+  </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>Conflict resolved: removed '{0}' from {1} — {2} takes precedence.</value>
+    <comment>Shown when adding a rule auto-removed an identical lower-precedence rule. {0}=rule, {1}=removed-from bucket, {2}=kept bucket.</comment>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>Not added: '{0}' is already in {1}, which takes precedence over {2}.</value>
+    <comment>Shown when an identical rule already exists in a higher-precedence bucket, so adding it to a lower one would have no effect. {0}=rule, {1}=existing/higher bucket, {2}=attempted bucket.</comment>
   </data>
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>Examples:</value>
@@ -1534,6 +1625,34 @@ Cancel — keep the window open.</value>
   </data>
   <data name="TipButtonRefresh" xml:space="preserve">
     <value>Re-scan the filesystem and reload the list</value>
+  </data>
+  <data name="LabelUpdateBannerTextFmt" xml:space="preserve">
+    <value>ClaudeForge {0} is available.</value>
+    <comment>Headline of the "update available" banner. {0} substitutes the version (e.g. "v1.2.3" or the GitHub release name).</comment>
+  </data>
+  <data name="ButtonViewReleaseNotes" xml:space="preserve">
+    <value>View release notes</value>
+    <comment>Primary action on the update-available banner. Opens the GitHub release page in the default browser.</comment>
+  </data>
+  <data name="TipButtonViewReleaseNotes" xml:space="preserve">
+    <value>Open the release page on GitHub in your default browser</value>
+  </data>
+  <data name="ButtonDismissUpdateBanner" xml:space="preserve">
+    <value>✕</value>
+    <comment>Icon-only dismiss button on the update-available banner.</comment>
+  </data>
+  <data name="TipButtonDismissUpdate" xml:space="preserve">
+    <value>Hide this banner. It will not reappear for this version, but a newer release will re-show it.</value>
+  </data>
+  <data name="AutoNameButtonDismissUpdate" xml:space="preserve">
+    <value>Dismiss update-available banner</value>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesTitle" xml:space="preserve">
+    <value>Check for updates</value>
+    <comment>Essentials-page card title for the auto-update-check toggle.</comment>
+  </data>
+  <data name="LabelEssentialsCheckForUpdatesDescription" xml:space="preserve">
+    <value>Periodically check GitHub for newer ClaudeForge releases and show a banner when one is available.</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Reveal in Explorer</value>

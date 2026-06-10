@@ -271,9 +271,10 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     isEnvVarCard: false,
                     readAsync: ReadStringAsync("model"),
                     writeAsync: WriteStringAsync("model"),
-                    // Schema-suggested examples — sonnet/opus/haiku plus pinned versions.
-                    // Free-form ComboBox (IsEditable) so users can type custom model IDs.
-                    enumOptions: ["sonnet", "opus", "haiku", "claude-sonnet-4-5", "claude-opus-4-5"],
+                    // Schema-suggested examples — aliases (incl. the new fable tier)
+                    // plus current pinned snapshot IDs. Free-form ComboBox (IsEditable)
+                    // so users can still type any custom model ID.
+                    enumOptions: ["sonnet", "opus", "haiku", "fable", "claude-fable-5", "claude-sonnet-4-6", "claude-opus-4-8"],
                     amberCalloutText: amberText)
                 { JsonPathFilter = "model" },
             // 7 — Disable bypass-permissions mode
@@ -571,6 +572,58 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                 _client.RemoveValue(jsonPath, _client.DefaultScope);
             }
 
+            return Task.CompletedTask;
+        };
+    }
+
+    /// <summary>
+    /// Read helper for app-level (non-Claude-config) boolean preferences
+    /// stored in <c>WindowState</c>.  Wraps a plain <see cref="Func{Boolean}"/>
+    /// in the card-expected delegate shape.  When <paramref name="getter"/>
+    /// is <see langword="null"/> (no MWVM plumbing supplied), the card reads
+    /// as <see langword="null"/> / inherit — same as a missing Claude
+    /// setting.
+    /// </summary>
+    private static Func<EssentialsCardViewModel, Task> ReadAppBoolAsync(Func<bool>? getter)
+    {
+        return card =>
+        {
+            card.IsLoading = true;
+            try
+            {
+                card.BoolValue = getter?.Invoke();
+            }
+            finally
+            {
+                card.IsLoading = false;
+            }
+
+            return Task.CompletedTask;
+        };
+    }
+
+    /// <summary>
+    /// Write helper for app-level boolean preferences.  When the user
+    /// clears the tri-state to null/inherit on a card whose target has no
+    /// inherit concept (app prefs are either on or off), we default to
+    /// <see langword="true"/> — matches the documented default in
+    /// <see cref="WindowState.CheckForUpdatesOnLaunch"/>.
+    /// </summary>
+    private static Func<EssentialsCardViewModel, Task> WriteAppBoolAsync(Action<bool>? setter)
+    {
+        return card =>
+        {
+            if (setter is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            // App-level prefs don't have an "inherit" tier — collapse null
+            // to the documented default (true) so the toggle remains
+            // semantically two-state from the user's perspective even though
+            // the underlying tri-state Bool card supports null.
+            bool value = card.BoolValue ?? true;
+            setter(value);
             return Task.CompletedTask;
         };
     }

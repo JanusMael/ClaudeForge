@@ -195,6 +195,10 @@
                          active.  Used by the Memory page's markdown viewer. -->
                     <SolidColorBrush x:Key="AppCodeBlockBackgroundBrush" Color="#F4F4F4" />
                     <SolidColorBrush x:Key="AppCodeBlockBorderBrush" Color="#D0D0D0" />
+                    <!-- Elevated "card" surface for large container panes (e.g. the
+                         permissions Build / Test panes). Lighter than the code-block
+                         fill on light so input wells read as nested, not flush. -->
+                    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#FFFFFF" />
                     <!-- Subtle panel/row divider borders (lighter than the code-block border).
                          Replaces SystemControlForegroundBaseLowBrush in places where Semi.Avalonia
                          resolved to a near-invisible tint on one theme or the other.  Used by row
@@ -233,6 +237,9 @@
                     <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#1B3A45" />
                     <SolidColorBrush x:Key="AppCodeBlockBackgroundBrush" Color="#1F1F1F" />
                     <SolidColorBrush x:Key="AppCodeBlockBorderBrush" Color="#3A3A3A" />
+                    <!-- Card surface on dark: a touch above the page so the pane
+                         reads as elevated (the existing dark value looked fine). -->
+                    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#262626" />
                     <SolidColorBrush x:Key="AppPanelBorderBrush" Color="#2E2E2E" />
                     <!-- Status-bar severity tokens — dark-mode counterparts.  Foregrounds
                          are brightened so the icon/text reads against the bar's

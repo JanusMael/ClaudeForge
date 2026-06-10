@@ -1108,6 +1108,78 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to ClaudeForge {0} is available.
+        /// </summary>
+        public static string LabelUpdateBannerTextFmt {
+            get {
+                return ResourceManager.GetString("LabelUpdateBannerTextFmt", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to View release notes.
+        /// </summary>
+        public static string ButtonViewReleaseNotes {
+            get {
+                return ResourceManager.GetString("ButtonViewReleaseNotes", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Open the release page on GitHub in your default browser.
+        /// </summary>
+        public static string TipButtonViewReleaseNotes {
+            get {
+                return ResourceManager.GetString("TipButtonViewReleaseNotes", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to ✕.
+        /// </summary>
+        public static string ButtonDismissUpdateBanner {
+            get {
+                return ResourceManager.GetString("ButtonDismissUpdateBanner", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Hide this banner. It will not reappear for this version, but a newer release will re-show it.
+        /// </summary>
+        public static string TipButtonDismissUpdate {
+            get {
+                return ResourceManager.GetString("TipButtonDismissUpdate", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Dismiss update-available banner.
+        /// </summary>
+        public static string AutoNameButtonDismissUpdate {
+            get {
+                return ResourceManager.GetString("AutoNameButtonDismissUpdate", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Check for updates.
+        /// </summary>
+        public static string LabelEssentialsCheckForUpdatesTitle {
+            get {
+                return ResourceManager.GetString("LabelEssentialsCheckForUpdatesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Periodically check GitHub for newer ClaudeForge releases and show a banner when one is available.
+        /// </summary>
+        public static string LabelEssentialsCheckForUpdatesDescription {
+            get {
+                return ResourceManager.GetString("LabelEssentialsCheckForUpdatesDescription", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to ↻ Refresh All.
         /// </summary>
         public static string ButtonRefreshAll {
@@ -3910,6 +3982,96 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
         
+        public static string TabPermOverview {
+            get { return ResourceManager.GetString("TabPermOverview", resourceCulture); }
+        }
+
+        public static string TabPermCommon {
+            get { return ResourceManager.GetString("TabPermCommon", resourceCulture); }
+        }
+
+        public static string TabPermBuild {
+            get { return ResourceManager.GetString("TabPermBuild", resourceCulture); }
+        }
+
+        public static string TabPermLists {
+            get { return ResourceManager.GetString("TabPermLists", resourceCulture); }
+        }
+
+        public static string TabPermAdvanced {
+            get { return ResourceManager.GetString("TabPermAdvanced", resourceCulture); }
+        }
+
+        public static string PermBuilderTestThisRule {
+            get { return ResourceManager.GetString("PermBuilderTestThisRule", resourceCulture); }
+        }
+
+        public static string TipPermBuilderTestThisRule {
+            get { return ResourceManager.GetString("TipPermBuilderTestThisRule", resourceCulture); }
+        }
+
+        public static string HeaderTesterAccordion {
+            get { return ResourceManager.GetString("HeaderTesterAccordion", resourceCulture); }
+        }
+
+
+
+        public static string DefaultModeClaudeDefault {
+            get { return ResourceManager.GetString("DefaultModeClaudeDefault", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudeAcceptEdits {
+            get { return ResourceManager.GetString("DefaultModeClaudeAcceptEdits", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudePlan {
+            get { return ResourceManager.GetString("DefaultModeClaudePlan", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudeAuto {
+            get { return ResourceManager.GetString("DefaultModeClaudeAuto", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudeDontAsk {
+            get { return ResourceManager.GetString("DefaultModeClaudeDontAsk", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudeBypass {
+            get { return ResourceManager.GetString("DefaultModeClaudeBypass", resourceCulture); }
+        }
+
+        public static string DefaultModeClaudeDelegate {
+            get { return ResourceManager.GetString("DefaultModeClaudeDelegate", resourceCulture); }
+        }
+
+        public static string DefaultModeDescDefault {
+            get { return ResourceManager.GetString("DefaultModeDescDefault", resourceCulture); }
+        }
+
+        public static string DefaultModeDescAcceptEdits {
+            get { return ResourceManager.GetString("DefaultModeDescAcceptEdits", resourceCulture); }
+        }
+
+        public static string DefaultModeDescPlan {
+            get { return ResourceManager.GetString("DefaultModeDescPlan", resourceCulture); }
+        }
+
+        public static string DefaultModeDescAuto {
+            get { return ResourceManager.GetString("DefaultModeDescAuto", resourceCulture); }
+        }
+
+        public static string DefaultModeDescDontAsk {
+            get { return ResourceManager.GetString("DefaultModeDescDontAsk", resourceCulture); }
+        }
+
+        public static string DefaultModeDescBypass {
+            get { return ResourceManager.GetString("DefaultModeDescBypass", resourceCulture); }
+        }
+
+        public static string DefaultModeDescDelegate {
+            get { return ResourceManager.GetString("DefaultModeDescDelegate", resourceCulture); }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Creating junction….
         /// </summary>
@@ -5121,6 +5283,18 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string TextPermissionsExplainer {
             get {
                 return ResourceManager.GetString("TextPermissionsExplainer", resourceCulture);
+            }
+        }
+
+        public static string TextPermConflictPruned {
+            get {
+                return ResourceManager.GetString("TextPermConflictPruned", resourceCulture);
+            }
+        }
+
+        public static string TextPermConflictSkipped {
+            get {
+                return ResourceManager.GetString("TextPermConflictSkipped", resourceCulture);
             }
         }
         

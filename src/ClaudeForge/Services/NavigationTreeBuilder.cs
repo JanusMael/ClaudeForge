@@ -222,7 +222,8 @@ public static class NavigationTreeBuilder
             browseDialog,
             factory,
             groupDescription: description,
-            sdkClient: sdkClient);
+            sdkClient: sdkClient,
+            tabCustomizer: ClaudeGroupTabCustomizer.Instance);
         return new NavigationGroup(groupTitle, vm);
     }
 }
