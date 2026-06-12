@@ -209,7 +209,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     // persistent tool-page VMs.  These VMs do NOT bind to
     // workspace.Root (they manage on-disk state via dedicated services /
-    // engines), so they're safe to reuse across BuildNavigationTree calls.
+    // engines), so they're safe to reuse across BuildNavigationTreeAsync calls.
     // Persisting them solves three Phase 3 issues:
     //   - Backup: in-flight backup operations no longer get cancelled by
     //     unrelated workspace reloads (file-watcher, profile switch,
@@ -337,11 +337,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _navHeaderExpanded = new Dictionary<string, bool>(_cachedState.NavHeaderExpanded);
 
         // Welcome-on-launch preference: hydrated from disk and consulted
-        // by BuildNavigationTree's Welcome-node conditional below.  Use
+        // by BuildNavigationTreeAsync's Welcome-node conditional below.  Use
         // the source-generated backing field directly so the partial
         // OnShowWelcomeOnLaunchChanged handler doesn't fire prematurely
         // (it would otherwise trigger ApplyWelcomeNodeVisibility before
-        // BuildNavigationTree has even run — _navTreeBuilt is still
+        // BuildNavigationTreeAsync has even run — _navTreeBuilt is still
         // false, so the call would no-op, but explicit field-init is
         // clearer about intent).
         _showWelcomeOnLaunch = _cachedState.ShowWelcomeNode;
@@ -1119,7 +1119,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Persist immediately + rebuild the navigation tree so the
         // Welcome node appears / disappears in real time when the user
         // toggles the checkbox.  Skip during construction (before
-        // BuildNavigationTree has run for the first time) — the initial
+        // BuildNavigationTreeAsync has run for the first time) — the initial
         // load reads the preference and adds / omits the node natively.
         _cachedState.ShowWelcomeNode = value;
         SaveWindowState();
@@ -1233,7 +1233,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Latched after <see cref="BuildNavigationTree"/> finishes for the
+    /// Latched after <see cref="BuildNavigationTreeAsync"/> finishes for the
     /// first time so that the runtime checkbox toggle path
     /// (<see cref="ApplyWelcomeNodeVisibility"/>) doesn't fire from the
     /// initial preference assignment in the constructor.
@@ -3150,7 +3150,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Wire up change listeners so any in-memory edit enables the Save button.
         SubscribeWorkspaceChangedEvents();
 
-        BuildNavigationTree(ccNodes, dtNodes);
+        await BuildNavigationTreeAsync(ccNodes, dtNodes);
         SetupFileWatcher(ccFiles.Concat(dtFiles).ToList());
 
         // surface schema-violation banner after every reload.
@@ -3246,7 +3246,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             paths);
     }
 
-    private void BuildNavigationTree(
+    private async Task BuildNavigationTreeAsync(
         IReadOnlyList<SchemaNode> ccNodes,
         IReadOnlyList<SchemaNode> dtNodes)
     {
@@ -3340,6 +3340,36 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         });
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
 
+        // ── Editor construction, off the UI thread ──────────────────────────
+        // Building each group's SettingsGroupEditorViewModel (which eagerly
+        // constructs all of its child property editors) is the bulk of the
+        // remaining synchronous startup cost. Those VMs are plain data — no
+        // Avalonia control, Dispatcher, or Application.Current access in any
+        // ctor — so build BOTH product sections on a worker thread to keep the
+        // just-painted window responsive; the ObservableCollection assembly
+        // below resumes on the UI thread (Avalonia's SynchronizationContext).
+        // Search stays gated by IsLoading (SearchViewModel's isLoadingProbe) for
+        // the whole load, so nothing can navigate to a not-yet-attached node.
+        SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
+        SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
+        ClaudeConfigClientCore? ccSdk = ClaudeCodeSdk;
+        ClaudeConfigClientCore? dtSdk = ClaudeDesktopSdk;
+        System.Diagnostics.Stopwatch editorBuildSw = System.Diagnostics.Stopwatch.StartNew();
+        (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
+            await Task.Run(() => (
+                ccWorkspace is not null && ccSdk is not null
+                    ? NavigationTreeBuilder.BuildGroups(
+                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes)
+                    : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
+                dtWorkspace is not null && dtSdk is not null
+                    ? NavigationTreeBuilder.BuildGroups(
+                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes)
+                    : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>()));
+        editorBuildSw.Stop();
+        Log.Debug(
+            "[Startup] Settings editors built off the UI thread in {ElapsedMs}ms",
+            editorBuildSw.ElapsedMilliseconds);
+
         // --- Claude Code section ---
         NavigationNodeViewModel ccHeader = new(NavTitleClaudeCode, "⚙", NavDescClaudeCode)
         {
@@ -3348,12 +3378,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         ccHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeCode, true);
         ccHeader.PropertyChanged += OnNavHeaderPropertyChanged;
 
-        SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
         if (ClaudeCodeSdk is not null && ccWorkspace is not null)
         {
-            IReadOnlyList<NavigationGroup> ccGroups = NavigationTreeBuilder.BuildGroups(
-                ccNodes, ccWorkspace, browsePath, _ccScopeContext, ClaudeCodeSdk, unsupportedShapes);
-            foreach (NavigationGroup group in ccGroups)
+            foreach (NavigationGroup group in builtGroups.Cc)
             {
                 ccHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
             }
@@ -3383,12 +3410,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         dtHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeDesktop, true);
         dtHeader.PropertyChanged += OnNavHeaderPropertyChanged;
 
-        SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
         if (ClaudeDesktopSdk is not null && dtWorkspace is not null)
         {
-            IReadOnlyList<NavigationGroup> dtGroups = NavigationTreeBuilder.BuildGroups(
-                dtNodes, dtWorkspace, browsePath, _dtScopeContext, ClaudeDesktopSdk, unsupportedShapes);
-            foreach (NavigationGroup group in dtGroups)
+            foreach (NavigationGroup group in builtGroups.Dt)
             {
                 dtHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
             }
@@ -3429,7 +3453,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // H-2: persistent VM. Callbacks are wired ONCE on first construction
         // (they capture MWVM by closure; subsequent reloads reuse the same
         // lambda instances which still observe current MWVM state via the
-        // captured `this`). Refresh() is called on every BuildNavigationTree
+        // captured `this`). Refresh() is called on every BuildNavigationTreeAsync
         // so the disk-backed list reflects post-reload state.
         if (_profilesVm is null)
         {
@@ -3825,7 +3849,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Dispose all editor ViewModels currently held in the navigation tree and unsubscribe
-    /// nav-header <c>PropertyChanged</c> handlers registered by <see cref="BuildNavigationTree"/>.
+    /// nav-header <c>PropertyChanged</c> handlers registered by <see cref="BuildNavigationTreeAsync"/>.
     /// Must be called before <see cref="NavigationTree"/> is cleared.
     /// </summary>
     private void DisposeNavigationEditors()
