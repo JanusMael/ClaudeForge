@@ -2332,7 +2332,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Test a rule (dry run) [Experimental].
+        ///   Looks up a localized string similar to Test a rule (dry run).
         /// </summary>
         public static string HeaderTesterAccordion {
             get {

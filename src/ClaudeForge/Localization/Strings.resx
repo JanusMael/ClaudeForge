@@ -1169,7 +1169,7 @@ New terminals will pick up the change; existing terminals need to be restarted. 
     <value>Open the dry-run tester, pre-filled from this rule, to see what Claude Code would actually do — across all your rules and scopes.</value>
   </data>
   <data name="HeaderTesterAccordion" xml:space="preserve">
-    <value>Test a rule (dry run) [Experimental]</value>
+    <value>Test a rule (dry run)</value>
     <comment>Header of the collapsed dry-run-tester accordion on the Build tab.</comment>
   </data>
 

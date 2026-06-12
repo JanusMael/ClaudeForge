@@ -311,7 +311,7 @@
 
   <!-- ── Dry-run tester: control labels / tooltips ────────────────────── -->
   <data name="PermTesterHeading" xml:space="preserve">
-    <value>Test a rule (dry run) [Experimental]</value>
+    <value>Test a rule (dry run)</value>
   </data>
   <data name="PermTesterToolLabel" xml:space="preserve">
     <value>Tool</value>
