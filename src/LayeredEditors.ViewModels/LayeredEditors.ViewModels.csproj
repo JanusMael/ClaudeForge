@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels</RootNamespace>
+        <AssemblyName>LayeredEditors.ViewModels</AssemblyName>
+        <Description>
+            View-models for layered-scope settings editors — pure presentation logic with NO
+            Avalonia (or any UI-framework) reference. Split out of LayeredEditors.Avalonia so a
+            view-model can never construct an Avalonia control: the editors built off the UI
+            thread during startup (MainWindowViewModel.BuildNavigationTreeAsync → BuildGroups)
+            stay safe by construction — a control reference here is a compile error.
+            Depends only on LayeredEditors.Abstractions + CommunityToolkit.Mvvm.
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
+    </ItemGroup>
+</Project>
