@@ -117,9 +117,14 @@ public static class PathRuleMatcher
 
         if (spec.StartsWith("//", StringComparison.Ordinal))
         {
-            // Absolute from filesystem root: drop one leading slash so the
-            // remainder is rooted at "/".
-            return ("/", spec[1..].TrimStart('/'), true);
+            // Absolute from filesystem root. The remainder may ITSELF be a Windows
+            // drive path (//C:/c/cl → /c/c/cl), so run it through ToPosix — the same
+            // drive→/c normalization candidate paths receive — before rooting at "/".
+            // Without this the drive letter ("C:") leaks into the sub-pattern verbatim
+            // and never matches a candidate whose drive was normalized to "/c"; the
+            // rule then silently matches nothing (which also makes its globs look inert).
+            string remainder = spec[1..].TrimStart('/');
+            return ("/", ToPosix(remainder).TrimStart('/'), true);
         }
 
         if (spec.StartsWith("~/", StringComparison.Ordinal))

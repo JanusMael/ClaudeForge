@@ -104,6 +104,41 @@ public sealed class PathRuleMatcherTests
     }
 
     [TestMethod]
+    public void AbsoluteDoubleSlash_WithWindowsDrive_NormalizesAndMatches()
+    {
+        // //C:/c/cl/** is an absolute path whose remainder is itself a Windows
+        // drive path. The drive must normalize to /c (same as candidate paths) so
+        // the base matches. Reported case: Allow Read recursively under C:\c\cl.
+        Assert.IsTrue(Match("Read(//C:/c/cl/**)", @"C:\c\cl\foo.txt"));
+        Assert.IsTrue(Match("Read(//C:/c/cl/**)", @"C:\c\cl\private\secret.txt"));
+        Assert.IsTrue(Match("Read(//C:/c/cl/**)", "/c/c/cl/foo.txt")); // POSIX-form candidate
+        // Different root / drive must NOT match.
+        Assert.IsFalse(Match("Read(//C:/c/cl/**)", @"C:\other\foo.txt"));
+        Assert.IsFalse(Match("Read(//C:/c/cl/**)", @"D:\c\cl\foo.txt"));
+    }
+
+    [TestMethod]
+    public void AbsoluteDoubleSlash_WithBackslashDrive_Matches()
+    {
+        // As a Windows user actually types it: //C:\c\cl\** — double-slash anchor
+        // plus a backslash drive path. Backslashes normalize to forward, drive to /c.
+        Assert.IsTrue(Match(@"Read(//C:\c\cl\**)", @"C:\c\cl\deep\nested\x.txt"));
+        Assert.IsTrue(Match(@"Read(//C:\c\cl\**)", "/c/c/cl/x.txt"));
+    }
+
+    [TestMethod]
+    public void AbsoluteDoubleSlash_WindowsDrive_SingleStarVsDoubleStarVsQuestion()
+    {
+        // * stays within one segment; ** is recursive; ? is one non-slash char —
+        // all under a //drive base. Locks the "wildcards behave as globs" contract.
+        Assert.IsTrue(Match("Read(//C:/c/cl/*)", @"C:\c\cl\foo.txt"));
+        Assert.IsFalse(Match("Read(//C:/c/cl/*)", @"C:\c\cl\sub\foo.txt"));
+        Assert.IsTrue(Match("Read(//C:/c/cl/**)", @"C:\c\cl\sub\foo.txt"));
+        Assert.IsTrue(Match("Read(//C:/c/cl/file?.txt)", @"C:\c\cl\file1.txt"));
+        Assert.IsFalse(Match("Read(//C:/c/cl/file?.txt)", @"C:\c\cl\file12.txt"));
+    }
+
+    [TestMethod]
     public void BareTool_MatchesAnyPath()
     {
         Assert.IsTrue(Match("Read", "/anywhere/at/all.txt"));

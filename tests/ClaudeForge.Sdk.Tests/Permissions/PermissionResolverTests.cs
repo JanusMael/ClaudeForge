@@ -52,6 +52,26 @@ public sealed class PermissionResolverTests
     }
 
     [TestMethod]
+    public void Read_DenySubHierarchyUnderAllowRoot_DenyWins()
+    {
+        // Reported scenario: allow Read recursively under a Windows root, deny a
+        // private sub-hierarchy. Deny must take precedence for files under private;
+        // files elsewhere under the root stay allowed.
+        PermissionDecision underRoot = Resolve(
+            PermissionCandidate.Read(@"C:\c\cl\notes.txt"),
+            allow: ["Read(//C:/c/cl/**)"],
+            deny: ["Read(//C:/c/cl/private/**)"]);
+        Assert.AreEqual(PermissionOutcome.Allow, underRoot.Outcome);
+
+        PermissionDecision underPrivate = Resolve(
+            PermissionCandidate.Read(@"C:\c\cl\private\secret.txt"),
+            allow: ["Read(//C:/c/cl/**)"],
+            deny: ["Read(//C:/c/cl/private/**)"]);
+        Assert.AreEqual(PermissionOutcome.Deny, underPrivate.Outcome);
+        Assert.AreEqual("Read(//C:/c/cl/private/**)", underPrivate.MatchedRule!.Value);
+    }
+
+    [TestMethod]
     public void Ask_WhenOnlyAskMatches()
     {
         PermissionDecision d = Resolve(PermissionCandidate.Bash("rm file"), ask: ["Bash(rm *)"]);
