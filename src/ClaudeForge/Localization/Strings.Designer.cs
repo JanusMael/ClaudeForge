@@ -238,25 +238,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("AutoNameButtonDismissInstall", resourceCulture);
             }
         }
-
-        /// <summary>
-        ///   Looks up a localized string similar to ✕.
-        /// </summary>
-        public static string ButtonDismissSchemaBanner {
-            get {
-                return ResourceManager.GetString("ButtonDismissSchemaBanner", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app.
-        /// </summary>
-        public static string TipButtonDismissSchema {
-            get {
-                return ResourceManager.GetString("TipButtonDismissSchema", resourceCulture);
-            }
-        }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to Dismiss schema-errors banner.
         /// </summary>
@@ -265,146 +247,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("AutoNameButtonDismissSchema", resourceCulture);
             }
         }
-
-        // ── Auto-update banner (2026-05-28) ──────────────────────────────────
-
-        /// <summary>
-        ///   Looks up a localized string similar to Update available: {0}.
-        /// </summary>
-        public static string LabelUpdateBannerTitleFmt {
-            get {
-                return ResourceManager.GetString("LabelUpdateBannerTitleFmt", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to A newer release of ClaudeForge is available on GitHub.
-        /// </summary>
-        public static string LabelUpdateBannerDesc {
-            get {
-                return ResourceManager.GetString("LabelUpdateBannerDesc", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to View release.
-        /// </summary>
-        public static string ButtonUpdateBannerOpenRelease {
-            get {
-                return ResourceManager.GetString("ButtonUpdateBannerOpenRelease", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Open the GitHub release page for this version.
-        /// </summary>
-        public static string TipButtonUpdateBannerOpenRelease {
-            get {
-                return ResourceManager.GetString("TipButtonUpdateBannerOpenRelease", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to ✕.
-        /// </summary>
-        public static string ButtonUpdateBannerDismiss {
-            get {
-                return ResourceManager.GetString("ButtonUpdateBannerDismiss", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Hide this banner for this version. The banner will reappear when a newer release is published.
-        /// </summary>
-        public static string TipButtonUpdateBannerDismiss {
-            get {
-                return ResourceManager.GetString("TipButtonUpdateBannerDismiss", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Dismiss update-available banner.
-        /// </summary>
-        public static string AutoNameButtonUpdateBannerDismiss {
-            get {
-                return ResourceManager.GetString("AutoNameButtonUpdateBannerDismiss", resourceCulture);
-            }
-        }
-
-        // ── About-dialog "Check for updates" button (2026-05-29) ─────────────
-
-        /// <summary>
-        ///   Looks up a localized string similar to Check for updates.
-        /// </summary>
-        public static string ButtonCheckForUpdates {
-            get {
-                return ResourceManager.GetString("ButtonCheckForUpdates", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Query GitHub for the latest release.
-        /// </summary>
-        public static string TipCheckForUpdates {
-            get {
-                return ResourceManager.GetString("TipCheckForUpdates", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Checking….
-        /// </summary>
-        public static string LabelCheckForUpdatesChecking {
-            get {
-                return ResourceManager.GetString("LabelCheckForUpdatesChecking", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to You're on the latest version.
-        /// </summary>
-        public static string LabelCheckForUpdatesUpToDate {
-            get {
-                return ResourceManager.GetString("LabelCheckForUpdatesUpToDate", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Update available: {0}.
-        /// </summary>
-        public static string LabelCheckForUpdatesAvailableFmt {
-            get {
-                return ResourceManager.GetString("LabelCheckForUpdatesAvailableFmt", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Couldn't reach GitHub. Try again in a moment.
-        /// </summary>
-        public static string LabelCheckForUpdatesFailed {
-            get {
-                return ResourceManager.GetString("LabelCheckForUpdatesFailed", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Check for updates on launch.
-        /// </summary>
-        public static string EssentialsCardCheckForUpdatesTitle {
-            get {
-                return ResourceManager.GetString("EssentialsCardCheckForUpdatesTitle", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so.
-        /// </summary>
-        public static string EssentialsCardCheckForUpdatesBody {
-            get {
-                return ResourceManager.GetString("EssentialsCardCheckForUpdatesBody", resourceCulture);
-            }
-        }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to Export effective config.
         /// </summary>
@@ -447,6 +290,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string AutoNameButtonSave {
             get {
                 return ResourceManager.GetString("AutoNameButtonSave", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dismiss update-available banner.
+        /// </summary>
+        public static string AutoNameButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("AutoNameButtonUpdateBannerDismiss", resourceCulture);
             }
         }
         
@@ -748,6 +600,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Plugin (read-only).
+        /// </summary>
+        public static string BadgePluginReadOnly {
+            get {
+                return ResourceManager.GetString("BadgePluginReadOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save dialog off.
         /// </summary>
         public static string BadgeSaveDialogOff {
@@ -852,6 +713,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string ButtonCancel {
             get {
                 return ResourceManager.GetString("ButtonCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check for updates.
+        /// </summary>
+        public static string ButtonCheckForUpdates {
+            get {
+                return ResourceManager.GetString("ButtonCheckForUpdates", resourceCulture);
             }
         }
         
@@ -991,6 +861,33 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ✕.
+        /// </summary>
+        public static string ButtonDismissSchemaBanner {
+            get {
+                return ResourceManager.GetString("ButtonDismissSchemaBanner", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Edit.
+        /// </summary>
+        public static string ButtonEditArtifact {
+            get {
+                return ResourceManager.GetString("ButtonEditArtifact", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Edit raw front-matter.
+        /// </summary>
+        public static string ButtonEditRawYaml {
+            get {
+                return ResourceManager.GetString("ButtonEditRawYaml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 📤 _Export….
         /// </summary>
         public static string ButtonExport {
@@ -1088,16 +985,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("ButtonRefresh", resourceCulture);
             }
         }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Re-scan the filesystem and reload the list.
-        /// </summary>
-        public static string TipButtonRefresh {
-            get {
-                return ResourceManager.GetString("TipButtonRefresh", resourceCulture);
-            }
-        }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to ↻ Refresh All.
         /// </summary>
@@ -1227,6 +1115,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         /// <summary>
         ///   Looks up a localized string similar to Save.
         /// </summary>
+        public static string ButtonSaveArtifact {
+            get {
+                return ResourceManager.GetString("ButtonSaveArtifact", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save.
+        /// </summary>
         public static string ButtonSaveDialog {
             get {
                 return ResourceManager.GetString("ButtonSaveDialog", resourceCulture);
@@ -1297,6 +1194,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ✕.
+        /// </summary>
+        public static string ButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("ButtonUpdateBannerDismiss", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to View release.
+        /// </summary>
+        public static string ButtonUpdateBannerOpenRelease {
+            get {
+                return ResourceManager.GetString("ButtonUpdateBannerOpenRelease", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Claude Code.
         /// </summary>
         public static string CheckboxClaudeCode {
@@ -1338,6 +1253,132 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string ConfirmClearAppData {
             get {
                 return ResourceManager.GetString("ConfirmClearAppData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Accept Edits.
+        /// </summary>
+        public static string DefaultModeClaudeAcceptEdits {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeAcceptEdits", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Auto.
+        /// </summary>
+        public static string DefaultModeClaudeAuto {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeAuto", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bypass Permission Checks.
+        /// </summary>
+        public static string DefaultModeClaudeBypass {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ask First.
+        /// </summary>
+        public static string DefaultModeClaudeDefault {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delegate.
+        /// </summary>
+        public static string DefaultModeClaudeDelegate {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeDelegate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Don&apos;t Ask.
+        /// </summary>
+        public static string DefaultModeClaudeDontAsk {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudeDontAsk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plan.
+        /// </summary>
+        public static string DefaultModeClaudePlan {
+            get {
+                return ResourceManager.GetString("DefaultModeClaudePlan", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Auto-accepts file edits; other tools still prompt.
+        /// </summary>
+        public static string DefaultModeDescAcceptEdits {
+            get {
+                return ResourceManager.GetString("DefaultModeDescAcceptEdits", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Auto-approves tool calls, with background safety checks.
+        /// </summary>
+        public static string DefaultModeDescAuto {
+            get {
+                return ResourceManager.GetString("DefaultModeDescAuto", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Skips all prompts — use only in isolated/trusted environments.
+        /// </summary>
+        public static string DefaultModeDescBypass {
+            get {
+                return ResourceManager.GetString("DefaultModeDescBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Prompts you on first use of each tool (standard behavior).
+        /// </summary>
+        public static string DefaultModeDescDefault {
+            get {
+                return ResourceManager.GetString("DefaultModeDescDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Coordination-only for agent team leads.
+        /// </summary>
+        public static string DefaultModeDescDelegate {
+            get {
+                return ResourceManager.GetString("DefaultModeDescDelegate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Auto-denies any tool not explicitly pre-approved in Allow.
+        /// </summary>
+        public static string DefaultModeDescDontAsk {
+            get {
+                return ResourceManager.GetString("DefaultModeDescDontAsk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Read-only — Claude cannot make modifications or side effects.
+        /// </summary>
+        public static string DefaultModeDescPlan {
+            get {
+                return ResourceManager.GetString("DefaultModeDescPlan", resourceCulture);
             }
         }
         
@@ -1603,6 +1644,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string EssentialsCardAutoUpdatesChannelTitle {
             get {
                 return ResourceManager.GetString("EssentialsCardAutoUpdatesChannelTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again..
+        /// </summary>
+        public static string EssentialsCardCheckForUpdatesBody {
+            get {
+                return ResourceManager.GetString("EssentialsCardCheckForUpdatesBody", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Check for updates on launch.
+        /// </summary>
+        public static string EssentialsCardCheckForUpdatesTitle {
+            get {
+                return ResourceManager.GetString("EssentialsCardCheckForUpdatesTitle", resourceCulture);
             }
         }
         
@@ -2273,6 +2332,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Test a rule (dry run) [Experimental].
+        /// </summary>
+        public static string HeaderTesterAccordion {
+            get {
+                return ResourceManager.GetString("HeaderTesterAccordion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Resources.
         /// </summary>
         public static string HeadingAboutLinks {
@@ -2469,7 +2537,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelArguments", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Auto mode isn&apos;t available for the current model or scope, so it won&apos;t take effect..
+        /// </summary>
+        public static string LabelAutoModeCoerced {
+            get {
+                return ResourceManager.GetString("LabelAutoModeCoerced", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to Includes open project: {0}.
         /// </summary>
@@ -2478,7 +2555,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelBackupIncludesProject", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to No project open — user-level config only.
         /// </summary>
@@ -2487,7 +2564,43 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelBackupNoProjectOpen", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update available: {0}.
+        /// </summary>
+        public static string LabelCheckForUpdatesAvailableFmt {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesAvailableFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checking….
+        /// </summary>
+        public static string LabelCheckForUpdatesChecking {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesChecking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn&apos;t reach GitHub.  Try again in a moment..
+        /// </summary>
+        public static string LabelCheckForUpdatesFailed {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You&apos;re on the latest version..
+        /// </summary>
+        public static string LabelCheckForUpdatesUpToDate {
+            get {
+                return ResourceManager.GetString("LabelCheckForUpdatesUpToDate", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to Claude.
         /// </summary>
@@ -2714,6 +2827,33 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Effort changed to &apos;{0}&apos; — the selected model doesn&apos;t support &apos;{1}&apos;..
+        /// </summary>
+        public static string LabelEffortCoercedFmt {
+            get {
+                return ResourceManager.GetString("LabelEffortCoercedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This model doesn&apos;t use an effort level..
+        /// </summary>
+        public static string LabelEffortNotApplicable {
+            get {
+                return ResourceManager.GetString("LabelEffortNotApplicable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Effort &apos;{0}&apos; isn&apos;t supported by the current model..
+        /// </summary>
+        public static string LabelEffortUnsupportedFmt {
+            get {
+                return ResourceManager.GetString("LabelEffortUnsupportedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Equivalent to --dangerouslySkipPermissions.
         /// </summary>
         public static string LabelEquivalentToBypass {
@@ -2872,6 +3012,42 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string LabelFootprintCategoryTranscripts {
             get {
                 return ResourceManager.GetString("LabelFootprintCategoryTranscripts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Description.
+        /// </summary>
+        public static string LabelFrontMatterDescription {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Model.
+        /// </summary>
+        public static string LabelFrontMatterModel {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterModel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name.
+        /// </summary>
+        public static string LabelFrontMatterName {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tools.
+        /// </summary>
+        public static string LabelFrontMatterTools {
+            get {
+                return ResourceManager.GetString("LabelFrontMatterTools", resourceCulture);
             }
         }
         
@@ -3137,6 +3313,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Model {0} supports effort: {1}.
+        /// </summary>
+        public static string LabelModelEffortSummaryFmt {
+            get {
+                return ResourceManager.GetString("LabelModelEffortSummaryFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Standard path (what tools look at):.
         /// </summary>
         public static string LabelMsixStandardPath {
@@ -3281,6 +3466,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Editing the raw front-matter — the typed fields are ignored until you turn this off. Comments and keys the fields don&apos;t cover are preserved..
+        /// </summary>
+        public static string LabelRawFrontMatterHint {
+            get {
+                return ResourceManager.GetString("LabelRawFrontMatterHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Release notes.
         /// </summary>
         public static string LabelReleaseNotes {
@@ -3367,6 +3561,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string LabelTransportType {
             get {
                 return ResourceManager.GetString("LabelTransportType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A newer release of ClaudeForge is available on GitHub..
+        /// </summary>
+        public static string LabelUpdateBannerDesc {
+            get {
+                return ResourceManager.GetString("LabelUpdateBannerDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update available: {0}.
+        /// </summary>
+        public static string LabelUpdateBannerTitleFmt {
+            get {
+                return ResourceManager.GetString("LabelUpdateBannerTitleFmt", resourceCulture);
             }
         }
         
@@ -3578,24 +3790,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk..
-        /// </summary>
-        public static string NavDescMemory {
-            get {
-                return ResourceManager.GetString("NavDescMemory", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Agents &amp; Skills.
-        /// </summary>
-        public static string NavTitleAgentsSkills {
-            get {
-                return ResourceManager.GetString("NavTitleAgentsSkills", resourceCulture);
-            }
-        }
-
-        /// <summary>
         ///   Looks up a localized string similar to Browse the sub-agents, skills, and slash commands Claude Code loads — across User, Project, and Plugin scopes..
         /// </summary>
         public static string NavDescAgentsSkills {
@@ -3603,166 +3797,22 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("NavDescAgentsSkills", resourceCulture);
             }
         }
-
+        
         /// <summary>
-        ///   Looks up a localized string similar to Sub-agents.
+        ///   Looks up a localized string similar to Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk..
         /// </summary>
-        public static string TabAgents {
+        public static string NavDescMemory {
             get {
-                return ResourceManager.GetString("TabAgents", resourceCulture);
+                return ResourceManager.GetString("NavDescMemory", resourceCulture);
             }
         }
-
+        
         /// <summary>
-        ///   Looks up a localized string similar to Skills.
+        ///   Looks up a localized string similar to Agents &amp; Skills.
         /// </summary>
-        public static string TabSkills {
+        public static string NavTitleAgentsSkills {
             get {
-                return ResourceManager.GetString("TabSkills", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Slash Commands.
-        /// </summary>
-        public static string TabSlashCommands {
-            get {
-                return ResourceManager.GetString("TabSlashCommands", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Name.
-        /// </summary>
-        public static string LabelFrontMatterName {
-            get {
-                return ResourceManager.GetString("LabelFrontMatterName", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Description.
-        /// </summary>
-        public static string LabelFrontMatterDescription {
-            get {
-                return ResourceManager.GetString("LabelFrontMatterDescription", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Tools.
-        /// </summary>
-        public static string LabelFrontMatterTools {
-            get {
-                return ResourceManager.GetString("LabelFrontMatterTools", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Model.
-        /// </summary>
-        public static string LabelFrontMatterModel {
-            get {
-                return ResourceManager.GetString("LabelFrontMatterModel", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Plugin (read-only).
-        /// </summary>
-        public static string BadgePluginReadOnly {
-            get {
-                return ResourceManager.GetString("BadgePluginReadOnly", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Edit.
-        /// </summary>
-        public static string ButtonEditArtifact {
-            get {
-                return ResourceManager.GetString("ButtonEditArtifact", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Save.
-        /// </summary>
-        public static string ButtonSaveArtifact {
-            get {
-                return ResourceManager.GetString("ButtonSaveArtifact", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Comma-separated, e.g. Read, Grep, Bash.
-        /// </summary>
-        public static string WatermarkEditTools {
-            get {
-                return ResourceManager.GetString("WatermarkEditTools", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Saved..
-        /// </summary>
-        public static string StatusArtifactSaved {
-            get {
-                return ResourceManager.GetString("StatusArtifactSaved", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Saved. Your edits apply to your next Claude Code session.
-        /// </summary>
-        public static string StatusArtifactSavedRestartHint {
-            get {
-                return ResourceManager.GetString("StatusArtifactSavedRestartHint", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Save failed: {0}.
-        /// </summary>
-        public static string StatusArtifactSaveFailedFmt {
-            get {
-                return ResourceManager.GetString("StatusArtifactSaveFailedFmt", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Loading agents, skills, and commands….
-        /// </summary>
-        public static string StatusAgentsSkillsLoading {
-            get {
-                return ResourceManager.GetString("StatusAgentsSkillsLoading", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Edit raw front-matter.
-        /// </summary>
-        public static string ButtonEditRawYaml {
-            get {
-                return ResourceManager.GetString("ButtonEditRawYaml", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Editing the raw front-matter — the typed fields are ignored until you turn this off….
-        /// </summary>
-        public static string LabelRawFrontMatterHint {
-            get {
-                return ResourceManager.GetString("LabelRawFrontMatterHint", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Couldn't parse the raw front-matter — fix it before saving.
-        /// </summary>
-        public static string StatusRawFrontMatterInvalid {
-            get {
-                return ResourceManager.GetString("StatusRawFrontMatterInvalid", resourceCulture);
+                return ResourceManager.GetString("NavTitleAgentsSkills", resourceCulture);
             }
         }
         
@@ -3776,6 +3826,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Test this rule.
+        /// </summary>
+        public static string PermBuilderTestThisRule {
+            get {
+                return ResourceManager.GetString("PermBuilderTestThisRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to (not set — inherits).
         /// </summary>
         public static string PlaceholderDefaultMode {
@@ -3784,96 +3843,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
         
-        public static string TabPermOverview {
-            get { return ResourceManager.GetString("TabPermOverview", resourceCulture); }
-        }
-
-        public static string TabPermCommon {
-            get { return ResourceManager.GetString("TabPermCommon", resourceCulture); }
-        }
-
-        public static string TabPermBuild {
-            get { return ResourceManager.GetString("TabPermBuild", resourceCulture); }
-        }
-
-        public static string TabPermLists {
-            get { return ResourceManager.GetString("TabPermLists", resourceCulture); }
-        }
-
-        public static string TabPermAdvanced {
-            get { return ResourceManager.GetString("TabPermAdvanced", resourceCulture); }
-        }
-
-        public static string PermBuilderTestThisRule {
-            get { return ResourceManager.GetString("PermBuilderTestThisRule", resourceCulture); }
-        }
-
-        public static string TipPermBuilderTestThisRule {
-            get { return ResourceManager.GetString("TipPermBuilderTestThisRule", resourceCulture); }
-        }
-
-        public static string HeaderTesterAccordion {
-            get { return ResourceManager.GetString("HeaderTesterAccordion", resourceCulture); }
-        }
-
-
-
-        public static string DefaultModeClaudeDefault {
-            get { return ResourceManager.GetString("DefaultModeClaudeDefault", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudeAcceptEdits {
-            get { return ResourceManager.GetString("DefaultModeClaudeAcceptEdits", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudePlan {
-            get { return ResourceManager.GetString("DefaultModeClaudePlan", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudeAuto {
-            get { return ResourceManager.GetString("DefaultModeClaudeAuto", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudeDontAsk {
-            get { return ResourceManager.GetString("DefaultModeClaudeDontAsk", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudeBypass {
-            get { return ResourceManager.GetString("DefaultModeClaudeBypass", resourceCulture); }
-        }
-
-        public static string DefaultModeClaudeDelegate {
-            get { return ResourceManager.GetString("DefaultModeClaudeDelegate", resourceCulture); }
-        }
-
-        public static string DefaultModeDescDefault {
-            get { return ResourceManager.GetString("DefaultModeDescDefault", resourceCulture); }
-        }
-
-        public static string DefaultModeDescAcceptEdits {
-            get { return ResourceManager.GetString("DefaultModeDescAcceptEdits", resourceCulture); }
-        }
-
-        public static string DefaultModeDescPlan {
-            get { return ResourceManager.GetString("DefaultModeDescPlan", resourceCulture); }
-        }
-
-        public static string DefaultModeDescAuto {
-            get { return ResourceManager.GetString("DefaultModeDescAuto", resourceCulture); }
-        }
-
-        public static string DefaultModeDescDontAsk {
-            get { return ResourceManager.GetString("DefaultModeDescDontAsk", resourceCulture); }
-        }
-
-        public static string DefaultModeDescBypass {
-            get { return ResourceManager.GetString("DefaultModeDescBypass", resourceCulture); }
-        }
-
-        public static string DefaultModeDescDelegate {
-            get { return ResourceManager.GetString("DefaultModeDescDelegate", resourceCulture); }
-        }
-
         /// <summary>
         ///   Looks up a localized string similar to Creating junction….
         /// </summary>
@@ -4010,6 +3979,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Loading agents, skills, and commands….
+        /// </summary>
+        public static string StatusAgentsSkillsLoading {
+            get {
+                return ResourceManager.GetString("StatusAgentsSkillsLoading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Applying Desktop profile &apos;{0}&apos;….
         /// </summary>
         public static string StatusApplyingDesktopProfileFmt {
@@ -4033,6 +4011,33 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string StatusApplyTimedOut {
             get {
                 return ResourceManager.GetString("StatusApplyTimedOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saved..
+        /// </summary>
+        public static string StatusArtifactSaved {
+            get {
+                return ResourceManager.GetString("StatusArtifactSaved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saved. Your edits apply to your next Claude Code session..
+        /// </summary>
+        public static string StatusArtifactSavedRestartHint {
+            get {
+                return ResourceManager.GetString("StatusArtifactSavedRestartHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save failed: {0}.
+        /// </summary>
+        public static string StatusArtifactSaveFailedFmt {
+            get {
+                return ResourceManager.GetString("StatusArtifactSaveFailedFmt", resourceCulture);
             }
         }
         
@@ -4352,6 +4357,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Couldn&apos;t parse the raw front-matter — fix it before saving..
+        /// </summary>
+        public static string StatusRawFrontMatterInvalid {
+            get {
+                return ResourceManager.GetString("StatusRawFrontMatterInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ready.
         /// </summary>
         public static string StatusReady {
@@ -4451,6 +4465,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Sub-agents.
+        /// </summary>
+        public static string TabAgents {
+            get {
+                return ResourceManager.GetString("TabAgents", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Backup.
         /// </summary>
         public static string TabBackup {
@@ -4478,6 +4501,51 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Advanced.
+        /// </summary>
+        public static string TabPermAdvanced {
+            get {
+                return ResourceManager.GetString("TabPermAdvanced", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Build.
+        /// </summary>
+        public static string TabPermBuild {
+            get {
+                return ResourceManager.GetString("TabPermBuild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Common.
+        /// </summary>
+        public static string TabPermCommon {
+            get {
+                return ResourceManager.GetString("TabPermCommon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lists.
+        /// </summary>
+        public static string TabPermLists {
+            get {
+                return ResourceManager.GetString("TabPermLists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overview.
+        /// </summary>
+        public static string TabPermOverview {
+            get {
+                return ResourceManager.GetString("TabPermOverview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Properties.
         /// </summary>
         public static string TabProperties {
@@ -4492,6 +4560,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string TabRestore {
             get {
                 return ResourceManager.GetString("TabRestore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Skills.
+        /// </summary>
+        public static string TabSkills {
+            get {
+                return ResourceManager.GetString("TabSkills", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Slash Commands.
+        /// </summary>
+        public static string TabSlashCommands {
+            get {
+                return ResourceManager.GetString("TabSlashCommands", resourceCulture);
             }
         }
         
@@ -5044,23 +5130,29 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Permission rules control which Claude Code tools can run without prompting. A rule is either a bare tool name — such as Read or Bash — granting unrestricted access to that tool, or a parameterized form such as Bash(git *) or Read(./**/*.ts) that matches only invocations whose argument fits the pattern. Rules in Allow run silently; Deny rules are blocked outright; Ask rules always trigger a confirmation prompt regardless of the Default Mode setting..
+        ///   Looks up a localized string similar to Conflict resolved: removed &apos;{0}&apos; from {1} — {2} takes precedence..
         /// </summary>
-        public static string TextPermissionsExplainer {
-            get {
-                return ResourceManager.GetString("TextPermissionsExplainer", resourceCulture);
-            }
-        }
-
         public static string TextPermConflictPruned {
             get {
                 return ResourceManager.GetString("TextPermConflictPruned", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not added: &apos;{0}&apos; is already in {1}, which takes precedence over {2}..
+        /// </summary>
         public static string TextPermConflictSkipped {
             get {
                 return ResourceManager.GetString("TextPermConflictSkipped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Permission rules control which Claude Code tools can run without prompting. A rule is either a bare tool name — such as Read or Bash — granting unrestricted access to that tool, or a parameterized form such as Bash(git *) or Read(./**/*.ts) that matches only invocations whose argument fits the pattern. Rules in Allow run silently; Deny rules are blocked outright; Ask rules always trigger a confirmation prompt regardless of the Default Mode setting..
+        /// </summary>
+        public static string TextPermissionsExplainer {
+            get {
+                return ResourceManager.GetString("TextPermissionsExplainer", resourceCulture);
             }
         }
         
@@ -5253,6 +5345,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string TextScopePathUser {
             get {
                 return ResourceManager.GetString("TextScopePathUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to To suppress all permission prompts, choose bypassPermissions in Default Mode below..
+        /// </summary>
+        public static string TextSelectBypassHint {
+            get {
+                return ResourceManager.GetString("TextSelectBypassHint", resourceCulture);
             }
         }
         
@@ -5477,6 +5578,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hide this banner. It will reappear if you open a different project, click Reload Window, or restart the app..
+        /// </summary>
+        public static string TipButtonDismissSchema {
+            get {
+                return ResourceManager.GetString("TipButtonDismissSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Export the fully-merged effective config as a .zip file.
         /// </summary>
         public static string TipButtonExport {
@@ -5527,6 +5637,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string TipButtonOpenProject {
             get {
                 return ResourceManager.GetString("TipButtonOpenProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Re-scan the filesystem and reload the list.
+        /// </summary>
+        public static string TipButtonRefresh {
+            get {
+                return ResourceManager.GetString("TipButtonRefresh", resourceCulture);
             }
         }
         
@@ -5603,11 +5722,38 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hide this banner for this version. The banner will reappear when a newer release is published..
+        /// </summary>
+        public static string TipButtonUpdateBannerDismiss {
+            get {
+                return ResourceManager.GetString("TipButtonUpdateBannerDismiss", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open the GitHub release page for this version.
+        /// </summary>
+        public static string TipButtonUpdateBannerOpenRelease {
+            get {
+                return ResourceManager.GetString("TipButtonUpdateBannerOpenRelease", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Uncheck to skip this confirmation dialog and save immediately in future.
         /// </summary>
         public static string TipCheckboxShowDialog {
             get {
                 return ResourceManager.GetString("TipCheckboxShowDialog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query GitHub for the latest release.  Works even when the auto-check on launch is disabled..
+        /// </summary>
+        public static string TipCheckForUpdates {
+            get {
+                return ResourceManager.GetString("TipCheckForUpdates", resourceCulture);
             }
         }
         
@@ -6269,6 +6415,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Open the dry-run tester, pre-filled from this rule, to see what Claude Code would actually do — across all your rules and scopes..
+        /// </summary>
+        public static string TipPermBuilderTestThisRule {
+            get {
+                return ResourceManager.GetString("TipPermBuilderTestThisRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enter a rule: bare tool name (e.g. Read) or parameterized form (e.g. Bash(git *)). See examples below..
         /// </summary>
         public static string TipPermissionRule {
@@ -6602,6 +6757,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Comma-separated, e.g. Read, Grep, Bash.
+        /// </summary>
+        public static string WatermarkEditTools {
+            get {
+                return ResourceManager.GetString("WatermarkEditTools", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to KEY.
         /// </summary>
         public static string WatermarkEnvKey {
@@ -6868,60 +7032,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string WorkspaceNameClaudeDesktop {
             get {
                 return ResourceManager.GetString("WorkspaceNameClaudeDesktop", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to This model doesn't use an effort level..
-        /// </summary>
-        public static string LabelEffortNotApplicable {
-            get {
-                return ResourceManager.GetString("LabelEffortNotApplicable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Effort changed to '{0}' — the selected model doesn't support '{1}'..
-        /// </summary>
-        public static string LabelEffortCoercedFmt {
-            get {
-                return ResourceManager.GetString("LabelEffortCoercedFmt", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Model {0} supports effort: {1}.
-        /// </summary>
-        public static string LabelModelEffortSummaryFmt {
-            get {
-                return ResourceManager.GetString("LabelModelEffortSummaryFmt", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to To suppress all permission prompts, choose bypassPermissions in Default Mode below..
-        /// </summary>
-        public static string TextSelectBypassHint {
-            get {
-                return ResourceManager.GetString("TextSelectBypassHint", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Auto mode isn't available for the current model or scope — switched to Ask permissions..
-        /// </summary>
-        public static string LabelAutoModeCoerced {
-            get {
-                return ResourceManager.GetString("LabelAutoModeCoerced", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Effort '{0}' isn't supported by the current model..
-        /// </summary>
-        public static string LabelEffortUnsupportedFmt {
-            get {
-                return ResourceManager.GetString("LabelEffortUnsupportedFmt", resourceCulture);
             }
         }
     }

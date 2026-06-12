@@ -5,6 +5,12 @@
         <AssemblyName>ClaudeForge</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Version>1.0.0</Version>
+        <!-- Static Windows app/taskbar icon embedded in the apphost exe so the
+             taskbar + titlebar show the icon immediately and reliably (including
+             under the Rider debugger) — independent of, and with no, runtime SVG
+             render on the startup path. Generated from Resources/ClaudeForge.svg as a
+             multi-resolution .ico (256/128/64/48/32/16). -->
+        <ApplicationIcon>Resources\ClaudeForge.ico</ApplicationIcon>
         <!-- Add Windows platform TFM to pick up the net10.0-windows build of
              LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
              Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it.

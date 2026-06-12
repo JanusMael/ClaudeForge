@@ -48,15 +48,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // NOTE: Icon assignment moved to OnOpened (below) so the underlying
-        // SVG → PNG render in AppIcon.EnsureLoaded doesn't fire on the
-        // dispatcher during MainWindow construction. The render is ~100-300 ms
-        // and was previously on the critical first-paint path (visible in
-        // cold-start profiles as a SKSvg.C... block under MainWindow's ctor).
-        // Setting Icon from OnOpened produces a very brief "default icon"
-        // flash on Windows/X11 before the rendered icon appears; on Wayland
-        // Window.Icon is ignored entirely so there's no visual cost there.
-        // Net: faster first paint with a tolerable icon-pop-in.
+        // NOTE: the window / taskbar / titlebar icon now comes from the static
+        // <ApplicationIcon> .ico embedded in the apphost exe (see ClaudeForge.csproj),
+        // so it appears immediately and reliably — including under the Rider debugger,
+        // where the previous runtime-rendered Window.Icon went missing. We deliberately
+        // do NOT set Window.Icon from AppIcon.Instance here: that SVG → PNG render was
+        // ~100-300 ms on the dispatcher and is no longer needed for the window icon
+        // (the .ico's per-size entries are crisper at taskbar/titlebar sizes than the
+        // 256-px master scaled down). AppIcon's rendered surfaces are still used lazily
+        // for dialog titlebars / the About box.
 
         // Ctrl+S → Save (other shortcuts wired via Window.KeyBindings in AXAML)
         KeyDown += OnKeyDown;
@@ -85,12 +85,8 @@ public partial class MainWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
-        // Set the window icon now that first paint has happened — moved out
-        // of the ctor so the SVG render in AppIcon.EnsureLoaded doesn't
-        // block first paint. Avalonia paints the icon update lazily on the
-        // next idle tick. See the ctor comment for the full rationale.
-        Icon = AppIcon.Instance;
-
+        // Window icon comes from the static <ApplicationIcon> .ico embedded in the exe
+        // (see ClaudeForge.csproj + the ctor comment) — no runtime SVG render here.
         if (DataContext is not MainWindowViewModel vm)
         {
             return;

@@ -3,10 +3,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Services;
 /// <summary>
 /// Sink that records schema properties surfaced via the raw-JSON fallback
 /// because the generic editor factory could not classify their shape. The host
-/// aggregates these and shows a single non-fatal load-time notice (see
-/// <c>AvaloniaDiagnostics.ShowNonFatalNotice</c>) so a user is never left unaware
-/// that a setting lacks a structured editor — the field stays fully editable as
-/// validated raw JSON. Part of the schema-coverage guarantee (Phase 2).
+/// aggregates these and writes a single non-fatal load-time entry to the log so
+/// the information is never lost — the field itself is already flagged read-only/raw
+/// in place and stays fully editable as validated raw JSON. (A startup
+/// <c>NonFatalNoticeDialog</c> was previously shown but proved redundant +
+/// distracting; the dialog machinery is retained but currently unused.) Part of the
+/// schema-coverage guarantee (Phase 2).
 /// </summary>
 public interface IUnsupportedShapeSink
 {
@@ -70,11 +72,12 @@ public sealed class UnsupportedShapeCollector : IUnsupportedShapeSink
 
 /// <summary>
 /// Shared text for the "no structured editor for this shape" affordance — the
-/// per-field tooltip and the aggregated load-time notice. Deliberately NOT
+/// per-field tooltip and the aggregated load-time notice (the title + header are
+/// now written to the log; see
+/// <c>MainWindowViewModel.MaybeLogUnsupportedShapeNotice</c>). Deliberately NOT
 /// localized: it is a rare, technical, diagnostic message about an unmodellable
-/// schema shape, consistent with the (also non-localized)
-/// <c>FatalErrorDialog</c> / <c>NonFatalNoticeDialog</c> siblings it is shown
-/// alongside.
+/// schema shape, consistent with the (also non-localized) <c>FatalErrorDialog</c> /
+/// <c>NonFatalNoticeDialog</c> siblings.
 /// </summary>
 public static class UnsupportedShapeText
 {

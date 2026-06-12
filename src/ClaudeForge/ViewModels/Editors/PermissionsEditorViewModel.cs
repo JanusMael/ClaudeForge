@@ -99,23 +99,53 @@ public sealed record CommonActionGroup(string Header, IReadOnlyList<CommonAction
 /// or — for the wildcard catch-all tier — a styled border with
 /// <see cref="IsCatchAll"/> set to <see langword="true"/> rendered at the
 /// bottom of the list outside the per-tool accordion stack.
+/// <para>
+/// A class (not a record) because <see cref="IsExpanded"/> is mutable, two-way-bound
+/// view state. Value-equality isn't needed — these objects are rebuilt wholesale by
+/// <see cref="PermissionsEditorViewModel.RebuildCommonActions"/>.
+/// </para>
 /// </summary>
-/// <param name="Tool">Display label (also the discriminator).</param>
-/// <param name="OperationGroups">
-/// The tool's operation groups, ordered safe-first
-/// (Read kinds first, then Write, then Network, then Destructive at the
-/// group level — see <see cref="PermissionsEditorViewModel.BuildToolGroups"/>).
-/// </param>
-/// <param name="IsCatchAll">
-/// <see langword="true"/> for the single wildcard tier ("All Tools");
-/// <see langword="false"/> for every concrete tool.  The View renders the
-/// catch-all tier in catch-all styling so users don't confuse it with a
-/// real tool accordion.
-/// </param>
-public sealed record ToolActionGroup(
-    string Tool,
-    IReadOnlyList<CommonActionGroup> OperationGroups,
-    bool IsCatchAll = false);
+public sealed partial class ToolActionGroup : ObservableObject
+{
+    /// <param name="tool">Display label (also the discriminator).</param>
+    /// <param name="operationGroups">
+    /// The tool's operation groups, ordered safe-first (Read kinds first, then Write,
+    /// then Network, then Destructive — see
+    /// <see cref="PermissionsEditorViewModel.BuildToolGroups"/>).
+    /// </param>
+    /// <param name="isCatchAll">
+    /// <see langword="true"/> for the single wildcard tier ("All Tools");
+    /// <see langword="false"/> for every concrete tool. The View renders the catch-all
+    /// tier in catch-all styling so users don't confuse it with a real tool accordion.
+    /// </param>
+    public ToolActionGroup(
+        string tool,
+        IReadOnlyList<CommonActionGroup> operationGroups,
+        bool isCatchAll = false)
+    {
+        Tool = tool;
+        OperationGroups = operationGroups;
+        IsCatchAll = isCatchAll;
+    }
+
+    /// <summary>Display label (also the discriminator).</summary>
+    public string Tool { get; }
+
+    /// <summary>The tool's operation groups, ordered safe-first.</summary>
+    public IReadOnlyList<CommonActionGroup> OperationGroups { get; }
+
+    /// <summary><see langword="true"/> for the single wildcard "All Tools" tier.</summary>
+    public bool IsCatchAll { get; }
+
+    /// <summary>
+    /// Whether the tool's accordion (<c>Expander</c>) is expanded — transient view
+    /// state, two-way bound in PermissionsCommonView. Preserved by tool name across
+    /// <see cref="PermissionsEditorViewModel.RebuildCommonActions"/> (which recreates
+    /// these objects after every add/remove) so adding a rule no longer collapses the
+    /// accordion the user is working in.
+    /// </summary>
+    [ObservableProperty] private bool _isExpanded;
+}
 
 /// <summary>
 /// Editor for the "permissions" object.
@@ -438,7 +468,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                     // Destructive kind — bare Bash wildcard (any shell command)
                     I("Bash", CommonActionKind.Destructive)
                 ),
-            ], IsCatchAll: true),
+            ], isCatchAll: true),
         ];
 
         // IMPORTANT — schema validation note:
@@ -525,8 +555,13 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         AskList.CollectionChanged += OnListChanged;
         // Initial state: all lists empty → show every tool group unfiltered
         // (subject to the Windows-only filter for the WSL group; see
-        // VisibleToolGroupsForPlatform).
-        ToolActionGroups = VisibleToolGroupsForPlatform(AllToolGroups).ToList();
+        // VisibleToolGroupsForPlatform). Wrap in fresh per-instance objects —
+        // AllToolGroups is a shared static template list and ToolActionGroup now
+        // carries mutable, two-way-bound IsExpanded view state that must not leak
+        // across editor instances (or mutate the static templates).
+        ToolActionGroups = VisibleToolGroupsForPlatform(AllToolGroups)
+                           .Select(t => new ToolActionGroup(t.Tool, t.OperationGroups, t.IsCatchAll))
+                           .ToList();
 
         // Schema-coverage guarantee: render every permissions schema key.
         // CoveredKeys lists what this editor handles bespoke-ly; every other
@@ -1641,6 +1676,15 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         //    gate VisibleToolGroupsForPlatform FIRST so the
         //    Windows-only WSL group is omitted on non-Windows hosts before
         //    the rule-level filtering downstream.
+        // 3a. Preserve which tool accordions the user had expanded. This method
+        //     recreates the ToolActionGroup objects on every add/remove, so without
+        //     carrying the flag over the freshly-built (collapsed) Expander would
+        //     replace the open one — collapsing the accordion the user just clicked an
+        //     Allow/Deny/Ask button in. Captured by tool name before reassigning.
+        HashSet<string> expandedTools = new(
+            ToolActionGroups.Where(t => t.IsExpanded).Select(t => t.Tool),
+            StringComparer.Ordinal);
+
         ToolActionGroups = VisibleToolGroupsForPlatform(AllToolGroups)
                            .Select(t => new ToolActionGroup(
                                t.Tool,
@@ -1650,7 +1694,10 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                                     g.Items.Where(i => !alreadySet.Contains(PermissionRuleNormalizer.Normalize(i.Rule))).ToList()))
                                 .Where(g => g.Items.Count > 0)
                                 .ToList(),
-                               t.IsCatchAll))
+                               t.IsCatchAll)
+                           {
+                               IsExpanded = expandedTools.Contains(t.Tool),
+                           })
                            .Where(t => t.OperationGroups.Count > 0)
                            .ToList();
 

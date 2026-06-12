@@ -127,8 +127,11 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ToolActionGroup">
                     <StackPanel>
-                        <!-- Concrete tool: Expander -->
-                        <Expander IsExpanded="False"
+                        <!-- Concrete tool: Expander. IsExpanded is two-way bound to the
+                             group so the user's expand survives RebuildCommonActions
+                             (which recreates these objects after every add) — otherwise
+                             clicking an Allow/Deny/Ask button collapses the accordion. -->
+                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                                   Margin="0,2,0,0"
                                   IsVisible="{Binding !IsCatchAll}">
                             <Expander.Header>

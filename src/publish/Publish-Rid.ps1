@@ -129,17 +129,22 @@ if (Test-Path $ridFolder) {
 }
 
 # /p:IncrementalBuild=false forces a fresh compilation per RID so the
-# trimmed output cannot accidentally reuse another RID's artifacts. The
-# publish stream is tee'd to a log file for the warning scan below;
-# Tee-Object does not overwrite $LASTEXITCODE so we can still read the
-# real `dotnet publish` exit code.
+# trimmed output cannot accidentally reuse another RID's artifacts.
+# /p:RunResxKeyGuard=false skips the dev/CI unused-resx-key guard
+# (Directory.Build.targets) during publish: it compiles an inline
+# RoslynCodeTaskFactory task that can intermittently fail under concurrent
+# builds / temp-dir contention (e.g. when publishing from an IDE) and is not
+# needed to produce the release binary. The publish stream is tee'd to a log
+# file for the warning scan below; Tee-Object does not overwrite $LASTEXITCODE
+# so we can still read the real `dotnet publish` exit code.
 dotnet publish "$projectPath" `
     -c Release `
     -r $Rid `
     --output "$ridFolder" `
     --self-contained true `
     -p:IncrementalBuild=false `
-    -p:BuildInParallel=false 2>&1 | Tee-Object -FilePath $logPath
+    -p:BuildInParallel=false `
+    -p:RunResxKeyGuard=false 2>&1 | Tee-Object -FilePath $logPath
 
 $publishExit = $LASTEXITCODE
 

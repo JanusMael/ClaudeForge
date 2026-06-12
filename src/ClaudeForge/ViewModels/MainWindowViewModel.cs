@@ -3032,7 +3032,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         JsonSchemaNode ccSchema = await _schemaRegistry.GetClaudeCodeSettingsNodeAsync();
         HashSet<string> ccKnown = _snapshotService.LoadSnapshot("claude-code-settings");
-        IReadOnlyList<SchemaNode> ccNodes = SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew);
+        // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
+        // SchemaNode data (no UI objects), so it's safe on a worker and keeps the
+        // just-painted startup window responsive instead of frozen during the build.
+        IReadOnlyList<SchemaNode> ccNodes =
+            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew));
         _renderedPathsBySchema["claude-code-settings"] = SchemaTreeBuilder.CollectPaths(ccNodes);
         if (ccKnown.Count == 0)
         {
@@ -3041,7 +3045,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         JsonSchemaNode dtSchema = await _schemaRegistry.GetClaudeDesktopConfigNodeAsync();
         HashSet<string> dtKnown = _snapshotService.LoadSnapshot("claude-desktop-config");
-        IReadOnlyList<SchemaNode> dtNodes = SchemaTreeBuilder.BuildTopLevel(dtSchema, dtKnown, flagAllAsNew);
+        // Same off-thread schema-tree build as the Claude Code section above.
+        IReadOnlyList<SchemaNode> dtNodes =
+            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(dtSchema, dtKnown, flagAllAsNew));
         _renderedPathsBySchema["claude-desktop-config"] = SchemaTreeBuilder.CollectPaths(dtNodes);
         if (dtKnown.Count == 0)
         {
@@ -3202,30 +3208,40 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         return all;
     }
 
-    // Latch so the unsupported-shape heads-up is shown at most once per session,
+    // Latch so the unsupported-shape heads-up is logged at most once per session,
     // not on every navigation-tree rebuild (scope switch, file-watcher reload).
-    private bool _unsupportedShapesNoticeShown;
+    private bool _unsupportedShapesNoticeLogged;
 
     /// <summary>
-    /// Show one aggregated, non-fatal notice listing every setting that has no
-    /// structured editor (rendered as raw JSON). No-op when nothing was reported
-    /// or the notice has already been shown this session. The fields remain fully
-    /// editable; this is purely informational.
+    /// Writes a single aggregated log entry listing every setting that has no
+    /// structured editor (rendered as raw JSON). No-op when nothing was reported or
+    /// the notice has already been logged this session. The fields remain fully
+    /// editable and are already flagged read-only/raw in place, so this is logged
+    /// rather than popped up: a startup dialog proved redundant + distracting. The
+    /// <see cref="AvaloniaDiagnostics.ShowNonFatalNotice"/> + <c>NonFatalNoticeDialog</c>
+    /// machinery is intentionally retained (currently unused) for future non-fatal
+    /// notices.
     /// </summary>
-    private void MaybeShowUnsupportedShapeNotice(UnsupportedShapeCollector collector)
+    private void MaybeLogUnsupportedShapeNotice(UnsupportedShapeCollector collector)
     {
-        if (_unsupportedShapesNoticeShown || !collector.HasAny)
+        if (_unsupportedShapesNoticeLogged || !collector.HasAny)
         {
             return;
         }
 
-        _unsupportedShapesNoticeShown = true;
-        string body = string.Join(
-            Environment.NewLine,
+        _unsupportedShapesNoticeLogged = true;
+        string paths = string.Join(
+            "; ",
             collector.Snapshot().Select(s =>
-                s.DisplayName is { Length: > 0 } name ? $"{s.JsonPath}    ({name})" : s.JsonPath));
-        AvaloniaDiagnostics.ShowNonFatalNotice(
-            UnsupportedShapeText.NoticeTitle, UnsupportedShapeText.NoticeHeader, body);
+                s.DisplayName is { Length: > 0 } name ? $"{s.JsonPath} ({name})" : s.JsonPath));
+
+        // Log the notice's intended message (the same Title + Header the dialog would
+        // have shown) so the information is preserved, without interrupting startup.
+        Log.Warning(
+            "[Schema] {NoticeTitle} {NoticeHeader} Affected settings: {Paths}",
+            UnsupportedShapeText.NoticeTitle,
+            UnsupportedShapeText.NoticeHeader,
+            paths);
     }
 
     private void BuildNavigationTree(
@@ -3392,10 +3408,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         NavigationTree.Add(dtHeader);
 
-        // One-time aggregated heads-up if any setting in either section has no
+        // One-time aggregated LOG entry if any setting in either section has no
         // structured editor (raw-JSON fallback). No-op when the schema is fully
-        // covered (the common case today) or after the first show this session.
-        MaybeShowUnsupportedShapeNotice(unsupportedShapes);
+        // covered (the common case today) or after the first log this session.
+        // Deliberately logged, not popped up — the fields are already flagged
+        // read-only/raw in place, so a startup dialog was redundant + distracting.
+        MaybeLogUnsupportedShapeNotice(unsupportedShapes);
 
         // --- Effective Settings ---
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });

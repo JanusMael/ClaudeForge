@@ -100,8 +100,12 @@ $pubDir   = Join-Path $repoRoot "src/ClaudeForge/bin/Release/net10.0/$Rid/publis
 
 if (-not $SkipPublish) {
     Write-Host "[smoke] publishing $Rid..."
+    # -p:RunResxKeyGuard=false skips the dev/CI unused-resx-key guard during publish
+    # (see Publish-Rid.ps1 / Directory.Build.targets) — the inline guard task can flake
+    # under concurrent-build / temp-dir contention and isn't needed for the binary.
     & dotnet publish (Join-Path $repoRoot 'src/ClaudeForge/ClaudeForge.csproj') `
-        -c Release -r $Rid --nologo -v minimal
+        -c Release -r $Rid --nologo -v minimal `
+        -p:RunResxKeyGuard=false
     if ($LASTEXITCODE -ne 0) {
         Write-Error "[smoke] publish failed (exit $LASTEXITCODE) — boot smoke aborted."
         exit 1

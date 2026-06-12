@@ -335,8 +335,19 @@ public class CheckUnusedResxKeys : Task
         </Task>
     </UsingTask>
 
+    <!-- The publish scripts pass -p:RunResxKeyGuard=false (a global property that
+         propagates to every project, including P2P references) to SKIP this guard during
+         `dotnet publish`. The guard compiles an inline RoslynCodeTaskFactory task at build
+         time; that generate-then-compile step can intermittently fail under concurrent
+         builds / temp-dir contention (e.g. publishing from an IDE that also runs background
+         builds), surfacing as a spurious "CheckUnusedResxKeys task was not found" plus a
+         CS1002 on the generated temp source. It is a dev/CI guardrail (dead-key +
+         dynamic-access tripwire) already enforced on every normal `dotnet build` and CI
+         run, so it is not needed to produce a release binary. -->
     <Target Name="GuardUnusedResxKeys" AfterTargets="Build"
-            Condition="'$(DesignTimeBuild)' != 'true' And Exists('$(MSBuildProjectDirectory)/Localization/Strings.resx')">
+            Condition="'$(DesignTimeBuild)' != 'true'
+                       And '$(RunResxKeyGuard)' != 'false'
+                       And Exists('$(MSBuildProjectDirectory)/Localization/Strings.resx')">
         <CheckUnusedResxKeys ResxPath="$(MSBuildProjectDirectory)/Localization/Strings.resx"
                              ScanRoots="$(MSBuildProjectDirectory);$(MSBuildThisFileDirectory)tests"
                              ProjectDir="$(MSBuildProjectDirectory)" />

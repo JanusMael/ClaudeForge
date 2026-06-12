@@ -610,6 +610,34 @@ public class PermissionsEditorViewModelTests
             + "call is missing in RebuildToolGroups.");
     }
 
+    [TestMethod]
+    public void CommonActions_AddingRule_PreservesExpandedAccordion()
+    {
+        // Regression: clicking an Allow/Deny/Ask button on the Common tab triggers
+        // RebuildCommonActions, which recreates the ToolActionGroup objects. The
+        // accordion the user had expanded must survive the rebuild — previously the
+        // freshly-built (collapsed) Expander replaced the open one, collapsing it and
+        // preventing easy clicks on the category's other buttons.
+        PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
+
+        ToolActionGroup bash = vm.ToolActionGroups.First(t => t.Tool == "Bash" && !t.IsCatchAll);
+        bash.IsExpanded = true;
+
+        // Add a rule from a DIFFERENT tool (File/Read) so the Bash group survives the
+        // rebuild intact — this isolates expansion preservation from group removal.
+        vm.AddToAllowCommand.Execute("Read");
+
+        ToolActionGroup? bashAfter = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "Bash" && !t.IsCatchAll);
+        Assert.IsNotNull(bashAfter, "Precondition: the Bash group must still exist after adding an unrelated rule.");
+        Assert.IsTrue(bashAfter!.IsExpanded,
+            "The expanded Bash accordion must stay expanded after adding a rule — it must not collapse.");
+
+        // A group the user never expanded must NOT spuriously expand across the rebuild.
+        ToolActionGroup? file = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "File" && !t.IsCatchAll);
+        Assert.IsNotNull(file, "Precondition: the File group survives (keeps Glob/Grep after Read is added).");
+        Assert.IsFalse(file!.IsExpanded, "A never-expanded group must remain collapsed across the rebuild.");
+    }
+
     [DataTestMethod]
     [DataRow("Bash(wsl ls *)")]
     [DataRow("Bash(wsl find *)")]
