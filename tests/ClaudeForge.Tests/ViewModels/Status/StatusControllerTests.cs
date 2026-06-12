@@ -266,7 +266,7 @@ public sealed class StatusControllerTests
     /// could flake under loaded CI schedulers.
     /// </remarks>
     private static async Task WaitForClearAsync(StatusController sc,
-                                                int maxWaitMs = 1000)
+                                                int maxWaitMs = 5000)
     {
         if (sc.Text is null)
         {
