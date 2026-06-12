@@ -12,10 +12,25 @@ public partial class EnumPropertyEditorViewModel : PropertyEditorViewModel
         // A strict enum (from JSON-Schema "enum") has no Examples and is rendered as a
         // ComboBox with a visible dropdown chevron so the dropdown affordance is obvious.
         AllowsFreeForm = schema.Examples.Count > 0;
+
+        // Pair each value with its optional per-value description so the picker can show
+        // a tooltip per item. Falls back to no description (no tooltip) when the schema
+        // carries none — the common case for most enums.
+        IReadOnlyDictionary<string, string> descriptions = schema.EnumValueDescriptions;
+        EnumOptionItems = EnumOptions
+            .Select(v => new EnumOption(v, descriptions.TryGetValue(v, out string? d) ? d : null))
+            .ToList();
     }
 
     /// <summary>The allowed values from the schema's enum definition.</summary>
     public IReadOnlyList<string> EnumOptions { get; }
+
+    /// <summary>
+    /// The picker options as value+description pairs — <see cref="EnumOptions"/> paired
+    /// with any per-value tooltip from <see cref="IEditorSchema.EnumValueDescriptions"/>.
+    /// The ComboBox / AutoCompleteBox bind to this so each item can carry a tooltip.
+    /// </summary>
+    public IReadOnlyList<EnumOption> EnumOptionItems { get; }
 
     /// <summary>
     /// <c>true</c> for enums promoted from the schema <c>examples</c> keyword —
@@ -61,3 +76,7 @@ public partial class EnumPropertyEditorViewModel : PropertyEditorViewModel
         SelectedValue = null;
     }
 }
+
+/// <summary>One picker option — its <see cref="Value"/> plus an optional tooltip
+/// <see cref="Description"/> (null when the schema provides none).</summary>
+public sealed record EnumOption(string Value, string? Description);

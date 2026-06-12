@@ -179,23 +179,37 @@
                     <DataTemplate x:DataType="vm:EnumPropertyEditorViewModel">
                         <Grid HorizontalAlignment="Left">
                             <ComboBox IsVisible="{Binding IsStrictEnum}"
-                                      ItemsSource="{Binding EnumOptions}"
-                                      SelectedItem="{Binding SelectedValue}"
+                                      ItemsSource="{Binding EnumOptionItems}"
+                                      SelectedValueBinding="{Binding Value}"
+                                      SelectedValue="{Binding SelectedValue, Mode=TwoWay}"
                                       PlaceholderText="{Binding Watermark}"
                                       MinWidth="200"
                                       AutomationProperties.Name="{Binding DisplayName}"
-                                      AutomationProperties.HelpText="{Binding Description}" />
+                                      AutomationProperties.HelpText="{Binding Description}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:EnumOption">
+                                        <TextBlock Text="{Binding Value}" ToolTip.Tip="{Binding Description}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                             <StackPanel IsVisible="{Binding AllowsFreeForm}"
                                         Orientation="Horizontal" Spacing="4">
                                 <AutoCompleteBox Name="FreeFormBox"
-                                                 ItemsSource="{Binding EnumOptions}"
+                                                 ItemsSource="{Binding EnumOptionItems}"
+                                                 ValueMemberBinding="{Binding Value}"
                                                  Text="{Binding SelectedValue}"
                                                  PlaceholderText="{Binding Watermark}"
                                                  FilterMode="Contains"
                                                  MinimumPrefixLength="0"
                                                  MinWidth="200"
                                                  AutomationProperties.Name="{Binding DisplayName}"
-                                                 AutomationProperties.HelpText="{Binding Description}" />
+                                                 AutomationProperties.HelpText="{Binding Description}">
+                                    <AutoCompleteBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:EnumOption">
+                                            <TextBlock Text="{Binding Value}" ToolTip.Tip="{Binding Description}" />
+                                        </DataTemplate>
+                                    </AutoCompleteBox.ItemTemplate>
+                                </AutoCompleteBox>
                                 <Button Content="▾" Padding="8,4"
                                         ToolTip.Tip="{x:Static loc:WrapperStrings.TipShowSuggestions}"
                                         Click="OnEnumDropdownToggleClick" />

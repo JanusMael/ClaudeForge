@@ -3035,8 +3035,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
         // SchemaNode data (no UI objects), so it's safe on a worker and keeps the
         // just-painted startup window responsive instead of frozen during the build.
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ccEnumDescriptions =
+            SchemaRegistry.GetEnumDescriptions("claude-code-settings.json");
         IReadOnlyList<SchemaNode> ccNodes =
-            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew));
+            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew, ccEnumDescriptions));
         _renderedPathsBySchema["claude-code-settings"] = SchemaTreeBuilder.CollectPaths(ccNodes);
         if (ccKnown.Count == 0)
         {

@@ -52,6 +52,78 @@ public sealed class SchemaRegistry : IDisposable
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
     }
 
+    /// <summary>Shared empty result for <see cref="GetEnumDescriptions"/>.</summary>
+    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> EmptyEnumDescriptions =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>(0);
+
+    /// <summary>
+    /// Per-property enum/example value descriptions (a map value→description), keyed by the
+    /// dot-path <see cref="SchemaTreeBuilder"/> uses (e.g. <c>"model"</c>,
+    /// <c>"permissions.defaultMode"</c>). Powers per-item tooltips on the value picker.
+    /// </summary>
+    /// <remarks>
+    /// Sourced from a dedicated resource under <c>Assets/Descriptions/</c> (e.g.
+    /// <c>claude-code-settings.enumdescriptions.json</c>) — deliberately NOT inside the JSON
+    /// Schema/overlay and NOT under <c>Assets/Schemas/</c>. Two reasons: JsonSchema.Net
+    /// strict-rejects unknown keywords for this dialect (a custom keyword in the schema crashes
+    /// <see cref="ParseSchema"/> and the <c>RestoreEngine</c> validation path), and
+    /// <c>BackupEngine.BundleSchemas</c> bundles everything under <c>Assets/Schemas/</c> into
+    /// backups where <c>RestoreEngine</c> would then try to parse it as a schema. Read here via
+    /// <see cref="System.Text.Json"/>, never through JsonSchema.Net. Resource shape:
+    /// <c>{ "&lt;jsonPath&gt;": { "&lt;value&gt;": "&lt;desc&gt;" } }</c>; non-object root entries
+    /// (e.g. a <c>"$comment"</c> string) are ignored.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> GetEnumDescriptions(string cacheFileName)
+    {
+        string descFileName = Path.GetFileNameWithoutExtension(cacheFileName)
+                              + ".enumdescriptions"
+                              + Path.GetExtension(cacheFileName);
+        byte[]? bytes = BundledResource.TryRead("Descriptions", descFileName);
+        if (bytes is null)
+        {
+            return EmptyEnumDescriptions;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(bytes);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return EmptyEnumDescriptions;
+            }
+
+            Dictionary<string, IReadOnlyDictionary<string, string>> result = new(StringComparer.Ordinal);
+            foreach (JsonProperty pathEntry in doc.RootElement.EnumerateObject())
+            {
+                // Skip non-object entries (e.g. a "$comment" string at the root).
+                if (pathEntry.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                Dictionary<string, string> map = new(StringComparer.Ordinal);
+                foreach (JsonProperty d in pathEntry.Value.EnumerateObject())
+                {
+                    if (d.Value.ValueKind == JsonValueKind.String)
+                    {
+                        map[d.Name] = d.Value.GetString()!;
+                    }
+                }
+
+                if (map.Count > 0)
+                {
+                    result[pathEntry.Name] = map;
+                }
+            }
+
+            return result.Count > 0 ? result : EmptyEnumDescriptions;
+        }
+        catch (JsonException)
+        {
+            return EmptyEnumDescriptions;
+        }
+    }
+
     /// <summary>
     /// Get a schema by URL, with bundled-first loading and disk caching.
     /// Loading priority: memory cache → bundled resource (+ overlay) → disk cache → HTTP fetch.

@@ -15,6 +15,7 @@
     <ItemGroup>
         <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
         <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
+        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
     </ItemGroup>
 
     <ItemGroup>

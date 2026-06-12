@@ -32,6 +32,43 @@ public class EnumPropertyEditorViewModelTests
     }
 
     [TestMethod]
+    public void EnumOptionItems_PairValuesWithDescriptions_NullWhenAbsent()
+    {
+        // EnumOptionItems pairs each value with its per-value description (for the
+        // per-item tooltip); a value with no description maps to a null tooltip.
+        FakeEditorSchema schema = new("settings.color", EditorValueType.Enum)
+        {
+            EnumValues = Options, // red, green, blue
+            EnumValueDescriptions = new Dictionary<string, string>
+            {
+                ["red"] = "warm",
+                ["blue"] = "cool",
+                // "green" intentionally omitted.
+            },
+        };
+        EnumPropertyEditorViewModel vm = new(schema, FakeEditorScope.User);
+
+        Assert.AreEqual(3, vm.EnumOptionItems.Count);
+        Assert.AreEqual("red", vm.EnumOptionItems[0].Value);
+        Assert.AreEqual("warm", vm.EnumOptionItems[0].Description);
+        Assert.AreEqual("green", vm.EnumOptionItems[1].Value);
+        Assert.IsNull(vm.EnumOptionItems[1].Description, "A value with no description maps to a null tooltip.");
+        Assert.AreEqual("blue", vm.EnumOptionItems[2].Value);
+        Assert.AreEqual("cool", vm.EnumOptionItems[2].Description);
+    }
+
+    [TestMethod]
+    public void EnumOptionItems_AllNullDescriptions_WhenSchemaHasNone()
+    {
+        EnumPropertyEditorViewModel vm = new(Schema(), FakeEditorScope.User);
+        Assert.AreEqual(3, vm.EnumOptionItems.Count);
+        foreach (EnumOption item in vm.EnumOptionItems)
+        {
+            Assert.IsNull(item.Description, "No descriptions in the schema → every item has a null tooltip.");
+        }
+    }
+
+    [TestMethod]
     public void Initial_SelectedValue_IsNull_NotModified()
     {
         EnumPropertyEditorViewModel vm = new(Schema(), FakeEditorScope.User);

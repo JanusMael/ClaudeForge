@@ -48,6 +48,20 @@ public sealed class SchemaNode
     /// <summary>Example values from the schema's "examples" keyword — used as suggestions for free-form fields.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
 
+    /// <summary>
+    /// Optional per-enum-value descriptions (value → human-readable text), surfaced as
+    /// tooltips on the value picker. Sourced from a dedicated descriptions resource
+    /// (<c>Assets/Descriptions/*.enumdescriptions.json</c>), loaded by
+    /// <c>SchemaRegistry.GetEnumDescriptions</c> and threaded in by the tree builder.
+    /// Empty when none are defined.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> EnumValueDescriptions { get; init; } =
+        EmptyEnumValueDescriptions;
+
+    /// <summary>Shared empty map so the common (description-free) node doesn't allocate.</summary>
+    public static readonly IReadOnlyDictionary<string, string> EmptyEnumValueDescriptions =
+        new Dictionary<string, string>(0);
+
     /// <summary>JSON Schema format hint (e.g. "uri", "date-time"), or null.</summary>
     public string? Format { get; init; }
 

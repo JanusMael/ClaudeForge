@@ -1,0 +1,16 @@
+{
+  "$comment": "Per-property enum/example value descriptions for ClaudeForge's value pickers (per-item tooltips). Keyed by the dot-path SchemaTreeBuilder uses (e.g. \"model\", \"permissions.defaultMode\"), then value -> description. This file lives under Assets/Descriptions/ (NOT Assets/Schemas/) ON PURPOSE, for two reasons: (1) JsonSchema.Net strict-rejects unknown keywords for this dialect, so putting these descriptions inside the JSON Schema/overlay crashes schema parsing (SchemaRegistry.ParseSchema and the RestoreEngine validation path); (2) BackupEngine.BundleSchemas bundles EVERY resource under Assets/Schemas/ into backups, and RestoreEngine.ValidateExtractedConfigsAsync ParseSchemas each one - a non-schema file there would crash restore. Read by SchemaRegistry.GetEnumDescriptions with System.Text.Json, never through JsonSchema.Net. Descriptions verified against https://code.claude.com/docs/en/model-config.",
+  "model": {
+    "fable": "Claude Fable 5 - most capable; for your hardest, longest-running tasks. Alias: tracks the latest Fable build.",
+    "opus[1m]": "Opus with the 1M-token extended-context window, for long sessions over large codebases.",
+    "opus": "Latest Opus - complex reasoning and architecture (today Opus 4.8). Alias: tracks the recommended build.",
+    "sonnet[1m]": "Sonnet with the 1M-token extended-context window, for long sessions.",
+    "sonnet": "Latest Sonnet - balanced daily coding; the default (today Sonnet 4.6). Alias: tracks the recommended build.",
+    "haiku": "Latest Haiku - fast and efficient for simple tasks. Alias: tracks the recommended build.",
+    "best": "Most capable model available to your account: Fable 5 where your organization has access, otherwise the latest Opus.",
+    "opusplan": "Hybrid: Opus while planning, then automatically switches to Sonnet for execution.",
+    "claude-fable-5": "Pins exactly Fable 5 - a fixed snapshot that never auto-updates (unlike the 'fable' alias).",
+    "claude-opus-4-8": "Pins exactly Opus 4.8 - a fixed snapshot that never auto-updates (unlike the 'opus' alias).",
+    "claude-sonnet-4-6": "Pins exactly Sonnet 4.6 - a fixed snapshot that never auto-updates (unlike the 'sonnet' alias)."
+  }
+}

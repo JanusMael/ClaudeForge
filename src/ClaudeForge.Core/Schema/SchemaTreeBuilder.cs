@@ -61,12 +61,13 @@ public static partial class SchemaTreeBuilder
     public static IReadOnlyList<SchemaNode> BuildTopLevel(
         JsonSchemaNode rootNode,
         ISet<string>? knownPaths,
-        bool flagAllAsNew)
+        bool flagAllAsNew,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? enumDescriptionsByPath = null)
     {
         List<SchemaNode> result = new();
         foreach (PropertySubschema sub in GetPropertySubschemas(rootNode))
         {
-            result.Add(BuildNode(sub.Name, sub.Name, sub.Node, knownPaths, flagAllAsNew));
+            result.Add(BuildNode(sub.Name, sub.Name, sub.Node, knownPaths, flagAllAsNew, enumDescriptionsByPath));
         }
 
         return result;
@@ -102,7 +103,8 @@ public static partial class SchemaTreeBuilder
         string name,
         JsonSchemaNode schemaNode,
         ISet<string>? knownPaths,
-        bool flagAllAsNew)
+        bool flagAllAsNew,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? enumDescriptionsByPath = null)
     {
         NullableCollapseResult collapse = CollapseNullable(schemaNode);
         if (collapse.Concrete != null)
@@ -141,7 +143,8 @@ public static partial class SchemaTreeBuilder
         {
             foreach (PropertySubschema sub in GetPropertySubschemas(schemaNode))
             {
-                children.Add(BuildNode($"{jsonPath}.{sub.Name}", sub.Name, sub.Node, knownPaths, flagAllAsNew));
+                children.Add(BuildNode($"{jsonPath}.{sub.Name}", sub.Name, sub.Node, knownPaths, flagAllAsNew,
+                    enumDescriptionsByPath));
             }
         }
 
@@ -151,7 +154,8 @@ public static partial class SchemaTreeBuilder
             KeywordData? itemsKw = FindKeyword(schemaNode, "items");
             if (itemsKw?.Subschemas.Length > 0)
             {
-                itemsNode = BuildNode($"{jsonPath}[]", "item", itemsKw.Subschemas[0], knownPaths, flagAllAsNew);
+                itemsNode = BuildNode($"{jsonPath}[]", "item", itemsKw.Subschemas[0], knownPaths, flagAllAsNew,
+                    enumDescriptionsByPath);
             }
         }
 
@@ -221,6 +225,10 @@ public static partial class SchemaTreeBuilder
             Properties = children,
             DefaultValue = defaultValue,
             Examples = examples,
+            EnumValueDescriptions = enumDescriptionsByPath is not null
+                                    && enumDescriptionsByPath.TryGetValue(jsonPath, out IReadOnlyDictionary<string, string>? descs)
+                ? descs
+                : SchemaNode.EmptyEnumValueDescriptions,
             IsNullable = isNullable,
             IsManagedOnly = IsManagedOnly(description),
             IsNew = isNew,

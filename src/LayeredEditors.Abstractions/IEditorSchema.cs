@@ -90,6 +90,13 @@ public interface IEditorSchema
     bool IsUndocumented => false;
 
     /// <summary>
+    /// Optional per-value descriptions (value → text) for <see cref="EditorValueType.Enum"/>
+    /// pickers, surfaced as per-item tooltips. Default-implemented as empty so adapters
+    /// without the concept need not provide it.
+    /// </summary>
+    IReadOnlyDictionary<string, string> EnumValueDescriptions => new Dictionary<string, string>(0);
+
+    /// <summary>
     /// Extensibility bag for source-specific metadata the editors may consult
     /// (well-known keys such as <c>"format"</c>, <c>"pattern"</c>, <c>"is-required"</c>).
     /// Keeps the core interface stable while allowing adapters to surface domain
