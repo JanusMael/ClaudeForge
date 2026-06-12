@@ -5,17 +5,17 @@
       "description": "Override the default model used by Claude Code. Can be a short alias (sonnet/opus/haiku/fable/best/opusplan) or a specific snapshot ID (e.g. claude-opus-4-8, claude-fable-5). Append [1m] to a Sonnet/Opus alias or name to use the 1M-token extended context window (e.g. opus[1m], claude-sonnet-4-6[1m]). For finer control, use environment variables: ANTHROPIC_MODEL (runtime override), ANTHROPIC_DEFAULT_OPUS_MODEL, ANTHROPIC_DEFAULT_SONNET_MODEL, ANTHROPIC_DEFAULT_HAIKU_MODEL (per-class pinning), CLAUDE_CODE_SUBAGENT_MODEL (subagent model). See https://code.claude.com/docs/en/model-config",
       "default": "sonnet",
       "examples": [
-        "sonnet",
-        "opus",
-        "haiku",
         "fable",
+        "opus[1m]",
+        "opus",
+        "sonnet[1m]",
+        "sonnet",
+        "haiku",
         "best",
         "opusplan",
-        "sonnet[1m]",
-        "opus[1m]",
+        "claude-fable-5",
         "claude-opus-4-8",
-        "claude-sonnet-4-6",
-        "claude-fable-5"
+        "claude-sonnet-4-6"
       ]
     }
   }
