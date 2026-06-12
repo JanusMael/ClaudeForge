@@ -3,15 +3,9 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Core.JsonHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
-
-public enum HookCommandType
-{
-    Command,
-    Prompt,
-    Url
-}
 
 /// <summary>
 /// Editable key/value pair for a hook's <c>headers</c> dictionary

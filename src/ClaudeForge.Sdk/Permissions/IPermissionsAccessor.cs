@@ -118,12 +118,15 @@ public interface IPermissionsAccessor
     bool RemoveAdditionalDirectory(string path);
 
     /// <summary>
-    /// Maps to the schema's <c>permissions.disableBypassPermissionsMode</c>
-    /// boolean. <see langword="true"/> when the org has disabled the
-    /// <c>bypassPermissions</c> default-mode option for this user / scope.
-    /// <see langword="null"/> when unset across every loaded scope.
+    /// Maps to the schema's <c>permissions.disableBypassPermissionsMode</c>, which is
+    /// a <b>string enum</b> whose only value is <c>"disable"</c> — NOT a boolean.
+    /// Surfaced here as a nullable bool for convenience: <see langword="true"/> means
+    /// <c>"disable"</c> is present (the org has disabled the <c>bypassPermissions</c>
+    /// default-mode option for this user / scope); <see langword="null"/> means absent
+    /// across every loaded scope. The implementation persists the string <c>"disable"</c>
+    /// (or removes the key) — never a boolean (which would fail schema validation).
     /// Setter targets <see cref="IClaudeConfigClient.DefaultScope"/>; pass
-    /// <see langword="null"/> to remove the override.
+    /// <see langword="false"/> or <see langword="null"/> to remove the override.
     /// </summary>
     /// <remarks>
     /// Most commonly set in

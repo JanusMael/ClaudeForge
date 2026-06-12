@@ -29,7 +29,12 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:PluginEntry">
                         <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                            <!-- Disabled for array-valued plugins (HasPreservedValue): the
+                                 checkbox can't represent an array-of-strings value, and a
+                                 toggle would silently destroy it. The value round-trips
+                                 verbatim; edit the raw JSON to change it. -->
                             <CheckBox IsChecked="{Binding Enabled}"
+                                      IsEnabled="{Binding !HasPreservedValue}"
                                       VerticalAlignment="Center"
                                       ToolTip.Tip="{x:Static loc:Strings.TipPluginToggle}"
                                       AutomationProperties.Name="{Binding PluginRef, StringFormat='Plugin enabled: {0}'}" />

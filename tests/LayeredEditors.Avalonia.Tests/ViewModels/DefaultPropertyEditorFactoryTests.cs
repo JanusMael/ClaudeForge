@@ -80,11 +80,27 @@ public class DefaultPropertyEditorFactoryTests
         Assert.AreEqual(1, ((ObjectPropertyEditorViewModel)vm).Children.Count);
     }
 
-    [TestMethod]
-    public void Create_Unknown_FallsBackToStringVM()
+    [DataTestMethod]
+    [DataRow(EditorValueType.Unknown)]
+    [DataRow(EditorValueType.Dictionary)]
+    [DataRow(EditorValueType.Complex)]
+    public void Create_UnsupportedShape_FallsBackToFlaggedStringVM(EditorValueType type)
     {
-        PropertyEditorViewModel vm = _factory.Create(Schema(EditorValueType.Unknown), null, Scope);
+        // The factory has no structured editor for these shapes. It still returns a
+        // text box (the only generic affordance), but TAGGED so the host shows a
+        // warning badge — closing the prior SILENT mis-edit hazard.
+        PropertyEditorViewModel vm = _factory.Create(Schema(type), null, Scope);
         Assert.IsInstanceOfType(vm, typeof(StringPropertyEditorViewModel));
+        Assert.IsFalse(string.IsNullOrEmpty(vm.UnsupportedShapeNotice),
+            "An unstructured shape must be flagged with a notice, not a silent text box.");
+        Assert.AreEqual(DefaultPropertyEditorFactory.NoStructuredEditorNotice, vm.UnsupportedShapeNotice);
+    }
+
+    [TestMethod]
+    public void Create_StructuredShape_HasNoUnsupportedNotice()
+    {
+        PropertyEditorViewModel vm = _factory.Create(Schema(EditorValueType.Boolean), null, Scope);
+        Assert.IsNull(vm.UnsupportedShapeNotice, "A structured shape must not be flagged.");
     }
 
     // ── CreateForGroup ─────────────────────────────────────────────────────────

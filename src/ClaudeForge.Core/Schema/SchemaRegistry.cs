@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -234,19 +233,7 @@ public sealed class SchemaRegistry : IDisposable
     }
 
     private static byte[]? TryReadBundledBytes(string cacheFileName)
-    {
-        Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = $"{ResourceHelper.ResourcePrefix}.Core.Assets.Schemas.{cacheFileName}";
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null)
-        {
-            return null;
-        }
-
-        using MemoryStream ms = new();
-        stream.CopyTo(ms);
-        return ms.ToArray();
-    }
+        => BundledResource.TryRead("Schemas", cacheFileName);
 
     /// <summary>
     /// Read the bundled base schema and apply its sibling <c>.overlay.json</c>

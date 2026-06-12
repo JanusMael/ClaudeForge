@@ -98,6 +98,14 @@ public sealed partial class PermissionTesterViewModel : ObservableObject
     /// </summary>
     [ObservableProperty] private string _readOnlyNote = string.Empty;
 
+    /// <summary>
+    /// Caution shown when a Bash/PowerShell command embeds another command via
+    /// substitution or a subshell (<c>$(…)</c>, backticks, <c>&lt;(…)</c>, a
+    /// leading <c>(…)</c>). The verdict reflects only the outer command, so it can
+    /// be over-permissive; empty when no such construct is present.
+    /// </summary>
+    [ObservableProperty] private string _subcommandWarning = string.Empty;
+
     partial void OnSelectedToolChanged(PermissionBuilderTool value) => Recompute();
     partial void OnCommandTextChanged(string value) => Recompute();
     partial void OnPathTextChanged(string value) => Recompute();
@@ -118,6 +126,7 @@ public sealed partial class PermissionTesterViewModel : ObservableObject
             OutcomeLabel = string.Empty;
             MatchedScopeLabel = string.Empty;
             ReadOnlyNote = string.Empty;
+            SubcommandWarning = string.Empty;
             return;
         }
 
@@ -135,6 +144,7 @@ public sealed partial class PermissionTesterViewModel : ObservableObject
         MatchedScopeLabel = MatchedScope.ToString();
         Explanation = Explain(decision);
         ReadOnlyNote = BuildReadOnlyNote(candidate);
+        SubcommandWarning = BuildSubcommandWarning(candidate);
         HasResult = true;
     }
 
@@ -211,6 +221,19 @@ public sealed partial class PermissionTesterViewModel : ObservableObject
         string first = candidate.CommandText.TrimStart().Split(' ', 2)[0];
         return BashCommandSplitter.ReadOnlyCommandNames.Contains(first)
             ? string.Format(Strings.PermTesterReadOnlyNote, first)
+            : string.Empty;
+    }
+
+    private static string BuildSubcommandWarning(PermissionCandidate candidate)
+    {
+        // Only Bash/PowerShell candidates carry a command line to inspect.
+        if (candidate.CommandText is not { Length: > 0 } command)
+        {
+            return string.Empty;
+        }
+
+        return BashCommandSplitter.ContainsUnexpandedSubcommand(command)
+            ? Strings.PermTesterSubcommandWarning
             : string.Empty;
     }
 

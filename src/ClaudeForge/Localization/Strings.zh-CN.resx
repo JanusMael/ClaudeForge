@@ -265,16 +265,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop 正在从此配置文件读取其配置（通过配置文件面板中的"应用"设置）。打开配置文件页面以应用其他 Desktop 配置文件。</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code: {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop: {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>ClaudeForge 版本</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>返回您到达此页面之前所在的页面</value>
@@ -366,10 +356,6 @@
     <value>面向 Claude Code 与 Claude Desktop 的跨平台、作用域感知的设置编辑器。</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>设置是分层的：Managed &gt; User &gt; Project &gt; Local</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -393,9 +379,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Claude Code 配置文件</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>已选择： </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ 应用到 CLI</value>
@@ -596,12 +579,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>包含 API 凭据（~/.claude/.credentials.json）</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>仅当备份文件存放在受信任的存储位置时才勾选此项。在那些令牌仍然有效期间，拥有此备份的任何人都能以您的身份登录。</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>保留</value>
@@ -811,9 +788,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>机器</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>（未设置）</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>'{0}' 不是有效的环境变量名称。</value>
   </data>
@@ -849,11 +823,6 @@
     <value>管理(_M)…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>在资源管理器中显示</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -960,9 +929,6 @@
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>取消勾选可在将来跳过此确认对话框并立即保存</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>放弃更改</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>保存</value>
@@ -1209,9 +1175,6 @@
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>示例：</value>
   </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>常用操作</value>
-  </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>已筛选，隐藏任何作用域中已存在的规则。</value>
   </data>
@@ -1255,10 +1218,6 @@
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>将此规则添加到询问列表 — 始终触发确认提示</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>（{0} 条规则）</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1441,10 +1400,6 @@
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>内存</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>审计、查看并清理 Claude 在每个会话中读取的文件以及留在磁盘上的行为足迹。</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1525,44 +1480,12 @@
     <value>足迹</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>如需编辑，请在文本编辑器中打开 — 单击"在资源管理器中显示"。</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
-  </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>刷新</value>
     <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
   </data>
   <data name="TipButtonRefresh" xml:space="preserve">
     <value>重新扫描文件系统并重新加载列表</value>
-  </data>
-  <data name="LabelUpdateBannerTextFmt" xml:space="preserve">
-    <value>ClaudeForge {0} 可用。</value>
-    <comment>Headline of the "update available" banner. {0} substitutes the version.</comment>
-  </data>
-  <data name="ButtonViewReleaseNotes" xml:space="preserve">
-    <value>查看发布说明</value>
-    <comment>Primary action on the update-available banner.</comment>
-  </data>
-  <data name="TipButtonViewReleaseNotes" xml:space="preserve">
-    <value>在默认浏览器中打开 GitHub 上的发布页面</value>
-  </data>
-  <data name="ButtonDismissUpdateBanner" xml:space="preserve">
-    <value>✕</value>
-    <comment>Icon-only dismiss button on the update-available banner.</comment>
-  </data>
-  <data name="TipButtonDismissUpdate" xml:space="preserve">
-    <value>隐藏此横幅。它不会再次显示此版本，但更新的发布版本会重新显示它。</value>
-  </data>
-  <data name="AutoNameButtonDismissUpdate" xml:space="preserve">
-    <value>关闭更新提示横幅</value>
-  </data>
-  <data name="LabelEssentialsCheckForUpdatesTitle" xml:space="preserve">
-    <value>检查更新</value>
-    <comment>Essentials-page card title for the auto-update-check toggle.</comment>
-  </data>
-  <data name="LabelEssentialsCheckForUpdatesDescription" xml:space="preserve">
-    <value>定期在 GitHub 上检查 ClaudeForge 的新版本，发现可用更新时显示横幅。</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>在资源管理器中显示</value>
@@ -2028,9 +1951,6 @@
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>配置文件已存在</value>
   </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>名为 '{0}' 的配置文件已存在。请选择其他名称。</value>
-  </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>删除配置文件</value>
   </data>
@@ -2238,9 +2158,6 @@
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>正在编辑</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>您当前正在编辑的内容</value>
   </data>
@@ -2253,13 +2170,6 @@
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>打开项目文件夹以编辑项目和本地作用域。</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>打开项目…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>显示作用域</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>配置作用域</value>
@@ -2620,14 +2530,6 @@
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>欢迎</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>编辑器导航 — 编辑哪些内容、作用域如何分层，以及在哪里找到影响最大的设置。首次启动时默认显示。</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>启动时显示此页面</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2639,10 +2541,6 @@
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>要点</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>高重要性的 Claude Code 设置 — token 预算、沙箱、MCP 信任、模型和更新通道 — 已固定，便于快速审查和更改。</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>要点 — 高重要性设置</value>
@@ -2836,5 +2734,29 @@
   </data>
   <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
     <value>无法连接到 GitHub。请稍后再试。</value>
+  </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>已解决冲突：已从 {1} 中移除“{0}” — {2} 优先。</value>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>未添加：“{0}”已在 {1} 中，其优先级高于 {2}。</value>
+  </data>
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>此模型不使用思考强度级别。</value>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>思考强度已更改为“{0}” — 所选模型不支持“{1}”。</value>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>模型 {0} 支持的思考强度：{1}</value>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>要抑制所有权限提示，请在下方的“默认模式”中选择 bypassPermissions。</value>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>当前模型或作用域不支持自动模式，因此不会生效。</value>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>当前模型不支持思考强度“{0}”。</value>
   </data>
 </root>

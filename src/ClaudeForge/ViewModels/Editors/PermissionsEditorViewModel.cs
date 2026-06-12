@@ -2,12 +2,15 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.JsonHelpers;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.ClaudeForge.ViewModels.Catalog;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -15,6 +18,7 @@ using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching.Pe
 using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionDefaultMode;
 using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRule;
 using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRuleNormalizer;
+using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 // Alias the SDK to disambiguate ConfigScope and reach the typed Permissions
 // accessor at every call site. Mirrors the previous editor migrations.
@@ -159,24 +163,29 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     /// </para>
     /// </summary>
     /// <summary>
-    /// Builds the default-mode catalog with localized friendly labels +
-    /// descriptions. Built per-instance (see <see cref="DefaultModeInfos"/>)
-    /// rather than a <c>static readonly</c> so the <see cref="Strings"/> lookups
-    /// resolve at the correct UI culture — a static initializer can run before
-    /// <c>Program.Main</c> applies the culture, capturing the wrong language.
-    /// The raw <c>Value</c> strings are the camelCase keys Claude Code persists;
-    /// the schema/SDK enum are the source of truth for which modes exist.
+    /// Builds the default-mode catalog by projecting the SDK model catalog
+    /// (<see cref="IModelCatalogAccessor.AllDefaultModes"/>) onto localized
+    /// friendly labels + descriptions via <see cref="CatalogLocalization"/>.
+    /// Built per-instance (see <see cref="DefaultModeInfos"/>) rather than
+    /// <c>static readonly</c> so the <see cref="Strings"/> lookups resolve at the
+    /// correct UI culture — a static initializer can run before <c>Program.Main</c>
+    /// applies the culture, capturing the wrong language. The catalog is the
+    /// source of truth for which modes exist + their order + the experimental
+    /// flag; the camelCase <c>Value</c> strings are what Claude Code persists.
+    /// Falls back to the shared bundled catalog when constructed without a client
+    /// (e.g. in tests) so the list is never empty.
     /// </summary>
-    private static IReadOnlyList<DefaultModeInfo> BuildDefaultModeInfos() =>
-    [
-        new("default", Strings.DefaultModeClaudeDefault, Strings.DefaultModeDescDefault),
-        new("acceptEdits", Strings.DefaultModeClaudeAcceptEdits, Strings.DefaultModeDescAcceptEdits),
-        new("plan", Strings.DefaultModeClaudePlan, Strings.DefaultModeDescPlan),
-        new("auto", Strings.DefaultModeClaudeAuto, Strings.DefaultModeDescAuto),
-        new("dontAsk", Strings.DefaultModeClaudeDontAsk, Strings.DefaultModeDescDontAsk),
-        new("bypassPermissions", Strings.DefaultModeClaudeBypass, Strings.DefaultModeDescBypass),
-        new("delegate", Strings.DefaultModeClaudeDelegate, Strings.DefaultModeDescDelegate, IsExperimental: true),
-    ];
+    private IReadOnlyList<DefaultModeInfo> BuildDefaultModeInfos()
+    {
+        IModelCatalogAccessor catalog = _client?.Models ?? ModelCatalogProvider.Default;
+        return catalog.AllDefaultModes
+            .Select(m => new DefaultModeInfo(
+                m.Id,
+                CatalogLocalization.DefaultModeLabel(m.Id),
+                CatalogLocalization.DefaultModeDescription(m.Id),
+                m.Experimental))
+            .ToList();
+    }
 
     // -----------------------------------------------------------------------
     // Static example text (permission rule syntax is technical; not localised)
@@ -199,7 +208,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         "\n" +
         "PowerShell(Get-ChildItem *)  – list directory contents (PS)\n" +
         "PowerShell(Get-Content *)    – print a file to stdout (PS)\n" +
-        "Pwsh(git status)             – check working-tree state (PS 7)";
+        "PowerShell(git status)       – check working-tree state (PS)";
 
     /// <summary>
     /// Representative Deny rules shown in the expander's read-only examples block.
@@ -217,7 +226,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         "\n" +
         "PowerShell(Remove-Item *)       – delete files or directories (PS)\n" +
         "PowerShell(git push *)          – push commits to remote (PS)\n" +
-        "Pwsh(Invoke-WebRequest *)       – make outbound HTTP requests (PS 7)";
+        "PowerShell(Invoke-WebRequest *) – make outbound HTTP requests (PS)";
 
     /// <summary>
     /// Representative Ask rules shown in the expander's read-only examples block.
@@ -236,7 +245,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         "\n" +
         "PowerShell(git commit *)  – commit staged changes (PS)\n" +
         "PowerShell(dotnet *)      – build, test, or publish .NET projects (PS)\n" +
-        "Pwsh(npm run *)           – run npm scripts via PowerShell 7";
+        "PowerShell(npm run *)     – run npm scripts (PS)";
 
     // -----------------------------------------------------------------------
     // Common Actions candidate groups (static; filtered at runtime)
@@ -316,39 +325,28 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                 G(Strings.LabelOperationSearchView,
                     I("PowerShell(Get-ChildItem *)", CommonActionKind.Read),
                     I("PowerShell(Get-Content *)", CommonActionKind.Read),
-                    I("PowerShell(Select-String *)", CommonActionKind.Read),
-                    I("Pwsh(Get-ChildItem *)", CommonActionKind.Read),
-                    I("Pwsh(Get-Content *)", CommonActionKind.Read),
-                    I("Pwsh(Select-String *)", CommonActionKind.Read)
+                    I("PowerShell(Select-String *)", CommonActionKind.Read)
                 ),
                 G(Strings.LabelOperationGitRead,
                     I("PowerShell(git status)", CommonActionKind.Read),
                     I("PowerShell(git log *)", CommonActionKind.Read),
-                    I("PowerShell(git diff *)", CommonActionKind.Read),
-                    I("Pwsh(git status)", CommonActionKind.Read),
-                    I("Pwsh(git log *)", CommonActionKind.Read)
+                    I("PowerShell(git diff *)", CommonActionKind.Read)
                 ),
                 G(Strings.LabelOperationGitWrite,
                     I("PowerShell(git add *)", CommonActionKind.Write),
                     I("PowerShell(git commit *)", CommonActionKind.Write),
-                    I("PowerShell(git push *)", CommonActionKind.Destructive),
-                    I("Pwsh(git add *)", CommonActionKind.Write),
-                    I("Pwsh(git commit *)", CommonActionKind.Write)
+                    I("PowerShell(git push *)", CommonActionKind.Destructive)
                 ),
                 G(Strings.LabelOperationRuntimes,
                     I("PowerShell(dotnet *)", CommonActionKind.Network),
                     I("PowerShell(npm *)", CommonActionKind.Network),
                     I("PowerShell(npm run *)", CommonActionKind.Network),
                     I("PowerShell(node *)", CommonActionKind.Network),
-                    I("PowerShell(python *)", CommonActionKind.Network),
-                    I("Pwsh(dotnet *)", CommonActionKind.Network),
-                    I("Pwsh(npm *)", CommonActionKind.Network)
+                    I("PowerShell(python *)", CommonActionKind.Network)
                 ),
                 G(Strings.LabelOperationNetwork,
                     I("PowerShell(Invoke-WebRequest *)", CommonActionKind.Network),
-                    I("PowerShell(Invoke-RestMethod *)", CommonActionKind.Network),
-                    I("Pwsh(Invoke-WebRequest *)", CommonActionKind.Network),
-                    I("Pwsh(Invoke-RestMethod *)", CommonActionKind.Network)
+                    I("PowerShell(Invoke-RestMethod *)", CommonActionKind.Network)
                 ),
             ]),
             // WSL group, Windows-only via the
@@ -411,11 +409,11 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
             // border uses LabelCommonActionsCatchAll instead), so it stays as
             // a string identifier for consumers' convenience.
             //
-            // PowerShell and Pwsh are intentionally absent: they have their own
-            // dedicated tool expander above with correctly classified per-command
-            // entries (Read/Write/Network). Duplicating them here as Destructive
-            // (the "worst-case bare-name" heuristic) produces a misleading label
-            // and creates confusing redundancy.
+            // PowerShell is intentionally absent: it has its own dedicated tool
+            // expander above with correctly classified per-command entries
+            // (Read/Write/Network). Duplicating it here as Destructive (the
+            // "worst-case bare-name" heuristic) produces a misleading label and
+            // creates confusing redundancy.
             new ToolActionGroup("All Tools", [
                 // Items ordered safe-first (Read → Write → Network → Destructive)
                 // so the user's eye lands on safe rules first and has to scroll
@@ -498,6 +496,11 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     // / Hooks editor migrations.
     private readonly IClaudeConfigClient? _client;
 
+    // Generic editor factory used to auto-surface schema keys this editor does
+    // not render bespoke-ly. Optional: null in legacy/test fixtures, in which
+    // case nothing is auto-surfaced and behaviour is unchanged.
+    private readonly DefaultEditorFactory? _editorFactory;
+
     public PermissionsEditorViewModel(SchemaNode schema, ConfigScope editingScope)
         : this(schema, editingScope, client: null)
     {
@@ -506,11 +509,14 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     public PermissionsEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IClaudeConfigClient? client)
+        IClaudeConfigClient? client,
+        DefaultEditorFactory? editorFactory = null)
         : base(schema, editingScope)
     {
         _client = client;
-        DefaultModeInfos = BuildDefaultModeInfos();
+        _editorFactory = editorFactory;
+        _allDefaultModeInfos = BuildDefaultModeInfos();
+        DefaultModeInfos = _allDefaultModeInfos;
         AllowList = [];
         DenyList = [];
         AskList = [];
@@ -521,6 +527,98 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         // (subject to the Windows-only filter for the WSL group; see
         // VisibleToolGroupsForPlatform).
         ToolActionGroups = VisibleToolGroupsForPlatform(AllToolGroups).ToList();
+
+        // Schema-coverage guarantee: render every permissions schema key.
+        // CoveredKeys lists what this editor handles bespoke-ly; every other
+        // schema key (e.g. disableAutoMode) is auto-surfaced via the generic
+        // factory so no schema property is ever silently dropped.
+        BuildAutoSurfacedEditors(editingScope);
+    }
+
+    // -----------------------------------------------------------------------
+    // Schema-coverage: auto-surfacing of uncovered schema keys
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// The permissions schema keys this editor renders with a hand-built,
+    /// bespoke control. Every OTHER key in the schema's
+    /// <see cref="SchemaNode.Properties"/> is auto-surfaced via the generic
+    /// editor factory (see <see cref="AutoSurfacedEditors"/>).
+    /// <para>
+    /// This is the editor's declaration of its OWN coverage — deliberately a
+    /// short hand-maintained list — NOT a mirror of the schema. The schema
+    /// (<c>additionalProperties:false</c> + an explicit <c>properties</c> map)
+    /// remains the single source of truth for the full key set; anything the
+    /// schema adds that this list does not name is surfaced automatically.
+    /// </para>
+    /// </summary>
+    private static readonly IReadOnlySet<string> CoveredKeys = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "defaultMode", "allow", "deny", "ask",
+        "disableBypassPermissionsMode", "additionalDirectories",
+    };
+
+    /// <summary>
+    /// Generic editors for schema keys this editor does not render bespoke-ly
+    /// (computed once as <c>Schema.Properties − CoveredKeys</c>). Each is a
+    /// standard leaf/object editor produced by the factory — an enum dropdown
+    /// for <c>disableAutoMode</c>, the validated raw-JSON editor for an
+    /// unsupported shape, etc. — rendered in place and loaded / saved per key
+    /// so the schema-coverage guarantee holds with no hardcoded per-key branch.
+    /// Empty when constructed without a factory (legacy / test fixtures).
+    /// </summary>
+    public ObservableCollection<LibVm.PropertyEditorViewModel> AutoSurfacedEditors { get; } = [];
+
+    /// <summary>
+    /// True when there is at least one auto-surfaced editor to render. Bound by
+    /// the Advanced view's <c>ItemsControl.IsVisible</c> so the section (and its
+    /// parent-panel spacing) collapses cleanly when the editor covers every
+    /// schema key. Fixed at construction — <see cref="AutoSurfacedEditors"/> is
+    /// built once and never mutated afterwards.
+    /// </summary>
+    public bool HasAutoSurfacedEditors => AutoSurfacedEditors.Count > 0;
+
+    // Names backing AutoSurfacedEditors — lets LoadFromLayered route an on-disk
+    // key to its auto-surfaced editor instead of the opaque preserved bag.
+    private readonly HashSet<string> _autoSurfacedKeys = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Build <see cref="AutoSurfacedEditors"/> from the uncovered schema keys.
+    /// No-op without a factory or when the schema declares no children (the
+    /// legacy / test path passes a bare <c>permissions</c> node).
+    /// </summary>
+    private void BuildAutoSurfacedEditors(ConfigScope editingScope)
+    {
+        if (_editorFactory is null)
+        {
+            return;
+        }
+
+        foreach (SchemaNode child in Schema.Properties)
+        {
+            if (CoveredKeys.Contains(child.Name))
+            {
+                continue;
+            }
+
+            LibVm.PropertyEditorViewModel editor = _editorFactory.Create(child, editingScope);
+            AutoSurfacedEditors.Add(editor);
+            _autoSurfacedKeys.Add(child.Name);
+
+            // Bubble a child edit up so the group editor re-serializes the whole
+            // permissions object. Children share this VM's lifetime (created and
+            // discarded together), so no unsubscription is needed — same contract
+            // as ObjectPropertyEditorViewModel.
+            editor.PropertyChanged += OnAutoSurfacedChildChanged;
+        }
+    }
+
+    private void OnAutoSurfacedChildChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(IsModified))
+        {
+            MarkModified();
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -533,7 +631,23 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     /// culture — see <see cref="BuildDefaultModeInfos"/>). Stable reference so
     /// <see cref="SelectedModeInfo"/> identity comparisons hold.
     /// </summary>
-    public IReadOnlyList<DefaultModeInfo> DefaultModeInfos { get; }
+    /// <summary>
+    /// The default-mode options currently OFFERED in the dropdown. Starts as the
+    /// full catalog set (<see cref="_allDefaultModeInfos"/>) and is narrowed by
+    /// <see cref="ApplyDefaultModeConstraint"/> to those eligible for the
+    /// effective model + editing scope (e.g. <c>auto</c> is hidden on a
+    /// non-auto-capable model or outside User scope).
+    /// </summary>
+    [ObservableProperty] private IReadOnlyList<DefaultModeInfo> _defaultModeInfos = [];
+
+    /// <summary>The full, unfiltered catalog of modes — source for re-filtering.</summary>
+    private readonly IReadOnlyList<DefaultModeInfo> _allDefaultModeInfos;
+
+    /// <summary>Advisory shown when an ineligible <c>auto</c> selection was coerced to the default.</summary>
+    [ObservableProperty] private bool _showAutoModeWarning;
+
+    partial void OnDefaultModeInfosChanged(IReadOnlyList<DefaultModeInfo> value)
+        => OnPropertyChanged(nameof(SelectedModeInfo));
 
     [ObservableProperty] private string? _defaultMode;
 
@@ -691,14 +805,91 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         ShowDangerCliHint = true;
     }
 
+    /// <summary>
+    /// <c>true</c> when the user navigated here via the synthetic
+    /// <c>bypass</c> / <c>bypassPermissions</c> search result.  Shows a contextual
+    /// hint near the <c>defaultMode</c> ComboBox prompting them to select
+    /// <c>bypassPermissions</c> — distinct from <see cref="ShowDangerCliHint"/>
+    /// (the CLI-flag equivalence) and the <see cref="IsInBypassMode"/> danger
+    /// banner (only after bypass is already selected). Cleared on dropdown change.
+    /// </summary>
+    [ObservableProperty] private bool _showSelectBypassHint;
+
+    /// <summary>
+    /// Activates the "select bypassPermissions" hint banner. Called by
+    /// <see cref="MainWindowViewModel.SelectSearchResult"/> for the synthetic
+    /// bypass search result. Does NOT change the value — deep-link + prompt only.
+    /// </summary>
+    public void ActivateBypassHint()
+    {
+        ShowSelectBypassHint = true;
+    }
+
+    /// <summary>
+    /// Narrow the default-mode dropdown to modes eligible for the effective model
+    /// + editing scope (the model/scope ↔ defaultMode inter-relationship), e.g.
+    /// <c>auto</c> is dropped as an offerable choice on a non-auto-capable model
+    /// or outside User scope.
+    /// <para>
+    /// This is <b>advisory-only and never writes</b>. Unlike the Essentials
+    /// effort card (where the user changes the model in the same view-model), the
+    /// model/scope that gate <c>auto</c> are edited on OTHER surfaces, so there is
+    /// no in-editor user action to coerce on. We therefore keep the user's
+    /// persisted value intact (a still-model-valid <c>auto</c> at Project scope is
+    /// silently ignored by Claude, not invalid) — we never reassign
+    /// <see cref="DefaultMode"/> here, which previously caused a load/Reset-time
+    /// <c>MarkModified</c> + live-write that clobbered persisted <c>auto</c>. The
+    /// current value stays visible (kept in the list) so the ComboBox isn't blank;
+    /// <see cref="ShowAutoModeWarning"/> explains it won't take effect. No-op
+    /// without an SDK client (tests / no context show every mode).
+    /// </para>
+    /// </summary>
+    private void ApplyDefaultModeConstraint(ConfigScope scope)
+    {
+        if (_client is null)
+        {
+            return;
+        }
+
+        string? effectiveModel = _client.GetEffective<string>("model");
+        List<DefaultModeInfo> eligible = _allDefaultModeInfos
+            .Where(m => _client.Models.IsDefaultModeAllowed(m.Value, effectiveModel, scope))
+            .ToList();
+
+        bool currentIneligible = DefaultMode is not null
+                                 && !eligible.Any(m => string.Equals(m.Value, DefaultMode, StringComparison.Ordinal));
+        if (currentIneligible)
+        {
+            // Keep the current (ineligible) mode visible so the ComboBox isn't blank,
+            // but it is NOT offered as a fresh choice. Advise; do NOT reassign/write —
+            // the persisted value (e.g. auto) is preserved until the user reselects.
+            DefaultModeInfo? current = _allDefaultModeInfos
+                .FirstOrDefault(m => string.Equals(m.Value, DefaultMode, StringComparison.Ordinal));
+            if (current is not null)
+            {
+                eligible.Add(current);
+            }
+
+            ShowAutoModeWarning = true;
+        }
+        else
+        {
+            ShowAutoModeWarning = false;
+        }
+
+        DefaultModeInfos = eligible;
+    }
+
     partial void OnDefaultModeChanged(string? value)
     {
         // Keep the ComboBox SelectedItem in sync whenever DefaultMode is set externally
         // (e.g. during LoadFromLayered or from test code via the string property directly).
         OnPropertyChanged(nameof(SelectedModeInfo));
         OnPropertyChanged(nameof(IsInBypassMode));
-        // User interacted with the dropdown — the hint has served its purpose; dismiss it.
+        // User interacted with the dropdown — the hints have served their purpose; dismiss them.
         ShowDangerCliHint = false;
+        ShowSelectBypassHint = false;
+        ShowAutoModeWarning = false;
         // Default mode feeds the tester's "no rule matched" branch — re-resolve.
         RefreshTester();
         MarkModified();
@@ -1104,9 +1295,14 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
         // emit typed UI fields (single source of truth
         // post-promotion).
-        if (DisableBypassPermissionsMode is { } db)
+        //
+        // Schema: permissions.disableBypassPermissionsMode is the string "disable"
+        // (or absent), NOT a boolean — writing a bool fails schema validation. Persist
+        // "disable" only when the toggle is on; false/unset -> omit (absence means
+        // bypass mode is not disabled; there is no "false" value on disk).
+        if (DisableBypassPermissionsMode == true)
         {
-            obj["disableBypassPermissionsMode"] = db;
+            obj["disableBypassPermissionsMode"] = "disable";
         }
 
         if (AdditionalDirectories.Count > 0)
@@ -1127,10 +1323,29 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
             }
         }
 
-        // replay preserved sub-fields the editor doesn't
-        // natively render (future schema additions).  Typed properties win
-        // on key collision — they're the source of truth for fields the
-        // user can edit; the preserved bag is the fallback for unknowns.
+        // emit auto-surfaced uncovered schema keys (e.g. disableAutoMode) from
+        // their generic editors. Each is editable in place, so this REPLACES the
+        // old behaviour of dropping the key into the invisible preserved bag.
+        // A native field above already won its key, so skip on collision.
+        foreach (LibVm.PropertyEditorViewModel child in AutoSurfacedEditors)
+        {
+            string childKey = child.Schema.Name;
+            if (obj.ContainsKey(childKey))
+            {
+                continue;
+            }
+
+            JsonNode? childValue = JsonCurrency.ToJsonNode(child.ToValue());
+            if (childValue != null)
+            {
+                obj[childKey] = childValue;
+            }
+        }
+
+        // replay genuinely out-of-schema sub-fields (no auto-surfaced editor and
+        // not in the schema's properties) so an unknown key the editor can't model
+        // is preserved rather than dropped. Native + auto-surfaced fields above
+        // already won their keys, so they take precedence on collision.
         foreach ((string key, JsonNode? value) in _preservedFields)
         {
             if (obj.ContainsKey(key))
@@ -1201,9 +1416,13 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                         case "ask":
                             continue;
                         case "disableBypassPermissionsMode":
-                            if (kv.Value is JsonValue dbv && dbv.TryGetValue(out bool dbBool))
+                            // Schema value is the string "disable"; a legacy boolean
+                            // true (written by an older build) migrates to "disable".
+                            if (kv.Value is JsonValue dbv
+                                && ((dbv.TryGetValue(out string? dbStr) && string.Equals(dbStr, "disable", StringComparison.Ordinal))
+                                    || (dbv.TryGetValue(out bool dbBool) && dbBool)))
                             {
-                                DisableBypassPermissionsMode = dbBool;
+                                DisableBypassPermissionsMode = true;
                             }
 
                             continue;
@@ -1221,6 +1440,15 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
                             continue;
                         default:
+                            // A schema key with an auto-surfaced editor is loaded
+                            // and re-emitted by that editor (LoadAutoSurfacedEditors
+                            // / ToJsonValue) — keep it OUT of the opaque preserved
+                            // bag. Only truly out-of-schema keys land there.
+                            if (_autoSurfacedKeys.Contains(kv.Key))
+                            {
+                                continue;
+                            }
+
                             _preservedFields[kv.Key] = kv.Value?.DeepClone();
                             break;
                     }
@@ -1253,12 +1481,21 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                 DefaultMode = null;
             }
 
+            // Load every auto-surfaced uncovered key from the full layered value
+            // (all scopes) so each generic editor binds its own per-scope value
+            // and inherited display — the same child-distribution contract as
+            // ObjectPropertyEditorViewModel.
+            LoadAutoSurfacedEditors(layered, editingScope);
+
             // IsModified = true  when the editing scope has an explicit value
             // IsModified = false when no value is set at this scope
             //
             // Both load paths consult the layered probe to disambiguate
             // "no value at scope" from "explicit empty {}", preserving the
-            // pre-migration contract.
+            // pre-migration contract. Auto-surfaced children live INSIDE this
+            // same scope object, so a child set at this scope already implies
+            // scopeValue != null; post-load child edits flip IsModified via
+            // OnAutoSurfacedChildChanged -> MarkModified.
             IsModified = scopeValue != null;
         }
         finally
@@ -1268,6 +1505,10 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
         // Single rebuild after all collections are fully populated.
         RebuildCommonActions();
+
+        // Narrow the default-mode options to those eligible for the effective
+        // model + this editing scope, coercing an ineligible 'auto' away.
+        ApplyDefaultModeConstraint(editingScope);
 
         // Fire count-label notifications once now that loading is done — we suppressed
         // the per-item notifications inside OnListChanged for efficiency, but the
@@ -1415,6 +1656,32 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
         OnPropertyChanged(nameof(ToolActionGroups));
         OnPropertyChanged(nameof(HasCommonActions));
+    }
+
+    /// <summary>
+    /// Distribute the per-scope child value of each auto-surfaced key to its
+    /// editor, building a child <see cref="LayeredValue"/> from the parent's
+    /// scope entries. Mirrors <c>ObjectPropertyEditorViewModel.LoadFromLayered</c>.
+    /// </summary>
+    private void LoadAutoSurfacedEditors(LayeredValue layered, ConfigScope editingScope)
+    {
+        foreach (LibVm.PropertyEditorViewModel child in AutoSurfacedEditors)
+        {
+            string childName = child.Schema.Name;
+            List<ScopeEntry> childEntries = layered.Entries
+                .Select(e => (e.Scope, Value: (e.Value as JsonObject)?[childName]?.DeepClone(), e.SourceFilePath))
+                .Where(t => t.Value is not null)
+                .Select(t => new ScopeEntry(t.Scope, t.Value!, t.SourceFilePath))
+                .ToList();
+
+            LayeredValue childLayered = new(child.Path, childEntries)
+            {
+                EffectiveValue = childEntries.Count > 0 ? childEntries[0].Value : null,
+                EffectiveScope = childEntries.Count > 0 ? childEntries[0].Scope : null,
+            };
+
+            child.LoadFromValue(new ClaudeValueAdapter(childLayered), ClaudeScope.For(editingScope));
+        }
     }
 
     private static void LoadList(ObservableCollection<PermissionRuleViewModel> target, JsonArray? source)

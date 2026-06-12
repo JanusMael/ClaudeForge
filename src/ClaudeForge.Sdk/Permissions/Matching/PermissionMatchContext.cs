@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 
 /// <summary>
@@ -21,6 +23,23 @@ public sealed record PermissionMatchContext(
     string ProjectRoot,
     string HomeDirectory)
 {
+    /// <summary>
+    /// The host OS convention: Windows filesystems are case-insensitive, POSIX
+    /// filesystems are case-sensitive. Used as the default for
+    /// <see cref="CaseInsensitivePaths"/> when a caller does not specify it.
+    /// </summary>
+    public static bool HostIsCaseInsensitive { get; } =
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    /// <summary>
+    /// Whether path matching should be case-insensitive. This is a property of
+    /// the <i>target</i> filesystem the edited config applies to — not the host
+    /// running this tool — so a caller editing a config for a different platform
+    /// can override it. Defaults to <see cref="HostIsCaseInsensitive"/>, which
+    /// preserves the long-standing host-OS behavior for callers that don't set it.
+    /// </summary>
+    public bool CaseInsensitivePaths { get; init; } = HostIsCaseInsensitive;
+
     /// <summary>
     /// A context seeded from the running process — current directory and the
     /// user profile as home, with the project root defaulting to the current

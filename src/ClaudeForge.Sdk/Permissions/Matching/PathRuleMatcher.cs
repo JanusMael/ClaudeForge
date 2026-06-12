@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -45,9 +44,6 @@ public static class PathRuleMatcher
 {
     private static readonly TimeSpan s_timeout = TimeSpan.FromMilliseconds(200);
 
-    private static readonly bool s_caseInsensitive =
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
     /// <summary>
     /// Returns <see langword="true"/> when <paramref name="candidatePath"/>
     /// matches the path <paramref name="rule"/> resolved against
@@ -76,10 +72,11 @@ public static class PathRuleMatcher
             return false;
         }
 
+        bool caseInsensitive = context.CaseInsensitivePaths;
         string candidate = ToPosixAbsolute(candidatePath, context.CurrentDirectory);
         (string baseDir, string sub, bool anchored) = ResolveAnchor(spec, context);
 
-        string? rel = RelativeUnder(candidate, baseDir);
+        string? rel = RelativeUnder(candidate, baseDir, caseInsensitive);
         if (rel is null)
         {
             return false;
@@ -87,7 +84,7 @@ public static class PathRuleMatcher
 
         string regex = BuildRegex(sub, anchored);
         RegexOptions options = RegexOptions.CultureInvariant
-                               | (s_caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None);
+                               | (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None);
         try
         {
             return Regex.IsMatch(rel, regex, options, s_timeout);
@@ -200,10 +197,12 @@ public static class PathRuleMatcher
     /// The portion of <paramref name="candidate"/> below <paramref name="baseDir"/>
     /// (POSIX, no leading slash), or <see langword="null"/> when the candidate is
     /// not at/under the base. An empty string means the candidate IS the base.
+    /// <paramref name="caseInsensitive"/> selects the prefix-comparison mode,
+    /// matching the target filesystem (see <see cref="PermissionMatchContext.CaseInsensitivePaths"/>).
     /// </summary>
-    internal static string? RelativeUnder(string candidate, string baseDir)
+    internal static string? RelativeUnder(string candidate, string baseDir, bool caseInsensitive)
     {
-        StringComparison cmp = s_caseInsensitive
+        StringComparison cmp = caseInsensitive
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 

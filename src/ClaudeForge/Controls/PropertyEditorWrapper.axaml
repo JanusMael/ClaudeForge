@@ -170,6 +170,17 @@
                                    Foreground="White"
                                    ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}" />
                     </Border>
+
+                    <!-- Unsupported-shape indicator: no structured editor matched
+                         this property's shape, so it is shown as a raw-JSON box
+                         (still editable). Tooltip text is the editor VM's
+                         UnsupportedShapeNotice, set by the editor factory. -->
+                    <TextBlock IsVisible="{Binding UnsupportedShapeNotice,
+                                   Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               Text="⚠"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="{Binding UnsupportedShapeNotice}" />
                 </StackPanel>
             </DockPanel>
 

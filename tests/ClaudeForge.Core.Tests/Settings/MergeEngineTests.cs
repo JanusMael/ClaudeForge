@@ -64,6 +64,48 @@ public class MergeEngineTests
     }
 
     // -----------------------------------------------------------------------
+    // Inferred array-ness (isArray == null): only a uniform all-array set unions
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void Inferred_MixedScalarAndArray_HighestPriorityScopeWins()
+    {
+        // Regression: a key whose value is a bool at a higher-priority scope and an
+        // array at a lower-priority scope (legal for enabledPlugins, anyOf[array, bool])
+        // must NOT be union-merged — that silently dropped the higher-priority bool.
+        // With inference, a MIXED set falls through to highest-priority-scope-wins.
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.Project, JsonValue.Create(true), "project.json"),
+            new ScopeEntry(ConfigScope.User, new JsonArray("comp-a"), "user.json"),
+        ];
+
+        MergeResult result = MergeEngine.Merge(entries); // isArray null → inferred
+
+        Assert.IsTrue(result.EffectiveValue is JsonValue jv && jv.GetValue<bool>(),
+            "The higher-priority Project bool must win over the lower-priority User array.");
+        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope);
+    }
+
+    [TestMethod]
+    public void Inferred_AllArrays_StillUnions()
+    {
+        // Guard: the fix only changes the MIXED case — a homogeneous all-array set,
+        // inferred (not schema-declared), must still union across scopes.
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.User, new JsonArray("a"), "user.json"),
+            new ScopeEntry(ConfigScope.Project, new JsonArray("b"), "project.json"),
+        ];
+
+        MergeResult result = MergeEngine.Merge(entries); // inferred
+
+        JsonArray? arr = result.EffectiveValue as JsonArray;
+        Assert.IsNotNull(arr);
+        Assert.AreEqual(2, arr!.Count, "Two distinct array entries must union.");
+    }
+
+    // -----------------------------------------------------------------------
     // Array: union across all scopes
     // -----------------------------------------------------------------------
 

@@ -9,10 +9,10 @@ using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using HookEvent = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookEvent;
-using Hooks_HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
 
-// Alias the SDK so ConfigScope is unambiguous and both HookCommandType
-// enums (editor's vs SDK's) can be reached without name clashes.
+// Alias the SDK HookEvent so it's reachable without fully-qualifying. The
+// editor's HookEntry now uses the SDK HookCommandType directly — the former
+// editor-local duplicate enum was merged into the SDK.
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -529,7 +529,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
         HookEntry entry = new()
         {
             Matcher = evt.Matcher,
-            CommandType = MapSdkCommandType(evt.CommandType),
+            CommandType = evt.CommandType,
             CommandValue = evt.CommandValue,
         };
 
@@ -551,23 +551,5 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
         // permanently on next save.
         entry.IngestOpaqueJson(evt.OpaqueInnerJson);
         return entry;
-    }
-
-    /// <summary>
-    /// SDK <see cref="Sdk.Hooks.HookCommandType"/> → editor's
-    /// <see cref="HookCommandType"/>. The two enums are parallel but live in
-    /// different namespaces; keeping the mapping explicit guards against a
-    /// future addition (e.g. a new CommandType variant) silently falling
-    /// through to <see cref="HookCommandType.Command"/>.
-    /// </summary>
-    private static HookCommandType MapSdkCommandType(Hooks_HookCommandType type)
-    {
-        return type switch
-        {
-            Hooks_HookCommandType.Command => HookCommandType.Command,
-            Hooks_HookCommandType.Prompt => HookCommandType.Prompt,
-            Hooks_HookCommandType.Url => HookCommandType.Url,
-            var _ => HookCommandType.Command,
-        };
     }
 }

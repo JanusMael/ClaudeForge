@@ -6,6 +6,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -402,6 +403,7 @@ public sealed class MemoryEditorViewModelTests
             public IMarketplacesAccessor Marketplaces => throw new NotSupportedException();
             public IEnabledPluginsAccessor Plugins => throw new NotSupportedException();
             public IEnvAccessor Env => throw new NotSupportedException();
+            public IModelCatalogAccessor Models => throw new NotSupportedException();
             public IBackupClient Backup => throw new NotSupportedException();
 
             public event EventHandler<ClientChangedEventArgs>? Changed
@@ -788,6 +790,7 @@ public sealed class MemoryEditorViewModelTests
         public IMarketplacesAccessor Marketplaces => throw new NotSupportedException();
         public IEnabledPluginsAccessor Plugins => throw new NotSupportedException();
         public IEnvAccessor Env => throw new NotSupportedException();
+        public IModelCatalogAccessor Models => throw new NotSupportedException();
         public IBackupClient Backup => throw new NotSupportedException();
 
         public event EventHandler<ClientChangedEventArgs>? Changed

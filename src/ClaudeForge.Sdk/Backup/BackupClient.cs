@@ -85,7 +85,7 @@ internal sealed class BackupClient : IBackupClient
         Core.Backup.BackupRequest coreReq = new()
         {
             DestinationZipPath = destPath,
-            Mode = ToCoreMode(request.Mode),
+            Mode = request.Mode,
             IncludeClaudeCode = _includeClaudeCode,
             IncludeClaudeDesktop = _includeClaudeDesktop,
             IncludeCredentials = request.IncludeCredentials,
@@ -185,26 +185,6 @@ internal sealed class BackupClient : IBackupClient
         });
     }
 
-    private static Core.Backup.BackupMode ToCoreMode(BackupMode mode)
-    {
-        return mode switch
-        {
-            BackupMode.SettingsOnly => Core.Backup.BackupMode.SettingsOnly,
-            BackupMode.Full => Core.Backup.BackupMode.Full,
-            var _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown BackupMode"),
-        };
-    }
-
-    private static BackupMode ToSdkMode(Core.Backup.BackupMode mode)
-    {
-        return mode switch
-        {
-            Core.Backup.BackupMode.SettingsOnly => BackupMode.SettingsOnly,
-            Core.Backup.BackupMode.Full => BackupMode.Full,
-            var _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown Core BackupMode"),
-        };
-    }
-
     private static BackupManifest ProjectManifest(Core.Backup.BackupManifest core)
     {
         return new BackupManifest(
@@ -213,7 +193,7 @@ internal sealed class BackupClient : IBackupClient
             CreatedUtc: core.CreatedUtc,
             Platform: core.Platform,
             AppVersion: core.AppVersion,
-            Mode: ToSdkMode(core.Mode),
+            Mode: core.Mode,
             Clients: core.Clients.ToList(),
             Projects: core.Projects.ToList(),
             Worktrees: core.Worktrees
@@ -234,7 +214,7 @@ internal sealed class BackupClient : IBackupClient
             CreatedUtc = sdk.CreatedUtc,
             Platform = sdk.Platform,
             AppVersion = sdk.AppVersion,
-            Mode = ToCoreMode(sdk.Mode),
+            Mode = sdk.Mode,
             Clients = sdk.Clients.ToList(),
             Projects = sdk.Projects.ToList(),
             Worktrees = sdk.Worktrees

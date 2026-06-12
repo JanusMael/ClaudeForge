@@ -3,30 +3,33 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Permissions;
 
 /// <summary>
-/// Add-time canonicalization: trailing space-star → colon-star for Bash AND
-/// PowerShell; backslash → forward-slash for Read/Edit/Write path specifiers
-/// (anchors preserved); everything else untouched; never throws.
+/// Add-time canonicalization: Bash/PowerShell trailing-wildcard specifiers
+/// (<c> *</c> and <c>:*</c>) are preserved VERBATIM because they are distinct
+/// match semantics (<c>:*</c> is a strict superset of <c> *</c>); backslash →
+/// forward-slash for Read/Edit/Write path specifiers (anchors preserved);
+/// everything else untouched; never throws.
 /// </summary>
 [TestClass]
 public sealed class PermissionRuleNormalizerTests
 {
     [TestMethod]
-    public void Bash_TrailingSpaceStar_BecomesColonStar()
+    public void Bash_TrailingSpaceStar_IsPreservedVerbatim()
     {
-        Assert.AreEqual("Bash(git push:*)", PermissionRuleNormalizer.Normalize("Bash(git push *)"));
+        // " *" (optional args) and ":*" (literal colon + remainder) are DISTINCT
+        // match semantics, so the normalizer must NOT rewrite one into the other.
+        Assert.AreEqual("Bash(git push *)", PermissionRuleNormalizer.Normalize("Bash(git push *)"));
     }
 
     [TestMethod]
-    public void PowerShell_TrailingSpaceStar_BecomesColonStar()
+    public void PowerShell_TrailingSpaceStar_IsPreservedVerbatim()
     {
-        // Per user reminder: PowerShell needs the same wildcard normalization.
         Assert.AreEqual(
-            "PowerShell(Get-ChildItem:*)",
+            "PowerShell(Get-ChildItem *)",
             PermissionRuleNormalizer.Normalize("PowerShell(Get-ChildItem *)"));
     }
 
     [TestMethod]
-    public void ColonStar_IsIdempotent()
+    public void ColonStar_IsPreservedVerbatim()
     {
         Assert.AreEqual("Bash(git push:*)", PermissionRuleNormalizer.Normalize("Bash(git push:*)"));
         Assert.AreEqual(

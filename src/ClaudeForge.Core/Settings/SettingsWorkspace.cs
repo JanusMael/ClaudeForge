@@ -76,7 +76,19 @@ public sealed class SettingsWorkspace
     public void SetValue(string key, JsonNode? value, ConfigScope scope)
     {
         SettingsDocument doc = GetWritableDocument(scope);
-        doc.Root[key] = value?.DeepClone();
+        JsonNode? incoming = value?.DeepClone();
+
+        // True no-op guard: re-setting a key to a value it already holds is not a
+        // change. Writing it anyway would MarkDirty + raise Changed for nothing —
+        // a "ghost change" surfaced by spurious control events (an AutoCompleteBox
+        // reasserting its Text, an ItemsSource swap). JsonNode.DeepEquals is the
+        // canonical structural comparison and treats two absent/null nodes as equal.
+        if (JsonNode.DeepEquals(doc.Root[key], incoming))
+        {
+            return;
+        }
+
+        doc.Root[key] = incoming;
         doc.MarkDirty();
         Changed?.Invoke(this, EventArgs.Empty);
     }

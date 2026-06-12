@@ -222,6 +222,21 @@ public static class AvaloniaDiagnostics
     }
 
     /// <summary>
+    /// Shows a modeless, NON-fatal <see cref="NonFatalNoticeDialog"/> with a
+    /// copyable body. Convenience wrapper for host informational notices (e.g.
+    /// "these settings have no structured editor"); identical to calling
+    /// <see cref="NonFatalNoticeDialog.ShowSafe"/>. Safe to call at any time and
+    /// from any thread.
+    /// </summary>
+    /// <param name="title">Window title.</param>
+    /// <param name="message">User-facing header shown above the body.</param>
+    /// <param name="bodyText">Copyable body (e.g. a newline-separated list).</param>
+    public static void ShowNonFatalNotice(string title, string message, string bodyText)
+    {
+        NonFatalNoticeDialog.ShowSafe(title, message, bodyText);
+    }
+
+    /// <summary>
     /// Shows a native OS error dialog (last-resort crash surface for the case
     /// where the Avalonia runtime is dead). Convenience wrapper for host
     /// crash handlers; identical to calling

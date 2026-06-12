@@ -180,4 +180,90 @@ public sealed class PermissionResolverTests
             deny: ["Edit(/src/**)"]);
         Assert.AreEqual(PermissionOutcome.Deny, d.Outcome);
     }
+
+    // ── B3: PowerShell compound resolution (case-insensitive subcommands) ────
+
+    [TestMethod]
+    public void Compound_PowerShell_AllSubsAllowed_CaseInsensitive()
+    {
+        // Each subcommand is rebuilt as a PowerShell candidate (WithCommand), so
+        // matching is case-insensitive — 'Remove-Item' matches a lowercase rule.
+        PermissionDecision d = Resolve(
+            PermissionCandidate.PowerShell("Get-ChildItem; Remove-Item x"),
+            allow: ["PowerShell(get-childitem*)", "PowerShell(remove-item*)"]);
+        Assert.AreEqual(PermissionOutcome.Allow, d.Outcome);
+    }
+
+    [TestMethod]
+    public void Compound_PowerShell_OneSubDenied_Denies()
+    {
+        PermissionDecision d = Resolve(
+            PermissionCandidate.PowerShell("Get-ChildItem; Remove-Item x"),
+            allow: ["PowerShell(get-childitem*)", "PowerShell(remove-item*)"],
+            deny: ["PowerShell(remove-item*)"]);
+        Assert.AreEqual(PermissionOutcome.Deny, d.Outcome);
+        StringAssert.Contains(d.DecidingSubcommand!, "Remove-Item");
+    }
+
+    [TestMethod]
+    public void Compound_BashCandidate_DoesNotMatch_PowerShellCasedRules()
+    {
+        // A Bash candidate must NOT match PowerShell rules: wrong tool, and Bash
+        // matching is case-sensitive ('Remove-Item' ≠ 'remove-item').
+        PermissionDecision d = Resolve(
+            PermissionCandidate.Bash("Remove-Item x"),
+            allow: ["PowerShell(remove-item*)"]);
+        Assert.AreEqual(PermissionOutcome.Default, d.Outcome);
+    }
+
+    // ── B7: duplicate deny across scopes → highest-precedence attribution ────
+
+    [TestMethod]
+    public void Merged_DuplicateDenyInMultipleScopes_AttributedToHighestPrecedence()
+    {
+        // Identical deny in BOTH Managed and User. The resolver orders scopes by
+        // precedence, so the Managed group is checked first and wins attribution —
+        // even though User is listed first in the input.
+        var scopes = new List<ScopedPermissionRules>
+        {
+            new(ConfigScope.User, Rules(), Rules("Bash(git push *)"), Rules()),
+            new(ConfigScope.Managed, Rules(), Rules("Bash(git push *)"), Rules()),
+        };
+
+        PermissionDecision d = PermissionResolver.ResolveMerged(
+            PermissionCandidate.Bash("git push origin main"),
+            scopes,
+            PermissionDefaultMode.Default,
+            Ctx);
+
+        Assert.AreEqual(PermissionOutcome.Deny, d.Outcome);
+        Assert.AreEqual(ConfigScope.Managed, d.MatchedScope);
+    }
+
+    // ── B8: compound restrictiveness ranking (Ask > Default > Allow) ─────────
+
+    [TestMethod]
+    public void Compound_Ask_WhenOneSubAskedAndAnotherAllowed()
+    {
+        // Ask(2) outranks Allow(0): a compound with one ask'd sub and one allowed
+        // sub resolves to Ask.
+        PermissionDecision d = Resolve(
+            PermissionCandidate.Bash("npm test && rm file"),
+            allow: ["Bash(npm test)"],
+            ask: ["Bash(rm *)"]);
+        Assert.AreEqual(PermissionOutcome.Ask, d.Outcome);
+        StringAssert.Contains(d.DecidingSubcommand!, "rm");
+    }
+
+    [TestMethod]
+    public void Compound_Ask_BeatsDefault_WhenOtherSubUnmatched()
+    {
+        // Ask(2) outranks Default(1): one ask'd sub + one unmatched (Default) sub
+        // resolves to Ask, attributed to the ask'd subcommand.
+        PermissionDecision d = Resolve(
+            PermissionCandidate.Bash("rm file && obscure-cmd"),
+            ask: ["Bash(rm *)"]);
+        Assert.AreEqual(PermissionOutcome.Ask, d.Outcome);
+        StringAssert.Contains(d.DecidingSubcommand!, "rm");
+    }
 }

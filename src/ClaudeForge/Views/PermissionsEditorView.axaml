@@ -92,6 +92,44 @@
                 </StackPanel>
             </Border>
 
+            <!-- Contextual hint: visible when user arrived via "bypass" search -->
+            <Border IsVisible="{Binding ShowSelectBypassHint}"
+                    BorderBrush="#E65100"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                    Padding="10,8"
+                    Margin="0,2,0,2">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="ℹ"
+                               FontSize="15"
+                               Foreground="#E65100"
+                               VerticalAlignment="Top"
+                               Margin="0,1,0,0" />
+                    <TextBlock Text="{x:Static loc:Strings.TextSelectBypassHint}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               MaxWidth="500"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Auto-mode advisory: shown when an ineligible 'auto' selection was
+                 coerced away (model not auto-capable, or scope not User). -->
+            <Border IsVisible="{Binding ShowAutoModeWarning}"
+                    BorderBrush="{DynamicResource AppCautionBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,5"
+                    Margin="0,2,0,2">
+                <TextBlock Text="{x:Static loc:Strings.LabelAutoModeCoerced}"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           MaxWidth="500"
+                           Foreground="{DynamicResource AppPrimaryTextBrush}" />
+            </Border>
+
             <!-- Danger banner: visible only when bypassPermissions is selected -->
             <Border IsVisible="{Binding IsInBypassMode}"
                     BorderBrush="#C62828"

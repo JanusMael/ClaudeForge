@@ -261,16 +261,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop is reading its config from this profile (set via 'Apply' in the Profiles panel). Open the Profiles section to apply a different Desktop profile.</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code: {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop: {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>ClaudeForge version</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>Return to the page you were on before you arrived here</value>
@@ -411,10 +401,6 @@
     <value>Cross-platform, scope-aware settings editor for Claude Code and Claude Desktop.</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>Settings are layered: Managed &gt; User &gt; Project &gt; Local</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -438,9 +424,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Claude Code Profiles</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>Selected: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ Apply to CLI</value>
@@ -641,12 +624,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>Include API credentials (~/.claude/.credentials.json)</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Only check this if the backup file will stay on trusted storage. Anyone with the backup can log in as you while those tokens remain valid.</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Retention</value>
@@ -856,9 +833,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>Machine</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(not set)</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>'{0}' is not a valid environment variable name.</value>
   </data>
@@ -894,11 +868,6 @@
     <value>_Manage…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Reveal in Explorer</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -1005,9 +974,6 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>Uncheck to skip this confirmation dialog and save immediately in future</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Discard Changes</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>Save</value>
@@ -1279,9 +1245,6 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>Examples:</value>
   </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Common Actions</value>
-  </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>Filtered to hide rules already present in any scope.</value>
   </data>
@@ -1325,10 +1288,6 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>Add this rule to the Ask list — always triggers a confirmation prompt</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} rule(s))</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1511,10 +1470,6 @@ Cancel — keep the window open.</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>Memory</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1615,44 +1570,12 @@ Cancel — keep the window open.</value>
     <value>Footprint</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>To edit, open in your text editor — click "Reveal in Explorer".</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
-  </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Refresh</value>
     <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
   </data>
   <data name="TipButtonRefresh" xml:space="preserve">
     <value>Re-scan the filesystem and reload the list</value>
-  </data>
-  <data name="LabelUpdateBannerTextFmt" xml:space="preserve">
-    <value>ClaudeForge {0} is available.</value>
-    <comment>Headline of the "update available" banner. {0} substitutes the version (e.g. "v1.2.3" or the GitHub release name).</comment>
-  </data>
-  <data name="ButtonViewReleaseNotes" xml:space="preserve">
-    <value>View release notes</value>
-    <comment>Primary action on the update-available banner. Opens the GitHub release page in the default browser.</comment>
-  </data>
-  <data name="TipButtonViewReleaseNotes" xml:space="preserve">
-    <value>Open the release page on GitHub in your default browser</value>
-  </data>
-  <data name="ButtonDismissUpdateBanner" xml:space="preserve">
-    <value>✕</value>
-    <comment>Icon-only dismiss button on the update-available banner.</comment>
-  </data>
-  <data name="TipButtonDismissUpdate" xml:space="preserve">
-    <value>Hide this banner. It will not reappear for this version, but a newer release will re-show it.</value>
-  </data>
-  <data name="AutoNameButtonDismissUpdate" xml:space="preserve">
-    <value>Dismiss update-available banner</value>
-  </data>
-  <data name="LabelEssentialsCheckForUpdatesTitle" xml:space="preserve">
-    <value>Check for updates</value>
-    <comment>Essentials-page card title for the auto-update-check toggle.</comment>
-  </data>
-  <data name="LabelEssentialsCheckForUpdatesDescription" xml:space="preserve">
-    <value>Periodically check GitHub for newer ClaudeForge releases and show a banner when one is available.</value>
   </data>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Reveal in Explorer</value>
@@ -2118,9 +2041,6 @@ Cancel — keep the window open.</value>
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>Profile Exists</value>
   </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>A profile named '{0}' already exists. Choose a different name.</value>
-  </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>Delete Profile</value>
   </data>
@@ -2330,9 +2250,6 @@ Cancel — keep the window open.</value>
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>Editing</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>What you're editing now</value>
   </data>
@@ -2345,13 +2262,6 @@ Cancel — keep the window open.</value>
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>Open a project folder to edit Project and Local scopes.</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>Open project…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>Show scopes</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>Configuration scopes</value>
@@ -2712,14 +2622,6 @@ Some paths inside config files may need manual edits afterward. Continue?</value
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Welcome</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch.</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>Show this page on launch</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2731,10 +2633,6 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>High-importance Claude Code settings — token budgets, sandbox, MCP trust, model and update channel — pinned for quick review and change.</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>Essentials — high-importance settings</value>
@@ -2889,4 +2787,28 @@ Some paths inside config files may need manual edits afterward. Continue?</value
     <value>When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again.</value>
   </data>
 
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>This model doesn't use an effort level.</value>
+    <comment>Inline notice on the Essentials effort card when the effective model exposes no effort level (e.g. Haiku).</comment>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>Effort changed to '{0}' — the selected model doesn't support '{1}'.</value>
+    <comment>Inline notice after the effort value is auto-coerced to the nearest supported level. {0}=new level, {1}=old unsupported level.</comment>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>Model {0} supports effort: {1}</value>
+    <comment>Read-only indicator beside the effort editor. {0}=model label, {1}=slash-joined supported effort levels.</comment>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>To suppress all permission prompts, choose bypassPermissions in Default Mode below.</value>
+    <comment>Contextual hint near the permissions defaultMode dropdown, shown when the user arrives via the 'bypass' synthetic search result.</comment>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>Auto mode isn't available for the current model or scope, so it won't take effect.</value>
+    <comment>Advisory near the permissions defaultMode dropdown when an ineligible 'auto' was auto-coerced to 'default'.</comment>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>Effort '{0}' isn't supported by the current model.</value>
+    <comment>Advisory on the Essentials effort card when the persisted effort is unsupported by the current model (shown on load; no coercion until the user changes the model). {0}=the unsupported effort level.</comment>
+  </data>
 </root>

@@ -115,4 +115,40 @@ public sealed class PathRuleMatcherTests
         Assert.IsTrue(Match("Read(.env)", ".env"));
         Assert.IsTrue(Match("Read(/src/a.ts)", "src/a.ts"));
     }
+
+    // ── Case sensitivity is driven by the target filesystem (the context), NOT
+    //    the host OS. Both contexts below behave identically regardless of where
+    //    the test executes, proving the host-OS static was removed. ───────────
+    private static bool MatchWithCase(string rule, string path, bool caseInsensitive)
+    {
+        PermissionMatchContext ctx = Ctx with { CaseInsensitivePaths = caseInsensitive };
+        return PathRuleMatcher.Match(ParsedPermissionRule.Parse(rule), path, ctx);
+    }
+
+    [TestMethod]
+    public void CaseSensitiveContext_RejectsCaseMismatch_InSubPattern()
+    {
+        // The sub-pattern segment differs only by case.
+        Assert.IsFalse(MatchWithCase("Read(/src/App.ts)", "/proj/src/app.ts", caseInsensitive: false));
+        Assert.IsTrue(MatchWithCase("Read(/src/App.ts)", "/proj/src/app.ts", caseInsensitive: true));
+    }
+
+    [TestMethod]
+    public void CaseSensitiveContext_RejectsCaseMismatch_InBasePrefix()
+    {
+        // The base-directory prefix (RelativeUnder) differs only by case.
+        Assert.IsFalse(MatchWithCase("Read(/secrets/**)", "/PROJ/secrets/k.txt", caseInsensitive: false));
+        Assert.IsTrue(MatchWithCase("Read(/secrets/**)", "/PROJ/secrets/k.txt", caseInsensitive: true));
+    }
+
+    [TestMethod]
+    public void DefaultContext_UsesHostConvention()
+    {
+        // A context that does not set the flag inherits the host-OS default, so a
+        // case-exact path matches on every platform.
+        Assert.AreEqual(
+            PermissionMatchContext.HostIsCaseInsensitive,
+            new PermissionMatchContext("/proj", "/proj", "/home/alice").CaseInsensitivePaths);
+        Assert.IsTrue(Match("Read(/src/app.ts)", "/proj/src/app.ts"));
+    }
 }

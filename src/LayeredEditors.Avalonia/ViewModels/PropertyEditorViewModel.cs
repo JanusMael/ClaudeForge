@@ -49,6 +49,16 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
     public bool IsUndocumented => Schema.IsUndocumented;
 
     /// <summary>
+    /// Non-null when this editor was produced as the generic raw-JSON fallback
+    /// because no structured editor matched the schema's shape. The default
+    /// <c>PropertyEditorWrapper</c> renders a warning badge whose tooltip is this
+    /// text; the property stays fully editable. Set once at construction by the
+    /// editor factory (or the library's own fallback); <see langword="null"/> for
+    /// every structured editor.
+    /// </summary>
+    [ObservableProperty] private string? _unsupportedShapeNotice;
+
+    /// <summary>
     /// True when any scope has an explicit value for this property — derived from
     /// <see cref="EffectiveScope"/> being non-null. Schema defaults and pure
     /// inheritance without an explicit value do NOT count. Change notifications

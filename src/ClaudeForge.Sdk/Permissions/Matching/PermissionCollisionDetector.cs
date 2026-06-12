@@ -65,11 +65,16 @@ public static class PermissionCollisionDetector
             return null;
         }
 
+        // Iterate in evaluation-precedence order (Deny > Ask > Allow). Because the
+        // first cross-bucket overlap is returned immediately, this makes the reported
+        // conflict the HIGHEST-precedence one: a candidate that overlaps BOTH an Ask
+        // and a Deny rule surfaces the Deny (the higher-impact warning — a deny hard-
+        // blocks the action) rather than the milder Ask.
         (IReadOnlyList<PermissionRule> rules, PermissionBucket bucket)[] buckets =
         [
-            (allow ?? [], PermissionBucket.Allow),
-            (ask ?? [], PermissionBucket.Ask),
             (deny ?? [], PermissionBucket.Deny),
+            (ask ?? [], PermissionBucket.Ask),
+            (allow ?? [], PermissionBucket.Allow),
         ];
 
         PermissionCollision? redundant = null;
@@ -93,7 +98,8 @@ public static class PermissionCollisionDetector
 
                 if (bucket != targetBucket)
                 {
-                    // Cross-bucket overlap is the strongest signal — return now.
+                    // First cross-bucket overlap in precedence order (Deny>Ask>Allow)
+                    // is the strongest signal — return it now.
                     return new PermissionCollision(PermissionCollisionKind.Conflict, existing, bucket);
                 }
 

@@ -66,7 +66,7 @@ Open an issue first if you're planning:
 
 - **Architectural changes** (swapping a package, restructuring SDK / Core / GUI separation, adding a new top-level project).
 - **New bundled schema files** — the schema-loading priority is documented in `CLAUDE.md`; choosing where to embed something has follow-on consequences. To **refresh** an existing bundled schema from its upstream source, see `scripts/refresh-schema.{sh,ps1}` — they download from `json.schemastore.org`, validate, show a diff, and write atomically. The PowerShell variant is also invoked weekly by `.github/workflows/schema-refresh.yml`, which opens a `chore/schema-refresh` PR if upstream has drifted; reviewers inspect the diff before merging. Any ClaudeForge hand-curated additions (notably the `default` + `examples` on the top-level `model` property, which drive the UI's AutoCompleteBox) live in the sibling `claude-code-settings.overlay.json` and are never touched by a refresh — the runtime merges them via RFC 7396 JSON Merge Patch. Guard tests under `tests/ClaudeForge.Core.Tests/Schema/` lock that contract.
-- **Breaking changes to `IClaudeConfigClient`** — that's a public API; we want intentional churn.
+- **Breaking changes to `IClaudeConfigClient`** — that's a public API; we want intentional churn. (The `Models` accessor — `IModelCatalogAccessor`, backed by the bundled `model-catalog.json` — is part of this surface; the catalog is the source of truth for `model`/`effortLevel`/`permissions.defaultMode` values + their relationships, validated by `scripts/validate-model-catalog.ps1`.)
 - **Anything that touches the Backup / Restore engine.** Sharp safety invariants there (path-traversal protection, partial-write rollback, B4Forge-suffix files); subtle changes can corrupt user data.
 - **Anything that touches the Profile import path.** See commit `854ed7e` for the path-traversal CRITICAL fix that's now pinned by 7 regression tests; don't regress it.
 
@@ -99,11 +99,15 @@ Common foot-guns documented in [TRIMMING.md](./TRIMMING.md) and [docs/AVALONIA-G
 
 ### Localization
 
-User-visible strings ALWAYS go through `src/ClaudeForge/Localization/Strings.resx`. Adding a new key requires touching three files in lockstep:
+User-visible strings ALWAYS go through `src/ClaudeForge/Localization/Strings.resx`. Adding a new key requires touching, in lockstep:
 
-1. `Strings.resx` — add the key + English value + a `<comment>` describing the context.
-2. `Strings.zh-CN.resx` — add the same key with the same English value and `<comment>TODO zh-CN translation</comment>`. Don't translate yourself unless you're a native speaker.
-3. `Strings.Designer.cs` — add the strongly-typed accessor by hand (we maintain it manually rather than relying on the IDE designer).
+1. `Strings.resx` — the key + English value + a `<comment>` describing the context.
+2. **Every** `Strings.<culture>.resx` (de-DE, es-ES, fr-FR, ja-JP, ko-KR, pt-BR, ru-RU, zh-CN) — the key with a **real translation**. `TODO` placeholders are NOT allowed.
+3. `Strings.Designer.cs` — the strongly-typed accessor by hand (we maintain it manually).
+
+`tests/ClaudeForge.Tests/Localization/LocalizationParityTests.cs` enforces this contract: every neutral key must exist in every locale, no `TODO` markers, and no locale may be a near-copy of English (>25% byte-identical). A missing/placeholder translation fails the build's test gate, so add real translations when you introduce a key.
+
+**Dead-string guard (build error).** `Directory.Build.targets` fails the build if a neutral-resx key is never referenced, and — via the **dynamic-access tripwire** — if project source resolves a string by name or reflection (`Strings.ResourceManager`, `typeof(Strings)`). So always reference keys as the literal token `Strings.<Key>` (C#) or `{x:Static loc:Strings.<Key>}` (AXAML); never `GetString(variableKey)`. When you need an id→string map (e.g. catalog mode ids → labels), write a `switch` whose arms each return a literal `Strings.<Key>` — see `src/ClaudeForge/ViewModels/Catalog/CatalogLocalization.cs`. (The tripwire blanks comments and string literals before scanning, so mentioning a forbidden token in a doc comment is fine — only real code trips it.)
 
 AXAML binds via `{x:Static loc:Strings.YourKeyName}`. See [LOCALIZATION.md](./LOCALIZATION.md) for the full workflow including platform-aware variants (`PlatformLabels.Reveal` etc.).
 

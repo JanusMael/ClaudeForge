@@ -320,6 +320,169 @@ public class EnabledPluginsEditorViewModelTests
         Assert.IsFalse(result["b@m"]!.GetValue<bool>());
     }
 
+    // -----------------------------------------------------------------------
+    // Non-bool (array) value preservation — schema allows anyOf[array, bool]
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void LoadFromLayered_ArrayValuePlugin_PreservedVerbatimOnRoundTrip()
+    {
+        // The enabledPlugins schema allows an array-of-strings value (enable
+        // specific components) alongside the bool form. The editor has no typed
+        // affordance for it, but must NOT coerce it to a bool on save — doing so
+        // silently destroyed the array (and flipped the plugin's meaning to false).
+        JsonObject loaded = new()
+        {
+            ["bool@m"] = true,
+            ["array@m"] = new JsonArray("comp-a", "comp-b"),
+        };
+
+        EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
+        vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
+
+        JsonObject? result = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(result);
+
+        // The plain bool round-trips as a bool.
+        Assert.IsTrue(result!["bool@m"] is JsonValue bv && bv.GetValue<bool>());
+
+        // The array round-trips verbatim — NOT coerced to `false`.
+        Assert.IsInstanceOfType(result["array@m"], typeof(JsonArray),
+            "An array-valued plugin must survive the round-trip as an array, not be coerced to a bool.");
+        JsonArray arr = (JsonArray)result["array@m"]!;
+        Assert.AreEqual(2, arr.Count);
+        Assert.AreEqual("comp-a", arr[0]!.GetValue<string>());
+        Assert.AreEqual("comp-b", arr[1]!.GetValue<string>());
+    }
+
+    [TestMethod]
+    public void ToJsonValue_ArrayValuePlugin_PreservedEvenWhenToggled()
+    {
+        // Re-audit HIGH regression lock: toggling the checkbox must NOT silently
+        // destroy the component array. The array always wins on save (the view
+        // disables the checkbox for such rows); a net-zero toggle-and-back — which
+        // leaves the UI visually unchanged — must not lose data either.
+        JsonObject loaded = new() { ["array@m"] = new JsonArray("comp-a") };
+
+        EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
+        vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
+
+        PluginEntry entry = vm.Plugins.Single(p => p.PluginRef == "array@m");
+        Assert.IsTrue(entry.HasPreservedValue, "An array-valued row must carry its preserved value.");
+        Assert.IsTrue(entry.Enabled, "An array-valued plugin surfaces as enabled (checked, disabled checkbox).");
+
+        entry.Enabled = !entry.Enabled; // one toggle
+        entry.Enabled = !entry.Enabled; // and back — net-zero, UI looks untouched
+
+        JsonObject? result = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(result);
+        Assert.IsInstanceOfType(result!["array@m"], typeof(JsonArray),
+            "The array must survive checkbox toggling — no silent coercion to bool.");
+        Assert.AreEqual("comp-a", ((JsonArray)result["array@m"]!)[0]!.GetValue<string>());
+    }
+
+    [TestMethod]
+    public async Task LoadFromLayered_WithSdkClient_NonBoolValue_RecoveredFromRawScope()
+    {
+        // The SDK accessor's entry list (PluginRef + Enabled) does not carry the array
+        // payload to the editor, so the editor recovers non-bool values from the raw scope
+        // JSON and round-trips them verbatim. Here the accessor (empty) and the raw scope
+        // (has the array) diverge intentionally — same technique as
+        // LoadFromLayered_WithSdkClient_ReadsThroughTypedAccessor — to prove the editor
+        // recovers a key the accessor's list omits.
+        string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-edit-arr-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string? previousOverride = PlatformPaths.TestUserProfileOverride;
+        PlatformPaths.TestUserProfileOverride = tempDir;
+        try
+        {
+            using ClaudeCodeClient client = new();
+            await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
+
+            // Accessor sees no plugins; the raw scope carries an array-valued one.
+            JsonObject rawScope = new() { ["array@m"] = new JsonArray("comp-a", "comp-b") };
+            LayeredValue layered = LayeredWithPlugins(ConfigScope.User, rawScope);
+
+            EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User, client);
+            vm.LoadFromLayered(layered, ConfigScope.User);
+
+            Assert.IsTrue(vm.Plugins.Any(p => p.PluginRef == "array@m"),
+                "An array-valued plugin omitted by the SDK accessor must be recovered from the raw scope JSON.");
+
+            JsonObject? result = vm.ToJsonValue() as JsonObject;
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result!["array@m"], typeof(JsonArray),
+                "The recovered array must round-trip verbatim — not be dropped or coerced.");
+            Assert.AreEqual(2, ((JsonArray)result["array@m"]!).Count);
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = previousOverride;
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+                /* best-effort */
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task LoadFromLayered_WithSdkClient_ArrayInWorkspace_AttachesPreservedAndRoundTrips()
+    {
+        // Companion to the recovery test: here the SDK workspace genuinely holds an
+        // array-valued plugin (Set with Components), so GetAt surfaces it and the
+        // SDK-path loop creates the entry — then the reconcile loop must ATTACH
+        // PreservedValue from the raw scope so ToJsonValue re-emits the array. Guards the
+        // reconcile loop against removal (its job is to attach the verbatim value, since
+        // the SDK-path entry carries only PluginRef + Enabled).
+        string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-edit-arr2-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string? previousOverride = PlatformPaths.TestUserProfileOverride;
+        PlatformPaths.TestUserProfileOverride = tempDir;
+        try
+        {
+            using ClaudeCodeClient client = new();
+            await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
+            client.Plugins.Set(new EnabledPlugin("comp/plugin", Enabled: true, Components: ["a", "b"]));
+
+            JsonObject rawScope = new() { ["comp/plugin"] = new JsonArray("a", "b") };
+            LayeredValue layered = LayeredWithPlugins(ConfigScope.User, rawScope);
+
+            EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User, client);
+            vm.LoadFromLayered(layered, ConfigScope.User);
+
+            PluginEntry entry = vm.Plugins.Single(p => p.PluginRef == "comp/plugin");
+            Assert.IsTrue(entry.HasPreservedValue, "The SDK-surfaced array row must get PreservedValue attached.");
+
+            JsonObject? result = vm.ToJsonValue() as JsonObject;
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result!["comp/plugin"], typeof(JsonArray),
+                "An array-valued plugin in the SDK workspace must round-trip as an array through the editor.");
+            Assert.AreEqual(2, ((JsonArray)result["comp/plugin"]!).Count);
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = previousOverride;
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+                /* best-effort */
+            }
+        }
+    }
+
     // ── Force-fire delete-after-load ──────────────
 
     [TestMethod]

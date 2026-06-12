@@ -1,7 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
-using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -735,7 +734,7 @@ public class HooksEditorViewModelTests
             Assert.IsNotNull(preToolUse);
             Assert.AreEqual(1, preToolUse!.Hooks.Count, "SDK path must populate PreToolUse only.");
             Assert.AreEqual("Bash", preToolUse.Hooks[0].Matcher);
-            Assert.AreEqual(ClaudeForge.ViewModels.Editors.HookCommandType.Command, preToolUse.Hooks[0].CommandType);
+            Assert.AreEqual(HookCommandType.Command, preToolUse.Hooks[0].CommandType);
             Assert.AreEqual("echo from-sdk", preToolUse.Hooks[0].CommandValue);
 
             HookEventGroup? postToolUse = vm.EventGroups.FirstOrDefault(g => g.EventName == "PostToolUse");

@@ -187,28 +187,38 @@ internal sealed class PermissionsAccessor : IPermissionsAccessor
 
     public bool? DisableBypassPermissionsMode
     {
-        get => _client.GetEffective<bool?>("permissions.disableBypassPermissionsMode");
+        // Schema: permissions.disableBypassPermissionsMode is a STRING enum whose only
+        // value is "disable" (never a boolean). Present (= "disable") means bypass mode
+        // is disabled; absent means it is not — there is no "false"/"enabled" value.
+        // Mapped to a nullable bool here: true == "disable" present, null == absent.
+        get => string.Equals(
+                   _client.GetEffective<string>("permissions.disableBypassPermissionsMode"),
+                   "disable",
+                   StringComparison.Ordinal)
+            ? true
+            : (bool?)null;
         set
         {
-            if (value is null)
+            if (value == true)
             {
-                _client.RemoveValue("permissions.disableBypassPermissionsMode", _client.DefaultScope);
+                _client.SetValue("permissions.disableBypassPermissionsMode", "disable");
             }
             else
             {
-                _client.SetValue("permissions.disableBypassPermissionsMode", value.Value);
+                // false / null means "not disabled" -> remove the key (no on-disk "false").
+                _client.RemoveValue("permissions.disableBypassPermissionsMode", _client.DefaultScope);
             }
         }
     }
 
     public bool? GetDisableBypassPermissionsModeAt(ConfigScope scope)
     {
-        if (_client.GetScopeValue("permissions.disableBypassPermissionsMode", scope) is not JsonValue jv)
-        {
-            return null;
-        }
-
-        return jv.TryGetValue(out bool b) ? b : null;
+        // String enum ["disable"] at exactly this scope -> true; anything else -> null.
+        return _client.GetScopeValue("permissions.disableBypassPermissionsMode", scope) is JsonValue jv
+               && jv.TryGetValue(out string? s)
+               && string.Equals(s, "disable", StringComparison.Ordinal)
+            ? true
+            : (bool?)null;
     }
 
     private static IReadOnlyList<string> MaterializeStrings(JsonArray? arr)

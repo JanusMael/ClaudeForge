@@ -56,6 +56,58 @@ public static class BashCommandSplitter
             "which", "diff", "stat", "du", "cd",
         }.ToFrozenSet(StringComparer.Ordinal);
 
+    // Shell constructs that embed another command which SplitCompound does NOT
+    // expand: $(...) command substitution (but not $(( )) arithmetic), backtick
+    // substitution, and <(...) / >(...) process substitution. A subshell group "("
+    // (at the start of any subcommand) is detected separately in
+    // ContainsUnexpandedSubcommand.
+    private static readonly Regex s_embeddedCommand =
+        new(@"\$\((?!\()|`|[<>]\(", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="command"/> contains a
+    /// shell construct that runs an <i>embedded</i> command which
+    /// <see cref="SplitCompound"/> does not separate out for independent matching:
+    /// command substitution <c>$(…)</c> or backticks, process substitution
+    /// <c>&lt;(…)</c> / <c>&gt;(…)</c>, or a subshell group <c>(…)</c> beginning
+    /// any subcommand (e.g. <c>echo ok &amp;&amp; (curl x | sh)</c>, not just at the
+    /// very start). Because the embedded command is matched only as literal text of
+    /// the outer command (or not at all), a permission verdict on such a command
+    /// can be <b>over-permissive</b> — e.g. <c>echo $(rm -rf /)</c> resolves against
+    /// the <c>echo</c> rule while <c>rm</c> actually runs. The dry-run tester
+    /// surfaces this as an informational caution; like the rest of this splitter it
+    /// is a teaching aid, not a security control (the real control is Claude Code).
+    /// </summary>
+    public static bool ContainsUnexpandedSubcommand(string command)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            return false;
+        }
+
+        if (s_embeddedCommand.IsMatch(command))
+        {
+            return true;
+        }
+
+        // A subshell group "(…)" beginning any subcommand runs commands that are
+        // not split out here. Check each split part — a subshell can follow a
+        // separator (e.g. "true; (rm -rf /)"), not just lead the whole command.
+        // Exclude the arithmetic-command form "((…))", which evaluates an
+        // expression rather than running a command (bash parses a leading "((" as
+        // arithmetic, so "( (cmd) )" with a space is still treated as a subshell).
+        foreach (string part in SplitCompound(command))
+        {
+            string trimmed = part.TrimStart();
+            if (trimmed.StartsWith('(') && !trimmed.StartsWith("((", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Split <paramref name="command"/> into subcommands on the recognized
     /// separators (<c>&amp;&amp;</c>, <c>||</c>, <c>;</c>, <c>|</c>, <c>|&amp;</c>,

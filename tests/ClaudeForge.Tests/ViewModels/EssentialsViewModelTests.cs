@@ -488,14 +488,17 @@ public sealed class EssentialsViewModelTests
     private sealed class GatedEnvProvider : IEnvironmentProvider
     {
         private readonly ManualResetEventSlim _gate;
+        private readonly ManualResetEventSlim? _entered;
 
-        public GatedEnvProvider(ManualResetEventSlim gate)
+        public GatedEnvProvider(ManualResetEventSlim gate, ManualResetEventSlim? entered = null)
         {
             _gate = gate;
+            _entered = entered;
         }
 
         public IDictionary GetVariables(EnvironmentVariableTarget target)
         {
+            _entered?.Set(); // signal the probe was reached, BEFORE blocking on the gate
             _gate.Wait();
             return new Dictionary<string, string>();
         }
@@ -598,10 +601,103 @@ public sealed class EssentialsViewModelTests
     }
 
     [TestMethod]
+    public async Task DisableBypassCard_ReadsAndWritesDisableString_NotBoolean()
+    {
+        // permissions.disableBypassPermissionsMode is a STRING enum ["disable"], not a
+        // bool. The Bool card must read "disable" -> checked and write checked ->
+        // "disable" / unchecked -> remove. Writing a raw bool fails schema validation
+        // (the reported bug).
+        ClaudeConfigClientCore client =
+            MakeClient("""{"permissions":{"disableBypassPermissionsMode":"disable"}}""");
+        EssentialsViewModel vm = MakeVm(client);
+        await vm.RefreshAsync();
+
+        EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdDisableBypass)!;
+        Assert.IsTrue(card.BoolValue, "\"disable\" on disk must read as checked.");
+
+        card.BoolValue = false; // unchecking removes the key (no on-disk "false")
+        Assert.IsNull(client.GetScopeValue("permissions.disableBypassPermissionsMode", ConfigScope.User),
+            "Unchecking must remove the key, never write a boolean.");
+
+        card.BoolValue = true; // checking writes the string "disable"
+        Assert.AreEqual("disable",
+            client.GetScopeValue("permissions.disableBypassPermissionsMode", ConfigScope.User)?.GetValue<string>(),
+            "Checking must persist the string \"disable\", not a boolean.");
+    }
+
+    [TestMethod]
+    public async Task ModelCard_WhitespaceValue_IsNotPinned()
+    {
+        // The free-form model combo, left as whitespace, must be treated as "unset" —
+        // never pinned as model=" " (the Essentials sibling of the model="" ghost).
+        ClaudeConfigClientCore client = MakeClient("""{"model":"opus"}""");
+        EssentialsViewModel vm = MakeVm(client);
+        await vm.RefreshAsync();
+
+        EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdModel)!;
+        card.EnumValue = "   "; // user types only whitespace
+
+        Assert.IsNull(client.GetScopeValue("model", ConfigScope.User),
+            "A whitespace-only model value must be treated as unset, not pinned as model=\" \".");
+    }
+
+    [TestMethod]
     public void Dispose_IsIdempotent()
     {
         EssentialsViewModel vm = MakeVm();
         vm.Dispose();
         vm.Dispose(); // second call must not throw
+    }
+
+    [TestMethod]
+    public async Task RefreshAsync_AfterDispose_DoesNotThrow()
+    {
+        // The XML doc promises a refresh requested after disposal is a safe no-op.
+        // The pre-fix gate regressed this: WaitAsync on the disposed gate threw
+        // ObjectDisposedException. The top _disposed guard now short-circuits.
+        EssentialsViewModel vm = MakeVm();
+        vm.Dispose();
+
+        await vm.RefreshAsync();
+        await vm.RefreshAsync(MakeClient()); // also with a (would-be) rebind client
+    }
+
+    [TestMethod]
+    public async Task Dispose_WhileRefreshSuspendedAtEnvProbe_DoesNotFault()
+    {
+        // Gate OPEN during construction: the ctor's fire-and-forget RefreshAsync
+        // acquires the refresh gate synchronously (uncontended WaitAsync) and runs
+        // through. Awaiting an explicit refresh then deterministically drains it —
+        // the explicit refresh cannot acquire the gate until the ctor refresh
+        // releases it — leaving nothing in flight.
+        using ManualResetEventSlim gate = new(initialState: true);
+        using ManualResetEventSlim entered = new(initialState: false);
+        EssentialsViewModel vm = new(MakeClient(), new GatedEnvProvider(gate, entered));
+        await vm.RefreshAsync();
+
+        // Now park a *captured* refresh at the env probe: close the gate, start a
+        // refresh that synchronously re-acquires the now-free gate and suspends at the
+        // env-var registry probe (a Task.Run that blocks on the closed gate), holding
+        // the refresh gate.
+        gate.Reset();
+        entered.Reset();
+        Task parked = vm.RefreshAsync();
+
+        // Deterministically wait until the probe is actually executing (inside
+        // GetVariables, about to block on the closed gate) before disposing — so the
+        // refresh is provably suspended at the probe, holding the refresh gate, when
+        // Dispose runs.
+        Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)),
+            "The parked refresh never reached the env-var probe.");
+
+        vm.Dispose();
+
+        // Release the probe; the parked refresh resumes and runs its finally{ Release() }.
+        // It must complete cleanly: the gate is intentionally NOT disposed, so Release
+        // succeeds. (Re-introducing _refreshGate.Dispose() in Dispose would make this
+        // Release throw ObjectDisposedException and fault `parked`, failing this test —
+        // which is exactly the regression this guards.)
+        gate.Set();
+        await parked; // must complete without faulting
     }
 }

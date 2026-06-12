@@ -63,6 +63,9 @@
   <data name="PermBuilderInvalid" xml:space="preserve">
     <value>Not a valid rule yet — complete the fields above.</value>
   </data>
+  <data name="PermBuilderBareWildcardPath" xml:space="preserve">
+    <value>A path of only wildcards matches every file. Leave the path empty to allow all paths for this tool, or enter a specific pattern.</value>
+  </data>
   <data name="PermBuilderGlossInvalid" xml:space="preserve">
     <value>Fill in the fields to see what this rule will match.</value>
   </data>
@@ -145,6 +148,9 @@
   </data>
   <data name="PermTesterReadOnlyNote" xml:space="preserve">
     <value>Note: Claude Code treats {0} as a read-only command and runs it without prompting, regardless of these rules.</value>
+  </data>
+  <data name="PermTesterSubcommandWarning" xml:space="preserve">
+    <value>Caution: this command embeds another command (via $(…), backticks, or a subshell). The verdict above reflects only the outer command — the embedded one runs but is not matched here, so a real run may be more permissive than shown.</value>
   </data>
 
   <!-- ── Education panel ───────────────────────────────────────────────── -->

@@ -280,4 +280,105 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.SelectedTool = PermissionBuilderTool.WebFetch;
         Assert.IsTrue(vm.ShowDomainInput);
     }
+
+    // ── AF8: whitespace inside quotes is preserved (only unquoted runs collapse) ─
+
+    [TestMethod]
+    public void Bash_PreservesWhitespaceInsideQuotes()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Bash;
+        vm.MatchPrefix = false;
+        // The double space is INSIDE quotes — part of the argument — so it must be
+        // preserved, while the accidental double space between tokens collapses.
+        vm.CommandText = "grep  \"foo   bar\"  .";
+        Assert.AreEqual("Bash(grep \"foo   bar\" .)", vm.PreviewRule);
+    }
+
+    [TestMethod]
+    public void Bash_PreservesWhitespaceInsideSingleQuotes()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Bash;
+        vm.MatchPrefix = false;
+        vm.CommandText = "echo 'a   b'";
+        Assert.AreEqual("Bash(echo 'a   b')", vm.PreviewRule);
+    }
+
+    [TestMethod]
+    public void CollapseUnquotedWhitespace_Cases()
+    {
+        Assert.AreEqual("a b c", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   b\t\tc"));
+        Assert.AreEqual("a \"b   c\" d", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   \"b   c\"   d"));
+        Assert.AreEqual("", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("   "));
+    }
+
+    // ── AF8: a path of only wildcards is flagged, not silently over-broad ───────
+
+    [TestMethod]
+    public void Read_BareWildcardPath_IsInvalidWithSpecificMessage()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Read;
+
+        foreach (string bare in new[] { "*", "**", "*/**", "/**" })
+        {
+            vm.PathText = bare;
+            vm.Recursive = false;
+            Assert.IsFalse(vm.IsValid, $"'{bare}' should be flagged as a bare-wildcard path");
+            Assert.AreEqual(
+                Bennewitz.Ninja.ClaudeForge.Avalonia.Localization.Strings.PermBuilderBareWildcardPath,
+                vm.ValidationMessage);
+        }
+    }
+
+    [TestMethod]
+    public void Read_RecursiveTurningPathBare_IsFlagged()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Read;
+        vm.PathText = "*";
+        vm.Recursive = true; // → "*/**", still all-wildcards
+        Assert.IsFalse(vm.IsValid);
+    }
+
+    [TestMethod]
+    public void Read_RealPattern_StaysValid()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Read;
+        vm.PathText = "*.env"; // has a literal segment
+        Assert.IsTrue(vm.IsValid);
+        Assert.AreEqual("Read(*.env)", vm.PreviewRule);
+    }
+
+    [TestMethod]
+    public void IsBareWildcardPath_Cases()
+    {
+        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("*"));
+        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("**"));
+        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("*/**"));
+        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath("*.ts"));
+        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath("src/**"));
+        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath(""));
+    }
+
+    // ── AF8: gloss agrees with the previewed rule (not just the toggle) ─────────
+
+    [TestMethod]
+    public void Gloss_PathEndingInDoubleStar_ReadsRecursive_EvenWithToggleOff()
+    {
+        GuidedRuleBuilderViewModel vm = New(out _);
+        vm.SelectedTool = PermissionBuilderTool.Read;
+        vm.Recursive = false;
+        vm.PathText = "src/**"; // recursive by the pattern, not the toggle
+        Assert.AreEqual("Read(src/**)", vm.PreviewRule);
+        // The gloss describes recursion and names the base directory, not "exact".
+        StringAssert.Contains(vm.PlainEnglishGloss, "src");
+        Assert.AreEqual(
+            string.Format(
+                Bennewitz.Ninja.ClaudeForge.Avalonia.Localization.Strings.PermBuilderGlossPathRecursive,
+                "src"),
+            vm.PlainEnglishGloss);
+    }
 }

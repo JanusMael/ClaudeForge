@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Text;
 using Bennewitz.Ninja.ClaudeForge.Avalonia.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
@@ -191,16 +191,104 @@ public sealed partial class GuidedRuleBuilderViewModel : ObservableObject
     private void Recompute()
     {
         PreviewRule = BuildPreviewRule();
-        IsValid = PermissionRule.TryParse(PreviewRule, out _);
-        ValidationMessage = IsValid ? string.Empty : Strings.PermBuilderInvalid;
+        bool parses = PermissionRule.TryParse(PreviewRule, out _);
+
+        // A path made of only wildcards (e.g. "*", "**", "*/**") matches everything
+        // and is almost certainly a mistake — the bare tool already means "all
+        // paths". Flag it with a specific message instead of a generic invalid one.
+        bool bareWildcard = ShowPathInput && IsBareWildcardPath(BuildPathSpecifier());
+
+        IsValid = parses && !bareWildcard;
+        ValidationMessage = bareWildcard
+            ? Strings.PermBuilderBareWildcardPath
+            : IsValid ? string.Empty : Strings.PermBuilderInvalid;
         PlainEnglishGloss = IsValid ? BuildGloss() : Strings.PermBuilderGlossInvalid;
     }
 
-    // Trim ends AND collapse internal runs of whitespace to a single space.
-    // A double space inside a Bash/PowerShell command would otherwise be emitted
-    // literally into the rule and never match the real (single-spaced) command —
-    // a silent "my rule doesn't work" trap.
-    private string CleanCommand() => Regex.Replace(CommandText.Trim(), @"\s+", " ");
+    // Trim ends AND collapse runs of whitespace to a single space — but ONLY
+    // outside quotes. A double space *between* tokens is almost always accidental
+    // and would silently break matching against the real (single-spaced) command,
+    // so it is collapsed; whitespace *inside* a quoted argument (e.g.
+    // grep "foo   bar") is part of the argument and is preserved verbatim, or the
+    // rule would never match.
+    private string CleanCommand() => CollapseUnquotedWhitespace(CommandText.Trim());
+
+    internal static string CollapseUnquotedWhitespace(string command)
+    {
+        StringBuilder sb = new(command.Length);
+        char quote = '\0';         // '\0' = outside quotes; else the open quote char
+        bool pendingSpace = false; // a collapsed run of unquoted whitespace is pending
+        foreach (char c in command)
+        {
+            if (quote != '\0')
+            {
+                sb.Append(c);
+                if (c == quote)
+                {
+                    quote = '\0';
+                }
+
+                continue;
+            }
+
+            if (c is '\'' or '"')
+            {
+                if (pendingSpace)
+                {
+                    sb.Append(' ');
+                    pendingSpace = false;
+                }
+
+                sb.Append(c);
+                quote = c;
+                continue;
+            }
+
+            if (char.IsWhiteSpace(c))
+            {
+                if (sb.Length > 0)
+                {
+                    pendingSpace = true; // defer; drops any leading run
+                }
+
+                continue;
+            }
+
+            if (pendingSpace)
+            {
+                sb.Append(' ');
+                pendingSpace = false;
+            }
+
+            sb.Append(c);
+        }
+
+        return sb.ToString(); // a trailing pending space is intentionally dropped
+    }
+
+    // The final path specifier shared by the preview and the gloss: trims, and
+    // appends "/**" when Recursive is set (unless the path is already recursive).
+    // Empty when no path is entered (→ the bare tool form, "all paths").
+    private string BuildPathSpecifier()
+    {
+        string path = PathText.Trim();
+        if (path.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (Recursive && !path.EndsWith("**", StringComparison.Ordinal))
+        {
+            path = path.TrimEnd('/') + "/**";
+        }
+
+        return path;
+    }
+
+    // True when the specifier consists solely of wildcard/separator characters —
+    // it has no literal segment to anchor on, so it matches everything.
+    internal static bool IsBareWildcardPath(string spec) =>
+        spec.Length > 0 && spec.Trim('*', '/', ' ').Length == 0;
 
     private string BuildPreviewRule()
     {
@@ -226,18 +314,8 @@ public sealed partial class GuidedRuleBuilderViewModel : ObservableObject
             case PermissionBuilderTool.Write:
             {
                 string tool = SelectedTool.ToString();
-                string path = PathText.Trim();
-                if (path.Length == 0)
-                {
-                    return tool;
-                }
-
-                if (Recursive && !path.EndsWith("**", StringComparison.Ordinal))
-                {
-                    path = path.TrimEnd('/') + "/**";
-                }
-
-                return $"{tool}({path})";
+                string spec = BuildPathSpecifier();
+                return spec.Length == 0 ? tool : $"{tool}({spec})";
             }
 
             case PermissionBuilderTool.WebFetch:
@@ -293,15 +371,24 @@ public sealed partial class GuidedRuleBuilderViewModel : ObservableObject
             case PermissionBuilderTool.Edit:
             case PermissionBuilderTool.Write:
             {
-                string path = PathText.Trim();
-                if (path.Length == 0)
+                // Gloss the ACTUAL specifier, not the Recursive toggle: a path the
+                // user typed as "src/**" is recursive even with the toggle off, so
+                // the gloss must agree with the previewed rule.
+                string spec = BuildPathSpecifier();
+                if (spec.Length == 0)
                 {
                     return Strings.PermBuilderGlossPathAll;
                 }
 
-                return Recursive
-                    ? string.Format(Strings.PermBuilderGlossPathRecursive, path)
-                    : string.Format(Strings.PermBuilderGlossPathExact, path);
+                if (spec.EndsWith("**", StringComparison.Ordinal))
+                {
+                    string baseDir = spec[..^2].TrimEnd('/');
+                    return string.Format(
+                        Strings.PermBuilderGlossPathRecursive,
+                        baseDir.Length == 0 ? spec : baseDir);
+                }
+
+                return string.Format(Strings.PermBuilderGlossPathExact, spec);
             }
 
             case PermissionBuilderTool.WebFetch:

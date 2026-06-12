@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.ClaudeForge.Services;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -17,6 +18,31 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// </remarks>
 public class DefaultEditorFactory
 {
+    /// <summary>
+    /// Optional sink notified whenever this factory falls back to the raw-JSON
+    /// editor for a schema shape it cannot classify (the only "unsupported shape"
+    /// path). Lets the host aggregate a single load-time notice. Null by default
+    /// so tests and standalone callers are unaffected; set by NavigationTreeBuilder
+    /// for the production build.
+    /// </summary>
+    public IUnsupportedShapeSink? UnsupportedShapeSink { get; set; }
+
+    /// <summary>
+    /// Build the raw-JSON fallback editor for a shape the factory cannot classify,
+    /// tag it with the per-field "unsupported shape" notice, and report it to
+    /// <see cref="UnsupportedShapeSink"/> (when set). The single origin of the
+    /// unsupported-shape signal — every raw-fallback arm routes here.
+    /// </summary>
+    private JsonRawPropertyEditorViewModel RawFallback(SchemaNode schema, ConfigScope editingScope)
+    {
+        JsonRawPropertyEditorViewModel raw = new(schema, editingScope)
+        {
+            UnsupportedShapeNotice = UnsupportedShapeText.FieldTooltip,
+        };
+        UnsupportedShapeSink?.Report(schema.JsonPath, schema.Title ?? schema.Name);
+        return raw;
+    }
+
     /// <summary>
     /// Create an editor ViewModel for the given schema node.
     /// </summary>
@@ -74,7 +100,7 @@ public class DefaultEditorFactory
             // Unknown ValueType (schema fetch failed, or a draft we don't yet
             // recognise) — same rationale as the Complex fallback above:
             // raw JSON is the only safe affordance.
-            var _ => new JsonRawPropertyEditorViewModel(schema, editingScope),
+            var _ => RawFallback(schema, editingScope),
         };
     }
 
@@ -109,7 +135,7 @@ public class DefaultEditorFactory
     /// anyOf with multiple non-null variants). Per-property knowledge is
     /// concentrated here so the editor types stay generic.
     /// </summary>
-    private static PropertyEditorViewModel CreateComplexFallback(
+    private PropertyEditorViewModel CreateComplexFallback(
         SchemaNode schema, ConfigScope editingScope)
     {
         return schema.Name switch
@@ -126,7 +152,7 @@ public class DefaultEditorFactory
             // surfaced directly; non-string originals (number / boolean /
             // array) preserve opaquely via per-server ExtraConfigs.
             "pluginConfigs" => new PluginConfigsEditorViewModel(schema, editingScope),
-            var _ => new JsonRawPropertyEditorViewModel(schema, editingScope),
+            var _ => RawFallback(schema, editingScope),
         };
     }
 
@@ -175,7 +201,7 @@ public class DefaultEditorFactory
     ///         net for the Array dispatch path.</item>
     /// </list>
     /// </summary>
-    private static LibVm.PropertyEditorViewModel CreateArrayEditor(SchemaNode schema, ConfigScope editingScope)
+    private LibVm.PropertyEditorViewModel CreateArrayEditor(SchemaNode schema, ConfigScope editingScope)
     {
         SchemaValueType itemType = schema.ItemsSchema?.ValueType ?? SchemaValueType.String;
         if (itemType is SchemaValueType.String or SchemaValueType.Path or SchemaValueType.Unknown)
@@ -210,7 +236,7 @@ public class DefaultEditorFactory
     /// list editor (8 source-discriminated variants). Anything else still
     /// falls to JsonRaw (the safety net).
     /// </remarks>
-    private static PropertyEditorViewModel CreateArrayObjectFallback(
+    private PropertyEditorViewModel CreateArrayObjectFallback(
         SchemaNode schema, ConfigScope editingScope)
     {
         return schema.Name switch
@@ -228,7 +254,7 @@ public class DefaultEditorFactory
             // across the round-trip so hand-curated managed entries survive.
             "strictKnownMarketplaces" or "blockedMarketplaces"
                 => new MarketplaceListEditorViewModel(schema, editingScope),
-            var _ => new JsonRawPropertyEditorViewModel(schema, editingScope),
+            var _ => RawFallback(schema, editingScope),
         };
     }
 

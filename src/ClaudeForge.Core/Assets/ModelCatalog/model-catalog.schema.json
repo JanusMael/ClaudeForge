@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ninja.bennewitz.com/claudeforge/model-catalog.schema.json",
+  "title": "ClaudeForge model catalog",
+  "description": "Source of truth for model / effortLevel / permissions.defaultMode values and their inter-relationships. Shipped with the build; overlay-able via model-catalog.overlay.json (RFC 7396).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "models", "aliases", "effortLevels", "defaultModes"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "$comment": { "type": "string" },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "alias", "label", "legacy", "supports1m", "supportedEffortLevels", "defaultEffortLevel", "supportsAutoMode"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "alias": { "type": ["string", "null"] },
+          "label": { "type": "string", "minLength": 1 },
+          "legacy": { "type": "boolean" },
+          "supports1m": { "type": "boolean" },
+          "supportedEffortLevels": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+            "uniqueItems": true
+          },
+          "defaultEffortLevel": {
+            "type": ["string", "null"],
+            "enum": ["low", "medium", "high", "xhigh", "max", null]
+          },
+          "supportsAutoMode": { "type": "boolean" }
+        }
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "effortLevels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "order", "persists"],
+        "properties": {
+          "id": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+          "order": { "type": "integer", "minimum": 0 },
+          "persists": { "type": "boolean" }
+        }
+      }
+    },
+    "defaultModes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "experimental", "requiresAutoCapableModel", "userScopeOnly"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "experimental": { "type": "boolean" },
+          "requiresAutoCapableModel": { "type": "boolean" },
+          "userScopeOnly": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

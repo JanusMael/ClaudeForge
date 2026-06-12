@@ -1,0 +1,88 @@
+{
+  "$schema": "./model-catalog.schema.json",
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "claude-fable-5",
+      "alias": "fable",
+      "label": "Fable 5",
+      "legacy": false,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-opus-4-8",
+      "alias": "opus",
+      "label": "Opus 4.8",
+      "legacy": false,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "alias": "sonnet",
+      "label": "Sonnet 4.6",
+      "legacy": false,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "max"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "alias": "haiku",
+      "label": "Haiku 4.5",
+      "legacy": false,
+      "supports1m": false,
+      "supportedEffortLevels": [],
+      "defaultEffortLevel": null,
+      "supportsAutoMode": false
+    },
+    {
+      "id": "claude-opus-4-7",
+      "alias": null,
+      "label": "Opus 4.7",
+      "legacy": true,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "xhigh",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-opus-4-6",
+      "alias": null,
+      "label": "Opus 4.6",
+      "legacy": true,
+      "supports1m": false,
+      "supportedEffortLevels": ["low", "medium", "high", "max"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
+    }
+  ],
+  "aliases": {
+    "fable": "claude-fable-5",
+    "opus": "claude-opus-4-8",
+    "sonnet": "claude-sonnet-4-6",
+    "haiku": "claude-haiku-4-5"
+  },
+  "effortLevels": [
+    { "id": "low", "order": 0, "persists": true },
+    { "id": "medium", "order": 1, "persists": true },
+    { "id": "high", "order": 2, "persists": true },
+    { "id": "xhigh", "order": 3, "persists": true },
+    { "id": "max", "order": 4, "persists": false }
+  ],
+  "defaultModes": [
+    { "id": "default", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "acceptEdits", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "plan", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "auto", "experimental": false, "requiresAutoCapableModel": true, "userScopeOnly": true },
+    { "id": "dontAsk", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "bypassPermissions", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "delegate", "experimental": true, "requiresAutoCapableModel": false, "userScopeOnly": false }
+  ]
+}

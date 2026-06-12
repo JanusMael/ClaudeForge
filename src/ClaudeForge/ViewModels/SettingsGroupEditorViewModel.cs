@@ -680,14 +680,43 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// </summary>
     private void WriteEditorValue(string jsonPath, JsonNode? value, ConfigScope scope)
     {
+        // An empty/whitespace string from a text box or free-form combo means "unset",
+        // not a literal empty value — normalize it to null so it takes the remove path
+        // (which, guarded below, is a true no-op when the key is already unset) and
+        // never pins a ghost like model="" from opening a dropdown and leaving it blank.
+        // No Claude Code setting treats "" as distinct from absent.
+        if (value is JsonValue strValue && strValue.TryGetValue(out string? s) && string.IsNullOrWhiteSpace(s))
+        {
+            value = null;
+        }
+
         if (_sdkClient is not null)
         {
             if (value != null)
             {
-                _sdkClient.SetValue(jsonPath, value, scope);
+                // Ghost-change guard: only persist when the value actually changes
+                // the value AT THE TARGET SCOPE. An editor that re-emits the value
+                // already present at this scope (e.g. a control event that re-asserts
+                // the current value) would otherwise pin a redundant explicit key —
+                // dirtying the doc with an empty Save preview. The compare basis MUST
+                // be the target scope (GetScopeValue), not the cross-scope effective
+                // value: comparing effective drops a legitimate explicit pin at
+                // EditingScope whenever a higher-priority scope shadows it with an
+                // equal value. This matches the _workspace fallback's scope-specific
+                // SetValue no-op guard. JsonNode.DeepEquals is the canonical compare.
+                if (!JsonNode.DeepEquals(value, _sdkClient.GetScopeValue(jsonPath, scope)))
+                {
+                    _sdkClient.SetValue(jsonPath, value, scope);
+                }
             }
-            else
+            else if (_sdkClient.GetScopeValue(jsonPath, scope) is not null)
             {
+                // Symmetric scope-specific guard: only remove when the key actually
+                // exists at the target scope. Removing an already-absent key is a
+                // no-op the SDK would still surface as a path-ful Changed event
+                // (ApplyRemoveLocked always-notifies a top-level remove), so skipping
+                // it keeps this branch ghost-event-free — matching the write branch
+                // above and the _workspace fallback's absent-key no-op.
                 _sdkClient.RemoveValue(jsonPath, scope);
             }
         }

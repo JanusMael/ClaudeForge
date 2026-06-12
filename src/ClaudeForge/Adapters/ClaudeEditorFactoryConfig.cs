@@ -63,9 +63,20 @@ public static class ClaudeEditorFactoryConfig
         // Migrated onto SDK accessor. Final editor in the
         // 4.3.6 series; every specialized editor now drives reads through
         // the typed accessor surface.
+        // The factory is threaded in so the editor can auto-surface every
+        // permissions schema key it does not render bespoke-ly (e.g.
+        // disableAutoMode) via the generic by-type / raw-JSON editors —
+        // no schema property is silently dropped. Today's permissions children
+        // (allow/deny/ask/defaultMode/disableBypassPermissionsMode/
+        // disableAutoMode/additionalDirectories) match no registered bespoke
+        // name, so the composite Create falls through to generic dispatch — no
+        // re-entrancy TODAY. A future permissions child whose name DID match a
+        // bespoke registration would be constructed here; verify that case is
+        // safe before adding such a registration (the Phase-4 rollout should
+        // consider routing auto-surfaced children through base/generic dispatch).
         factory.Register(
             s => s.Name == "permissions",
-            (s, scope) => new PermissionsEditorViewModel(s, scope, sdkClient));
+            (s, scope) => new PermissionsEditorViewModel(s, scope, sdkClient, factory));
     }
 
     /// <summary>

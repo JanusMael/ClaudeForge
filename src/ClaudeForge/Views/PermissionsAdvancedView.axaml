@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.PermissionsAdvancedView"
              x:DataType="vm:PermissionsEditorViewModel">
@@ -68,5 +70,18 @@
                         Command="{Binding AddAdditionalDirectoryCommand}" />
             </StackPanel>
         </StackPanel>
+
+        <!-- Auto-surfaced permissions schema keys that have no bespoke control
+             (e.g. disableAutoMode). Rendered via the generic PropertyEditorWrapper
+             so every schema property is editable in place. Renders nothing when
+             the editor already covers every schema key (the common case). -->
+        <ItemsControl ItemsSource="{Binding AutoSurfacedEditors}"
+                      IsVisible="{Binding HasAutoSurfacedEditors}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
+                    <controls:PropertyEditorWrapper Margin="0,4,0,0" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </StackPanel>
 </UserControl>

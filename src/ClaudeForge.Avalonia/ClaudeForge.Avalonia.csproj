@@ -26,4 +26,12 @@
     <ItemGroup>
         <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <!-- The in-tree test project exercises a few internal view-model helpers
+             (the quote-aware command cleaner, the bare-wildcard path check)
+             directly. Mirrors the InternalsVisibleTo pattern used by
+             Core / Sdk / LayeredEditors.Avalonia. -->
+        <InternalsVisibleTo Include="ClaudeForge.Avalonia.Tests" />
+    </ItemGroup>
 </Project>

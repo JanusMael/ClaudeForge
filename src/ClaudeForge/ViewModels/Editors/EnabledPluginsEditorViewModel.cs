@@ -25,10 +25,38 @@ public partial class PluginEntry : ObservableObject
 
     [ObservableProperty] private string _pluginRef;
     [ObservableProperty] private bool _enabled;
+
+    /// <summary>
+    /// The original on-disk value when it was NOT a plain boolean. The
+    /// <c>enabledPlugins</c> schema (<c>additionalProperties</c>) permits an
+    /// array-of-strings (enable specific components) in addition to a bool; the
+    /// editor has no typed affordance for the array form, so it round-trips the
+    /// original verbatim rather than coercing it to a bool — which silently
+    /// destroyed the array before this fix. <see langword="null"/> when the
+    /// value was a plain bool (the common case).
+    /// <para>
+    /// The preserved value ALWAYS wins on save — the bool checkbox cannot override
+    /// it (the view disables the checkbox when <see cref="HasPreservedValue"/>). An
+    /// earlier "explicit toggle discards the array" escape hatch was removed: the
+    /// checkbox can't reveal that a value is an array, so a toggle there was a
+    /// silent-data-loss trap (a single uncheck, or a net-zero toggle-and-back,
+    /// destroyed the array). Changing an array value is done by editing the raw
+    /// JSON, not via this checkbox.
+    /// </para>
+    /// </summary>
+    public JsonNode? PreservedValue { get; internal set; }
+
+    /// <summary>
+    /// True when this entry carries a non-boolean <see cref="PreservedValue"/> (e.g.
+    /// the schema's array-of-strings form). The view disables the enabled checkbox
+    /// for such rows so a toggle cannot silently destroy the value.
+    /// </summary>
+    public bool HasPreservedValue => PreservedValue is not null;
 }
 
 /// <summary>
-/// Editor for the "enabledPlugins" object — a dictionary of plugin-id@marketplace-id → bool entries.
+/// Editor for the "enabledPlugins" object — a dictionary of plugin-id@marketplace-id
+/// → bool (or, per the schema's anyOf, array-of-strings) entries.
 /// </summary>
 /// <remarks>
 /// when an <see cref="IClaudeConfigClient"/> is supplied via
@@ -161,7 +189,12 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
         JsonObject obj = new();
         foreach (PluginEntry p in Plugins)
         {
-            obj[p.PluginRef] = JsonValue.Create(p.Enabled);
+            // A preserved non-bool value (e.g. the schema's array-of-strings form)
+            // ALWAYS round-trips verbatim — the bool checkbox is disabled for such
+            // rows, so it can never silently coerce the array away on save.
+            obj[p.PluginRef] = p.PreservedValue is not null
+                ? p.PreservedValue.DeepClone()
+                : (JsonNode?)JsonValue.Create(p.Enabled);
         }
 
         return obj;
@@ -196,7 +229,6 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
             // path would — but as strongly-typed EnabledPlugin records, with
             // the SDK applying the same null/missing-key handling rules
             // headless consumers see.
-            int countAtScope;
             if (_client is not null)
             {
                 // Cast across the parallel ConfigScope enums (Core ↔ Sdk):
@@ -208,8 +240,6 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
                 {
                     Plugins.Add(new PluginEntry(plugin.PluginRef, plugin.Enabled));
                 }
-
-                countAtScope = snapshot.Count;
             }
             else
             {
@@ -225,8 +255,39 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
                         Plugins.Add(new PluginEntry(kv.Key, enabled));
                     }
                 }
+            }
 
-                countAtScope = scopeValue?.Count ?? 0;
+            // Reconcile against the raw scope JSON so non-bool plugin values survive.
+            // The schema permits an array-of-strings value (enable specific components)
+            // alongside the bool form. The SDK accessor surfaces such values (via
+            // EnabledPlugin.Components), but the SDK-path loop above keeps only PluginRef +
+            // Enabled, and the legacy bool-parse coerces a non-bool to false — so the editor
+            // needs the raw scope JSON (captured as the baseline) to attach the verbatim
+            // original as PreservedValue. ToJsonValue then re-emits it unchanged; without
+            // this an array value would be dropped or rewritten to `false` on the next save
+            // (which overwrites the whole block on disk). Also recovers a key the SDK-path
+            // list might not contain. Such rows are marked enabled (a non-bool value means
+            // active) and the view shows a checked, disabled checkbox.
+            if (_baselineEnabledPluginsValue is JsonObject rawScope)
+            {
+                foreach ((string key, JsonNode? raw) in rawScope)
+                {
+                    if (raw is null || (raw is JsonValue rv && rv.TryGetValue(out bool _)))
+                    {
+                        continue; // plain bool (or null) — already handled by the load above.
+                    }
+
+                    PluginEntry? existing = Plugins.FirstOrDefault(p => p.PluginRef == key);
+                    if (existing is null)
+                    {
+                        Plugins.Add(new PluginEntry(key, enabled: true) { PreservedValue = raw.DeepClone() });
+                    }
+                    else
+                    {
+                        existing.Enabled = true;
+                        existing.PreservedValue = raw.DeepClone();
+                    }
+                }
             }
 
             // IsModified = true  when the scope has at least one plugin entry to persist.
@@ -235,7 +296,7 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
             // to "not set" — treating it as modified would cause Save to attempt a no-op
             // write of {} to disk, and leaves first-launch users with a phantom "unsaved
             // changes" indicator after merely opening their config.
-            IsModified = countAtScope > 0;
+            IsModified = Plugins.Count > 0;
         }
         finally
         {

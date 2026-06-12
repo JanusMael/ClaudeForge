@@ -1,0 +1,67 @@
+name: Model catalog validation
+
+# Validation gate for the bundled model catalog
+# (src/ClaudeForge.Core/Assets/ModelCatalog/model-catalog.json).
+#
+# Design rationale — see also `.github/WORKFLOWS.md`:
+#   - Unlike the JSON schema, the catalog has NO upstream machine-readable
+#     source (the Claude docs are prose). The curated file IS the source of
+#     truth, so this workflow VALIDATES it rather than downloading anything.
+#   - It runs on every PR/push that touches the catalog (so a hand edit can't
+#     ship an inconsistent file), plus a weekly schedule + manual dispatch as a
+#     standing check.
+#   - The hand-curated overlay (`model-catalog.overlay.json`) is the
+#     refresh-safe seam; the validator only checks it parses.
+#   - Updates to the shipped catalog flow through normal human-authored PRs
+#     (a doc-harvest edit on a branch), gated by this workflow — there is
+#     nothing to auto-generate, so no auto-PR step.
+
+on:
+  push:
+    paths:
+      - 'src/ClaudeForge.Core/Assets/ModelCatalog/**'
+      - 'scripts/validate-model-catalog.ps1'
+      - '.github/workflows/model-catalog-refresh.yml'
+  pull_request:
+    paths:
+      - 'src/ClaudeForge.Core/Assets/ModelCatalog/**'
+      - 'scripts/validate-model-catalog.ps1'
+      - '.github/workflows/model-catalog-refresh.yml'
+  schedule:
+    # Mondays 09:00 UTC — same maintenance slot as the schema refresh.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: model-catalog-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate catalog + relationship tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Structural + cross-relationship gate (pwsh is preinstalled on the
+      # ubuntu-latest image). Exits non-zero — failing the job — on any
+      # internal inconsistency in the curated catalog.
+      - name: Validate model catalog
+        shell: pwsh
+        run: pwsh scripts/validate-model-catalog.ps1
+
+      # The runtime contract: catalog parses + loads, relationship queries
+      # behave, and the catalog stays in parity with the bundled JSON schema's
+      # effortLevel / permissions.defaultMode enums.
+      - name: Catalog unit tests
+        run: dotnet test ClaudeForge.slnx -c Debug --filter "FullyQualifiedName~ModelCatalog"

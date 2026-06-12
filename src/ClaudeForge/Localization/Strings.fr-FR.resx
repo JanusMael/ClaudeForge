@@ -265,16 +265,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop lit sa configuration depuis ce profil (défini via « Appliquer » dans le panneau Profils). Ouvrez la section Profils pour appliquer un autre profil Desktop.</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code : {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop : {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>Version de ClaudeForge</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>Revenir à la page que vous consultiez avant d'arriver ici</value>
@@ -365,10 +355,6 @@
     <value>Éditeur de paramètres multiplateforme et sensible aux portées pour Claude Code et Claude Desktop.</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>Les paramètres sont superposés : Géré &gt; Utilisateur &gt; Projet &gt; Local</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -392,9 +378,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Profils Claude Code</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>Sélectionné : </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ Appliquer au CLI</value>
@@ -595,12 +578,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>Inclure les identifiants d'API (~/.claude/.credentials.json)</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Cochez cette option uniquement si le fichier de sauvegarde restera sur un stockage de confiance. Quiconque possède la sauvegarde peut se connecter à votre place tant que ces jetons restent valides.</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Rétention</value>
@@ -810,9 +787,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>Machine</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(non définie)</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>« {0} » n'est pas un nom de variable d'environnement valide.</value>
   </data>
@@ -848,11 +822,6 @@
     <value>_Gérer…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Afficher dans l'Explorateur</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -959,9 +928,6 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>Décochez pour ignorer cette boîte de dialogue de confirmation et enregistrer immédiatement à l'avenir</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Abandonner les modifications</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>Enregistrer</value>
@@ -1142,9 +1108,6 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>Exemples :</value>
   </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Actions courantes</value>
-  </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>Filtré pour masquer les règles déjà présentes dans une portée quelconque.</value>
   </data>
@@ -1188,10 +1151,6 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>Ajouter cette règle à la liste Demander — déclenche toujours une confirmation</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} règle(s))</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1374,10 +1333,6 @@ Annuler — laisser la fenêtre ouverte.</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>Mémoire</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>Auditez, consultez et nettoyez les fichiers que Claude lit à chaque session ainsi que l'empreinte comportementale laissée sur le disque.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1477,10 +1432,6 @@ Annuler — laisser la fenêtre ouverte.</value>
   <data name="HeaderTabFootprint" xml:space="preserve">
     <value>Empreinte</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
-  </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>Pour modifier, ouvrez le fichier dans votre éditeur de texte — cliquez sur « Afficher dans l'Explorateur ».</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
   </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Actualiser</value>
@@ -1953,9 +1904,6 @@ Annuler — laisser la fenêtre ouverte.</value>
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>Le profil existe</value>
   </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>Un profil nommé « {0} » existe déjà. Choisissez un autre nom.</value>
-  </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>Supprimer le profil</value>
   </data>
@@ -2165,9 +2113,6 @@ Annuler — laisser la fenêtre ouverte.</value>
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>Édition</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>Ce que vous êtes en train de modifier</value>
   </data>
@@ -2180,13 +2125,6 @@ Annuler — laisser la fenêtre ouverte.</value>
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>Ouvrez un dossier de projet pour modifier les portées Projet et Local.</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>Ouvrir un projet…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>Afficher les portées</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>Portées de configuration</value>
@@ -2547,14 +2485,6 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Bienvenue</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientation pour l'éditeur — ce qui est modifié, comment les portées se superposent et où trouver les paramètres à fort impact. Affichée par défaut au premier lancement.</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>Afficher cette page au lancement</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2566,10 +2496,6 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>Essentiels</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>Paramètres Claude Code à fort impact — budgets de jetons, bac à sable, confiance MCP, modèle et canal de mise à jour — épinglés pour un examen et une modification rapides.</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>Essentiels — paramètres à fort impact</value>
@@ -2763,5 +2689,95 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
   </data>
   <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
     <value>Impossible de joindre GitHub. Veuillez réessayer dans un instant.</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>Accepter les modifications</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>Automatique</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>Ignorer les vérifications d'autorisation</value>
+  </data>
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>Demander d'abord</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>Déléguer</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>Ne pas demander</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>Accepte automatiquement les modifications de fichiers ; les autres outils continuent de demander</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>Approuve automatiquement les appels d'outils, avec des vérifications de sécurité en arrière-plan</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>Ignore toutes les invites — à utiliser uniquement dans des environnements isolés/de confiance</value>
+  </data>
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>Vous demande lors de la première utilisation de chaque outil (comportement standard)</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>Coordination uniquement pour les chefs d'équipe d'agents</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>Refuse automatiquement tout outil non explicitement pré-approuvé dans Autoriser</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>Lecture seule — Claude ne peut effectuer aucune modification ni effet secondaire</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>Tester une règle (simulation)</value>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>Tester cette règle</value>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>Ouvre le testeur de simulation, prérempli à partir de cette règle, pour voir ce que Claude Code ferait réellement — sur l'ensemble de vos règles et portées.</value>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>Avancé</value>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>Créer</value>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>Communs</value>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>Listes</value>
+  </data>
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>Vue d'ensemble</value>
+  </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>Conflit résolu : '{0}' supprimé de {1} — {2} a la priorité.</value>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>Non ajouté : '{0}' figure déjà dans {1}, qui a la priorité sur {2}.</value>
+  </data>
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>Ce modèle n'utilise pas de niveau d'effort.</value>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>Effort changé en '{0}' — le modèle sélectionné ne prend pas en charge '{1}'.</value>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>Le modèle {0} prend en charge l'effort : {1}</value>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>Pour supprimer toutes les invites d'autorisation, choisissez bypassPermissions dans Mode par défaut ci-dessous.</value>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>Le mode automatique n'est pas disponible pour le modèle ou la portée actuels et ne prendra donc pas effet.</value>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>L'effort '{0}' n'est pas pris en charge par le modèle actuel.</value>
   </data>
 </root>

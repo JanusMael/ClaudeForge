@@ -165,6 +165,72 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// <summary>Available options for <see cref="EssentialsCardKind.EnumString"/>.</summary>
     public IReadOnlyList<string> EnumOptions { get; }
 
+    /// <summary>
+    /// When true the EnumString card is editable — the options are
+    /// <em>suggestions</em>, not a closed set (e.g. the model card, where a user
+    /// may type any custom model id). Strict enums (effortLevel, autoUpdatesChannel)
+    /// leave this false.
+    /// </summary>
+    public bool AllowsFreeForm { get; }
+
+    /// <summary>EnumString card with a closed option set → render a (selection-only) ComboBox.</summary>
+    public bool IsStrictEnumString => Kind == EssentialsCardKind.EnumString && !AllowsFreeForm;
+
+    /// <summary>EnumString card whose options are suggestions → render an editable AutoCompleteBox.</summary>
+    public bool IsFreeFormEnumString => Kind == EssentialsCardKind.EnumString && AllowsFreeForm;
+
+    /// <summary>
+    /// The dropdown's <em>currently offered</em> options. Seeded from
+    /// <see cref="EnumOptions"/> and narrowed at runtime for inter-related cards
+    /// (e.g. the effort card filtered to the effective model's supported levels).
+    /// The strict ComboBox binds to this; other cards leave it == EnumOptions.
+    /// </summary>
+    public ObservableCollection<string> FilteredOptions { get; }
+
+    /// <summary>True when the editor should be disabled (e.g. effort on a model that exposes none).</summary>
+    [ObservableProperty] private bool _enumDisabled;
+
+    /// <summary>A persistent (not auto-dismissing) inline notice — e.g. "effort coerced" / "session-only" / "not applicable".</summary>
+    [ObservableProperty] private bool _showConstraintNotice;
+
+    /// <summary>Text for <see cref="ShowConstraintNotice"/>.</summary>
+    [ObservableProperty] private string _constraintNoticeText = string.Empty;
+
+    /// <summary>Read-only "current model — supports: …" indicator shown beside an inter-related editor. Empty = hidden.</summary>
+    [ObservableProperty] private string _modelSupportSummary = string.Empty;
+
+    /// <summary>
+    /// Replace the offered options (used by the orchestrator to narrow an
+    /// inter-related dropdown). Guards <see cref="IsLoading"/> across the
+    /// mutation because clearing the bound <c>ItemsSource</c> synchronously nulls
+    /// a bound ComboBox <c>SelectedItem</c> — without the guard that would fire a
+    /// spurious <see cref="EnumValue"/>=null write. Preserves the current
+    /// selection when it is still offered.
+    /// </summary>
+    internal void SetFilteredOptions(IEnumerable<string> options)
+    {
+        string? keep = EnumValue;
+        bool wasLoading = IsLoading;
+        IsLoading = true;
+        try
+        {
+            FilteredOptions.Clear();
+            foreach (string o in options)
+            {
+                FilteredOptions.Add(o);
+            }
+
+            if (keep is not null && FilteredOptions.Contains(keep, StringComparer.OrdinalIgnoreCase))
+            {
+                EnumValue = keep; // re-select the value the Clear() nulled, since it's still valid
+            }
+        }
+        finally
+        {
+            IsLoading = wasLoading;
+        }
+    }
+
     /// <summary>Items for <see cref="EssentialsCardKind.StringList"/>.</summary>
     public ObservableCollection<string> StringListValues { get; } = new();
 
@@ -219,7 +285,8 @@ public partial class EssentialsCardViewModel : ObservableObject
         IReadOnlyList<string>? enumOptions = null,
         Func<EssentialsCardViewModel, bool>? isDangerPredicate = null,
         string dangerBannerText = "",
-        string amberCalloutText = "")
+        string amberCalloutText = "",
+        bool allowsFreeForm = false)
     {
         Id = id;
         Title = title;
@@ -242,6 +309,8 @@ public partial class EssentialsCardViewModel : ObservableObject
         _readAsync = readAsync;
         _writeAsync = writeAsync;
         EnumOptions = enumOptions ?? Array.Empty<string>();
+        FilteredOptions = new ObservableCollection<string>(EnumOptions);
+        AllowsFreeForm = allowsFreeForm;
         _isDangerPredicate = isDangerPredicate;
         DangerBannerText = dangerBannerText;
         AmberCalloutText = amberCalloutText;

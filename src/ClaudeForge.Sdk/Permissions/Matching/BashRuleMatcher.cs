@@ -21,12 +21,17 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 /// <b>Trailing wildcard = optional arguments.</b> The canonical Claude form is the
 /// colon suffix — <c>Bash(npm run test:*)</c> means "<c>npm run test</c> with any
 /// flags/args, <i>including none</i>". A trailing <c>:*</c> and a trailing
-/// <c> *</c> (space-star) are treated as equivalent and both mean "the prefix,
-/// optionally followed by a space and more text". So <c>Bash(git push:*)</c> and
-/// <c>Bash(git push *)</c> both match the bare command <c>git push</c> as well as
-/// <c>git push origin main</c>, but neither matches <c>git pushx</c> (the space
-/// boundary is preserved). Only the trailing token is special; a mid-pattern
-/// <c>*</c> stays an ordinary glob and a mid-pattern colon stays literal.
+/// <c> *</c> (space-star) are <b>distinct, not equivalent</b>: <c>:*</c> matches
+/// the bare prefix, a <c>:</c>-suffixed subcommand, OR space-args, while <c> *</c>
+/// matches the bare prefix or space-args only (no colon suffix). So <c>:*</c> is a
+/// strict <i>superset</i> of <c> *</c> — <c>Bash(git push:*)</c> matches
+/// <c>git push:weird</c> but <c>Bash(git push *)</c> does not; both match the bare
+/// <c>git push</c> and <c>git push origin main</c>, and neither matches
+/// <c>git pushx</c> (the space boundary is preserved). Because the two forms mean
+/// different things, <see cref="PermissionRuleNormalizer"/> preserves each
+/// verbatim and never rewrites one into the other. Only the trailing token is
+/// special; a mid-pattern <c>*</c> stays an ordinary glob and a mid-pattern colon
+/// stays literal.
 /// </para>
 /// <para>
 /// <b>Not a prefix matcher, not a security boundary.</b> The old guidance that a
@@ -96,25 +101,43 @@ public static class BashRuleMatcher
 
     /// <summary>
     /// Convert a Bash glob specifier to an anchored regex. Every character is
-    /// literal except <c>*</c>, which becomes <c>.*</c>. A <b>trailing</b>
-    /// <c>:*</c> or <c> *</c> (space-star) is special: it denotes optional
-    /// arguments and compiles to <c>( .*)?</c>, so the prefix matches with or
-    /// without a following space + text (e.g. <c>git push:*</c> and
-    /// <c>git push *</c> both match bare <c>git push</c> and <c>git push origin</c>,
-    /// but not <c>git pushx</c>). A non-trailing <c>*</c>, or a trailing <c>*</c>
-    /// not preceded by a space (e.g. <c>ls*</c>), stays an ordinary glob.
+    /// literal except <c>*</c>, which becomes <c>.*</c>. Two trailing forms denote
+    /// a prefix with "any arguments":
+    /// <list type="bullet">
+    ///   <item><b>Trailing <c>:*</c></b> (the canonical Claude Code form) — the
+    ///   prefix matches bare, or followed by a <c>:</c>-suffix, OR a space + args.
+    ///   <c>npm run test:*</c> matches bare <c>npm run test</c>, <c>npm run test:unit</c>,
+    ///   <c>npm run test:e2e</c>, and <c>npm run test --watch</c>, but NOT
+    ///   <c>npm run testify</c> (no <c>:</c>/space delimiter → not a real subcommand).</item>
+    ///   <item><b>Trailing <c> *</c> (space-star)</b> — bare or a space + args only
+    ///   (no colon-suffix): <c>git push *</c> matches <c>git push</c> and
+    ///   <c>git push origin</c>, but not <c>git pushx</c>.</item>
+    /// </list>
+    /// So <c>:*</c> is a strict superset of <c> *</c> (it additionally allows a
+    /// colon suffix). A non-trailing <c>*</c>, or a trailing <c>*</c> not preceded
+    /// by <c>:</c> or a space (e.g. <c>ls*</c>), stays an ordinary glob.
     /// </summary>
     internal static string GlobToRegex(string glob)
     {
-        bool optionalArgs =
-            glob.EndsWith(":*", StringComparison.Ordinal) ||
-            glob.EndsWith(" *", StringComparison.Ordinal);
+        // Trailing ":*" — prefix + (nothing | ':' suffix | space args). This is the
+        // form Claude Code's docs use for subcommands like npm run test:unit.
+        if (glob.EndsWith(":*", StringComparison.Ordinal))
+        {
+            string prefix = glob[..^2]; // drop the ":*"
+            string body = Regex.Escape(prefix).Replace("\\*", ".*");
+            return $"^{body}(:.*| .*)?$";
+        }
 
-        string prefix = optionalArgs ? glob[..^2] : glob;
+        // Trailing " *" — space-star: bare or a space + args (no colon suffix).
+        if (glob.EndsWith(" *", StringComparison.Ordinal))
+        {
+            string prefix = glob[..^2]; // drop the " *"
+            string body = Regex.Escape(prefix).Replace("\\*", ".*");
+            return $"^{body}( .*)?$";
+        }
 
-        // Escape everything (turns '*' into '\*'), then re-open the wildcard so
-        // any interior '*' remains a glob.
-        string body = Regex.Escape(prefix).Replace("\\*", ".*");
-        return optionalArgs ? $"^{body}( .*)?$" : $"^{body}$";
+        // Ordinary glob.
+        string ordinary = Regex.Escape(glob).Replace("\\*", ".*");
+        return $"^{ordinary}$";
     }
 }

@@ -59,6 +59,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Localization {
             get { return ResourceManager.GetString("PermBuilderInvalid", resourceCulture); }
         }
 
+        public static string PermBuilderBareWildcardPath {
+            get { return ResourceManager.GetString("PermBuilderBareWildcardPath", resourceCulture); }
+        }
+
         public static string PermBuilderGlossInvalid {
             get { return ResourceManager.GetString("PermBuilderGlossInvalid", resourceCulture); }
         }
@@ -161,6 +165,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Localization {
 
         public static string PermTesterReadOnlyNote {
             get { return ResourceManager.GetString("PermTesterReadOnlyNote", resourceCulture); }
+        }
+
+        public static string PermTesterSubcommandWarning {
+            get { return ResourceManager.GetString("PermTesterSubcommandWarning", resourceCulture); }
         }
 
         public static string PermEduHeading {

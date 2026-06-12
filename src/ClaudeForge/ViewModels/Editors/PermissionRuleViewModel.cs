@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -16,25 +17,24 @@ public partial class PermissionRuleViewModel : ObservableObject
     // ---------------------------------------------------------------------------
 
     /// <summary>
-    /// The compiled permissionRule regex sourced from the bundled JSON schema.
-    /// A valid rule is either a known tool name (optionally followed by a parenthesised
-    /// pattern whose content is not purely wildcards) or any string starting with <c>mcp__</c>.
+    /// The compiled permissionRule regex. The pattern comes from
+    /// <see cref="PermissionTools.RulePattern"/> — the single source of truth shared
+    /// with the SDK validator, so the two cannot drift. This GUI copy keeps a short
+    /// match timeout because it runs on every keystroke against user-typed input.
+    /// A valid rule is a known tool name (optionally followed by a parenthesised,
+    /// not-purely-wildcard pattern) or any string starting with <c>mcp__</c>.
     /// </summary>
     private static readonly Regex RuleRegex = new(
-        @"^((Agent|Bash|Edit|ExitPlanMode|Glob|Grep|KillShell|LSP|NotebookEdit|PowerShell|Pwsh|Read|Skill|" +
-        @"TaskCreate|TaskGet|TaskList|TaskOutput|TaskStop|TaskUpdate|TodoWrite|ToolSearch|" +
-        @"WebFetch|WebSearch|Write)(\((?=.*[^)*?])[^)]+\))?|mcp__.*)$",
+        PermissionTools.RulePattern,
         RegexOptions.Compiled | RegexOptions.CultureInvariant,
         matchTimeout: TimeSpan.FromMilliseconds(100));
 
-    /// <summary>Tool names accepted by the schema regex (kept in sync with <see cref="RuleRegex"/>).</summary>
-    internal static readonly HashSet<string> KnownToolNames = new(StringComparer.Ordinal)
-    {
-        "Agent", "Bash", "Edit", "ExitPlanMode", "Glob", "Grep", "KillShell", "LSP",
-        "NotebookEdit", "PowerShell", "Pwsh", "Read", "Skill", "TaskCreate", "TaskGet",
-        "TaskList", "TaskOutput", "TaskStop", "TaskUpdate", "TodoWrite", "ToolSearch",
-        "WebFetch", "WebSearch", "Write",
-    };
+    /// <summary>
+    /// Tool names accepted by the schema regex. The single source of truth lives in
+    /// the SDK (<see cref="PermissionTools.NameSet"/>); this alias keeps existing
+    /// call sites unchanged while eliminating the former hand-maintained copy.
+    /// </summary>
+    internal static readonly IReadOnlySet<string> KnownToolNames = PermissionTools.NameSet;
 
     // ---------------------------------------------------------------------------
     // Constructor

@@ -53,6 +53,16 @@
       Scanning the project dir + the repo's tests/ keeps test-only references from
       false-positiving while never producing a false error (an unrelated match
       only marks a key "used"). Skipped on design-time (IDE) builds.
+
+      Dynamic-access tripwire: the unused-key scan is only complete while every
+      live key is referenced as the literal token Strings.<Key>. A by-name or
+      reflective lookup (Strings.ResourceManager.GetString(variable),
+      typeof(Strings) reflection) is invisible to it and could let a genuinely
+      live key be reported "unused" and deleted. The task therefore also fails the
+      build if those patterns appear in the project's OWN source (Strings.Designer.cs
+      is excluded; tests/ is not scanned for this check, so reflective parity tests
+      stay allowed). If a dynamically-built key family is ever genuinely needed,
+      extend the task with an allowlist rather than removing the tripwire.
     -->
     <UsingTask TaskName="CheckUnusedResxKeys"
                TaskFactory="RoslynCodeTaskFactory"
@@ -60,6 +70,7 @@
         <ParameterGroup>
             <ResxPath ParameterType="System.String" Required="true" />
             <ScanRoots ParameterType="System.String" Required="true" />
+            <ProjectDir ParameterType="System.String" Required="true" />
         </ParameterGroup>
         <Task>
             <Code Type="Class" Language="cs"><![CDATA[
@@ -76,6 +87,7 @@ public class CheckUnusedResxKeys : Task
 {
     public string ResxPath { get; set; }
     public string ScanRoots { get; set; }
+    public string ProjectDir { get; set; }
 
     public override bool Execute()
     {
@@ -84,7 +96,8 @@ public class CheckUnusedResxKeys : Task
             .Where(n => !string.IsNullOrEmpty(n))
             .ToList();
 
-        var sb = new StringBuilder();
+        var sep = Path.DirectorySeparatorChar;
+        var files = new System.Collections.Generic.List<string>();
         foreach (var root in ScanRoots.Split(';'))
         {
             if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
@@ -93,16 +106,34 @@ public class CheckUnusedResxKeys : Task
                 bool ext = f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
                            || f.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase);
                 if (!ext) continue;
-                var s = Path.DirectorySeparatorChar;
-                if (f.IndexOf(s + "obj" + s, StringComparison.OrdinalIgnoreCase) >= 0) continue;
-                if (f.IndexOf(s + "bin" + s, StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (f.IndexOf(sep + "obj" + sep, StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (f.IndexOf(sep + "bin" + sep, StringComparison.OrdinalIgnoreCase) >= 0) continue;
                 if (f.EndsWith("Strings.Designer.cs", StringComparison.OrdinalIgnoreCase)) continue;
-                sb.Append(File.ReadAllText(f)).Append('\n');
+                files.Add(f);
             }
         }
 
+        // Build the usage corpus with non-code blanked so a Strings.<Key> that
+        // appears ONLY in a comment (e.g. a <see cref="Strings.Foo"/> doc note)
+        // does not keep a genuinely-dead key alive. C# files have their comments
+        // blanked but string/char content (incl. $"...{Strings.Foo}..." holes) is
+        // preserved, since those are real references. .axaml references live in
+        // attribute values, so only XML comments are blanked there.
+        var sb = new StringBuilder();
+        foreach (var f in files)
+        {
+            string raw = File.ReadAllText(f);
+            string forCorpus = f.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase)
+                ? StripXmlComments(raw)
+                : StripComments(raw);
+            sb.Append(forCorpus).Append('\n');
+        }
         var corpus = sb.ToString();
+
         bool ok = true;
+
+        // (1) Dead-key check: every neutral-resx key must appear as a literal
+        //     Strings.<Key> reference in project source or the test projects.
         foreach (var k in keys)
         {
             if (!Regex.IsMatch(corpus, @"Strings\." + Regex.Escape(k) + @"\b"))
@@ -114,7 +145,190 @@ public class CheckUnusedResxKeys : Task
                 ok = false;
             }
         }
+
+        // (2) Dynamic-access tripwire: forbid by-name / reflective resolution of
+        //     the Strings class in the project's own source. Such patterns are
+        //     invisible to (1) and could let a live key be reported unused and
+        //     deleted. Scanned per-file (project dir only) so we can report a line
+        //     and so reflective tests under tests/ stay allowed.
+        var dynamicAccessPatterns = new[] { @"\bStrings\.ResourceManager\b", @"typeof\(\s*Strings\s*\)" };
+        var projDir = string.IsNullOrEmpty(ProjectDir) ? null : ProjectDir.TrimEnd(sep);
+        foreach (var f in files)
+        {
+            if (projDir != null && !f.StartsWith(projDir, StringComparison.OrdinalIgnoreCase)) continue;
+            // Blank out comments + string literals (offsets/newlines preserved) so a
+            // forbidden token mentioned in a doc comment or a string doesn't false-trip.
+            string text = StripNonCode(File.ReadAllText(f));
+            foreach (var pat in dynamicAccessPatterns)
+            {
+                Match m = Regex.Match(text, pat);
+                if (!m.Success) continue;
+                int line = 1;
+                for (int i = 0; i < m.Index; i++) if (text[i] == '\n') line++;
+                Log.LogError(
+                    "Dynamic string-resource access '{0}' in {1}({2}). The dead-string guard only sees " +
+                    "literal Strings.<Key> references, so by-name/reflective resolution can let a live key " +
+                    "be reported unused and deleted. Use a literal Strings.<Key> accessor; if a " +
+                    "dynamically-built key family is genuinely intended, extend this guard with an allowlist.",
+                    m.Value, f, line);
+                ok = false;
+            }
+        }
+
         return ok;
+    }
+
+    // ── Non-code stripping ──────────────────────────────────────────────────
+    //
+    // A single left-to-right tokenizer drives both blanking modes. Whichever
+    // construct STARTS first at a given position wins, so a "//" inside a string
+    // is not treated as a comment and a quote inside a // comment does not open a
+    // phantom string — the bug a sequence of independent regex passes had. It
+    // also understands char literals ('"' no longer opens a string), verbatim and
+    // raw ("""…""") strings, and interpolation holes ($"…{code}…") whose contents
+    // are real CODE and are scanned as such. Newlines and offsets are preserved
+    // so reported line numbers stay correct.
+    //
+    //   StripComments  (blankStrings:false) — blank ONLY comments; keep all
+    //     string/char content. Used for the dead-key corpus, where a
+    //     Strings.<Key> inside an interpolated string is a real reference.
+    //   StripNonCode   (blankStrings:true)  — also blank string/char literal
+    //     TEXT, but still keep interpolation-hole code, so the dynamic-access
+    //     tripwire catches Strings.ResourceManager used inside a hole while never
+    //     false-tripping on a mention in plain comment/string text.
+
+    private static string StripComments(string s) { return StripCore(s, false); }
+    private static string StripNonCode(string s) { return StripCore(s, true); }
+
+    private static char Blank(char c) { return (c == '\n' || c == '\r') ? c : ' '; }
+
+    // Blank XML comments in .axaml (string-resource references live in attribute
+    // values, so only <!-- … --> is removed).
+    private static string StripXmlComments(string s)
+    {
+        return Regex.Replace(s, @"<!--[\s\S]*?-->", m =>
+        {
+            var sb = new StringBuilder(m.Length);
+            foreach (char c in m.Value) sb.Append(Blank(c));
+            return sb.ToString();
+        });
+    }
+
+    private static string StripCore(string s, bool blankStrings)
+    {
+        var sb = new StringBuilder(s.Length);
+        int i = 0;
+        ScanCode(s, ref i, s.Length, sb, blankStrings, false);
+        return sb.ToString();
+    }
+
+    // Scan a region of code. When inHole is true we are inside an interpolation
+    // hole and must return (without consuming) at the matching unbalanced '}'.
+    private static void ScanCode(string s, ref int i, int n, StringBuilder sb, bool blankStrings, bool inHole)
+    {
+        while (i < n)
+        {
+            char c = s[i];
+            if (inHole && c == '}') return;
+
+            if (c == '/' && i + 1 < n && s[i + 1] == '/')           // line comment
+            {
+                while (i < n && s[i] != '\n' && s[i] != '\r') { sb.Append(' '); i++; }
+                continue;
+            }
+            if (c == '/' && i + 1 < n && s[i + 1] == '*')           // block comment
+            {
+                sb.Append("  "); i += 2;
+                while (i < n && !(s[i] == '*' && i + 1 < n && s[i + 1] == '/')) { sb.Append(Blank(s[i])); i++; }
+                if (i < n) { sb.Append("  "); i += 2; }
+                continue;
+            }
+            if (c == '\'')                                          // char literal
+            {
+                sb.Append(blankStrings ? ' ' : c); i++;
+                while (i < n)
+                {
+                    if (s[i] == '\\' && i + 1 < n)
+                    {
+                        if (blankStrings) sb.Append("  "); else { sb.Append(s[i]); sb.Append(s[i + 1]); }
+                        i += 2; continue;
+                    }
+                    char d = s[i];
+                    sb.Append(blankStrings ? Blank(d) : d); i++;
+                    if (d == '\'') break;
+                }
+                continue;
+            }
+            if (c == '"' || c == '$' || c == '@')                  // possible string (with prefixes)
+            {
+                int j = i; int dollars = 0; bool at = false;
+                while (j < n && (s[j] == '$' || s[j] == '@')) { if (s[j] == '$') dollars++; else at = true; j++; }
+                if (j < n && s[j] == '"')
+                {
+                    int q = 0, k = j;
+                    while (k < n && s[k] == '"') { q++; k++; }
+                    for (int p = i; p < k; p++) sb.Append(blankStrings ? ' ' : s[p]); // prefix + opening quotes
+                    i = k;
+                    if (q >= 3) ScanRawStringBody(s, ref i, n, sb, blankStrings, q);
+                    else if (q == 1) ScanStringBody(s, ref i, n, sb, blankStrings, at, dollars > 0);
+                    // q == 2 is an empty "" / @"" / $"" string — already fully emitted.
+                    continue;
+                }
+                sb.Append(c); i++; continue;                       // a lone $ or @ that isn't a string
+            }
+
+            sb.Append(c); i++;
+        }
+    }
+
+    // Regular / verbatim / interpolated string body (single opening quote). The
+    // closing quote is consumed. Interpolation holes are handed back to ScanCode.
+    private static void ScanStringBody(string s, ref int i, int n, StringBuilder sb, bool blankStrings, bool verbatim, bool interp)
+    {
+        while (i < n)
+        {
+            char c = s[i];
+            if (interp && c == '{')
+            {
+                if (i + 1 < n && s[i + 1] == '{') { sb.Append(blankStrings ? "  " : "{{"); i += 2; continue; }
+                sb.Append('{'); i++;                               // structural brace
+                ScanCode(s, ref i, n, sb, blankStrings, true);     // hole content is CODE
+                if (i < n && s[i] == '}') { sb.Append('}'); i++; }
+                continue;
+            }
+            if (interp && c == '}' && i + 1 < n && s[i + 1] == '}') { sb.Append(blankStrings ? "  " : "}}"); i += 2; continue; }
+            if (!verbatim && c == '\\' && i + 1 < n)               // escape sequence
+            {
+                if (blankStrings) sb.Append("  "); else { sb.Append(c); sb.Append(s[i + 1]); }
+                i += 2; continue;
+            }
+            if (c == '"')
+            {
+                if (verbatim && i + 1 < n && s[i + 1] == '"') { sb.Append(blankStrings ? "  " : "\"\""); i += 2; continue; }
+                sb.Append(blankStrings ? ' ' : c); i++; return;    // closing quote
+            }
+            sb.Append(blankStrings ? Blank(c) : c); i++;
+        }
+    }
+
+    // Raw string body: scan to the first run of >= q double-quotes (the closer).
+    // Raw interpolation holes are not parsed — no Strings.<Key> is ever used in
+    // one in this codebase, and the content is preserved in dead-key mode anyway.
+    private static void ScanRawStringBody(string s, ref int i, int n, StringBuilder sb, bool blankStrings, int q)
+    {
+        while (i < n)
+        {
+            if (s[i] == '"')
+            {
+                int run = 0, k = i;
+                while (k < n && s[k] == '"') { run++; k++; }
+                for (int p = i; p < k; p++) sb.Append(blankStrings ? Blank(s[p]) : s[p]);
+                i = k;
+                if (run >= q) return;                              // closing delimiter
+                continue;                                          // shorter run is literal content
+            }
+            sb.Append(blankStrings ? Blank(s[i]) : s[i]); i++;
+        }
     }
 }
 ]]></Code>
@@ -124,7 +338,8 @@ public class CheckUnusedResxKeys : Task
     <Target Name="GuardUnusedResxKeys" AfterTargets="Build"
             Condition="'$(DesignTimeBuild)' != 'true' And Exists('$(MSBuildProjectDirectory)/Localization/Strings.resx')">
         <CheckUnusedResxKeys ResxPath="$(MSBuildProjectDirectory)/Localization/Strings.resx"
-                             ScanRoots="$(MSBuildProjectDirectory);$(MSBuildThisFileDirectory)tests" />
+                             ScanRoots="$(MSBuildProjectDirectory);$(MSBuildThisFileDirectory)tests"
+                             ProjectDir="$(MSBuildProjectDirectory)" />
     </Target>
 
 </Project>

@@ -72,11 +72,28 @@ public sealed class BashRuleMatcherTests
     }
 
     [TestMethod]
-    public void ColonStarSuffix_EquivalentToSpaceStar()
+    public void ColonStarSuffix_MatchesBare_ColonSuffix_AndSpaceArgs()
     {
-        // Spec: Bash(ls:*) matches the same as Bash(ls *).
+        // ":*" is the canonical prefix form: bare, a ':'-suffixed subcommand, OR space args.
+        Assert.IsTrue(Match("Bash(npm run test:*)", "npm run test"), "bare prefix matches");
+        Assert.IsTrue(Match("Bash(npm run test:*)", "npm run test:unit"), "colon-suffixed subcommand matches (the bug fix)");
+        Assert.IsTrue(Match("Bash(npm run test:*)", "npm run test:e2e"));
+        Assert.IsTrue(Match("Bash(npm run test:*)", "npm run test --watch"), "space args match");
+        Assert.IsFalse(Match("Bash(npm run test:*)", "npm run testify"), "no ':' or space delimiter → not a subcommand");
+
+        // It also behaves like space-star for the bare/space cases (back-compat).
         Assert.IsTrue(Match("Bash(ls:*)", "ls -la"));
         Assert.IsFalse(Match("Bash(ls:*)", "lsof"));
+    }
+
+    [TestMethod]
+    public void SpaceStarSuffix_IsBareOrSpaceArgs_NotColonSuffix()
+    {
+        // " *" excludes the colon-suffix that ":*" allows.
+        Assert.IsTrue(Match("Bash(git push *)", "git push"));
+        Assert.IsTrue(Match("Bash(git push *)", "git push origin main"));
+        Assert.IsFalse(Match("Bash(git push *)", "git pushx"));
+        Assert.IsFalse(Match("Bash(git push *)", "git push:weird"), "space-star does not match a colon suffix.");
     }
 
     [TestMethod]

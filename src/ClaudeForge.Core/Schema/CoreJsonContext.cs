@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Bennewitz.Ninja.ClaudeForge.Core.Catalog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Core.Schema;
 
@@ -9,4 +10,5 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Schema;
 /// </summary>
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(string[]))]
+[JsonSerializable(typeof(ModelCatalogDto))]
 internal sealed partial class CoreJsonContext : JsonSerializerContext;

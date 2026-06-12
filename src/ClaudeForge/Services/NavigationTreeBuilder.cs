@@ -149,12 +149,18 @@ public static class NavigationTreeBuilder
         SettingsWorkspace workspace,
         Func<Task<string?>>? browseDialog = null,
         SharedScopeContext? sharedScope = null,
-        ClaudeConfigClientCore? sdkClient = null)
+        ClaudeConfigClientCore? sdkClient = null,
+        IUnsupportedShapeSink? unsupportedShapeSink = null)
     {
         // One factory per call: SDK-aware editors capture this client when
         // they are constructed. Sharing across both sections (Claude Code +
         // Desktop) would mis-route editor reads.
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault(sdkClient);
+        // The factory reports any raw-JSON fallback (a schema shape it can't
+        // classify) to this sink so the host can raise one aggregated load-time
+        // notice. Editors are built eagerly in each SettingsGroupEditorViewModel
+        // ctor, so the sink is fully populated by the time BuildGroups returns.
+        factory.UnsupportedShapeSink = unsupportedShapeSink;
         // Bucket nodes by group
         Dictionary<string, List<SchemaNode>> buckets = new(StringComparer.Ordinal);
 

@@ -13,6 +13,8 @@ thread-safe interface. It has:
 | Capability                                      | Where it lives                                                       |
 |-------------------------------------------------|----------------------------------------------------------------------|
 | Workspace I/O (load, save, reload)              | `ClaudeConfigClientCore.OpenAsync` / `SaveAsync` / `ReloadAsync`     |
+| Sync read/write                                 | `GetEffective` / `SetValue` / `RemoveValue` in `ClaudeConfigClientCore.cs` |
+| Async read/write (cancellable, single-lock)     | `GetEffectiveAsync` / `SetValueAsync` / `RemoveValueAsync`; `SetValueIfChangedAsync` = atomic, **scope-specific** ghost-guard (writes only if the value at the target scope changes) |
 | Schema content tree (`SchemaNode` objects)      | cached in `_cachedSchemaNodes` after `OpenAsync`                     |
 | Text search over schema content                 | `SearchSchema` in `ClaudeConfigClientCore.cs`                        |
 | Typed accessors (Permissions, Hooks, MCP, etc.) | `Permissions/`, `Hooks/`, `McpServers/`, `Marketplaces/`, `Plugins/` |
@@ -43,6 +45,7 @@ an editor page must maintain their own `JsonPath → NavigationNodeViewModel` ma
 | `ClaudeCodeClient.cs`       | Claude Code concrete; overrides `DiscoverFiles`, `IsClaudeCode=true`     |
 | `ClaudeDesktopClient.cs`    | Claude Desktop concrete; overrides `DiscoverFiles`, `IsClaudeCode=false` |
 | `SchemaSearchResult.cs`     | Return type of `SearchSchema`                                            |
+| `Models/IModelCatalogAccessor.cs` | `IClaudeConfigClient.Models` — allowed `model`/`effortLevel`/`permissions.defaultMode` values + their relationships (which efforts a model supports, auto-mode gating) + the nearest-analog coercion rule. Backed by Core's bundled `model-catalog.json`; shared via `ModelCatalogProvider.Default`. The relationship/coercion logic is domain code here (not in any view-model) so it's CLI/MCP-usable. See [docs/MODEL-CATALOG.md](../../docs/MODEL-CATALOG.md). |
 
 ## §4 `preLoadedWorkspace` injection — migration artifact
 
@@ -89,6 +92,7 @@ Contract:
 - `SetValue` / `RemoveValue` — called on whatever thread the caller uses
 - `workspace.Changed` forwarder — fires synchronously on the mutation thread
 - `SaveAsync` / `ReloadAsync` — fires on the `await` continuation thread
+- `SetValueAsync` / `RemoveValueAsync` / `SetValueIfChangedAsync` — raise `Changed` **after the state lock is released**, on the `await` continuation thread, and **only when a write actually occurred** (a no-op conditional write / absent-key remove raises nothing)
 
 **Avalonia bindings require `PropertyChanged` to fire on the UI thread.**
 `MainWindowViewModel.OnSdkClientChanged` MUST dispatch to
@@ -121,3 +125,12 @@ A test for this contract is in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedCha
 `SearchSchema` does not have its own seam; the integration test pattern is:
 set `TestUserProfileOverride`, construct `ClaudeCodeClient()`, call `OpenAsync(null, ct)`,
 then assert on `SearchSchema` results. The bundled schema is always used (no HTTP call needed).
+
+**Async-method contract template.** `tests/ClaudeForge.Sdk.Tests/ClaudeConfigClientAsyncTests.cs`
+is the reference every future async SDK method must mirror. It locks: cancellation
+(a pre-cancelled token throws `OperationCanceledException` with no partial mutation),
+lock-release-on-throw (an in-lock failure doesn't leak the lock → no deadlock),
+`ConfigureAwait(false)` (no deadlock when a non-pumping `SynchronizationContext` is
+captured), atomic compare-and-set under contention (`SetValueIfChangedAsync` — exactly
+one of N racing writers commits), and `Changed` fires once per real write / never on a
+no-op. The scope-specific compare basis is exercised with a Managed-shadows-User workspace.

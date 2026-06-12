@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
@@ -80,7 +81,17 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     private readonly IEnvironmentProvider _envProvider;
     private readonly Func<bool>? _checkForUpdatesRead;
     private readonly Action<bool>? _checkForUpdatesWrite;
-    private bool _disposed;
+    // volatile: read on the RefreshAsync await-continuation thread (which may differ
+    // from the dispatcher thread that runs Dispose) to honor the post-dispose contract.
+    private volatile bool _disposed;
+
+    // Serializes RefreshAsync so overlapping refreshes can't interleave their
+    // per-card IsLoading toggles. Without this, the constructor's fire-and-forget
+    // refresh racing a reload (or a test's explicit RefreshAsync) lets the
+    // model-card change subscription observe a transient IsLoading state and
+    // either fire a spurious load-time coercion (phantom dirty) or skip a genuine
+    // user-change coercion. See EssentialsModelEffortConstraintTests.
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
     /// <summary>
     /// Construct an EssentialsViewModel.
@@ -112,6 +123,24 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         _checkForUpdatesRead = checkForUpdatesRead;
         _checkForUpdatesWrite = checkForUpdatesWrite;
         Cards = new ObservableCollection<EssentialsCardViewModel>(BuildCards());
+
+        // When the user changes the model, re-reconcile the effort card
+        // (filter + coerce + indicator). The model card's own change handler
+        // writes the model synchronously before this fires, so GetEffective
+        // already reflects the new value. Only the model card drives this — the
+        // effort card never re-enters it, so there is no update loop.
+        if (GetCardById(CardIdModel) is { } modelCard)
+        {
+            modelCard.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(EssentialsCardViewModel.EnumValue) && !modelCard.IsLoading)
+                {
+                    // Genuine user model change → coerce + persist the effort override.
+                    ApplyModelEffortConstraint(persist: true);
+                }
+            };
+        }
+
         // Initial read; ignore the Task — the cards render with default
         // (empty / null) values until the read populates them.  Any read
         // failure is silently swallowed by the per-card delegate so a
@@ -134,14 +163,58 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     /// Clients can call this with <see langword="null"/> after disposal or
     /// during shutdown — the cards will read empty values without throwing.
     /// </remarks>
-    public Task RefreshAsync(IClaudeConfigClient? client = null)
+    public async Task RefreshAsync(IClaudeConfigClient? client = null)
     {
+        // Honor the documented post-disposal contract (see remarks): a refresh
+        // requested after disposal — or racing shutdown — is a safe no-op. The gate
+        // is intentionally NOT disposed (see Dispose), so even the rare
+        // check-then-dispose interleaving resolves to a harmless extra acquire that
+        // bails at the in-lock _disposed checks below — no WaitAsync/Release throws.
+        if (_disposed)
+        {
+            return;
+        }
+
         if (client is not null)
         {
             _client = client;
         }
 
-        return Task.WhenAll(Cards.Select(c => c.ReadAsync()));
+        // Serialize: a concurrent refresh (constructor's fire-and-forget vs a
+        // reload, or a test's explicit call) must not interleave the per-card
+        // IsLoading toggles, or the model-change subscription can fire a spurious
+        // load-time coercion / miss a genuine one.
+        await _refreshGate.WaitAsync();
+        try
+        {
+            // Disposal can run while this refresh is suspended (a prior in-flight
+            // refresh may hold the gate, parked at the env-var registry probe). After
+            // disposal _client is null and the cards are torn down — bail before and
+            // after the awaited reads rather than do throwaway work.
+            if (_disposed)
+            {
+                return;
+            }
+
+            await Task.WhenAll(Cards.Select(c => c.ReadAsync()));
+
+            if (_disposed)
+            {
+                return;
+            }
+
+            // After values are read, reconcile the effort card against the effective
+            // model: narrow its options + set the indicator/advisory. Load is
+            // non-persisting (persist:false) — it never writes, so opening the app
+            // never lights the Save banner. Coercion only happens on a user model change.
+            ApplyModelEffortConstraint(persist: false);
+        }
+        finally
+        {
+            // Safe even when Dispose ran during the gated section: the gate is never
+            // disposed (see Dispose), so Release never throws ObjectDisposedException.
+            _refreshGate.Release();
+        }
     }
 
     /// <summary>Look up a card by its <see cref="EssentialsCardViewModel.Id"/>.</summary>
@@ -157,6 +230,121 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     public void ActivateAmberCalloutFor(string cardId)
     {
         GetCardById(cardId)?.ActivateAmberCallout();
+    }
+
+    /// <summary>
+    /// Reconcile the effort card against the effective model (the model ↔ effort
+    /// inter-relationship from the catalog): narrow the dropdown to the model's
+    /// persistable levels, refresh the read-only "current model — supports …"
+    /// indicator, and surface a notice when the effective effort is unsupported.
+    /// <para>
+    /// <paramref name="persist"/> controls whether an invalidated effort is
+    /// <b>coerced and written</b>. On a genuine user model change
+    /// (<c>persist: true</c>) an unsupported effort is coerced to the nearest
+    /// analog and written as an editing-scope override (shown in the Save
+    /// preview). On load (<c>persist: false</c>) NOTHING is written — the
+    /// dropdown is filtered, the persisted value stays visible, and the advisory
+    /// explains it; this prevents a phantom dirty state on app open / reload.
+    /// </para>
+    /// The catalog/coercion rules come from the SDK (<c>client.Models</c>); only
+    /// the reactive application lives here.
+    /// </summary>
+    private void ApplyModelEffortConstraint(bool persist)
+    {
+        if (GetCardById(CardIdEffortLevel) is not { } effortCard)
+        {
+            return;
+        }
+
+        IModelCatalogAccessor catalog = _client?.Models ?? ModelCatalogProvider.Default;
+        string? effectiveModel = _client?.GetEffective<string>("model");
+        IReadOnlyList<string> persistable = catalog.PersistableEffortLevels(effectiveModel);
+
+        // Capture the effective effort BEFORE narrowing — SetFilteredOptions clears
+        // the bound collection, which would otherwise reset the captured selection.
+        string? currentEffort = effortCard.EnumValue;
+        effortCard.ModelSupportSummary = BuildModelSupportSummary(catalog, effectiveModel, persistable);
+
+        if (persistable.Count == 0)
+        {
+            // Model exposes no effort level (e.g. Haiku): disable + notice.
+            effortCard.SetFilteredOptions(persistable);
+            SetEffortDisplay(effortCard, null); // clear the disabled control's display, no write
+            effortCard.EnumDisabled = true;
+            effortCard.ConstraintNoticeText = Strings.LabelEffortNotApplicable;
+            effortCard.ShowConstraintNotice = true;
+            // Only DROP a persisted explicit effort on a genuine user model change —
+            // never silently on load (an inherited value can't be unset anyway, and
+            // Claude ignores effort for such a model).
+            if (persist && _client is not null && !string.IsNullOrEmpty(_client.GetEffective<string>("effortLevel")))
+            {
+                _client.RemoveValue("effortLevel", _client.DefaultScope);
+            }
+
+            return;
+        }
+
+        effortCard.EnumDisabled = false;
+        bool invalid = !string.IsNullOrEmpty(currentEffort)
+                       && !persistable.Contains(currentEffort, StringComparer.OrdinalIgnoreCase);
+
+        if (!invalid)
+        {
+            effortCard.SetFilteredOptions(persistable); // keeps the (valid) selection
+            effortCard.ShowConstraintNotice = false;
+            return;
+        }
+
+        string? analog = catalog.NearestAnalogEffort(effectiveModel, currentEffort);
+        if (persist)
+        {
+            // User changed the model → narrow + coerce the override (writes).
+            effortCard.SetFilteredOptions(persistable);
+            effortCard.EnumValue = analog; // not loading → routes through the write path
+            effortCard.ConstraintNoticeText = string.Format(
+                CultureInfo.CurrentCulture, Strings.LabelEffortCoercedFmt, analog, currentEffort);
+        }
+        else
+        {
+            // Load: keep the now-unsupported persisted value visible, advise, do NOT write.
+            effortCard.SetFilteredOptions(persistable.Append(currentEffort!));
+            SetEffortDisplay(effortCard, currentEffort);
+            effortCard.ConstraintNoticeText = string.Format(
+                CultureInfo.CurrentCulture, Strings.LabelEffortUnsupportedFmt, currentEffort);
+        }
+
+        effortCard.ShowConstraintNotice = true;
+    }
+
+    /// <summary>Set the effort card's displayed value without triggering its auto-write (load path).</summary>
+    private static void SetEffortDisplay(EssentialsCardViewModel card, string? value)
+    {
+        bool wasLoading = card.IsLoading;
+        card.IsLoading = true;
+        try
+        {
+            card.EnumValue = value;
+        }
+        finally
+        {
+            card.IsLoading = wasLoading;
+        }
+    }
+
+    private static string BuildModelSupportSummary(
+        IModelCatalogAccessor catalog, string? effectiveModel, IReadOnlyList<string> persistable)
+    {
+        if (string.IsNullOrEmpty(effectiveModel) || persistable.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        string label = catalog.Resolve(effectiveModel)?.Label ?? effectiveModel;
+        return string.Format(
+            CultureInfo.CurrentCulture,
+            Strings.LabelModelEffortSummaryFmt,
+            label,
+            string.Join(" / ", persistable));
     }
 
     // ── Card construction ─────────────────────────────────────────────────
@@ -181,6 +369,17 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // uniformly so a future translator only needs to translate one
         // string instead of 11.
         string? amberText = Strings.LabelEssentialsAmberCallout;
+
+        // Model / effort allowed-value lists come from the SDK model catalog (the
+        // single source of truth) rather than hardcoded arrays. Effort is narrowed
+        // to the effective model's persistable levels (omits session-only "max",
+        // empty for models with no effort); Phase 2 makes this recompute reactively
+        // when the model changes. Falls back to the shared bundled catalog when
+        // constructed without a client (tests).
+        IModelCatalogAccessor catalog = _client?.Models ?? ModelCatalogProvider.Default;
+        string? effectiveModel = _client?.GetEffective<string>("model");
+        IReadOnlyList<string> modelOptions = catalog.ModelSuggestions();
+        IReadOnlyList<string> effortOptions = catalog.PersistableEffortLevels(effectiveModel);
 
         // Display order set per user spec: groups cards by
         // user-mental-model rather than by severity tier.  Day-to-day
@@ -242,7 +441,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     isEnvVarCard: false,
                     readAsync: ReadStringAsync("effortLevel"),
                     writeAsync: WriteStringAsync("effortLevel"),
-                    enumOptions: ["low", "medium", "high", "xhigh"],
+                    enumOptions: effortOptions,
                     amberCalloutText: amberText)
                 { JsonPathFilter = "effortLevel" },
             // 5 — Fast mode
@@ -271,11 +470,12 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     isEnvVarCard: false,
                     readAsync: ReadStringAsync("model"),
                     writeAsync: WriteStringAsync("model"),
-                    // Schema-suggested examples — aliases (incl. the new fable tier)
-                    // plus current pinned snapshot IDs. Free-form ComboBox (IsEditable)
-                    // so users can still type any custom model ID.
-                    enumOptions: ["sonnet", "opus", "haiku", "fable", "claude-fable-5", "claude-sonnet-4-6", "claude-opus-4-8"],
-                    amberCalloutText: amberText)
+                    // Suggestions from the model catalog (aliases + pinned ids +
+                    // [1m] variants). Free-form ComboBox (AllowsFreeForm → IsEditable)
+                    // so users can still type any custom model id.
+                    enumOptions: modelOptions,
+                    amberCalloutText: amberText,
+                    allowsFreeForm: true)
                 { JsonPathFilter = "model" },
             // 7 — Disable bypass-permissions mode
 
@@ -287,8 +487,8 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitlePermissions,
                     isEnvVarCard: false,
-                    readAsync: ReadBoolAsync("permissions.disableBypassPermissionsMode"),
-                    writeAsync: WriteBoolAsync("permissions.disableBypassPermissionsMode"),
+                    readAsync: ReadStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
+                    writeAsync: WriteStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
                     amberCalloutText: amberText)
                 { JsonPathFilter = "permissions.disableBypassPermissionsMode" },
             // 8 — Auto-trust project MCP servers
@@ -521,14 +721,27 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
             int? value = card.IntValue;
             string? str = value?.ToString(CultureInfo.InvariantCulture);
-            _client.Env.Set(varName, str);
-            // Permanent audit log: pairs with the [Essentials.UserEdit] line
-            // fired at OnIntValueChanged, capturing the moment the user's
-            // intent reaches the SDK env map.  hasUnsaved=true after the write
-            // confirms the workspace was marked dirty (otherwise the save flow
-            // wouldn't pick it up).
-            Log.Information("[Essentials.Write] varName={VarName} wrote=\"{Str}\" hasUnsavedAfter={Has}",
-                varName, str ?? "(null)", _client.HasUnsavedChanges);
+
+            // Ghost-change guard: only write when the value differs from the
+            // current effective env value. A spurious NumericUpDown event that
+            // re-emits the existing value would otherwise pin a redundant env
+            // entry — dirtying the workspace with no visible Save-preview diff.
+            if (string.Equals(str, _client.Env.Get(varName), StringComparison.Ordinal))
+            {
+                Log.Information("[Essentials.Write] varName={VarName} skipped (effective value unchanged)", varName);
+            }
+            else
+            {
+                _client.Env.Set(varName, str);
+                // Permanent audit log: pairs with the [Essentials.UserEdit] line
+                // fired at OnIntValueChanged, capturing the moment the user's
+                // intent reaches the SDK env map.  hasUnsaved=true after the write
+                // confirms the workspace was marked dirty (otherwise the save flow
+                // wouldn't pick it up).
+                Log.Information("[Essentials.Write] varName={VarName} wrote=\"{Str}\" hasUnsavedAfter={Has}",
+                    varName, str ?? "(null)", _client.HasUnsavedChanges);
+            }
+
             await UpdateEnvSourceLabelsAsync(card, varName).ConfigureAwait(true);
         };
     }
@@ -540,9 +753,9 @@ public class EssentialsViewModel : ObservableObject, IDisposable
             card.IsLoading = true;
             try
             {
-                // GetEffective<bool?> returns false for unset; we want null→inherit.
-                // Fish through the typed bool path: GetEffective<bool?> first, fall
-                // back to GetEffective<bool> only if the raw lookup found anything.
+                // GetEffective<bool?> returns null for an unset path (ConvertFromJsonNode
+                // returns default), which the tri-state Bool card treats as inherit; an
+                // explicit true/false comes back as itself.
                 card.BoolValue = _client is null ? null : _client.GetEffective<bool?>(jsonPath);
             }
             finally
@@ -565,10 +778,75 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
             if (card.BoolValue is bool b)
             {
-                _client.SetValue(jsonPath, b, _client.DefaultScope);
+                // Ghost-change guard (see WriteStringAsync): only persist when the
+                // value differs from the current effective value. EqualityComparer
+                // honours the nullable-bool semantics (true/false/inherit).
+                if (!EqualityComparer<bool?>.Default.Equals(b, _client.GetEffective<bool?>(jsonPath)))
+                {
+                    _client.SetValue(jsonPath, b, _client.DefaultScope);
+                }
             }
             else
             {
+                _client.RemoveValue(jsonPath, _client.DefaultScope);
+            }
+
+            return Task.CompletedTask;
+        };
+    }
+
+    // permissions.disableBypassPermissionsMode is a STRING enum ["disable"] (NOT a
+    // boolean) — present (= "disable") means disabled, absent means not disabled. A
+    // Bool card surfaces it as a checkbox; these helpers map the string enum to/from
+    // that checkbox. Writing a raw bool here is a schema-validation error (the bug
+    // this fixes).
+    private const string DisableBypassValue = "disable";
+
+    private Func<EssentialsCardViewModel, Task> ReadStringFlagAsync(string jsonPath, string onValue)
+    {
+        return card =>
+        {
+            card.IsLoading = true;
+            try
+            {
+                // Present (= onValue) -> checked; absent -> null (inherit/indeterminate).
+                // GetEffective<bool?> can't read a string enum, so compare the string.
+                card.BoolValue = _client is not null
+                    && string.Equals(_client.GetEffective<string>(jsonPath), onValue, StringComparison.Ordinal)
+                        ? true
+                        : (bool?)null;
+            }
+            finally
+            {
+                card.IsLoading = false;
+            }
+
+            return Task.CompletedTask;
+        };
+    }
+
+    private Func<EssentialsCardViewModel, Task> WriteStringFlagAsync(string jsonPath, string onValue)
+    {
+        return card =>
+        {
+            if (_client is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (card.BoolValue == true)
+            {
+                // Ghost-change guard (mirrors WriteBoolAsync): only persist when the
+                // effective value isn't already the on-value.
+                if (!string.Equals(_client.GetEffective<string>(jsonPath), onValue, StringComparison.Ordinal))
+                {
+                    _client.SetValue(jsonPath, onValue, _client.DefaultScope);
+                }
+            }
+            else
+            {
+                // Unchecked / inherit -> not set (there is no on-disk "false" for a
+                // string-enum flag); mirror WriteBoolAsync's unconditional remove.
                 _client.RemoveValue(jsonPath, _client.DefaultScope);
             }
 
@@ -656,12 +934,24 @@ public class EssentialsViewModel : ObservableObject, IDisposable
             }
 
             string? value = card.EnumValue;
-            if (string.IsNullOrEmpty(value))
+            if (string.IsNullOrWhiteSpace(value))
             {
+                // Empty/whitespace = "inherit": a free-form combo (e.g. the model
+                // AutoCompleteBox) left blank or holding only whitespace is "unset",
+                // never a literal value like model=" ". RemoveValue is a no-op (and
+                // raises no Changed) when nothing is explicitly set, so a spurious
+                // clear can't dirty. Mirrors the empty-string normalization in
+                // SettingsGroupEditorViewModel.WriteEditorValue.
                 _client.RemoveValue(jsonPath, _client.DefaultScope);
             }
-            else
+            else if (!string.Equals(value, _client.GetEffective<string>(jsonPath), StringComparison.Ordinal))
             {
+                // Ghost-change guard: only persist when the value actually changes
+                // the effective value. Re-emitting the already-effective value
+                // (e.g. an AutoCompleteBox reasserting its Text on focus, or a
+                // ComboBox after an ItemsSource swap) would otherwise pin a
+                // redundant explicit key — dirtying the doc with an empty Save
+                // preview. StringComparison.Ordinal matches the SDK's storage.
                 _client.SetValue(jsonPath, value, _client.DefaultScope);
             }
 
@@ -731,7 +1021,13 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                         JsonValue.Create(s));
                 }
 
-                _client.SetValue(jsonPath, arr, _client.DefaultScope);
+                // Ghost-change guard: only persist when the list differs from the
+                // current effective value (JsonNode.DeepEquals = structural array
+                // comparison), so re-emitting the inherited set adds no ghost key.
+                if (!JsonNode.DeepEquals(arr, _client.GetEffective<JsonArray>(jsonPath)))
+                {
+                    _client.SetValue(jsonPath, arr, _client.DefaultScope);
+                }
             }
 
             return Task.CompletedTask;
@@ -823,5 +1119,12 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
         _disposed = true;
         _client = null;
+        // Intentionally NOT disposing _refreshGate. A fire-and-forget refresh (from
+        // the ctor / nav-tree rebuild) can be parked at the env-var probe holding the
+        // gate when the window closes; disposing the semaphore would make that
+        // refresh's pending Release (or a later WaitAsync) throw ObjectDisposedException
+        // and fault the unobserved task — breaking the documented "safe after disposal"
+        // contract. A SemaphoreSlim whose AvailableWaitHandle is never accessed owns no
+        // unmanaged handle, so leaving it for GC is the correct, race-free choice.
     }
 }

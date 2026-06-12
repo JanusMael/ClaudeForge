@@ -24,6 +24,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -250,11 +251,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Title of the synthetic top-of-tree "Essentials" node.  Hardcoded
-    /// English (parallels the other NavTitle* constants) so programmatic
-    /// lookups against <c>n.Title</c> stay culture-invariant.  The user-
-    /// facing label comes from <c>Strings.NavTitleEssentials</c> and
-    /// is set on the navigation node's <c>DisplayTitle</c> when the node
-    /// is constructed.
+    /// English (parallels the other NavTitle* constants) so both the node's
+    /// display label and the programmatic <c>n.Title</c> lookups stay
+    /// culture-invariant.  The localized <c>Strings.NavTitleEssentials</c>
+    /// is consumed separately by <c>SearchViewModel</c> as the search-results
+    /// group label; full nav-tree localization is still pending (see the
+    /// NavDesc* note below).
     /// </summary>
     private const string NavTitleEssentials = "Essentials";
 
@@ -2243,7 +2245,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // related safety control (disableBypassPermissionsMode) lives there, and
             // the synthetic hit carries an empty PropertyKey so the filter-based
             // check below won't catch it.
-            if (result.IsSynthetic && permEditor is not null)
+            if (result.IsSynthetic && permEditor is not null
+                && string.Equals(result.PropertyKey, "permissions.defaultMode", StringComparison.Ordinal))
+            {
+                // Synthetic "bypass" hit: prompt the user to pick bypassPermissions
+                // in Default Mode (Overview tab). Deep-link + hint only — we never
+                // auto-select a dangerous mode for the user.
+                permEditor.ActivateBypassHint();
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+            }
+            else if (result.IsSynthetic && permEditor is not null)
             {
                 permEditor.ActivateDangerHint();
                 // Land on Overview (the Advanced accordion + Default Mode live there)
@@ -3191,6 +3202,32 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         return all;
     }
 
+    // Latch so the unsupported-shape heads-up is shown at most once per session,
+    // not on every navigation-tree rebuild (scope switch, file-watcher reload).
+    private bool _unsupportedShapesNoticeShown;
+
+    /// <summary>
+    /// Show one aggregated, non-fatal notice listing every setting that has no
+    /// structured editor (rendered as raw JSON). No-op when nothing was reported
+    /// or the notice has already been shown this session. The fields remain fully
+    /// editable; this is purely informational.
+    /// </summary>
+    private void MaybeShowUnsupportedShapeNotice(UnsupportedShapeCollector collector)
+    {
+        if (_unsupportedShapesNoticeShown || !collector.HasAny)
+        {
+            return;
+        }
+
+        _unsupportedShapesNoticeShown = true;
+        string body = string.Join(
+            Environment.NewLine,
+            collector.Snapshot().Select(s =>
+                s.DisplayName is { Length: > 0 } name ? $"{s.JsonPath}    ({name})" : s.JsonPath));
+        AvaloniaDiagnostics.ShowNonFatalNotice(
+            UnsupportedShapeText.NoticeTitle, UnsupportedShapeText.NoticeHeader, body);
+    }
+
     private void BuildNavigationTree(
         IReadOnlyList<SchemaNode> ccNodes,
         IReadOnlyList<SchemaNode> dtNodes)
@@ -3202,6 +3239,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Clear();
 
         Func<Task<string?>> browsePath = () => DialogServiceForViewAccess.PickFolderAsync();
+
+        // Collects any schema property surfaced via the raw-JSON fallback (a shape
+        // the factory can't classify) across BOTH product sections, so we can raise
+        // one aggregated heads-up after the tree is built.
+        UnsupportedShapeCollector unsupportedShapes = new();
 
         // Both sections are always shown — even without an active installation —
         // so users can create configs for other machines or prepare for first-time
@@ -3292,7 +3334,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (ClaudeCodeSdk is not null && ccWorkspace is not null)
         {
             IReadOnlyList<NavigationGroup> ccGroups = NavigationTreeBuilder.BuildGroups(
-                ccNodes, ccWorkspace, browsePath, _ccScopeContext, ClaudeCodeSdk);
+                ccNodes, ccWorkspace, browsePath, _ccScopeContext, ClaudeCodeSdk, unsupportedShapes);
             foreach (NavigationGroup group in ccGroups)
             {
                 ccHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
@@ -3327,7 +3369,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         if (ClaudeDesktopSdk is not null && dtWorkspace is not null)
         {
             IReadOnlyList<NavigationGroup> dtGroups = NavigationTreeBuilder.BuildGroups(
-                dtNodes, dtWorkspace, browsePath, _dtScopeContext, ClaudeDesktopSdk);
+                dtNodes, dtWorkspace, browsePath, _dtScopeContext, ClaudeDesktopSdk, unsupportedShapes);
             foreach (NavigationGroup group in dtGroups)
             {
                 dtHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
@@ -3349,6 +3391,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         });
 
         NavigationTree.Add(dtHeader);
+
+        // One-time aggregated heads-up if any setting in either section has no
+        // structured editor (raw-JSON fallback). No-op when the schema is fully
+        // covered (the common case today) or after the first show this session.
+        MaybeShowUnsupportedShapeNotice(unsupportedShapes);
 
         // --- Effective Settings ---
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });

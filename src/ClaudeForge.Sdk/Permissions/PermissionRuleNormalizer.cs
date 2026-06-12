@@ -9,16 +9,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 /// <para>
 /// <b>Spec.</b>
 /// <see href="https://code.claude.com/docs/en/permissions">code.claude.com/docs/en/permissions</see>.
-/// Two normalizations are applied:
+/// One normalization is applied:
 /// </para>
 /// <list type="bullet">
-///   <item>
-///     <b>Bash / PowerShell "any arguments" wildcard.</b> The docs write this as the
-///     colon suffix (<c>Bash(npm run test:*)</c>). A trailing space-star
-///     (<c>Bash(npm run test *)</c>) means the same thing to
-///     <see cref="Matching.BashRuleMatcher"/>, so we rewrite a trailing <c> *</c>
-///     to <c>:*</c> for a single canonical form. A colon form is left as-is.
-///   </item>
 ///   <item>
 ///     <b>Read / Edit / Write path separators.</b> Claude's path rules are
 ///     gitignore-style with forward slashes. A Windows user typing
@@ -59,21 +52,12 @@ public static class PermissionRuleNormalizer
 
         switch (parsed.ToolName)
         {
-            case "Bash":
-            case "PowerShell":
-            {
-                // Canonicalize a trailing " *" (space-star) to ":*". Leave an
-                // existing ":*" and any non-trailing wildcard alone.
-                if (specifier.EndsWith(" *", StringComparison.Ordinal) &&
-                    !specifier.EndsWith(":*", StringComparison.Ordinal))
-                {
-                    string canonical = specifier[..^2] + ":*";
-                    return $"{parsed.ToolName}({canonical})";
-                }
-
-                return rule;
-            }
-
+            // NOTE: Bash/PowerShell specifiers are intentionally NOT normalized.
+            // A trailing " *" (optional space-args) and ":*" (literal-colon +
+            // remainder) are DISTINCT match semantics in BashRuleMatcher
+            // (`npm run test *` ≠ `npm run test:*` against `npm run test:unit`),
+            // so rewriting one to the other would change what a rule matches.
+            // The specifier is preserved exactly as the user wrote it.
             case "Read":
             case "Edit":
             case "Write":

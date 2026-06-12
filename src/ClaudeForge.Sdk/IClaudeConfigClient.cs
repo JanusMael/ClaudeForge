@@ -6,6 +6,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
 
@@ -20,11 +21,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk;
 /// <para>
 /// <b>Thread-safe.</b> A single client instance can be used from multiple
 /// threads concurrently — MCP server authors do not need to wrap their own
-/// locks. Workspace state is guarded internally by a reader-writer lock;
-/// reads (<see cref="GetEffective{T}"/>, accessor reads) acquire the read
-/// lock and capture a lazy snapshot, writes (<see cref="SetValue{T}(string, T)"/>,
-/// <see cref="RemoveValue"/>, accessor mutations, <see cref="ReloadAsync"/>,
-/// <see cref="SaveAsync(bool, CancellationToken)"/>) acquire the write lock.
+/// locks. Workspace state is guarded internally by a single non-reentrant
+/// mutex (a <see cref="System.Threading.SemaphoreSlim"/>): every read
+/// (<see cref="GetEffective{T}"/>, accessor reads) and every write
+/// (<see cref="SetValue{T}(string, T)"/>, <see cref="RemoveValue"/>, accessor
+/// mutations, <see cref="ReloadAsync"/>, <see cref="SaveAsync(bool, CancellationToken)"/>)
+/// serializes on it — reads and writes do not run in parallel. The async
+/// variants acquire the same lock without blocking the calling thread.
 /// </para>
 /// <para>
 /// <b>Event-handler contract.</b> The <see cref="Changed"/> event is raised
@@ -164,6 +167,16 @@ public interface IClaudeConfigClient : IDisposable
     /// </summary>
     IEnvAccessor Env { get; }
 
+    /// <summary>
+    /// Model-catalog accessor — the allowed <c>model</c> / <c>effortLevel</c> /
+    /// <c>permissions.defaultMode</c> values and their inter-relationships
+    /// (which effort levels a model supports, whether a model supports auto
+    /// mode, the nearest-analog coercion rule). Backed by the bundled
+    /// <c>model-catalog.json</c>; read-only and Avalonia-free so non-GUI
+    /// consumers can use it.
+    /// </summary>
+    IModelCatalogAccessor Models { get; }
+
     // ── Generic escape hatch ───────────────────────────────────────────────
 
     /// <summary>
@@ -184,6 +197,68 @@ public interface IClaudeConfigClient : IDisposable
 
     /// <summary>Remove a value at the specified scope.</summary>
     void RemoveValue(string path, ConfigScope scope);
+
+    // ── Async read/write variants ──────────────────────────────────────────
+    // Default implementations wrap the synchronous members so existing/external
+    // implementers (and test fakes) keep compiling; ClaudeConfigClientCore
+    // overrides them with genuinely-async, cancellable, single-lock versions.
+
+    /// <summary>Async variant of <see cref="GetEffective{T}"/>.</summary>
+    Task<T?> GetEffectiveAsync<T>(string path, CancellationToken ct)
+        => Task.FromResult(GetEffective<T>(path));
+
+    /// <summary>Async variant of <see cref="SetValue{T}(string, T)"/> (writes at <see cref="DefaultScope"/>).</summary>
+    Task SetValueAsync<T>(string path, T value, CancellationToken ct)
+        => SetValueAsync(path, value, DefaultScope, ct);
+
+    /// <summary>Async variant of <see cref="SetValue{T}(string, T, ConfigScope)"/>.</summary>
+    Task SetValueAsync<T>(string path, T value, ConfigScope scope, CancellationToken ct)
+    {
+        SetValue(path, value, scope);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Async variant of <see cref="RemoveValue"/>.</summary>
+    Task RemoveValueAsync(string path, ConfigScope scope, CancellationToken ct)
+    {
+        RemoveValue(path, scope);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Atomic conditional write: write <paramref name="value"/> at
+    /// <paramref name="scope"/> ONLY if it differs from the value currently at that
+    /// same <paramref name="scope"/>, and return whether a write occurred.
+    /// <para>
+    /// The core implementation performs the compare-and-set under a single lock
+    /// acquisition, eliminating the read-then-write (TOCTOU) race of a separate
+    /// scope read + <see cref="SetValue{T}(string, T, ConfigScope)"/> and avoiding
+    /// "ghost" no-op changes (re-asserting the value already present at this scope,
+    /// which would dirty the document and raise <see cref="Changed"/> for nothing).
+    /// The compare is <b>scope-specific</b>, not cross-scope effective — matching
+    /// <see cref="SetValue{T}(string, T, ConfigScope)"/>'s own no-op guard — so an
+    /// explicit pin whose value happens to equal a shadowing higher-priority scope
+    /// still writes (the target scope genuinely changed) and is never silently
+    /// dropped. Use <see cref="SetValue{T}(string, T, ConfigScope)"/> directly to
+    /// write unconditionally.
+    /// </para>
+    /// </summary>
+    Task<bool> SetValueIfChangedAsync<T>(string path, T value, ConfigScope scope, CancellationToken ct)
+    {
+        // Default (non-atomic) best-effort fallback for alternate implementers; the
+        // core client OVERRIDES this with a single-lock, scope-specific structural-
+        // equality version, so the shipped clients' correctness does NOT depend on
+        // this body. The fallback approximates with an effective compare — the
+        // interface exposes no public scope-specific reader — so it is not perfectly
+        // scope-accurate under shadowing; adequate for test fakes.
+        if (EqualityComparer<T>.Default.Equals(GetEffective<T>(path), value))
+        {
+            return Task.FromResult(false);
+        }
+
+        SetValue(path, value, scope);
+        return Task.FromResult(true);
+    }
 
     // ── Backup / restore ───────────────────────────────────────────────────
 
