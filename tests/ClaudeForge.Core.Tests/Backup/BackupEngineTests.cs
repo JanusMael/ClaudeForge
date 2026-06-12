@@ -800,6 +800,35 @@ public sealed class BackupEngineTests
     }
 
     [TestMethod]
+    public async Task RestoreAsync_InvalidSchemaEntryInBackup_DoesNotCrash()
+    {
+        // Sibling of RestoreAsync_CorruptSchemaEntryInBackup_DoesNotCrash, for the OTHER failure
+        // mode: a schema entry that is well-formed JSON but NOT a valid JSON-Schema (here the core
+        // `type` keyword carries a number instead of a string/array). SchemaRegistry.ParseSchema
+        // then throws Json.Schema.JsonSchemaException — a DIFFERENT type than the malformed-JSON
+        // case (System.Text.Json.JsonException). The validator must catch it too and skip the bad
+        // entry rather than letting it abort the whole restore. Pins the latent-crash fix.
+        string dest = Path.Combine(_fakeHome, "backup-invalidschema.zip");
+        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            IncludeClaudeCode = true,
+            IncludeClaudeDesktop = false,
+        });
+        Assert.IsTrue(create.Succeeded);
+
+        // Valid JSON, invalid schema: `type` must be a string or array of strings, not a number,
+        // so JsonSchema.FromText throws JsonSchemaException while building the node.
+        OverwriteZipEntry(dest, "Schemas/claude-code-settings.json",
+            """{ "$schema": "http://json-schema.org/draft-07/schema#", "type": 12345 }""");
+
+        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        Assert.IsTrue(restore.Succeeded,
+            "A bundled schema that is valid JSON but an invalid JSON-Schema must not abort the restore.");
+    }
+
+    [TestMethod]
     public async Task RestoreAsync_CorruptSettingsFileInBackup_SkippedFromValidation()
     {
         // The validator's per-file try/catch around JsonNode.Parse silently
