@@ -23,12 +23,12 @@
       "supportsAutoMode": true
     },
     {
-      "id": "claude-sonnet-4-6",
+      "id": "claude-sonnet-5",
       "alias": "sonnet",
-      "label": "Sonnet 4.6",
+      "label": "Sonnet 5",
       "legacy": false,
       "supports1m": true,
-      "supportedEffortLevels": ["low", "medium", "high", "max"],
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
     },
@@ -61,12 +61,22 @@
       "supportedEffortLevels": ["low", "medium", "high", "max"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "alias": null,
+      "label": "Sonnet 4.6",
+      "legacy": true,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "max"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
     }
   ],
   "aliases": {
     "fable": "claude-fable-5",
     "opus": "claude-opus-4-8",
-    "sonnet": "claude-sonnet-4-6",
+    "sonnet": "claude-sonnet-5",
     "haiku": "claude-haiku-4-5"
   },
   "effortLevels": [

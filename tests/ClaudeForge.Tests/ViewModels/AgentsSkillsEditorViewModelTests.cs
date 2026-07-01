@@ -1,8 +1,10 @@
 using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -590,5 +592,169 @@ public sealed class AgentsSkillsEditorViewModelTests
         {
             fi.IsReadOnly = false;
         }
+    }
+
+    // ── Delete (writable artifacts only) ─────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteArtifact_NullRow_NoOp()
+    {
+        StubDialogService dlg = new();
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.DeleteArtifactAsync(null);
+        Assert.AreEqual(0, dlg.ConfirmCalls);
+    }
+
+    [TestMethod]
+    public async Task DeleteArtifact_PluginRow_NotDeletable_NoOp()
+    {
+        string skillMd = Path.Combine(Home, "plugins", "mkt", "plug", "skills", "widget", "SKILL.md");
+        Write(skillMd, "---\nname: widget\n---\n\nBody.\n");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is not null)
+        {
+            await vm.LastDescriptionFill;
+        }
+
+        ArtifactRowViewModel widget = SkillRows(vm).Single(s => s.DisplayName == "widget");
+        Assert.IsFalse(widget.IsDeletable, "Plugin rows must report as non-deletable.");
+
+        await vm.DeleteArtifactAsync(widget);
+
+        Assert.AreEqual(0, dlg.ConfirmCalls, "Plugin (read-only) rows must not prompt for delete.");
+        Assert.IsTrue(File.Exists(skillMd), "Plugin-provided artifacts must never be deleted.");
+    }
+
+    [TestMethod]
+    public async Task DeleteArtifact_UserAgent_Confirms_DeletesFile()
+    {
+        string path = Path.Combine(Home, "agents", "reviewer.md");
+        Write(path, "---\nname: reviewer\n---\n\nBody.\n");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is not null)
+        {
+            await vm.LastDescriptionFill;
+        }
+
+        ArtifactRowViewModel row = AgentRows(vm).Single();
+        Assert.IsTrue(row.IsDeletable);
+
+        await vm.DeleteArtifactAsync(row);
+
+        Assert.AreEqual(1, dlg.ConfirmCalls);
+        Assert.IsFalse(File.Exists(path), "Confirmed → file deleted.");
+        Assert.IsFalse(AgentRows(vm).Any(r => r.DisplayName == "reviewer"),
+            "Deleted row drops out of the list after refresh.");
+    }
+
+    [TestMethod]
+    public async Task DeleteArtifact_Skill_Confirms_DeletesWholeDirectory()
+    {
+        Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nBody.\n");
+        Write(Path.Combine(Home, "skills", "pdf", "run.py"), "print('x')");
+        string skillDir = Path.Combine(Home, "skills", "pdf");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is not null)
+        {
+            await vm.LastDescriptionFill;
+        }
+
+        ArtifactRowViewModel skill = SkillRows(vm).Single();
+        Assert.IsTrue(skill.IsSkill);
+
+        await vm.DeleteArtifactAsync(skill);
+
+        Assert.IsFalse(Directory.Exists(skillDir),
+            "Deleting a skill removes its whole directory, not just SKILL.md.");
+    }
+
+    [TestMethod]
+    public async Task DeleteArtifact_UserDeclines_NoDelete()
+    {
+        string path = Path.Combine(Home, "commands", "summarise.md");
+        Write(path, "---\ndescription: Summarise\n---\n\nBody.\n");
+
+        StubDialogService dlg = new() { ConfirmReturns = false };
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is not null)
+        {
+            await vm.LastDescriptionFill;
+        }
+
+        ArtifactRowViewModel row = CommandRows(vm).Single();
+
+        await vm.DeleteArtifactAsync(row);
+
+        Assert.AreEqual(1, dlg.ConfirmCalls);
+        Assert.IsTrue(File.Exists(path), "Declined → file survives.");
+    }
+
+    [TestMethod]
+    public async Task DeleteArtifact_OpenRow_ClosesViewerOnDelete()
+    {
+        string path = Path.Combine(Home, "agents", "reviewer.md");
+        Write(path, "---\nname: reviewer\n---\n\nBody.\n");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is not null)
+        {
+            await vm.LastDescriptionFill;
+        }
+
+        ArtifactRowViewModel row = AgentRows(vm).Single();
+        await vm.LoadArtifactAsync(row);
+        Assert.IsTrue(vm.IsViewerVisible);
+
+        await vm.DeleteArtifactAsync(row);
+
+        Assert.IsFalse(vm.IsViewerVisible, "Deleting the open row closes the detail pane.");
+    }
+
+    /// <summary>
+    /// Minimal IDialogService stub with trinary confirm support
+    /// (true / false / null = X-close).  Mirrors the one in
+    /// MemoryEditorViewModelTests; the rich DialogMessage/category confirm
+    /// overload flattens to this four-string one via its default interface impl.
+    /// </summary>
+    private sealed class StubDialogService : IDialogService
+    {
+        public bool ConfirmReturns { get; set; }
+        public bool ConfirmReturnsNull { get; set; }
+        public int ConfirmCalls { get; private set; }
+
+        public Task<string?> PickFolderAsync(string? title = null) => Task.FromResult<string?>(null);
+
+        public Task<string?> PickFileAsync(string? title = null, IReadOnlyList<FilePickerFilter>? filters = null) =>
+            Task.FromResult<string?>(null);
+
+        public Task<string?> PickSaveFileAsync(string? title, string defaultFileName,
+                                               IReadOnlyList<FilePickerFilter>? filters = null) =>
+            Task.FromResult<string?>(null);
+
+        public Task ShowAlertAsync(string title, string message) => Task.CompletedTask;
+
+        public Task<string?> ShowInputAsync(string title, string prompt, string? placeholder = null) =>
+            Task.FromResult<string?>(null);
+
+        public Task<bool?> ShowConfirmAsync(string title, string message,
+                                            string confirmLabel = "Confirm", string cancelLabel = "Cancel")
+        {
+            ConfirmCalls++;
+            return Task.FromResult<bool?>(ConfirmReturnsNull ? null : ConfirmReturns);
+        }
+
+        public Task<bool> ShowSaveChangesDialogAsync(ISaveChangesPrompt prompt) => Task.FromResult(false);
     }
 }

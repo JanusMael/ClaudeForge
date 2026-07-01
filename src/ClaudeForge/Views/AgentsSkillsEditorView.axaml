@@ -46,35 +46,73 @@
             </StackPanel>
         </DataTemplate>
 
-        <!-- Artifact row — click to open the detail pane.  Right-side chip
-             shows the Source (User / Project / plugin name) so same-named
-             artifacts from different plugins are distinguishable. -->
+        <!-- Artifact row — mirrors the Memory page's User Memory rows: the
+             clickable NAME opens the detail pane (where Edit lives); a trailing
+             action cluster offers Open-in-editor / Reveal / Delete.  The name
+             can't be the whole-row button anymore (a Button can't host the
+             action Buttons), so the row is a Border + Grid like the Memory tab.
+             The Source chip (User / Project / plugin name) disambiguates
+             same-named artifacts from different plugins.  ToolTip on the name +
+             chip surfaces the file's full absolute path. -->
         <DataTemplate x:DataType="vm:ArtifactRowViewModel">
-            <Button HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    Padding="10,8"
-                    Margin="0,2"
-                    Background="{DynamicResource BarButtonBackgroundBrush}"
-                    Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).LoadArtifactCommand}"
-                    CommandParameter="{Binding}"
-                    AutomationProperties.Name="{Binding DisplayName}">
-                <DockPanel LastChildFill="True">
-                    <Border DockPanel.Dock="Right"
+            <Border Padding="10,8" Margin="0,2"
+                    CornerRadius="4"
+                    Background="{DynamicResource BarButtonBackgroundBrush}">
+                <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+                    <!-- Name + subtitle: click opens the detail pane.  Transparent
+                         flat button so it reads as a link, not a nested box. -->
+                    <Button Grid.Column="0"
+                            Background="Transparent" BorderThickness="0" Padding="0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding AbsolutePath}"
+                            Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).LoadArtifactCommand}"
+                            CommandParameter="{Binding}"
+                            AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Subtitle}" FontSize="11"
+                                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Source chip. -->
+                    <Border Grid.Column="1"
                             Background="{DynamicResource AppPanelBorderBrush}"
                             CornerRadius="3" Padding="5,1"
-                            VerticalAlignment="Top" Margin="6,1,0,0"
+                            VerticalAlignment="Center" Margin="6,0"
                             ToolTip.Tip="{Binding AbsolutePath}">
                         <TextBlock Text="{Binding Source}" FontSize="10"
                                    Foreground="{DynamicResource AppSecondaryTextBrush}" />
                     </Border>
-                    <StackPanel Spacing="1">
-                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Subtitle}" FontSize="11"
-                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
-                                   TextTrimming="CharacterEllipsis" />
+
+                    <!-- Per-row actions: Open in editor + Reveal + Delete.
+                         Delete is red (like the Footprint tab) and shown only for
+                         writable (User / Project) rows — plugin rows are read-only
+                         and never deletable.  Skills delete the whole directory. -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4"
+                                VerticalAlignment="Center">
+                        <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                FontSize="11" Padding="6,2"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}"
+                                Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).OpenExternallyCommand}"
+                                CommandParameter="{Binding AbsolutePath}" />
+                        <Button Content="{x:Static loc:PlatformLabels.Reveal}"
+                                FontSize="11" Padding="6,2"
+                                AutomationProperties.Name="{x:Static loc:Strings.ButtonReveal}"
+                                Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).RevealCommand}"
+                                CommandParameter="{Binding AbsolutePath}" />
+                        <Button Content="{x:Static loc:Strings.ButtonDeleteFootprint}"
+                                FontSize="11" Padding="6,2"
+                                Foreground="#C62828"
+                                IsVisible="{Binding IsDeletable}"
+                                AutomationProperties.Name="{Binding DisplayName, StringFormat='Delete {0}'}"
+                                Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).DeleteArtifactCommand}"
+                                CommandParameter="{Binding}" />
                     </StackPanel>
-                </DockPanel>
-            </Button>
+                </Grid>
+            </Border>
         </DataTemplate>
 
     </UserControl.DataTemplates>

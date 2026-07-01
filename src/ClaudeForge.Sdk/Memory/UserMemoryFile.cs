@@ -22,4 +22,21 @@ public sealed record UserMemoryFile(
     string DisplayName,
     long SizeBytes,
     DateTime LastWriteUtc,
-    string? Subtitle);
+    string? Subtitle)
+{
+    /// <summary>
+    /// <see langword="true"/> for a skill (whose file is always <c>SKILL.md</c>).
+    /// Deleting a skill removes its whole directory, not just the markdown file.
+    /// </summary>
+    public bool IsSkill => Category == UserMemoryCategory.Skill;
+
+    /// <summary>
+    /// Whether the Memory page may offer a standalone Delete for this file.
+    /// <see langword="true"/> for every user-authored category;
+    /// <see langword="false"/> for <see cref="UserMemoryCategory.CrossToolMemory"/>
+    /// — those files are owned by ANOTHER tool (Codex / Gemini / OpenCode), so a
+    /// Claude config tool must not offer to delete them (the governing theme:
+    /// never delete things installed / owned by something else).
+    /// </summary>
+    public bool IsDeletable => Category != UserMemoryCategory.CrossToolMemory;
+}

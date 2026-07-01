@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -28,6 +29,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 {
     private readonly string? _projectRoot;
     private readonly IShellLauncher? _shellLauncher;
+    private readonly IDialogService? _dialogService;
     private bool _disposed;
 
     // Defers the initial filesystem scan until the page is first navigated to.
@@ -50,10 +52,12 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     // land after the user has already moved on and overwrite the selection.
     private CancellationTokenSource _loadCts = new();
 
-    public AgentsSkillsEditorViewModel(string? projectRoot, IShellLauncher? shellLauncher)
+    public AgentsSkillsEditorViewModel(
+        string? projectRoot, IShellLauncher? shellLauncher, IDialogService? dialogService)
     {
         _projectRoot = projectRoot;
         _shellLauncher = shellLauncher;
+        _dialogService = dialogService;
         AgentItems = [];
         SkillItems = [];
         CommandItems = [];
@@ -62,9 +66,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         // scan cost when the user never visits this page in that session.
     }
 
-    /// <summary>Test/fixture convenience ctor — no shell-launch plumbing.</summary>
+    /// <summary>Convenience ctor — shell-launch but no dialog plumbing.</summary>
+    public AgentsSkillsEditorViewModel(string? projectRoot, IShellLauncher? shellLauncher)
+        : this(projectRoot, shellLauncher, dialogService: null)
+    {
+    }
+
+    /// <summary>Test/fixture convenience ctor — no shell-launch / dialog plumbing.</summary>
     public AgentsSkillsEditorViewModel(string? projectRoot)
-        : this(projectRoot, shellLauncher: null)
+        : this(projectRoot, shellLauncher: null, dialogService: null)
     {
     }
 
@@ -554,6 +564,95 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
         _shellLauncher?.OpenInDefaultEditor(path);
         Log.Information("[AgentsSkills.Command] action=OpenExternally");
+    }
+
+    /// <summary>
+    /// Delete the row's artifact — a file, or the whole directory for a skill —
+    /// after a Destructive confirm.  Gated on
+    /// <see cref="ArtifactRowViewModel.IsDeletable"/>: plugin (read-only) rows are
+    /// never deletable (the governing theme: never delete things installed by
+    /// another thing).  Closes the detail pane if the deleted row was open, then
+    /// refreshes the lists.
+    /// </summary>
+    /// <remarks>
+    /// Reuses the footprint-delete localised strings — their values are generic
+    /// and reading identically here avoids minting new keys that would each need
+    /// a translation across all eight locale resx files.
+    /// </remarks>
+    [RelayCommand]
+    public async Task DeleteArtifactAsync(ArtifactRowViewModel? row)
+    {
+        if (row is null || !row.IsDeletable)
+        {
+            return;
+        }
+
+        Log.Information("[AgentsSkills.Command] action=Delete kind={Kind} scope={Scope} name={Name}",
+            row.Entry.Category, row.Entry.Scope, row.DisplayName);
+
+        (string targetPath, int fileCount, long bytes) = await Task
+            .Run(() => MemoryArtifactDeleter.StatTarget(row.AbsolutePath, row.IsSkill, row.Entry.SizeBytes))
+            .ConfigureAwait(true);
+
+        if (_dialogService is not null)
+        {
+            DialogMessage msg = DialogMessage.Builder()
+                                             .Text(string.Format(
+                                                 CultureInfo.CurrentCulture,
+                                                 Strings.MsgDeleteFootprintConfirmFmt,
+                                                 fileCount,
+                                                 FormatBytes(bytes)))
+                                             .Text("\n\n")
+                                             .Path(targetPath)
+                                             .Text("\n\nThis cannot be undone.")
+                                             .Build();
+            bool? confirmed = await _dialogService.ShowConfirmAsync(
+                string.Format(CultureInfo.CurrentCulture, Strings.TitleDeleteFootprintFmt, row.DisplayName),
+                msg,
+                DialogCategory.Destructive,
+                confirmLabel: Strings.ButtonDeleteFootprint).ConfigureAwait(true);
+            // Binary destructive yes/no — both Cancel (false) and X (null) abort.
+            if (confirmed != true)
+            {
+                return;
+            }
+        }
+
+        IsBusy = true;
+        try
+        {
+            // Close the detail pane if the row being deleted is the one open.
+            if (SelectedArtifact is not null
+                && string.Equals(SelectedArtifact.AbsolutePath, row.AbsolutePath, StringComparison.Ordinal))
+            {
+                CloseViewer();
+            }
+
+            await MemoryArtifactDeleter.DeleteAsync(row.AbsolutePath, row.IsSkill, CancellationToken.None)
+                                       .ConfigureAwait(true);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        // Re-walk the scopes so the deleted row drops out of its segment list.
+        await RefreshAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>Humanised byte count (e.g. "2.4 MB"); invariant separator for a technical badge.</summary>
+    private static string FormatBytes(long bytes)
+    {
+        const double KB = 1024d;
+        const double MB = KB * 1024;
+        const double GB = MB * 1024;
+        return bytes switch
+        {
+            >= (long)GB => FormattableString.Invariant($"{bytes / GB:0.0} GB"),
+            >= (long)MB => FormattableString.Invariant($"{bytes / MB:0.0} MB"),
+            >= (long)KB => FormattableString.Invariant($"{bytes / KB:0.0} KB"),
+            var _ => FormattableString.Invariant($"{bytes} B"),
+        };
     }
 
     // ── Edit / Save (group #3) ───────────────────────────────────────────

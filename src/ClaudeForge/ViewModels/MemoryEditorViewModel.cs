@@ -326,6 +326,95 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Delete a single Tier 1 user-memory file — or, for a skill, its whole
+    /// directory — after a Destructive confirm.  Mirrors
+    /// <see cref="DeleteFootprintAsync"/>: null-guards, a confirm dialog citing
+    /// the count + size, then delete + Tier 1 rebuild.  Cross-tool memory rows
+    /// never reach here — the View hides their Delete button via
+    /// <see cref="UserMemoryFile.IsDeletable"/>, and the guard below is
+    /// defence-in-depth.
+    /// </summary>
+    /// <remarks>
+    /// Reuses the footprint-delete localised strings (<c>TitleDeleteFootprintFmt</c>
+    /// / <c>MsgDeleteFootprintConfirmFmt</c> / <c>ButtonDeleteFootprint</c>) — their
+    /// values are generic ("Delete {0}?", "This will permanently delete {0}
+    /// file(s) totalling {1} from disk:", "Delete") and reading identically here
+    /// avoids minting new keys that would each need a translation in all eight
+    /// locale resx files.
+    /// </remarks>
+    [RelayCommand]
+    public async Task DeleteUserMemoryFileAsync(UserMemoryFile? file)
+    {
+        if (file is null || _codeClient is null)
+        {
+            return;
+        }
+
+        // Defence in depth against a Delete dispatched on a non-deletable row
+        // (another tool's cross-tool memory file).  The View already hides it.
+        if (!file.IsDeletable)
+        {
+            return;
+        }
+
+        Log.Information(
+            "[Memory.Command] action=DeleteUserMemoryFile category={Category} path={Path}",
+            file.Category, file.AbsolutePath);
+
+        (string targetPath, int fileCount, long bytes) = await Task
+            .Run(() => MemoryArtifactDeleter.StatTarget(file.AbsolutePath, file.IsSkill, file.SizeBytes))
+            .ConfigureAwait(true);
+
+        if (_dialogService is not null)
+        {
+            DialogMessage msg = DialogMessage.Builder()
+                                             .Text(string.Format(
+                                                 Strings.MsgDeleteFootprintConfirmFmt,
+                                                 fileCount,
+                                                 FormatBytes(bytes)))
+                                             .Text("\n\n")
+                                             .Path(targetPath)
+                                             .Text("\n\nThis cannot be undone.")
+                                             .Build();
+            bool? confirmed = await _dialogService.ShowConfirmAsync(
+                string.Format(Strings.TitleDeleteFootprintFmt, file.DisplayName),
+                msg,
+                DialogCategory.Destructive,
+                confirmLabel: Strings.ButtonDeleteFootprint).ConfigureAwait(true);
+            // Binary destructive yes/no — both Cancel (false) and X (null) abort.
+            if (confirmed != true)
+            {
+                return;
+            }
+        }
+
+        IsBusy = true;
+        try
+        {
+            // If the file being deleted is open in the viewer, close it first so
+            // the pane doesn't linger over a now-missing file.
+            if (SelectedFile is not null
+                && string.Equals(SelectedFile.AbsolutePath, file.AbsolutePath, StringComparison.Ordinal))
+            {
+                CloseViewer();
+            }
+
+            await MemoryArtifactDeleter.DeleteAsync(file.AbsolutePath, file.IsSkill, CancellationToken.None)
+                                       .ConfigureAwait(true);
+
+            // Re-snapshot Tier 1 only (the affected surface) and rebuild groups —
+            // same spirit as DeleteFootprintAsync re-stating just the footprint.
+            IReadOnlyList<UserMemoryFile> tier1 = await Task
+                .Run(() => _codeClient.SnapshotUserMemoryFiles(_projectRoot)).ConfigureAwait(true);
+            RebuildTier1Groups(tier1);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
     /// Delete an entire footprint category. Surfaces a Destructive-category
     /// confirm dialog citing the count + size; on confirm, calls the SDK
     /// and refreshes the row.

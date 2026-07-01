@@ -3692,7 +3692,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // a cached _agentsSkillsVm field per the AGENTS.md nav-page checklist.
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
         {
-            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance),
+            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess),
             IsTopLevel = true,
         });
 

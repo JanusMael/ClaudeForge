@@ -94,6 +94,9 @@
                                                                  with the DisplayName button regardless of the row's measured height. -->
                                                             <Grid ColumnDefinitions="Auto,*,Auto"
                                                                   VerticalAlignment="Center">
+                                                                <!-- ToolTip surfaces the file's full absolute path on hover —
+                                                                     the DisplayName is a short label, so the path is the
+                                                                     disambiguator (which agents/ vs project vs cross-tool file). -->
                                                                 <Button Grid.Column="0"
                                                                         Content="{Binding DisplayName}"
                                                                         Background="Transparent"
@@ -101,6 +104,7 @@
                                                                         HorizontalContentAlignment="Left"
                                                                         FontWeight="SemiBold"
                                                                         Padding="0"
+                                                                        ToolTip.Tip="{Binding AbsolutePath}"
                                                                         AutomationProperties.Name="{Binding DisplayName, StringFormat='Open memory file {0}'}"
                                                                         Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).LoadFileCommand}"
                                                                         CommandParameter="{Binding}" />
@@ -136,6 +140,21 @@
                                                                         AutomationProperties.Name="{x:Static loc:Strings.ButtonReveal}"
                                                                         Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).RevealCommand}"
                                                                         CommandParameter="{Binding AbsolutePath}" />
+                                                                    <!-- Delete (red, like the Footprint tab) — shown only for
+                                                                         standalone deletable files.  Hidden for cross-tool
+                                                                         memory (Codex/Gemini/OpenCode), which is owned by
+                                                                         another tool.  For a skill it removes the whole
+                                                                         skills/<name>/ directory (confirm dialog cites the
+                                                                         real folder count + size). -->
+                                                                    <Button
+                                                                        Content="{x:Static loc:Strings.ButtonDeleteFootprint}"
+                                                                        FontSize="11"
+                                                                        Padding="6,2"
+                                                                        Foreground="#C62828"
+                                                                        IsVisible="{Binding IsDeletable}"
+                                                                        AutomationProperties.Name="{Binding DisplayName, StringFormat='Delete {0}'}"
+                                                                        Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).DeleteUserMemoryFileCommand}"
+                                                                        CommandParameter="{Binding}" />
                                                                 </StackPanel>
                                                             </Grid>
                                                         </Border>

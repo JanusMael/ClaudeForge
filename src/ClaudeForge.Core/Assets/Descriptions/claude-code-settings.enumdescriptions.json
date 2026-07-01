@@ -5,12 +5,12 @@
     "opus[1m]": "Opus with the 1M-token extended-context window, for long sessions over large codebases.",
     "opus": "Latest Opus - complex reasoning and architecture (today Opus 4.8). Alias: tracks the recommended build.",
     "sonnet[1m]": "Sonnet with the 1M-token extended-context window, for long sessions.",
-    "sonnet": "Latest Sonnet - balanced daily coding; the default (today Sonnet 4.6). Alias: tracks the recommended build.",
+    "sonnet": "Latest Sonnet - balanced daily coding; the default (today Sonnet 5). Alias: tracks the recommended build.",
     "haiku": "Latest Haiku - fast and efficient for simple tasks. Alias: tracks the recommended build.",
     "best": "Most capable model available to your account: Fable 5 where your organization has access, otherwise the latest Opus.",
     "opusplan": "Hybrid: Opus while planning, then automatically switches to Sonnet for execution.",
     "claude-fable-5": "Pins exactly Fable 5 - a fixed snapshot that never auto-updates (unlike the 'fable' alias).",
     "claude-opus-4-8": "Pins exactly Opus 4.8 - a fixed snapshot that never auto-updates (unlike the 'opus' alias).",
-    "claude-sonnet-4-6": "Pins exactly Sonnet 4.6 - a fixed snapshot that never auto-updates (unlike the 'sonnet' alias)."
+    "claude-sonnet-5": "Pins exactly Sonnet 5 - a fixed snapshot that never auto-updates (unlike the 'sonnet' alias)."
   }
 }

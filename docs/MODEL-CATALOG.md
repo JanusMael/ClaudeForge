@@ -56,9 +56,9 @@ catalog; a parity test (`ModelCatalogSchemaParityTests`) locks the schema's
       "legacy": false, "supports1m": false,
       "supportedEffortLevels": [], "defaultEffortLevel": null,
       "supportsAutoMode": false }
-    // … sonnet, fable, legacy opus-4-7/4-6
+    // … sonnet 5, fable, legacy opus-4-7/4-6 + sonnet-4-6
   ],
-  "aliases": { "opus": "claude-opus-4-8", "sonnet": "claude-sonnet-4-6", … },
+  "aliases": { "opus": "claude-opus-4-8", "sonnet": "claude-sonnet-5", … },
   "effortLevels": [ { "id": "low", "order": 0, "persists": true }, …,
                     { "id": "max", "order": 4, "persists": false } ],
   "defaultModes": [ { "id": "default", … },
