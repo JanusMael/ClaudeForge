@@ -64,8 +64,20 @@ public sealed class MemoryEditorViewModelTests
         return new MemoryEditorViewModel(client, projectRoot: null);
     }
 
-    private static FakeClaudeCodeClient NewFakeClient()
+    private FakeClaudeCodeClient NewFakeClient()
     {
+        // Re-assert the sandbox override inside the test METHOD's async flow — not
+        // only in [TestInitialize]. TestUserProfileOverride is an AsyncLocal (kept
+        // that way because ClaudeForge.Sdk.Tests runs method-level parallel and needs
+        // per-flow isolation). Under serial MSTest, the value set in the sync Setup
+        // does not always propagate into the async test method's execution context, so
+        // FootprintService.DeleteAsync's Task.Run — which reads PlatformPaths.ClaudeHome
+        // on a pool thread — occasionally captured a context WITHOUT the override and
+        // deleted from the real home instead of the sandbox. That surfaced as the flaky
+        // DeleteFootprintAsync_* failures that only appeared in the full suite. Setting
+        // it here (every real-delete test funnels through NewFakeClient, on its own
+        // flow, before the client is used) makes the later Task.Run capture the sandbox.
+        PlatformPaths.TestUserProfileOverride = _fakeHome;
         return new FakeClaudeCodeClient();
     }
 

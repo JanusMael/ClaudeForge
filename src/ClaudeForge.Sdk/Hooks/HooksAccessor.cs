@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 
@@ -30,6 +31,12 @@ internal sealed class HooksAccessor : IHooksAccessor
     {
         _client = client;
     }
+
+    public IReadOnlyList<HookEventInfo> KnownEvents =>
+        HookEventCatalog.ResolveOrder(_client.SchemaHookEvents());
+
+    public IReadOnlyList<HookCommandVariantInfo> KnownCommandTypes =>
+        _client.SchemaHookCommandVariants();
 
     public IReadOnlyList<HookEvent> Events =>
         new LazyReadOnlyList<HookEvent>(Materialize);

@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+#
+# Installer manifest (template).
+#
+# ClaudeForge's Windows release asset is a .zip whose single meaningful entry is
+# the self-contained `ClaudeForge.exe` (PublishSingleFile). winget therefore
+# installs it as a PORTABLE app extracted from the zip:
+#   InstallerType: zip  +  NestedInstallerType: portable
+# winget places the exe under its packages dir and registers a `claudeforge`
+# alias on PATH. There is no Start Menu shortcut (portable installs don't create
+# one) and no separate Add/Remove Programs entry beyond winget's own tracking —
+# an installer (Inno/WiX) would be needed for those; see ./README.md.
+#
+# `<PACKAGE_VERSION>`, `<SHA256_X64>`, `<SHA256_ARM64>` are placeholders filled at
+# submission time (wingetcreate computes the hashes from the InstallerUrls).
+PackageIdentifier: Bennewitz.Ninja.ClaudeForge
+PackageVersion: "<PACKAGE_VERSION>"
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: ClaudeForge.exe
+    PortableCommandAlias: claudeforge
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/JanusMael/ClaudeForge/releases/download/v<PACKAGE_VERSION>/ClaudeForge-win-x64.zip
+    InstallerSha256: <SHA256_X64>
+  - Architecture: arm64
+    InstallerUrl: https://github.com/JanusMael/ClaudeForge/releases/download/v<PACKAGE_VERSION>/ClaudeForge-win-arm64.zip
+    InstallerSha256: <SHA256_ARM64>
+ManifestType: installer
+ManifestVersion: 1.6.0

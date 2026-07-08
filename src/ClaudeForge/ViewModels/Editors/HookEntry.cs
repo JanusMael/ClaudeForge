@@ -28,13 +28,30 @@ public sealed record HookCommandTypeInfo(HookCommandType Value, string Descripti
 /// <summary>A single hook within an event group.</summary>
 public partial class HookEntry : ObservableObject
 {
-    /// <summary>All valid command types with descriptions — used as ItemsSource in the Type ComboBox.</summary>
-    public static readonly IReadOnlyList<HookCommandTypeInfo> CommandTypeInfos =
+    /// <summary>
+    /// Offline fallback for the Type-picker: the valid command types with terse
+    /// hardcoded descriptions. Used only when the schema isn't available (no client /
+    /// offline / a bare test node). When a schema IS loaded, <see cref="CommandTypeInfos"/>
+    /// is replaced per-instance with the schema's authoritative descriptions
+    /// (<c>HooksEditorViewModel</c> → <c>HookEventGroup</c>), so this list stops being the
+    /// source of truth — mirroring how <c>HookEventCatalog.CuratedOrder</c> is only a
+    /// fallback for the schema-driven event list.
+    /// </summary>
+    public static readonly IReadOnlyList<HookCommandTypeInfo> DefaultCommandTypeInfos =
     [
         new(HookCommandType.Command, "Run a shell command"),
         new(HookCommandType.Prompt, "Inject text into Claude's context"),
         new(HookCommandType.Url, "Open a URL in the default browser"),
     ];
+
+    /// <summary>
+    /// The command types offered in this entry's Type ComboBox (ItemsSource). Defaults to
+    /// the offline <see cref="DefaultCommandTypeInfos"/>; the owning <see cref="HookEventGroup"/>
+    /// replaces it with a schema-described list when the editor was built with an SDK client, so
+    /// the picker shows the schema's per-type help text ("Bash command hook", "LLM prompt hook. See …").
+    /// Set once before the row is rendered, so a plain settable property (no change notification) suffices.
+    /// </summary>
+    public IReadOnlyList<HookCommandTypeInfo> CommandTypeInfos { get; set; } = DefaultCommandTypeInfos;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MatcherIsValid))]

@@ -12,6 +12,18 @@ public class HooksEditorViewModelTests
         return new SchemaNode("hooks", "hooks") { ValueType = SchemaValueType.Complex };
     }
 
+    // A hooks schema node whose Properties carry the given event names — mirrors
+    // what SchemaTreeBuilder produces in production (hooks.properties children),
+    // so the editor can derive its event list FRESH from the schema.
+    private static SchemaNode HooksSchemaWith(params string[] events)
+    {
+        return new SchemaNode("hooks", "hooks")
+        {
+            ValueType = SchemaValueType.Complex,
+            Properties = events.Select(e => new SchemaNode($"hooks.{e}", e)).ToList(),
+        };
+    }
+
     private static LayeredValue LayeredWithHooks(ConfigScope scope, JsonObject? obj)
     {
         ScopeEntry entry = new(scope, obj, "/fake");
@@ -28,7 +40,7 @@ public class HooksEditorViewModelTests
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
 
-        Assert.AreEqual(HooksEditorViewModel.KnownEventTypes.Count, vm.EventGroups.Count);
+        Assert.AreEqual(HookEventCatalog.CuratedOrder.Count, vm.EventGroups.Count);
     }
 
     [TestMethod]
@@ -790,5 +802,157 @@ public class HooksEditorViewModelTests
         Assert.AreEqual(1, pre!.Hooks.Count);
         Assert.AreEqual("Edit", pre.Hooks[0].Matcher);
         Assert.AreEqual("echo legacy", pre.Hooks[0].CommandValue);
+    }
+
+    // ── Schema-derived event list + unrecognized-event notice ────────────────
+
+    [TestMethod]
+    public void SchemaDerivedEvents_DriveEventGroups_IncludingNonCurated()
+    {
+        // A schema exposing a curated event plus one we don't curate: the editor
+        // must offer BOTH (the schema drives the list, not a hardcoded mirror),
+        // curated first.
+        HooksEditorViewModel vm = new(HooksSchemaWith("PreToolUse", "BrandNewEvent"), ConfigScope.User);
+        vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
+
+        string[] names = vm.EventGroups.Select(g => g.EventName).ToArray();
+        CollectionAssert.AreEquivalent(new[] { "PreToolUse", "BrandNewEvent" }, names);
+        Assert.AreEqual("PreToolUse", names[0], "Curated events sort before non-curated schema events.");
+    }
+
+    [TestMethod]
+    public void UnrecognizedEventInConfig_SetsNotice()
+    {
+        // Schema knows only PreToolUse; the config carries a deprecated/unknown event.
+        JsonObject obj = new()
+        {
+            ["PreToolUse"] = new JsonArray(new JsonObject { ["matcher"] = "*", ["command"] = "echo ok" }),
+            ["DeprecatedEvent"] = new JsonArray(new JsonObject { ["matcher"] = "*", ["command"] = "echo old" }),
+        };
+        HooksEditorViewModel vm = new(HooksSchemaWith("PreToolUse"), ConfigScope.User);
+        vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
+
+        Assert.IsNotNull(vm.UnrecognizedEventsNotice, "An event not in the schema must raise the notice.");
+        StringAssert.Contains(vm.UnrecognizedEventsNotice!, "DeprecatedEvent");
+        Assert.IsFalse(vm.UnrecognizedEventsNotice!.Contains("PreToolUse"),
+            "A recognised event must not appear in the notice.");
+    }
+
+    [TestMethod]
+    public void RecognizedEventsOnly_NoNotice()
+    {
+        JsonObject obj = new()
+        {
+            ["PreToolUse"] = new JsonArray(new JsonObject { ["matcher"] = "*", ["command"] = "echo ok" }),
+        };
+        HooksEditorViewModel vm = new(HooksSchemaWith("PreToolUse", "Stop"), ConfigScope.User);
+        vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
+
+        Assert.IsNull(vm.UnrecognizedEventsNotice, "All-recognised config must not raise the notice.");
+    }
+
+    [TestMethod]
+    public void BareSchemaNode_NoNotice_EvenForUnknownConfigEvent()
+    {
+        // No schema event set (bare/offline node) → we can't judge, so stay forgiving.
+        JsonObject obj = new()
+        {
+            ["TotallyMadeUp"] = new JsonArray(new JsonObject { ["matcher"] = "*", ["command"] = "echo x" }),
+        };
+        HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
+        vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
+
+        Assert.IsNull(vm.UnrecognizedEventsNotice,
+            "A bare/offline schema (no event set) must not flag anything — forgiving by default.");
+    }
+
+    [TestMethod]
+    public void EventGroups_CarrySchemaDescriptions_ForTooltipAndLabel()
+    {
+        SchemaNode schema = new("hooks", "hooks")
+        {
+            ValueType = SchemaValueType.Complex,
+            Properties = new[]
+            {
+                new SchemaNode("hooks.PreToolUse", "PreToolUse") { Description = "Hooks that run before tool calls" },
+                new SchemaNode("hooks.CwdChanged", "CwdChanged") { Description = "Hooks that run when the working directory changes" },
+            },
+        };
+        HooksEditorViewModel vm = new(schema, ConfigScope.User);
+        vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
+
+        HookEventGroup cwd = vm.EventGroups.First(g => g.EventName == "CwdChanged");
+        Assert.AreEqual("Hooks that run when the working directory changes", cwd.Description);
+        Assert.IsTrue(cwd.HasDescription);
+
+        // A bare schema node (no descriptions) yields no per-event description,
+        // so the tooltip + detail label stay hidden.
+        HooksEditorViewModel bare = new(HooksSchema(), ConfigScope.User);
+        bare.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
+        Assert.IsFalse(bare.EventGroups.First().HasDescription);
+    }
+
+    // ── Command-type picker descriptions (SDK-first) ─────────────────────────
+
+    [TestMethod]
+    public async Task CommandTypePicker_CarriesSchemaDescriptions_WhenClientPresent()
+    {
+        // With an SDK client, the Type ComboBox's per-type help text comes from the
+        // schema ($defs.hookCommand.anyOf[*].description), not HookEntry's hardcoded
+        // fallback — and it flows to every entry regardless of how it was created.
+        string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-hooks-cmdtype-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string? previousOverride = PlatformPaths.TestUserProfileOverride;
+        PlatformPaths.TestUserProfileOverride = tempDir;
+        try
+        {
+            using ClaudeCodeClient client = new();
+            await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
+
+            HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
+            vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
+
+            HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PreToolUse");
+            group.AddHookCommand.Execute(null); // creates a HookEntry via the group
+
+            HookEntry entry = group.Hooks[0];
+            HookCommandTypeInfo command = entry.CommandTypeInfos.First(i => i.Value == HookCommandType.Command);
+            StringAssert.Contains(command.Description, "Bash command hook",
+                "The Type picker must show the schema's description, not the hardcoded fallback.");
+            Assert.AreNotEqual("Run a shell command", command.Description,
+                "The hardcoded fallback must be superseded by the schema description when a client is present.");
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = previousOverride;
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+                /* best-effort */
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CommandTypePicker_FallsBackToHardcoded_WithoutClient()
+    {
+        // No client (unit-test fixture / offline): the picker degrades to the hardcoded
+        // DefaultCommandTypeInfos rather than showing nothing.
+        HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client: null);
+        vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
+
+        HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PreToolUse");
+        group.AddHookCommand.Execute(null);
+
+        HookEntry entry = group.Hooks[0];
+        HookCommandTypeInfo command = entry.CommandTypeInfos.First(i => i.Value == HookCommandType.Command);
+        Assert.AreEqual("Run a shell command", command.Description,
+            "Without a client the picker must use the offline DefaultCommandTypeInfos.");
     }
 }

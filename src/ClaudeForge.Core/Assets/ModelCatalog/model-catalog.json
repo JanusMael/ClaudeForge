@@ -8,7 +8,7 @@
       "label": "Fable 5",
       "legacy": false,
       "supports1m": true,
-      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
     },
@@ -18,7 +18,7 @@
       "label": "Opus 4.8",
       "legacy": false,
       "supports1m": true,
-      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
     },
@@ -28,7 +28,7 @@
       "label": "Sonnet 5",
       "legacy": false,
       "supports1m": true,
-      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
     },
@@ -48,7 +48,7 @@
       "label": "Opus 4.7",
       "legacy": true,
       "supports1m": true,
-      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
       "defaultEffortLevel": "xhigh",
       "supportsAutoMode": true
     },
@@ -84,7 +84,8 @@
     { "id": "medium", "order": 1, "persists": true },
     { "id": "high", "order": 2, "persists": true },
     { "id": "xhigh", "order": 3, "persists": true },
-    { "id": "max", "order": 4, "persists": false }
+    { "id": "max", "order": 4, "persists": false },
+    { "id": "ultracode", "order": 5, "persists": false }
   ],
   "defaultModes": [
     { "id": "default", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },

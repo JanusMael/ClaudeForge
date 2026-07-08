@@ -922,7 +922,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             new() { Id = GroupTab.JsonId, Header = JsonTabHeader, Content = this },
         ];
 
-        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList());
+        // Pass SelectTab so a customizer can wire an in-editor deep-link (e.g. the Hooks
+        // "View flow diagram" link) to jump to a sibling contributed tab.
+        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList(), SelectTab);
 
         Tabs.Clear();
         foreach (GroupTab tab in seed)

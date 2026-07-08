@@ -327,6 +327,49 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
     /// <inheritdoc/>
     public IHooksAccessor Hooks => _hooksAccessor ??= new HooksAccessor(this);
 
+    /// <summary>
+    /// Hook lifecycle events from the currently-loaded settings schema — each
+    /// event's name plus its schema description (the <c>hooks</c> node's child
+    /// properties). The fresh, schema-driven set the GUI's schema tree is built
+    /// from too. Empty before <see cref="OpenAsync"/> or when the schema exposes no
+    /// <c>hooks.properties</c>. Consumed by the Hooks accessor's <c>KnownEvents</c>
+    /// so headless callers and the editor share one source of truth — including the
+    /// descriptions, not just the names.
+    /// </summary>
+    internal IReadOnlyList<HookEventInfo> SchemaHookEvents()
+    {
+        SchemaNode? hooks = _cachedSchemaNodes?.FirstOrDefault(n =>
+            string.Equals(n.Name, "hooks", StringComparison.Ordinal));
+        if (hooks is not null)
+        {
+            return hooks.Properties.Select(p => new HookEventInfo(p.Name, p.Description)).ToList();
+        }
+
+        // No cached schema tree — the client was constructed via FromExistingWorkspace
+        // (the GUI's path) and never ran OpenAsync, so _cachedSchemaNodes is null. Read the
+        // event names + descriptions straight from the bundled schema (same source, same
+        // descriptions) so KnownEvents — and thus the editor's per-event tooltips/labels —
+        // stay populated regardless of how the client was built. Mirrors SchemaHookCommandVariants.
+        return IsClaudeCode
+            ? SchemaRegistry.GetHookEvents("claude-code-settings.json")
+            : [];
+    }
+
+    /// <summary>
+    /// Hook command variants from the settings schema's <c>$defs.hookCommand.anyOf</c> —
+    /// each variant's <c>type</c> discriminator, description, and field descriptions. Read
+    /// from the bundled merged schema JSON because the <c>anyOf</c> variants don't survive the
+    /// flattened <see cref="SchemaNode"/> tree the GUI builds from (unlike <see cref="SchemaHookEvents"/>,
+    /// which reads that tree); the bundled schema is the same source the tree derives from, so
+    /// they stay consistent. Empty for non-Claude-Code clients — hooks are a Claude Code concept.
+    /// Consumed by the Hooks accessor's <c>KnownCommandTypes</c> so headless callers and the editor
+    /// share one source for the per-type picker text and per-field descriptions.
+    /// </summary>
+    internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
+        IsClaudeCode
+            ? SchemaRegistry.GetHookCommandVariants("claude-code-settings.json")
+            : [];
+
     /// <inheritdoc/>
     public IMcpServersAccessor McpServers => _mcpServersAccessor ??= new McpServersAccessor(this);
 

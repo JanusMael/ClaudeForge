@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
@@ -10,6 +11,30 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
 /// </remarks>
 public interface IHooksAccessor
 {
+    /// <summary>
+    /// The hook lifecycle events the loaded settings schema accepts — each with its
+    /// name and the schema's human description — in a stable display order (curated
+    /// overlay first, then any schema events not yet curated). Headless consumers —
+    /// CLI tools, MCP servers — enumerate the valid events (and can surface their
+    /// descriptions) from here without touching the schema or the GUI; the editor
+    /// derives from the same source, so both agree. Falls back to a curated default
+    /// (names only, null descriptions) when the client hasn't loaded a schema yet
+    /// (e.g. before <see cref="IClaudeConfigClient.OpenAsync"/>).
+    /// </summary>
+    IReadOnlyList<HookEventInfo> KnownEvents { get; }
+
+    /// <summary>
+    /// The hook command variants the loaded settings schema defines — each with its
+    /// <c>type</c> discriminator, the schema's description, and its field descriptions — as
+    /// declared in <c>$defs.hookCommand.anyOf</c> (<c>command</c>, <c>prompt</c>, <c>agent</c>,
+    /// <c>http</c>, …). Headless consumers get the per-type help text and per-field tooltips from
+    /// here; the editor's Type picker derives from the same source instead of a hardcoded mirror.
+    /// Complements <see cref="KnownEvents"/> — that surfaces the lifecycle events (the <c>hooks</c>
+    /// object's keys); this surfaces the shape of an individual hook. Empty when no schema is
+    /// available (a non-Claude-Code client); callers fall back to their own defaults.
+    /// </summary>
+    IReadOnlyList<HookCommandVariantInfo> KnownCommandTypes { get; }
+
     /// <summary>All hooks across all event kinds.</summary>
     /// <remarks>
     /// Reads from the merged effective view across all loaded scopes. For the

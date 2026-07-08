@@ -24,7 +24,7 @@
           "supports1m": { "type": "boolean" },
           "supportedEffortLevels": {
             "type": "array",
-            "items": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+            "items": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max", "ultracode"] },
             "uniqueItems": true
           },
           "defaultEffortLevel": {
@@ -46,7 +46,7 @@
         "additionalProperties": false,
         "required": ["id", "order", "persists"],
         "properties": {
-          "id": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+          "id": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max", "ultracode"] },
           "order": { "type": "integer", "minimum": 0 },
           "persists": { "type": "boolean" }
         }

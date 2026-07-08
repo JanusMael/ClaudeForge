@@ -119,4 +119,47 @@ public sealed class GroupTabCustomizerTests
                 $"Contributed tab '{id}' must bind to the shared PermissionsEditorViewModel.");
         }
     }
+
+    [TestMethod]
+    public void Customize_HooksGroup_InsertsFlowTabAfterProperties_AndWiresLink()
+    {
+        List<GroupTab> tabs = SeedBuiltIns();
+        HooksEditorViewModel hooks = new(new SchemaNode("hooks", "hooks"), ConfigScope.User);
+        string? navigated = null;
+
+        ClaudeGroupTabCustomizer.Instance.Customize(
+            ClaudeGroupTabCustomizer.HooksGroupName, tabs, [hooks], id => navigated = id);
+
+        // Flow sits right after Properties, before Effective/JSON.
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                GroupTab.PropertiesId,
+                ClaudeGroupTabCustomizer.HooksFlowId,
+                GroupTab.EffectiveId,
+                GroupTab.JsonId,
+            },
+            tabs.Select(t => t.Id).ToList());
+
+        GroupTab flow = tabs.Single(t => t.Id == ClaudeGroupTabCustomizer.HooksFlowId);
+        Assert.AreSame(hooks, flow.Content, "The Flow tab binds to the hooks editor VM.");
+        Assert.IsTrue(hooks.HasFlowTab, "The Properties-tab 'View flow diagram' link is enabled.");
+
+        // The wired link invokes the supplied SelectTab with the Flow tab id.
+        hooks.OpenFlowCommand.Execute(null);
+        Assert.AreEqual(ClaudeGroupTabCustomizer.HooksFlowId, navigated);
+    }
+
+    [TestMethod]
+    public void Customize_HooksGroup_NoEditor_LeavesBuiltInsUnchanged()
+    {
+        List<GroupTab> tabs = SeedBuiltIns();
+
+        ClaudeGroupTabCustomizer.Instance.Customize(
+            ClaudeGroupTabCustomizer.HooksGroupName, tabs, []);
+
+        CollectionAssert.AreEqual(
+            new[] { GroupTab.PropertiesId, GroupTab.EffectiveId, GroupTab.JsonId },
+            tabs.Select(t => t.Id).ToList());
+    }
 }

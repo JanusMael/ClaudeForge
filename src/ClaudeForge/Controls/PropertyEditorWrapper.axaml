@@ -119,6 +119,18 @@
                                    AutomationProperties.HelpText="{Binding Description}" />
                     </Border>
 
+                    <!-- Optional section-level action to the right of the name pill
+                         (e.g. Hooks' "View flow diagram"). Compiled-bound to the base
+                         VM's HeaderAction* slot so every editor type resolves it;
+                         hidden when the editor sets no HeaderActionText. -->
+                    <HyperlinkButton Content="{Binding HeaderActionText}"
+                                     Command="{Binding HeaderActionCommand}"
+                                     IsVisible="{Binding HeaderActionText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                     VerticalAlignment="Center"
+                                     Padding="6,0"
+                                     FontSize="12"
+                                     AutomationProperties.Name="{Binding HeaderActionText}" />
+
                     <!-- Scope badge - only shown when a value exists at some scope.
                          ToolTip is set on BOTH the Border (covers the padding/fill area)
                          and the inner TextBlock (covers the text area) so the entire

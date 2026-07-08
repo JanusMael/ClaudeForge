@@ -22,8 +22,8 @@ public static class PermissionTools
     /// </summary>
     public static readonly IReadOnlyList<string> Names =
     [
-        "Agent", "Bash", "Edit", "ExitPlanMode", "Glob", "Grep", "KillShell", "LSP",
-        "Monitor", "NotebookEdit", "PowerShell", "Read", "Skill", "TaskCreate", "TaskGet",
+        "Agent", "Bash", "Cd", "Edit", "ExitPlanMode", "Glob", "Grep", "KillShell", "LSP",
+        "Monitor", "MultiEdit", "NotebookEdit", "PowerShell", "Read", "Skill", "TaskCreate", "TaskGet",
         "TaskList", "TaskOutput", "TaskStop", "TaskUpdate", "TodoWrite", "ToolSearch",
         "WebFetch", "WebSearch", "Write",
     ];

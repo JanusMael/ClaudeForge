@@ -1691,6 +1691,26 @@ Abbrechen — das Fenster geöffnet lassen.</value>
     <value>Eigenschaften</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>Ablauf</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>Ablaufdiagramm anzeigen</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>Verkleinern</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>Vergrößern</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>Breite anpassen</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
+  </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ Eigenschaftsfilter löschen</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
@@ -2767,5 +2787,8 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
   </data>
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>Aufwand '{0}' wird vom aktuellen Modell nicht unterstützt.</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>Diese Hook-Ereignisse werden vom aktuellen Schema nicht erkannt (möglicherweise veraltet oder falsch geschrieben) und bleiben unverändert erhalten: {0}</value>
   </data>
 </root>
