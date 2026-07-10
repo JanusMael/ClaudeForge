@@ -6,6 +6,7 @@
              xmlns:md="https://github.com/whistyun/Markdown.Avalonia.Tight"
              xmlns:mdc="clr-namespace:Markdown.Avalonia.Controls;assembly=Markdown.Avalonia"
              xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.MemoryEditorView"
              x:DataType="vm:MemoryEditorViewModel">
 
@@ -51,7 +52,8 @@
             </Border>
 
             <!-- Code section body — TabControl with two tabs. -->
-            <TabControl IsVisible="{Binding HasCodeMemory}">
+            <TabControl IsVisible="{Binding HasCodeMemory}"
+                        SelectedIndex="{Binding SelectedMemoryTabIndex, Mode=TwoWay}">
 
                 <!-- ── Tier 1 — User Memory (read-only inventory) ────────── -->
                 <TabItem Header="{x:Static loc:Strings.HeaderTabUserMemory}">
@@ -189,13 +191,13 @@
                                          control.  Open-in-Editor is the actual edit path. -->
                                     <Button DockPanel.Dock="Left"
                                             Classes="back-button"
-                                            Content="{x:Static loc:Strings.ButtonCloseViewer}"
+                                            Content="{x:Static loc:Strings.ButtonBack}"
                                             Command="{Binding CloseViewerCommand}"
                                             FontWeight="SemiBold"
                                             FontSize="11"
                                             Padding="10,4"
                                             Margin="0,0,8,0"
-                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCloseViewer}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.ButtonBack}"
                                             VerticalAlignment="Center" />
                                     <!-- Right-aligned action group: Open in editor + Copy markdown.
                                          Open in editor uses the registered file association
@@ -235,333 +237,8 @@
                                     BorderThickness="1,0,1,1"
                                     Padding="12"
                                     CornerRadius="0,0,4,4">
-                                <!-- Markdown viewer powered by Markdown.Avalonia
-                                     (12.0.0-a3, prerelease for Avalonia 12).
-                                     MarkdownStyleName="GithubLike" picks the
-                                     package's GitHub-flavored typography +
-                                     spacing.  The Styles block below overrides
-                                     specific colors that would otherwise blend
-                                     into our Fluent light/dark backgrounds —
-                                     GithubLike assumes a white page, so on
-                                     dark theme its near-black foreground +
-                                     light-grey code-block background would be
-                                     unreadable.  Each Setter binds to a
-                                     DynamicResource Fluent token so the
-                                     palette tracks the active theme.
-
-                                     Selectors target ctxt:CTextBlock with the
-                                     class names Markdown.Avalonia attaches at
-                                     render time (Heading1Class / CodeBlockClass /
-                                     BlockquoteClass / etc.) — see the embedded
-                                     Markdown.Avalonia.Tight DLL strings dump
-                                     for the canonical class list.  Selection /
-                                     copy keep working — MarkdownScrollViewer
-                                     uses SelectableTextBlock under the hood. -->
-                                <!-- Foreground set directly on the control so it
-                                     INHERITS to descendant CTextBlocks even if a
-                                     particular Style override doesn't take effect.
-                                     This is the dark-theme safety net: GithubLike
-                                     hardcodes a near-black body color which becomes
-                                     invisible on the Fluent dark base-low background.
-                                     Setting Foreground here propagates the Fluent
-                                     base-high color to anything the Styles below
-                                     don't reach.
-
-                                     Per-class Style overrides match GithubLike's
-                                     own selector specificity (the package sets
-                                     Foreground on Heading1..6 / CodeBlock /
-                                     Blockquote individually with class selectors;
-                                     a broader `ctxt|CTextBlock` selector loses to
-                                     those, which is why the first iteration left
-                                     dark-theme text unreadable). Repeating each
-                                     class explicitly puts our override at the
-                                     same specificity tier, and "later style wins"
-                                     resolves it in our favor. -->
-                                <!-- Markdown viewer: switched from MarkdownStyleName="GithubLike"
-                                     to "FluentTheme" after a smoke session showed the GithubLike
-                                     overrides couldn't reliably win Avalonia 12's style cascade
-                                     (the package loads its MarkdownStyle styles via a path that
-                                     evaluates after our local <Styles> in many cases, defeating
-                                     same-specificity source-order resolution).  Concrete failures
-                                     under GithubLike + overrides:
-                                       - Dark theme H2/H3/etc still rendered as #ff000000 black.
-                                       - Code-block body invisible because the SyntaxHigh package
-                                         only ships theme-appendix axaml for FluentTheme /
-                                         FluentAvalonia / DefaultTheme — no GithubLike variant —
-                                         so AvaloniaEdit's SyntaxHighlighting setter never fires.
-
-                                     FluentTheme is theme-aware end-to-end out of the box: every
-                                     foreground / background routes through Fluent tokens via the
-                                     package's mde:Alpha / mde:Multiply markup extensions, and its
-                                     matching SyntaxHigh appendix auto-loads (giving us correct
-                                     code-block rendering with no overrides).
-
-                                     Trade-off: we lose GithubLike's heavier H1 (28pt UltraBold)
-                                     and the white/grey table striping aesthetic.  FluentTheme
-                                     uses lighter, smaller headers consistent with WinUI 3 and
-                                     theme-tracking tints throughout — which is closer to the
-                                     rest of this app's UI anyway.
-
-                                     if the
-                                     full GithubLike typography aesthetic is wanted (UltraBold
-                                     headers, heavier H1, distinct white/grey table striping),
-                                     the route is to author a full Styles collection (typography
-                                     setters from GithubLike, theme-aware Foreground / Background
-                                     setters via Fluent tokens) and assign it to the package's
-                                     MarkdownStyle property (NOT MarkdownStyleName).  That bypasses
-                                     the package's auto-load entirely so we own the cascade.
-                                     Probably 60-80 lines of XAML — track separately when the
-                                     aesthetic gap becomes a real friction. -->
-                                <!-- Markdown viewer with FULL CUSTOM Styles assigned via the
-                                     package's MarkdownStyle property — bypasses MarkdownStyleName
-                                     entirely so the package's auto-load doesn't compete with
-                                     our cascade.  Two prior approaches failed:
-
-                                       (a) MarkdownStyleName="GithubLike" + local override Styles
-                                           — package loaded its styles AFTER ours, defeating
-                                           same-specificity source-order resolution.
-                                       (b) MarkdownStyleName="FluentTheme" + local override Styles
-                                           — same problem, plus FluentTheme's setters use mde:Alpha
-                                           / mde:DivideColor markup extensions over Fluent tokens
-                                           that don't always resolve in our app, leaving values
-                                           unset and falling back to defaults (= near-black, =
-                                           invisible on dark theme).
-
-                                     This block defines every style the viewer needs from scratch,
-                                     bound to DynamicResource App-owned tokens defined per theme
-                                     variant in App.axaml (AppPrimaryTextBrush /
-                                     AppCodeBlockBackgroundBrush / AppCodeBlockBorderBrush /
-                                     AppPanelBorderBrush / AppLinkBrush).  Semi.Avalonia does
-                                     NOT reliably define the SystemControl* family (per the
-                                     hazard documented in App.axaml comments — Semi maps that
-                                     family to dark-ish in BOTH theme variants), so app-owned
-                                     tokens are the only reliable cross-theme path.
-
-                                     CAVEAT: these Style setters are dead code in practice
-                                     today.  The package writes Foreground inline at
-                                     LocalValue priority during render, beating any Style.
-                                     The code-behind walk-the-tree in MemoryEditorView.axaml.cs
-                                     is what actually colors the rendered output.  Keeping
-                                     these setters here for two reasons:
-                                       (1) The non-Foreground properties (FontSize, FontWeight,
-                                           Margin, Padding, CornerRadius, etc.) DO land —
-                                           those drive the visible typography hierarchy.
-                                       (2) If a future Markdown.Avalonia release stops writing
-                                           Foreground inline, these styles take effect and
-                                           SHOULD render correctly under Semi.
-
-                                     Selectors mirror Markdown.Avalonia's emitted element tree:
-                                       - .Markdown_Avalonia_MarkdownViewer is the ancestor class
-                                         applied to every CTextBlock / Border / Grid / TextBlock
-                                         the package emits.
-                                       - ctxt|CTextBlock.HeadingN / CodeBlock / ListMarker / Note /
-                                         Paragraph for typed inline content.
-                                       - Border.CodeBlock / Blockquote / Table / TableHeader /
-                                         OddTableRow / EvenTableRow for typed containers.
-
-                                     SyntaxHigh / AvaloniaEdit code-body rendering was
-                                     dropped in favour of Markdown.Avalonia.Tight (the minimal
-                                     package without SyntaxHigh) — fenced code blocks now
-                                     render as TextBlock.CodeBlock for both no-language and
-                                     language-tagged fences.  Trade-off: lose syntax
-                                     highlighting + per-block Copy button + language watermark.
-                                     Reasoning: AvaloniaEdit's Fluent theme XAML referenced an
-                                     unbounded set of Fluent typography tokens via StaticResource
-                                     (hard-fail), and Semi.Avalonia doesn't define them — would
-                                     have required defining each one as it surfaced (see commit
-                                     log around 2026-05-05 16:30 for the cascade).  Code blocks
-                                     still render readable monospace via the code-behind walk
-                                     handling TextBlock + Border.CodeBlock. -->
-                                <md:MarkdownScrollViewer x:Name="MarkdownViewer"
-                                                         Markdown="{Binding ViewerContent}"
-                                                         TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}"
-                                                         MaxHeight="600">
-                                    <md:MarkdownScrollViewer.MarkdownStyle>
-                                        <Styles>
-                                            <!-- Body / paragraph defaults — also the inheritance
-                                                 source for every element these styles don't reach. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="14" />
-                                                <Setter Property="Margin" Value="0,5" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Paragraph">
-                                                <Setter Property="Margin" Value="0,7,0,0" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="14" />
-                                            </Style>
-
-                                            <!-- Headings — sized in a 28/22/18/15/13/13 ladder so
-                                                 the section hierarchy reads at a glance, all forced
-                                                 to the high-contrast theme foreground. -->
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading1">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="28" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                                <Setter Property="Margin" Value="0,15,0,5" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading2">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="22" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                                <Setter Property="Margin" Value="0,12,0,4" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading3">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="18" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                <Setter Property="Margin" Value="0,10,0,4" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading4">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="15" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                <Setter Property="Margin" Value="0,8,0,3" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading5">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="13" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading6">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontSize" Value="13" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </Style>
-
-                                            <!-- Lists — Grid.List sets indentation; ListMarker is
-                                                 the per-item bullet/number prefix. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.List">
-                                                <Setter Property="Margin" Value="20,0,0,0" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.ListMarker">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="Margin" Value="0,5,5,5" />
-                                            </Style>
-
-                                            <!-- Inline `code` — theme-aware bg + fg, monospace. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CCode">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
-                                            </Style>
-
-                                            <!-- Hyperlinks — high-contrast Fluent accent that
-                                                 reads on both themes. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CHyperlink">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppLinkBrush}" />
-                                                <Setter Property="IsUnderline" Value="True" />
-                                            </Style>
-
-                                            <!-- Code-block container — outline + padding give the
-                                                 block visible boundaries on either theme. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.CodeBlock">
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
-                                                <Setter Property="BorderBrush"
-                                                        Value="{DynamicResource AppCodeBlockBorderBrush}" />
-                                                <Setter Property="BorderThickness" Value="1" />
-                                                <Setter Property="CornerRadius" Value="4" />
-                                                <Setter Property="Padding" Value="8" />
-                                                <Setter Property="Margin" Value="0,4" />
-                                            </Style>
-                                            <!-- Plain (no-language) fenced code blocks. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock.CodeBlock">
-                                                <Setter Property="Foreground"
-                                                        Value="{DynamicResource AppPrimaryTextBrush}" />
-                                                <Setter Property="FontFamily"
-                                                        Value="Consolas, Menlo, monospace" />
-                                                <Setter Property="FontSize" Value="12" />
-                                            </Style>
-                                            <!-- Tables — outer Border, per-cell Border, header bg,
-                                                 alternating row striping. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Table">
-                                                <Setter Property="Margin" Value="5" />
-                                                <Setter Property="BorderThickness" Value="0,0,1,1" />
-                                                <Setter Property="BorderBrush"
-                                                        Value="{DynamicResource AppPanelBorderBrush}" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TightTable">
-                                                <Setter Property="HorizontalAlignment" Value="Left" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table > Border">
-                                                <Setter Property="Margin" Value="0" />
-                                                <Setter Property="BorderThickness" Value="1,1,0,0" />
-                                                <Setter Property="BorderBrush"
-                                                        Value="{DynamicResource AppPanelBorderBrush}" />
-                                                <Setter Property="Padding" Value="6,3" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table">
-                                                <Setter Property="mdc:AutoScaleColumnDefinitions.IsEnabled"
-                                                        Value="True" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader">
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
-                                            </Style>
-                                            <Style
-                                                Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader ctxt|CTextBlock">
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.OddTableRow">
-                                                <Setter Property="Background" Value="Transparent" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.EvenTableRow">
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
-                                            </Style>
-
-                                            <!-- Blockquote stripe + body container. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Blockquote">
-                                                <Setter Property="BorderBrush"
-                                                        Value="{DynamicResource AppPanelBorderBrush}" />
-                                                <Setter Property="BorderThickness" Value="3,0,0,0" />
-                                                <Setter Property="Padding" Value="10,2" />
-                                            </Style>
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer StackPanel.Blockquote">
-                                                <Setter Property="Margin" Value="10,5" />
-                                            </Style>
-
-                                            <!-- Note callout. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Note">
-                                                <Setter Property="Margin" Value="5,0,5,0" />
-                                                <Setter Property="Padding" Value="10,5" />
-                                                <Setter Property="BorderBrush"
-                                                        Value="{DynamicResource AppPanelBorderBrush}" />
-                                                <Setter Property="BorderThickness" Value="1" />
-                                                <Setter Property="CornerRadius" Value="4" />
-                                                <Setter Property="Background"
-                                                        Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
-                                            </Style>
-
-                                            <!-- Horizontal rule. -->
-                                            <Style Selector=".Markdown_Avalonia_MarkdownViewer mdc|Rule">
-                                                <Setter Property="Margin" Value="0,8" />
-                                            </Style>
-                                        </Styles>
-                                    </md:MarkdownScrollViewer.MarkdownStyle>
-                                </md:MarkdownScrollViewer>
+                                <!-- Rendered markdown body via the shared MarkdownBodyView control (Controls/MarkdownBodyView.axaml): the ~185-line MarkdownStyle + the dark-theme restyle tree-walk live there, shared with the Agents and Skills page. MaxHeight caps the height so it scrolls internally. -->
+                                <ctrl:MarkdownBodyView Markdown="{Binding ViewerContent}" MaxHeight="600" />
                             </Border>
                         </DockPanel>
                     </Grid>

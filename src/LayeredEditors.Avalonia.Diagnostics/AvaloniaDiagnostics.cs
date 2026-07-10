@@ -52,6 +52,7 @@ public static class AvaloniaDiagnostics
 {
     private static BucketedRollingFileSink? _fileSink;
     private static AvaloniaDiagnosticsOptions? _options;
+    private static LiveTailWindow? _eventWindow;
 
     /// <summary>
     /// Application name supplied via
@@ -173,12 +174,21 @@ public static class AvaloniaDiagnostics
 
         AvaloniaDiagnosticsOptions options = _options;
 
+        // Build the optional host-fed event-tail window first so its Toggle can be
+        // wired as the F12 window's header launch link below.
+        if (options.EnableEventTailWindow)
+        {
+            _eventWindow = new LiveTailWindow(options.EventTailWindowTitle ?? "Live Events");
+        }
+
         if (options.EnableLiveLogWindow)
         {
             LiveLogWindow.Initialize(
                 fileSink: _fileSink,
                 logsDirectory: options.LogsDirectory,
-                windowTitle: options.LiveLogWindowTitle);
+                windowTitle: options.LiveLogWindowTitle,
+                extraActionLabel: _eventWindow is null ? null : options.EventTailLaunchLabel ?? "Events ▸",
+                extraAction: _eventWindow is null ? null : _eventWindow.Toggle);
         }
 
         if (options.EnableBindingValidationLogger)
@@ -198,6 +208,28 @@ public static class AvaloniaDiagnostics
     public static void ToggleLiveLogWindow()
     {
         LiveLogWindow.ToggleWindow();
+    }
+
+    /// <summary>
+    /// Appends one line to the optional event-tail window (enabled via
+    /// <see cref="AvaloniaDiagnosticsOptions.EnableEventTailWindow"/>). Thread-safe,
+    /// non-blocking, and a no-op when the window was not enabled. Independent of the
+    /// Serilog pipeline — use it for host-domain events (e.g. file-watcher hits) that
+    /// should stream live without polluting the log.
+    /// </summary>
+    public static void EnqueueEvent(string line)
+    {
+        _eventWindow?.Enqueue(line);
+    }
+
+    /// <summary>
+    /// Shows the event-tail window if hidden; hides it if visible. Must be called
+    /// from the UI thread. No-op when the window was not enabled. The window is also
+    /// reachable from the F12 log window's header launch link.
+    /// </summary>
+    public static void ToggleEventTailWindow()
+    {
+        _eventWindow?.Toggle();
     }
 
     /// <summary>

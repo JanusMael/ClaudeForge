@@ -102,7 +102,7 @@
             </DockPanel>
         </Border>
 
-        <TabControl>
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- =========================== BACKUP TAB =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabBackup}">

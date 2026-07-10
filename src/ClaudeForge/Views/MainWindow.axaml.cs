@@ -267,6 +267,16 @@ public partial class MainWindow : Window
 
     private async void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        // Shift+F12 — toggle the live config-file-events window (the second live-tail
+        // window, fed by ConfigFileWatcher). Checked BEFORE plain F12 so the Shift
+        // chord isn't swallowed by the modifier-less F12 branch below.
+        if (e.Key == Key.F12 && e.KeyModifiers == KeyModifiers.Shift)
+        {
+            AvaloniaDiagnostics.ToggleEventTailWindow();
+            e.Handled = true;
+            return;
+        }
+
         // F12 — toggle the floating live-log window (always available; ships in Release).
         // Placed here alongside Ctrl+S following the established codebase convention of
         // handling keyboard shortcuts in code-behind rather than XAML KeyBindings.

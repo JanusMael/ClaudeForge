@@ -56,6 +56,16 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(FilteredRows))]
     private string _filterText;
 
+    // Which tab (Properties / Raw JSON) is shown. VM-driven so the change is
+    // observable + logged, not view-only. 0=Properties, 1=Json.
+    [ObservableProperty] private int _selectedTabIndex;
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        string tab = value switch { 0 => "Properties", 1 => "Json", _ => "?" };
+        Log.Information("[Effective.Tab] index={Index} tab={Tab}", value, tab);
+    }
+
     public List<EffectivePropertyRow> PropertyRows { get; private set; }
 
     public IEnumerable<EffectivePropertyRow> FilteredRows =>

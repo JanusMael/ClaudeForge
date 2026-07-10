@@ -76,7 +76,7 @@
         </Border>
 
         <!-- Tab view: flat table + raw JSON -->
-        <TabControl>
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- Property table -->
             <TabItem Header="{x:Static loc:Strings.TabProperties}">

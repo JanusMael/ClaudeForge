@@ -257,10 +257,21 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
                                          .ConfigureAwait(true);
     }
 
+    // Which Memory tab (User Memory / Footprint) is shown. VM-driven + logged
+    // (OnSelectedMemoryTabIndexChanged) rather than view-only. 0=User Memory, 1=Footprint.
+    [ObservableProperty] private int _selectedMemoryTabIndex;
+
+    partial void OnSelectedMemoryTabIndexChanged(int value)
+    {
+        string tab = value switch { 0 => "UserMemory", 1 => "Footprint", _ => "?" };
+        Log.Information("[Memory.Tab] index={Index} tab={Tab}", value, tab);
+    }
+
     /// <summary>Close the viewer (return to the inventory list).</summary>
     [RelayCommand]
     public void CloseViewer()
     {
+        Log.Information("[Memory.Command] action=Back");
         SelectedFile = null;
         ViewerContent = null;
     }

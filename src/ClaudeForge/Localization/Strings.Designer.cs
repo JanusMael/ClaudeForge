@@ -743,14 +743,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized string similar to Back to list.
-        /// </summary>
-        public static string ButtonCloseViewer {
-            get {
-                return ResourceManager.GetString("ButtonCloseViewer", resourceCulture);
-            }
-        }
         
         /// <summary>
         ///   Looks up a localized string similar to Continue without saving.

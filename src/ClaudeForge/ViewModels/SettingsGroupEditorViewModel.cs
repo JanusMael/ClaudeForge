@@ -166,6 +166,19 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// </summary>
     [ObservableProperty] private GroupTab? _selectedTab;
 
+    // Set true only around RebuildTabs' programmatic re-selection so the tab-change
+    // trace in OnSelectedTabChanged logs USER tab clicks (and deep-link SelectTab),
+    // not the rebuilds that fire on every save / reload / scope change.
+    private bool _suppressTabLog;
+
+    partial void OnSelectedTabChanged(GroupTab? value)
+    {
+        if (value is not null && !_suppressTabLog)
+        {
+            Log.Information("[Editor.Tab] group={Group} tab={Tab}", GroupName, value.Id);
+        }
+    }
+
     /// <summary>
     /// Select the tab with <paramref name="tabId"/> when present; no-op otherwise.
     /// Used by deep-link navigation to land on a specific tab (e.g. Overview, so
@@ -935,9 +948,13 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         // Initial selection (when this is NOT a deep-link, which overrides via
         // SelectTab afterward): the remembered tab → the customizer's default tab
         // → the first tab.
+        // Programmatic re-selection — suppress the tab-change trace (this is a
+        // rebuild, not a user click).
+        _suppressTabLog = true;
         SelectedTab = Tabs.FirstOrDefault(t => t.Id == priorId)
                       ?? Tabs.FirstOrDefault(t => t.IsDefaultTab)
                       ?? Tabs.FirstOrDefault();
+        _suppressTabLog = false;
     }
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)

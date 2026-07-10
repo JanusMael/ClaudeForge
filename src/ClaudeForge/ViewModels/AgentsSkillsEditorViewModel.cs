@@ -151,6 +151,23 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// <summary>The markdown body (everything after the front-matter) of the selected file.</summary>
     [ObservableProperty] private string? _viewerBody;
 
+    // Which segment (Sub-agents / Skills / Slash Commands) the TabControl shows.
+    // VM-driven so the change is observable + logged, not view-only. 0=Sub-agents,
+    // 1=Skills, 2=Slash Commands.
+    [ObservableProperty] private int _selectedSegmentIndex;
+
+    partial void OnSelectedSegmentIndexChanged(int value)
+    {
+        string segment = value switch
+        {
+            0 => "Subagents",
+            1 => "Skills",
+            2 => "SlashCommands",
+            _ => "?",
+        };
+        Log.Information("[AgentsSkills.Tab] index={Index} segment={Segment}", value, segment);
+    }
+
     // Structured front-matter card fields — populated on selection.  Kept as
     // plain strings + visibility flags so the read-only card needs no
     // per-kind View switching beyond IsVisible bindings.
@@ -531,6 +548,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     [RelayCommand]
     public void CloseViewer()
     {
+        Log.Information("[AgentsSkills.Command] action=Back");
         SelectedArtifact = null;
         ViewerBody = null;
         _currentFrontMatter = null;
@@ -564,6 +582,29 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
         _shellLauncher?.OpenInDefaultEditor(path);
         Log.Information("[AgentsSkills.Command] action=OpenExternally");
+    }
+
+    /// <summary>
+    /// Raised when <see cref="CopyMarkdownCommand"/> runs; the view copies the
+    /// payload to the clipboard (clipboard access needs <c>TopLevel</c>, a view
+    /// concern). Mirrors <c>MemoryEditorViewModel.CopyMarkdownRequested</c>.
+    /// </summary>
+    public event EventHandler<string>? CopyMarkdownRequested;
+
+    /// <summary>
+    /// Copies the full artifact file (front-matter + body) to the clipboard, so a
+    /// paste is a self-contained agent/skill/command definition — matching what
+    /// "Open in editor" opens. Recomposes from the current front-matter (which
+    /// already carries the body); falls back to the raw body when there is none.
+    /// </summary>
+    [RelayCommand]
+    public void CopyMarkdown()
+    {
+        string content = _currentFrontMatter is { Present: true } fm
+            ? YamlFrontMatter.Compose(fm)
+            : ViewerBody ?? string.Empty;
+        CopyMarkdownRequested?.Invoke(this, content);
+        Log.Information("[AgentsSkills.Command] action=CopyMarkdown");
     }
 
     /// <summary>

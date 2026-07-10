@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.AgentsSkillsEditorView"
              x:DataType="vm:AgentsSkillsEditorViewModel">
 
@@ -164,7 +165,8 @@
                  [headers + rows] collection, in a ScrollViewer.  The bounded
                  viewport lets the VirtualizingStackPanel materialise only the
                  visible rows, so long plugin lists stay responsive. -->
-            <TabControl Margin="16,0,16,16">
+            <TabControl Margin="16,0,16,16"
+                        SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}">
                 <TabItem Header="{x:Static loc:Strings.TabAgents}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding AgentItems}" Margin="0,8,0,0">
@@ -210,9 +212,13 @@
                  (read-only) rows can't enter edit mode. -->
             <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,8">
                 <Button DockPanel.Dock="Left"
+                        Classes="back-button"
                         Content="{x:Static loc:Strings.ButtonBack}"
                         Command="{Binding CloseViewerCommand}"
+                        FontWeight="SemiBold"
+                        FontSize="11"
                         Padding="10,4"
+                        VerticalAlignment="Center"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonBack}" />
 
                 <!-- View-mode actions -->
@@ -268,6 +274,11 @@
                         CommandParameter="{Binding SelectedArtifactPath}"
                         Padding="10,4" Margin="4,0,0,0"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonOpenInEditor}" />
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonCopyMarkdown}"
+                        Command="{Binding CopyMarkdownCommand}"
+                        Padding="10,4" Margin="4,0,0,0"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonCopyMarkdown}" />
             </DockPanel>
 
             <!-- Transient post-save status line. -->
@@ -276,6 +287,13 @@
                        IsVisible="{Binding LastSaveMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                        Foreground="{DynamicResource AppSecondaryTextBrush}"
                        FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+
+            <!-- Front-matter card(s) + body share ONE scroll region so the front-matter
+                 scrolls away with the markdown (the body no longer scrolls internally —
+                 the MarkdownBodyView below sets VerticalScrollBarVisibility="Disabled").
+                 The pinned toolbar + save line above stay put. -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
 
             <!-- Read-only structured front-matter card (view mode). -->
             <Border DockPanel.Dock="Top"
@@ -386,23 +404,26 @@
                 </StackPanel>
             </Border>
 
-            <!-- Body — read-only (view mode) or editable (edit mode).  Plain
-                 TextBox, not a rendered-markdown viewer: see the lead comment. -->
-            <TextBox Text="{Binding ViewerBody}"
-                     IsVisible="{Binding !IsEditing}"
-                     IsReadOnly="True"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
-                     VerticalAlignment="Stretch"
-                     AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />
+            <!-- Body (view mode) — rendered markdown via the shared MarkdownBodyView
+                 control (the body is frontmatter-stripped markdown). Edit mode still
+                 shows the raw TextBox below, so "what you edit" stays honest; the
+                 toolbar "Copy markdown" button copies the full file. -->
+            <ctrl:MarkdownBodyView Markdown="{Binding ViewerBody}"
+                                   IsVisible="{Binding !IsEditing}"
+                                   VerticalScrollBarVisibility="Disabled"
+                                   VerticalAlignment="Stretch"
+                                   AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />
             <TextBox Text="{Binding EditBody}"
                      IsVisible="{Binding IsEditing}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
                      VerticalAlignment="Stretch"
+                     MinHeight="300"
                      AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />
+
+                </StackPanel>
+            </ScrollViewer>
         </DockPanel>
     </Grid>
 
