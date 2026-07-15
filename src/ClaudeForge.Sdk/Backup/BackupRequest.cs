@@ -1,3 +1,5 @@
+using Bennewitz.Ninja.ClaudeForge.Core.Backup;
+
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 
 /// <summary>

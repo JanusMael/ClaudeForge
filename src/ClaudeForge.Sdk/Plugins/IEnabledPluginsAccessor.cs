@@ -26,6 +26,10 @@ public interface IEnabledPluginsAccessor
 
     /// <summary>Returns the plugin entry registered as <paramref name="pluginRef"/>,
     /// or <see langword="null"/> when no entry exists.</summary>
+    /// <remarks>When the on-disk value is the schema's array-of-strings form, the
+    /// returned <see cref="EnabledPlugin"/> has <see cref="EnabledPlugin.Components"/>
+    /// populated and <see cref="EnabledPlugin.Enabled"/> = <see langword="true"/>
+    /// (same projection as <see cref="All"/> / <see cref="GetAt"/>).</remarks>
     EnabledPlugin? Get(string pluginRef);
 
     /// <summary>Insert or replace a plugin entry by its <see cref="EnabledPlugin.PluginRef"/>.</summary>

@@ -5,14 +5,17 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
 using HookEvent = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookEvent;
-using Hooks_HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
 
-// Alias the SDK so ConfigScope is unambiguous and both HookCommandType
-// enums (editor's vs SDK's) can be reached without name clashes.
+// Alias the SDK HookEvent so it's reachable without fully-qualifying. The
+// editor's HookEntry now uses the SDK HookCommandType directly — the former
+// editor-local duplicate enum was merged into the SDK.
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -22,48 +25,47 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// </summary>
 public partial class HooksEditorViewModel : PropertyEditorViewModel
 {
-    // The hook event types Claude Code accepts. Mirrors exactly the keys
-    // declared under "hooks.properties" in
-    // src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json — the
-    // schema sets additionalProperties:false on /hooks, so any name not
-    // listed here is rejected on save with a confusing
-    // "All values fail against the false schema" validator message.
-    //
-    // Filtering by tool is done via the
-    // "matcher" field on PreToolUse/PostToolUse, not by encoding the tool
-    // into the event name. Removing the bogus entries here closes the
-    // user-trap; the friendly-message translator in MainWindowViewModel
-    // catches any leftover references in legacy on-disk configs.
-    //
-    // Order: lifecycle (start/end/idle/compact), tool calls (Pre/Post),
-    // permission and elicitation flow, prompt and stop, sub-agents,
-    // worktrees, working-directory and file watchers, configuration,
-    // notifications. This is the order the editor's left rail renders
-    // them in — keep it stable so the user's muscle memory holds.
-    public static readonly IReadOnlyList<string> KnownEventTypes =
-    [
-        "SessionStart", "SessionEnd",
-        "PreCompact", "PostCompact",
-        "PreToolUse", "PostToolUse", "PostToolUseFailure",
-        "PermissionRequest",
-        "Elicitation", "ElicitationResult",
-        "UserPromptSubmit",
-        "Stop",
-        "SubagentStart", "SubagentStop",
-        "TeammateIdle", "TaskCompleted",
-        "WorktreeCreate", "WorktreeRemove",
-        "CwdChanged", "FileChanged",
-        "ConfigChange",
-        "InstructionsLoaded",
-        "Setup",
-        "Notification",
-    ];
-
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces / McpServers
     // editor migrations.
     private readonly IClaudeConfigClient? _client;
+
+    // The hook events the schema currently accepts, derived FRESH from the
+    // schema node this editor was built with (its hooks.properties children).
+    // Empty when the schema doesn't expose them (offline/minimal schema, or a
+    // bare test node) — HookEventCatalog then falls back to its curated order.
+    // Replaces the former hardcoded KnownEventTypes mirror: a schema refresh
+    // that adds or removes an event now flows through with no code change.
+    private readonly IReadOnlyList<string> _schemaEventNames;
+
+    // Events shown proactively in the left rail: the schema set above ordered by
+    // HookEventCatalog's curated overlay (or the curated order itself as fallback).
+    private readonly IReadOnlyList<string> _orderedEvents;
+
+    // Event name -> schema description (hooks.properties[name].description) for the
+    // left-rail hover tooltip + the detail-pane label. Empty for schema nodes that
+    // carry no descriptions (bare / offline).
+    private readonly IReadOnlyDictionary<string, string> _eventDescriptions;
+
+    // Type-picker infos threaded into every HookEventGroup → HookEntry so the Type
+    // ComboBox shows the SCHEMA's per-type help text ($defs.hookCommand.anyOf[*].description)
+    // instead of HookEntry's hardcoded fallback. Built once from the SDK's schema-derived
+    // KnownCommandTypes; falls back to HookEntry.DefaultCommandTypeInfos per type when the
+    // schema doesn't describe it (offline / no client). Replaces the former static mirror,
+    // mirroring how _eventDescriptions replaced the hardcoded event descriptions.
+    private readonly IReadOnlyList<HookCommandTypeInfo> _commandTypeInfos;
+
+    // Maps the editor's three picker values to their schema variant `type` discriminators.
+    // The schema also defines agent / mcp_tool variants, which the editor round-trips
+    // opaquely and does not offer in the picker, so they have no entry here.
+    private static readonly IReadOnlyDictionary<HookCommandType, string> PickerSchemaType =
+        new Dictionary<HookCommandType, string>
+        {
+            [HookCommandType.Command] = "command",
+            [HookCommandType.Prompt] = "prompt",
+            [HookCommandType.Url] = "http",
+        };
 
     public HooksEditorViewModel(SchemaNode schema, ConfigScope editingScope)
         : this(schema, editingScope, client: null)
@@ -78,11 +80,108 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
     {
         _client = client;
         EventGroups = [];
+
+        // Schema-driven event vocabulary — names AND descriptions. Prefer the SDK
+        // surface (client.Hooks.KnownEvents) when a client is present so the editor
+        // and headless SDK consumers share ONE source; fall back to deriving from
+        // the schema node this editor was built with (the same cached node the
+        // client would read) when there is no client — e.g. unit-test fixtures.
+        // _schemaEventNames stays sourced from the node for the unrecognized-event
+        // notice (empty → forgiving).
+        _schemaEventNames = schema.Properties.Select(p => p.Name).ToList();
+
+        IReadOnlyList<HookEventInfo> known = _client is not null
+            ? _client.Hooks.KnownEvents
+            : HookEventCatalog.ResolveOrder(
+                schema.Properties.Select(p => new HookEventInfo(p.Name, p.Description)).ToList());
+
+        _orderedEvents = known.Select(e => e.Name).ToList();
+        _eventDescriptions = known
+            .Where(e => !string.IsNullOrWhiteSpace(e.Description))
+            .GroupBy(e => e.Name, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First().Description!, StringComparer.Ordinal);
+
+        _commandTypeInfos = BuildCommandTypeInfos(_client);
+    }
+
+    /// <summary>
+    /// Build the Type-picker infos: start from the offline default list (fixed order
+    /// Command / Prompt / Url) and, when the SDK exposes the schema's command variants,
+    /// replace each item's description with the schema's — so the picker shows the
+    /// authoritative "Bash command hook" / "LLM prompt hook. See …" text and tracks a
+    /// schema refresh with no code change. Falls back to the hardcoded description per item
+    /// when the schema doesn't carry one (offline / no client). Mirrors how the event list
+    /// prefers the SDK's <c>KnownEvents</c> and degrades to the curated fallback.
+    /// </summary>
+    private static IReadOnlyList<HookCommandTypeInfo> BuildCommandTypeInfos(IClaudeConfigClient? client)
+    {
+        IReadOnlyList<HookCommandVariantInfo> variants = client?.Hooks.KnownCommandTypes ?? [];
+        if (variants.Count == 0)
+        {
+            return HookEntry.DefaultCommandTypeInfos;
+        }
+
+        Dictionary<string, string> descByType = variants
+            .Where(v => !string.IsNullOrWhiteSpace(v.Description))
+            .GroupBy(v => v.Type, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First().Description!, StringComparer.Ordinal);
+
+        return HookEntry.DefaultCommandTypeInfos
+            .Select(info =>
+                PickerSchemaType.TryGetValue(info.Value, out string? schemaType)
+                && descByType.TryGetValue(schemaType, out string? desc)
+                    ? info with { Description = desc }
+                    : info)
+            .ToList();
     }
 
     public ObservableCollection<HookEventGroup> EventGroups { get; }
 
     [ObservableProperty] private HookEventGroup? _selectedGroup;
+
+    /// <summary>
+    /// Non-null when the loaded config contains hook events the current schema no
+    /// longer recognises (deprecated or misspelled). They are kept as-is and still
+    /// saved; this banner tells the user why they look "unofficial". Complements
+    /// the save-time friendly message in <c>SchemaErrorMessages</c>.
+    /// </summary>
+    [ObservableProperty] private string? _unrecognizedEventsNotice;
+
+    // ── Flow-tab bridge ─────────────────────────────────────────────────────
+    // The Hooks group contributes a "Flow" tab (an SVG diagram) via
+    // ClaudeGroupTabCustomizer, which wires EnableFlowTab with a callback that
+    // selects that tab on the parent SettingsGroupEditorViewModel. This lets the
+    // Properties-tab "View flow diagram" hyperlink (bound to OpenFlowCommand)
+    // deep-link to the Flow tab without this editor holding a reference to the
+    // group VM.
+
+    /// <summary>
+    /// True once the parent group wired a Flow tab (see <see cref="EnableFlowTab"/>).
+    /// Gates the Properties-tab hyperlink's visibility.
+    /// </summary>
+    [ObservableProperty] private bool _hasFlowTab;
+
+    private Action? _showFlow;
+
+    /// <summary>
+    /// Wired by <see cref="ClaudeGroupTabCustomizer"/> when it contributes the Flow
+    /// tab; <paramref name="showFlow"/> navigates to it. Enables the Properties link.
+    /// </summary>
+    internal void EnableFlowTab(Action showFlow)
+    {
+        _showFlow = showFlow;
+        HasFlowTab = true;
+
+        // Surface the "View flow diagram" link in the property-name header row via the
+        // generic HeaderAction slot, so it sits right of the "Hooks" label (rendered by
+        // PropertyEditorWrapper) rather than inside this editor body.
+        HeaderActionText = Strings.LinkHookFlowDiagram;
+        HeaderActionCommand = OpenFlowCommand;
+    }
+
+    /// <summary>Navigate to the group's Flow tab. Bound to the Properties-tab hyperlink.</summary>
+    [RelayCommand]
+    private void OpenFlow() => _showFlow?.Invoke();
 
 
     public override JsonNode? ToJsonValue()
@@ -350,6 +449,11 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
         // reload, after a non-self-write workspace change).
         _baselineHooksValue = scopeValue?.DeepClone();
 
+        // Event names actually present in the user's config at this scope,
+        // collected during the build below and used to flag unrecognized /
+        // deprecated events (present on disk but not in the current schema).
+        List<string> configEventNames = [];
+
         if (_client is not null)
         {
             // SDK-backed read path. The accessor returns a
@@ -361,9 +465,9 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
             // then populate from the SDK snapshot, then append any
             // SDK-discovered event names that weren't in KnownEventTypes.
             Dictionary<string, HookEventGroup> groupsByName = new(StringComparer.Ordinal);
-            foreach (string name in KnownEventTypes)
+            foreach (string name in _orderedEvents)
             {
-                HookEventGroup g = new(name);
+                HookEventGroup g = new(name, DescriptionFor(name), _commandTypeInfos);
                 groupsByName[name] = g;
                 EventGroups.Add(g);
             }
@@ -372,9 +476,10 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
             IReadOnlyList<HookEvent> snapshot = _client.Hooks.EventsAt(sdkScope);
             foreach (HookEvent evt in snapshot)
             {
+                configEventNames.Add(evt.EventName);
                 if (!groupsByName.TryGetValue(evt.EventName, out HookEventGroup? group))
                 {
-                    group = new HookEventGroup(evt.EventName);
+                    group = new HookEventGroup(evt.EventName, DescriptionFor(evt.EventName), _commandTypeInfos);
                     groupsByName[evt.EventName] = group;
                     EventGroups.Add(group);
                 }
@@ -386,28 +491,41 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
         {
             // Legacy path — used by unit-test fixtures that construct the
             // editor without an SDK client.
-            // Build a group for every known event type
-            foreach (string eventName in KnownEventTypes)
+            // Build a group for every event the schema currently offers.
+            foreach (string eventName in _orderedEvents)
             {
                 JsonNode? node = scopeValue?[eventName];
                 HookEventGroup group = node != null
-                    ? HookEventGroup.FromJson(eventName, node)
-                    : new HookEventGroup(eventName);
+                    ? HookEventGroup.FromJson(eventName, node, DescriptionFor(eventName), _commandTypeInfos)
+                    : new HookEventGroup(eventName, DescriptionFor(eventName), _commandTypeInfos);
                 EventGroups.Add(group);
             }
 
-            // Also add any unknown event types present in the file
+            // Also add any event types present in the file that we did not
+            // pre-create above (unknown or deprecated) so nothing on disk is
+            // hidden from the user.
             if (scopeValue != null)
             {
                 foreach (KeyValuePair<string, JsonNode?> kv in scopeValue)
                 {
-                    if (!KnownEventTypes.Contains(kv.Key))
+                    configEventNames.Add(kv.Key);
+                    if (!_orderedEvents.Contains(kv.Key))
                     {
-                        EventGroups.Add(HookEventGroup.FromJson(kv.Key, kv.Value));
+                        EventGroups.Add(HookEventGroup.FromJson(kv.Key, kv.Value, DescriptionFor(kv.Key), _commandTypeInfos));
                     }
                 }
             }
         }
+
+        // Flag any events on disk the current schema no longer recognises
+        // (deprecated or misspelled). They are preserved and still saved; the
+        // banner just explains why they appear "unofficial". Skipped when the
+        // schema set is unknown (empty) — we can't judge, so we don't warn.
+        IReadOnlyList<string> unrecognized =
+            HookEventCatalog.UnrecognizedEvents(configEventNames, _schemaEventNames);
+        UnrecognizedEventsNotice = unrecognized.Count > 0
+            ? string.Format(Strings.LabelHooksUnrecognizedEventsFmt, string.Join(", ", unrecognized))
+            : null;
 
         // Subscribe to collection changes (add/remove of whole hooks) and to each
         // entry's property changes + nested Headers/AllowedEnvVars collections so
@@ -524,12 +642,16 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
     /// binding-time concerns (matcher/value validation, observable
     /// PropertyChanged subscriptions) that the immutable SDK record does not.
     /// </summary>
+    /// <summary>The schema description for an event, or <see langword="null"/> when the schema doesn't describe it.</summary>
+    private string? DescriptionFor(string eventName) =>
+        _eventDescriptions.TryGetValue(eventName, out string? d) ? d : null;
+
     private static HookEntry HookEntryFromSdk(HookEvent evt)
     {
         HookEntry entry = new()
         {
             Matcher = evt.Matcher,
-            CommandType = MapSdkCommandType(evt.CommandType),
+            CommandType = evt.CommandType,
             CommandValue = evt.CommandValue,
         };
 
@@ -551,23 +673,5 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
         // permanently on next save.
         entry.IngestOpaqueJson(evt.OpaqueInnerJson);
         return entry;
-    }
-
-    /// <summary>
-    /// SDK <see cref="Sdk.Hooks.HookCommandType"/> → editor's
-    /// <see cref="HookCommandType"/>. The two enums are parallel but live in
-    /// different namespaces; keeping the mapping explicit guards against a
-    /// future addition (e.g. a new CommandType variant) silently falling
-    /// through to <see cref="HookCommandType.Command"/>.
-    /// </summary>
-    private static HookCommandType MapSdkCommandType(Hooks_HookCommandType type)
-    {
-        return type switch
-        {
-            Hooks_HookCommandType.Command => HookCommandType.Command,
-            Hooks_HookCommandType.Prompt => HookCommandType.Prompt,
-            Hooks_HookCommandType.Url => HookCommandType.Url,
-            var _ => HookCommandType.Command,
-        };
     }
 }

@@ -23,6 +23,7 @@ public sealed class FakeEditorSchema : IEditorSchema
 
     public IReadOnlyList<string>? EnumValues { get; init; }
     public IReadOnlyList<string> Examples { get; init; } = [];
+    public IReadOnlyDictionary<string, string> EnumValueDescriptions { get; init; } = new Dictionary<string, string>();
     public double? Minimum { get; init; }
     public double? Maximum { get; init; }
     public IReadOnlyList<IEditorSchema> Properties { get; init; } = [];

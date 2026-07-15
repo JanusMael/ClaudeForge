@@ -70,6 +70,17 @@ consumers), use `IClaudeConfigClient.SearchSchema(query)` from the SDK layer and
 map results back to nav nodes via the path-to-node lookup described in §5 below.
 See `src/ClaudeForge.Sdk/AGENTS.md §2` for the SDK / navigation boundary contract.
 
+**Synthetic results (deep-links with no backing schema property):** `ExecuteSearch`
+adds pinned `IsSynthetic` rows for common gotchas — `--dangerouslySkipPermissions`
+(prefix `danger…`, empty `PropertyKey`) and `bypassPermissions` (query contains
+`bypass`, excludes `disable`, `PropertyKey="permissions.defaultMode"`), plus the
+Essentials-card triggers. `MainWindowViewModel.SelectSearchResult` branches on
+`PropertyKey`: the bypass row lands on the Permissions Overview tab and calls
+`permEditor.ActivateBypassHint()`; the danger row calls `ActivateDangerHint()` +
+expands Advanced. When adding a synthetic, keep the trigger distinct from
+existing ones and add a `SearchViewModelTests` / `SearchViewModelBypassTests` case
+(present-vs-absent node, distinctness).
+
 **Internal test surface:**
 
 - `SearchViewModel.ExecuteSearch(string query)` — `internal`; drives matching directly,

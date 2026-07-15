@@ -67,4 +67,23 @@ public interface IShellLauncher
     /// The path must be absolute. Failures are silently swallowed.
     /// </remarks>
     void OpenInDefaultEditor(string filePath);
+
+    /// <summary>
+    /// Opens <paramref name="url"/> in the platform default browser.
+    /// </summary>
+    /// <remarks>
+    /// Platform behaviour:
+    /// <list type="bullet">
+    ///   <item><b>Windows</b> — <c>Process.Start</c> with <c>UseShellExecute=true</c>
+    ///     dispatches the URL via the OS's registered <c>http://</c> /
+    ///     <c>https://</c> handler (typically the default browser).</item>
+    ///   <item><b>macOS</b> — <c>open "&lt;url&gt;"</c> (Launch Services routes to
+    ///     the default browser).</item>
+    ///   <item><b>Linux</b> — <c>xdg-open "&lt;url&gt;"</c> defers to the desktop
+    ///     environment's default URL handler.</item>
+    /// </list>
+    /// Failures are silently swallowed — URL opening is cosmetic and the
+    /// caller is expected to surface a copy-link affordance as fallback.
+    /// </remarks>
+    void LaunchUrl(string url);
 }

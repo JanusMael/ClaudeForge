@@ -9,6 +9,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
 using Json.Schema;
@@ -326,6 +327,49 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
     /// <inheritdoc/>
     public IHooksAccessor Hooks => _hooksAccessor ??= new HooksAccessor(this);
 
+    /// <summary>
+    /// Hook lifecycle events from the currently-loaded settings schema — each
+    /// event's name plus its schema description (the <c>hooks</c> node's child
+    /// properties). The fresh, schema-driven set the GUI's schema tree is built
+    /// from too. Empty before <see cref="OpenAsync"/> or when the schema exposes no
+    /// <c>hooks.properties</c>. Consumed by the Hooks accessor's <c>KnownEvents</c>
+    /// so headless callers and the editor share one source of truth — including the
+    /// descriptions, not just the names.
+    /// </summary>
+    internal IReadOnlyList<HookEventInfo> SchemaHookEvents()
+    {
+        SchemaNode? hooks = _cachedSchemaNodes?.FirstOrDefault(n =>
+            string.Equals(n.Name, "hooks", StringComparison.Ordinal));
+        if (hooks is not null)
+        {
+            return hooks.Properties.Select(p => new HookEventInfo(p.Name, p.Description)).ToList();
+        }
+
+        // No cached schema tree — the client was constructed via FromExistingWorkspace
+        // (the GUI's path) and never ran OpenAsync, so _cachedSchemaNodes is null. Read the
+        // event names + descriptions straight from the bundled schema (same source, same
+        // descriptions) so KnownEvents — and thus the editor's per-event tooltips/labels —
+        // stay populated regardless of how the client was built. Mirrors SchemaHookCommandVariants.
+        return IsClaudeCode
+            ? SchemaRegistry.GetHookEvents("claude-code-settings.json")
+            : [];
+    }
+
+    /// <summary>
+    /// Hook command variants from the settings schema's <c>$defs.hookCommand.anyOf</c> —
+    /// each variant's <c>type</c> discriminator, description, and field descriptions. Read
+    /// from the bundled merged schema JSON because the <c>anyOf</c> variants don't survive the
+    /// flattened <see cref="SchemaNode"/> tree the GUI builds from (unlike <see cref="SchemaHookEvents"/>,
+    /// which reads that tree); the bundled schema is the same source the tree derives from, so
+    /// they stay consistent. Empty for non-Claude-Code clients — hooks are a Claude Code concept.
+    /// Consumed by the Hooks accessor's <c>KnownCommandTypes</c> so headless callers and the editor
+    /// share one source for the per-type picker text and per-field descriptions.
+    /// </summary>
+    internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
+        IsClaudeCode
+            ? SchemaRegistry.GetHookCommandVariants("claude-code-settings.json")
+            : [];
+
     /// <inheritdoc/>
     public IMcpServersAccessor McpServers => _mcpServersAccessor ??= new McpServersAccessor(this);
 
@@ -337,6 +381,9 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
 
     /// <inheritdoc/>
     public IEnvAccessor Env => _envAccessor ??= new EnvAccessor(this);
+
+    /// <inheritdoc/>
+    public IModelCatalogAccessor Models => ModelCatalogProvider.Default;
 
     private IBackupClient? _backupClient;
 
@@ -586,19 +633,109 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
         {
             ThrowIfDisposed();
             EnsureOpen();
-            (string top, string? remainder) = SplitPath(path);
-            LayeredValue layered = _workspace!.GetLayeredValue(top);
-            JsonNode? node = layered.EffectiveValue;
-            if (remainder is not null)
-            {
-                node = ResolveByPath(node, remainder);
-            }
-
-            return JsonConversion.ConvertFromJsonNode<T>(node);
+            return JsonConversion.ConvertFromJsonNode<T>(GetEffectiveNodeLocked(path));
         }
         finally
         {
             ExitStateLock();
+        }
+    }
+
+    // ── Locked primitives shared by the sync + async read/write methods ──────
+    // Each assumes _stateLock is already held and the workspace is open. Keeping
+    // the in-lock logic in one place means the async variants (which differ only
+    // in how they ACQUIRE the lock) and the atomic SetValueIfChangedAsync reuse
+    // exactly the same mutation/read semantics.
+
+    /// <summary>Effective (merged) JSON node at <paramref name="path"/>. Lock held.</summary>
+    private JsonNode? GetEffectiveNodeLocked(string path)
+    {
+        (string top, string? remainder) = SplitPath(path);
+        JsonNode? node = _workspace!.GetLayeredValue(top).EffectiveValue;
+        return remainder is not null ? ResolveByPath(node, remainder) : node;
+    }
+
+    /// <summary>
+    /// Scope-specific JSON node at <paramref name="path"/> (no cross-scope merge) —
+    /// the value as it exists at exactly <paramref name="scope"/>, or <c>null</c>
+    /// when unset there. Lock held.
+    /// </summary>
+    private JsonNode? GetScopeNodeLocked(string path, ConfigScope scope)
+    {
+        (string top, string? remainder) = SplitPath(path);
+        JsonNode? raw = ReadScopeKey(top, scope);
+        return remainder is null ? raw : ResolveByPath(raw, remainder);
+    }
+
+    /// <summary>Write <paramref name="converted"/> at <paramref name="scope"/>. Lock held; raises NO Changed.</summary>
+    private void ApplySetLocked(string path, JsonNode? converted, ConfigScope scope)
+    {
+        _suppressForwarder = true;
+        try
+        {
+            (string top, string? remainder) = SplitPath(path);
+            if (remainder is null)
+            {
+                _workspace!.SetValue(top, converted, scope);
+            }
+            else
+            {
+                JsonNode? existing = ReadScopeKey(top, scope);
+                JsonObject mutated = existing is JsonObject obj ? (JsonObject)obj.DeepClone() : new JsonObject();
+                SetNested(mutated, remainder, converted);
+                _workspace!.SetValue(top, mutated, scope);
+            }
+        }
+        finally
+        {
+            _suppressForwarder = false;
+        }
+    }
+
+    /// <summary>
+    /// Remove the value at <paramref name="path"/>/<paramref name="scope"/>. Lock held;
+    /// raises NO Changed. Returns whether the caller should raise Changed — true for a
+    /// top-level remove (preserves the prior always-notify behavior) and for a nested
+    /// remove that actually changed something; false when a nested key was absent.
+    /// </summary>
+    private bool ApplyRemoveLocked(string path, ConfigScope scope)
+    {
+        _suppressForwarder = true;
+        try
+        {
+            (string top, string? remainder) = SplitPath(path);
+            if (remainder is null)
+            {
+                _workspace!.RemoveValue(top, scope);
+                return true;
+            }
+
+            JsonNode? existing = ReadScopeKey(top, scope);
+            if (existing is not JsonObject obj)
+            {
+                return false;
+            }
+
+            JsonObject mutated = (JsonObject)obj.DeepClone();
+            if (!RemoveNested(mutated, remainder))
+            {
+                return false;
+            }
+
+            if (mutated.Count == 0)
+            {
+                _workspace!.RemoveValue(top, scope);
+            }
+            else
+            {
+                _workspace!.SetValue(top, mutated, scope);
+            }
+
+            return true;
+        }
+        finally
+        {
+            _suppressForwarder = false;
         }
     }
 
@@ -621,34 +758,10 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
         {
             ThrowIfDisposed();
             EnsureOpen();
-            // 4.3.7 step 8: suppress the workspace-Changed forwarder while we
-            // do the SDK-initiated write. Without this guard the consumer
-            // would observe two Mutation events per write — the path-less
-            // forwarder copy plus the path-full explicit raise below.
-            _suppressForwarder = true;
-            try
-            {
-                (string top, string? remainder) = SplitPath(path);
-                if (remainder is null)
-                {
-                    _workspace!.SetValue(top, converted, scope);
-                }
-                else
-                {
-                    // Read existing top-level object for this scope, mutate the
-                    // nested path inside it, write the whole object back. This
-                    // matches the behaviour of the existing GUI editor pipeline,
-                    // which always writes complete top-level keys.
-                    JsonNode? existing = ReadScopeKey(top, scope);
-                    JsonObject mutated = existing is JsonObject obj ? (JsonObject)obj.DeepClone() : new JsonObject();
-                    SetNested(mutated, remainder, converted);
-                    _workspace!.SetValue(top, mutated, scope);
-                }
-            }
-            finally
-            {
-                _suppressForwarder = false;
-            }
+            // ApplySetLocked suppresses the workspace-Changed forwarder while it
+            // mutates, so the consumer sees exactly one Mutation event — the
+            // path-full explicit raise below, not the path-less forwarder copy.
+            ApplySetLocked(path, converted, scope);
         }
         finally
         {
@@ -664,50 +777,68 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrEmpty(path);
 
+        bool mutated;
         EnterStateLock();
         try
         {
             ThrowIfDisposed();
             EnsureOpen();
-            _suppressForwarder = true;
-            try
-            {
-                (string top, string? remainder) = SplitPath(path);
-                if (remainder is null)
-                {
-                    _workspace!.RemoveValue(top, scope);
-                }
-                else
-                {
-                    // Nested remove: read top-level object, remove nested path,
-                    // write back. If the resulting object is empty, remove the
-                    // whole top-level key.
-                    JsonNode? existing = ReadScopeKey(top, scope);
-                    if (existing is not JsonObject obj)
-                    {
-                        return;
-                    }
+            mutated = ApplyRemoveLocked(path, scope);
+        }
+        finally
+        {
+            ExitStateLock();
+        }
 
-                    JsonObject mutated = (JsonObject)obj.DeepClone();
-                    if (!RemoveNested(mutated, remainder))
-                    {
-                        return;
-                    }
+        if (mutated)
+        {
+            Changed?.Invoke(this, new ClientChangedEventArgs(ClientChangeKind.Mutation, path));
+        }
+    }
 
-                    if (mutated.Count == 0)
-                    {
-                        _workspace!.RemoveValue(top, scope);
-                    }
-                    else
-                    {
-                        _workspace!.SetValue(top, mutated, scope);
-                    }
-                }
-            }
-            finally
-            {
-                _suppressForwarder = false;
-            }
+    // ── Async read/write variants (genuinely async lock acquisition) ─────────
+    // Same in-lock semantics as the sync methods (they share the *Locked helpers);
+    // they differ only in acquiring the lock via EnterStateLockAsync(ct), so they
+    // are non-blocking and honor cancellation. Changed is raised AFTER the lock is
+    // released, matching the documented contract.
+
+    /// <inheritdoc/>
+    public async Task<T?> GetEffectiveAsync<T>(string path, CancellationToken ct)
+    {
+        ThrowIfDisposed();
+        ArgumentException.ThrowIfNullOrEmpty(path);
+
+        await EnterStateLockAsync(ct).ConfigureAwait(false);
+        try
+        {
+            ThrowIfDisposed();
+            EnsureOpen();
+            return JsonConversion.ConvertFromJsonNode<T>(GetEffectiveNodeLocked(path));
+        }
+        finally
+        {
+            ExitStateLock();
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task SetValueAsync<T>(string path, T value, CancellationToken ct)
+        => SetValueAsync(path, value, DefaultScope, ct);
+
+    /// <inheritdoc/>
+    public async Task SetValueAsync<T>(string path, T value, ConfigScope scope, CancellationToken ct)
+    {
+        ThrowIfDisposed();
+        ArgumentException.ThrowIfNullOrEmpty(path);
+
+        JsonNode? converted = JsonConversion.ConvertToJsonNode(value);
+
+        await EnterStateLockAsync(ct).ConfigureAwait(false);
+        try
+        {
+            ThrowIfDisposed();
+            EnsureOpen();
+            ApplySetLocked(path, converted, scope);
         }
         finally
         {
@@ -715,6 +846,78 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
         }
 
         Changed?.Invoke(this, new ClientChangedEventArgs(ClientChangeKind.Mutation, path));
+    }
+
+    /// <inheritdoc/>
+    public async Task RemoveValueAsync(string path, ConfigScope scope, CancellationToken ct)
+    {
+        ThrowIfDisposed();
+        ArgumentException.ThrowIfNullOrEmpty(path);
+
+        bool mutated;
+        await EnterStateLockAsync(ct).ConfigureAwait(false);
+        try
+        {
+            ThrowIfDisposed();
+            EnsureOpen();
+            mutated = ApplyRemoveLocked(path, scope);
+        }
+        finally
+        {
+            ExitStateLock();
+        }
+
+        if (mutated)
+        {
+            Changed?.Invoke(this, new ClientChangedEventArgs(ClientChangeKind.Mutation, path));
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> SetValueIfChangedAsync<T>(string path, T value, ConfigScope scope, CancellationToken ct)
+    {
+        ThrowIfDisposed();
+        ArgumentException.ThrowIfNullOrEmpty(path);
+
+        JsonNode? converted = JsonConversion.ConvertToJsonNode(value);
+
+        bool wrote;
+        await EnterStateLockAsync(ct).ConfigureAwait(false);
+        try
+        {
+            ThrowIfDisposed();
+            EnsureOpen();
+            // Atomic compare-and-set under a SINGLE lock acquisition: write only
+            // when it would change the value AT THE TARGET SCOPE. The compare basis
+            // (scope-specific) and the write domain (scope-specific) MUST agree —
+            // comparing the cross-scope EFFECTIVE value here would let a shadowed
+            // scope both (a) write with no scope change suppressed and (b) skip a
+            // legitimate explicit pin, the very ghost-change class this guards. This
+            // mirrors SettingsWorkspace.SetValue's own scope-specific no-op guard and
+            // eliminates the read-then-write (TOCTOU) race of a separate read + set.
+            // DeepEquals treats two absent/null nodes as equal, so re-asserting the
+            // value already present at this scope is a no-op.
+            if (JsonNode.DeepEquals(GetScopeNodeLocked(path, scope), converted))
+            {
+                wrote = false;
+            }
+            else
+            {
+                ApplySetLocked(path, converted, scope);
+                wrote = true;
+            }
+        }
+        finally
+        {
+            ExitStateLock();
+        }
+
+        if (wrote)
+        {
+            Changed?.Invoke(this, new ClientChangedEventArgs(ClientChangeKind.Mutation, path));
+        }
+
+        return wrote;
     }
 
     // ── Schema search ─────────────────────────────────────────────────────
@@ -1078,19 +1281,7 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
         {
             ThrowIfDisposed();
             EnsureOpen();
-            (string top, string? remainder) = SplitPath(path);
-            JsonNode? raw = ReadScopeKey(top, scope);
-            if (raw is null)
-            {
-                return null;
-            }
-
-            if (remainder is null)
-            {
-                return raw.DeepClone();
-            }
-
-            return ResolveByPath(raw, remainder)?.DeepClone();
+            return GetScopeNodeLocked(path, scope)?.DeepClone();
         }
         finally
         {

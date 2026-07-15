@@ -103,7 +103,7 @@ public sealed class CommonActionsTaxonomyTests
     {
         // git push is irreversible (rewrites remote state visible to others).
         // Raw Bash wildcard grants unrestricted shell access.
-        // PowerShell and Pwsh bare-name entries are intentionally absent from
+        // PowerShell bare-name entries are intentionally absent from
         // AllToolGroups (removed from the catch-all to avoid the misleading
         // Destructive label — per-command entries in the dedicated PowerShell
         // expander carry the correct Read/Write/Network kinds instead).
@@ -175,14 +175,13 @@ public sealed class CommonActionsTaxonomyTests
                                      .ToList();
 
         // Sanity: at minimum the file, web, and bare-shell wildcards are present.
-        // PowerShell and Pwsh are intentionally absent — their per-command entries
-        // in the dedicated PowerShell expander carry the correct kind labels;
-        // duplicating them here as Destructive would be misleading.
+        // PowerShell is intentionally absent — its per-command entries in the
+        // dedicated PowerShell expander carry the correct kind labels;
+        // duplicating it here as Destructive would be misleading.
         CollectionAssert.Contains(rules, "Bash");
         CollectionAssert.Contains(rules, "WebFetch");
         CollectionAssert.Contains(rules, "mcp__*");
         CollectionAssert.DoesNotContain(rules, "PowerShell");
-        CollectionAssert.DoesNotContain(rules, "Pwsh");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

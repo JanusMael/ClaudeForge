@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -51,6 +50,240 @@ public sealed class SchemaRegistry : IDisposable
         JsonSchema schema = await GetSchemaAsync("bundled://claude-desktop-config", "claude-desktop-config.json", ct);
         return schema.Root
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
+    }
+
+    /// <summary>Shared empty result for <see cref="GetEnumDescriptions"/>.</summary>
+    private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> EmptyEnumDescriptions =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>(0);
+
+    /// <summary>
+    /// Per-property enum/example value descriptions (a map value→description), keyed by the
+    /// dot-path <see cref="SchemaTreeBuilder"/> uses (e.g. <c>"model"</c>,
+    /// <c>"permissions.defaultMode"</c>). Powers per-item tooltips on the value picker.
+    /// </summary>
+    /// <remarks>
+    /// Sourced from a dedicated resource under <c>Assets/Descriptions/</c> (e.g.
+    /// <c>claude-code-settings.enumdescriptions.json</c>) — deliberately NOT inside the JSON
+    /// Schema/overlay and NOT under <c>Assets/Schemas/</c>. Two reasons: JsonSchema.Net
+    /// strict-rejects unknown keywords for this dialect (a custom keyword in the schema crashes
+    /// <see cref="ParseSchema"/> and the <c>RestoreEngine</c> validation path), and
+    /// <c>BackupEngine.BundleSchemas</c> bundles everything under <c>Assets/Schemas/</c> into
+    /// backups where <c>RestoreEngine</c> would then try to parse it as a schema. Read here via
+    /// <see cref="System.Text.Json"/>, never through JsonSchema.Net. Resource shape:
+    /// <c>{ "&lt;jsonPath&gt;": { "&lt;value&gt;": "&lt;desc&gt;" } }</c>; non-object root entries
+    /// (e.g. a <c>"$comment"</c> string) are ignored.
+    /// </remarks>
+    public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> GetEnumDescriptions(string cacheFileName)
+    {
+        string descFileName = Path.GetFileNameWithoutExtension(cacheFileName)
+                              + ".enumdescriptions"
+                              + Path.GetExtension(cacheFileName);
+        byte[]? bytes = BundledResource.TryRead("Descriptions", descFileName);
+        if (bytes is null)
+        {
+            return EmptyEnumDescriptions;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(bytes);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                return EmptyEnumDescriptions;
+            }
+
+            Dictionary<string, IReadOnlyDictionary<string, string>> result = new(StringComparer.Ordinal);
+            foreach (JsonProperty pathEntry in doc.RootElement.EnumerateObject())
+            {
+                // Skip non-object entries (e.g. a "$comment" string at the root).
+                if (pathEntry.Value.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                Dictionary<string, string> map = new(StringComparer.Ordinal);
+                foreach (JsonProperty d in pathEntry.Value.EnumerateObject())
+                {
+                    if (d.Value.ValueKind == JsonValueKind.String)
+                    {
+                        map[d.Name] = d.Value.GetString()!;
+                    }
+                }
+
+                if (map.Count > 0)
+                {
+                    result[pathEntry.Name] = map;
+                }
+            }
+
+            return result.Count > 0 ? result : EmptyEnumDescriptions;
+        }
+        catch (JsonException)
+        {
+            return EmptyEnumDescriptions;
+        }
+    }
+
+    /// <summary>Shared empty result for <see cref="GetHookCommandVariants"/>.</summary>
+    private static readonly IReadOnlyList<HookCommandVariantInfo> EmptyHookCommandVariants = [];
+
+    /// <summary>
+    /// The hook command variants declared in the settings schema's
+    /// <c>$defs.hookCommand.anyOf</c> — each variant's <c>type</c> discriminator, its
+    /// description, and its per-field descriptions. Powers the Hooks editor's Type-picker
+    /// help text and per-field tooltips, sourced from the schema instead of a hardcoded mirror.
+    /// </summary>
+    /// <remarks>
+    /// Reads the bundled merged schema JSON directly via <see cref="System.Text.Json"/>
+    /// (mirrors <see cref="GetEnumDescriptions"/>), NOT the flattened <see cref="SchemaNode"/>
+    /// tree: the <c>anyOf</c> variants and their <c>type.const</c> discriminators don't survive
+    /// <see cref="SchemaTreeBuilder"/>, which collapses combinator branches. The bundled schema is
+    /// the same source the node tree is built from (<see cref="GetSchemaAsync"/> prefers bundled +
+    /// overlay over disk/network), so the two stay consistent. Returns an empty list when the
+    /// resource is missing or malformed (fail-open — never blocks the editor).
+    /// </remarks>
+    public static IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariants(string cacheFileName)
+    {
+        byte[]? bytes = TryReadBundledBytesMerged(cacheFileName);
+        if (bytes is null)
+        {
+            return EmptyHookCommandVariants;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(bytes);
+            if (!doc.RootElement.TryGetProperty("$defs", out JsonElement defs)
+                || !defs.TryGetProperty("hookCommand", out JsonElement hookCommand)
+                || !hookCommand.TryGetProperty("anyOf", out JsonElement anyOf)
+                || anyOf.ValueKind != JsonValueKind.Array)
+            {
+                return EmptyHookCommandVariants;
+            }
+
+            List<HookCommandVariantInfo> variants = new();
+            foreach (JsonElement variant in anyOf.EnumerateArray())
+            {
+                if (variant.ValueKind != JsonValueKind.Object
+                    || !variant.TryGetProperty("properties", out JsonElement props)
+                    || props.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                string? variantDesc = ReadDescription(variant);
+
+                string? type = null;
+                List<HookFieldInfo> fields = new();
+                foreach (JsonProperty prop in props.EnumerateObject())
+                {
+                    if (prop.Name == "type")
+                    {
+                        // The discriminator is captured as Type, not surfaced as a field —
+                        // its description is a bare "Hook type" that adds nothing as a tooltip.
+                        type = ReadTypeConst(prop.Value);
+                        continue;
+                    }
+
+                    fields.Add(new HookFieldInfo(prop.Name, ReadDescription(prop.Value)));
+                }
+
+                // A hookCommand variant with no `type` discriminator is unusable for the
+                // picker (nothing to key it by); skip it rather than emit an anonymous entry.
+                if (!string.IsNullOrEmpty(type))
+                {
+                    variants.Add(new HookCommandVariantInfo(type, variantDesc, fields));
+                }
+            }
+
+            return variants.Count > 0 ? variants : EmptyHookCommandVariants;
+        }
+        catch (JsonException)
+        {
+            return EmptyHookCommandVariants;
+        }
+    }
+
+    /// <summary>Shared empty result for <see cref="GetHookEvents"/>.</summary>
+    private static readonly IReadOnlyList<HookEventInfo> EmptyHookEvents = [];
+
+    /// <summary>
+    /// The hook lifecycle events declared in the settings schema's
+    /// <c>properties.hooks.properties</c> — each event's name plus its schema description.
+    /// The raw-JSON counterpart to reading the <c>hooks</c> <see cref="SchemaNode"/>'s children:
+    /// used when a client wasn't opened via <c>OpenAsync</c> (e.g. the GUI's
+    /// <c>FromExistingWorkspace</c> path), so no <see cref="SchemaNode"/> tree was cached, yet
+    /// the event descriptions must still surface. Reads the bundled merged schema — the same
+    /// source the tree derives from — so the two stay consistent. Fail-open empty on a missing
+    /// or malformed resource.
+    /// </summary>
+    public static IReadOnlyList<HookEventInfo> GetHookEvents(string cacheFileName)
+    {
+        byte[]? bytes = TryReadBundledBytesMerged(cacheFileName);
+        if (bytes is null)
+        {
+            return EmptyHookEvents;
+        }
+
+        try
+        {
+            using JsonDocument doc = JsonDocument.Parse(bytes);
+            if (!doc.RootElement.TryGetProperty("properties", out JsonElement props)
+                || !props.TryGetProperty("hooks", out JsonElement hooks)
+                || !hooks.TryGetProperty("properties", out JsonElement hooksProps)
+                || hooksProps.ValueKind != JsonValueKind.Object)
+            {
+                return EmptyHookEvents;
+            }
+
+            List<HookEventInfo> events = new();
+            foreach (JsonProperty ev in hooksProps.EnumerateObject())
+            {
+                events.Add(new HookEventInfo(ev.Name, ReadDescription(ev.Value)));
+            }
+
+            return events.Count > 0 ? events : EmptyHookEvents;
+        }
+        catch (JsonException)
+        {
+            return EmptyHookEvents;
+        }
+    }
+
+    /// <summary>Read a schema node's <c>description</c> string, or <see langword="null"/>.</summary>
+    private static string? ReadDescription(JsonElement schemaNode) =>
+        schemaNode.TryGetProperty("description", out JsonElement d) && d.ValueKind == JsonValueKind.String
+            ? d.GetString()
+            : null;
+
+    /// <summary>
+    /// Read the <c>type</c> field's discriminator value: prefer <c>const</c>, fall back to
+    /// the first <c>enum</c> entry. Returns <see langword="null"/> when neither is a string.
+    /// </summary>
+    private static string? ReadTypeConst(JsonElement typeSchema)
+    {
+        if (typeSchema.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        if (typeSchema.TryGetProperty("const", out JsonElement c) && c.ValueKind == JsonValueKind.String)
+        {
+            return c.GetString();
+        }
+
+        if (typeSchema.TryGetProperty("enum", out JsonElement e) && e.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement item in e.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String)
+                {
+                    return item.GetString();
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -234,19 +467,7 @@ public sealed class SchemaRegistry : IDisposable
     }
 
     private static byte[]? TryReadBundledBytes(string cacheFileName)
-    {
-        Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = $"{ResourceHelper.ResourcePrefix}.Core.Assets.Schemas.{cacheFileName}";
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null)
-        {
-            return null;
-        }
-
-        using MemoryStream ms = new();
-        stream.CopyTo(ms);
-        return ms.ToArray();
-    }
+        => BundledResource.TryRead("Schemas", cacheFileName);
 
     /// <summary>
     /// Read the bundled base schema and apply its sibling <c>.overlay.json</c>
@@ -409,7 +630,78 @@ public sealed class SchemaRegistry : IDisposable
             }
         }
 
+        return await EnrichAllowedValuesAsync(errors, isClaudeCode, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Best-effort pass that attaches <see cref="SchemaValidationError.AllowedValues"/>
+    /// to enum-mismatch errors, so the message can show the permitted values (from the
+    /// same <see cref="SchemaNode"/> tree the editor uses for its dropdowns) rather than
+    /// just "should match one of the enum values". Runs only when errors exist (rare,
+    /// user-facing save path); the node fetch is cached, so this is cheap. Never throws
+    /// — enrichment failure falls back to the un-enriched errors.
+    /// </summary>
+    private async Task<IReadOnlyList<SchemaValidationError>> EnrichAllowedValuesAsync(
+        List<SchemaValidationError> errors, bool isClaudeCode, CancellationToken ct)
+    {
+        if (errors.Count == 0)
+        {
+            return errors;
+        }
+
+        Dictionary<string, IReadOnlyList<string>> enumsByPath;
+        try
+        {
+            JsonSchemaNode rootNode = isClaudeCode
+                ? await GetClaudeCodeSettingsNodeAsync(ct).ConfigureAwait(false)
+                : await GetClaudeDesktopConfigNodeAsync(ct).ConfigureAwait(false);
+            enumsByPath = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+            CollectEnumPaths(SchemaTreeBuilder.BuildTopLevel(rootNode), enumsByPath);
+        }
+        catch
+        {
+            return errors;
+        }
+
+        for (int i = 0; i < errors.Count; i++)
+        {
+            // InstancePath is a JSON Pointer (/permissions/defaultMode); SchemaNode.JsonPath
+            // is dot-separated (permissions.defaultMode). Convert to match leaf enum props.
+            string dotPath = errors[i].InstancePath.TrimStart('/').Replace('/', '.');
+            if (dotPath.Length > 0 && enumsByPath.TryGetValue(dotPath, out IReadOnlyList<string>? allowed))
+            {
+                errors[i] = errors[i] with { AllowedValues = allowed };
+            }
+        }
+
         return errors;
+    }
+
+    /// <summary>
+    /// Recursively index every enum-bearing node by its dot-separated
+    /// <see cref="SchemaNode.JsonPath"/> so a validation error's instance path resolves
+    /// to its permitted values.
+    /// </summary>
+    private static void CollectEnumPaths(
+        IReadOnlyList<SchemaNode> nodes, Dictionary<string, IReadOnlyList<string>> sink)
+    {
+        foreach (SchemaNode node in nodes)
+        {
+            if (node.EnumValues.Count > 0)
+            {
+                sink[node.JsonPath] = node.EnumValues;
+            }
+
+            if (node.Properties.Count > 0)
+            {
+                CollectEnumPaths(node.Properties, sink);
+            }
+
+            if (node.ItemsSchema is { } items)
+            {
+                CollectEnumPaths([items], sink);
+            }
+        }
     }
 
     /// <summary>
@@ -532,13 +824,77 @@ public sealed class SchemaRegistry : IDisposable
             }
 
             string path = detail.InstanceLocation.ToString() ?? string.Empty;
+            // Read the offending value once per site (all messages here share the path)
+            // so the user sees WHAT they have, not just that it's wrong.
+            string? offendingValue = RenderOffendingValue(NavigateToInstance(root, path));
             foreach ((string _, string message) in errs)
             {
-                errors.Add(new SchemaValidationError(filePath, path, message));
+                errors.Add(new SchemaValidationError(filePath, path, message) { Value = offendingValue });
             }
         }
 
         return CollapseFailedAnyOfErrors(errors);
+    }
+
+    /// <summary>
+    /// Resolve a JSON-Pointer instance location (e.g. <c>/permissions/allow/0</c>)
+    /// against the parsed document, returning the node at that path or null when the
+    /// path doesn't resolve. Version-agnostic (walks the tree by hand rather than
+    /// depending on a pointer library's evaluate API); unescapes the pointer tokens
+    /// <c>~1</c>→<c>/</c> and <c>~0</c>→<c>~</c>.
+    /// </summary>
+    private static JsonNode? NavigateToInstance(JsonObject root, string instancePointer)
+    {
+        if (string.IsNullOrEmpty(instancePointer) || instancePointer == "/")
+        {
+            return root;
+        }
+
+        JsonNode? current = root;
+        foreach (string rawSeg in instancePointer.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string seg = rawSeg.Replace("~1", "/").Replace("~0", "~");
+            switch (current)
+            {
+                case JsonObject obj when obj.TryGetPropertyValue(seg, out JsonNode? child):
+                    current = child;
+                    break;
+                case JsonArray arr when int.TryParse(seg, out int idx) && idx >= 0 && idx < arr.Count:
+                    current = arr[idx];
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// Render <paramref name="node"/> as compact JSON for display in a validation
+    /// message — quoted for strings (so <c>"max"</c> reads as a string), braces for
+    /// objects/arrays — truncated so a large offending object doesn't flood the dialog.
+    /// Null in → null out (nothing to show).
+    /// </summary>
+    private static string? RenderOffendingValue(JsonNode? node)
+    {
+        if (node is null)
+        {
+            return null;
+        }
+
+        string json;
+        try
+        {
+            json = node.ToJsonString();
+        }
+        catch
+        {
+            return null;
+        }
+
+        const int max = 200;
+        return json.Length > max ? string.Concat(json.AsSpan(0, max), "…") : json;
     }
 
     /// <summary>
@@ -596,7 +952,12 @@ public sealed class SchemaRegistry : IDisposable
             collapsed.Add(new SchemaValidationError(
                 group.Key.FilePath,
                 group.Key.InstancePath,
-                summary));
+                summary)
+            {
+                // Every branch shares the instance path, so they share the offending
+                // value — carry it onto the collapsed error (e.g. the theme object).
+                Value = list[0].Value,
+            });
         }
 
         return collapsed;
@@ -684,6 +1045,21 @@ public sealed class SchemaRegistry : IDisposable
 /// <summary>One schema violation produced by <see cref="SchemaRegistry.ValidateWorkspaceAsync"/>.</summary>
 public sealed record SchemaValidationError(string FilePath, string InstancePath, string Message)
 {
+    /// <summary>
+    /// The offending value at <see cref="InstancePath"/>, rendered as compact JSON
+    /// (e.g. <c>"max"</c> or <c>{"base":"dark",…}</c>), truncated when long. Null when
+    /// the value could not be read (e.g. the failure is a missing-required-property).
+    /// Surfaced in the validation message so the user sees <em>what</em> they have.
+    /// </summary>
+    public string? Value { get; init; }
+
+    /// <summary>
+    /// The permitted values for an <c>enum</c> property, or null when the failure is
+    /// not an enum mismatch (or the options aren't known). Surfaced so the user sees
+    /// <em>what is allowed</em> instead of only "should match one of the enum values".
+    /// </summary>
+    public IReadOnlyList<string>? AllowedValues { get; init; }
+
     /// <summary>
     /// Human-readable property path, e.g.
     /// "extraKnownMarketplaces → everything-claude-code → source → repo".

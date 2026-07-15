@@ -8,6 +8,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Platform;
 /// <see cref="EmulatedPlatformInfo"/>) used by the <c>--windows</c> /
 /// <c>--macos</c> / <c>--linux</c> debug flags.
 /// </summary>
+// PlatformInfo.Current is a PROCESS-WIDE static (set via OverrideForDebug, which
+// production debug flags also use — so it is deliberately not AsyncLocal). This
+// class mutates it by design, so it must not run concurrently with anything that
+// reads PlatformInfo.Current. DoNotParallelize runs it serially, isolated from the
+// method-level-parallelized rest of the assembly.
+[DoNotParallelize]
 [TestClass]
 public sealed class PlatformInfoTests
 {

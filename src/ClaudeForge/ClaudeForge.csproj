@@ -5,6 +5,12 @@
         <AssemblyName>ClaudeForge</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Version>1.0.0</Version>
+        <!-- Static Windows app/taskbar icon embedded in the apphost exe so the
+             taskbar + titlebar show the icon immediately and reliably (including
+             under the Rider debugger) — independent of, and with no, runtime SVG
+             render on the startup path. Generated from Resources/ClaudeForge.svg as a
+             multi-resolution .ico (256/128/64/48/32/16). -->
+        <ApplicationIcon>Resources\ClaudeForge.ico</ApplicationIcon>
         <!-- Add Windows platform TFM to pick up the net10.0-windows build of
              LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
              Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it.
@@ -42,6 +48,11 @@
                                       or fails to render. -->
         <AvaloniaResource Include="Resources\ClaudeForge.svg"/>
         <AvaloniaResource Include="Resources\ClaudeForge-small.svg"/>
+        <!-- Diagram shown on the Hooks group's "Flow" tab, rendered by the
+             <svg:Svg> control (Svg.Controls.Skia.Avalonia) scaled to fit the pane.
+             The view references it by the fixed avares path
+             /Resources/hooks-lifecycle.svg. -->
+        <AvaloniaResource Include="Resources\hooks-lifecycle.svg"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -228,18 +239,29 @@
         <TrimmerRootAssembly Include="Markdown.Avalonia"/>
         <TrimmerRootAssembly Include="ColorTextBlock.Avalonia"/>
         <TrimmerRootAssembly Include="Svg.Model" />
+        <!-- Svg.Skia + the Avalonia control layer resolve types by string/reflection
+             (SVG element factories); root them so a trimmed publish keeps the Flow
+             tab's <svg:Svg> renderer intact. -->
+        <TrimmerRootAssembly Include="Svg.Custom" />
+        <TrimmerRootAssembly Include="Svg.Controls.Skia.Avalonia" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.3" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.0"/>
-        <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+        <PackageReference Include="Avalonia" Version="12.0.5" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.1" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.0.5" />
         <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
-        <!-- Avalonia.Svg.Skia has no Avalonia 12 release; Svg.Skia is the underlying
-             standalone package (no Avalonia dependency) and provides the same SKSvg API. -->
-        <PackageReference Include="Svg.Skia" Version="5.0.0" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
+        <!-- SVG support. Svg.Skia provides the standalone SKSvg API (used by AppIcon
+             to render the app icon SVGs to bitmaps). Svg.Controls.Skia.Avalonia is the
+             Avalonia-integrated control layer (the successor to the now-deprecated,
+             Avalonia-11-only Avalonia.Svg.Skia); its 12.0.0.x line targets Avalonia 12 +
+             net10.0 and supplies the <svg:Svg> control + {SvgImage} markup extension that
+             scale-to-fit natively (used by the Hooks "Flow" tab). It requires Svg.Skia
+             >= 5.1.1, so Svg.Skia is pinned to match. -->
+        <PackageReference Include="Svg.Skia" Version="5.1.1" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.5" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.5" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Serilog (core + File + Trace sinks) flows transitively from the
              LayeredEditors.Avalonia.Diagnostics project reference below, which
@@ -247,12 +269,13 @@
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
              GHSA-xrw6-gwf8-vvr9. Pin explicitly so NU1605 (downgrade-as-error) is satisfied. -->
-        <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
         <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <ProjectReference Include="..\ClaudeForge.Avalonia\ClaudeForge.Avalonia.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>

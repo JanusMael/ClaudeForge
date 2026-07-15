@@ -1,5 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
+using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Views;
 
@@ -20,9 +22,38 @@ public partial class AgentsSkillsEditorView : UserControl
 {
     private const string IndentUnit = "  "; // 2 spaces — YAML uses spaces, never tabs
 
+    private AgentsSkillsEditorViewModel? _vm;
+
     public AgentsSkillsEditorView()
     {
         InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    // Clipboard bridge for the VM's "Copy markdown" command — keeps the VM free of
+    // any TopLevel dependency (mirrors MemoryEditorView).
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_vm is not null)
+        {
+            _vm.CopyMarkdownRequested -= OnCopyMarkdownRequested;
+        }
+
+        _vm = DataContext as AgentsSkillsEditorViewModel;
+
+        if (_vm is not null)
+        {
+            _vm.CopyMarkdownRequested += OnCopyMarkdownRequested;
+        }
+    }
+
+    private async void OnCopyMarkdownRequested(object? sender, string markdown)
+    {
+        IClipboard? clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is not null)
+        {
+            await clipboard.SetTextAsync(markdown);
+        }
     }
 
     /// <summary>

@@ -62,4 +62,34 @@ public sealed class ModelPropertyPromotionTests
         CollectionAssert.Contains(model.EnumValues.ToArray(), "opus");
         CollectionAssert.Contains(model.EnumValues.ToArray(), "haiku");
     }
+
+    [TestMethod]
+    public void Model_CarriesEnumValueDescriptions_FromDescriptionsResource()
+    {
+        // The descriptions resource (Assets/Descriptions/claude-code-settings.enumdescriptions.json)
+        // must surface on the model node so the picker can render per-item tooltips. Loaded via
+        // SchemaRegistry.GetEnumDescriptions (System.Text.Json, not JsonSchema.Net) and threaded
+        // into BuildTopLevel.
+        JsonSchemaNode root = LoadBundledClaudeCodeRoot();
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> descriptions =
+            SchemaRegistry.GetEnumDescriptions("claude-code-settings.json");
+
+        IReadOnlyList<SchemaNode> top =
+            SchemaTreeBuilder.BuildTopLevel(root, knownPaths: null, flagAllAsNew: false, descriptions);
+        SchemaNode model = top.First(n => n.Name == "model");
+
+        Assert.IsTrue(model.EnumValueDescriptions.Count >= 6,
+            $"Expected per-value descriptions from the descriptions resource; got {model.EnumValueDescriptions.Count}.");
+
+        // Every promoted picker value should have a tooltip (no item left bare).
+        foreach (string value in model.EnumValues)
+        {
+            Assert.IsTrue(model.EnumValueDescriptions.ContainsKey(value),
+                $"Model picker value '{value}' has no tooltip description.");
+        }
+
+        Assert.IsTrue(model.EnumValueDescriptions.TryGetValue("opusplan", out string? plan)
+                      && plan.Contains("plan", StringComparison.OrdinalIgnoreCase),
+            "opusplan should be described as the plan/execute hybrid.");
+    }
 }

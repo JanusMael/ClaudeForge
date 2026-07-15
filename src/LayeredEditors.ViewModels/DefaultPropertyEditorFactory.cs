@@ -11,6 +11,19 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 /// </remarks>
 public class DefaultPropertyEditorFactory : IPropertyEditorFactory
 {
+    /// <summary>
+    /// Per-field notice tagged onto the text-box fallback when the factory has no
+    /// structured editor for a value's shape (Unknown / Dictionary / Complex).
+    /// Drives the host's warning badge so the fallback is never SILENT — the prior
+    /// behaviour let a user type a scalar into a structured slot unnoticed. A
+    /// consuming app that can do better (e.g. a validated raw-JSON editor)
+    /// registers a <see cref="CompositePropertyEditorFactory"/> matcher to
+    /// intercept these shapes.
+    /// </summary>
+    public const string NoStructuredEditorNotice =
+        "No structured editor matches this value's shape — it is shown as a plain "
+        + "text box. Register a specialized editor factory to edit it properly.";
+
     /// <inheritdoc/>
     public virtual PropertyEditorViewModel Create(
         IEditorSchema schema,
@@ -29,7 +42,16 @@ public class DefaultPropertyEditorFactory : IPropertyEditorFactory
             EditorValueType.Number => new NumberPropertyEditorViewModel(schema, editingScope),
             EditorValueType.StringArray => new StringArrayPropertyEditorViewModel(schema, editingScope),
             EditorValueType.Object => CreateObjectEditor(schema, workspace, editingScope, context),
-            var _ => new StringPropertyEditorViewModel(schema, editingScope),
+            // Unknown / Dictionary / Complex — no structured editor in this generic
+            // factory. Fall back to a text box but TAG it (UnsupportedShapeNotice) so
+            // the host renders a warning badge; the prior bare String editor was a
+            // SILENT mis-edit hazard (a scalar typed into a structured slot). A
+            // consumer that can do better registers a CompositePropertyEditorFactory
+            // matcher to intercept these shapes.
+            var _ => new StringPropertyEditorViewModel(schema, editingScope)
+            {
+                UnsupportedShapeNotice = NoStructuredEditorNotice,
+            },
         };
     }
 

@@ -15,6 +15,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Platform;
 /// 2. After explicit invalidation, the next probe re-runs and reflects the
 ///    new disk state.
 /// </summary>
+// Tests the process-lifetime claude-code location cache by design — inherently
+// process-wide shared state, so it cannot run concurrently. Run serially,
+// isolated from the method-level-parallelized rest of the assembly.
+[DoNotParallelize]
 [TestClass]
 public sealed class PlatformPathsCacheTests
 {

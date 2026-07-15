@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Channels;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -109,6 +111,12 @@ public static class LiveLogWindow
     private static string? _logsDirectory;
     private static string _windowTitle = "Live Debug Logs — F12 to hide";
 
+    // Optional host-supplied launch affordance rendered in the header (e.g. a
+    // link that opens a second LiveTailWindow). The link renders only when BOTH
+    // the label and the action are supplied to Initialize.
+    private static string? _extraActionLabel;
+    private static Action? _extraAction;
+
     // -----------------------------------------------------------------------
     // Public API
     // -----------------------------------------------------------------------
@@ -127,10 +135,17 @@ public static class LiveLogWindow
     /// link. When <c>null</c> the link is hidden.</param>
     /// <param name="windowTitle">Optional window title. Defaults to
     /// <c>"Live Debug Logs — F12 to hide"</c>.</param>
+    /// <param name="extraActionLabel">Optional text for a header launch link (e.g.
+    /// opening a second live-tail window). The link renders only when this AND
+    /// <paramref name="extraAction"/> are both supplied.</param>
+    /// <param name="extraAction">Optional callback invoked when the
+    /// <paramref name="extraActionLabel"/> link is clicked.</param>
     public static void Initialize(
         BucketedRollingFileSink? fileSink = null,
         string? logsDirectory = null,
-        string? windowTitle = null)
+        string? windowTitle = null,
+        string? extraActionLabel = null,
+        Action? extraAction = null)
     {
         if (_initialized)
         {
@@ -141,6 +156,8 @@ public static class LiveLogWindow
 
         _fileSink = fileSink;
         _logsDirectory = logsDirectory;
+        _extraActionLabel = extraActionLabel;
+        _extraAction = extraAction;
         if (!string.IsNullOrWhiteSpace(windowTitle))
         {
             _windowTitle = windowTitle;
@@ -226,8 +243,24 @@ public static class LiveLogWindow
             ShowActivated = false,
         };
 
+        // Hide-on-close so F12 can re-show it. Closing via the OS ✕ button DESTROYS
+        // the window; the next ToggleWindow() → Show() then throws "Cannot re-show a
+        // closed window." Intercept only a user/OS window close and hide instead —
+        // let ApplicationShutdown / OSShutdown close it for real so app exit isn't
+        // blocked by a cancelled close.
+        _window.Closing += OnWindowClosing;
+
         _window.Hide();
         RefreshLogPathLink();
+    }
+
+    private static void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_window is not null && e.CloseReason == WindowCloseReason.WindowClosing)
+        {
+            e.Cancel = true;
+            _window.Hide();
+        }
     }
 
     private static ListBox BuildLogList(IBrush background)
@@ -238,12 +271,15 @@ public static class LiveLogWindow
         // trim-safe (no IL2026 warning from Avalonia.Data.Binding's reflection-
         // binding pipeline) while still updating correctly when the ListBox
         // recycles row containers during virtualized scrolling.
-        return new ListBox
+        ListBox list = new()
         {
             ItemsSource = _logLines,
             Background = background,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
+            // Multiple so a user can Shift/Ctrl-select a range of lines and copy
+            // them with Ctrl+C — a virtualized list has no free-text selection.
+            SelectionMode = SelectionMode.Multiple,
             ItemTemplate = new FuncDataTemplate<string>((_, _) =>
             {
                 TextBlock tb = new()
@@ -267,6 +303,59 @@ public static class LiveLogWindow
                 return tb;
             }, supportsRecycling: true),
         };
+
+        list.KeyDown += OnLogListKeyDown;
+
+        // Right-click → Copy. Deliberately does NOT change the selection, so a
+        // Ctrl+click discontiguous selection survives the right-click (the flow is
+        // "Ctrl+click to select rows, then right-click → Copy").
+        ContextMenu menu = new();
+        MenuItem copyItem = new() { Header = "Copy" };
+        copyItem.Click += (_, _) => CopySelectedRows(list);
+        menu.Items.Add(copyItem);
+        list.ContextMenu = menu;
+
+        return list;
+    }
+
+    /// <summary>Ctrl+C copies the selected rows (see <see cref="CopySelectedRows"/>).</summary>
+    private static void OnLogListKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.C && e.KeyModifiers.HasFlag(KeyModifiers.Control) && sender is ListBox list)
+        {
+            CopySelectedRows(list);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Copies the selected rows' text to the clipboard in row order. Shared by the
+    /// Ctrl+C key handler and the right-click "Copy" menu item. A virtualized
+    /// ListBox has no free-text selection, so this (plus the header "Log file"
+    /// link for the full file) is the copy affordance. Indexes come from the
+    /// <c>ISelectionModel</c> so duplicate log strings — and Ctrl+click
+    /// discontiguous selections — resolve to the correct rows.
+    /// </summary>
+    private static void CopySelectedRows(ListBox list)
+    {
+        if (_logLines is null)
+        {
+            return;
+        }
+
+        var indexes = list.Selection.SelectedIndexes;
+        if (indexes.Count == 0)
+        {
+            return;
+        }
+
+        string text = string.Join(
+            Environment.NewLine,
+            indexes.OrderBy(i => i)
+                   .Where(i => i >= 0 && i < _logLines.Count)
+                   .Select(i => _logLines[i]));
+
+        _ = TopLevel.GetTopLevel(list)?.Clipboard?.SetTextAsync(text);
     }
 
     private static Border BuildHeader(
@@ -326,6 +415,29 @@ public static class LiveLogWindow
                 foreground: linkBrush,
                 onClick: OnFolderClicked);
             stack.Children.Add(folderLink);
+        }
+
+        // Host-supplied launch affordance (e.g. "open the config-file-events tail").
+        // Invoked on click; captured into a local so the delegate doesn't re-read
+        // the mutable static field.
+        if (!string.IsNullOrEmpty(_extraActionLabel) && _extraAction is { } extraAction)
+        {
+            if (stack.Children.Count > 0)
+            {
+                stack.Children.Add(new TextBlock
+                {
+                    Text = "·",
+                    Foreground = labelBrush,
+                    FontSize = 11,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+            }
+
+            stack.Children.Add(MakeLink(
+                text: _extraActionLabel!,
+                tooltip: "Open the related live view",
+                foreground: linkBrush,
+                onClick: (_, _) => extraAction()));
         }
 
         return new Border

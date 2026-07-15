@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:perm="using:Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.PermissionsBuildView"
+             x:DataType="vm:PermissionsEditorViewModel">
+
+    <!-- "Build" permissions tab body: guided rule builder, a "Test this rule"
+         bridge button, and the dry-run tester in a collapsed accordion. The
+         button (TestBuiltRuleCommand on the editor VM) seeds the tester from the
+         builder's current inputs and expands the accordion. The tester still runs
+         the full-ruleset simulation. DataContext = PermissionsEditorViewModel. -->
+    <StackPanel Spacing="12" Margin="0,8,0,0">
+        <!-- Guided rule builder. The editor VM is the rule sink (builder add
+             targets); rules land in the same lists as the Lists tab + taxonomy. -->
+        <Border Background="{DynamicResource AppCardBackgroundBrush}"
+                BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                BorderThickness="1" CornerRadius="4" Padding="12,10">
+            <perm:GuidedRuleBuilderView DataContext="{Binding GuidedBuilder}" />
+        </Border>
+
+        <!-- Auto-resolution note: shown when an add pruned an identical
+             lower-precedence rule from another bucket, or was skipped because a
+             higher-precedence bucket already holds it. Bound to the editor VM
+             (this tab's DataContext). -->
+        <TextBlock Text="{Binding ConflictResolutionMessage}"
+                   IsVisible="{Binding ConflictResolutionMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Margin="2,0,0,0"
+                   FontSize="11" TextWrapping="Wrap"
+                   Foreground="{DynamicResource AppStatusActiveForegroundBrush}"
+                   AutomationProperties.Name="{Binding ConflictResolutionMessage}" />
+
+        <!-- "Test this rule" bridge: seed + reveal the tester below. Left margin
+             aligns the button with the tester accordion's header label below. -->
+        <Button Content="{x:Static loc:Strings.PermBuilderTestThisRule}"
+                Command="{Binding TestBuiltRuleCommand}"
+                HorizontalAlignment="Left"
+                Margin="12,0,0,0"
+                ToolTip.Tip="{x:Static loc:Strings.TipPermBuilderTestThisRule}"
+                AutomationProperties.Name="{x:Static loc:Strings.PermBuilderTestThisRule}" />
+
+        <!-- Dry-run tester — collapsed by default; "Test this rule" expands it. -->
+        <Expander Header="{x:Static loc:Strings.HeaderTesterAccordion}"
+                  IsExpanded="{Binding IsTesterExpanded}">
+            <Border Background="{DynamicResource AppCardBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                    BorderThickness="1" CornerRadius="4" Padding="12,10">
+                <perm:PermissionTesterView DataContext="{Binding Tester}" />
+            </Border>
+        </Expander>
+    </StackPanel>
+</UserControl>

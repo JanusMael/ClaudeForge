@@ -37,17 +37,30 @@ ClaudeForge is a typed editor for all of that. Every setting shows which scope p
 | **Layered settings editor** | Browse and edit all Claude Code settings across Managed → Local → Project → User scopes. Every setting shows colour-coded scope badges with explanatory tooltips. |
 | **Effective settings view** | See the fully-merged winning value for every setting at a glance, with the source scope marked. |
 | **Compound editors** | Permissions (with curated common-actions panel), Hooks (sortable + URL/script/MCP variants), MCP servers (env-var-aware), Marketplaces (with all 8 source variants), Enabled plugins. |
+| **Model-aware settings** | `model`, `effortLevel`, and `permissions.defaultMode` are driven by a bundled [model catalog](./docs/MODEL-CATALOG.md) that knows their relationships: the effort dropdown only offers levels the selected model supports (auto-coercing an invalidated value to the nearest one), `auto` mode is gated to capable models at User scope, and the model field is free-form with suggestions. |
 | **Profiles + claudectx interop** | Manage named profiles for both Claude Code and Claude Desktop. Per-profile JSON export / import that round-trips with [claudectx](https://github.com/foxj77/claudectx). See [docs/CLAUDECTX-COMPATIBILITY.md](./docs/CLAUDECTX-COMPATIBILITY.md). |
 | **Auto-reload** | When another tool (e.g. claudectx) or your text editor changes a config file on disk, ClaudeForge picks it up automatically. |
 | **Backup / Restore** | Timestamped `.zip` archives of all config (and optionally projects + credentials). Restore any previous backup with a preview. **Sanitized mode** scrubs secret-bearing values (`env`, MCP `headers`, `credentials`, `*token`, `*secret`, `*password`, `*apikey`, `bearer`) with `"[redacted]"` so the archive is safe to share with support / community / bug reports. Sanitized backups are non-restorable by design. |
 | **Add to PATH** | One-click Add-to-PATH button on the Version Information page. Windows: writes `HKCU\Environment\Path`. macOS / Linux (new in v1): appends to the user's shell rc file (`~/.bashrc` / `~/.zshrc` / `~/.config/fish/config.fish`, auto-detected from `$SHELL`). |
-| **Search bar** | Find any setting by name, JSON path, or keyword. Synthetic hits for common gotchas like `--dangerouslySkipPermissions`. |
+| **Search bar** | Find any setting by name, JSON path, or keyword. Synthetic hits for common gotchas like `--dangerouslySkipPermissions` and `bypassPermissions`. |
 | **Save preview** | Confirm-before-save dialog lists each file the change will be written to, plus a one-line "Saving N change(s) across M file(s)" summary. |
 | **Dark / light theme** | Follows the system preference; toggle manually from the toolbar. |
 
 ---
 
 ## Install
+
+### winget (Windows)
+
+```powershell
+winget install Bennewitz.Ninja.ClaudeForge
+```
+
+Installs the current release as a portable app and adds a `claudeforge` command
+to your `PATH`; upgrade later with `winget upgrade Bennewitz.Ninja.ClaudeForge`.
+Portable installs don't create a Start Menu shortcut, and — until the binary is
+code-signed — the first launch still shows the SmartScreen notice described
+below.
 
 ### Pre-built binaries
 

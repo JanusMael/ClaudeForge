@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Localization"
+             xmlns:behaviors="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Behaviors"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions.PermissionRuleEducationPanel">
+
+    <!--
+        Self-contained "How permission rules work" accordion. Prose comes from the
+        library resx; code tokens are wrapped in `backticks` and rendered monospace
+        + accent by the CodeInline.Markup attached property (no code-behind).
+    -->
+    <Expander Header="{x:Static loc:Strings.PermEduHeading}"
+              AutomationProperties.Name="{x:Static loc:Strings.PermEduHeading}">
+        <StackPanel Spacing="10" Margin="4,8">
+            <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduIntro}"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Text="{x:Static loc:Strings.PermEduPrecedenceHeading}"
+                       FontWeight="SemiBold"
+                       AutomationProperties.HeadingLevel="3" />
+            <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduPrecedenceBody}"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Text="{x:Static loc:Strings.PermEduPerToolHeading}"
+                       FontWeight="SemiBold"
+                       AutomationProperties.HeadingLevel="3" />
+            <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduPerToolBody}"
+                       TextWrapping="Wrap" />
+
+            <TextBlock Text="{x:Static loc:Strings.PermEduMistakesHeading}"
+                       FontWeight="SemiBold"
+                       AutomationProperties.HeadingLevel="3" />
+            <StackPanel Spacing="4" Margin="8,0,0,0">
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduMistake1}"
+                           TextWrapping="Wrap" />
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduMistake2}"
+                           TextWrapping="Wrap" />
+                <TextBlock behaviors:CodeInline.Markup="{x:Static loc:Strings.PermEduMistake3}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </StackPanel>
+    </Expander>
+</UserControl>

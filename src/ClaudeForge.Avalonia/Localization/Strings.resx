@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ── Guided builder: validation + gloss ───────────────────────────── -->
+  <data name="PermBuilderInvalid" xml:space="preserve">
+    <value>Not a valid rule yet — complete the fields above.</value>
+  </data>
+  <data name="PermBuilderBareWildcardPath" xml:space="preserve">
+    <value>A path of only wildcards matches every file. Leave the path empty to allow all paths for this tool, or enter a specific pattern.</value>
+  </data>
+  <data name="PermBuilderGlossInvalid" xml:space="preserve">
+    <value>Fill in the fields to see what this rule will match.</value>
+  </data>
+  <data name="PermBuilderAddedFmt" xml:space="preserve">
+    <value>✓ Added `{0}` to {1}</value>
+    <comment>Transient builder confirmation. {0} = rule string, {1} = bucket (Allow/Ask/Deny).</comment>
+  </data>
+  <data name="PermBuilderCollisionConflict" xml:space="preserve">
+    <value>⚠ Conflicts with `{0}` in {1} — deny/ask takes precedence over allow.</value>
+    <comment>Cross-bucket collision note. {0} = existing rule, {1} = its bucket.</comment>
+  </data>
+  <data name="PermBuilderCollisionRedundant" xml:space="preserve">
+    <value>Overlaps with `{0}` already in {1} — one may be redundant.</value>
+    <comment>Same-bucket subsumption note. {0} = existing rule, {1} = its bucket.</comment>
+  </data>
+  <data name="PermBuilderGlossShellAll" xml:space="preserve">
+    <value>Matches ALL commands for this tool — very broad. Prefer a specific command.</value>
+  </data>
+  <data name="PermBuilderGlossShellPrefix" xml:space="preserve">
+    <value>Matches any command starting with `{0}`</value>
+  </data>
+  <data name="PermBuilderGlossShellExact" xml:space="preserve">
+    <value>Matches exactly the command `{0}`</value>
+  </data>
+  <data name="PermBuilderGlossPathAll" xml:space="preserve">
+    <value>Matches ALL file paths for this tool.</value>
+  </data>
+  <data name="PermBuilderGlossPathRecursive" xml:space="preserve">
+    <value>Matches any file under `{0}`</value>
+  </data>
+  <data name="PermBuilderGlossPathExact" xml:space="preserve">
+    <value>Matches the path `{0}`</value>
+  </data>
+  <data name="PermBuilderGlossWebAll" xml:space="preserve">
+    <value>Matches ALL web fetches.</value>
+  </data>
+  <data name="PermBuilderGlossWebDomain" xml:space="preserve">
+    <value>Matches web fetches to `{0}` and its subdomains.</value>
+  </data>
+  <data name="PermBuilderGlossMcpServer" xml:space="preserve">
+    <value>Matches every tool from the MCP server `{0}`</value>
+  </data>
+  <data name="PermBuilderGlossMcpTool" xml:space="preserve">
+    <value>Matches the MCP tool `{0}` on server `{1}`.</value>
+  </data>
+  <data name="PermBuilderGlossAgentAll" xml:space="preserve">
+    <value>Matches ALL subagents.</value>
+  </data>
+  <data name="PermBuilderGlossAgentNamed" xml:space="preserve">
+    <value>Matches the subagent `{0}`</value>
+  </data>
+
+  <!-- ── Dry-run tester: outcomes + explanations ──────────────────────── -->
+  <data name="PermOutcomeAllow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="PermOutcomeAsk" xml:space="preserve">
+    <value>Ask</value>
+  </data>
+  <data name="PermOutcomeDeny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+  <data name="PermOutcomeDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="PermTesterDefaultModeUnset" xml:space="preserve">
+    <value>(not set)</value>
+  </data>
+  <data name="PermTesterExplainDefault" xml:space="preserve">
+    <value>No rule matched. The outcome falls through to the default mode: {0}.</value>
+  </data>
+  <data name="PermTesterExplainMatched" xml:space="preserve">
+    <value>Matched a {0} rule: {1}</value>
+  </data>
+  <data name="PermTesterExplainMatchedScoped" xml:space="preserve">
+    <value>Matched a {0} rule in the {2} scope: {1}</value>
+  </data>
+  <data name="PermTesterDecidingPart" xml:space="preserve">
+    <value>(deciding part of the compound command: {0})</value>
+  </data>
+  <data name="PermTesterReadOnlyNote" xml:space="preserve">
+    <value>Note: Claude Code treats {0} as a read-only command and runs it without prompting, regardless of these rules.</value>
+  </data>
+  <data name="PermTesterSubcommandWarning" xml:space="preserve">
+    <value>Caution: this command embeds another command (via $(…), backticks, or a subshell). The verdict above reflects only the outer command — the embedded one runs but is not matched here, so a real run may be more permissive than shown.</value>
+  </data>
+
+  <!-- ── Education panel ───────────────────────────────────────────────── -->
+  <data name="PermEduHeading" xml:space="preserve">
+    <value>How permission rules work</value>
+  </data>
+  <data name="PermEduIntro" xml:space="preserve">
+    <value>Permission rules tell Claude Code which tool actions to allow, ask about, or deny. Each rule is either a bare tool name (matching every use of that tool) or `Tool(specifier)` for fine-grained control.</value>
+  </data>
+  <data name="PermEduPrecedenceHeading" xml:space="preserve">
+    <value>Precedence: deny always wins</value>
+  </data>
+  <data name="PermEduPrecedenceBody" xml:space="preserve">
+    <value>Rules are evaluated `deny` → `ask` → `allow`, and the first match wins. A deny in ANY scope beats an allow in any scope. If no rule matches, the default mode decides.</value>
+  </data>
+  <data name="PermEduPerToolHeading" xml:space="preserve">
+    <value>Each tool has its own pattern style</value>
+  </data>
+  <data name="PermEduPerToolBody" xml:space="preserve">
+    <value>Bash and PowerShell use glob patterns: `*` matches anything, even spaces, and a space before a trailing `*` forces a word boundary (so `ls *` matches `ls -la` but not `lsof`). Read/Edit/Write use gitignore-style paths with four anchors: `//absolute`, `~/home`, `/project-root`, and `./current-directory`. WebFetch uses `domain:host`. MCP uses `mcp__server` or `mcp__server__tool`.</value>
+  </data>
+  <data name="PermEduMistakesHeading" xml:space="preserve">
+    <value>Common mistakes</value>
+  </data>
+  <data name="PermEduMistake1" xml:space="preserve">
+    <value>• Expecting an allow rule to override a deny — it never does. Deny always wins.</value>
+  </data>
+  <data name="PermEduMistake2" xml:space="preserve">
+    <value>• Using the wrong path anchor: a single leading slash (`/path`) means your PROJECT ROOT, not the filesystem root. Use `//path` for an absolute path.</value>
+  </data>
+  <data name="PermEduMistake3" xml:space="preserve">
+    <value>• Trying to constrain Bash arguments. Patterns like `Bash(curl example.com *)` are fragile — option order, redirects, and variables defeat them. For network control, deny `curl` / `wget` and allow `WebFetch(domain:…)` instead.</value>
+  </data>
+
+  <!-- ── Guided builder: control labels / tooltips ────────────────────── -->
+  <data name="PermBuilderHeading" xml:space="preserve">
+    <value>Build a rule</value>
+  </data>
+  <data name="PermBuilderHintStarShell" xml:space="preserve">
+    <value>`*` matches anything, even spaces</value>
+  </data>
+  <data name="PermBuilderHintWebDomain" xml:space="preserve">
+    <value>Matches the host `example.com` and all its subdomains</value>
+  </data>
+  <data name="PermBuilderHintMcpAll" xml:space="preserve">
+    <value>`mcp__server` = every tool from that server</value>
+  </data>
+  <data name="PermBuilderHintMcpOne" xml:space="preserve">
+    <value>`mcp__server__tool` = one specific tool</value>
+  </data>
+  <data name="PermBuilderHintStarPath" xml:space="preserve">
+    <value>`*` matches within one path segment</value>
+  </data>
+  <data name="PermBuilderHintDoubleStarPath" xml:space="preserve">
+    <value>`**` matches across path segments</value>
+  </data>
+  <data name="PermBuilderHintQuestionPath" xml:space="preserve">
+    <value>`?` matches a single character</value>
+  </data>
+  <data name="PermBuilderHintGroupWildcards" xml:space="preserve">
+    <value>Wildcards</value>
+    <comment>Caption for the wildcard group of builder hints.</comment>
+  </data>
+  <data name="PermBuilderHintGroupAnchors" xml:space="preserve">
+    <value>Anchors</value>
+    <comment>Caption for the path-anchor group of builder hints.</comment>
+  </data>
+  <data name="PermBuilderHintAnchorProject" xml:space="preserve">
+    <value>`/path` = project root</value>
+  </data>
+  <data name="PermBuilderHintAnchorAbsolute" xml:space="preserve">
+    <value>`//path` = filesystem absolute</value>
+  </data>
+  <data name="PermBuilderHintAnchorHome" xml:space="preserve">
+    <value>`~/path` = home directory</value>
+  </data>
+  <data name="PermBuilderHintAnchorCwd" xml:space="preserve">
+    <value>`./path` = current directory</value>
+  </data>
+  <data name="PermBuilderToolLabel" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="PermBuilderToolTip" xml:space="preserve">
+    <value>Choose which tool this rule applies to.</value>
+  </data>
+  <data name="PermBuilderCommandLabel" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="PermBuilderCommandTip" xml:space="preserve">
+    <value>The command to match. Leave empty to match every command for this tool (very broad).</value>
+  </data>
+  <data name="PermBuilderPrefixLabel" xml:space="preserve">
+    <value>Match as a prefix (any arguments)</value>
+  </data>
+  <data name="PermBuilderPrefixTip" xml:space="preserve">
+    <value>When on, the rule matches this command followed by any arguments (appends a trailing wildcard).</value>
+  </data>
+  <data name="PermBuilderPathLabel" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="PermBuilderPathTip" xml:space="preserve">
+    <value>A file or folder path. Anchors: //absolute, ~/home, /project-root, or a plain/relative path from the current directory.</value>
+  </data>
+  <data name="PermBuilderBrowseFile" xml:space="preserve">
+    <value>Browse file…</value>
+  </data>
+  <data name="PermBuilderBrowseFolder" xml:space="preserve">
+    <value>Browse folder…</value>
+  </data>
+  <data name="PermBuilderRecursiveLabel" xml:space="preserve">
+    <value>Include everything underneath (recursive)</value>
+  </data>
+  <data name="PermBuilderRecursiveTip" xml:space="preserve">
+    <value>When on, matches all files under the folder (appends /**).</value>
+  </data>
+  <data name="PermBuilderDomainLabel" xml:space="preserve">
+    <value>Domain</value>
+  </data>
+  <data name="PermBuilderDomainTip" xml:space="preserve">
+    <value>A domain such as example.com. Subdomains are included.</value>
+  </data>
+  <data name="PermBuilderMcpServerLabel" xml:space="preserve">
+    <value>MCP server</value>
+  </data>
+  <data name="PermBuilderMcpServerTip" xml:space="preserve">
+    <value>Choose the MCP server this rule applies to.</value>
+  </data>
+  <data name="PermBuilderMcpAllToolsLabel" xml:space="preserve">
+    <value>All tools from this server</value>
+  </data>
+  <data name="PermBuilderMcpToolLabel" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="PermBuilderMcpToolTip" xml:space="preserve">
+    <value>The specific MCP tool to match. Ignored when 'All tools' is on.</value>
+  </data>
+  <data name="PermBuilderAgentLabel" xml:space="preserve">
+    <value>Subagent name</value>
+  </data>
+  <data name="PermBuilderAgentTip" xml:space="preserve">
+    <value>The subagent to match, e.g. Explore.</value>
+  </data>
+  <data name="PermBuilderPreviewLabel" xml:space="preserve">
+    <value>Rule preview</value>
+  </data>
+  <data name="PermBuilderPreviewTip" xml:space="preserve">
+    <value>The exact rule string that will be added.</value>
+  </data>
+  <data name="PermBuilderAddAllowTip" xml:space="preserve">
+    <value>Add this rule to the allow list at the current scope.</value>
+  </data>
+  <data name="PermBuilderAddAskTip" xml:space="preserve">
+    <value>Add this rule to the ask list at the current scope.</value>
+  </data>
+  <data name="PermBuilderAddDenyTip" xml:space="preserve">
+    <value>Add this rule to the deny list at the current scope.</value>
+  </data>
+
+  <!-- ── Dry-run tester: control labels / tooltips ────────────────────── -->
+  <data name="PermTesterHeading" xml:space="preserve">
+    <value>Test a rule (dry run)</value>
+  </data>
+  <data name="PermTesterToolLabel" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="PermTesterCommandLabel" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="PermTesterPathLabel" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="PermTesterUrlLabel" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="PermTesterMcpServerLabel" xml:space="preserve">
+    <value>MCP server</value>
+  </data>
+  <data name="PermTesterMcpToolLabel" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="PermTesterAgentLabel" xml:space="preserve">
+    <value>Subagent name</value>
+  </data>
+  <data name="PermTesterMergedLabel" xml:space="preserve">
+    <value>Check across all scopes (merged)</value>
+  </data>
+  <data name="PermTesterMergedTip" xml:space="preserve">
+    <value>When on, evaluates rules from every scope together. When off, only the scope you are editing.</value>
+  </data>
+  <data name="PermTesterResultHeading" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="PermTesterNoInput" xml:space="preserve">
+    <value>Enter a value above (a command, path, URL, MCP tool, or subagent) to see the decision Claude Code would make.</value>
+  </data>
+  <data name="PermTesterScopeLabel" xml:space="preserve">
+    <value>Scope</value>
+    <comment>Label for the dedicated scope callout in the tester result (merged view).</comment>
+  </data>
+  <data name="PermTesterInputTip" xml:space="preserve">
+    <value>Describe what Claude would do; the result shows the decision Claude Code would make.</value>
+  </data>
+</root>

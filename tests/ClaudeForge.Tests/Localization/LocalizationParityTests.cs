@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Localization;
 
@@ -201,9 +202,103 @@ public sealed class LocalizationParityTests
         }
     }
 
+    /// <summary>
+    /// Contract #4 — format-placeholder parity.  For every English value that
+    /// contains <c>{N}</c> indexed placeholders, each locale that defines the same
+    /// key must use the IDENTICAL set of placeholder indices.  <c>string.Format</c>
+    /// resolves the value for the user's <c>CurrentUICulture</c>, so a locale that
+    /// drops or renumbers a placeholder (e.g. the coercion strings
+    /// <c>LabelEffortCoercedFmt</c> / <c>LabelEffortUnsupportedFmt</c> /
+    /// <c>LabelModelEffortSummaryFmt</c>) throws <see cref="FormatException"/> at
+    /// runtime for that locale instead of merely falling back to English — the one
+    /// drift class that crashes rather than degrades, so the other three contracts
+    /// don't cover it.
+    /// </summary>
+    [TestMethod]
+    public void EveryFormatPlaceholder_MatchesAcrossLocales()
+    {
+        string localizationDir = FindLocalizationDirectory();
+        IReadOnlyDictionary<string, string> englishValues = LoadValues(Path.Combine(localizationDir, "Strings.resx"));
+        Assert.IsTrue(englishValues.Count > 0,
+            "Sanity check: Strings.resx must contain at least one <data> with a <value>.");
+
+        IReadOnlyList<string> localeFiles = Directory.GetFiles(localizationDir, "Strings.*.resx")
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        Assert.IsTrue(localeFiles.Count > 0,
+            "Sanity check: at least one Strings.<culture>.resx file must exist.");
+
+        List<string> failures = new();
+        foreach (string localeFile in localeFiles)
+        {
+            string cultureCode = ExtractCultureCode(localeFile);
+            IReadOnlyDictionary<string, string> localeValues = LoadValues(localeFile);
+
+            foreach (KeyValuePair<string, string> kv in englishValues)
+            {
+                IReadOnlySet<int> englishIndices = PlaceholderIndices(kv.Value);
+                if (englishIndices.Count == 0)
+                {
+                    continue; // nothing to format → nothing to drift
+                }
+
+                // Key-presence is Contract #1's job; only compare where the locale
+                // actually defines the key (a missing key falls back to English and
+                // formats safely).
+                if (!localeValues.TryGetValue(kv.Key, out string? localeValue))
+                {
+                    continue;
+                }
+
+                IReadOnlySet<int> localeIndices = PlaceholderIndices(localeValue);
+                if (!englishIndices.SetEquals(localeIndices))
+                {
+                    failures.Add(string.Format(CultureInfo.InvariantCulture,
+                        "[{0}] key '{1}': English uses placeholders {{{2}}} but the locale uses {{{3}}}.",
+                        cultureCode, kv.Key,
+                        string.Join(",", englishIndices.OrderBy(i => i)),
+                        string.Join(",", localeIndices.OrderBy(i => i))));
+                }
+            }
+        }
+
+        if (failures.Count > 0)
+        {
+            Assert.Fail(
+                "Format-placeholder drift detected — a localized format string must use the " +
+                "exact same {N} placeholder set as its English source, or string.Format throws " +
+                "FormatException at runtime for that locale:\n  " +
+                string.Join("\n  ", failures));
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The distinct numeric placeholder indices in a composite format string
+    /// (<c>"{0} of {1}"</c> → <c>{0, 1}</c>; <c>"{0:P1}"</c> → <c>{0}</c>).  Escaped
+    /// braces (<c>{{</c> / <c>}}</c>) are stripped first so a literal brace never
+    /// registers as a placeholder.
+    /// </summary>
+    private static IReadOnlySet<int> PlaceholderIndices(string value)
+    {
+        string unescaped = value
+            .Replace("{{", string.Empty, StringComparison.Ordinal)
+            .Replace("}}", string.Empty, StringComparison.Ordinal);
+
+        // Limitation: a format specifier containing literal braces (e.g. "{0:{nested}}")
+        // is not parsed correctly — vanishingly rare in UI strings, and absent from this
+        // resx. Revisit the pattern if a complex specifier is ever introduced.
+        HashSet<int> indices = new();
+        foreach (Match m in Regex.Matches(unescaped, @"\{(\d+)(?:[,:][^{}]*)?\}"))
+        {
+            indices.Add(int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture));
+        }
+
+        return indices;
+    }
 
     /// <summary>
     /// Reads the set of <c>&lt;data name="…"&gt;</c> keys from a resx file.

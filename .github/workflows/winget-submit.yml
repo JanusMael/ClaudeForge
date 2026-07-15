@@ -1,0 +1,68 @@
+name: Submit to winget
+
+# Manually-dispatched winget submission for Bennewitz.Ninja.ClaudeForge.
+#
+# Run this AFTER the release's Windows zips have been SIGNED and re-uploaded.
+# winget records a SHA256 that wingetcreate computes from the live release
+# asset, so submitting BEFORE the signed re-upload would pin the unsigned hash —
+# hence manual, and always after signing.
+#
+# FIRST-TIME NOTE: `wingetcreate update` requires the package to already exist in
+# winget-pkgs, so the very first submission of the brand-new package is manual —
+# see packaging/winget/README.md. This workflow keeps it current thereafter.
+#
+# Requires repository secret WINGET_TOKEN: a GitHub PAT (classic) with the
+# `public_repo` scope, used by wingetcreate to fork winget-pkgs and open the PR.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to submit (no leading 'v'), e.g. 2026.3.701."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  winget:
+    name: Update winget manifest
+    runs-on: windows-latest
+
+    steps:
+      - name: Resolve version + asset URLs
+        id: vars
+        shell: pwsh
+        run: |
+          $ver = "${{ github.event.inputs.version }}" -replace '^v', ''
+          if (-not $ver) { Write-Error "A version input is required."; exit 1 }
+
+          $tag  = "v$ver"
+          $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
+          "version=$ver"                          | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "x64=$base/ClaudeForge-win-x64.zip"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "arm64=$base/ClaudeForge-win-arm64.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Submitting Bennewitz.Ninja.ClaudeForge $ver"
+
+      - name: Update winget manifest and open PR
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          if (-not $env:WINGET_TOKEN) {
+            Write-Error "WINGET_TOKEN secret is not set. Create a GitHub PAT (classic) with the 'public_repo' scope and add it as the repo secret WINGET_TOKEN. See packaging/winget/README.md."
+            exit 1
+          }
+
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+
+          # `update` fetches the current manifest from winget-pkgs and bumps the
+          # version + URLs, recomputing each installer's SHA256 from the live
+          # (now signed) asset and preserving the nested-portable structure.
+          # --urls order matches the manifest's installers (x64, then arm64).
+          .\wingetcreate.exe update Bennewitz.Ninja.ClaudeForge `
+            --version "${{ steps.vars.outputs.version }}" `
+            --urls "${{ steps.vars.outputs.x64 }}" "${{ steps.vars.outputs.arm64 }}" `
+            --submit `
+            --token $env:WINGET_TOKEN

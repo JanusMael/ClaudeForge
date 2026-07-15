@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+#
+# Default-locale manifest (template). Publisher is the author's name; the
+# PackageIdentifier prefix (Bennewitz.Ninja) is the author's namespace — the two
+# do not have to match.
+PackageIdentifier: Bennewitz.Ninja.ClaudeForge
+PackageVersion: "<PACKAGE_VERSION>"
+PackageLocale: en-US
+Publisher: Brian Bennewitz
+PublisherUrl: https://github.com/JanusMael
+PublisherSupportUrl: https://github.com/JanusMael/ClaudeForge/issues
+Author: Brian Bennewitz
+PackageName: ClaudeForge
+PackageUrl: https://github.com/JanusMael/ClaudeForge
+License: MIT
+LicenseUrl: https://github.com/JanusMael/ClaudeForge/blob/main/LICENSE
+Copyright: Copyright (c) 2024-2026 ClaudeForge Contributors
+CopyrightUrl: https://github.com/JanusMael/ClaudeForge/blob/main/LICENSE
+ShortDescription: A cross-platform desktop editor for Claude Code and Claude Desktop configuration files.
+Description: >-
+  ClaudeForge is a cross-platform desktop editor for Claude Code and Claude
+  Desktop configuration. It provides schema-validated, guided editors for
+  settings.json, permission allow/deny/ask rules, hooks, MCP servers,
+  environment variables, the model catalog, user-memory files, and
+  agents/skills/slash-commands — plus backup and restore.
+Moniker: claudeforge
+Tags:
+  - claude
+  - claude-code
+  - anthropic
+  - ai
+  - configuration
+  - settings
+  - editor
+  - developer-tools
+  - avalonia
+  - dotnet
+ReleaseNotesUrl: https://github.com/JanusMael/ClaudeForge/releases/tag/v<PACKAGE_VERSION>
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

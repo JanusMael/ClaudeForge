@@ -1,3 +1,5 @@
+using Bennewitz.Ninja.ClaudeForge.Core.Backup;
+
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 
 /// <summary>
@@ -6,11 +8,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 /// </summary>
 /// <remarks>
 /// <para>
-/// SDK-side mirror of <c>ClaudeForge.Core.Backup.BackupManifest</c>. The Sdk
-/// keeps its own surface so that consumers see only Sdk-defined types
-/// (<see cref="BackupMode"/> rather than Core's enum, no JSON-serialization
-/// attributes leaking into the public contract). The migration in
-/// 4.3.5 projects Core's manifest to this type at the SDK boundary.
+/// SDK-side mirror of <c>ClaudeForge.Core.Backup.BackupManifest</c>. The Sdk keeps
+/// its own record surface so no JSON-serialization attributes leak into the public
+/// contract; Core's manifest is projected to this type at the SDK boundary.
+/// <see cref="Mode"/> is the shared <c>Core.Backup.BackupMode</c> — formerly a
+/// duplicated Sdk-local enum, consolidated since both surfaces enumerate the same
+/// backup modes.
 /// </para>
 /// </remarks>
 /// <param name="Kind">Discriminator. Always <c>"backup"</c> for backup archives.</param>

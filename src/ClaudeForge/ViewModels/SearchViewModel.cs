@@ -188,7 +188,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
         // The config-file equivalent is permissions.defaultMode = "bypassPermissions".
         const string dangerFlagLower = "dangerouslyskippermissions";
         if (query.Length >= 3 &&
-            dangerFlagLower.StartsWith(query.ToLower(), StringComparison.Ordinal))
+            dangerFlagLower.StartsWith(query.ToLowerInvariant(), StringComparison.Ordinal))
         {
             NavigationNodeViewModel? permNode = FindPermissionsNode();
             if (permNode is not null)
@@ -207,6 +207,50 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
                 {
                     IsSynthetic = true,
                 });
+            }
+        }
+
+        // ── Synthetic result: permissions.defaultMode = bypassPermissions ───
+        // Typing "bypass" / "bypassPermissions" deep-links to SELECTING the bypass
+        // default mode. Distinct from the --dangerouslySkipPermissions CLI-flag
+        // synthetic above (different trigger) and from the "Disable bypass-
+        // permissions mode" Essentials card (the opposite intent). Queries
+        // containing "disable" are excluded so "disable bypass" surfaces only the
+        // lock-out card.
+        const string bypassLower = "bypasspermissions";
+        string queryLower = query.ToLowerInvariant();
+        if (query.Length >= 3
+            && (bypassLower.StartsWith(queryLower, StringComparison.Ordinal)
+                || queryLower.Contains("bypass", StringComparison.Ordinal))
+            && !queryLower.Contains("disable", StringComparison.Ordinal))
+        {
+            NavigationNodeViewModel? permNode = FindPermissionsNode();
+            if (permNode is not null)
+            {
+                const string bypassDesc = "Set permissions.defaultMode = bypassPermissions to suppress all "
+                                          + "tool permission prompts. Only use this in fully isolated environments.";
+                SearchResults.Add(new SearchResultViewModel(
+                    permNode,
+                    _claudeCodeNavTitle,
+                    "Permissions",
+                    "permissions.defaultMode = bypassPermissions",
+                    "permissions.defaultMode", // real sub-path key — deep-links to the Default Mode editor
+                    "permissions.defaultMode = bypassPermissions",
+                    bypassDesc)
+                {
+                    IsSynthetic = true,
+                });
+
+                // Suppress the OPPOSITE-INTENT "Disable bypass-permissions mode"
+                // Essentials card for an enable-bypass query: its "disable bypass"
+                // trigger substring-matches a bare "bypass" via the bidirectional
+                // Essentials matcher, so without this both rows surface at once.
+                SearchResultViewModel? disableCard = SearchResults.FirstOrDefault(
+                    r => r.IsSynthetic && r.PropertyKey == EssentialsViewModel.CardIdDisableBypass);
+                if (disableCard is not null)
+                {
+                    SearchResults.Remove(disableCard);
+                }
             }
         }
 
@@ -405,7 +449,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
             ],
             [EssentialsViewModel.CardIdModel] =
             [
-                "model", "opus", "haiku", "sonnet",
+                "model", "opus", "haiku", "sonnet", "fable",
             ],
             [EssentialsViewModel.CardIdEffortLevel] =
             [

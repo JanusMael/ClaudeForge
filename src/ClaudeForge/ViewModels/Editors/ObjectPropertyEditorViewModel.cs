@@ -28,12 +28,30 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// </remarks>
 public class ObjectPropertyEditorViewModel : PropertyEditorViewModel
 {
+    /// <summary>
+    /// Only objects with MORE than this many children render as collapsible, name-prefix
+    /// CATEGORIES (see <see cref="Categories"/>); anything at or below renders as a plain
+    /// inline list exactly as it always did.
+    /// <para>
+    /// Deliberately high. It was the FULL set (<c>env</c>'s ~305 vars) that made the
+    /// Environment page take seconds; a ~150-child list renders acceptably inline. So this
+    /// must not impose an accordion on mid-sized objects (e.g. <c>sandbox</c>'s 35) that
+    /// were perfectly fine before — the accordion is reserved for the pathological case.
+    /// </para>
+    /// </summary>
+    private const int InlineChildThreshold = 150;
+
+    /// <summary>Minimum children a name-prefix must have to earn its own category.</summary>
+    private const int MinCategoryMembers = 5;
+
     public ObjectPropertyEditorViewModel(SchemaNode schema, ConfigScope editingScope,
                                          IReadOnlyList<LibVm.PropertyEditorViewModel> children,
                                          SettingsWorkspace? workspace = null)
         : base(schema, editingScope)
     {
         Children = children;
+        IsCollapsible = children.Count > InlineChildThreshold;
+        Categories = IsCollapsible ? BuildCategories(children) : [];
         // workspace parameter kept for API compatibility but not stored —
         // LoadFromLayered extracts child values from the parent LayeredValue
         // rather than querying the workspace directly (see LoadFromLayered comment).
@@ -49,6 +67,19 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel
     }
 
     public IReadOnlyList<LibVm.PropertyEditorViewModel> Children { get; }
+
+    /// <summary>True when this object is large enough to render as collapsible categories.</summary>
+    public bool IsCollapsible { get; }
+
+    /// <summary>
+    /// For a large (collapsible) object: its children bucketed into name-prefix categories
+    /// (e.g. <c>CLAUDE</c>, <c>OTEL</c>, <c>Other</c>), each a collapsible + virtualized
+    /// section that realizes nothing until expanded. Empty for small objects (inline). When
+    /// prefix-grouping doesn't split the object into useful buckets, this is a single
+    /// <c>All</c> category, so the large object still renders as one bounded, virtualized,
+    /// collapsed section rather than an easy-to-miss toggle.
+    /// </summary>
+    public IReadOnlyList<PropertyCategoryViewModel> Categories { get; }
 
     public override JsonNode? ToJsonValue()
     {
@@ -146,5 +177,66 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel
         {
             OnPropertyChanged(nameof(IsModified));
         }
+    }
+
+    /// <summary>
+    /// Bucket <paramref name="children"/> by the leading token of their name (up to the
+    /// first <c>'_'</c>, e.g. <c>CLAUDE</c>, <c>OTEL</c>). A prefix with at least
+    /// <see cref="MinCategoryMembers"/> members becomes its own category (ordered
+    /// alphabetically); everything else — short prefixes, singletons, and names with no
+    /// underscore — pools into a trailing <c>Other</c>. When no prefix qualifies (no useful
+    /// structure, e.g. sandbox's camelCase keys) the whole object collapses into a single
+    /// <c>All</c> category, so it still renders as one bounded, virtualized, collapsed
+    /// section instead of an easy-to-miss toggle.
+    /// </summary>
+    private static IReadOnlyList<PropertyCategoryViewModel> BuildCategories(
+        IReadOnlyList<LibVm.PropertyEditorViewModel> children)
+    {
+        Dictionary<string, List<LibVm.PropertyEditorViewModel>> byPrefix = new(StringComparer.Ordinal);
+        foreach (LibVm.PropertyEditorViewModel child in children)
+        {
+            string name = child.Schema.Name;
+            int underscore = name.IndexOf('_');
+            string prefix = underscore > 0 ? name[..underscore] : string.Empty;
+            if (!byPrefix.TryGetValue(prefix, out List<LibVm.PropertyEditorViewModel>? bucket))
+            {
+                bucket = new List<LibVm.PropertyEditorViewModel>();
+                byPrefix[prefix] = bucket;
+            }
+
+            bucket.Add(child);
+        }
+
+        List<PropertyCategoryViewModel> categories = new();
+        List<LibVm.PropertyEditorViewModel> other = new();
+        foreach (KeyValuePair<string, List<LibVm.PropertyEditorViewModel>> kv in byPrefix)
+        {
+            if (kv.Key.Length > 0 && kv.Value.Count >= MinCategoryMembers)
+            {
+                // Name is the bare prefix ("CLAUDE", not "CLAUDE_") — the trailing
+                // separator is noise in a section header.
+                categories.Add(new PropertyCategoryViewModel(kv.Key, kv.Value));
+            }
+            else
+            {
+                other.AddRange(kv.Value);
+            }
+        }
+
+        categories.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+
+        // No prefix reached the threshold → one bounded "All" section (still virtualized,
+        // still collapsed) rather than a pile of singleton categories.
+        if (categories.Count == 0)
+        {
+            return [new PropertyCategoryViewModel("All", children)];
+        }
+
+        if (other.Count > 0)
+        {
+            categories.Add(new PropertyCategoryViewModel("Other", other));
+        }
+
+        return categories;
     }
 }

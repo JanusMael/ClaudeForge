@@ -11,6 +11,29 @@
 
     <DockPanel>
 
+        <!-- Unrecognized/deprecated-event notice: events on disk that the current
+             schema no longer lists (kept as-is, still saved). Amber caution palette
+             (fixed, theme-independent) so it reads as advisory, not an error. -->
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding UnrecognizedEventsNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                Background="#FFFEF3C7"
+                BorderBrush="#FFF59E0B"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,4"
+                Margin="8,8,8,0"
+                TextElement.Foreground="#FF92400E">
+            <TextBlock Text="{Binding UnrecognizedEventsNotice}"
+                       Foreground="#FF92400E"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       AutomationProperties.Name="{Binding UnrecognizedEventsNotice}" />
+        </Border>
+
+        <!-- The "View flow diagram" link now lives in the property-name header row
+             (PropertyEditorWrapper, via the VM's HeaderAction* slot) so it sits right
+             of the "Hooks" label rather than inside this editor body. -->
+
         <Grid ColumnDefinitions="190,4,*">
 
             <!-- Left: event type list with hook-count indicator -->
@@ -22,7 +45,7 @@
                          AutomationProperties.Name="{x:Static loc:Strings.AutoNameHookEventList}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:HookEventGroup">
-                            <DockPanel>
+                            <DockPanel ToolTip.Tip="{Binding Description}">
                                 <!-- Hook count badge (right-aligned).
                                  Use an explicit dark-blue background (rather than the theme
                                  accent, which can be a light tint in Semi light mode where
@@ -60,16 +83,35 @@
                     <DataTemplate DataType="vm:HookEventGroup">
                         <DockPanel Margin="12,8">
 
-                            <!-- Toolbar -->
-                            <StackPanel DockPanel.Dock="Top"
-                                        Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+                            <!-- Toolbar row: event name with the Add-hook button immediately
+                                 to its right (not docked to the far edge). -->
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal"
+                                        Spacing="12" Margin="0,0,0,4">
                                 <TextBlock Text="{Binding EventName}"
                                            FontSize="16" FontWeight="SemiBold"
                                            VerticalAlignment="Center" />
                                 <Button Content="{x:Static loc:Strings.ButtonAddHook}"
                                         Command="{Binding AddHookCommand}"
+                                        VerticalAlignment="Center"
                                         AutomationProperties.Name="{x:Static loc:Strings.ButtonAddHook}" />
                             </StackPanel>
+
+                            <!-- Schema description as a highlighted chip beneath the name — wraps
+                                 in full (never truncated) so long CwdChanged / FileChanged text and
+                                 its docs URL stay readable. Background + foreground use the SAME
+                                 Semi keys as a selected left-rail item (ListBoxItemSelected*), so
+                                 the blurb visually reads as belonging to the selected event. -->
+                            <Border DockPanel.Dock="Top"
+                                    IsVisible="{Binding HasDescription}"
+                                    Background="{DynamicResource ListBoxItemSelectedBackground}"
+                                    CornerRadius="4"
+                                    Padding="8,5"
+                                    Margin="0,0,0,8">
+                                <TextBlock Text="{Binding Description}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource ListBoxItemSelectedForeground}" />
+                            </Border>
 
                             <!-- Guidance paragraph -->
                             <TextBlock DockPanel.Dock="Top"
@@ -285,7 +327,7 @@
                                         <DataGridTemplateColumn.CellEditingTemplate>
                                             <DataTemplate x:DataType="vm:HookEntry">
                                                 <ComboBox SelectedItem="{Binding SelectedCommandTypeInfo}"
-                                                          ItemsSource="{x:Static vm:HookEntry.CommandTypeInfos}"
+                                                          ItemsSource="{Binding CommandTypeInfos}"
                                                           HorizontalAlignment="Stretch"
                                                           AutomationProperties.Name="{x:Static loc:Strings.HeaderHookType}">
                                                     <ComboBox.ItemTemplate>

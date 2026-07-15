@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security;
@@ -202,27 +203,50 @@ public partial class AboutEditorViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> when the product this About page represents is
-    /// detected on the current machine.  Used as the CanExecute gate for all config
-    /// file actions so buttons are disabled when the product is not installed.
-    /// Uses the same binary-presence check as <see cref="IsProductInstalled"/> so the
-    /// button state is always consistent with the version-row display.
+    /// <see langword="true"/> when the primary config FILE exists, so "Open config"
+    /// has a real target. Gated on the file — NOT product-install detection — because
+    /// ClaudeForge is a config editor: an existing config should be openable even when
+    /// the product binary isn't detected (installed-but-not-on-PATH, or a config
+    /// authored before the product is installed). Previously both actions gated on
+    /// <see cref="IsProductInstalled"/>, which (a) disabled them whenever the product
+    /// wasn't detected even though a config existed, and (b) enabled them against a
+    /// MISSING file when only the install directory was found.
     /// </summary>
-    private bool CanActOnConfig()
+    private bool CanOpenConfig()
     {
-        return IsProductInstalled;
+        return File.Exists(PrimaryConfigPath);
     }
 
-    [RelayCommand(CanExecute = nameof(CanActOnConfig))]
+    /// <summary>
+    /// <see langword="true"/> when the config file OR its parent directory exists.
+    /// "Reveal" shows the file when present, otherwise opens the containing folder —
+    /// useful when the product is installed but has not written its config yet.
+    /// </summary>
+    private bool CanRevealConfig()
+    {
+        return File.Exists(PrimaryConfigPath)
+               || Directory.Exists(Path.GetDirectoryName(PrimaryConfigPath));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOpenConfig))]
     private void OpenConfig()
     {
         _shellLauncher.OpenInDefaultEditor(PrimaryConfigPath);
     }
 
-    [RelayCommand(CanExecute = nameof(CanActOnConfig))]
+    [RelayCommand(CanExecute = nameof(CanRevealConfig))]
     private void RevealConfig()
     {
-        _shellLauncher.RevealInFileManager(PrimaryConfigPath);
+        // Reveal the file when it exists; otherwise open the containing folder so the
+        // user can still get to where the config lives (or will live).
+        if (File.Exists(PrimaryConfigPath))
+        {
+            _shellLauncher.RevealInFileManager(PrimaryConfigPath);
+        }
+        else if (Path.GetDirectoryName(PrimaryConfigPath) is { } dir)
+        {
+            _shellLauncher.RevealInFileManager(dir);
+        }
     }
 
     /// <summary>True when a log file path is known and a share service is wired up.</summary>

@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -62,6 +64,17 @@ public partial class JsonRawPropertyEditorViewModel : PropertyEditorViewModel
     /// </summary>
     [ObservableProperty] private string? _parseError;
 
+    /// <summary>
+    /// Inline, advisory schema-structure message shown beneath the box when the JSON
+    /// parses but doesn't fit this property's shape — a wrong root kind (array vs
+    /// object) or a missing required child property. Distinct from <see cref="ParseError"/>
+    /// (a hard parse failure): a schema warning does NOT block the live write, since the
+    /// save-time validator is the authoritative gate and reports deep value constraints
+    /// (enum / pattern) the structural check can't see. <see langword="null"/> when the
+    /// structure looks right (or the text is empty / unparseable).
+    /// </summary>
+    [ObservableProperty] private string? _schemaError;
+
     /// <summary>True when the JSON text is non-empty.</summary>
     public bool IsValueSet => !string.IsNullOrWhiteSpace(Text);
 
@@ -99,6 +112,7 @@ public partial class JsonRawPropertyEditorViewModel : PropertyEditorViewModel
         {
             _parsedValue = null;
             ParseError = null;
+            SchemaError = null;
             // Match the simple-leaf "cleared" semantics: not modified.
             // The live-write path translates IsModified=false into a
             // RemoveValue() call.
@@ -114,6 +128,10 @@ public partial class JsonRawPropertyEditorViewModel : PropertyEditorViewModel
         {
             _parsedValue = JsonNode.Parse(value);
             ParseError = null;
+            // Advisory structural check (never blocks the write; save-time
+            // validation is the gate). Surfaces a wrong root kind / missing
+            // required property live, before the user has to hit Save.
+            SchemaError = ValidateStructure(_parsedValue);
             // MarkModified force-fires PropertyChanged even when IsModified is
             // already true, so consecutive successful edits keep flowing
             // through the live-write loop.
@@ -126,9 +144,94 @@ public partial class JsonRawPropertyEditorViewModel : PropertyEditorViewModel
             // re-fire IsModified — the live-write path must not write the
             // unparseable text or the stale prior value as if the user had
             // confirmed it. The user fixes the JSON; on the next successful
-            // parse we resume writing.
+            // parse we resume writing. Clear any stale schema warning — the
+            // parse error takes precedence.
             ParseError = ex.Message;
+            SchemaError = null;
         }
+    }
+
+    /// <summary>
+    /// Re-indent the current JSON in place (parse → pretty-print). No-op when the text
+    /// is empty or not valid JSON — in the latter case <see cref="ParseError"/> already
+    /// explains why nothing happened. Setting <see cref="Text"/> re-runs the parse +
+    /// structural check through <see cref="OnTextChanged"/>.
+    /// </summary>
+    [RelayCommand]
+    private void Format()
+    {
+        if (string.IsNullOrWhiteSpace(Text))
+        {
+            return;
+        }
+
+        try
+        {
+            JsonNode? parsed = JsonNode.Parse(Text);
+            if (parsed is not null)
+            {
+                Text = PrettyPrint(parsed);
+            }
+        }
+        catch (JsonException)
+        {
+            // Not valid JSON — leave the text and ParseError untouched.
+        }
+    }
+
+    /// <summary>
+    /// Best-effort structural check of <paramref name="value"/> against this property's
+    /// <see cref="SchemaNode"/> — the part verifiable without the full JSON-Schema engine:
+    /// the root kind (array vs object) and any missing required child properties. Returns
+    /// a specific, human message, or <see langword="null"/> when the structure looks right.
+    /// Deep value constraints (enum / pattern / nested types) are left to the save-time
+    /// validator, which reports them in the banner. Deliberately English — matching the
+    /// other non-localized raw-JSON diagnostics (parse errors, the unsupported-shape notice).
+    /// </summary>
+    private string? ValidateStructure(JsonNode? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (Schema.ValueType == SchemaValueType.Array && value is not JsonArray)
+        {
+            return $"This setting expects a JSON array, but the value is {DescribeKind(value)}.";
+        }
+
+        if (Schema.ValueType == SchemaValueType.Object && value is not JsonObject)
+        {
+            return $"This setting expects a JSON object, but the value is {DescribeKind(value)}.";
+        }
+
+        if (value is JsonObject obj && Schema.Properties.Count > 0)
+        {
+            List<string> missing = Schema.Properties
+                .Where(p => p.IsRequired && !obj.ContainsKey(p.Name))
+                .Select(p => p.Name)
+                .ToList();
+            if (missing.Count > 0)
+            {
+                string label = missing.Count == 1 ? "property" : "properties";
+                return $"Missing required {label}: {string.Join(", ", missing)}.";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Human name for a JSON node's kind, for the structural message.</summary>
+    private static string DescribeKind(JsonNode node)
+    {
+        return node switch
+        {
+            JsonArray => "an array",
+            JsonObject => "an object",
+            JsonValue v when v.TryGetValue(out string? _) => "a string",
+            JsonValue v when v.TryGetValue(out bool _) => "a boolean",
+            _ => "a number",
+        };
     }
 
     /// <inheritdoc/>

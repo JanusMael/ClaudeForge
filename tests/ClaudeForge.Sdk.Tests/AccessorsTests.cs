@@ -368,4 +368,41 @@ public class AccessorsTests
         // back to effective.
         Assert.AreEqual(0, atProject.Count);
     }
+
+    [TestMethod]
+    public async Task EnabledPlugins_Set_WithComponents_RoundTripsAsArray()
+    {
+        // The schema permits an array-of-strings value (enable specific plugin
+        // components). The accessor must store it as a JSON array and surface it via
+        // Components, not collapse it to a bool.
+        using ClaudeCodeClient client = await OpenAsync();
+
+        client.Plugins.Set(new EnabledPlugin("formatter/tools", Enabled: true, Components: ["alpha", "beta"]));
+
+        EnabledPlugin? got = client.Plugins.Get("formatter/tools");
+        Assert.IsNotNull(got);
+        Assert.IsTrue(got!.Enabled);
+        Assert.IsNotNull(got.Components);
+        CollectionAssert.AreEqual(new[] { "alpha", "beta" }, got.Components!.ToArray());
+
+        // A plain-bool entry still reports null Components.
+        client.Plugins.Set(new EnabledPlugin("plain/bool", Enabled: true));
+        Assert.IsNull(client.Plugins.Get("plain/bool")!.Components);
+    }
+
+    [TestMethod]
+    public async Task EnabledPlugins_All_SurfacesArrayValuedPlugins()
+    {
+        // Regression: the accessor formerly OMITTED non-bool values entirely, making
+        // array-valued plugins invisible to headless consumers (and droppable by any
+        // consumer that rewrote the whole block).
+        using ClaudeCodeClient client = await OpenAsync();
+        client.Plugins.Set(new EnabledPlugin("with/components", Enabled: true, Components: ["x"]));
+        client.Plugins.Set(new EnabledPlugin("plain/flag", Enabled: false));
+
+        IReadOnlyList<EnabledPlugin> all = client.Plugins.All;
+        Assert.AreEqual(2, all.Count, "Both the array-valued and the bool-valued plugin must surface.");
+        Assert.IsTrue(all.Any(p => p.PluginRef == "with/components" && p.Components is { Count: 1 }));
+        Assert.IsTrue(all.Any(p => p.PluginRef == "plain/flag" && !p.Enabled && p.Components is null));
+    }
 }

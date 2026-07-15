@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
+using BackupMode = Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests;
 
@@ -80,6 +81,29 @@ public class BackupClientTests
         StringAssert.EndsWith(archive.FilePath, ".zip");
         Assert.AreEqual("backup", archive.Manifest.Kind);
         Assert.AreEqual(BackupMode.SettingsOnly, archive.Manifest.Mode);
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_SanitizedMode_RoundTripsThroughTheSdk()
+    {
+        // Consolidating BackupMode onto Core's enum exposed Sanitized on the SDK
+        // surface; the SDK delegates it straight to Core's engine and the manifest
+        // round-trips the mode back out. (Sanitized archives are non-restorable by
+        // design — enforced by Core's RestoreEngine, not by the mode's absence here.)
+        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+
+        BackupArchive archive = await client.Backup.CreateAsync(
+            new BackupRequest(
+                Mode: BackupMode.Sanitized,
+                OutputDirectory: _backupDir,
+                IncludeCredentials: false,
+                KeepLast: 0),
+            onProgress: null,
+            ct: CancellationToken.None);
+
+        Assert.IsNotNull(archive);
+        Assert.IsTrue(File.Exists(archive.FilePath), $"Sanitized archive should exist: {archive.FilePath}");
+        Assert.AreEqual(BackupMode.Sanitized, archive.Manifest.Mode);
     }
 
     [TestMethod]

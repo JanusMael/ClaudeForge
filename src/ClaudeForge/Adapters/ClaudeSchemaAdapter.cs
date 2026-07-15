@@ -59,6 +59,7 @@ public sealed class ClaudeSchemaAdapter : IEditorSchema
 
     public IReadOnlyList<string>? EnumValues => _inner.EnumValues.Count > 0 ? _inner.EnumValues : null;
     public IReadOnlyList<string> Examples => _inner.Examples;
+    public IReadOnlyDictionary<string, string> EnumValueDescriptions => _inner.EnumValueDescriptions;
     public double? Minimum => _inner.Minimum;
     public double? Maximum => _inner.Maximum;
     public IReadOnlyList<IEditorSchema> Properties => _properties.Value;

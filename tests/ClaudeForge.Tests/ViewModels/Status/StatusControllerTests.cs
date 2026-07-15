@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Reflection;
+using Avalonia.Headless;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
@@ -27,6 +29,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
 [TestClass]
 public sealed class StatusControllerTests
 {
+    // The auto-clear marshals its clear onto the Avalonia UI thread
+    // (Dispatcher.UIThread.Post). A plain [TestMethod] has no pumped dispatcher,
+    // so a posted ApplyClear never runs and the "auto-clear fires" assertions
+    // hang until the watchdog (immune to timeout bumps — it never fires, it isn't
+    // slow). Tests that assert the clear FIRES therefore run on the shared
+    // headless session's pumped UI thread via Session.Dispatch(...).
+    private static HeadlessUnitTestSession Session =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
+
     [TestCleanup]
     public void Cleanup()
     {
@@ -99,7 +110,7 @@ public sealed class StatusControllerTests
     }
 
     [TestMethod]
-    public async Task Set_SuccessKind_AutoClearsAfterDelay()
+    public Task Set_SuccessKind_AutoClearsAfterDelay() => Session.Dispatch(async () =>
     {
         // Inject a delay function that completes immediately so the
         // auto-clear path fires without us actually sleeping.
@@ -108,16 +119,17 @@ public sealed class StatusControllerTests
         StatusController sc = new();
         sc.Set("Saved.", StatusKind.Success);
 
-        // The auto-clear is scheduled via Task.Run + UI-thread post;
-        // give the dispatcher a tick to drain.
+        // Auto-clear marshals ApplyClear onto the UI thread; running inside the
+        // headless session means the dispatcher is pumped, so the clear actually
+        // fires (a plain [TestMethod] has no pumped dispatcher → never clears).
         await WaitForClearAsync(sc);
 
         Assert.IsNull(sc.Text, "Success status should auto-clear after the delay.");
         Assert.AreEqual(StatusKind.None, sc.Kind);
-    }
+    }, CancellationToken.None);
 
     [TestMethod]
-    public async Task Set_WarningKind_AlsoAutoClears()
+    public Task Set_WarningKind_AlsoAutoClears() => Session.Dispatch(async () =>
     {
         StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
 
@@ -128,7 +140,7 @@ public sealed class StatusControllerTests
 
         Assert.IsNull(sc.Text, "Warning status should auto-clear after the delay.");
         Assert.AreEqual(StatusKind.None, sc.Kind);
-    }
+    }, CancellationToken.None);
 
     [TestMethod]
     public async Task Set_FailureKind_DoesNotAutoClear()
@@ -266,7 +278,7 @@ public sealed class StatusControllerTests
     /// could flake under loaded CI schedulers.
     /// </remarks>
     private static async Task WaitForClearAsync(StatusController sc,
-                                                int maxWaitMs = 1000)
+                                                int maxWaitMs = 5000)
     {
         if (sc.Text is null)
         {

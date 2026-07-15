@@ -1,0 +1,250 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.PermissionsListsView"
+             x:DataType="vm:PermissionsEditorViewModel">
+
+    <!-- "Lists" permissions tab body: Allow / Deny / Ask rule lists + manual-add
+         inputs. The Tester lives on the Build tab only. Extracted from
+         PermissionsEditorView. DataContext = PermissionsEditorViewModel. -->
+    <StackPanel Spacing="12" Margin="0,8,0,0">
+
+        <!-- ───── Allow ───── -->
+        <Expander IsExpanded="True">
+            <Expander.Header>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{x:Static loc:Strings.HeaderAllow}" FontWeight="SemiBold" Foreground="#388E3C" />
+                    <TextBlock VerticalAlignment="Center" FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Text="{Binding AllowCountLabel}" />
+                </StackPanel>
+            </Expander.Header>
+            <StackPanel Spacing="4" Margin="0,4,0,0">
+                <ItemsControl ItemsSource="{Binding AllowList}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
+                            <StackPanel Spacing="1" Margin="0,2">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Panel Width="360">
+                                        <TextBox Text="{Binding Rule}"
+                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Allow rule: {0}'}"
+                                                 FontFamily="Consolas,Menlo,monospace" />
+                                        <Border IsVisible="{Binding HasValidationError}"
+                                                BorderBrush="#C62828"
+                                                BorderThickness="2"
+                                                CornerRadius="2"
+                                                IsHitTestVisible="False" />
+                                    </Panel>
+                                    <Button Content="✕" Padding="6,2" FontSize="11"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
+                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove allow rule {0}'}"
+                                            Click="OnRemoveAllow" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding ValidationErrorText}"
+                                           IsVisible="{Binding HasValidationError}"
+                                           FontSize="13" Foreground="#C62828"
+                                           TextWrapping="Wrap" MaxWidth="360"
+                                           Margin="2,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                    <TextBox Text="{Binding NewAllowText}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkAllowRule}"
+                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkAllowRule}"
+                             FontFamily="Consolas,Menlo,monospace"
+                             Width="280"
+                             VerticalAlignment="Top"
+                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AddAllowCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Content="+" Padding="8,2"
+                            Command="{Binding AddAllowCommand}"
+                            VerticalAlignment="Top"
+                            AutomationProperties.Name="{x:Static loc:Strings.TipAddAllowRule}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipAddAllowRule}" />
+                    <TextBlock Text="{Binding NewAllowError}"
+                               IsVisible="{Binding NewAllowError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="13" Foreground="#C62828"
+                               TextWrapping="Wrap" MaxWidth="320"
+                               VerticalAlignment="Top" />
+                </StackPanel>
+
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AllowExamples}"
+                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Expander>
+
+        <!-- ───── Deny ───── -->
+        <Expander IsExpanded="True">
+            <Expander.Header>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{x:Static loc:Strings.HeaderDeny}" FontWeight="SemiBold" Foreground="#D32F2F" />
+                    <TextBlock VerticalAlignment="Center" FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Text="{Binding DenyCountLabel}" />
+                </StackPanel>
+            </Expander.Header>
+            <StackPanel Spacing="4" Margin="0,4,0,0">
+                <ItemsControl ItemsSource="{Binding DenyList}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
+                            <StackPanel Spacing="1" Margin="0,2">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Panel Width="360">
+                                        <TextBox Text="{Binding Rule}"
+                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Deny rule: {0}'}"
+                                                 FontFamily="Consolas,Menlo,monospace" />
+                                        <Border IsVisible="{Binding HasValidationError}"
+                                                BorderBrush="#C62828"
+                                                BorderThickness="2"
+                                                CornerRadius="2"
+                                                IsHitTestVisible="False" />
+                                    </Panel>
+                                    <Button Content="✕" Padding="6,2" FontSize="11"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
+                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove deny rule {0}'}"
+                                            Click="OnRemoveDeny" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding ValidationErrorText}"
+                                           IsVisible="{Binding HasValidationError}"
+                                           FontSize="13" Foreground="#C62828"
+                                           TextWrapping="Wrap" MaxWidth="360"
+                                           Margin="2,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                    <TextBox Text="{Binding NewDenyText}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkDenyRule}"
+                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkDenyRule}"
+                             FontFamily="Consolas,Menlo,monospace"
+                             Width="280"
+                             VerticalAlignment="Top"
+                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AddDenyCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Content="+" Padding="8,2"
+                            Command="{Binding AddDenyCommand}"
+                            VerticalAlignment="Top"
+                            AutomationProperties.Name="{x:Static loc:Strings.TipAddDenyRule}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipAddDenyRule}" />
+                    <TextBlock Text="{Binding NewDenyError}"
+                               IsVisible="{Binding NewDenyError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="13" Foreground="#C62828"
+                               TextWrapping="Wrap" MaxWidth="320"
+                               VerticalAlignment="Top" />
+                </StackPanel>
+
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.DenyExamples}"
+                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Expander>
+
+        <!-- ───── Ask ───── -->
+        <Expander IsExpanded="True">
+            <Expander.Header>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{x:Static loc:Strings.HeaderAsk}" FontWeight="SemiBold" Foreground="#F57F17" />
+                    <TextBlock VerticalAlignment="Center" FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Text="{Binding AskCountLabel}" />
+                </StackPanel>
+            </Expander.Header>
+            <StackPanel Spacing="4" Margin="0,4,0,0">
+                <ItemsControl ItemsSource="{Binding AskList}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
+                            <StackPanel Spacing="1" Margin="0,2">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Panel Width="360">
+                                        <TextBox Text="{Binding Rule}"
+                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Ask rule: {0}'}"
+                                                 FontFamily="Consolas,Menlo,monospace" />
+                                        <Border IsVisible="{Binding HasValidationError}"
+                                                BorderBrush="#C62828"
+                                                BorderThickness="2"
+                                                CornerRadius="2"
+                                                IsHitTestVisible="False" />
+                                    </Panel>
+                                    <Button Content="✕" Padding="6,2" FontSize="11"
+                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
+                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove ask rule {0}'}"
+                                            Click="OnRemoveAsk" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding ValidationErrorText}"
+                                           IsVisible="{Binding HasValidationError}"
+                                           FontSize="13" Foreground="#C62828"
+                                           TextWrapping="Wrap" MaxWidth="360"
+                                           Margin="2,0,0,0" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                    <TextBox Text="{Binding NewAskText}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkAskRule}"
+                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkAskRule}"
+                             FontFamily="Consolas,Menlo,monospace"
+                             Width="280"
+                             VerticalAlignment="Top"
+                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AddAskCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Content="+" Padding="8,2"
+                            Command="{Binding AddAskCommand}"
+                            VerticalAlignment="Top"
+                            AutomationProperties.Name="{x:Static loc:Strings.TipAddAskRule}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipAddAskRule}" />
+                    <TextBlock Text="{Binding NewAskError}"
+                               IsVisible="{Binding NewAskError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="13" Foreground="#C62828"
+                               TextWrapping="Wrap" MaxWidth="320"
+                               VerticalAlignment="Top" />
+                </StackPanel>
+
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AskExamples}"
+                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Expander>
+    </StackPanel>
+</UserControl>

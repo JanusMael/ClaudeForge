@@ -61,12 +61,13 @@ public static partial class SchemaTreeBuilder
     public static IReadOnlyList<SchemaNode> BuildTopLevel(
         JsonSchemaNode rootNode,
         ISet<string>? knownPaths,
-        bool flagAllAsNew)
+        bool flagAllAsNew,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? enumDescriptionsByPath = null)
     {
         List<SchemaNode> result = new();
         foreach (PropertySubschema sub in GetPropertySubschemas(rootNode))
         {
-            result.Add(BuildNode(sub.Name, sub.Name, sub.Node, knownPaths, flagAllAsNew));
+            result.Add(BuildNode(sub.Name, sub.Name, sub.Node, knownPaths, flagAllAsNew, enumDescriptionsByPath));
         }
 
         return result;
@@ -102,7 +103,8 @@ public static partial class SchemaTreeBuilder
         string name,
         JsonSchemaNode schemaNode,
         ISet<string>? knownPaths,
-        bool flagAllAsNew)
+        bool flagAllAsNew,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? enumDescriptionsByPath = null)
     {
         NullableCollapseResult collapse = CollapseNullable(schemaNode);
         if (collapse.Concrete != null)
@@ -116,6 +118,26 @@ public static partial class SchemaTreeBuilder
 
         IReadOnlyList<string> enumValues = GetEnumValues(schemaNode);
         IReadOnlyList<string> examples = GetExamples(schemaNode);
+
+        // anyOf/oneOf whose branches are ALL strings, at least one an enum (e.g.
+        // `theme`: a fixed enum OR a "custom:<slug>" pattern string). Classify as an
+        // enum so it gets the value picker instead of the raw-JSON fallback; when a
+        // non-enum string branch exists (a pattern / plain string), values beyond the
+        // list are permitted, so also seed Examples — the enum editor reads a non-empty
+        // Examples as "allow free-form typing" (AutoCompleteBox, not a strict ComboBox).
+        if (valueType == SchemaValueType.Complex && enumValues.Count == 0)
+        {
+            StringUnionEnum? union = TryGetStringUnionEnum(schemaNode);
+            if (union is { } u)
+            {
+                valueType = SchemaValueType.Enum;
+                enumValues = u.Values;
+                if (u.AllowsFreeForm && examples.Count == 0)
+                {
+                    examples = u.Values;
+                }
+            }
+        }
 
         if (enumValues.Count > 0 && valueType is SchemaValueType.String or SchemaValueType.Unknown)
         {
@@ -141,7 +163,8 @@ public static partial class SchemaTreeBuilder
         {
             foreach (PropertySubschema sub in GetPropertySubschemas(schemaNode))
             {
-                children.Add(BuildNode($"{jsonPath}.{sub.Name}", sub.Name, sub.Node, knownPaths, flagAllAsNew));
+                children.Add(BuildNode($"{jsonPath}.{sub.Name}", sub.Name, sub.Node, knownPaths, flagAllAsNew,
+                    enumDescriptionsByPath));
             }
         }
 
@@ -151,7 +174,8 @@ public static partial class SchemaTreeBuilder
             KeywordData? itemsKw = FindKeyword(schemaNode, "items");
             if (itemsKw?.Subschemas.Length > 0)
             {
-                itemsNode = BuildNode($"{jsonPath}[]", "item", itemsKw.Subschemas[0], knownPaths, flagAllAsNew);
+                itemsNode = BuildNode($"{jsonPath}[]", "item", itemsKw.Subschemas[0], knownPaths, flagAllAsNew,
+                    enumDescriptionsByPath);
             }
         }
 
@@ -221,6 +245,10 @@ public static partial class SchemaTreeBuilder
             Properties = children,
             DefaultValue = defaultValue,
             Examples = examples,
+            EnumValueDescriptions = enumDescriptionsByPath is not null
+                                    && enumDescriptionsByPath.TryGetValue(jsonPath, out IReadOnlyDictionary<string, string>? descs)
+                ? descs
+                : SchemaNode.EmptyEnumValueDescriptions,
             IsNullable = isNullable,
             IsManagedOnly = IsManagedOnly(description),
             IsNew = isNew,
@@ -250,6 +278,39 @@ public static partial class SchemaTreeBuilder
                 foreach (string p in CollectPaths([node.ItemsSchema]))
                 {
                     yield return p;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Map every <see cref="SchemaNode.JsonPath"/> that carries help text to it
+    /// (<see cref="SchemaNode.Description"/>, falling back to <see cref="SchemaNode.Title"/>).
+    /// Lets a surface that only knows the effective dot-path — e.g. the Effective
+    /// Settings grid — show the property's description on hover.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> CollectDescriptions(IEnumerable<SchemaNode> nodes)
+    {
+        Dictionary<string, string> map = new(StringComparer.Ordinal);
+        Walk(nodes, map);
+        return map;
+
+        static void Walk(IEnumerable<SchemaNode> ns, Dictionary<string, string> sink)
+        {
+            foreach (SchemaNode node in ns)
+            {
+                string? text = !string.IsNullOrWhiteSpace(node.Description) ? node.Description
+                    : !string.IsNullOrWhiteSpace(node.Title) ? node.Title
+                    : null;
+                if (text is not null)
+                {
+                    sink.TryAdd(node.JsonPath, text);
+                }
+
+                Walk(node.Properties, sink);
+                if (node.ItemsSchema is not null)
+                {
+                    Walk([node.ItemsSchema], sink);
                 }
             }
         }
@@ -378,6 +439,60 @@ public static partial class SchemaTreeBuilder
 
         return values;
     }
+
+    /// <summary>
+    /// When <paramref name="node"/> is an <c>anyOf</c>/<c>oneOf</c> whose non-null
+    /// branches are ALL strings and at least one carries an <c>enum</c> — e.g.
+    /// <c>theme</c>, a fixed enum OR a <c>"custom:&lt;slug&gt;"</c> pattern string —
+    /// returns the ordered, de-duplicated union of those enum values plus whether a
+    /// free-form branch exists (a string branch with no enum: a pattern or plain string,
+    /// meaning values beyond the enum are permitted). Returns <see langword="null"/> when
+    /// the node is not that shape, so the caller leaves classification untouched.
+    /// </summary>
+    private static StringUnionEnum? TryGetStringUnionEnum(JsonSchemaNode node)
+    {
+        KeywordData? kw = FindKeyword(node, "anyOf") ?? FindKeyword(node, "oneOf");
+        JsonSchemaNode[] subs = kw?.Subschemas ?? [];
+        if (subs.Length < 2)
+        {
+            return null;
+        }
+
+        List<string> values = new();
+        bool allowsFreeForm = false;
+        foreach (JsonSchemaNode sub in subs)
+        {
+            string? type = GetTypeStringFromNode(sub);
+            if (type is "null" or "Null")
+            {
+                continue;
+            }
+
+            if (type is not ("string" or "String"))
+            {
+                return null; // a non-string branch — not the theme-like shape
+            }
+
+            IReadOnlyList<string> subEnum = GetEnumValues(sub);
+            if (subEnum.Count > 0)
+            {
+                values.AddRange(subEnum);
+            }
+            else
+            {
+                allowsFreeForm = true; // string branch w/o enum (pattern / plain)
+            }
+        }
+
+        if (values.Count == 0)
+        {
+            return null; // need at least one enum branch to seed the picker
+        }
+
+        return new StringUnionEnum(values.Distinct().ToList(), allowsFreeForm);
+    }
+
+    private readonly record struct StringUnionEnum(IReadOnlyList<string> Values, bool AllowsFreeForm);
 
     private static IReadOnlyList<PropertySubschema> GetPropertySubschemas(JsonSchemaNode node)
     {

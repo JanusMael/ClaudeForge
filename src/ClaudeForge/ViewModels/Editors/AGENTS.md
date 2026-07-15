@@ -321,3 +321,21 @@ Live references: the `*AfterLoad_FiresIsModifiedPropertyChanged` tests in
 `tests/ClaudeForge.Tests/ViewModels/Editors/McpServersEditorViewModelTests.cs`
 for the fired-count templates; `HooksEditorViewModelTests.cs` for the editor with
 the deferred-subscription variant.
+
+## 9. Model-catalog-driven option lists (`PermissionsEditorViewModel`)
+
+`DefaultModeInfos` is **not** a hardcoded list — it is projected from
+`client.Models.AllDefaultModes` (the SDK model catalog), with localized
+label/description from `ViewModels/Catalog/CatalogLocalization` (a literal
+`Strings.<Key>` `switch`, so the dead-string guard stays green) and the
+`experimental` flag carried through. The camelCase `Value` strings stay the
+serialization source of truth (`FormatDefaultMode` + the SDK `PermissionDefaultMode`
+enum).
+
+`ApplyDefaultModeConstraint(scope)` runs at the end of `LoadFromLayered`: it
+narrows `DefaultModeInfos` to modes eligible for the effective model + editing
+scope (`client.Models.IsDefaultModeAllowed`) and coerces an ineligible `auto`
+to `default` with the `ShowAutoModeWarning` advisory. It is a no-op without an
+SDK client (test fixtures see all modes, no coercion). The Essentials page does
+the symmetric model→effort filter+coerce in `EssentialsViewModel.ApplyModelEffortConstraint`.
+Full design: [docs/MODEL-CATALOG.md](../../../../docs/MODEL-CATALOG.md).

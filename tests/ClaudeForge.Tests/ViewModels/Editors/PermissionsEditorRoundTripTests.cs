@@ -58,21 +58,21 @@ public sealed class PermissionsEditorRoundTripTests
     [TestMethod]
     public void RoundTrip_PreservesDisableBypassPermissionsMode()
     {
-        // disableBypassPermissionsMode is now a typed
-        // bool property on the editor (was opaque-bag preservation).
-        // Schema defines it as boolean; test now uses the correct type.
+        // disableBypassPermissionsMode is a tri-state bool property on the editor, but
+        // the schema persists it as the STRING enum "disable" (or absent) — never a
+        // boolean — so the round-trip must preserve "disable", not a bool.
         JsonObject input = new()
         {
             ["defaultMode"] = "default",
-            ["disableBypassPermissionsMode"] = true,
+            ["disableBypassPermissionsMode"] = "disable",
         };
 
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
         JsonObject output = (JsonObject)vm.ToJsonValue()!;
 
-        Assert.IsTrue(
-            output["disableBypassPermissionsMode"]!.GetValue<bool>());
+        Assert.AreEqual("disable",
+            output["disableBypassPermissionsMode"]!.GetValue<string>());
     }
 
     [TestMethod]

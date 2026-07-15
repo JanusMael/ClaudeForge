@@ -46,8 +46,16 @@ public static class MergeEngine
             return new MergeResult(null, null);
         }
 
-        // Determine whether this is an array merge
-        bool treatAsArray = isArray ?? defined.Any(e => e.Value is JsonArray);
+        // Determine whether this is an array merge. When the schema hasn't declared
+        // array-ness (isArray == null), infer it — but ONLY treat the node as a
+        // union-merged array when EVERY defined scope value is an array. A MIXED set
+        // (e.g. one scope holds a bool and another an array for the same key — legal for
+        // `enabledPlugins`, whose values are anyOf[array, bool]) is NOT a uniform array
+        // path: falling through keeps the documented "non-arrays: highest-priority scope
+        // wins" rule instead of letting MergeArrays silently drop the non-array
+        // (higher-priority) value into a union. Schema-declared array paths pass
+        // isArray == true and are unaffected.
+        bool treatAsArray = isArray ?? defined.All(e => e.Value is JsonArray);
 
         if (treatAsArray)
         {

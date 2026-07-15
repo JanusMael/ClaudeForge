@@ -24,6 +24,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -208,7 +209,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     // persistent tool-page VMs.  These VMs do NOT bind to
     // workspace.Root (they manage on-disk state via dedicated services /
-    // engines), so they're safe to reuse across BuildNavigationTree calls.
+    // engines), so they're safe to reuse across BuildNavigationTreeAsync calls.
     // Persisting them solves three Phase 3 issues:
     //   - Backup: in-flight backup operations no longer get cancelled by
     //     unrelated workspace reloads (file-watcher, profile switch,
@@ -250,11 +251,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Title of the synthetic top-of-tree "Essentials" node.  Hardcoded
-    /// English (parallels the other NavTitle* constants) so programmatic
-    /// lookups against <c>n.Title</c> stay culture-invariant.  The user-
-    /// facing label comes from <c>Strings.NavTitleEssentials</c> and
-    /// is set on the navigation node's <c>DisplayTitle</c> when the node
-    /// is constructed.
+    /// English (parallels the other NavTitle* constants) so both the node's
+    /// display label and the programmatic <c>n.Title</c> lookups stay
+    /// culture-invariant.  The localized <c>Strings.NavTitleEssentials</c>
+    /// is consumed separately by <c>SearchViewModel</c> as the search-results
+    /// group label; full nav-tree localization is still pending (see the
+    /// NavDesc* note below).
     /// </summary>
     private const string NavTitleEssentials = "Essentials";
 
@@ -335,11 +337,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _navHeaderExpanded = new Dictionary<string, bool>(_cachedState.NavHeaderExpanded);
 
         // Welcome-on-launch preference: hydrated from disk and consulted
-        // by BuildNavigationTree's Welcome-node conditional below.  Use
+        // by BuildNavigationTreeAsync's Welcome-node conditional below.  Use
         // the source-generated backing field directly so the partial
         // OnShowWelcomeOnLaunchChanged handler doesn't fire prematurely
         // (it would otherwise trigger ApplyWelcomeNodeVisibility before
-        // BuildNavigationTree has even run — _navTreeBuilt is still
+        // BuildNavigationTreeAsync has even run — _navTreeBuilt is still
         // false, so the call would no-op, but explicit field-init is
         // clearer about intent).
         _showWelcomeOnLaunch = _cachedState.ShowWelcomeNode;
@@ -612,7 +614,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(NavigateBackCommand))]
     private bool _canGoBack;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    // Not wired to SaveCommand: Save no longer depends on the install banner
+    // (see CanSave). The banner is purely an install-guidance affordance.
+    [ObservableProperty]
     private bool _showInstallBanner;
 
     /// <summary>
@@ -1117,7 +1121,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Persist immediately + rebuild the navigation tree so the
         // Welcome node appears / disappears in real time when the user
         // toggles the checkbox.  Skip during construction (before
-        // BuildNavigationTree has run for the first time) — the initial
+        // BuildNavigationTreeAsync has run for the first time) — the initial
         // load reads the preference and adds / omits the node natively.
         _cachedState.ShowWelcomeNode = value;
         SaveWindowState();
@@ -1146,7 +1150,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _cachedState.CheckForUpdatesOnLaunch = value;
         SaveWindowState();
         Log.Information(
-            "[UpdateCheck] User changed CheckForUpdatesOnLaunch to {Value}.",
+            "[UpdateCheck] User changed CheckForUpdatesOnLaunch to {Value}",
             value);
     }
 
@@ -1212,7 +1216,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // Marshal the apply to the UI thread — UpdateBannerViewModel
                 // raises PropertyChanged events that must hit the UI sync
                 // context.
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     UpdateBanner.ApplyResult(result);
                 });
@@ -1225,13 +1229,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // but don't propagate; the banner just stays hidden.
                 Log.Information(
                     ex,
-                    "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden.");
+                    "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden");
             }
         });
     }
 
     /// <summary>
-    /// Latched after <see cref="BuildNavigationTree"/> finishes for the
+    /// Latched after <see cref="BuildNavigationTreeAsync"/> finishes for the
     /// first time so that the runtime checkbox toggle path
     /// (<see cref="ApplyWelcomeNodeVisibility"/>) doesn't fire from the
     /// initial preference assignment in the constructor.
@@ -1382,7 +1386,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // makes the two operations mutually exclusive on the workspace fields they share.
     private bool CanSave()
     {
-        return !ShowInstallBanner && HasUnsavedChanges && !IsLoading;
+        // Do NOT gate on ShowInstallBanner. It can be force-shown via the
+        // --showInstallBanner debug flag even when products ARE installed and
+        // editable, which wrongly disabled Save despite real unsaved changes
+        // (observed: default-mode edit set HasUnsavedChanges=true but the button
+        // stayed dark because the forced banner held CanSave false). When products
+        // are genuinely absent there is nothing to edit, so HasUnsavedChanges is
+        // already false and Save stays disabled without the extra gate.
+        return HasUnsavedChanges && !IsLoading;
     }
 
     [RelayCommand(CanExecute = nameof(CanSave))]
@@ -2138,6 +2149,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             agentsVm.EnsureLoaded();
         }
 
+        // Page-navigation trace: every landed-on page (user click, deep link, or
+        // post-reload re-selection). Editor-less nodes (headers/dividers) are logged
+        // too — they clear the editor to the Welcome view, which is a real nav.
+        Log.Information("[App.Nav] page={Page}", value.Title);
+
         _lastNodeTitle = value.Title;
         SaveWindowState();
     }
@@ -2158,6 +2174,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationNodeViewModel? target = _backNode;
         _backNode = null;
         CanGoBack = false;
+        Log.Information("[App.Command] action=NavigateBack to={Page}", target.Title);
         SelectedNode = target;
     }
 
@@ -2232,16 +2249,42 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // visible without scrolling — the user can clear the filter bar to see context.
         if (result.Node.Editor is SettingsGroupEditorViewModel groupEditor)
         {
-            groupEditor.FilterText = result.PropertyKey;
+            groupEditor.ApplyNavigationFilter(result.PropertyKey);
+
+            PermissionsEditorViewModel? permEditor = groupEditor.Editors
+                                                                .OfType<PermissionsEditorViewModel>()
+                                                                .FirstOrDefault();
 
             // For the synthetic --dangerouslySkipPermissions result, activate the
-            // contextual amber hint banner on the PermissionsEditorViewModel.
-            if (result.IsSynthetic)
+            // contextual amber hint banner AND open the Advanced accordion — the
+            // related safety control (disableBypassPermissionsMode) lives there, and
+            // the synthetic hit carries an empty PropertyKey so the filter-based
+            // check below won't catch it.
+            if (result.IsSynthetic && permEditor is not null
+                && string.Equals(result.PropertyKey, "permissions.defaultMode", StringComparison.Ordinal))
             {
-                PermissionsEditorViewModel? permEditor = groupEditor.Editors
-                                                                    .OfType<PermissionsEditorViewModel>()
-                                                                    .FirstOrDefault();
-                permEditor?.ActivateDangerHint();
+                // Synthetic "bypass" hit: prompt the user to pick bypassPermissions
+                // in Default Mode (Overview tab). Deep-link + hint only — we never
+                // auto-select a dangerous mode for the user.
+                permEditor.ActivateBypassHint();
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+            }
+            else if (result.IsSynthetic && permEditor is not null)
+            {
+                permEditor.ActivateDangerHint();
+                // Land on Overview (the Advanced accordion + Default Mode live there)
+                // regardless of the remembered tab, then expand Advanced.
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+                RequestExpandPermissionsAdvanced(permEditor);
+            }
+
+            // A hit on an advanced permission setting (disableBypassPermissionsMode /
+            // additionalDirectories) must pop the Overview "Advanced" accordion so
+            // the deep-linked control is visible, not hidden behind a closed section.
+            if (permEditor is not null && IsAdvancedPermissionFilter(result.PropertyKey))
+            {
+                groupEditor.SelectTab(GroupTab.PropertiesId);
+                RequestExpandPermissionsAdvanced(permEditor);
             }
         }
         // Essentials page deep-link.  Synthetic search hits
@@ -2254,6 +2297,27 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             essentials.ActivateAmberCalloutFor(result.PropertyKey);
         }
+    }
+
+    /// <summary>
+    /// Open the permissions "Advanced" accordion for a deep-link. Sets the flag
+    /// immediately AND re-applies once the navigation's view rebuild has settled
+    /// (<see cref="DispatcherPriority.Loaded"/>): selecting a node triggers an
+    /// editor/tab rebuild that re-materializes the bound Expander, which can land
+    /// AFTER the synchronous set and leave it collapsed. The deferred re-apply
+    /// runs after layout so the final state is expanded.
+    /// </summary>
+    private static void RequestExpandPermissionsAdvanced(PermissionsEditorViewModel? perms)
+    {
+        if (perms is null)
+        {
+            Log.Information("[DeepLink] Permissions editor not found; cannot expand Advanced accordion.");
+            return;
+        }
+
+        perms.IsAdvancedExpanded = true;
+        Dispatcher.UIThread.Post(() => perms.IsAdvancedExpanded = true, DispatcherPriority.Loaded);
+        Log.Information("[DeepLink] Requested permissions Advanced accordion expansion.");
     }
 
     /// <summary>
@@ -2331,7 +2395,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (target.Editor is SettingsGroupEditorViewModel groupEditor)
             {
-                groupEditor.FilterText = msg.PropertyFilter;
+                groupEditor.ApplyNavigationFilter(msg.PropertyFilter);
+
+                // Advanced permission settings (disableBypassPermissionsMode,
+                // additionalDirectories) live inside the permissions compound
+                // editor's collapsed "Advanced" accordion on the Overview tab.
+                // The filter surfaces the editor (sub-path fallback), but the
+                // accordion would stay closed — expand it so the deep-linked
+                // control is actually visible.
+                if (IsAdvancedPermissionFilter(msg.PropertyFilter))
+                {
+                    groupEditor.SelectTab(GroupTab.PropertiesId);
+                    RequestExpandPermissionsAdvanced(
+                        groupEditor.Editors.OfType<PermissionsEditorViewModel>().FirstOrDefault());
+                }
             }
             else if (target.Editor is EnvironmentEditorViewModel envEditor)
             {
@@ -2371,6 +2448,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// whose Title matches <paramref name="title"/> exactly.  Used by the
     /// <c>NavigateToNavGroupMessage</c> handler.
     /// </summary>
+    // The permissions "Advanced" accordion houses these keys; a deep-link to one
+    // should pop the accordion open (see OnNavigateToNavGroup).
+    private static bool IsAdvancedPermissionFilter(string? filter) =>
+        filter is not null &&
+        (filter.Contains("disableBypassPermissionsMode", StringComparison.Ordinal) ||
+         filter.Contains("additionalDirectories", StringComparison.Ordinal));
+
     private NavigationNodeViewModel? FindNavNodeByTitle(string title)
     {
         // Top-level pass — synthetic nodes (Essentials, Effective Settings,
@@ -2963,7 +3047,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         JsonSchemaNode ccSchema = await _schemaRegistry.GetClaudeCodeSettingsNodeAsync();
         HashSet<string> ccKnown = _snapshotService.LoadSnapshot("claude-code-settings");
-        IReadOnlyList<SchemaNode> ccNodes = SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew);
+        // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
+        // SchemaNode data (no UI objects), so it's safe on a worker and keeps the
+        // just-painted startup window responsive instead of frozen during the build.
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ccEnumDescriptions =
+            SchemaRegistry.GetEnumDescriptions("claude-code-settings.json");
+        IReadOnlyList<SchemaNode> ccNodes =
+            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew, ccEnumDescriptions));
         _renderedPathsBySchema["claude-code-settings"] = SchemaTreeBuilder.CollectPaths(ccNodes);
         if (ccKnown.Count == 0)
         {
@@ -2972,7 +3062,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         JsonSchemaNode dtSchema = await _schemaRegistry.GetClaudeDesktopConfigNodeAsync();
         HashSet<string> dtKnown = _snapshotService.LoadSnapshot("claude-desktop-config");
-        IReadOnlyList<SchemaNode> dtNodes = SchemaTreeBuilder.BuildTopLevel(dtSchema, dtKnown, flagAllAsNew);
+        // Same off-thread schema-tree build as the Claude Code section above.
+        IReadOnlyList<SchemaNode> dtNodes =
+            await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(dtSchema, dtKnown, flagAllAsNew));
         _renderedPathsBySchema["claude-desktop-config"] = SchemaTreeBuilder.CollectPaths(dtNodes);
         if (dtKnown.Count == 0)
         {
@@ -3073,7 +3165,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Wire up change listeners so any in-memory edit enables the Save button.
         SubscribeWorkspaceChangedEvents();
 
-        BuildNavigationTree(ccNodes, dtNodes);
+        await BuildNavigationTreeAsync(ccNodes, dtNodes);
         SetupFileWatcher(ccFiles.Concat(dtFiles).ToList());
 
         // surface schema-violation banner after every reload.
@@ -3133,7 +3225,43 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         return all;
     }
 
-    private void BuildNavigationTree(
+    // Latch so the unsupported-shape heads-up is logged at most once per session,
+    // not on every navigation-tree rebuild (scope switch, file-watcher reload).
+    private bool _unsupportedShapesNoticeLogged;
+
+    /// <summary>
+    /// Writes a single aggregated log entry listing every setting that has no
+    /// structured editor (rendered as raw JSON). No-op when nothing was reported or
+    /// the notice has already been logged this session. The fields remain fully
+    /// editable and are already flagged read-only/raw in place, so this is logged
+    /// rather than popped up: a startup dialog proved redundant + distracting. The
+    /// <see cref="AvaloniaDiagnostics.ShowNonFatalNotice"/> + <c>NonFatalNoticeDialog</c>
+    /// machinery is intentionally retained (currently unused) for future non-fatal
+    /// notices.
+    /// </summary>
+    private void MaybeLogUnsupportedShapeNotice(UnsupportedShapeCollector collector)
+    {
+        if (_unsupportedShapesNoticeLogged || !collector.HasAny)
+        {
+            return;
+        }
+
+        _unsupportedShapesNoticeLogged = true;
+        string paths = string.Join(
+            "; ",
+            collector.Snapshot().Select(s =>
+                s.DisplayName is { Length: > 0 } name ? $"{s.JsonPath} ({name})" : s.JsonPath));
+
+        // Log the notice's intended message (the same Title + Header the dialog would
+        // have shown) so the information is preserved, without interrupting startup.
+        Log.Warning(
+            "[Schema] {NoticeTitle} {NoticeHeader} Affected settings: {Paths}",
+            UnsupportedShapeText.NoticeTitle,
+            UnsupportedShapeText.NoticeHeader,
+            paths);
+    }
+
+    private async Task BuildNavigationTreeAsync(
         IReadOnlyList<SchemaNode> ccNodes,
         IReadOnlyList<SchemaNode> dtNodes)
     {
@@ -3144,6 +3272,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Clear();
 
         Func<Task<string?>> browsePath = () => DialogServiceForViewAccess.PickFolderAsync();
+
+        // Collects any schema property surfaced via the raw-JSON fallback (a shape
+        // the factory can't classify) across BOTH product sections, so we can raise
+        // one aggregated heads-up after the tree is built.
+        UnsupportedShapeCollector unsupportedShapes = new();
 
         // Both sections are always shown — even without an active installation —
         // so users can create configs for other machines or prepare for first-time
@@ -3222,6 +3355,36 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         });
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
 
+        // ── Editor construction, off the UI thread ──────────────────────────
+        // Building each group's SettingsGroupEditorViewModel (which eagerly
+        // constructs all of its child property editors) is the bulk of the
+        // remaining synchronous startup cost. Those VMs are plain data — no
+        // Avalonia control, Dispatcher, or Application.Current access in any
+        // ctor — so build BOTH product sections on a worker thread to keep the
+        // just-painted window responsive; the ObservableCollection assembly
+        // below resumes on the UI thread (Avalonia's SynchronizationContext).
+        // Search stays gated by IsLoading (SearchViewModel's isLoadingProbe) for
+        // the whole load, so nothing can navigate to a not-yet-attached node.
+        SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
+        SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
+        ClaudeConfigClientCore? ccSdk = ClaudeCodeSdk;
+        ClaudeConfigClientCore? dtSdk = ClaudeDesktopSdk;
+        System.Diagnostics.Stopwatch editorBuildSw = System.Diagnostics.Stopwatch.StartNew();
+        (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
+            await Task.Run(() => (
+                ccWorkspace is not null && ccSdk is not null
+                    ? NavigationTreeBuilder.BuildGroups(
+                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes)
+                    : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
+                dtWorkspace is not null && dtSdk is not null
+                    ? NavigationTreeBuilder.BuildGroups(
+                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes)
+                    : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>()));
+        editorBuildSw.Stop();
+        Log.Debug(
+            "[Startup] Settings editors built off the UI thread in {ElapsedMs}ms",
+            editorBuildSw.ElapsedMilliseconds);
+
         // --- Claude Code section ---
         NavigationNodeViewModel ccHeader = new(NavTitleClaudeCode, "⚙", NavDescClaudeCode)
         {
@@ -3230,12 +3393,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         ccHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeCode, true);
         ccHeader.PropertyChanged += OnNavHeaderPropertyChanged;
 
-        SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
         if (ClaudeCodeSdk is not null && ccWorkspace is not null)
         {
-            IReadOnlyList<NavigationGroup> ccGroups = NavigationTreeBuilder.BuildGroups(
-                ccNodes, ccWorkspace, browsePath, _ccScopeContext, ClaudeCodeSdk);
-            foreach (NavigationGroup group in ccGroups)
+            foreach (NavigationGroup group in builtGroups.Cc)
             {
                 ccHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
             }
@@ -3265,12 +3425,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         dtHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeDesktop, true);
         dtHeader.PropertyChanged += OnNavHeaderPropertyChanged;
 
-        SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
         if (ClaudeDesktopSdk is not null && dtWorkspace is not null)
         {
-            IReadOnlyList<NavigationGroup> dtGroups = NavigationTreeBuilder.BuildGroups(
-                dtNodes, dtWorkspace, browsePath, _dtScopeContext, ClaudeDesktopSdk);
-            foreach (NavigationGroup group in dtGroups)
+            foreach (NavigationGroup group in builtGroups.Dt)
             {
                 dtHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
             }
@@ -3292,11 +3449,19 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         NavigationTree.Add(dtHeader);
 
+        // One-time aggregated LOG entry if any setting in either section has no
+        // structured editor (raw-JSON fallback). No-op when the schema is fully
+        // covered (the common case today) or after the first log this session.
+        // Deliberately logged, not popped up — the fields are already flagged
+        // read-only/raw in place, so a startup dialog was redundant + distracting.
+        MaybeLogUnsupportedShapeNotice(unsupportedShapes);
+
         // --- Effective Settings ---
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
-            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService),
+            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
+                SchemaTreeBuilder.CollectDescriptions(ccNodes)),
             IsTopLevel = true,
         });
 
@@ -3304,7 +3469,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // H-2: persistent VM. Callbacks are wired ONCE on first construction
         // (they capture MWVM by closure; subsequent reloads reuse the same
         // lambda instances which still observe current MWVM state via the
-        // captured `this`). Refresh() is called on every BuildNavigationTree
+        // captured `this`). Refresh() is called on every BuildNavigationTreeAsync
         // so the disk-backed list reflects post-reload state.
         if (_profilesVm is null)
         {
@@ -3543,7 +3708,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // a cached _agentsSkillsVm field per the AGENTS.md nav-page checklist.
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
         {
-            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance),
+            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess),
             IsTopLevel = true,
         });
 
@@ -3671,6 +3836,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // _saveInProgressCount field comment.
             if (Volatile.Read(ref _saveInProgressCount) > 0)
             {
+                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (save in progress)");
                 Log.Debug("[FileWatcher] Suppressed reload for {File} (save in progress)",
                     Path.GetFileName(filePath));
                 return;
@@ -3684,11 +3850,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // mid-operation. See _suppressWatcherUntilUtc field comment.
             if (DateTime.UtcNow < _suppressWatcherUntilUtc)
             {
+                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (post-save window)");
                 Log.Debug("[FileWatcher] Suppressed reload for {File} (within post-save window)",
                     Path.GetFileName(filePath));
                 return;
             }
 
+            EnqueueWatcherEvent(filePath, "external change → reloading");
             SetStatusActive(string.Format(Strings.StatusReloadingFileFmt, Path.GetFileName(filePath)));
             // FileSystemWatcher fire — automatic trigger, NOT user-initiated.
             // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
@@ -3699,8 +3867,22 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Streams one debounced <see cref="ConfigFileWatcher"/> hit to the live
+    /// event-tail window (the Shift+F12 / F12-header-link window), tagged with how
+    /// the app reacted (external reload vs. self-write suppression). A no-op when
+    /// that window is disabled. Centralises the line format; called from every
+    /// branch of <see cref="OnFileChangedExternally"/> so the user sees EVERY
+    /// debounced event, not just the ones that trigger a reload.
+    /// </summary>
+    private static void EnqueueWatcherEvent(string filePath, string disposition)
+    {
+        AvaloniaDiagnostics.EnqueueEvent(
+            $"{DateTime.Now:HH:mm:ss.fff}  {filePath}  — {disposition}");
+    }
+
+    /// <summary>
     /// Dispose all editor ViewModels currently held in the navigation tree and unsubscribe
-    /// nav-header <c>PropertyChanged</c> handlers registered by <see cref="BuildNavigationTree"/>.
+    /// nav-header <c>PropertyChanged</c> handlers registered by <see cref="BuildNavigationTreeAsync"/>.
     /// Must be called before <see cref="NavigationTree"/> is cleared.
     /// </summary>
     private void DisposeNavigationEditors()

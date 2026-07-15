@@ -26,9 +26,9 @@ public sealed class PermissionRuleViewModelTests
     [DataRow("ExitPlanMode")]
     [DataRow("KillShell")]
     [DataRow("LSP")]
+    [DataRow("Monitor")]
     [DataRow("NotebookEdit")]
     [DataRow("PowerShell")]
-    [DataRow("Pwsh")]
     [DataRow("Skill")]
     [DataRow("TaskCreate")]
     [DataRow("TaskGet")]
@@ -91,6 +91,8 @@ public sealed class PermissionRuleViewModelTests
     [DataRow("Bash(*)")] // pure-wildcard paren — schema rejects
     [DataRow("Bash(?)")] // pure-? paren — schema rejects
     [DataRow("Bash(***)")] // multiple wildcards only
+    [DataRow("Pwsh")] // not a real Claude Code tool — the shell tool is "PowerShell"
+    [DataRow("Pwsh(git status)")] // Pwsh(...) is not recognized; rules must use PowerShell(...)
     public void IsValid_KnownInvalidShapes_False(string rule)
     {
         Assert.IsFalse(PermissionRuleViewModel.IsValid(rule),

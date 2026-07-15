@@ -12,12 +12,40 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ## [2026.2.528] - TBD
 
+### Added
+
+- **Model catalog** — a single bundled source of truth
+  (`src/ClaudeForge.Core/Assets/ModelCatalog/model-catalog.json`) for the allowed
+  `model` / `effortLevel` / `permissions.defaultMode` values and their
+  inter-relationships, replacing several hardcoded lists. Surfaced through the
+  new SDK accessor `IClaudeConfigClient.Models` (`IModelCatalogAccessor`); the
+  curated file is overlay-able (`model-catalog.overlay.json`, RFC 7396) and
+  validated by `scripts/validate-model-catalog.ps1` +
+  `.github/workflows/model-catalog-refresh.yml`.
+- **Model-aware effort & mode editors** — the Essentials effort dropdown now
+  shows only the levels the selected model supports; an invalidated effort
+  auto-coerces to the nearest analog (e.g. `max`/`xhigh` → `high` on Sonnet 4.6)
+  as an editing-scope override, surfaced in the Save preview. A model with no
+  effort (Haiku) disables the control. `permissions.defaultMode = auto` is gated
+  to auto-capable models at User scope, with the option filtered out and an
+  ineligible selection coerced to `default`. A read-only "current model —
+  supports …" indicator sits beside the effort editor.
+- **Editable model field** — the Essentials model card is now a free-form
+  AutoCompleteBox (catalog entries are suggestions; any custom id can be typed).
+- **`bypassPermissions` search shortcut** — typing "bypass" deep-links to the
+  Default Mode editor with a hint, distinct from the `--dangerouslySkipPermissions`
+  flag result and the "disable bypass" card.
+- **Dynamic-access tripwire** — the build-time dead-string guard now also fails
+  the build on by-name/reflective resource access (`Strings.ResourceManager`,
+  `typeof(Strings)`) in project source, keeping its literal-`Strings.<Key>`
+  analysis sound.
+
 ### Changed
 
+- `model` / `effortLevel` / `permissions.defaultMode` option lists are now
+  catalog-driven and inter-aware rather than hardcoded.
 - Fixed 'missing files' that originate in the 'selected project' tree during backup scenarios
 - Newly available localizations
-
-### 
 
 ## [2026.2.527] - [2026.2.528]
 

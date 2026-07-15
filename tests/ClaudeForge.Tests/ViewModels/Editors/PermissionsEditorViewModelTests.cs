@@ -1,6 +1,8 @@
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
+using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -82,6 +84,8 @@ public class PermissionsEditorViewModelTests
         vm.AddAskCommand.Execute(null);
 
         Assert.AreEqual(1, vm.AskList.Count);
+        // The specifier is preserved verbatim — a trailing " *" (optional args) is
+        // NOT rewritten to ":*" (which would change match semantics).
         Assert.AreEqual("Bash(git push *)", vm.AskList[0].Rule);
         Assert.AreEqual(string.Empty, vm.NewAskText, "Input must be cleared after a successful add.");
         Assert.AreEqual(string.Empty, vm.NewAskError, "Error must be cleared after a successful add.");
@@ -606,6 +610,34 @@ public class PermissionsEditorViewModelTests
             + "call is missing in RebuildToolGroups.");
     }
 
+    [TestMethod]
+    public void CommonActions_AddingRule_PreservesExpandedAccordion()
+    {
+        // Regression: clicking an Allow/Deny/Ask button on the Common tab triggers
+        // RebuildCommonActions, which recreates the ToolActionGroup objects. The
+        // accordion the user had expanded must survive the rebuild — previously the
+        // freshly-built (collapsed) Expander replaced the open one, collapsing it and
+        // preventing easy clicks on the category's other buttons.
+        PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
+
+        ToolActionGroup bash = vm.ToolActionGroups.First(t => t.Tool == "Bash" && !t.IsCatchAll);
+        bash.IsExpanded = true;
+
+        // Add a rule from a DIFFERENT tool (File/Read) so the Bash group survives the
+        // rebuild intact — this isolates expansion preservation from group removal.
+        vm.AddToAllowCommand.Execute("Read");
+
+        ToolActionGroup? bashAfter = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "Bash" && !t.IsCatchAll);
+        Assert.IsNotNull(bashAfter, "Precondition: the Bash group must still exist after adding an unrelated rule.");
+        Assert.IsTrue(bashAfter!.IsExpanded,
+            "The expanded Bash accordion must stay expanded after adding a rule — it must not collapse.");
+
+        // A group the user never expanded must NOT spuriously expand across the rebuild.
+        ToolActionGroup? file = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "File" && !t.IsCatchAll);
+        Assert.IsNotNull(file, "Precondition: the File group survives (keeps Glob/Grep after Read is added).");
+        Assert.IsFalse(file!.IsExpanded, "A never-expanded group must remain collapsed across the rebuild.");
+    }
+
     [DataTestMethod]
     [DataRow("Bash(wsl ls *)")]
     [DataRow("Bash(wsl find *)")]
@@ -634,5 +666,232 @@ public class PermissionsEditorViewModelTests
         Assert.IsTrue(PermissionRuleViewModel.IsValid(rule),
             $"Canonical WSL rule '{rule}' must pass PermissionRuleViewModel.IsValid. "
             + $"Diagnose: {PermissionRuleViewModel.Diagnose(rule)}");
+    }
+
+    // -----------------------------------------------------------------------
+    // Schema-coverage guarantee — every permissions schema key is editable.
+    //
+    // The bespoke editor renders allow/deny/ask/defaultMode/disableBypass/
+    // additionalDirectories; every OTHER schema key (here: disableAutoMode)
+    // must be auto-surfaced via the generic factory, NOT dropped into the
+    // invisible preserved bag. These tests fail on the pre-feature editor,
+    // which routed disableAutoMode through the load switch's
+    // default: -> _preservedFields (round-tripped but invisible / uneditable).
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// A realistic (subset) permissions schema: two keys the editor covers
+    /// bespoke-ly (allow, defaultMode) plus one it does NOT (disableAutoMode,
+    /// an enum). Real schema declares <c>additionalProperties:false</c> + an
+    /// explicit <c>properties</c> map, so SchemaNode.Properties is exhaustive.
+    /// </summary>
+    private static SchemaNode PermissionsSchemaWithChildren()
+    {
+        return new SchemaNode("permissions", "permissions")
+        {
+            ValueType = SchemaValueType.Complex,
+            Properties =
+            [
+                new SchemaNode("permissions.allow", "allow") { ValueType = SchemaValueType.Array },
+                new SchemaNode("permissions.defaultMode", "defaultMode")
+                {
+                    ValueType = SchemaValueType.Enum,
+                    EnumValues = ["default", "acceptEdits"],
+                },
+                new SchemaNode("permissions.disableAutoMode", "disableAutoMode")
+                {
+                    ValueType = SchemaValueType.Enum,
+                    EnumValues = ["disable"],
+                },
+            ],
+        };
+    }
+
+    [TestMethod]
+    public void UncoveredSchemaKey_IsAutoSurfacedEditably_NotDroppedToPreservedBag()
+    {
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+        PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client: null, factory);
+
+        // disableAutoMode is not a bespoke-rendered key, so it must be auto-surfaced.
+        LibVm.PropertyEditorViewModel? surfaced =
+            vm.AutoSurfacedEditors.SingleOrDefault(e => e.Schema.Name == "disableAutoMode");
+        Assert.IsNotNull(surfaced, "disableAutoMode must be auto-surfaced as an editable editor.");
+
+        // ...and as the by-TYPE editor (enum -> dropdown), never the String/raw fallback.
+        Assert.AreEqual("EnumPropertyEditorViewModel", surfaced!.GetType().Name,
+            "An enum schema key must auto-surface as an enum dropdown, not a string/raw editor.");
+
+        // NO bespoke-covered key may be auto-surfaced (else it double-renders).
+        // Check the full covered set, not just a sample, so dropping any one key
+        // from CoveredKeys is caught.
+        IReadOnlySet<string> coveredKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "defaultMode", "allow", "deny", "ask",
+            "disableBypassPermissionsMode", "additionalDirectories",
+        };
+        Assert.IsFalse(vm.AutoSurfacedEditors.Any(e => coveredKeys.Contains(e.Schema.Name)),
+            "No bespoke-covered key may be auto-surfaced (would double-render).");
+    }
+
+    [TestMethod]
+    public void UncoveredSchemaKey_RoundTripsThroughAutoSurfacedEditor()
+    {
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+        PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client: null, factory);
+
+        JsonObject perms = new() { ["disableAutoMode"] = "disable" };
+        vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, perms), ConfigScope.User);
+
+        // Prove the value loaded INTO the auto-surfaced editor — not silently into
+        // _preservedFields, which would ALSO round-trip and mask a broken route.
+        // This is the real regression guard; the ToJsonValue check below alone
+        // would pass via the preserved bag.
+        LibVm.EnumPropertyEditorViewModel enumEditor =
+            (LibVm.EnumPropertyEditorViewModel)vm.AutoSurfacedEditors.Single(e => e.Schema.Name == "disableAutoMode");
+        Assert.AreEqual("disable", enumEditor.SelectedValue,
+            "disableAutoMode must load into its auto-surfaced editor, not the opaque preserved bag.");
+
+        JsonObject? result = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(result, "A permissions object with a set key must serialize to a JsonObject.");
+        Assert.AreEqual("disable", (string?)result!["disableAutoMode"],
+            "disableAutoMode must round-trip through its auto-surfaced editor, not be dropped.");
+    }
+
+    [TestMethod]
+    public void EditingAutoSurfacedChild_MarksEditorModified()
+    {
+        // The Save-enable payoff: a user edit to an auto-surfaced child must
+        // bubble up so SettingsGroupEditorViewModel re-serializes the group.
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+        PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client: null, factory);
+
+        // Baseline: no permissions value at this scope -> not modified.
+        vm.LoadFromLayered(new LayeredValue("permissions", []), ConfigScope.User);
+        Assert.IsFalse(vm.IsModified, "Baseline: an unset scope must not be modified.");
+
+        // Simulate the user picking the enum value in the auto-surfaced dropdown.
+        LibVm.EnumPropertyEditorViewModel enumEditor =
+            (LibVm.EnumPropertyEditorViewModel)vm.AutoSurfacedEditors.Single(e => e.Schema.Name == "disableAutoMode");
+        enumEditor.SelectedValue = "disable";
+
+        Assert.IsTrue(enumEditor.IsModified,
+            "Setting the child's value must mark the child modified (precondition for the bubble).");
+        Assert.IsTrue(vm.IsModified,
+            "Editing an auto-surfaced child must bubble up and mark the permissions editor modified.");
+    }
+
+    [TestMethod]
+    public void NoFactory_AutoSurfacedEditorsEmpty_BackCompatPreserved()
+    {
+        // Legacy / test fixtures construct without a factory; nothing is
+        // auto-surfaced and behaviour matches the pre-feature editor (the
+        // 27 existing fixtures above all use this no-factory path).
+        PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User);
+        Assert.AreEqual(0, vm.AutoSurfacedEditors.Count,
+            "Without an editor factory the editor must not auto-surface any keys.");
+    }
+
+    [TestMethod]
+    public void UncoveredSchemaKey_UnsupportedShape_IsStillSurfaced_NotSilentlyDropped()
+    {
+        // The no-silent-drop guarantee must hold even for a key whose shape the
+        // factory can't classify (Complex with no properties): it falls back to
+        // the validated raw-JSON editor (editable), never a silent drop.
+        SchemaNode schema = new SchemaNode("permissions", "permissions")
+        {
+            ValueType = SchemaValueType.Complex,
+            Properties =
+            [
+                new SchemaNode("permissions.futureBlob", "futureBlob") { ValueType = SchemaValueType.Complex },
+            ],
+        };
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+        PermissionsEditorViewModel vm = new(schema, ConfigScope.User, client: null, factory);
+
+        LibVm.PropertyEditorViewModel? surfaced =
+            vm.AutoSurfacedEditors.SingleOrDefault(e => e.Schema.Name == "futureBlob");
+        Assert.IsNotNull(surfaced, "An unsupported-shape uncovered key must still be surfaced (editable), not dropped.");
+        Assert.AreEqual("JsonRawPropertyEditorViewModel", surfaced!.GetType().Name,
+            "An unclassifiable shape must fall back to the validated raw-JSON editor.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_NativeAndAutoSurfacedKeys_CoexistWithCorrectValues()
+    {
+        // A covered key (defaultMode, native path) and an uncovered key
+        // (disableAutoMode, auto-surfaced path) must both round-trip with the
+        // right values — the native field owns its key, the auto-surfaced field
+        // contributes its own, neither clobbers the other.
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+        PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client: null, factory);
+        Assert.IsFalse(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "defaultMode"),
+            "defaultMode is covered; it must not also be auto-surfaced.");
+
+        JsonObject perms = new() { ["defaultMode"] = "default", ["disableAutoMode"] = "disable" };
+        vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, perms), ConfigScope.User);
+
+        JsonObject? result = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(result);
+        Assert.AreEqual("default", (string?)result!["defaultMode"],
+            "Covered key must round-trip via the native path.");
+        Assert.AreEqual("disable", (string?)result["disableAutoMode"],
+            "Uncovered key must round-trip via the auto-surfaced editor.");
+    }
+
+    [TestMethod]
+    public async Task SdkPath_AutoSurfacedKey_RoundTripsAlongsideSdkSourcedRules()
+    {
+        // Production config: an SDK client is present (rules read through the
+        // typed accessor) AND an auto-surfaced key (disableAutoMode) is read from
+        // the layered value. Both must compose — the rule from the SDK, the
+        // auto-surfaced key from layered — and ToJsonValue must emit both.
+        string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-autosurface-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string? previousOverride = PlatformPaths.TestUserProfileOverride;
+        PlatformPaths.TestUserProfileOverride = tempDir;
+        try
+        {
+            using ClaudeCodeClient client = new();
+            await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
+            client.Permissions.AddAllow(new PermissionRule("Bash(git status)"));
+
+            JsonObject perms = new()
+            {
+                ["allow"] = new JsonArray("Bash(git status)"),
+                ["disableAutoMode"] = "disable",
+            };
+            LayeredValue layered = LayeredWithPermissions(ConfigScope.User, perms);
+
+            // The factory only needs to build the generic child editor; pass the
+            // SDK client as the VM's read client.
+            CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
+            PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client, factory);
+            vm.LoadFromLayered(layered, ConfigScope.User);
+
+            Assert.AreEqual(1, vm.AllowList.Count, "Rule must come from the SDK accessor.");
+            Assert.IsTrue(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "disableAutoMode"),
+                "disableAutoMode must be auto-surfaced even in the SDK-backed path.");
+
+            JsonObject? result = vm.ToJsonValue() as JsonObject;
+            Assert.IsNotNull(result);
+            Assert.AreEqual("disable", (string?)result!["disableAutoMode"],
+                "Auto-surfaced disableAutoMode must round-trip in the SDK-backed configuration.");
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = previousOverride;
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+                /* best-effort */
+            }
+        }
     }
 }

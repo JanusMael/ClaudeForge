@@ -26,6 +26,10 @@ The **Essentials** nav node — synthetic, pinned to the top of the navigation t
 
 Card #11 mirrors the existing precedent — `disableBypassPermissionsMode` already had its own synthetic search hit and amber callout — so new users see the security knob without having to discover the Permissions page first.
 
+### Model ↔ effort coupling
+
+The **Model** card is a free-form AutoCompleteBox (catalog suggestions, any custom id typeable). The **Effort level** card is model-aware: its options come from the [model catalog](./MODEL-CATALOG.md) (`client.Models.PersistableEffortLevels`) filtered to what the effective model supports, with `max` (session-only) omitted. When the user changes the model, `EssentialsViewModel.ApplyModelEffortConstraint` re-filters the effort dropdown and **coerces an now-unsupported value to the nearest analog** (e.g. `xhigh` → `high` on Sonnet 4.6) as an editing-scope override — surfaced in the Save-Changes preview. A model with no effort (Haiku) disables the control, and a read-only "current model — supports …" indicator sits beside it. The option lists are catalog-driven, not hardcoded in `BuildCards`.
+
 ## Architecture — three layers, SDK-first
 
 ### Layer 1 — SDK: `IEnvAccessor`
@@ -86,20 +90,20 @@ A `SearchViewModelTests` fixture (`EssentialsTriggers_TableCovers_EveryCardId`) 
 
 ### Localization
 
-All new user-visible strings (~40 keys: page header + card titles + bodies + danger banners + amber callout + source labels) flow through `Strings.resx` + `Strings.zh-CN.resx` (placeholders with `TODO zh-CN translation` comments) + `Strings.Designer.cs`.
+All new user-visible strings (page header + card titles + bodies + danger banners + amber callout + source labels) flow through `Strings.resx` + `Strings.zh-CN.resx` (a real translation per key) + `Strings.Designer.cs`. `LocalizationParityTests` enforces that every English key has a non-`TODO` entry in every locale — placeholder punts are rejected.
 
 ## Testing
 
 | Suite | Coverage |
 |---|---|
-| `tests/ClaudeForge.Sdk.Tests/Env/EnvAccessorTests.cs` | 23 tests — Get/Set/All round-trip, typed property setters (int parse, bool parse, null = remove), per-scope reads, save+reload survival, argument validation. |
-| `tests/ClaudeForge.Tests/ViewModels/EssentialsViewModelTests.cs` | 19 tests — card list shape, value bindings, save round-trip through SDK, danger-banner toggle, env-var source attribution, amber-callout deep-link, reload contract. |
-| `tests/ClaudeForge.Tests/ViewModels/SearchViewModelTests.cs` (extended) | 5 new tests — synthetic-hit production per trigger phrase + table-coverage guard. |
-| `tests/ClaudeForge.Tests/Headless/ReloadHardeningTests.cs` (extended) | 1 new test — `_essentialsVm` survives reload (H-2 contract). |
+| `tests/ClaudeForge.Sdk.Tests/Env/EnvAccessorTests.cs` | Get/Set/All round-trip, typed property setters (int parse, bool parse, null = remove), per-scope reads, save+reload survival, argument validation. |
+| `tests/ClaudeForge.Tests/ViewModels/EssentialsViewModelTests.cs` | Card list shape, value bindings, save round-trip through the SDK, danger-banner toggle, env-var source attribution, amber-callout deep-link, reload contract, and dispose/refresh lifecycle (post-dispose refresh is a safe no-op; dispose during an in-flight gated refresh does not fault). |
+| `tests/ClaudeForge.Tests/ViewModels/SearchViewModelTests.cs` (extended) | Synthetic-hit production per trigger phrase + table-coverage guard. |
+| `tests/ClaudeForge.Tests/Headless/ReloadHardeningTests.cs` (extended) | `_essentialsVm` survives reload (H-2 contract). |
 
 ## Adding a new card
 
-1. Add the `Strings.resx` entries (Title / Body / optionally DangerBanner). Mirror in `Strings.zh-CN.resx` with `TODO zh-CN translation`.
+1. Add the `Strings.resx` entries (Title / Body / optionally DangerBanner). Mirror in `Strings.zh-CN.resx` with a **real** translation — `LocalizationParityTests` Contract #2 rejects `TODO` placeholders and Contract #1 requires the key in every locale.
 2. Append the `Designer.cs` accessor properties.
 3. In `EssentialsViewModel.BuildCards`, append a new `list.Add(new EssentialsCardViewModel(...))` block.
 4. Add the card id to `SearchViewModel.EssentialsTriggers` with at least one trigger phrase.

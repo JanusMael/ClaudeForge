@@ -1,27 +1,25 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
-             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:perm="using:Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions"
+             xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.PermissionsEditorView"
              x:DataType="vm:PermissionsEditorViewModel">
 
-    <UserControl.Resources>
-        <!-- Common Actions chiclet converters.
-             ActionKindToBrush    → SolidColorBrush keyed in CommonActionKindTheme.axaml
-             ActionKindToLabel    → localized label string from Strings.resx
-             ActionKindToTooltip  → localized one-sentence description; surfaced
-                                    as ToolTip.Tip so users can hover for the
-                                    semantic meaning of each chiclet colour. -->
-        <conv:CommonActionKindToBrushConverter x:Key="ActionKindToBrush" />
-        <conv:CommonActionKindToLabelConverter x:Key="ActionKindToLabel" />
-        <conv:CommonActionKindToTooltipConverter x:Key="ActionKindToTooltip" />
-    </UserControl.Resources>
-
+    <!--
+        Permissions "Overview" body. The heavy activity surfaces (Common presets,
+        guided Build, rule Lists) are top-level sibling tabs contributed by
+        ClaudeGroupTabCustomizer + rendered by GroupTabBodyTemplate. This control
+        is what the built-in (relabeled "Overview") tab shows: the rule-syntax
+        explainer, the inline "How permission rules work" accordion, the Default
+        Mode selector with its contextual warning banners, and an Advanced
+        accordion (disableBypass + additionalDirectories) at the end.
+    -->
     <StackPanel Spacing="12" Margin="0,8">
 
         <!-- ═══════════════════════════════════════════════════════════
-             Explanatory text — rule syntax overview
+             Explainer + inline education accordion
              ═══════════════════════════════════════════════════════════ -->
         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
@@ -31,16 +29,18 @@
                        Foreground="{DynamicResource AppSecondaryTextBrush}" />
         </Border>
 
-        <!-- defaultMode -->
+        <!-- defaultMode — surfaced near the top so it's one of the first
+             things the user sees. -->
         <StackPanel Spacing="4">
             <TextBlock Text="{x:Static loc:Strings.LabelDefaultMode}" FontWeight="SemiBold" />
             <TextBlock Text="{x:Static loc:Strings.TextDefaultModeHint}"
                        FontSize="11"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
             <!-- ItemsSource = DefaultModeInfo list; SelectedItem = SelectedModeInfo (computed).
-                 ItemTemplate shows value in monospace + description in muted text on one row.
-                 ToolTip.Tip and AutomationProperties.Name repeat the description for tooltip
-                 hover and screen-reader announcement. -->
+                 Row shows the raw camelCase value in monospace + the localized description.
+                 ToolTip.Tip adds Claude's friendly wording (TooltipText = ClaudeLabel +
+                 description); AutomationProperties.Name (AccessibleName) carries value +
+                 friendly label + description for screen-reader announcement. -->
             <ComboBox ItemsSource="{Binding DefaultModeInfos}"
                       SelectedItem="{Binding SelectedModeInfo}"
                       PlaceholderText="{x:Static loc:Strings.PlaceholderDefaultMode}"
@@ -48,7 +48,7 @@
                       MinWidth="300">
                 <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:DefaultModeInfo">
-                        <DockPanel ToolTip.Tip="{Binding Description}"
+                        <DockPanel ToolTip.Tip="{Binding TooltipText}"
                                    AutomationProperties.Name="{Binding AccessibleName}">
                             <TextBlock DockPanel.Dock="Left"
                                        Text="{Binding Value}"
@@ -92,6 +92,44 @@
                 </StackPanel>
             </Border>
 
+            <!-- Contextual hint: visible when user arrived via "bypass" search -->
+            <Border IsVisible="{Binding ShowSelectBypassHint}"
+                    BorderBrush="#E65100"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                    Padding="10,8"
+                    Margin="0,2,0,2">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="ℹ"
+                               FontSize="15"
+                               Foreground="#E65100"
+                               VerticalAlignment="Top"
+                               Margin="0,1,0,0" />
+                    <TextBlock Text="{x:Static loc:Strings.TextSelectBypassHint}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               MaxWidth="500"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Auto-mode advisory: shown when an ineligible 'auto' selection was
+                 coerced away (model not auto-capable, or scope not User). -->
+            <Border IsVisible="{Binding ShowAutoModeWarning}"
+                    BorderBrush="{DynamicResource AppCautionBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,5"
+                    Margin="0,2,0,2">
+                <TextBlock Text="{x:Static loc:Strings.LabelAutoModeCoerced}"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           MaxWidth="500"
+                           Foreground="{DynamicResource AppPrimaryTextBrush}" />
+            </Border>
+
             <!-- Danger banner: visible only when bypassPermissions is selected -->
             <Border IsVisible="{Binding IsInBypassMode}"
                     BorderBrush="#C62828"
@@ -121,536 +159,18 @@
             </Border>
         </StackPanel>
 
-        <Separator />
+        <!-- "How permission rules work" — accordion placed after Default Mode and
+             before Advanced. Self-contained Expander; rich inline formatting
+             (monospace + accent for code tokens) is applied in its code-behind. -->
+        <perm:PermissionRuleEducationPanel />
 
-        <!-- ═══════════════════════════════════════════════════════════
-             typed UI affordances for fields the SDK
-             promoted from PreservedFields to typed properties.
-             ═══════════════════════════════════════════════════════════ -->
-
-        <!-- disableBypassPermissionsMode — managed-scope org-policy gate.  Three-
-             state CheckBox (null = not set, true = disable, false = explicit allow). -->
-        <StackPanel Spacing="4">
-            <TextBlock Text="{x:Static loc:Strings.LabelDisableBypassPermissionsMode}"
-                       FontWeight="SemiBold" />
-            <TextBlock Text="{x:Static loc:Strings.TextDisableBypassPermissionsModeHint}"
-                       FontSize="11"
-                       Foreground="{DynamicResource AppSecondaryTextBrush}"
-                       TextWrapping="Wrap" />
-            <CheckBox IsChecked="{Binding DisableBypassPermissionsMode}"
-                      IsThreeState="True"
-                      AutomationProperties.Name="{x:Static loc:Strings.LabelDisableBypassPermissionsMode}"
-                      Content="{x:Static loc:Strings.LabelDisableBypassPermissionsModeCheckbox}" />
-        </StackPanel>
-
-        <!-- additionalDirectories — extra paths Claude is allowed to consider
-             in scope.  Add via the textbox + button; remove via the per-row × . -->
-        <StackPanel Spacing="4">
-            <TextBlock Text="{x:Static loc:Strings.LabelAdditionalDirectories}"
-                       FontWeight="SemiBold" />
-            <TextBlock Text="{x:Static loc:Strings.TextAdditionalDirectoriesHint}"
-                       FontSize="11"
-                       Foreground="{DynamicResource AppSecondaryTextBrush}"
-                       TextWrapping="Wrap" />
-            <ItemsControl ItemsSource="{Binding AdditionalDirectories}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel Margin="0,2">
-                            <Button DockPanel.Dock="Right"
-                                    Content="×"
-                                    FontSize="11"
-                                    Padding="6,2"
-                                    Margin="6,0,0,0"
-                                    Command="{Binding $parent[ItemsControl].((vm:PermissionsEditorViewModel)DataContext).RemoveAdditionalDirectoryCommand}"
-                                    CommandParameter="{Binding}"
-                                    AutomationProperties.Name="{Binding StringFormat='Remove additional directory {0}'}" />
-                            <TextBlock Text="{Binding}"
-                                       FontFamily="Consolas,Menlo,monospace"
-                                       VerticalAlignment="Center" />
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBox Text="{Binding NewAdditionalDirectory}"
-                         PlaceholderText="{x:Static loc:Strings.WatermarkAdditionalDirectory}"
-                         AutomationProperties.Name="{x:Static loc:Strings.LabelAdditionalDirectories}"
-                         Width="420">
-                    <TextBox.KeyBindings>
-                        <KeyBinding Gesture="Enter"
-                                    Command="{Binding AddAdditionalDirectoryCommand}" />
-                    </TextBox.KeyBindings>
-                </TextBox>
-                <Button Content="+"
-                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameAddAdditionalDirectory}"
-                        Command="{Binding AddAdditionalDirectoryCommand}" />
-            </StackPanel>
-        </StackPanel>
-
-        <Separator />
-
-        <!-- ═══════════════════════════════════════════════════════════
-             Allow
-             ═══════════════════════════════════════════════════════════ -->
-        <Expander IsExpanded="True">
-            <Expander.Header>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="{x:Static loc:Strings.HeaderAllow}" FontWeight="SemiBold" Foreground="#388E3C" />
-                    <TextBlock VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               Text="{Binding AllowCountLabel}" />
-                </StackPanel>
-            </Expander.Header>
-            <StackPanel Spacing="4" Margin="0,4,0,0">
-
-                <!-- Existing rules list -->
-                <ItemsControl ItemsSource="{Binding AllowList}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
-                            <StackPanel Spacing="1" Margin="0,2">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Panel Width="360">
-                                        <TextBox Text="{Binding Rule}"
-                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Allow rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
-                                        <Border IsVisible="{Binding HasValidationError}"
-                                                BorderBrush="#C62828"
-                                                BorderThickness="2"
-                                                CornerRadius="2"
-                                                IsHitTestVisible="False" />
-                                    </Panel>
-                                    <Button Content="✕" Padding="6,2" FontSize="11"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove allow rule {0}'}"
-                                            Click="OnRemoveAllow" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding ValidationErrorText}"
-                                           IsVisible="{Binding HasValidationError}"
-                                           FontSize="13" Foreground="#C62828"
-                                           TextWrapping="Wrap" MaxWidth="360"
-                                           Margin="2,0,0,0" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Input row: fixed half-width so the field doesn't span the full panel -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <TextBox Text="{Binding NewAllowText}"
-                             PlaceholderText="{x:Static loc:Strings.WatermarkAllowRule}"
-                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkAllowRule}"
-                             FontFamily="Consolas,Menlo,monospace"
-                             Width="280"
-                             VerticalAlignment="Top"
-                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Gesture="Enter" Command="{Binding AddAllowCommand}" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
-                    <Button Content="+" Padding="8,2"
-                            Command="{Binding AddAllowCommand}"
-                            VerticalAlignment="Top"
-                            AutomationProperties.Name="{x:Static loc:Strings.TipAddAllowRule}"
-                            ToolTip.Tip="{x:Static loc:Strings.TipAddAllowRule}" />
-                    <TextBlock Text="{Binding NewAllowError}"
-                               IsVisible="{Binding NewAllowError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               FontSize="13" Foreground="#C62828"
-                               TextWrapping="Wrap" MaxWidth="320"
-                               VerticalAlignment="Top" />
-                </StackPanel>
-
-                <!-- Read-only examples block — shown after the editing controls -->
-                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AllowExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+        <!-- Advanced (disableBypass + additionalDirectories) as a collapsed
+             accordion at the end of the Overview, rather than its own tab.
+             Reuses the extracted PermissionsAdvancedView; DataContext inherits
+             this control's PermissionsEditorViewModel. -->
+        <Expander Header="{x:Static loc:Strings.TabPermAdvanced}"
+                  IsExpanded="{Binding IsAdvancedExpanded}">
+            <views:PermissionsAdvancedView Margin="0,4,0,0" />
         </Expander>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             Deny
-             ═══════════════════════════════════════════════════════════ -->
-        <Expander IsExpanded="True">
-            <Expander.Header>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="{x:Static loc:Strings.HeaderDeny}" FontWeight="SemiBold" Foreground="#D32F2F" />
-                    <TextBlock VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               Text="{Binding DenyCountLabel}" />
-                </StackPanel>
-            </Expander.Header>
-            <StackPanel Spacing="4" Margin="0,4,0,0">
-
-                <!-- Existing rules list -->
-                <ItemsControl ItemsSource="{Binding DenyList}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
-                            <StackPanel Spacing="1" Margin="0,2">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Panel Width="360">
-                                        <TextBox Text="{Binding Rule}"
-                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Deny rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
-                                        <Border IsVisible="{Binding HasValidationError}"
-                                                BorderBrush="#C62828"
-                                                BorderThickness="2"
-                                                CornerRadius="2"
-                                                IsHitTestVisible="False" />
-                                    </Panel>
-                                    <Button Content="✕" Padding="6,2" FontSize="11"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove deny rule {0}'}"
-                                            Click="OnRemoveDeny" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding ValidationErrorText}"
-                                           IsVisible="{Binding HasValidationError}"
-                                           FontSize="13" Foreground="#C62828"
-                                           TextWrapping="Wrap" MaxWidth="360"
-                                           Margin="2,0,0,0" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Input row: fixed half-width so the field doesn't span the full panel -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <TextBox Text="{Binding NewDenyText}"
-                             PlaceholderText="{x:Static loc:Strings.WatermarkDenyRule}"
-                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkDenyRule}"
-                             FontFamily="Consolas,Menlo,monospace"
-                             Width="280"
-                             VerticalAlignment="Top"
-                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Gesture="Enter" Command="{Binding AddDenyCommand}" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
-                    <Button Content="+" Padding="8,2"
-                            Command="{Binding AddDenyCommand}"
-                            VerticalAlignment="Top"
-                            AutomationProperties.Name="{x:Static loc:Strings.TipAddDenyRule}"
-                            ToolTip.Tip="{x:Static loc:Strings.TipAddDenyRule}" />
-                    <TextBlock Text="{Binding NewDenyError}"
-                               IsVisible="{Binding NewDenyError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               FontSize="13" Foreground="#C62828"
-                               TextWrapping="Wrap" MaxWidth="320"
-                               VerticalAlignment="Top" />
-                </StackPanel>
-
-                <!-- Read-only examples block — shown after the editing controls -->
-                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.DenyExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </Expander>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             Ask
-             ═══════════════════════════════════════════════════════════ -->
-        <Expander IsExpanded="True">
-            <Expander.Header>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="{x:Static loc:Strings.HeaderAsk}" FontWeight="SemiBold" Foreground="#F57F17" />
-                    <TextBlock VerticalAlignment="Center" FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               Text="{Binding AskCountLabel}" />
-                </StackPanel>
-            </Expander.Header>
-            <StackPanel Spacing="4" Margin="0,4,0,0">
-
-                <!-- Existing rules list -->
-                <ItemsControl ItemsSource="{Binding AskList}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PermissionRuleViewModel">
-                            <StackPanel Spacing="1" Margin="0,2">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Panel Width="360">
-                                        <TextBox Text="{Binding Rule}"
-                                                 AutomationProperties.Name="{Binding Rule, StringFormat='Ask rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
-                                        <Border IsVisible="{Binding HasValidationError}"
-                                                BorderBrush="#C62828"
-                                                BorderThickness="2"
-                                                CornerRadius="2"
-                                                IsHitTestVisible="False" />
-                                    </Panel>
-                                    <Button Content="✕" Padding="6,2" FontSize="11"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipRemoveRule}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Remove ask rule {0}'}"
-                                            Click="OnRemoveAsk" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding ValidationErrorText}"
-                                           IsVisible="{Binding HasValidationError}"
-                                           FontSize="13" Foreground="#C62828"
-                                           TextWrapping="Wrap" MaxWidth="360"
-                                           Margin="2,0,0,0" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Input row: fixed half-width so the field doesn't span the full panel -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <TextBox Text="{Binding NewAskText}"
-                             PlaceholderText="{x:Static loc:Strings.WatermarkAskRule}"
-                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkAskRule}"
-                             FontFamily="Consolas,Menlo,monospace"
-                             Width="280"
-                             VerticalAlignment="Top"
-                             ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Gesture="Enter" Command="{Binding AddAskCommand}" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
-                    <Button Content="+" Padding="8,2"
-                            Command="{Binding AddAskCommand}"
-                            VerticalAlignment="Top"
-                            AutomationProperties.Name="{x:Static loc:Strings.TipAddAskRule}"
-                            ToolTip.Tip="{x:Static loc:Strings.TipAddAskRule}" />
-                    <TextBlock Text="{Binding NewAskError}"
-                               IsVisible="{Binding NewAskError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                               FontSize="13" Foreground="#C62828"
-                               TextWrapping="Wrap" MaxWidth="320"
-                               VerticalAlignment="Top" />
-                </StackPanel>
-
-                <!-- Read-only examples block — shown after the editing controls -->
-                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        CornerRadius="4" Padding="10,7" Margin="0,8,0,0">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{x:Static loc:Strings.TextExamplesHeader}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                        <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AskExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </Expander>
-
-        <!-- ═══════════════════════════════════════════════════════════
-             Common Actions
-             Pre-filtered curated rules — one click to add to any list.
-             ═══════════════════════════════════════════════════════════ -->
-        <Expander IsExpanded="{Binding CommonActionsExpanded}" Margin="0,4,0,0">
-            <Expander.Header>
-                <TextBlock Text="{x:Static loc:Strings.HeaderCommonActions}" FontWeight="SemiBold" />
-            </Expander.Header>
-            <StackPanel Spacing="4" Margin="0,4,0,0">
-                <TextBlock Text="{x:Static loc:Strings.TextCommonActionsNote}"
-                           FontSize="11"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                           Margin="0,0,0,4" />
-
-                <!-- 2026-05-20 - Windows-only contextual hint pointing users at
-                     the WSL group below as a solution to Git Bash / MSYS
-                     path-mangling friction.  Same gating signal as the
-                     VisibleToolGroupsForPlatform helper that hides the WSL
-                     group itself on non-Windows hosts: IsWindowsPlatform
-                     reads through PlatformInfo.Current so the linux / macos
-                     debug-flag emulation cleanly hides this hint too.
-                     Styled as an amber callout (matches the existing
-                     bypass-mode + danger-cli hint surfaces on this page)
-                     so it reads as advice, not a hard requirement. -->
-                <Border IsVisible="{Binding IsWindowsPlatform}"
-                        Background="{DynamicResource AppCautionBackgroundBrush}"
-                        BorderBrush="{DynamicResource AppCautionBrush}"
-                        BorderThickness="1"
-                        CornerRadius="3"
-                        Padding="8,6"
-                        Margin="0,0,0,4">
-                    <TextBlock Text="{x:Static loc:Strings.TextCommonActionsWslHint}"
-                               FontSize="11"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
-                </Border>
-
-                <!-- Empty state: shown when every candidate is already configured -->
-                <TextBlock Text="{x:Static loc:Strings.TextCommonActionsEmpty}"
-                           IsVisible="{Binding !HasCommonActions}"
-                           FontSize="12" FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-
-                <!--
-                    Tool list (Phase 4 refactor): each tool is its own Expander
-                    containing operation groups as bold sub-section headings.
-                    The catch-all wildcard tier (IsCatchAll = true) renders as
-                    a styled border instead of an Expander so users don't
-                    confuse wildcards with concrete tools — pinned at the
-                    bottom of the list per the design contract.
-
-                    Sub-templates `OperationGroupTemplate` and `CommonActionRowTemplate`
-                    are declared inline so both the per-tool Expander branch and
-                    the catch-all Border branch can share the row markup
-                    without duplicating it.
-                -->
-                <ItemsControl ItemsSource="{Binding ToolActionGroups}"
-                              IsVisible="{Binding HasCommonActions}">
-                    <ItemsControl.Resources>
-                        <!-- Inner row: chiclet (Kind label, coloured background) + rule label
-                             on the left, Allow/Deny/Ask buttons on the right. -->
-                        <DataTemplate x:Key="CommonActionRowTemplate" x:DataType="vm:CommonActionItem">
-                            <DockPanel Margin="0,2">
-                                <!-- Allow / Deny / Ask buttons on the right, with colour-coded icons -->
-                                <StackPanel DockPanel.Dock="Right"
-                                            Orientation="Horizontal" Spacing="4"
-                                            Margin="8,0,0,0">
-                                    <Button FontSize="11" Padding="6,2"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipCommonAddAllow}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Add rule {0} to allow list'}"
-                                            Click="OnCommonAddAllow">
-                                        <StackPanel Orientation="Horizontal" Spacing="3">
-                                            <TextBlock Text="✓" Foreground="#388E3C" FontWeight="SemiBold" />
-                                            <TextBlock Text="{x:Static loc:Strings.HeaderAllow}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button FontSize="11" Padding="6,2"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipCommonAddDeny}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Add rule {0} to deny list'}"
-                                            Click="OnCommonAddDeny">
-                                        <StackPanel Orientation="Horizontal" Spacing="3">
-                                            <TextBlock Text="✗" Foreground="#D32F2F" FontWeight="SemiBold" />
-                                            <TextBlock Text="{x:Static loc:Strings.HeaderDeny}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button FontSize="11" Padding="6,2"
-                                            ToolTip.Tip="{x:Static loc:Strings.TipCommonAddAsk}"
-                                            AutomationProperties.Name="{Binding Rule, StringFormat='Add rule {0} to ask list'}"
-                                            Click="OnCommonAddAsk">
-                                        <StackPanel Orientation="Horizontal" Spacing="3">
-                                            <TextBlock Text="?" Foreground="#F57F17" FontWeight="SemiBold" />
-                                            <TextBlock Text="{x:Static loc:Strings.HeaderAsk}" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                                <!-- Chiclet (Kind badge) flush-left of the rule label.
-                                     Mirrors the ScopeLegend chiclet pattern: Border + white
-                                     TextBlock, padding 8,2, CornerRadius 4. ToolTip.Tip is set
-                                     on BOTH the Border (covers the padded fill area) and the
-                                     inner TextBlock (covers the text glyph area) so the entire
-                                     coloured badge surfaces the description on hover, matching
-                                     how the EffectiveScope chiclet is wired in
-                                     PropertyEditorWrapper.axaml. -->
-                                <Border DockPanel.Dock="Left"
-                                        Background="{Binding Kind, Converter={StaticResource ActionKindToBrush}}"
-                                        CornerRadius="4"
-                                        Padding="6,1"
-                                        Margin="0,0,8,0"
-                                        VerticalAlignment="Center"
-                                        ToolTip.Tip="{Binding Kind, Converter={StaticResource ActionKindToTooltip}}">
-                                    <TextBlock Text="{Binding Kind, Converter={StaticResource ActionKindToLabel}}"
-                                               Foreground="White"
-                                               FontSize="10"
-                                               FontWeight="SemiBold"
-                                               ToolTip.Tip="{Binding Kind, Converter={StaticResource ActionKindToTooltip}}" />
-                                </Border>
-                                <!-- Rule label fills remaining space -->
-                                <TextBlock Text="{Binding Rule}"
-                                           FontFamily="Consolas,Menlo,monospace"
-                                           FontSize="12"
-                                           VerticalAlignment="Center" />
-                            </DockPanel>
-                        </DataTemplate>
-
-                        <!-- Operation sub-group: bold heading + items list. Used
-                             inside both the tool Expander and the catch-all border. -->
-                        <DataTemplate x:Key="OperationGroupTemplate" x:DataType="vm:CommonActionGroup">
-                            <StackPanel Margin="0,4,0,0">
-                                <TextBlock Text="{Binding Header}"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
-                                           Margin="0,0,0,2" />
-                                <ItemsControl ItemsSource="{Binding Items}"
-                                              ItemTemplate="{StaticResource CommonActionRowTemplate}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.Resources>
-
-                    <!-- Plain StackPanel — avoids the nested VSP-in-Expander layout-cycle
-                         detector that fires when this is embedded in a VirtualizingStackPanel. -->
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ToolActionGroup">
-                            <!--
-                                Two sibling renderings: only one is visible at a time.
-                                Concrete tool (IsCatchAll=false): Expander with tool name.
-                                Catch-all tier  (IsCatchAll=true):  styled Border with caption.
-                            -->
-                            <StackPanel>
-                                <!-- Concrete tool: Expander -->
-                                <Expander IsExpanded="False"
-                                          Margin="0,2,0,0"
-                                          IsVisible="{Binding !IsCatchAll}">
-                                    <Expander.Header>
-                                        <TextBlock Text="{Binding Tool}" FontSize="12" FontWeight="SemiBold" />
-                                    </Expander.Header>
-                                    <ItemsControl ItemsSource="{Binding OperationGroups}"
-                                                  ItemTemplate="{StaticResource OperationGroupTemplate}"
-                                                  Margin="8,4,0,4">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                </Expander>
-
-                                <!-- Catch-all wildcard tier: styled border, always expanded -->
-                                <Border Margin="0,8,0,0"
-                                        Padding="10,8"
-                                        CornerRadius="4"
-                                        BorderThickness="1"
-                                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                        IsVisible="{Binding IsCatchAll}">
-                                    <StackPanel>
-                                        <TextBlock Text="{x:Static loc:Strings.LabelCommonActionsCatchAll}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12"
-                                                   Margin="0,0,0,4" />
-                                        <ItemsControl ItemsSource="{Binding OperationGroups}"
-                                                      ItemTemplate="{StaticResource OperationGroupTemplate}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-        </Expander>
-
     </StackPanel>
 </UserControl>

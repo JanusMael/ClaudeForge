@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <leconv:EnvVarNameToBrushConverter x:Key="EnvVarNameToBrush" />
         <conv:EnvVarTooltipConverter x:Key="EnvVarTooltip" />
+        <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
     </UserControl.Resources>
 
     <DockPanel>
@@ -193,7 +194,7 @@
                                             <Panel HorizontalAlignment="Stretch"
                                                    VerticalAlignment="Stretch"
                                                    Background="Transparent"
-                                                   ToolTip.Tip="{Binding EffectiveValue}">
+                                                   ToolTip.Tip="{Binding EffectiveValue, Converter={StaticResource LongValueTooltip}}">
                                                 <TextBlock Text="{Binding EffectiveValue}"
                                                            Margin="4,0"
                                                            VerticalAlignment="Center"
@@ -295,7 +296,7 @@
                                             <Panel HorizontalAlignment="Stretch"
                                                    VerticalAlignment="Stretch"
                                                    Background="Transparent"
-                                                   ToolTip.Tip="{Binding EffectiveValue}">
+                                                   ToolTip.Tip="{Binding EffectiveValue, Converter={StaticResource LongValueTooltip}}">
                                                 <TextBlock Text="{Binding EffectiveValue}"
                                                            Margin="4,0"
                                                            VerticalAlignment="Center"

@@ -78,6 +78,39 @@ public sealed class ShellLauncher : IShellLauncher
     }
 
     /// <inheritdoc />
+    public void LaunchUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return;
+        }
+
+        try
+        {
+            // Process.Start returns a Process? whose handle is owned by the caller
+            // even when UseShellExecute=true. The discard `using` ensures Dispose
+            // runs immediately so the handle is not held until GC.
+            using Process? _ =
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true })
+                    : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                        ? Process.Start(new ProcessStartInfo
+                            { FileName = "open", ArgumentList = { url }, UseShellExecute = false })
+                        : Process.Start(new ProcessStartInfo
+                            { FileName = "xdg-open", ArgumentList = { url }, UseShellExecute = false });
+        }
+        catch (Exception ex) when (ex is Win32Exception
+                                       or InvalidOperationException
+                                       or FileNotFoundException
+                                       or PlatformNotSupportedException)
+        {
+            // Non-fatal — URL opening is purely cosmetic. The caller is expected
+            // to surface a copy-link / "open in browser failed" affordance.
+            _ = ex;
+        }
+    }
+
+    /// <inheritdoc />
     public void OpenInDefaultEditor(string filePath)
     {
         if (!Path.IsPathRooted(filePath))

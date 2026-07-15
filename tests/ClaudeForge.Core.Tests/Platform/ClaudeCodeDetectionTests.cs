@@ -8,6 +8,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Platform;
 /// directory fallback that catches the Windows-ARM64-npm-global scenario
 /// where <c>%APPDATA%\npm\claude.cmd</c> exists but is not on PATH.
 /// </summary>
+// Mutates the process-wide PATH env var AND the process-lifetime claude-code
+// location cache (_claudeCodeLocationCache) — both real process globals, not
+// AsyncLocal test seams. Must run serially, isolated from the parallel batch.
+[DoNotParallelize]
 [TestClass]
 public sealed class ClaudeCodeDetectionTests
 {

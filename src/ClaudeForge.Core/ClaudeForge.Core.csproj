@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="JsonSchema.Net" Version="9.2.1" />
+        <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
         <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
              file discovery errors).  No Avalonia dependency — safe to reference from Core. -->
         <PackageReference Include="Serilog" Version="4.3.1" />
@@ -14,6 +14,8 @@
 
     <ItemGroup>
         <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
+        <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
+        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
     </ItemGroup>
 
     <ItemGroup>

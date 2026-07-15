@@ -166,6 +166,29 @@ public sealed class HasUnsavedChangesRecheckTests
     }
 
     [TestMethod]
+    public void Save_StaysEnabled_WhenUnsavedChanges_EvenWhileInstallBannerShows()
+    {
+        // Regression: the --showInstallBanner debug flag force-sets ShowInstallBanner=true
+        // even with products installed, and CanSave gated on !ShowInstallBanner — so a real
+        // edit set HasUnsavedChanges=true but the Save button stayed dark. Save must depend
+        // only on there being unsaved changes (and not being mid-load), never on the
+        // install-guidance banner's visibility.
+        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        try
+        {
+            vm.ShowInstallBanner = true;
+            vm.HasUnsavedChanges = true;
+
+            Assert.IsTrue(vm.SaveCommand.CanExecute(null),
+                "Save must be enabled when unsaved changes exist, regardless of the install banner.");
+        }
+        finally
+        {
+            vm.Dispose();
+        }
+    }
+
+    [TestMethod]
     public async Task InstallBanner_AutoClearsDismissedFlag_WhenProductAppears()
     {
         // Contract: if the user dismissed the banner (neither product was installed),

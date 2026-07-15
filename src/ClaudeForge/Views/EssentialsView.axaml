@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.EssentialsView"
              x:DataType="vm:EssentialsViewModel">
 
@@ -129,15 +130,59 @@
                                                HorizontalAlignment="Left"
                                                AutomationProperties.Name="{Binding Title}" />
 
-                                <!-- EnumString: editable ComboBox so users can type
-                                     custom values for Model (which has free-form
-                                     identifiers in addition to the listed examples). -->
-                                <ComboBox ItemsSource="{Binding EnumOptions}"
+                                <!-- Strict EnumString (effortLevel, autoUpdatesChannel):
+                                     selection-only ComboBox restricted to the catalog set.
+                                     ItemsSource is FilteredOptions so an inter-related card
+                                     (effort) can narrow to the effective model's supported
+                                     levels; IsEnabled drops when the model exposes none. -->
+                                <ComboBox ItemsSource="{Binding FilteredOptions}"
                                           SelectedItem="{Binding EnumValue, Mode=TwoWay}"
-                                          IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsEnumString}}"
+                                          IsVisible="{Binding IsStrictEnumString}"
+                                          IsEnabled="{Binding !EnumDisabled}"
                                           MinWidth="220"
                                           HorizontalAlignment="Left"
                                           AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- Free-form EnumString (Model): editable AutoCompleteBox so
+                                     users can still type any custom id. Suggestions are rich
+                                     ModelSuggestionItems (brand Label + committed Value), shown
+                                     via the template below; ValueMemberBinding commits the id
+                                     while the list displays "Opus 4.8". The control bakes in a
+                                     fuzzy filter, so "Opus" matches the alias, the id, the [1m]
+                                     variant, AND the brand label. MinimumPrefixLength=0 surfaces
+                                     the whole list on focus. -->
+                                <!-- Delay coalesces keystrokes so the model is written (and effort
+                                     coercion re-run) only after the user pauses typing, not on every
+                                     character — restoring the commit-ish semantics of the old ComboBox. -->
+                                <ctrl:ModelPicker Suggestions="{Binding ModelSuggestions}"
+                                                  Value="{Binding EnumValue, Mode=TwoWay}"
+                                                  IsVisible="{Binding IsFreeFormEnumString}"
+                                                  AutomationLabel="{Binding Title}"
+                                                  HorizontalAlignment="Left" />
+
+                                <!-- Read-only "current model — supports …" indicator beside the
+                                     effort editor (empty/hidden on every other card). -->
+                                <TextBlock Text="{Binding ModelSupportSummary}"
+                                           IsVisible="{Binding ModelSupportSummary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                           FontSize="11"
+                                           Opacity="0.75"
+                                           Margin="0,2,0,0"
+                                           TextWrapping="Wrap" />
+
+                                <!-- Persistent inline constraint notice (e.g. effort auto-coerced,
+                                     or effort not applicable for the model). -->
+                                <Border IsVisible="{Binding ShowConstraintNotice}"
+                                        Background="Transparent"
+                                        BorderBrush="{DynamicResource AppCautionBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,3"
+                                        Margin="0,4,0,0"
+                                        HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding ConstraintNoticeText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
+                                </Border>
 
                                 <!-- StringList: existing entries + add-row textbox + Add button. -->
                                 <StackPanel Spacing="4"

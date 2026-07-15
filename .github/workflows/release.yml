@@ -83,7 +83,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5
@@ -131,7 +131,7 @@ jobs:
       PublicVersion: ${{ github.ref_name }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5
@@ -154,6 +154,9 @@ jobs:
         # comma-array natively: -Rids win-x64,win-arm64 → @('win-x64','win-arm64').
         run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
 
+      # Windows binaries are signed locally, after the release is published and
+      # before the winget submission (the signing cert can't be automated on
+      # hosted runners). The build intentionally ships unsigned artifacts.
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -170,7 +173,7 @@ jobs:
       PublicVersion: ${{ github.ref_name }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5
@@ -202,7 +205,7 @@ jobs:
       PublicVersion: ${{ github.ref_name }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5
@@ -236,7 +239,7 @@ jobs:
       # Full history is required for two reasons:
       #   1. git log -1 --format='%b' reads the tagged commit's message body.
       #   2. gh release create --generate-notes (fallback path) diffs between tags.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

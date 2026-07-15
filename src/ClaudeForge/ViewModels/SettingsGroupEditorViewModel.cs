@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +9,7 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -38,6 +41,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     private readonly Func<Task<string?>>? _browseDialog;
     private readonly DefaultEditorFactory _factory;
     private readonly SharedScopeContext _sharedScope;
+
+    // Per-group tab-strip exception hook (insert/hide tabs). Null ⇒ built-ins only.
+    private readonly IGroupTabCustomizer? _tabCustomizer;
 
     // Lazy-rebuild support: when this VM is not the active page, shared-scope
     // changes are deferred until Activate() is called.
@@ -102,7 +108,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         Func<Task<string?>>? browseDialog = null,
         DefaultEditorFactory? factory = null,
         string groupDescription = "",
-        ClaudeConfigClientCore? sdkClient = null)
+        ClaudeConfigClientCore? sdkClient = null,
+        IGroupTabCustomizer? tabCustomizer = null)
     {
         GroupName = groupName;
         GroupDescription = groupDescription;
@@ -112,10 +119,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         _browseDialog = browseDialog;
         _factory = factory ?? ClaudeEditorFactoryConfig.CreateDefault();
         _sharedScope = sharedScope;
+        _tabCustomizer = tabCustomizer;
         _editingScope = sharedScope.EditingScope; // initialise from shared state
         sharedScope.PropertyChanged += OnSharedScopePropertyChanged;
         Editors = [];
-        RebuildEditors();
+        Tabs = [];
+        RebuildEditors(); // also calls RebuildTabs()
 
         // Auto-refresh when the workspace changes externally (file watcher, another editor, etc.).
         // Own-writes are guarded by _selfWriting to prevent destroying the user's in-progress edits.
@@ -141,6 +150,49 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     }
 
     public string GroupName { get; }
+
+    /// <summary>
+    /// The top-level tab strip, data-driven so groups can contribute extra tabs
+    /// at any index and hide the built-ins via an <see cref="IGroupTabCustomizer"/>.
+    /// Seeded with Properties / Effective / JSON; rebuilt whenever the editors
+    /// are (see <see cref="RebuildTabs"/>).
+    /// </summary>
+    public ObservableCollection<GroupTab> Tabs { get; }
+
+    /// <summary>
+    /// The selected tab. Two-way bound to the view's <c>TabControl.SelectedItem</c>
+    /// (replacing a hardcoded <c>SelectedIndex=0</c>), so the selection is
+    /// remembered across rebuilds (see <see cref="RebuildTabs"/>) and navigation
+    /// away and back. Deep-links set it explicitly via <see cref="SelectTab"/>.
+    /// </summary>
+    [ObservableProperty] private GroupTab? _selectedTab;
+
+    // Set true only around RebuildTabs' programmatic re-selection so the tab-change
+    // trace in OnSelectedTabChanged logs USER tab clicks (and deep-link SelectTab),
+    // not the rebuilds that fire on every save / reload / scope change.
+    private bool _suppressTabLog;
+
+    partial void OnSelectedTabChanged(GroupTab? value)
+    {
+        if (value is not null && !_suppressTabLog)
+        {
+            Log.Information("[Editor.Tab] group={Group} tab={Tab}", GroupName, value.Id);
+        }
+    }
+
+    /// <summary>
+    /// Select the tab with <paramref name="tabId"/> when present; no-op otherwise.
+    /// Used by deep-link navigation to land on a specific tab (e.g. Overview, so
+    /// the permissions "Advanced" accordion it expands is on screen).
+    /// </summary>
+    public void SelectTab(string tabId)
+    {
+        GroupTab? tab = Tabs.FirstOrDefault(t => t.Id == tabId);
+        if (tab is not null)
+        {
+            SelectedTab = tab;
+        }
+    }
 
     /// <summary>
     /// One-line page description shown in the editor header next to
@@ -176,12 +228,52 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     private string _filterText = string.Empty;
 
     /// <summary>
+    /// True only while the current <see cref="FilterText"/> was injected by a deep-link
+    /// navigation (search result / "View in group") rather than typed by the user. Drives
+    /// an orange frame on the filter box — matching the deep-link "Back" button — so the
+    /// filter reads as part of that navigation state. Cleared the instant the user edits
+    /// or clears the filter (see <see cref="OnFilterTextChanged"/>).
+    /// </summary>
+    [ObservableProperty] private bool _filterFromNavigation;
+
+    // Guards the nav-injection path so the FilterText write inside ApplyNavigationFilter
+    // doesn't immediately clear FilterFromNavigation via OnFilterTextChanged.
+    private bool _applyingNavFilter;
+
+    /// <summary>
+    /// Set the filter from a deep-link navigation and flag it so the filter box shows the
+    /// orange "navigated" frame until the user edits or clears it. Deep-link handlers must
+    /// use this rather than assigning <see cref="FilterText"/> directly, which would read
+    /// as a user edit and skip the frame.
+    /// </summary>
+    public void ApplyNavigationFilter(string? filter)
+    {
+        _applyingNavFilter = true;
+        try
+        {
+            FilterText = filter ?? string.Empty;
+            FilterFromNavigation = !string.IsNullOrEmpty(FilterText);
+        }
+        finally
+        {
+            _applyingNavFilter = false;
+        }
+    }
+
+    /// <summary>
     /// Clears contextual hint banners on compound editors when the filter is removed,
     /// matching the user expectation that clearing the filter returns the page to its
     /// default state.  Currently dismisses <see cref="PermissionsEditorViewModel.ShowDangerCliHint"/>.
     /// </summary>
     partial void OnFilterTextChanged(string value)
     {
+        // Any change NOT coming through ApplyNavigationFilter is a user edit / clear, which
+        // drops the deep-link "navigated" frame.
+        if (!_applyingNavFilter)
+        {
+            FilterFromNavigation = false;
+        }
+
         if (!string.IsNullOrEmpty(value))
         {
             return;
@@ -349,6 +441,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     partial void OnShowJsonPlaceholdersChanged(bool value)
     {
         RebuildJsonPreview();
+        // Keep the data-driven JSON tab's header in sync ("JSON (all)" / "(active)").
+        GroupTab? jsonTab = Tabs.FirstOrDefault(t => t.Id == GroupTab.JsonId);
+        if (jsonTab is not null)
+        {
+            jsonTab.Header = JsonTabHeader;
+        }
     }
 
     public string JsonTabHeader => ShowJsonPlaceholders ? "JSON (all)" : "JSON (active)";
@@ -512,11 +610,17 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     public void Activate()
     {
         _isActive = true;
+        // Perf trace: rebuilt=true means a deferred scope rebuild ran on this visit
+        // (its cost is the [Editor.Rebuild] line); rebuilt=false means editors were
+        // reused and any perceived slowness on revisit is view realization, not the VM.
+        bool rebuilt = _rebuildPending;
         if (_rebuildPending)
         {
             _rebuildPending = false;
             RebuildEditors();
         }
+
+        Log.Information("[Editor.Activate] group={Group} rebuilt={Rebuilt}", GroupName, rebuilt);
     }
 
     /// <summary>
@@ -636,14 +740,43 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// </summary>
     private void WriteEditorValue(string jsonPath, JsonNode? value, ConfigScope scope)
     {
+        // An empty/whitespace string from a text box or free-form combo means "unset",
+        // not a literal empty value — normalize it to null so it takes the remove path
+        // (which, guarded below, is a true no-op when the key is already unset) and
+        // never pins a ghost like model="" from opening a dropdown and leaving it blank.
+        // No Claude Code setting treats "" as distinct from absent.
+        if (value is JsonValue strValue && strValue.TryGetValue(out string? s) && string.IsNullOrWhiteSpace(s))
+        {
+            value = null;
+        }
+
         if (_sdkClient is not null)
         {
             if (value != null)
             {
-                _sdkClient.SetValue(jsonPath, value, scope);
+                // Ghost-change guard: only persist when the value actually changes
+                // the value AT THE TARGET SCOPE. An editor that re-emits the value
+                // already present at this scope (e.g. a control event that re-asserts
+                // the current value) would otherwise pin a redundant explicit key —
+                // dirtying the doc with an empty Save preview. The compare basis MUST
+                // be the target scope (GetScopeValue), not the cross-scope effective
+                // value: comparing effective drops a legitimate explicit pin at
+                // EditingScope whenever a higher-priority scope shadows it with an
+                // equal value. This matches the _workspace fallback's scope-specific
+                // SetValue no-op guard. JsonNode.DeepEquals is the canonical compare.
+                if (!JsonNode.DeepEquals(value, _sdkClient.GetScopeValue(jsonPath, scope)))
+                {
+                    _sdkClient.SetValue(jsonPath, value, scope);
+                }
             }
-            else
+            else if (_sdkClient.GetScopeValue(jsonPath, scope) is not null)
             {
+                // Symmetric scope-specific guard: only remove when the key actually
+                // exists at the target scope. Removing an already-absent key is a
+                // no-op the SDK would still surface as a path-ful Changed event
+                // (ApplyRemoveLocked always-notifies a top-level remove), so skipping
+                // it keeps this branch ghost-event-free — matching the write branch
+                // above and the _workspace fallback's absent-key no-op.
                 _sdkClient.RemoveValue(jsonPath, scope);
             }
         }
@@ -738,6 +871,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
     private void RebuildEditors()
     {
+        long rebuildStartTs = Stopwatch.GetTimestamp();
+
         // reuse existing editor instances by JsonPath instead of
         // always constructing fresh ones. Prior code:
         //
@@ -825,6 +960,58 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         OnPropertyChanged(nameof(ShowFilterBar));
         RebuildEffectiveRows();
         RebuildJsonPreview();
+        RebuildTabs();
+
+        // Perf trace: a slow revisit shows here as a high elapsedMs (VM rebuild is the
+        // cost); if this line is ABSENT on a revisit (see [Editor.Activate] rebuilt=false)
+        // the cost is view realization, not the VM. editors=N is the group size. This also
+        // fires for the whole-group Effective-rows + JSON-preview recompute above, so a
+        // large gap between editors=N and elapsedMs points at those, not editor creation.
+        Log.Information("[Editor.Rebuild] group={Group} editors={Count} elapsedMs={Ms:F1}",
+            GroupName, Editors.Count, Stopwatch.GetElapsedTime(rebuildStartTs).TotalMilliseconds);
+    }
+
+    /// <summary>
+    /// Rebuilds <see cref="Tabs"/>: seeds the built-in Properties / Effective /
+    /// JSON tabs (content = this group VM), then applies the per-group
+    /// <see cref="IGroupTabCustomizer"/> so a group can insert/hide tabs. Called
+    /// at the end of <see cref="RebuildEditors"/> so contributed tabs always
+    /// reference the current editor instances.
+    /// </summary>
+    private void RebuildTabs()
+    {
+        // Remember which tab was selected so it survives this rebuild (Tabs is
+        // cleared + repopulated with fresh GroupTab instances on every save /
+        // reload / scope change). Matched back by Id below.
+        string? priorId = SelectedTab?.Id;
+
+        List<GroupTab> seed =
+        [
+            new() { Id = GroupTab.PropertiesId, Header = Strings.HeaderTabProperties, Content = this },
+            new() { Id = GroupTab.EffectiveId, Header = Strings.HeaderTabEffective, Content = this },
+            new() { Id = GroupTab.JsonId, Header = JsonTabHeader, Content = this },
+        ];
+
+        // Pass SelectTab so a customizer can wire an in-editor deep-link (e.g. the Hooks
+        // "View flow diagram" link) to jump to a sibling contributed tab.
+        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList(), SelectTab);
+
+        Tabs.Clear();
+        foreach (GroupTab tab in seed)
+        {
+            Tabs.Add(tab);
+        }
+
+        // Initial selection (when this is NOT a deep-link, which overrides via
+        // SelectTab afterward): the remembered tab → the customizer's default tab
+        // → the first tab.
+        // Programmatic re-selection — suppress the tab-change trace (this is a
+        // rebuild, not a user click).
+        _suppressTabLog = true;
+        SelectedTab = Tabs.FirstOrDefault(t => t.Id == priorId)
+                      ?? Tabs.FirstOrDefault(t => t.IsDefaultTab)
+                      ?? Tabs.FirstOrDefault();
+        _suppressTabLog = false;
     }
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -952,18 +1139,17 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
                                                   return null;
                                               }
 
+                                              // Keep the FULL value: the view trims the cell (ellipsis)
+                                              // and the hover tooltip pretty-prints the whole JSON, so
+                                              // truncating here would throw away recoverable detail.
                                               string display = layered.EffectiveValue.ToJsonString();
-                                              // Truncate very long values (e.g. nested object JSON) for readability.
-                                              if (display.Length > 120)
-                                              {
-                                                  display = display[..120] + "…";
-                                              }
 
                                               return new EffectivePropertyRow(
                                                   node.Title ?? node.Name,
                                                   display,
                                                   layered.EffectiveScope,
-                                                  layered.IsOverridden);
+                                                  layered.IsOverridden,
+                                                  node.Description);
                                           })
                                           .Where(r => r is not null)
                                           .Select(r => r!)

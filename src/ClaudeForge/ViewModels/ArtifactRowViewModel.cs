@@ -40,6 +40,19 @@ public sealed partial class ArtifactRowViewModel(EditableMemoryEntry entry) : Ob
     /// <summary><see langword="true"/> for plugin-scoped (read-only) rows.</summary>
     public bool IsPlugin => Entry.Scope == EditableMemoryScope.Plugin;
 
+    /// <summary>
+    /// Whether this row may be deleted — writable (User / Project) artifacts
+    /// only.  Plugin-provided rows are never deletable (the governing theme:
+    /// never delete things installed by another thing).
+    /// </summary>
+    public bool IsDeletable => IsWritable;
+
+    /// <summary>
+    /// <see langword="true"/> for skills — delete removes the whole skill
+    /// directory (its <c>SKILL.md</c> plus any sibling assets), not just the file.
+    /// </summary>
+    public bool IsSkill => Entry.Category == UserMemoryCategory.Skill;
+
     /// <summary>Short scope label: "User" / "Project" / "Plugin".</summary>
     public string ScopeLabel => Entry.Scope switch
     {

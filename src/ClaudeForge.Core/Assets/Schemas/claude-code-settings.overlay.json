@@ -2,20 +2,20 @@
   "$comment": "ClaudeForge hand-curated additions overlaid onto the upstream schemastore.org schema (claude-code-settings.json) at load time via SchemaRegistry.ApplyOverlay (RFC 7396 JSON Merge Patch semantics). This file is NEVER touched by scripts/refresh-schema.{sh,ps1} — refreshing upstream is idempotent for the overlay, edits here persist across refreshes. Don't add purely-upstream content here; the overlay is for additions and overrides the upstream schema doesn't carry (today: `model.default` drives the '(inherits: <alias>)' watermark; `model.examples` populates the AutoCompleteBox suggestion list; `model.description` is an enriched user-facing text that mentions specific aliases and the [1m] extended-context syntax which the terser upstream description omits). === SAFETY === RFC 7396 makes overlay keys unconditionally win, and a null in the overlay deletes the matched key from the base. An overlay edit COULD silently weaken a security-relevant schema constraint. The following keys MUST NOT be added to this overlay — they live in the upstream schema and the merged result must preserve them byte-for-byte: $defs.permissionRule.pattern (regex locking valid permission rule names); $defs.hookCommand.anyOf[*].properties.type (hook variant discriminator, including 'const' values); properties.autoUpdatesChannel.enum (locks values to stable/latest); any other 'pattern' / 'enum' / 'required' / 'const' / 'minLength' / 'maxLength' on properties under `hooks`, `permissions`, `allowedTools`, `deniedTools`, or `mcpServers`. The guard tests in tests/ClaudeForge.Core.Tests/Schema/SchemaRegistryOverlayTests.cs (Overlay_PreservesPermissionRulePattern / Overlay_PreservesHookCommandTypeConst / Overlay_PreservesAutoUpdatesChannelEnum) will fail if one of these constraints is accidentally stripped. If you're adding a NEW override for a property that today has no overlay entry, prefer additive keys (default, examples, description) — and if you genuinely need to override a structural constraint, extend the guard-test set first so the contract is locked.",
   "properties": {
     "model": {
-      "description": "Override the default model used by Claude Code. Can be a short alias (sonnet/opus/haiku/best/opusplan) or a specific snapshot ID (e.g. claude-opus-4-7). Append [1m] to a Sonnet/Opus alias or name to use the 1M-token extended context window (e.g. opus[1m], claude-sonnet-4-6[1m]). For finer control, use environment variables: ANTHROPIC_MODEL (runtime override), ANTHROPIC_DEFAULT_OPUS_MODEL, ANTHROPIC_DEFAULT_SONNET_MODEL, ANTHROPIC_DEFAULT_HAIKU_MODEL (per-class pinning), CLAUDE_CODE_SUBAGENT_MODEL (subagent model). See https://code.claude.com/docs/en/model-config",
+      "description": "Override the default model used by Claude Code. Can be a short alias (sonnet/opus/haiku/fable/best/opusplan) or a specific snapshot ID (e.g. claude-opus-4-8, claude-fable-5). Append [1m] to a Sonnet/Opus alias or name to use the 1M-token extended context window (e.g. opus[1m], claude-sonnet-5[1m]). For finer control, use environment variables: ANTHROPIC_MODEL (runtime override), ANTHROPIC_DEFAULT_OPUS_MODEL, ANTHROPIC_DEFAULT_SONNET_MODEL, ANTHROPIC_DEFAULT_HAIKU_MODEL (per-class pinning), CLAUDE_CODE_SUBAGENT_MODEL (subagent model). See https://code.claude.com/docs/en/model-config",
       "default": "sonnet",
       "examples": [
-        "sonnet",
+        "fable",
+        "opus[1m]",
         "opus",
+        "sonnet[1m]",
+        "sonnet",
         "haiku",
         "best",
         "opusplan",
-        "sonnet[1m]",
-        "opus[1m]",
-        "claude-opus-4-7",
-        "claude-sonnet-4-6",
-        "claude-opus-4-6",
-        "claude-sonnet-4-5"
+        "claude-fable-5",
+        "claude-opus-4-8",
+        "claude-sonnet-5"
       ]
     }
   }

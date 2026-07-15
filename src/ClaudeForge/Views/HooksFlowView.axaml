@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:svg="clr-namespace:Avalonia.Svg.Skia;assembly=Svg.Controls.Skia.Avalonia"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.HooksFlowView">
+
+    <!-- Overlay layout: the diagram fills the WHOLE pane and the zoom toolbar floats
+         over its top-right corner. So the SVG scrolls under the pane's top edge, not
+         under an opaque docked strip band (the previous DockPanel-row layout showed a
+         dark band because a transparent row just reveals the pane behind it). -->
+    <Grid>
+        <!-- Scrollable, zoomable diagram. The SVG renders at its natural size
+             (Stretch=None); the LayoutTransformControl applies the zoom as a LAYOUT
+             transform so the ScrollViewer's scroll extent tracks the scaled size
+             (a RenderTransform would not). -->
+        <ScrollViewer x:Name="Scroller"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="{DynamicResource AppCardBackgroundBrush}">
+            <!-- LayoutTransform (a ScaleTransform) is assigned in code-behind so it's
+                 reachable by reference for zooming. -->
+            <LayoutTransformControl x:Name="ZoomHost"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="16">
+                <svg:Svg Path="/Resources/hooks-lifecycle.svg" Stretch="None" />
+            </LayoutTransformControl>
+        </ScrollViewer>
+
+        <!-- Floating zoom toolbar (top-right). Ctrl+MouseWheel zooms toward the cursor
+             (code-behind); these buttons zoom about the viewport centre. The faint,
+             theme-adaptive card backdrop (semi-transparent) is a separate layer BEHIND
+             the controls so the diagram shows through and scrolls under it, while the
+             buttons stay crisp/legible over the light diagram. -->
+        <Border VerticalAlignment="Top" HorizontalAlignment="Right"
+                Margin="0,6,10,0" CornerRadius="6">
+            <Panel>
+                <Border Background="{DynamicResource AppCardBackgroundBrush}"
+                        CornerRadius="6" Opacity="0.7" />
+                <StackPanel Orientation="Horizontal" Spacing="6"
+                            VerticalAlignment="Center" Margin="6,2">
+                    <Button Content="&#x2212;" Click="OnZoomOut" Width="30" Padding="0"
+                            Background="Transparent"
+                            ToolTip.Tip="{x:Static loc:Strings.AutoNameZoomOut}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameZoomOut}" />
+                    <TextBlock x:Name="ZoomReadout" Text="100%" Width="48"
+                               TextAlignment="Center" VerticalAlignment="Center"
+                               FontFamily="Consolas,Menlo,monospace" />
+                    <Button Content="+" Click="OnZoomIn" Width="30" Padding="0"
+                            Background="Transparent"
+                            ToolTip.Tip="{x:Static loc:Strings.AutoNameZoomIn}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameZoomIn}" />
+                    <Border Width="1" Margin="4,2"
+                            Background="{DynamicResource AppPanelBorderBrush}" />
+                    <Button Content="{x:Static loc:Strings.ButtonFitWidth}" Click="OnFitWidth"
+                            Background="Transparent"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonFitWidth}" />
+                    <Button Content="{x:Static loc:Strings.ButtonReset}" Click="OnResetZoom"
+                            Background="Transparent"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonReset}" />
+                </StackPanel>
+            </Panel>
+        </Border>
+    </Grid>
+</UserControl>

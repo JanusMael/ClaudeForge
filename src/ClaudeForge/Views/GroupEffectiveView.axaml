@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupEffectiveView"
+             x:DataType="vm:SettingsGroupEditorViewModel">
+
+    <!-- Built-in "Effective" tab body: subtitle + merged-value grid (read-only).
+         Extracted from SettingsGroupEditorView. DataContext = the group VM.
+         Carries its own scope-chiclet converters (were in the parent's Resources). -->
+    <UserControl.Resources>
+        <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
+        <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
+        <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
+        <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
+    </UserControl.Resources>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top"
+                Padding="14,8"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <TextBlock Text="{x:Static loc:Strings.TextEffectiveTabSubtitle}"
+                       FontSize="11"
+                       TextWrapping="Wrap"
+                       MaxWidth="800"
+                       HorizontalAlignment="Left"
+                       TextAlignment="Left"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Border>
+
+        <DataGrid ItemsSource="{Binding EffectiveRows}"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  GridLinesVisibility="Horizontal"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}"
+                  AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpEffectiveRowsGrid}">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="200" CanUserSort="True" SortMemberPath="Property">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveProperty}"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                            <!-- Tooltip shows the schema description (falls back to the name). -->
+                            <controls:TipCell Tip="{Binding PropertyTooltip}">
+                                <TextBlock Text="{Binding Property}"
+                                           VerticalAlignment="Center"
+                                           Margin="12,0"
+                                           TextTrimming="CharacterEllipsis" />
+                            </controls:TipCell>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="*" CanUserSort="True" SortMemberPath="DisplayValue">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValue}"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                            <!-- Cell trims to width; hover pretty-prints the full JSON value. -->
+                            <controls:TipCell Tip="{Binding DisplayValue, Converter={StaticResource LongValueTooltip}}">
+                                <SelectableTextBlock Text="{Binding DisplayValue}"
+                                                     TextTrimming="CharacterEllipsis"
+                                                     VerticalAlignment="Center"
+                                                     Margin="12,0" />
+                            </controls:TipCell>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="Auto"
+                                        CanUserSort="True"
+                                        SortMemberPath="Scope">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveScope}"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                            <Border Background="{Binding Scope, Converter={StaticResource ScopeToBrush}}"
+                                    TextElement.Foreground="White"
+                                    CornerRadius="3" Padding="6,2" Margin="4,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsVisible="{Binding Scope, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    ToolTip.Tip="{Binding Scope, Converter={StaticResource ScopeToTooltip}}">
+                                <TextBlock Text="{Binding Scope, Converter={StaticResource ScopeToName}}"
+                                           FontSize="10" FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           ToolTip.Tip="{Binding Scope, Converter={StaticResource ScopeToTooltip}}" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridCheckBoxColumn Binding="{Binding IsOverridden}" Width="90">
+                    <DataGridCheckBoxColumn.Header>
+                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveOverridden}"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveOverridden}" />
+                    </DataGridCheckBoxColumn.Header>
+                </DataGridCheckBoxColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

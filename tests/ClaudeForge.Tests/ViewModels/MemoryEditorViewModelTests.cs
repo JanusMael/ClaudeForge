@@ -6,6 +6,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -63,8 +64,20 @@ public sealed class MemoryEditorViewModelTests
         return new MemoryEditorViewModel(client, projectRoot: null);
     }
 
-    private static FakeClaudeCodeClient NewFakeClient()
+    private FakeClaudeCodeClient NewFakeClient()
     {
+        // Re-assert the sandbox override inside the test METHOD's async flow — not
+        // only in [TestInitialize]. TestUserProfileOverride is an AsyncLocal (kept
+        // that way because ClaudeForge.Sdk.Tests runs method-level parallel and needs
+        // per-flow isolation). Under serial MSTest, the value set in the sync Setup
+        // does not always propagate into the async test method's execution context, so
+        // FootprintService.DeleteAsync's Task.Run — which reads PlatformPaths.ClaudeHome
+        // on a pool thread — occasionally captured a context WITHOUT the override and
+        // deleted from the real home instead of the sandbox. That surfaced as the flaky
+        // DeleteFootprintAsync_* failures that only appeared in the full suite. Setting
+        // it here (every real-delete test funnels through NewFakeClient, on its own
+        // flow, before the client is used) makes the later Task.Run capture the sandbox.
+        PlatformPaths.TestUserProfileOverride = _fakeHome;
         return new FakeClaudeCodeClient();
     }
 
@@ -136,6 +149,34 @@ public sealed class MemoryEditorViewModelTests
         Assert.IsTrue(vm.IsViewerVisible);
         Assert.AreEqual("hello world", vm.ViewerContent);
         Assert.AreSame(primary, vm.SelectedFile);
+        Assert.IsFalse(vm.HasViewerFrontMatter, "Plain content has no front-matter card.");
+    }
+
+    [TestMethod]
+    public async Task LoadFile_WithFrontMatter_SplitsCardFromBody()
+    {
+        Write("CLAUDE.md", "---\nname: Alpha\ndescription: does things\n---\n# Body\n\nHello.\n");
+        FakeClaudeCodeClient client = NewFakeClient();
+        MemoryEditorViewModel vm = NewVm(client);
+        await vm.RefreshAsync();
+
+        UserMemoryFile primary = vm.Tier1Groups
+                                   .Single(g => g.Category == UserMemoryCategory.PrimaryMemory)
+                                   .Files[0];
+
+        await vm.LoadFileAsync(primary);
+
+        // Front-matter is surfaced as a structured card…
+        Assert.IsTrue(vm.HasViewerFrontMatter);
+        Assert.IsNotNull(vm.ViewerFrontMatter);
+        Assert.AreEqual("Alpha", vm.ViewerFrontMatter!.Single(r => r.Key == "name").Value);
+
+        // …and stripped from the rendered body.
+        StringAssert.Contains(vm.ViewerContent, "# Body");
+        Assert.IsFalse(vm.ViewerContent!.Contains("name:"),
+            "Front-matter must not leak into the rendered markdown body.");
+        Assert.IsFalse(vm.ViewerContent!.TrimStart().StartsWith("---"),
+            "Body must not begin with the front-matter delimiter.");
     }
 
     [TestMethod]
@@ -402,6 +443,7 @@ public sealed class MemoryEditorViewModelTests
             public IMarketplacesAccessor Marketplaces => throw new NotSupportedException();
             public IEnabledPluginsAccessor Plugins => throw new NotSupportedException();
             public IEnvAccessor Env => throw new NotSupportedException();
+            public IModelCatalogAccessor Models => throw new NotSupportedException();
             public IBackupClient Backup => throw new NotSupportedException();
 
             public event EventHandler<ClientChangedEventArgs>? Changed
@@ -668,6 +710,129 @@ public sealed class MemoryEditorViewModelTests
             "No dialog service → delete proceeds without confirmation.");
     }
 
+    // ── DeleteUserMemoryFileAsync coverage ──
+    //
+    // Mirrors the footprint branch matrix for Tier 1 user-memory files: null
+    // guard, the cross-tool non-deletable guard, dialog decline, confirm-deletes,
+    // the no-dialog fast path, and skill = whole-directory delete.
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_NullFile_NoOp()
+    {
+        StubDialogService dlg = new();
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
+        await vm.DeleteUserMemoryFileAsync(null);
+        Assert.AreEqual(0, dlg.ConfirmCalls);
+    }
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_CrossToolFile_NotDeletable_NoOp()
+    {
+        // Cross-tool memory (Codex/Gemini/OpenCode) is owned by another tool — the
+        // Delete command must short-circuit before any dialog or delete.
+        string crossPath = Path.Combine(_fakeHome, ".codex", "AGENTS.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(crossPath)!);
+        File.WriteAllText(crossPath, "codex memory");
+
+        UserMemoryFile crossTool = new(
+            AbsolutePath: crossPath,
+            Category: UserMemoryCategory.CrossToolMemory,
+            DisplayName: "AGENTS",
+            SizeBytes: 12,
+            LastWriteUtc: DateTime.UtcNow,
+            Subtitle: null);
+        Assert.IsFalse(crossTool.IsDeletable, "Cross-tool memory must report as non-deletable.");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
+
+        await vm.DeleteUserMemoryFileAsync(crossTool);
+
+        Assert.AreEqual(0, dlg.ConfirmCalls, "Non-deletable cross-tool row must not even prompt.");
+        Assert.IsTrue(File.Exists(crossPath), "Another tool's file must never be deleted.");
+    }
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_UserDeclines_NoDelete()
+    {
+        Write("agents/reviewer.md", "# reviewer");
+        string path = Path.Combine(_claudeHome, "agents", "reviewer.md");
+
+        StubDialogService dlg = new() { ConfirmReturns = false };
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
+        await vm.RefreshAsync();
+        UserMemoryFile file = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent).Files[0];
+
+        await vm.DeleteUserMemoryFileAsync(file);
+
+        Assert.AreEqual(1, dlg.ConfirmCalls);
+        Assert.IsTrue(File.Exists(path), "Declined confirm → file survives.");
+    }
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_UserConfirms_DeletesFileAndRebuilds()
+    {
+        Write("agents/reviewer.md", "# reviewer");
+        string path = Path.Combine(_claudeHome, "agents", "reviewer.md");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
+        await vm.RefreshAsync();
+        UserMemoryFile file = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent).Files[0];
+
+        await vm.DeleteUserMemoryFileAsync(file);
+
+        Assert.IsFalse(File.Exists(path), "Confirmed → file deleted.");
+        Assert.IsTrue(vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent).IsEmpty,
+            "Tier 1 group must rebuild empty after the delete.");
+        Assert.IsFalse(vm.IsBusy, "IsBusy must reset in the finally block.");
+    }
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_Skill_DeletesWholeDirectory()
+    {
+        Write("skills/pdf/SKILL.md", "---\nname: pdf\n---\n");
+        Write("skills/pdf/run.py", "print('x')");
+        string skillDir = Path.Combine(_claudeHome, "skills", "pdf");
+
+        StubDialogService dlg = new() { ConfirmReturns = true };
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
+        await vm.RefreshAsync();
+        UserMemoryFile skill = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Skill).Files[0];
+        Assert.IsTrue(skill.IsSkill);
+
+        await vm.DeleteUserMemoryFileAsync(skill);
+
+        Assert.IsFalse(Directory.Exists(skillDir),
+            "Deleting a skill removes its whole directory, not just SKILL.md.");
+    }
+
+    [TestMethod]
+    public async Task DeleteUserMemoryFileAsync_NoDialogService_DeletesImmediately()
+    {
+        Write("commands/summarise.md", "# summarise");
+        string path = Path.Combine(_claudeHome, "commands", "summarise.md");
+
+        MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: null, shellLauncher: null);
+        await vm.RefreshAsync();
+        UserMemoryFile file = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.SlashCommand).Files[0];
+
+        await vm.DeleteUserMemoryFileAsync(file);
+
+        Assert.IsFalse(File.Exists(path), "No dialog service → delete proceeds without confirmation.");
+    }
+
+    [TestMethod]
+    public void UserMemoryFile_IsDeletable_FalseOnlyForCrossTool()
+    {
+        foreach (UserMemoryCategory cat in Enum.GetValues<UserMemoryCategory>())
+        {
+            UserMemoryFile f = new("/p/x.md", cat, "x", 1, DateTime.UtcNow, null);
+            bool expected = cat != UserMemoryCategory.CrossToolMemory;
+            Assert.AreEqual(expected, f.IsDeletable, $"IsDeletable wrong for {cat}.");
+        }
+    }
+
     /// <summary>
     /// Helper: synthesise a FootprintRowViewModel for the given category
     /// without going through the full vm.Refresh() machinery.
@@ -788,6 +953,7 @@ public sealed class MemoryEditorViewModelTests
         public IMarketplacesAccessor Marketplaces => throw new NotSupportedException();
         public IEnabledPluginsAccessor Plugins => throw new NotSupportedException();
         public IEnvAccessor Env => throw new NotSupportedException();
+        public IModelCatalogAccessor Models => throw new NotSupportedException();
         public IBackupClient Backup => throw new NotSupportedException();
 
         public event EventHandler<ClientChangedEventArgs>? Changed

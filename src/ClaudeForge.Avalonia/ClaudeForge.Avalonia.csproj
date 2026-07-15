@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Avalonia</RootNamespace>
+        <AssemblyName>ClaudeForge.Avalonia</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Description>
+            Reusable Avalonia controls + view-models for editing Claude Code
+            permission rules: a guided per-tool rule builder, a dry-run rule
+            tester, and an education panel. Depends on ClaudeForge.Sdk (for the
+            rule parser / matchers / resolver) + Avalonia + CommunityToolkit.Mvvm.
+            Hosts adapt their own data source via the IPermissionRuleSource /
+            IPermissionRuleSink / IPermissionPathPicker abstractions so the
+            controls drop into any Claude-adjacent Avalonia tool.
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.0.5" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <!-- Semi flows transitively so a consuming app picks up matching styling
+             if it opts into the Semi theme; omit-able by Fluent consumers. -->
+        <PackageReference Include="Semi.Avalonia" Version="12.0.3" PrivateAssets="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The in-tree test project exercises a few internal view-model helpers
+             (the quote-aware command cleaner, the bare-wildcard path check)
+             directly. Mirrors the InternalsVisibleTo pattern used by
+             Core / Sdk / LayeredEditors.Avalonia. -->
+        <InternalsVisibleTo Include="ClaudeForge.Avalonia.Tests" />
+    </ItemGroup>
+</Project>

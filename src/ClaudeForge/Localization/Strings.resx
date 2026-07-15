@@ -261,16 +261,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop is reading its config from this profile (set via 'Apply' in the Profiles panel). Open the Profiles section to apply a different Desktop profile.</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code: {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop: {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>ClaudeForge version</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>Return to the page you were on before you arrived here</value>
@@ -411,10 +401,6 @@
     <value>Cross-platform, scope-aware settings editor for Claude Code and Claude Desktop.</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>Settings are layered: Managed &gt; User &gt; Project &gt; Local</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -438,9 +424,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Claude Code Profiles</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>Selected: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ Apply to CLI</value>
@@ -641,12 +624,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>Include API credentials (~/.claude/.credentials.json)</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Only check this if the backup file will stay on trusted storage. Anyone with the backup can log in as you while those tokens remain valid.</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Retention</value>
@@ -856,9 +833,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>Machine</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(not set)</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>'{0}' is not a valid environment variable name.</value>
   </data>
@@ -894,11 +868,6 @@
     <value>_Manage…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Reveal in Explorer</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -1005,9 +974,6 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>Uncheck to skip this confirmation dialog and save immediately in future</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Discard Changes</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>Save</value>
@@ -1173,6 +1139,89 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="PlaceholderDefaultMode" xml:space="preserve">
     <value>(not set — inherits)</value>
   </data>
+
+  <!-- ── Permissions page: tab headers ────────────────────────────────── -->
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>Overview</value>
+    <comment>Permissions page tab: relabel of the built-in Properties tab for the Permissions group; shows the explainer + Default Mode + help link.</comment>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>Common</value>
+    <comment>Permissions page tab: one-click taxonomy presets.</comment>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>Build</value>
+    <comment>Permissions page tab: guided rule builder + dry-run tester.</comment>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>Lists</value>
+    <comment>Permissions page tab: Allow/Deny/Ask rule lists + tester.</comment>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>Advanced</value>
+    <comment>Permissions page: header of the Advanced accordion (disableBypass + additionalDirectories) on the Overview tab.</comment>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>Test this rule</value>
+    <comment>Button under the guided rule builder; seeds the dry-run tester from the builder inputs and reveals it.</comment>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>Open the dry-run tester, pre-filled from this rule, to see what Claude Code would actually do — across all your rules and scopes.</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>Test a rule (dry run)</value>
+    <comment>Header of the collapsed dry-run-tester accordion on the Build tab.</comment>
+  </data>
+
+  <!-- ── Permissions page: "How rules work" help link ─────────────────── -->
+
+  <!-- ── Default-mode friendly (Claude) labels — shown in the item tooltip
+       + screen-reader name, alongside the raw camelCase value. ────────── -->
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>Ask First</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>Accept Edits</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>Don't Ask</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>Bypass Permission Checks</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>Delegate</value>
+  </data>
+
+  <!-- ── Default-mode descriptions (localized; moved out of C#). ───────── -->
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>Prompts you on first use of each tool (standard behavior)</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>Auto-accepts file edits; other tools still prompt</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>Read-only — Claude cannot make modifications or side effects</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>Auto-approves tool calls, with background safety checks</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>Auto-denies any tool not explicitly pre-approved in Allow</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>Skips all prompts — use only in isolated/trusted environments</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>Coordination-only for agent team leads</value>
+  </data>
+
   <data name="HeaderAllow" xml:space="preserve">
     <value>Allow</value>
   </data>
@@ -1185,11 +1234,16 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TextPermissionsExplainer" xml:space="preserve">
     <value>Permission rules control which Claude Code tools can run without prompting. A rule is either a bare tool name — such as Read or Bash — granting unrestricted access to that tool, or a parameterized form such as Bash(git *) or Read(./**/*.ts) that matches only invocations whose argument fits the pattern. Rules in Allow run silently; Deny rules are blocked outright; Ask rules always trigger a confirmation prompt regardless of the Default Mode setting.</value>
   </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>Conflict resolved: removed '{0}' from {1} — {2} takes precedence.</value>
+    <comment>Shown when adding a rule auto-removed an identical lower-precedence rule. {0}=rule, {1}=removed-from bucket, {2}=kept bucket.</comment>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>Not added: '{0}' is already in {1}, which takes precedence over {2}.</value>
+    <comment>Shown when an identical rule already exists in a higher-precedence bucket, so adding it to a lower one would have no effect. {0}=rule, {1}=existing/higher bucket, {2}=attempted bucket.</comment>
+  </data>
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>Examples:</value>
-  </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Common Actions</value>
   </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>Filtered to hide rules already present in any scope.</value>
@@ -1234,10 +1288,6 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>Add this rule to the Ask list — always triggers a confirmation prompt</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} rule(s))</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1420,10 +1470,6 @@ Cancel — keep the window open.</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>Memory</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>Audit, view, and clean up the files Claude reads on every session and the behavioural footprint left on disk.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1524,10 +1570,6 @@ Cancel — keep the window open.</value>
     <value>Footprint</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>To edit, open in your text editor — click "Reveal in Explorer".</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
-  </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Refresh</value>
     <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
@@ -1538,10 +1580,6 @@ Cancel — keep the window open.</value>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Reveal in Explorer</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
-  </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Back to list</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
   </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Copy markdown</value>
@@ -1812,6 +1850,26 @@ Cancel — keep the window open.</value>
     <value>Properties</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>Flow</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>View flow diagram</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>Zoom out</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>Zoom in</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>Fit width</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
+  </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ Clear property filter</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
@@ -1998,9 +2056,6 @@ Cancel — keep the window open.</value>
   </data>
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>Profile Exists</value>
-  </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>A profile named '{0}' already exists. Choose a different name.</value>
   </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>Delete Profile</value>
@@ -2211,9 +2266,6 @@ Cancel — keep the window open.</value>
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>Editing</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>What you're editing now</value>
   </data>
@@ -2226,13 +2278,6 @@ Cancel — keep the window open.</value>
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>Open a project folder to edit Project and Local scopes.</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>Open project…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>Show scopes</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>Configuration scopes</value>
@@ -2593,14 +2638,6 @@ Some paths inside config files may need manual edits afterward. Continue?</value
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Welcome</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch.</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>Show this page on launch</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2612,10 +2649,6 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>High-importance Claude Code settings — token budgets, sandbox, MCP trust, model and update channel — pinned for quick review and change.</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>Essentials — high-importance settings</value>
@@ -2770,4 +2803,32 @@ Some paths inside config files may need manual edits afterward. Continue?</value
     <value>When enabled, ClaudeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again.</value>
   </data>
 
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>This model doesn't use an effort level.</value>
+    <comment>Inline notice on the Essentials effort card when the effective model exposes no effort level (e.g. Haiku).</comment>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>Effort changed to '{0}' — the selected model doesn't support '{1}'.</value>
+    <comment>Inline notice after the effort value is auto-coerced to the nearest supported level. {0}=new level, {1}=old unsupported level.</comment>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>Model {0} supports effort: {1}</value>
+    <comment>Read-only indicator beside the effort editor. {0}=model label, {1}=slash-joined supported effort levels.</comment>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>To suppress all permission prompts, choose bypassPermissions in Default Mode below.</value>
+    <comment>Contextual hint near the permissions defaultMode dropdown, shown when the user arrives via the 'bypass' synthetic search result.</comment>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>Auto mode isn't available for the current model or scope, so it won't take effect.</value>
+    <comment>Advisory near the permissions defaultMode dropdown when an ineligible 'auto' was auto-coerced to 'default'.</comment>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>Effort '{0}' isn't supported by the current model.</value>
+    <comment>Advisory on the Essentials effort card when the persisted effort is unsupported by the current model (shown on load; no coercion until the user changes the model). {0}=the unsupported effort level.</comment>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>These hook events aren't recognised by the current schema (they may be deprecated or misspelled) and are preserved as-is: {0}</value>
+    <comment>Hooks editor banner. {0} = comma-separated list of unrecognized event names found in the user's config.</comment>
+  </data>
 </root>

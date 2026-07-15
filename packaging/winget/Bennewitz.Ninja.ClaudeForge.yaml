@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.6.0.schema.json
+#
+# Version manifest (template). `<PACKAGE_VERSION>` is filled in at submission
+# time — by `wingetcreate` in CI, or by hand for the first manual submission.
+# See ./README.md.
+PackageIdentifier: Bennewitz.Ninja.ClaudeForge
+PackageVersion: "<PACKAGE_VERSION>"
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

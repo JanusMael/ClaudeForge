@@ -8,14 +8,29 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Platform;
 /// </summary>
 public static class PlatformPaths
 {
+    // Test-only overrides are backed by AsyncLocal, NOT a plain static, so they
+    // isolate per logical async flow. ClaudeForge.Sdk.Tests runs method-level
+    // PARALLEL ([assembly: Parallelize]), and 12+ of its fixtures set this override;
+    // AsyncLocal keeps each concurrently-running test's sandbox from leaking into
+    // another (a plain static races there — ~48 failures/run). In production the
+    // value is never set, so the AsyncLocal default (null) is returned and the real
+    // OS path is used.
+    private static readonly AsyncLocal<string?> s_testUserProfileOverride = new();
+    private static readonly AsyncLocal<string?> s_testAppBaseDirOverride = new();
+
     /// <summary>
     /// Test-only override for the user-profile root. When non-null, every path derived
     /// from the user profile (<see cref="ClaudeHome"/>, <see cref="ClaudeJsonPath"/>,
     /// <see cref="DesktopConfigPath"/>, etc.) resolves against this instead of the OS
     /// user profile — lets tests point the engine at a sandboxed scratch dir without
-    /// touching real Claude data. Left <c>null</c> in production.
+    /// touching real Claude data. Left <c>null</c> in production. Backed by
+    /// <see cref="AsyncLocal{T}"/> so concurrent (parallelized) tests stay isolated.
     /// </summary>
-    public static string? TestUserProfileOverride { get; set; }
+    public static string? TestUserProfileOverride
+    {
+        get => s_testUserProfileOverride.Value;
+        set => s_testUserProfileOverride.Value = value;
+    }
 
     /// <summary>
     /// User-profile root directory (<c>%USERPROFILE%</c> on Windows,
@@ -108,8 +123,14 @@ public static class PlatformPaths
     /// <see cref="AppLogsDirectory"/>. When non-null, <c>AppLogsDirectory</c>
     /// resolves to <c>&lt;TestAppBaseDirOverride&gt;/logs</c> instead of the
     /// directory that contains the running executable. Left <c>null</c> in production.
+    /// Backed by <see cref="AsyncLocal{T}"/> (see <see cref="TestUserProfileOverride"/>)
+    /// so concurrent (parallelized) tests stay isolated.
     /// </summary>
-    internal static string? TestAppBaseDirOverride { get; set; }
+    internal static string? TestAppBaseDirOverride
+    {
+        get => s_testAppBaseDirOverride.Value;
+        set => s_testAppBaseDirOverride.Value = value;
+    }
 
     /// <summary>
     /// Directory for ClaudeForge's own rolling log files (written by the Serilog

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 
@@ -16,19 +15,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 /// producing an error from the rule shape itself (the schema may still
 /// reject a rule for other reasons — e.g. a managed-policy denylist).
 /// </para>
+/// <para>
+/// The validation regex is <see cref="PermissionTools.RuleRegex"/> — the single
+/// source of truth for the tool-name taxonomy, shared with the GUI editor's regex
+/// so the two cannot drift (the proven <c>Pwsh</c>/<c>Monitor</c> drift). A guard
+/// test locks that list to the schema's <c>$defs.permissionRule</c> alternation.
+/// </para>
 /// </remarks>
-public sealed partial record PermissionRule(string Value)
+public sealed record PermissionRule(string Value)
 {
-    // Mirrors src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json
-    //   $defs.permissionRule.pattern
-    // Kept here as the canonical SDK-side regex so the SDK does not depend on
-    // the bundled schema asset at validation time. If the schema's tool-name
-    // list grows, this regex must be updated alongside it.
-    [GeneratedRegex(
-        @"^((Agent|Bash|Edit|ExitPlanMode|Glob|Grep|KillShell|LSP|NotebookEdit|PowerShell|Pwsh|Read|Skill|TaskCreate|TaskGet|TaskList|TaskOutput|TaskStop|TaskUpdate|TodoWrite|ToolSearch|WebFetch|WebSearch|Write)(\((?=.*[^)*?])[^)]+\))?|mcp__.*)$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex RuleRegex();
-
     /// <summary>
     /// Parses <paramref name="s"/> into a <see cref="PermissionRule"/>.
     /// Throws <see cref="FormatException"/> for inputs that do not match
@@ -37,7 +32,7 @@ public sealed partial record PermissionRule(string Value)
     public static PermissionRule Parse(string s)
     {
         ArgumentNullException.ThrowIfNull(s);
-        if (!RuleRegex().IsMatch(s))
+        if (!PermissionTools.RuleRegex.IsMatch(s))
         {
             throw new FormatException(
                 $"'{s}' is not a valid permission rule. Expected a known tool name optionally " +
@@ -55,7 +50,7 @@ public sealed partial record PermissionRule(string Value)
     /// </summary>
     public static bool TryParse(string s, [NotNullWhen(true)] out PermissionRule? rule)
     {
-        if (s is not null && RuleRegex().IsMatch(s))
+        if (s is not null && PermissionTools.RuleRegex.IsMatch(s))
         {
             rule = new PermissionRule(s);
             return true;
@@ -64,4 +59,12 @@ public sealed partial record PermissionRule(string Value)
         rule = null;
         return false;
     }
+
+    /// <summary>
+    /// Decompose this (shape-valid) rule into its structural parts for matching.
+    /// See <see cref="ParsedPermissionRule"/> for the parsed shape and the
+    /// rationale for keeping the strict shape gate (this type) separate from the
+    /// permissive evaluation parser.
+    /// </summary>
+    public ParsedPermissionRule Decompose() => ParsedPermissionRule.Parse(Value);
 }

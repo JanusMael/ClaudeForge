@@ -863,8 +863,14 @@ internal static class RestoreEngine
                     JsonSchema schema = SchemaRegistry.ParseSchema(json);
                     schemaByName[Path.GetFileName(schemaFile)] = schema;
                 }
-                catch (Exception ex) when (ex is IOException or JsonException)
+                catch (Exception ex) when (ex is IOException or JsonException or JsonSchemaException)
                 {
+                    // One unreadable/invalid schema entry must not abort the restore or stop the
+                    // others from loading: skip it — IOException (unreadable), JsonException
+                    // (malformed JSON), or JsonSchemaException (well-formed JSON that isn't a valid
+                    // JSON-Schema, e.g. a keyword with a wrong-typed value, or an unknown keyword
+                    // under a strict $vocabulary dialect).
+                    _ = ex;
                 }
             }
 
@@ -953,10 +959,12 @@ internal static class RestoreEngine
         catch (Exception ex) when (ex is IOException
                                        or UnauthorizedAccessException
                                        or JsonException
-                                       or InvalidOperationException)
+                                       or InvalidOperationException
+                                       or JsonSchemaException)
         {
-            // Outer guard: any unexpected I/O or schema-loading failure → return
-            // whatever warnings we accumulated so far without surfacing the error.
+            // Outer guard: any unexpected I/O or schema load/evaluate failure → return
+            // whatever warnings we accumulated so far without surfacing the error
+            // (honors this method's documented "never throws" contract).
             _ = ex;
         }
 

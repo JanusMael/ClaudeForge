@@ -38,7 +38,9 @@ warning scan, closure analyzer, and archive creation.
 
  Monday 09:00 UTC  ─────────────────────────────────────────────────────────────
    ├─▶ Dependabot            NuGet + GitHub Actions version checks → open PRs
-   └─▶ Schema refresh        refresh-schema.ps1 → open PR if upstream drifted
+   ├─▶ Schema refresh        refresh-schema.ps1 → open PR if upstream drifted
+   └─▶ Model catalog         validate-model-catalog.ps1 + catalog tests (also on
+                             PR/push touching the catalog)
 ```
 
 ---
@@ -172,6 +174,28 @@ The sibling overlay (`src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.o
 is NEVER touched by the script, so this workflow can't silently overwrite
 hand-curated additions. Auto-merge is deliberately not configured — the
 schema diff requires human review every time.
+
+---
+
+### `workflows/model-catalog-refresh.yml` — Model catalog validation
+
+**Triggers:** PR / push touching `src/ClaudeForge.Core/Assets/ModelCatalog/**`,
+the validator script, or this workflow; Monday 09:00 UTC schedule; manual
+`workflow_dispatch`.  
+**Concurrency:** `model-catalog-validation-${{ github.ref }}`, `cancel-in-progress: true`.  
+**Permissions:** `contents: read` (validation only — never writes).
+
+Unlike the JSON schema, the model catalog has **no upstream machine-readable
+source** — the Claude docs are prose, so the curated
+`model-catalog.json` IS the source of truth. This workflow is therefore a
+**validation gate, not a downloader**: it runs `pwsh scripts/validate-model-catalog.ps1`
+(structural + cross-relationship checks — every supported effort level is real,
+every alias resolves, every default effort is supported, etc.) and the
+`ModelCatalog` unit tests (which also lock the catalog ↔ JSON-schema enum
+parity). Updates to the shipped catalog flow through ordinary human-authored
+PRs (a doc-harvest edit on a branch), gated by this workflow; there's nothing to
+auto-generate, so there is no auto-PR step. The hand-curated overlay
+(`model-catalog.overlay.json`) is the refresh-safe seam and ships empty.
 
 ---
 

@@ -27,7 +27,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.3" />
+        <PackageReference Include="Avalonia" Version="12.0.5" />
         <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
              ClaudeForge.Sdk so the SDK can produce dialog models that this services
              library renders.  Couples the services lib to ClaudeForge.Sdk in this
@@ -38,6 +38,6 @@
 
     <!-- Explicit MAUI Essentials package reference required for net8+ when UseMauiEssentials=true -->
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0-windows'))">
-        <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.70"/>
+        <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.80"/>
     </ItemGroup>
 </Project>

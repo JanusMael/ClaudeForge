@@ -265,16 +265,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop はこのプロファイルから構成を読み込んでいます（プロファイル パネルの「適用」で設定されます）。別の Desktop プロファイルを適用するには、プロファイル セクションを開いてください。</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code: {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop: {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>ClaudeForge のバージョン</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>ここに来る前に表示していたページに戻ります</value>
@@ -365,10 +355,6 @@
     <value>Claude Code と Claude Desktop 向けの、クロスプラットフォームでスコープ対応の設定エディターです。</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>設定はレイヤー構造です: Managed &gt; User &gt; Project &gt; Local</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -392,9 +378,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Claude Code プロファイル</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>選択中: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ CLI に適用</value>
@@ -595,12 +578,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>API 資格情報を含める (~/.claude/.credentials.json)</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>バックアップ ファイルが信頼できるストレージに置かれる場合にのみ有効にしてください。これらのトークンが有効な間、バックアップを持つ誰もがあなたとしてログインできます。</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>保持</value>
@@ -810,9 +787,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>Machine</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(未設定)</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>'{0}' は有効な環境変数名ではありません。</value>
   </data>
@@ -848,11 +822,6 @@
     <value>管理(_M)…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>エクスプローラーで表示</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -959,9 +928,6 @@
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>オフにすると、今後はこの確認ダイアログをスキップしてすぐに保存します</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>変更を破棄</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>保存</value>
@@ -1142,9 +1108,6 @@
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>例:</value>
   </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>よく使うアクション</value>
-  </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>いずれかのスコープに既に存在するルールは非表示にしています。</value>
   </data>
@@ -1188,10 +1151,6 @@
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>このルールを Ask 一覧に追加します — 常に確認プロンプトがトリガーされます</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} 件のルール)</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1374,10 +1333,6 @@
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>メモリ</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>すべてのセッションで Claude が読み取るファイルと、ディスクに残る振る舞いのフットプリントを監査・表示・クリーンアップします。</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1478,10 +1433,6 @@
     <value>フットプリント</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>編集するには、テキスト エディターで開いてください — 「エクスプローラーで表示」をクリックしてください。</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
-  </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>更新</value>
     <comment>Generic Refresh button label used on Memory and Agents &amp; Skills page tabs.</comment>
@@ -1492,10 +1443,6 @@
   <data name="ButtonReveal" xml:space="preserve">
     <value>エクスプローラーで表示</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
-  </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>一覧に戻る</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
   </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Markdown をコピー</value>
@@ -1766,6 +1713,26 @@
     <value>プロパティ</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>フロー</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>フロー図を表示</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>縮小</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>拡大</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>幅に合わせる</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
+  </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ プロパティ フィルターをクリア</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
@@ -1952,9 +1919,6 @@
   </data>
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>プロファイルが存在します</value>
-  </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>'{0}' という名前のプロファイルは既に存在します。別の名前を選択してください。</value>
   </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>プロファイルを削除</value>
@@ -2165,9 +2129,6 @@
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>編集中</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>現在編集している対象</value>
   </data>
@@ -2180,13 +2141,6 @@
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>Project と Local のスコープを編集するには、プロジェクト フォルダーを開いてください。</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>プロジェクトを開く…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>スコープを表示</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>構成スコープ</value>
@@ -2547,14 +2501,6 @@
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>ようこそ</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>エディターの使い方 — 何が編集されるのか、スコープがどう重なるか、影響度の高い設定がどこにあるかの案内です。初回起動時に既定で表示されます。</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>起動時にこのページを表示</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2566,10 +2512,6 @@
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>影響度の高い Claude Code 設定 — トークン予算、サンドボックス、MCP の信頼、モデルと更新チャネル — をすばやく確認・変更できるようにピン留めしています。</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>Essentials — 影響度の高い設定</value>
@@ -2762,5 +2704,98 @@
   </data>
   <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
     <value>GitHub に接続できませんでした。しばらくしてからもう一度お試しください。</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>編集を承認</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>自動</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>権限チェックをバイパス</value>
+  </data>
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>最初に確認</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>委任</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>確認しない</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>プラン</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>ファイル編集を自動的に承認します。他のツールは引き続き確認します</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>ツール呼び出しを自動的に承認し、バックグラウンドで安全性チェックを行います</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>すべての確認をスキップします — 隔離された/信頼できる環境でのみ使用してください</value>
+  </data>
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>各ツールの初回使用時に確認します（標準動作）</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>エージェントチームのリーダー向けの調整専用</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>「許可」で明示的に事前承認されていないツールを自動的に拒否します</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>読み取り専用 — Claude は変更や副作用を行えません</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>ルールをテスト（ドライラン）</value>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>このルールをテスト</value>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>このルールから事前入力されたドライランテスターを開き、Claude Code がすべてのルールとスコープにわたって実際に何を行うかを確認します。</value>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>詳細</value>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>作成</value>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>共通</value>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>リスト</value>
+  </data>
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>概要</value>
+  </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>競合を解決しました: {1} から「{0}」を削除しました — {2} が優先されます。</value>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>追加されませんでした: 「{0}」はすでに {1} にあり、{2} より優先されます。</value>
+  </data>
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>このモデルは作業強度レベルを使用しません。</value>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>作業強度を「{0}」に変更しました — 選択したモデルは「{1}」をサポートしていません。</value>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>モデル {0} がサポートする作業強度: {1}</value>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>すべての権限プロンプトを抑制するには、下の「デフォルトモード」で bypassPermissions を選択してください。</value>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>現在のモデルまたはスコープでは自動モードを使用できないため、有効になりません。</value>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>現在のモデルは作業強度「{0}」をサポートしていません。</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>これらのフックイベントは現在のスキーマでは認識されません（非推奨または誤記の可能性があります）。そのまま保持されます: {0}</value>
   </data>
 </root>

@@ -18,6 +18,11 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Backup;
 /// 3. <see cref="BackupEngine.Delete"/> drops the cache entry so a future
 ///    file with the same path doesn't serve a stale manifest.
 /// </summary>
+// Exercises BackupEngine's process-wide list/manifest cache (via
+// InvalidateListCache) by design — inherently process-global shared state that
+// cannot be probed concurrently. Run serially, isolated from the
+// method-level-parallelized rest of the assembly.
+[DoNotParallelize]
 [TestClass]
 public sealed class BackupListCacheTests
 {

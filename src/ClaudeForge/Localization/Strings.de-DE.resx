@@ -265,16 +265,6 @@
   <data name="TipDesktopActiveBadge" xml:space="preserve">
     <value>Claude Desktop liest seine Konfiguration aus diesem Profil (festgelegt über „Anwenden“ im Profile-Bereich). Öffnen Sie den Bereich „Profile“, um ein anderes Desktop-Profil anzuwenden.</value>
   </data>
-  <data name="StringFormatCliActive" xml:space="preserve">
-    <value>Claude Code: {0}</value>
-  </data>
-  <data name="StringFormatDesktopActive" xml:space="preserve">
-    <value>Claude Desktop: {0}</value>
-  </data>
-  <data name="TipAppVersion" xml:space="preserve">
-    <value>ClaudeForge-Version</value>
-  </data>
-
   <!-- MainWindow — navigation sidebar -->
   <data name="TipNavigateBack" xml:space="preserve">
     <value>Zur zuvor besuchten Seite zurückkehren</value>
@@ -356,10 +346,6 @@
     <value>Plattformübergreifender, geltungsbereichsbewusster Einstellungseditor für Claude Code und Claude Desktop.</value>
     <comment>One-liner shown under the Welcome H1; mirrors LabelAboutTagline so the About dialog and the Welcome page describe the app identically. The "how to navigate" hint that used to live here is redundant with Section 1 below, which already tells the user contextually which file Save will write.</comment>
   </data>
-  <data name="WelcomeHint" xml:space="preserve">
-    <value>Einstellungen sind geschichtet: Verwaltet &gt; Benutzer &gt; Projekt &gt; Lokal</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        ProfilesView
        ═══════════════════════════════════════════════════════════════ -->
@@ -383,9 +369,6 @@
   </data>
   <data name="HeadingCliProfiles" xml:space="preserve">
     <value>Claude Code-Profile</value>
-  </data>
-  <data name="LabelRunSelected" xml:space="preserve">
-    <value>Ausgewählt: </value>
   </data>
   <data name="ButtonApplyToCli" xml:space="preserve">
     <value>▶ Auf CLI anwenden</value>
@@ -586,12 +569,6 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
-  </data>
-  <data name="CheckboxIncludeCredentials" xml:space="preserve">
-    <value>API-Anmeldedaten einbeziehen (~/.claude/.credentials.json)</value>
-  </data>
-  <data name="TipIncludeCredentials" xml:space="preserve">
-    <value>Aktivieren Sie dies nur, wenn die Backup-Datei auf vertrauenswürdigem Speicher verbleibt. Jeder, der das Backup besitzt, kann sich als Sie anmelden, solange diese Token gültig sind.</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Aufbewahrung</value>
@@ -801,9 +778,6 @@
   <data name="LabelMachine" xml:space="preserve">
     <value>Maschine</value>
   </data>
-  <data name="TargetNullNotSet" xml:space="preserve">
-    <value>(nicht gesetzt)</value>
-  </data>
   <data name="StatusEnvKeyInvalidFmt" xml:space="preserve">
     <value>„{0}“ ist kein gültiger Name für eine Umgebungsvariable.</value>
   </data>
@@ -839,11 +813,6 @@
     <value>_Verwalten…</value>
     <comment>Toolbar button next to the Editing-Profile dropdown; navigates to the Profiles section.  Replaces the ✏ pencil glyph that rendered as a missing-glyph box on some Linux installations (CachyOS smoke).  Alt+M.</comment>
   </data>
-  <data name="ButtonRevealInExplorer" xml:space="preserve">
-    <value>Im Explorer anzeigen</value>
-    <comment>DEPRECATED  — kept for back-compat with any external consumers, but new call sites should bind {x:Static loc:PlatformLabels.Reveal} which resolves to the platform-correct label (Reveal in Explorer / Reveal in Finder / Show in Files).</comment>
-  </data>
-
   <!-- platform-resolved Reveal-in-Files-app labels.
        PlatformLabels.Reveal / .RevealTooltip pick from these at runtime
        based on PlatformInfo.Current.  Direct AXAML bindings should use
@@ -950,9 +919,6 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   </data>
   <data name="TipCheckboxShowDialog" xml:space="preserve">
     <value>Deaktivieren, um diesen Bestätigungsdialog zu überspringen und zukünftig sofort zu speichern</value>
-  </data>
-  <data name="ButtonDiscardChanges" xml:space="preserve">
-    <value>Änderungen verwerfen</value>
   </data>
   <data name="ButtonSaveDialog" xml:space="preserve">
     <value>Speichern</value>
@@ -1118,6 +1084,72 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   <data name="PlaceholderDefaultMode" xml:space="preserve">
     <value>(nicht gesetzt — wird vererbt)</value>
   </data>
+  <data name="TabPermOverview" xml:space="preserve">
+    <value>Übersicht</value>
+  </data>
+  <data name="TabPermCommon" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="TabPermBuild" xml:space="preserve">
+    <value>Erstellen</value>
+  </data>
+  <data name="TabPermLists" xml:space="preserve">
+    <value>Listen</value>
+  </data>
+  <data name="TabPermAdvanced" xml:space="preserve">
+    <value>Erweitert</value>
+  </data>
+  <data name="PermBuilderTestThisRule" xml:space="preserve">
+    <value>Diese Regel testen</value>
+  </data>
+  <data name="TipPermBuilderTestThisRule" xml:space="preserve">
+    <value>Öffnet den Probelauf-Tester, vorausgefüllt aus dieser Regel, um zu sehen, was Claude Code tatsächlich tun würde — über alle Regeln und Geltungsbereiche hinweg.</value>
+  </data>
+  <data name="HeaderTesterAccordion" xml:space="preserve">
+    <value>Regel testen (Probelauf)</value>
+  </data>
+  <data name="DefaultModeClaudeDefault" xml:space="preserve">
+    <value>Zuerst fragen</value>
+  </data>
+  <data name="DefaultModeClaudeAcceptEdits" xml:space="preserve">
+    <value>Änderungen akzeptieren</value>
+  </data>
+  <data name="DefaultModeClaudePlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="DefaultModeClaudeAuto" xml:space="preserve">
+    <value>Automatisch</value>
+  </data>
+  <data name="DefaultModeClaudeDontAsk" xml:space="preserve">
+    <value>Nicht fragen</value>
+  </data>
+  <data name="DefaultModeClaudeBypass" xml:space="preserve">
+    <value>Berechtigungsprüfungen umgehen</value>
+  </data>
+  <data name="DefaultModeClaudeDelegate" xml:space="preserve">
+    <value>Delegieren</value>
+  </data>
+  <data name="DefaultModeDescDefault" xml:space="preserve">
+    <value>Fragt bei der ersten Verwendung jedes Tools nach (Standardverhalten)</value>
+  </data>
+  <data name="DefaultModeDescAcceptEdits" xml:space="preserve">
+    <value>Akzeptiert Dateiänderungen automatisch; andere Tools fragen weiterhin nach</value>
+  </data>
+  <data name="DefaultModeDescPlan" xml:space="preserve">
+    <value>Schreibgeschützt — Claude kann keine Änderungen oder Nebeneffekte vornehmen</value>
+  </data>
+  <data name="DefaultModeDescAuto" xml:space="preserve">
+    <value>Genehmigt Tool-Aufrufe automatisch, mit Sicherheitsprüfungen im Hintergrund</value>
+  </data>
+  <data name="DefaultModeDescDontAsk" xml:space="preserve">
+    <value>Verweigert automatisch jedes Tool, das nicht ausdrücklich in „Zulassen“ vorab genehmigt ist</value>
+  </data>
+  <data name="DefaultModeDescBypass" xml:space="preserve">
+    <value>Überspringt alle Abfragen — nur in isolierten/vertrauenswürdigen Umgebungen verwenden</value>
+  </data>
+  <data name="DefaultModeDescDelegate" xml:space="preserve">
+    <value>Nur Koordination für Agenten-Teamleiter</value>
+  </data>
   <data name="HeaderAllow" xml:space="preserve">
     <value>Erlauben</value>
   </data>
@@ -1132,9 +1164,6 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   </data>
   <data name="TextExamplesHeader" xml:space="preserve">
     <value>Beispiele:</value>
-  </data>
-  <data name="HeaderCommonActions" xml:space="preserve">
-    <value>Häufige Aktionen</value>
   </data>
   <data name="TextCommonActionsNote" xml:space="preserve">
     <value>Gefiltert, um Regeln auszublenden, die bereits in einem Geltungsbereich vorhanden sind.</value>
@@ -1179,10 +1208,6 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   <data name="TipCommonAddAsk" xml:space="preserve">
     <value>Diese Regel zur Nachfragen-Liste hinzufügen — löst stets eine Bestätigungsabfrage aus</value>
   </data>
-  <data name="StringFormatRuleCount" xml:space="preserve">
-    <value>({0} Regel(n))</value>
-  </data>
-
   <!-- ═══════════════════════════════════════════════════════════════
        PropertyEditorWrapper
        ═══════════════════════════════════════════════════════════════ -->
@@ -1365,10 +1390,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
     <comment>Heading rendered above the catch-all wildcard tier at the bottom of the Common Actions list.</comment>
   </data>
   <!-- Phase 5 — Memory & Footprint page -->
-  <data name="NavTitleMemory" xml:space="preserve">
-    <value>Speicher</value>
-    <comment>Top-level nav node label for the Memory page.</comment>
-  </data>
   <data name="NavDescMemory" xml:space="preserve">
     <value>Prüfen, anzeigen und aufräumen, welche Dateien Claude bei jeder Sitzung liest und welchen Verhaltens-Fußabdruck er auf der Festplatte hinterlässt.</value>
     <comment>Top-level nav node description for the Memory page.</comment>
@@ -1389,10 +1410,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
     <value>Fußabdruck</value>
     <comment>Tab header for the Tier 2 footprint stats + cleanup table.</comment>
   </data>
-  <data name="LabelMemoryViewerNote" xml:space="preserve">
-    <value>Zum Bearbeiten in Ihrem Texteditor öffnen — klicken Sie auf „Im Explorer anzeigen“.</value>
-    <comment>Info note shown at the top of the read-only Tier 1 file viewer.</comment>
-  </data>
   <data name="ButtonRefresh" xml:space="preserve">
     <value>Aktualisieren</value>
     <comment>Generic Refresh button label used on Memory page tabs.</comment>
@@ -1400,10 +1417,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
   <data name="ButtonReveal" xml:space="preserve">
     <value>Im Explorer anzeigen</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
-  </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Zurück zur Liste</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
   </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Markdown kopieren</value>
@@ -1674,6 +1687,26 @@ Abbrechen — das Fenster geöffnet lassen.</value>
     <value>Eigenschaften</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
   </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>Ablauf</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>Ablaufdiagramm anzeigen</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>Verkleinern</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>Vergrößern</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>Breite anpassen</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
+  </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ Eigenschaftsfilter löschen</value>
     <comment>Button text for the clear-filter button on the property-filter bar.</comment>
@@ -1860,9 +1893,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
   </data>
   <data name="DialogTitleProfileExists" xml:space="preserve">
     <value>Profil existiert bereits</value>
-  </data>
-  <data name="MsgProfileAlreadyExists" xml:space="preserve">
-    <value>Ein Profil mit dem Namen „{0}“ existiert bereits. Wählen Sie einen anderen Namen.</value>
   </data>
   <data name="DialogTitleDeleteProfile" xml:space="preserve">
     <value>Profil löschen</value>
@@ -2065,9 +2095,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
        ═══════════════════════════════════════════════════════════════ -->
 
   <!-- Editing-context labels (Welcome panel + MainWindow status row) -->
-  <data name="LabelEditingContext" xml:space="preserve">
-    <value>Bearbeitet wird</value>
-  </data>
   <data name="HeadingEditingContext" xml:space="preserve">
     <value>Was Sie gerade bearbeiten</value>
   </data>
@@ -2080,13 +2107,6 @@ Abbrechen — das Fenster geöffnet lassen.</value>
   <data name="TextOpenProjectHint" xml:space="preserve">
     <value>Öffnen Sie einen Projektordner, um die Geltungsbereiche Projekt und Lokal zu bearbeiten.</value>
   </data>
-  <data name="LinkOpenProject" xml:space="preserve">
-    <value>Projekt öffnen…</value>
-  </data>
-  <data name="LinkShowScopes" xml:space="preserve">
-    <value>Geltungsbereiche anzeigen</value>
-  </data>
-
   <!-- Scope legend (4-row table reused across Welcome, ? popup, BackupRestoreView) -->
   <data name="HeadingScopes" xml:space="preserve">
     <value>Konfigurations-Geltungsbereiche</value>
@@ -2447,14 +2467,6 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
        text is shared across cards (same message regardless of which card the
        user arrived at via a synthetic search hit).
        ════════════════════════════════════════════════════════════════════════════ -->
-  <data name="NavTitleWelcome" xml:space="preserve">
-    <value>Willkommen</value>
-    <comment>Title of the synthetic top-of-tree Welcome nav node — selected by default on a fresh install so the orientation content is visible until the user clicks elsewhere.</comment>
-  </data>
-  <data name="NavDescWelcome" xml:space="preserve">
-    <value>Orientierung für den Editor — was bearbeitet wird, wie sich Geltungsbereiche schichten und wo die wichtigsten Einstellungen zu finden sind. Wird beim ersten Start standardmäßig angezeigt.</value>
-    <comment>Tooltip / description for the Welcome nav node.</comment>
-  </data>
   <data name="LabelShowWelcomeOnLaunch" xml:space="preserve">
     <value>Diese Seite beim Start anzeigen</value>
     <comment>Checkbox label on the Welcome page that controls whether the Welcome nav node appears in the navigation tree. Unchecking removes the node; the Welcome page remains reachable by clicking the Claude Code or Claude Desktop header nodes.</comment>
@@ -2466,10 +2478,6 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
   <data name="NavTitleEssentials" xml:space="preserve">
     <value>Essentials</value>
     <comment>Title of the synthetic top-of-tree nav node that pins the high-importance settings.</comment>
-  </data>
-  <data name="NavDescEssentials" xml:space="preserve">
-    <value>Besonders wichtige Claude Code-Einstellungen — Token-Budgets, Sandbox, MCP-Vertrauen, Modell und Update-Kanal — angeheftet zur schnellen Überprüfung und Änderung.</value>
-    <comment>Tooltip / description for the Essentials nav node.</comment>
   </data>
   <data name="HeaderEssentials" xml:space="preserve">
     <value>Essentials — besonders wichtige Einstellungen</value>
@@ -2751,5 +2759,32 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
   </data>
   <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
     <value>GitHub konnte nicht erreicht werden. Bitte später erneut versuchen.</value>
+  </data>
+  <data name="TextPermConflictPruned" xml:space="preserve">
+    <value>Konflikt gelöst: '{0}' aus {1} entfernt — {2} hat Vorrang.</value>
+  </data>
+  <data name="TextPermConflictSkipped" xml:space="preserve">
+    <value>Nicht hinzugefügt: '{0}' ist bereits in {1}, das Vorrang vor {2} hat.</value>
+  </data>
+  <data name="LabelEffortNotApplicable" xml:space="preserve">
+    <value>Dieses Modell verwendet keine Aufwandsstufe.</value>
+  </data>
+  <data name="LabelEffortCoercedFmt" xml:space="preserve">
+    <value>Aufwand auf '{0}' geändert — das ausgewählte Modell unterstützt '{1}' nicht.</value>
+  </data>
+  <data name="LabelModelEffortSummaryFmt" xml:space="preserve">
+    <value>Modell {0} unterstützt Aufwand: {1}</value>
+  </data>
+  <data name="TextSelectBypassHint" xml:space="preserve">
+    <value>Um alle Berechtigungsabfragen zu unterdrücken, wählen Sie unten unter „Standardmodus“ die Option bypassPermissions.</value>
+  </data>
+  <data name="LabelAutoModeCoerced" xml:space="preserve">
+    <value>Der Auto-Modus ist für das aktuelle Modell oder den aktuellen Geltungsbereich nicht verfügbar und wird daher nicht wirksam.</value>
+  </data>
+  <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
+    <value>Aufwand '{0}' wird vom aktuellen Modell nicht unterstützt.</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>Diese Hook-Ereignisse werden vom aktuellen Schema nicht erkannt (möglicherweise veraltet oder falsch geschrieben) und bleiben unverändert erhalten: {0}</value>
   </data>
 </root>

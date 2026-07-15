@@ -285,7 +285,7 @@ public sealed class TypedSurfaceStopBTests
         {
             ["permissions"] = new JsonObject
             {
-                ["disableBypassPermissionsMode"] = true,
+                ["disableBypassPermissionsMode"] = "disable",
             },
         };
         using ClaudeCodeClient client = MakeClient(MakeWorkspace(input));
@@ -308,9 +308,9 @@ public sealed class TypedSurfaceStopBTests
         client.Permissions.DisableBypassPermissionsMode = true;
         Assert.IsTrue(client.Permissions.DisableBypassPermissionsMode);
 
-        // Verify on-disk shape
+        // Verify on-disk shape: the schema value is the string "disable", NOT a bool.
         JsonObject perms = (JsonObject)client.GetScopeValue("permissions", ConfigScope.User)!;
-        Assert.IsTrue(perms["disableBypassPermissionsMode"]!.GetValue<bool>());
+        Assert.AreEqual("disable", perms["disableBypassPermissionsMode"]!.GetValue<string>());
     }
 
     [TestMethod]
@@ -320,7 +320,7 @@ public sealed class TypedSurfaceStopBTests
         {
             ["permissions"] = new JsonObject
             {
-                ["disableBypassPermissionsMode"] = true,
+                ["disableBypassPermissionsMode"] = "disable",
                 ["defaultMode"] = "default",
             },
         };
@@ -346,7 +346,7 @@ public sealed class TypedSurfaceStopBTests
         {
             ["permissions"] = new JsonObject
             {
-                ["disableBypassPermissionsMode"] = true,
+                ["disableBypassPermissionsMode"] = "disable",
             },
         };
         using ClaudeCodeClient client = MakeClient(MakeWorkspace(input));

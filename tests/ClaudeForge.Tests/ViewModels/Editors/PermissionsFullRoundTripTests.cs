@@ -152,9 +152,11 @@ public class PermissionsFullRoundTripTests
             obj["additionalDirectories"] = arr;
         }
 
-        if (disableBypassPermissionsMode.HasValue)
+        // Schema: the string "disable" (or absent), never a boolean. true -> "disable";
+        // false -> omit (there is no on-disk "false" for this string-enum flag).
+        if (disableBypassPermissionsMode == true)
         {
-            obj["disableBypassPermissionsMode"] = disableBypassPermissionsMode.Value;
+            obj["disableBypassPermissionsMode"] = "disable";
         }
 
         if (extras is not null)
@@ -244,6 +246,7 @@ public class PermissionsFullRoundTripTests
         fx.SaveAndReload();
 
         Assert.AreEqual(1, fx.Editor.AskList.Count);
+        // The specifier is preserved verbatim — " *" (optional args) is NOT rewritten to ":*".
         Assert.AreEqual("Bash(git push *)", fx.Editor.AskList[0].Rule);
     }
 
@@ -372,7 +375,7 @@ public class PermissionsFullRoundTripTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  DisableBypassPermissionsMode (tri-state: null / true / false)
+    //  DisableBypassPermissionsMode (schema string enum "disable" / absent; bool? UI)
     // ═══════════════════════════════════════════════════════════════════════
 
     [TestMethod]
@@ -385,23 +388,23 @@ public class PermissionsFullRoundTripTests
         fx.SaveAndReload();
 
         Assert.IsTrue(fx.Editor.DisableBypassPermissionsMode);
-        Assert.IsTrue(PermsOnDisk(fx.Doc)["disableBypassPermissionsMode"]!.GetValue<bool>());
+        Assert.AreEqual("disable", PermsOnDisk(fx.Doc)["disableBypassPermissionsMode"]!.GetValue<string>());
     }
 
     [TestMethod]
-    public void DisableBypassPermissionsMode_SetFalse_RoundTrips()
+    public void DisableBypassPermissionsMode_SetFalse_CollapsesToAbsent()
     {
-        // Explicit false ≠ null — a deliberate "I want bypass mode
-        // ENABLED at this scope" must round-trip distinct from "no
-        // override at this scope".
+        // The schema value is the string "disable" (or absent) — there is NO on-disk
+        // "false". Setting the tri-state to false therefore means "not disabled" and
+        // collapses to absent on save, identical to null: you stop disabling by
+        // removing the key, not by writing a boolean false (which fails validation).
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
         fx.Editor.DisableBypassPermissionsMode = false;
 
         fx.SaveAndReload();
 
-        Assert.IsFalse(fx.Editor.DisableBypassPermissionsMode);
-        Assert.IsTrue(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
-        Assert.IsFalse(PermsOnDisk(fx.Doc)["disableBypassPermissionsMode"]!.GetValue<bool>());
+        Assert.IsNull(fx.Editor.DisableBypassPermissionsMode);
+        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
     }
 
     [TestMethod]

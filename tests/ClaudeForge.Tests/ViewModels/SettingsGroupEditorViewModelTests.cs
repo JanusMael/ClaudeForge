@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
@@ -40,6 +41,42 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
 
         Assert.AreEqual(3, vm.Editors.Count);
+    }
+
+    [TestMethod]
+    public void SelectedTab_DefaultsToFirstTab()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        Assert.IsNotNull(vm.SelectedTab);
+        Assert.AreEqual(GroupTab.PropertiesId, vm.SelectedTab.Id);
+    }
+
+    [TestMethod]
+    public void SelectTab_SelectsById()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.SelectTab(GroupTab.JsonId);
+
+        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
+    }
+
+    [TestMethod]
+    public void SelectedTab_PreservedAcrossRebuild()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.Activate(); // so EditingScope changes rebuild immediately
+
+        vm.SelectTab(GroupTab.JsonId);
+        vm.EditingScope = ConfigScope.Project; // triggers RebuildEditors → RebuildTabs
+
+        // The remembered tab survives the rebuild (Tabs is rebuilt with fresh
+        // instances, matched back by Id).
+        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
     }
 
     [TestMethod]
@@ -270,6 +307,63 @@ public partial class SettingsGroupEditorViewModelTests
             "to make sure the _userEditedPaths gate is intact.");
         Assert.AreEqual("60000",
             effective["CLAUDE_CODE_MAX_OUTPUT_TOKENS"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// A3 regression: the SDK-routed WriteEditorValue ghost-guard must compare the
+    /// value at the TARGET (editing) scope, not the cross-scope effective value.
+    /// Project shadows User with model="opus"; the user explicitly pins "opus" at
+    /// User scope. Comparing effective ("opus") would see no diff and silently drop
+    /// the legitimate User-scope pin; comparing the User scope (empty) writes it.
+    /// </summary>
+    [TestMethod]
+    public void WriteEditorValue_SdkBranch_DoesNotDropShadowedScopePin()
+    {
+        List<SchemaNode> nodes = [MakeNode("model", "model")];
+        SettingsWorkspace ws = MakeWorkspace(
+            (ConfigScope.Project, """{"model":"opus"}"""),
+            (ConfigScope.User, "{}"));
+        using ClaudeConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+            ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+
+        SharedScopeContext ctx = new(ConfigScope.User);
+        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, sdkClient: sdk);
+
+        StringPropertyEditorViewModel editor = (StringPropertyEditorViewModel)vm.Editors[0];
+        Assert.AreEqual(string.Empty, editor.Value ?? string.Empty,
+            "Precondition: the editor shows the empty User-scope value, not the shadowing Project value.");
+
+        editor.Value = "opus"; // user pins the inherited value explicitly at User scope
+        vm.ApplyToWorkspace();
+
+        Assert.AreEqual("opus", sdk.GetScopeValue("model", ConfigScope.User)?.GetValue<string>(),
+            "The explicit User-scope pin must survive even though Project shadows it with an equal value.");
+    }
+
+    /// <summary>
+    /// Model-dropdown ghost repro: a blank ("") combo value must be treated as "unset",
+    /// never pinned as model="". Pick a value, then clear it to blank; the field must
+    /// end UNSET. Without the empty-string normalization in WriteEditorValue, the blank
+    /// flush pinned model="" (the reported ghost, surfaced in the Save dialog).
+    /// </summary>
+    [TestMethod]
+    public void WriteEditorValue_SdkBranch_BlankString_DoesNotPinEmptyValue()
+    {
+        List<SchemaNode> nodes = [MakeNode("model", "model")];
+        SettingsWorkspace ws = MakeWorkspace((ConfigScope.User, "{}"));
+        using ClaudeConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+            ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+
+        SharedScopeContext ctx = new(ConfigScope.User);
+        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, sdkClient: sdk);
+
+        StringPropertyEditorViewModel editor = (StringPropertyEditorViewModel)vm.Editors[0];
+        editor.Value = "opus"; // user picks a model...
+        editor.Value = "";     // ...then clears it back to blank
+        vm.ApplyToWorkspace();
+
+        Assert.IsNull(sdk.GetScopeValue("model", ConfigScope.User),
+            "A blank selection must leave model unset, never pin model=\"\".");
     }
 
     // ── Shared scope synchronisation ──────────────────────────────────────────
@@ -677,6 +771,58 @@ public partial class SettingsGroupEditorViewModelTests
     {
         Assert.AreEqual("(null)",
             SettingsGroupEditorViewModel.FormatValueForAuditLog(null, "anything"));
+    }
+
+    // ── Deep-link filter "navigated" frame (FilterFromNavigation) ──────────
+
+    [TestMethod]
+    public void ApplyNavigationFilter_SetsFilterAndNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.ApplyNavigationFilter("model");
+
+        Assert.AreEqual("model", vm.FilterText);
+        Assert.IsTrue(vm.FilterFromNavigation, "A deep-link filter must flag the orange nav frame.");
+    }
+
+    [TestMethod]
+    public void UserEditingFilter_DropsNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.ApplyNavigationFilter("model");
+        Assert.IsTrue(vm.FilterFromNavigation);
+
+        vm.FilterText = "modelX"; // simulates the user typing into the filter box
+
+        Assert.IsFalse(vm.FilterFromNavigation, "A user edit must drop the nav frame.");
+    }
+
+    [TestMethod]
+    public void ClearingFilter_DropsNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.ApplyNavigationFilter("model");
+
+        vm.ClearFilterCommand.Execute(null);
+
+        Assert.AreEqual(string.Empty, vm.FilterText);
+        Assert.IsFalse(vm.FilterFromNavigation);
+    }
+
+    [TestMethod]
+    public void ApplyNavigationFilter_NullOrEmpty_DoesNotFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.ApplyNavigationFilter(null);
+
+        Assert.AreEqual(string.Empty, vm.FilterText);
+        Assert.IsFalse(vm.FilterFromNavigation, "An empty nav filter must not draw the frame.");
     }
 
     [GeneratedRegex("sk-test-secret")]

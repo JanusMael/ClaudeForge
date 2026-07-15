@@ -1,23 +1,13 @@
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
 /// <summary>
-/// Locks the agreement between <see cref="HooksEditorViewModel.KnownEventTypes"/>
-/// (the events the GUI's left rail offers) and the Claude Code settings
-/// schema's <c>hooks.properties</c> allowlist.
-///
-/// Two contracts:
-///
-/// 1. Every event the editor offers must be schema-accepted. The 2026-05-01
-///    bug was the GUI offering tool-suffixed pseudo-events
-///    (<c>PreBashToolUse</c>, <c>PostFileEditToolUse</c>, ...) that the
-///    schema rejected — the user picked one and got blocked on save with
-///    a confusing message. This test catches a recurrence at build time.
-///
-/// 2. (Looser) The editor should not silently drop schema-accepted events
-///    — if a future schema upgrade adds a new hook event the editor will
-///    miss it from its left rail until KnownEventTypes is updated. This is
-///    less critical (users can still use the event via external edit), so
-///    we only WARN via Inconclusive rather than fail.
+/// The "overlay ⊆ schema" guard. The editor now derives its live hook-event list
+/// FRESH from the schema's <c>hooks.properties</c>; <see cref="HookEventCatalog.CuratedOrder"/>
+/// is only a display-ordering overlay + offline fallback. This test fails the
+/// build if a curated entry is no longer schema-accepted (a stale overlay entry),
+/// and guards the original 2026-05-01 trap — a hardcoded list offering
+/// tool-suffixed pseudo-events (<c>PreBashToolUse</c>, <c>PostFileEditToolUse</c>,
+/// ...) the schema rejects — from creeping back in via the curated overlay.
 /// </summary>
 [TestClass]
 public sealed class HooksKnownEventTypesParityTests
@@ -61,7 +51,7 @@ public sealed class HooksKnownEventTypesParityTests
         using SchemaRegistry registry = CreateRegistry();
         List<(string Event, string Path, string Message)> rejected = new();
 
-        foreach (string eventName in HooksEditorViewModel.KnownEventTypes)
+        foreach (string eventName in HookEventCatalog.CuratedOrder)
         {
             SettingsWorkspace ws = WorkspaceWithEvent(eventName);
             IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
@@ -77,7 +67,7 @@ public sealed class HooksKnownEventTypesParityTests
         }
 
         Assert.AreEqual(0, rejected.Count,
-            "KnownEventTypes contains events the schema rejects:\n"
+            "HookEventCatalog.CuratedOrder contains events the schema rejects (stale overlay entry):\n"
             + string.Join("\n", rejected.Select(r => $"  {r.Event}: {r.Path} — {r.Message}")));
     }
 }
