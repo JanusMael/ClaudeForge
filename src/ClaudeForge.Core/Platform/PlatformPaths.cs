@@ -9,11 +9,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Platform;
 public static class PlatformPaths
 {
     // Test-only overrides are backed by AsyncLocal, NOT a plain static, so they
-    // isolate per logical async flow. Under MSTest parallelization each test runs
-    // in its own execution-context flow, so one test's sandbox override never
-    // leaks into a concurrently-running test (the contamination that made the
-    // suite unsafe to parallelize). In production the value is never set, so the
-    // AsyncLocal default (null) is returned and the real OS path is used.
+    // isolate per logical async flow. ClaudeForge.Sdk.Tests runs method-level
+    // PARALLEL ([assembly: Parallelize]), and 12+ of its fixtures set this override;
+    // AsyncLocal keeps each concurrently-running test's sandbox from leaking into
+    // another (a plain static races there — ~48 failures/run). In production the
+    // value is never set, so the AsyncLocal default (null) is returned and the real
+    // OS path is used.
     private static readonly AsyncLocal<string?> s_testUserProfileOverride = new();
     private static readonly AsyncLocal<string?> s_testAppBaseDirOverride = new();
 

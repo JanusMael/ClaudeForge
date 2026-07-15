@@ -119,6 +119,18 @@
                                    AutomationProperties.HelpText="{Binding Description}" />
                     </Border>
 
+                    <!-- Optional section-level action to the right of the name pill
+                         (e.g. Hooks' "View flow diagram"). Compiled-bound to the base
+                         VM's HeaderAction* slot so every editor type resolves it;
+                         hidden when the editor sets no HeaderActionText. -->
+                    <HyperlinkButton Content="{Binding HeaderActionText}"
+                                     Command="{Binding HeaderActionCommand}"
+                                     IsVisible="{Binding HeaderActionText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                     VerticalAlignment="Center"
+                                     Padding="6,0"
+                                     FontSize="12"
+                                     AutomationProperties.Name="{Binding HeaderActionText}" />
+
                     <!-- Scope badge - only shown when a value exists at some scope.
                          ToolTip is set on BOTH the Border (covers the padding/fill area)
                          and the inner TextBlock (covers the text area) so the entire
@@ -542,6 +554,13 @@
                          Replaces the prior String-editor fallback. -->
                     <DataTemplate x:DataType="vm:JsonRawPropertyEditorViewModel">
                         <StackPanel Spacing="4" HorizontalAlignment="Stretch">
+                            <!-- Format re-indents the JSON in place (parse + pretty-print). -->
+                            <Button Content="Format"
+                                    Command="{Binding FormatCommand}"
+                                    HorizontalAlignment="Right"
+                                    Padding="8,2"
+                                    FontSize="11"
+                                    ToolTip.Tip="Re-indent the JSON (parse and pretty-print)." />
                             <TextBox Text="{Binding Text}"
                                      AcceptsReturn="True"
                                      TextWrapping="NoWrap"
@@ -552,9 +571,17 @@
                                      HorizontalAlignment="Stretch"
                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                            <!-- Hard parse failure (red) — blocks the live write. -->
                             <TextBlock Text="{Binding ParseError}"
                                        IsVisible="{Binding ParseError, Converter={x:Static ObjectConverters.IsNotNull}}"
                                        Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap" />
+                            <!-- Advisory structure warning (amber) — does NOT block the write;
+                                 the save-time validator is the authoritative gate. -->
+                            <TextBlock Text="{Binding SchemaError}"
+                                       IsVisible="{Binding SchemaError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       Foreground="#CC7700"
                                        FontSize="11"
                                        TextWrapping="Wrap" />
                         </StackPanel>
@@ -729,6 +756,19 @@
                          visible chevron so allowed values are discoverable. Free-form
                          enums (promoted from "examples") → AutoCompleteBox with a ▾
                          toggle button so custom values are also accepted. -->
+                    <!-- `model` — THE shared ModelPicker (friendly fuzzy suggestions + chevron),
+                         the same control the Essentials card uses. MUST be declared BEFORE the
+                         EnumPropertyEditorViewModel template below: ModelPropertyEditorViewModel
+                         derives from it and templates match in declaration order, so the base
+                         template would otherwise win and we'd be back to raw hyphenated ids. -->
+                    <DataTemplate x:DataType="vm:ModelPropertyEditorViewModel">
+                        <ctrl:ModelPicker Suggestions="{Binding ModelSuggestions}"
+                                          Value="{Binding SelectedValue, Mode=TwoWay}"
+                                          Watermark="{Binding Watermark}"
+                                          AutomationLabel="{Binding DisplayName}"
+                                          HorizontalAlignment="Left" />
+                    </DataTemplate>
+
                     <DataTemplate x:DataType="libvm:EnumPropertyEditorViewModel">
                         <Grid HorizontalAlignment="Left">
                             <!-- Strict enum: ComboBox restricts to the allowed set. -->
@@ -815,20 +855,63 @@
                         leaf (e.g. the Desktop preferences checkboxes appeared unlabeled).
                     -->
                     <DataTemplate x:DataType="vm:ObjectPropertyEditorViewModel">
-                        <!-- Row 1 above already shows DisplayName + Description as the section
-                             label; children are rendered inline without an accordion wrapper.
-                             An Expander was used previously but its blank header (removed to fix
-                             a double-label issue) left a large chunk of dead whitespace. -->
-                        <ItemsControl ItemsSource="{Binding Children}">
-                            <ItemsControl.ItemTemplate>
-                                <!-- x:DataType enables compiled bindings inside the recursive
-                                     PropertyEditorWrapper; without it, trim analysis emits an
-                                     IL2026 ReflectionBinding warning for this closure. -->
-                                <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
-                                    <ctrl:PropertyEditorWrapper />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <StackPanel Spacing="4">
+                            <!-- SMALL object: children inline (unchanged). Row 1 above is the label. -->
+                            <ItemsControl ItemsSource="{Binding Children}"
+                                          IsVisible="{Binding !IsCollapsible}">
+                                <ItemsControl.ItemTemplate>
+                                    <!-- x:DataType enables compiled bindings inside the recursive
+                                         PropertyEditorWrapper; without it, trim analysis emits an
+                                         IL2026 ReflectionBinding warning for this closure. -->
+                                    <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
+                                        <ctrl:PropertyEditorWrapper />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- LARGE object (e.g. env, ~305 vars): name-prefix categories, each a
+                                 collapsible Expander whose body is a bounded (MaxHeight) VIRTUALIZED
+                                 list. Collapsed sections bind to VisibleChildren (EMPTY) so they
+                                 realize ZERO editors on page load; the bounded viewport lets the
+                                 VirtualizingStackPanel realize only what's on screen when expanded,
+                                 so opening a 159-item section no longer builds 159 wrappers at once. -->
+                            <ItemsControl ItemsSource="{Binding Categories}"
+                                          IsVisible="{Binding IsCollapsible}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:PropertyCategoryViewModel">
+                                        <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                  Margin="0,2,0,0"
+                                                  HorizontalAlignment="Stretch">
+                                            <!-- Title in the page-header accent (NavSelectedAccentBrush,
+                                                 the same blue as the group heading pill) so the section
+                                                 reads as a real header and can't be missed. -->
+                                            <Expander.Header>
+                                                <TextBlock Text="{Binding Header}"
+                                                           Foreground="{DynamicResource NavSelectedAccentBrush}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold" />
+                                            </Expander.Header>
+                                            <ScrollViewer MaxHeight="360"
+                                                          VerticalScrollBarVisibility="Auto"
+                                                          HorizontalScrollBarVisibility="Disabled">
+                                                <ItemsControl ItemsSource="{Binding VisibleChildren}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <VirtualizingStackPanel />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="libvm:PropertyEditorViewModel">
+                                                            <ctrl:PropertyEditorWrapper />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </DataTemplate>
 
                     <!-- Specialized editors -->

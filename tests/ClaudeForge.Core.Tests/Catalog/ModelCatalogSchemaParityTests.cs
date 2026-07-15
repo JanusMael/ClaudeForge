@@ -15,6 +15,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Catalog;
 /// (e.g. after a schema refresh adds a mode the catalog doesn't know). Also
 /// validates <c>model-catalog.json</c> against its own schema.
 /// </summary>
+/// <remarks>
+/// The <c>effortLevel</c> comparison is against the catalog's <b>persistable</b>
+/// effort ids, not every effort the catalog knows. Upstream deliberately excludes
+/// session-only levels (<c>max</c>, <c>ultracode</c>) from the persisted-setting
+/// <c>effortLevel</c> enum — they're set via <c>CLAUDE_CODE_EFFORT_LEVEL</c> / <c>/effort</c>,
+/// never written to settings.json — and the catalog mirrors that with
+/// <c>EffortLevelInfo.Persists=false</c>. So the invariant is: schema's persisted enum ==
+/// catalog's persistable ids.
+/// </remarks>
 [TestClass]
 public sealed class ModelCatalogSchemaParityTests
 {
@@ -33,10 +42,13 @@ public sealed class ModelCatalogSchemaParityTests
     {
         JsonNode schema = LoadMergedSchema();
         HashSet<string> schemaEnum = EnumAt(schema["properties"]!["effortLevel"]!["enum"]!);
-        HashSet<string> catalog = ModelCatalogLoader.Load().EffortLevels.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        // Persisted-setting enum ↔ persistable catalog ids. Session-only levels
+        // (max/ultracode, Persists=false) are intentionally absent from the schema's
+        // effortLevel enum, so they're excluded here too — see class remarks.
+        HashSet<string> catalog = ModelCatalogLoader.Load().PersistableEffortIds.ToHashSet(StringComparer.Ordinal);
 
         Assert.IsTrue(schemaEnum.SetEquals(catalog),
-            $"effortLevel enum drift. schema=[{string.Join(",", schemaEnum)}] catalog=[{string.Join(",", catalog)}]");
+            $"effortLevel enum drift. schema=[{string.Join(",", schemaEnum)}] persistable-catalog=[{string.Join(",", catalog)}]");
     }
 
     [TestMethod]

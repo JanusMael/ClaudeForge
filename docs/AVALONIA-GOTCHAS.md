@@ -69,6 +69,143 @@ This one is GOOD — it's how the nav-tree icon column hides on sub-items withou
 
 ---
 
+## Styling / theming
+
+> Colour-token policy (why we don't use the `SystemControl*` family under Semi.Avalonia) lives in [UI-STYLE-GUIDE.md](UI-STYLE-GUIDE.md) §2. The two entries below are the *mechanical* traps that make a correct-looking style silently do nothing.
+
+### A local value OUTRANKS every Style setter — a styled property must not also be set as an attribute
+
+**Symptom:** A conditional class (`Classes.foo="{Binding Bool}"`) is applied correctly and the selector matches, but the visual never changes. Selector specificity, `!important`-style tricks, and reordering all fail to help.
+
+**Cause:** Avalonia's value precedence is **Animation > LocalValue > Style > Inherited > Default**. Writing `BorderBrush="Transparent"` as an *attribute* sets a **LocalValue**, which beats **every** Style setter regardless of selector. The style isn't losing on specificity — it's outranked by category, so it can never win.
+
+This is the same priority rule that forces `MarkdownBodyView` to re-colour Markdown.Avalonia's output with a tree-walk: the package writes `Foreground` inline at LocalValue priority, so no Style setter can override it.
+
+**Fix:** Put **both** states in styles. The element declares no attribute for that property; the default comes from a base-class style and the active state from a more specific one.
+
+```xml
+<!-- BAD: BorderBrush="Transparent" below is a LocalValue, so it outranks the
+     setter above no matter what. The orange can never appear. -->
+<StackPanel.Styles>
+    <Style Selector="Border.nav-filter">
+        <Setter Property="BorderBrush" Value="#FFF57C00" />
+    </Style>
+</StackPanel.Styles>
+<Border Classes.nav-filter="{Binding FilterFromNavigation}"
+        BorderBrush="Transparent"
+        BorderThickness="2" />
+
+<!-- GOOD: default AND active both come from styles -->
+<StackPanel.Styles>
+    <Style Selector="Border.filter-frame">
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.filter-frame.nav-filter">
+        <Setter Property="BorderBrush" Value="#FFF57C00" />
+    </Style>
+</StackPanel.Styles>
+<Border Classes="filter-frame"
+        Classes.nav-filter="{Binding FilterFromNavigation}"
+        BorderThickness="2" />          <!-- BorderThickness is fine: no style sets it -->
+```
+
+Note `BorderThickness` may stay an attribute — nothing styles it, so there's no conflict. The rule is only about properties a style also sets. Keeping a constant thickness with a transparent default is what stops the layout shifting when the frame appears.
+
+Working reference: `Button.hint-segment` / `.active` in `GuidedRuleBuilderView.axaml` — its default `Background="Transparent"` is a *Style setter*, which is exactly why its conditional `.active` override works.
+
+### A control's `Styles` apply to its DESCENDANTS, not to itself
+
+**Symptom:** A `<Style Selector="Border.foo">` placed inside that very Border's `<Border.Styles>` never matches it.
+
+**Cause:** Styles hosted by a control are applied down the tree; the host is not matched by its own `Styles` collection.
+
+**Fix:** Hoist the style to the **parent** (or to `UserControl.Styles` / `App.axaml`). The codebase convention is visible in `MainWindow.axaml`, where `<TreeView.Styles>` only ever targets descendants (`TreeView > TreeViewItem`, `TreeViewItem:selected /template/ …`).
+
+```xml
+<!-- BAD: never matches the Border hosting it -->
+<Border Classes.foo="{Binding Flag}">
+    <Border.Styles>
+        <Style Selector="Border.foo">...</Style>
+    </Border.Styles>
+</Border>
+
+<!-- GOOD: style lives on the parent, Border is a descendant -->
+<StackPanel>
+    <StackPanel.Styles>
+        <Style Selector="Border.foo">...</Style>
+    </StackPanel.Styles>
+    <Border Classes.foo="{Binding Flag}" />
+</StackPanel>
+```
+
+Both traps can be present at once and mask each other — fixing only the scoping still leaves the LocalValue beating the setter. If a class-driven style does nothing, check **both**.
+
+---
+
+## Templates / controls
+
+### `DataTemplate`s match in DECLARATION ORDER — a subclass template must be declared BEFORE the base type's
+
+**Symptom:** A new view-model that derives from an existing one renders with the *base* type's template; the new template appears to be ignored.
+
+**Cause:** Avalonia walks the `DataTemplates` collection in order and takes the first template whose type matches. A `DataTemplate` for the base type matches derived instances too, so whichever is declared first wins.
+
+**Fix:** Declare the most-derived template first.
+
+```xml
+<!-- ModelPropertyEditorViewModel : EnumPropertyEditorViewModel -->
+<DataTemplate x:DataType="vm:ModelPropertyEditorViewModel"> ... </DataTemplate>   <!-- FIRST -->
+<DataTemplate x:DataType="libvm:EnumPropertyEditorViewModel"> ... </DataTemplate> <!-- base, after -->
+```
+
+Reference: `PropertyEditorWrapper.axaml` — the `model` picker template sits immediately above the generic enum template for exactly this reason.
+
+### `AutoCompleteBox.ItemFilter` SUPERSEDES `FilterMode`
+
+**Symptom:** Code that "shows the full list" by setting `FilterMode = AutoCompleteFilterMode.None` has no effect on a box that uses a custom filter — the list stays filtered to the current text.
+
+**Cause:** When an `ItemFilter` **delegate** is set, `FilterMode` is ignored entirely.
+
+**Fix:** To temporarily show everything, swap the *delegate*, then restore it on `DropDownClosed`.
+
+```csharp
+AutoCompleteFilterPredicate<object?>? original = box.ItemFilter;
+box.ItemFilter = (_, _) => true;                    // match everything
+EventHandler? restore = null;
+restore = (_, _) => { box.ItemFilter = original; box.DropDownClosed -= restore; };
+box.DropDownClosed += restore;
+box.IsDropDownOpen = true;
+```
+
+Reference: `ModelPicker.axaml.cs` chevron handler (the fuzzy model picker).
+
+---
+
+## Virtualization / perf
+
+### Virtualization needs a BOUNDED viewport — and it does not reach into a nested items host
+
+**Symptom:** A settings page takes seconds to appear even though its top-level list is virtualized and its view-models are cached. Realized-control counts are far higher than a screenful.
+
+**Cause:** Two separate things:
+
+1. A `VirtualizingStackPanel` only virtualizes when something gives it a **bounded height**. Put an items host inside a `ScrollViewer` that measures it with infinite height and every row is realized.
+2. Virtualization is **per items-host**. A virtualized outer row whose template contains a *plain* `ItemsControl` will realize that inner list **in full** — the outer panel's virtualization does nothing for it.
+
+In this codebase the `env` setting declares ~305 known variables. The outer property list virtualized fine, but the object editor rendered its children in a plain nested `ItemsControl`, so opening the Environment page eagerly built **306 `PropertyEditorWrapper`s (~4.4 s)**. `Advanced`, with 94 *top-level* editors, realized only 7 and rendered instantly — the difference is nesting, not count.
+
+**Fix:** Don't render a large nested collection eagerly. Either give the inner host its own bounded, virtualized viewport, or (better for very large sets) gate it behind a collapsed section whose `ItemsSource` is **empty while collapsed** — `IsVisible="False"` is not enough, because a hidden subtree is still realized.
+
+```csharp
+// Lazy gate: a collapsed section realizes ZERO child editors.
+public IReadOnlyList<PropertyEditorViewModel> VisibleChildren =>
+    IsExpanded ? Children : [];
+```
+
+References: `ObjectPropertyEditorViewModel` (prefix categories + lazy `VisibleChildren`), `PropertyCategoryViewModel`, and the `[PropView.Realized] group=… wrappers=N` trace in `GroupPropertiesView.axaml.cs` — that counter is the fastest way to catch a regression of this class (a healthy page realizes a screenful; hundreds means something is eagerly building a subtree again).
+
+---
+
 ## Bindings / view-model
 
 ### Compiled bindings don't reliably re-evaluate manual `OnPropertyChanged` for getter-only properties

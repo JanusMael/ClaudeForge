@@ -311,6 +311,28 @@ public class HooksFullRoundTripTests
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Schema descriptions via the production (FromExistingWorkspace) client path
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void EventDescriptions_Populate_ViaFromExistingWorkspaceClient()
+    {
+        // Regression: the GUI builds its SDK client via FromExistingWorkspace (see
+        // MainWindowViewModel), which skips OpenAsync — so the client has NO cached
+        // schema tree. The fixture here uses that exact path plus a BARE schema node
+        // (no descriptions), so the per-event descriptions can only come from the SDK's
+        // bundled-schema fallback. They must populate so the left-rail tooltip and the
+        // detail-pane label render. Before the fix, SchemaHookEvents returned nothing
+        // without a cached node and every event description was blank in the app.
+        using HooksFixture fx = HooksFixture.From(null);
+
+        HookEventGroup cwd = fx.Editor.EventGroups.First(g => g.EventName == "CwdChanged");
+        Assert.IsTrue(cwd.HasDescription,
+            "Event descriptions must populate via the FromExistingWorkspace client (the GUI path).");
+        StringAssert.Contains(cwd.Description!, "working directory");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Variant: Command  (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -924,5 +946,36 @@ public class HooksFullRoundTripTests
             "'http' type discriminator must survive SDK round-trip.");
         Assert.AreEqual("https://example.com/webhook", inner["url"]!.GetValue<string>());
         Assert.AreEqual("preserved", inner["headers"]!.AsObject()["X-Trace"]!.GetValue<string>());
+    }
+
+    [TestMethod]
+    public void UnknownEventName_SurvivesSaveReload_AndEditsToOtherEvents()
+    {
+        // A hook under an event NAME the schema doesn't recognise (deprecated,
+        // renamed, or hand-authored). The editor must NEVER drop it on save — it
+        // persists until the user removes it themselves. This is the event-name
+        // analogue of OpaqueHttpHook_RoundTripsVerbatim (which covers unknown
+        // hook TYPES).
+        using HooksFixture fx = HooksFixture.From(CommandHook("SomeLegacyEvent", "*", "echo legacy"));
+
+        // Present after the initial SDK-backed load, as its own group.
+        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"), "Unknown event loads as its own group.");
+
+        // Survives a save + reload untouched (ToJsonValue emits every group with
+        // hooks, filtering by NONE of the event names).
+        fx.SaveAndReload();
+        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"), "Unknown event must survive save+reload.");
+        Assert.AreEqual("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
+
+        // Editing a DIFFERENT (recognised) event and saving must not drop it.
+        HookEntry added = fx.AddHookTo("PreToolUse");
+        added.Matcher = "Bash";
+        added.CommandValue = "echo new";
+        fx.SaveAndReload();
+
+        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"),
+            "Editing another event must leave the unknown event intact.");
+        Assert.AreEqual("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
+        Assert.AreEqual(1, fx.HookCount("PreToolUse"));
     }
 }

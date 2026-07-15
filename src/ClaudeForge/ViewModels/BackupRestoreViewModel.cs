@@ -236,6 +236,18 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string? _progressMessage;
     [ObservableProperty] private string? _statusMessage;
 
+    // Which tab (Backup / Restore / MSIX Fix) is shown. VM-driven so the change is
+    // observable + logged, not view-only. 0=Backup, 1=Restore, 2=MSIX Fix. The MSIX
+    // tab is Windows-only (IsVisible=ShowMsixTab) but keeps its Items slot, so the
+    // index mapping is stable whether or not it is shown.
+    [ObservableProperty] private int _selectedTabIndex;
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };
+        Log.Information("[Backup.Tab] index={Index} tab={Tab}", value, tab);
+    }
+
     /// <summary>Cancels the active Backup or Restore operation.</summary>
     [RelayCommand]
     private void CancelOperation()

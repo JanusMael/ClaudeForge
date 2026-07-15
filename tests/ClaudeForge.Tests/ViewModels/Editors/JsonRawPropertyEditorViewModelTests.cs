@@ -199,4 +199,91 @@ public class JsonRawPropertyEditorViewModelTests
         Assert.IsTrue(vm.IsModified);
         Assert.IsNull(vm.ParseError);
     }
+
+    // ── Smart box: Format + structural validation ──────────────────────────
+
+    private static SchemaNode ArraySchema(string name = "sandbox.enabledPlatforms")
+    {
+        return new SchemaNode(name, name) { ValueType = SchemaValueType.Array };
+    }
+
+    private static SchemaNode ObjectSchemaWithRequired(string name = "theming")
+    {
+        return new SchemaNode(name, name)
+        {
+            ValueType = SchemaValueType.Object,
+            Properties = [new SchemaNode($"{name}.base", "base") { ValueType = SchemaValueType.String, IsRequired = true }],
+        };
+    }
+
+    [TestMethod]
+    public void Format_ReindentsCompactJson_KeepingItValid()
+    {
+        JsonRawPropertyEditorViewModel vm = new(ComplexSchema(), ConfigScope.User);
+        vm.LoadFromLayered(Empty(), ConfigScope.User);
+        vm.Text = """{"a":1,"b":{"c":2}}""";
+
+        vm.FormatCommand.Execute(null);
+
+        StringAssert.Contains(vm.Text, "\n", "Formatting must indent onto multiple lines.");
+        Assert.IsNull(vm.ParseError, "Formatted JSON must still parse.");
+        Assert.AreEqual(2, vm.ToJsonValue()?["b"]?["c"]?.GetValue<int>());
+    }
+
+    [TestMethod]
+    public void Format_InvalidJson_IsNoOp_LeavesParseError()
+    {
+        JsonRawPropertyEditorViewModel vm = new(ComplexSchema(), ConfigScope.User);
+        vm.LoadFromLayered(Empty(), ConfigScope.User);
+        vm.Text = "not-json{";
+
+        vm.FormatCommand.Execute(null);
+
+        Assert.AreEqual("not-json{", vm.Text, "Format must not alter unparseable text.");
+        Assert.IsNotNull(vm.ParseError);
+    }
+
+    [TestMethod]
+    public void Structure_WrongRootKind_WarnsButDoesNotBlockWrite()
+    {
+        JsonRawPropertyEditorViewModel vm = new(ArraySchema(), ConfigScope.User);
+        vm.LoadFromLayered(Empty("sandbox.enabledPlatforms"), ConfigScope.User);
+
+        // Schema wants an array; the user typed an object.
+        vm.Text = """{"a":1}""";
+
+        Assert.IsNull(vm.ParseError, "Valid JSON — no parse error.");
+        Assert.IsNotNull(vm.SchemaError, "A wrong root kind must raise the advisory schema warning.");
+        StringAssert.Contains(vm.SchemaError!, "array");
+        // Advisory only — the save-time validator is the gate, so the write still flows.
+        Assert.IsNotNull(vm.ToJsonValue(), "A schema warning must NOT block the live write.");
+    }
+
+    [TestMethod]
+    public void Structure_MissingRequiredProperty_Warns()
+    {
+        JsonRawPropertyEditorViewModel vm = new(ObjectSchemaWithRequired(), ConfigScope.User);
+        vm.LoadFromLayered(Empty("theming"), ConfigScope.User);
+
+        vm.Text = "{}"; // missing the required "base"
+
+        Assert.IsNull(vm.ParseError);
+        Assert.IsNotNull(vm.SchemaError);
+        StringAssert.Contains(vm.SchemaError!, "base");
+    }
+
+    [TestMethod]
+    public void Structure_ValidShape_ClearsWarning()
+    {
+        JsonRawPropertyEditorViewModel vm = new(ObjectSchemaWithRequired(), ConfigScope.User);
+        vm.LoadFromLayered(Empty("theming"), ConfigScope.User);
+
+        vm.Text = "{}";
+        Assert.IsNotNull(vm.SchemaError, "precondition: empty object is missing required 'base'");
+
+        vm.Text = """{"base":"dark"}""";
+
+        Assert.IsNull(vm.SchemaError, "A structurally valid value must clear the advisory warning.");
+        Assert.IsNull(vm.ParseError);
+    }
 }

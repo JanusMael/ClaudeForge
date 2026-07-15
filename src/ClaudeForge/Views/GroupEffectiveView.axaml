@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupEffectiveView"
              x:DataType="vm:SettingsGroupEditorViewModel">
@@ -13,6 +14,7 @@
         <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
         <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
         <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
+        <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
     </UserControl.Resources>
 
     <DockPanel>
@@ -39,18 +41,40 @@
                   AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}"
                   AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpEffectiveRowsGrid}">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding Property}" Width="200">
-                    <DataGridTextColumn.Header>
+                <DataGridTemplateColumn Width="200" CanUserSort="True" SortMemberPath="Property">
+                    <DataGridTemplateColumn.Header>
                         <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveProperty}"
                                    ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
-                <DataGridTextColumn Binding="{Binding DisplayValue}" Width="*">
-                    <DataGridTextColumn.Header>
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                            <!-- Tooltip shows the schema description (falls back to the name). -->
+                            <controls:TipCell Tip="{Binding PropertyTooltip}">
+                                <TextBlock Text="{Binding Property}"
+                                           VerticalAlignment="Center"
+                                           Margin="12,0"
+                                           TextTrimming="CharacterEllipsis" />
+                            </controls:TipCell>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Width="*" CanUserSort="True" SortMemberPath="DisplayValue">
+                    <DataGridTemplateColumn.Header>
                         <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveValue}"
                                    ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
-                    </DataGridTextColumn.Header>
-                </DataGridTextColumn>
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                            <!-- Cell trims to width; hover pretty-prints the full JSON value. -->
+                            <controls:TipCell Tip="{Binding DisplayValue, Converter={StaticResource LongValueTooltip}}">
+                                <SelectableTextBlock Text="{Binding DisplayValue}"
+                                                     TextTrimming="CharacterEllipsis"
+                                                     VerticalAlignment="Center"
+                                                     Margin="12,0" />
+                            </controls:TipCell>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Width="Auto"
                                         CanUserSort="True"
                                         SortMemberPath="Scope">

@@ -1444,10 +1444,6 @@
     <value>エクスプローラーで表示</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>一覧に戻る</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
-  </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Markdown をコピー</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
@@ -1716,6 +1712,26 @@
   <data name="HeaderTabProperties" xml:space="preserve">
     <value>プロパティ</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>フロー</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>フロー図を表示</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>縮小</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>拡大</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>幅に合わせる</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ プロパティ フィルターをクリア</value>
@@ -2778,5 +2794,8 @@
   </data>
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>現在のモデルは作業強度「{0}」をサポートしていません。</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>これらのフックイベントは現在のスキーマでは認識されません（非推奨または誤記の可能性があります）。そのまま保持されます: {0}</value>
   </data>
 </root>

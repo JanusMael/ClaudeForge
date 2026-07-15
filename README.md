@@ -50,6 +50,18 @@ ClaudeForge is a typed editor for all of that. Every setting shows which scope p
 
 ## Install
 
+### winget (Windows)
+
+```powershell
+winget install Bennewitz.Ninja.ClaudeForge
+```
+
+Installs the current release as a portable app and adds a `claudeforge` command
+to your `PATH`; upgrade later with `winget upgrade Bennewitz.Ninja.ClaudeForge`.
+Portable installs don't create a Start Menu shortcut, and — until the binary is
+code-signed — the first launch still shows the SmartScreen notice described
+below.
+
 ### Pre-built binaries
 
 Download the latest release for your platform from the [Releases](../../releases) page:

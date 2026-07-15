@@ -38,6 +38,7 @@ public sealed class GroupTabBodyTemplate : IDataTemplate
             ClaudeGroupTabCustomizer.PermBuildId => new PermissionsBuildView(),
             ClaudeGroupTabCustomizer.PermListsId => new PermissionsListsView(),
             ClaudeGroupTabCustomizer.PermAdvancedId => new PermissionsAdvancedView(),
+            ClaudeGroupTabCustomizer.HooksFlowId => new HooksFlowView(),
             // Defensive fallback: an unknown id renders its id as plain text rather
             // than throwing — a contributed tab with no matching body is visible,
             // not a crash.

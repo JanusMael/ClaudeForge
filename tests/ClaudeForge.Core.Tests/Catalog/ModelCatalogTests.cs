@@ -52,6 +52,29 @@ public sealed class ModelCatalogTests
     }
 
     [TestMethod]
+    public void SessionOnlyEffortLevels_MirrorFullRange_ButStayNonPersistable()
+    {
+        // "Mirror the UI": the catalog carries the full effort range Claude Desktop shows —
+        // including session-only `max` AND `ultracode` (the dynamic-workflow tier that
+        // reports as xhigh) — so ClaudeForge's model matches reality rather than pretending
+        // they don't exist. Both are persists:false, so neither reaches the settings-file
+        // effortLevel dropdown (which can only hold persistable values).
+        EffortLevelInfo ultra = Catalog.EffortLevels.Single(e => e.Id == "ultracode");
+        Assert.IsFalse(ultra.Persists, "ultracode is session-only (not accepted in settings.json).");
+        Assert.IsTrue(
+            ultra.Order > Catalog.EffortLevels.Single(e => e.Id == "max").Order,
+            "ultracode sits above max on the Faster→Smarter axis.");
+
+        // Full range (incl. ultracode) is exposed for models that carry xhigh+max…
+        CollectionAssert.Contains(Catalog.SupportedEffortLevels("claude-opus-4-8").ToList(), "ultracode");
+        // …but the persistable set stays low/medium/high/xhigh (no max, no ultracode).
+        CollectionAssert.DoesNotContain(Catalog.PersistableEffortLevels("claude-opus-4-8").ToList(), "ultracode");
+
+        // Models without xhigh don't gain the ultracode tier (it reports as xhigh).
+        CollectionAssert.DoesNotContain(Catalog.SupportedEffortLevels("claude-sonnet-4-6").ToList(), "ultracode");
+    }
+
+    [TestMethod]
     public void NearestAnalogEffort_CoercesToClosestSupported()
     {
         // Sonnet 4.6 persistable = low/medium/high; xhigh and max both fall to high.

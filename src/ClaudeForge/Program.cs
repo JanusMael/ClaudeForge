@@ -71,6 +71,14 @@ internal sealed class Program
         {
             AppName = "ClaudeForge",
             LogsDirectory = PlatformPaths.AppLogsDirectory,
+            // Second live-tail window (opt-in): streams debounced ConfigFileWatcher
+            // hits so the user can watch external edits (Claude CLI, other editors)
+            // to the settings files in real time. Fed by MainWindowViewModel via
+            // AvaloniaDiagnostics.EnqueueEvent; launched from the F12 window header
+            // link or Shift+F12.
+            EnableEventTailWindow = true,
+            EventTailWindowTitle = "Live Config-File Events — Shift+F12 to hide",
+            EventTailLaunchLabel = "Config-file events ▸",
         });
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture

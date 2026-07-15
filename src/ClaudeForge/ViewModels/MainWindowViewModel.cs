@@ -614,7 +614,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(NavigateBackCommand))]
     private bool _canGoBack;
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    // Not wired to SaveCommand: Save no longer depends on the install banner
+    // (see CanSave). The banner is purely an install-guidance affordance.
+    [ObservableProperty]
     private bool _showInstallBanner;
 
     /// <summary>
@@ -1384,7 +1386,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // makes the two operations mutually exclusive on the workspace fields they share.
     private bool CanSave()
     {
-        return !ShowInstallBanner && HasUnsavedChanges && !IsLoading;
+        // Do NOT gate on ShowInstallBanner. It can be force-shown via the
+        // --showInstallBanner debug flag even when products ARE installed and
+        // editable, which wrongly disabled Save despite real unsaved changes
+        // (observed: default-mode edit set HasUnsavedChanges=true but the button
+        // stayed dark because the forced banner held CanSave false). When products
+        // are genuinely absent there is nothing to edit, so HasUnsavedChanges is
+        // already false and Save stays disabled without the extra gate.
+        return HasUnsavedChanges && !IsLoading;
     }
 
     [RelayCommand(CanExecute = nameof(CanSave))]
@@ -2140,6 +2149,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             agentsVm.EnsureLoaded();
         }
 
+        // Page-navigation trace: every landed-on page (user click, deep link, or
+        // post-reload re-selection). Editor-less nodes (headers/dividers) are logged
+        // too — they clear the editor to the Welcome view, which is a real nav.
+        Log.Information("[App.Nav] page={Page}", value.Title);
+
         _lastNodeTitle = value.Title;
         SaveWindowState();
     }
@@ -2160,6 +2174,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationNodeViewModel? target = _backNode;
         _backNode = null;
         CanGoBack = false;
+        Log.Information("[App.Command] action=NavigateBack to={Page}", target.Title);
         SelectedNode = target;
     }
 
@@ -2234,7 +2249,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // visible without scrolling — the user can clear the filter bar to see context.
         if (result.Node.Editor is SettingsGroupEditorViewModel groupEditor)
         {
-            groupEditor.FilterText = result.PropertyKey;
+            groupEditor.ApplyNavigationFilter(result.PropertyKey);
 
             PermissionsEditorViewModel? permEditor = groupEditor.Editors
                                                                 .OfType<PermissionsEditorViewModel>()
@@ -2380,7 +2395,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (target.Editor is SettingsGroupEditorViewModel groupEditor)
             {
-                groupEditor.FilterText = msg.PropertyFilter;
+                groupEditor.ApplyNavigationFilter(msg.PropertyFilter);
 
                 // Advanced permission settings (disableBypassPermissionsMode,
                 // additionalDirectories) live inside the permissions compound
@@ -3445,7 +3460,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
-            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService),
+            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
+                SchemaTreeBuilder.CollectDescriptions(ccNodes)),
             IsTopLevel = true,
         });
 
@@ -3820,6 +3836,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // _saveInProgressCount field comment.
             if (Volatile.Read(ref _saveInProgressCount) > 0)
             {
+                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (save in progress)");
                 Log.Debug("[FileWatcher] Suppressed reload for {File} (save in progress)",
                     Path.GetFileName(filePath));
                 return;
@@ -3833,11 +3850,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // mid-operation. See _suppressWatcherUntilUtc field comment.
             if (DateTime.UtcNow < _suppressWatcherUntilUtc)
             {
+                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (post-save window)");
                 Log.Debug("[FileWatcher] Suppressed reload for {File} (within post-save window)",
                     Path.GetFileName(filePath));
                 return;
             }
 
+            EnqueueWatcherEvent(filePath, "external change → reloading");
             SetStatusActive(string.Format(Strings.StatusReloadingFileFmt, Path.GetFileName(filePath)));
             // FileSystemWatcher fire — automatic trigger, NOT user-initiated.
             // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
@@ -3845,6 +3864,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // resetting banners on each fire would nag the user constantly).
             _ = ReloadCoreAsync();
         });
+    }
+
+    /// <summary>
+    /// Streams one debounced <see cref="ConfigFileWatcher"/> hit to the live
+    /// event-tail window (the Shift+F12 / F12-header-link window), tagged with how
+    /// the app reacted (external reload vs. self-write suppression). A no-op when
+    /// that window is disabled. Centralises the line format; called from every
+    /// branch of <see cref="OnFileChangedExternally"/> so the user sees EVERY
+    /// debounced event, not just the ones that trigger a reload.
+    /// </summary>
+    private static void EnqueueWatcherEvent(string filePath, string disposition)
+    {
+        AvaloniaDiagnostics.EnqueueEvent(
+            $"{DateTime.Now:HH:mm:ss.fff}  {filePath}  — {disposition}");
     }
 
     /// <summary>

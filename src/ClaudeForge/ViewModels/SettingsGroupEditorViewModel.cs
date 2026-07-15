@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -166,6 +167,19 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// </summary>
     [ObservableProperty] private GroupTab? _selectedTab;
 
+    // Set true only around RebuildTabs' programmatic re-selection so the tab-change
+    // trace in OnSelectedTabChanged logs USER tab clicks (and deep-link SelectTab),
+    // not the rebuilds that fire on every save / reload / scope change.
+    private bool _suppressTabLog;
+
+    partial void OnSelectedTabChanged(GroupTab? value)
+    {
+        if (value is not null && !_suppressTabLog)
+        {
+            Log.Information("[Editor.Tab] group={Group} tab={Tab}", GroupName, value.Id);
+        }
+    }
+
     /// <summary>
     /// Select the tab with <paramref name="tabId"/> when present; no-op otherwise.
     /// Used by deep-link navigation to land on a specific tab (e.g. Overview, so
@@ -214,12 +228,52 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     private string _filterText = string.Empty;
 
     /// <summary>
+    /// True only while the current <see cref="FilterText"/> was injected by a deep-link
+    /// navigation (search result / "View in group") rather than typed by the user. Drives
+    /// an orange frame on the filter box — matching the deep-link "Back" button — so the
+    /// filter reads as part of that navigation state. Cleared the instant the user edits
+    /// or clears the filter (see <see cref="OnFilterTextChanged"/>).
+    /// </summary>
+    [ObservableProperty] private bool _filterFromNavigation;
+
+    // Guards the nav-injection path so the FilterText write inside ApplyNavigationFilter
+    // doesn't immediately clear FilterFromNavigation via OnFilterTextChanged.
+    private bool _applyingNavFilter;
+
+    /// <summary>
+    /// Set the filter from a deep-link navigation and flag it so the filter box shows the
+    /// orange "navigated" frame until the user edits or clears it. Deep-link handlers must
+    /// use this rather than assigning <see cref="FilterText"/> directly, which would read
+    /// as a user edit and skip the frame.
+    /// </summary>
+    public void ApplyNavigationFilter(string? filter)
+    {
+        _applyingNavFilter = true;
+        try
+        {
+            FilterText = filter ?? string.Empty;
+            FilterFromNavigation = !string.IsNullOrEmpty(FilterText);
+        }
+        finally
+        {
+            _applyingNavFilter = false;
+        }
+    }
+
+    /// <summary>
     /// Clears contextual hint banners on compound editors when the filter is removed,
     /// matching the user expectation that clearing the filter returns the page to its
     /// default state.  Currently dismisses <see cref="PermissionsEditorViewModel.ShowDangerCliHint"/>.
     /// </summary>
     partial void OnFilterTextChanged(string value)
     {
+        // Any change NOT coming through ApplyNavigationFilter is a user edit / clear, which
+        // drops the deep-link "navigated" frame.
+        if (!_applyingNavFilter)
+        {
+            FilterFromNavigation = false;
+        }
+
         if (!string.IsNullOrEmpty(value))
         {
             return;
@@ -556,11 +610,17 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     public void Activate()
     {
         _isActive = true;
+        // Perf trace: rebuilt=true means a deferred scope rebuild ran on this visit
+        // (its cost is the [Editor.Rebuild] line); rebuilt=false means editors were
+        // reused and any perceived slowness on revisit is view realization, not the VM.
+        bool rebuilt = _rebuildPending;
         if (_rebuildPending)
         {
             _rebuildPending = false;
             RebuildEditors();
         }
+
+        Log.Information("[Editor.Activate] group={Group} rebuilt={Rebuilt}", GroupName, rebuilt);
     }
 
     /// <summary>
@@ -811,6 +871,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
     private void RebuildEditors()
     {
+        long rebuildStartTs = Stopwatch.GetTimestamp();
+
         // reuse existing editor instances by JsonPath instead of
         // always constructing fresh ones. Prior code:
         //
@@ -899,6 +961,14 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         RebuildEffectiveRows();
         RebuildJsonPreview();
         RebuildTabs();
+
+        // Perf trace: a slow revisit shows here as a high elapsedMs (VM rebuild is the
+        // cost); if this line is ABSENT on a revisit (see [Editor.Activate] rebuilt=false)
+        // the cost is view realization, not the VM. editors=N is the group size. This also
+        // fires for the whole-group Effective-rows + JSON-preview recompute above, so a
+        // large gap between editors=N and elapsedMs points at those, not editor creation.
+        Log.Information("[Editor.Rebuild] group={Group} editors={Count} elapsedMs={Ms:F1}",
+            GroupName, Editors.Count, Stopwatch.GetElapsedTime(rebuildStartTs).TotalMilliseconds);
     }
 
     /// <summary>
@@ -922,7 +992,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             new() { Id = GroupTab.JsonId, Header = JsonTabHeader, Content = this },
         ];
 
-        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList());
+        // Pass SelectTab so a customizer can wire an in-editor deep-link (e.g. the Hooks
+        // "View flow diagram" link) to jump to a sibling contributed tab.
+        _tabCustomizer?.Customize(GroupName, seed, Editors.ToList(), SelectTab);
 
         Tabs.Clear();
         foreach (GroupTab tab in seed)
@@ -933,9 +1005,13 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         // Initial selection (when this is NOT a deep-link, which overrides via
         // SelectTab afterward): the remembered tab → the customizer's default tab
         // → the first tab.
+        // Programmatic re-selection — suppress the tab-change trace (this is a
+        // rebuild, not a user click).
+        _suppressTabLog = true;
         SelectedTab = Tabs.FirstOrDefault(t => t.Id == priorId)
                       ?? Tabs.FirstOrDefault(t => t.IsDefaultTab)
                       ?? Tabs.FirstOrDefault();
+        _suppressTabLog = false;
     }
 
     private void OnEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1063,18 +1139,17 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
                                                   return null;
                                               }
 
+                                              // Keep the FULL value: the view trims the cell (ellipsis)
+                                              // and the hover tooltip pretty-prints the whole JSON, so
+                                              // truncating here would throw away recoverable detail.
                                               string display = layered.EffectiveValue.ToJsonString();
-                                              // Truncate very long values (e.g. nested object JSON) for readability.
-                                              if (display.Length > 120)
-                                              {
-                                                  display = display[..120] + "…";
-                                              }
 
                                               return new EffectivePropertyRow(
                                                   node.Title ?? node.Name,
                                                   display,
                                                   layered.EffectiveScope,
-                                                  layered.IsOverridden);
+                                                  layered.IsOverridden,
+                                                  node.Description);
                                           })
                                           .Where(r => r is not null)
                                           .Select(r => r!)

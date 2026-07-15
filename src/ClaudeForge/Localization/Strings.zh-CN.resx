@@ -1491,10 +1491,6 @@
     <value>在资源管理器中显示</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>返回列表</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
-  </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>复制 Markdown</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
@@ -1763,6 +1759,26 @@
   <data name="HeaderTabProperties" xml:space="preserve">
     <value>属性</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>流程</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>查看流程图</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>缩小</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>放大</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>适应宽度</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ 清除属性筛选</value>
@@ -2758,5 +2774,8 @@
   </data>
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>当前模型不支持思考强度“{0}”。</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>当前架构无法识别这些挂钩事件（可能已弃用或拼写错误），将按原样保留：{0}</value>
   </data>
 </root>

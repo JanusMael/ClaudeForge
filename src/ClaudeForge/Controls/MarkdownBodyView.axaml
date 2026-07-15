@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="https://github.com/whistyun/Markdown.Avalonia.Tight"
+             xmlns:mdc="clr-namespace:Markdown.Avalonia.Controls;assembly=Markdown.Avalonia"
+             xmlns:ctxt="clr-namespace:ColorTextBlock.Avalonia;assembly=ColorTextBlock.Avalonia"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Controls.MarkdownBodyView">
+
+    <!-- Reusable read-only markdown body renderer. The Markdown source is pushed
+         onto Viewer.Markdown from code-behind (the Markdown styled property), and
+         the code-behind ALSO walks the rendered tree to force theme foregrounds —
+         Markdown.Avalonia writes Foreground inline at LocalValue priority, which
+         beats every Style setter, so the styles below handle FontSize/Weight/Margin
+         and the tree-walk handles colour. Both live here so Memory + Agents&Skills
+         share one source. -->
+    <md:MarkdownScrollViewer x:Name="Viewer"
+                             TextElement.Foreground="{DynamicResource AppPrimaryTextBrush}">
+        <md:MarkdownScrollViewer.MarkdownStyle>
+            <Styles>
+                <!-- Body / paragraph defaults — also the inheritance source for every
+                     element these styles don't reach. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="Margin" Value="0,5" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Paragraph">
+                    <Setter Property="Margin" Value="0,7,0,0" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="14" />
+                </Style>
+
+                <!-- Headings — 28/22/18/15/13/13 ladder, high-contrast theme foreground. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading1">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="28" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Margin" Value="0,15,0,5" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading2">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="22" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Margin" Value="0,12,0,4" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading3">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="18" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="Margin" Value="0,10,0,4" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading4">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="15" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="Margin" Value="0,8,0,3" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading5">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="13" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.Heading6">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontSize" Value="13" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </Style>
+
+                <!-- Lists — Grid.List sets indentation; ListMarker is the per-item prefix. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.List">
+                    <Setter Property="Margin" Value="20,0,0,0" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CTextBlock.ListMarker">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="Margin" Value="0,5,5,5" />
+                </Style>
+
+                <!-- Inline `code` — theme-aware bg + fg, monospace. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CCode">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                </Style>
+
+                <!-- Hyperlinks — high-contrast accent that reads on both themes. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CHyperlink">
+                    <Setter Property="Foreground" Value="{DynamicResource AppLinkBrush}" />
+                    <Setter Property="IsUnderline" Value="True" />
+                </Style>
+
+                <!-- Code-block container — outline + padding for visible boundaries. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.CodeBlock">
+                    <Setter Property="Background" Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppCodeBlockBorderBrush}" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Setter Property="CornerRadius" Value="4" />
+                    <Setter Property="Padding" Value="8" />
+                    <Setter Property="Margin" Value="0,4" />
+                </Style>
+                <!-- Plain (no-language) fenced code blocks. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock.CodeBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="FontFamily" Value="Consolas, Menlo, monospace" />
+                    <Setter Property="FontSize" Value="12" />
+                </Style>
+
+                <!-- Tables — outer Border, per-cell Border, header bg, row striping. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Table">
+                    <Setter Property="Margin" Value="5" />
+                    <Setter Property="BorderThickness" Value="0,0,1,1" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppPanelBorderBrush}" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TightTable">
+                    <Setter Property="HorizontalAlignment" Value="Left" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table &gt; Border">
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="BorderThickness" Value="1,1,0,0" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppPanelBorderBrush}" />
+                    <Setter Property="Padding" Value="6,3" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Grid.Table">
+                    <Setter Property="mdc:AutoScaleColumnDefinitions.IsEnabled" Value="True" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader">
+                    <Setter Property="Background" Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.TableHeader ctxt|CTextBlock">
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.OddTableRow">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.EvenTableRow">
+                    <Setter Property="Background" Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                </Style>
+
+                <!-- Blockquote stripe + body container. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Blockquote">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppPanelBorderBrush}" />
+                    <Setter Property="BorderThickness" Value="3,0,0,0" />
+                    <Setter Property="Padding" Value="10,2" />
+                </Style>
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer StackPanel.Blockquote">
+                    <Setter Property="Margin" Value="10,5" />
+                </Style>
+
+                <!-- Note callout. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer Border.Note">
+                    <Setter Property="Margin" Value="5,0,5,0" />
+                    <Setter Property="Padding" Value="10,5" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppPanelBorderBrush}" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Setter Property="CornerRadius" Value="4" />
+                    <Setter Property="Background" Value="{DynamicResource AppCodeBlockBackgroundBrush}" />
+                </Style>
+
+                <!-- Horizontal rule. -->
+                <Style Selector=".Markdown_Avalonia_MarkdownViewer mdc|Rule">
+                    <Setter Property="Margin" Value="0,8" />
+                </Style>
+            </Styles>
+        </md:MarkdownScrollViewer.MarkdownStyle>
+    </md:MarkdownScrollViewer>
+</UserControl>

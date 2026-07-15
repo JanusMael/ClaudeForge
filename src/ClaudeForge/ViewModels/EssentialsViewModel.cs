@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.ClaudeForge.Core.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
@@ -379,6 +380,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         IModelCatalogAccessor catalog = _client?.Models ?? ModelCatalogProvider.Default;
         string? effectiveModel = _client?.GetEffective<string>("model");
         IReadOnlyList<string> modelOptions = catalog.ModelSuggestions();
+        IReadOnlyList<ModelSuggestionItem> modelSuggestions = ModelSuggestionCatalog.Build(catalog);
         IReadOnlyList<string> effortOptions = catalog.PersistableEffortLevels(effectiveModel);
 
         // Display order set per user spec: groups cards by
@@ -476,7 +478,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
                     enumOptions: modelOptions,
                     amberCalloutText: amberText,
                     allowsFreeForm: true)
-                { JsonPathFilter = "model" },
+                { JsonPathFilter = "model", ModelSuggestions = modelSuggestions },
             // 7 — Disable bypass-permissions mode
 
             new(

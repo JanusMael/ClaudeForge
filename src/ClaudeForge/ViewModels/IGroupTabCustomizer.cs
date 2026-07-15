@@ -27,8 +27,15 @@ public interface IGroupTabCustomizer
     /// <param name="tabs">The mutable, pre-seeded tab list.</param>
     /// <param name="editors">The group's property editors (for reaching a
     /// compound editor VM to bind a contributed tab to).</param>
+    /// <param name="selectTab">
+    /// Deferred navigation callback (the group VM's <c>SelectTab(tabId)</c>). An
+    /// implementation can capture it so a contributed tab — or an in-editor
+    /// hyperlink — can deep-link to a sibling tab after the strip is built.
+    /// <see langword="null"/> in unit tests that exercise the customizer in isolation.
+    /// </param>
     void Customize(
         string groupName,
         IList<GroupTab> tabs,
-        IReadOnlyList<PropertyEditorViewModel> editors);
+        IReadOnlyList<PropertyEditorViewModel> editors,
+        Action<string>? selectTab = null);
 }

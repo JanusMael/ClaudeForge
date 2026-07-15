@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.McpServersEditorView"
@@ -220,7 +221,7 @@
                                                                 Width="*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate x:DataType="vm:ArgItem">
-                                                    <ctrl:TipCell Tip="{Binding Value}">
+                                                    <ctrl:TipCell Tip="{Binding Value, Converter={x:Static conv:LongValueTooltipConverter.Instance}}">
                                                         <TextBlock Text="{Binding Value}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="4,0"
@@ -306,7 +307,7 @@
                                                                 SortMemberPath="Value">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate x:DataType="vm:EnvVar">
-                                                    <ctrl:TipCell Tip="{Binding Value}">
+                                                    <ctrl:TipCell Tip="{Binding Value, Converter={x:Static conv:LongValueTooltipConverter.Instance}}">
                                                         <TextBlock Text="{Binding Value}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="4,0"

@@ -106,4 +106,44 @@ public sealed class SchemaErrorMessagesTests
         Assert.IsFalse(rendered.Contains("false schema"),
             "The bulleted block must use the friendly translation, not the raw validator jargon.");
     }
+
+    [TestMethod]
+    public void Format_EnumError_ShowsCurrentValueAndAllowedValues()
+    {
+        // The killer case: "should match one of the enum values" alone doesn't tell the
+        // user what they HAVE or what's ALLOWED. The enriched error carries both.
+        SchemaValidationError[] errors =
+        [
+            new SchemaValidationError("settings.local.json", "/effortLevel",
+                "Value should match one of the values specified by the enum")
+            {
+                Value = "\"max\"",
+                AllowedValues = ["low", "medium", "high", "xhigh"],
+            },
+        ];
+
+        string rendered = SchemaErrorMessages.Format(errors);
+
+        StringAssert.Contains(rendered, "current value: \"max\"",
+            "The offending value should be shown so the user sees what they have.");
+        StringAssert.Contains(rendered, "allowed values: low, medium, high, xhigh",
+            "The permitted enum values should be listed so the user knows the valid options.");
+        StringAssert.Contains(rendered, "(Local scope)",
+            "settings.local.json should be labelled with its scope.");
+    }
+
+    [TestMethod]
+    public void Format_UnenrichedError_RendersExactlyAsBefore()
+    {
+        // Errors without Value/AllowedValues (the common path) must not gain blank
+        // detail lines — the enrichment is strictly additive.
+        SchemaValidationError[] errors = [Make("/some/path", "minLength constraint failed")];
+
+        string rendered = SchemaErrorMessages.Format(errors);
+
+        Assert.IsFalse(rendered.Contains("current value:"),
+            "No value line should appear when the error carries no Value.");
+        Assert.IsFalse(rendered.Contains("allowed values:"),
+            "No allowed-values line should appear when the error carries no AllowedValues.");
+    }
 }

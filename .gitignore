@@ -144,3 +144,9 @@ $RECYCLE.BIN/
 # ---------------------------------------------------------------------------
 *.log
 
+
+packaging/sign-release.ps1
+
+packaging/SIGNING.md
+
+reference/semi-avalonia/

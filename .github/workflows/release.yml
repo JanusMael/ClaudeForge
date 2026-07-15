@@ -154,6 +154,9 @@ jobs:
         # comma-array natively: -Rids win-x64,win-arm64 → @('win-x64','win-arm64').
         run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
 
+      # Windows binaries are signed locally, after the release is published and
+      # before the winget submission (the signing cert can't be automated on
+      # hosted runners). The build intentionally ships unsigned artifacts.
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v7
         with:

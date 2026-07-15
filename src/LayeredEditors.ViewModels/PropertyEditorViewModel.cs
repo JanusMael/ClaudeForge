@@ -59,6 +59,20 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
     [ObservableProperty] private string? _unsupportedShapeNotice;
 
     /// <summary>
+    /// Optional section-level action rendered as a hyperlink immediately to the
+    /// right of the property-name heading by the default <c>PropertyEditorWrapper</c>.
+    /// Hidden when null/empty. Lets a specialized editor surface a heading-level
+    /// affordance — e.g. the Hooks editor's "View flow diagram" jump to its Flow
+    /// tab — without the generic wrapper knowing anything editor-specific; both this
+    /// and <see cref="HeaderActionCommand"/> are compiled-bound against this base type,
+    /// so every editor resolves them (null ⇒ the link collapses).
+    /// </summary>
+    [ObservableProperty] private string? _headerActionText;
+
+    /// <summary>Command invoked by the header-action hyperlink. See <see cref="HeaderActionText"/>.</summary>
+    [ObservableProperty] private System.Windows.Input.ICommand? _headerActionCommand;
+
+    /// <summary>
     /// True when any scope has an explicit value for this property — derived from
     /// <see cref="EffectiveScope"/> being non-null. Schema defaults and pure
     /// inheritance without an explicit value do NOT count. Change notifications

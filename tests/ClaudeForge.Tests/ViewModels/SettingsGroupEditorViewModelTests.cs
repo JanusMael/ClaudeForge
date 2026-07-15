@@ -773,6 +773,58 @@ public partial class SettingsGroupEditorViewModelTests
             SettingsGroupEditorViewModel.FormatValueForAuditLog(null, "anything"));
     }
 
+    // ── Deep-link filter "navigated" frame (FilterFromNavigation) ──────────
+
+    [TestMethod]
+    public void ApplyNavigationFilter_SetsFilterAndNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.ApplyNavigationFilter("model");
+
+        Assert.AreEqual("model", vm.FilterText);
+        Assert.IsTrue(vm.FilterFromNavigation, "A deep-link filter must flag the orange nav frame.");
+    }
+
+    [TestMethod]
+    public void UserEditingFilter_DropsNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.ApplyNavigationFilter("model");
+        Assert.IsTrue(vm.FilterFromNavigation);
+
+        vm.FilterText = "modelX"; // simulates the user typing into the filter box
+
+        Assert.IsFalse(vm.FilterFromNavigation, "A user edit must drop the nav frame.");
+    }
+
+    [TestMethod]
+    public void ClearingFilter_DropsNavFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        vm.ApplyNavigationFilter("model");
+
+        vm.ClearFilterCommand.Execute(null);
+
+        Assert.AreEqual(string.Empty, vm.FilterText);
+        Assert.IsFalse(vm.FilterFromNavigation);
+    }
+
+    [TestMethod]
+    public void ApplyNavigationFilter_NullOrEmpty_DoesNotFlag()
+    {
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+
+        vm.ApplyNavigationFilter(null);
+
+        Assert.AreEqual(string.Empty, vm.FilterText);
+        Assert.IsFalse(vm.FilterFromNavigation, "An empty nav filter must not draw the frame.");
+    }
+
     [GeneratedRegex("sk-test-secret")]
     private static partial Regex MyRegex();
 }

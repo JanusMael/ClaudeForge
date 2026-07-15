@@ -11,14 +11,38 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// <summary>All hooks registered for one event type (e.g. "PreToolUse").</summary>
 public partial class HookEventGroup : ObservableObject
 {
-    public HookEventGroup(string eventName)
+    // The Type-picker infos every entry in this group shares. Schema-described
+    // when the editor was built with an SDK client (threaded in by
+    // HooksEditorViewModel); the offline HookEntry.DefaultCommandTypeInfos otherwise.
+    private readonly IReadOnlyList<HookCommandTypeInfo> _commandTypeInfos;
+
+    public HookEventGroup(
+        string eventName,
+        string? description = null,
+        IReadOnlyList<HookCommandTypeInfo>? commandTypeInfos = null)
     {
         EventName = eventName;
+        Description = description;
+        _commandTypeInfos = commandTypeInfos ?? HookEntry.DefaultCommandTypeInfos;
         Hooks = [];
         Hooks.CollectionChanged += OnHooksCollectionChanged;
     }
 
     public string EventName { get; }
+
+    /// <summary>
+    /// Human-readable description of this event, sourced from the settings
+    /// schema's <c>hooks.properties[EventName].description</c>. <see langword="null"/>
+    /// when the schema doesn't describe it (unknown / deprecated events, or an
+    /// offline / minimal schema). Surfaced as a hover tooltip in the left rail
+    /// and a label in the detail pane so unfamiliar events (e.g. CwdChanged,
+    /// FileChanged) explain themselves.
+    /// </summary>
+    public string? Description { get; }
+
+    /// <summary><see langword="true"/> when <see cref="Description"/> is present — drives label + tooltip visibility.</summary>
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+
     public ObservableCollection<HookEntry> Hooks { get; }
 
     [ObservableProperty] private HookEntry? _selectedHook;
@@ -39,6 +63,11 @@ public partial class HookEventGroup : ObservableObject
         {
             foreach (HookEntry entry in e.NewItems)
             {
+                // Every entry belonging to this group shares the group's Type-picker
+                // infos, so the Type ComboBox shows the schema descriptions regardless
+                // of how the entry was created (AddHook, FromJson, or the SDK load path).
+                // Centralised here so no creation site can forget it.
+                entry.CommandTypeInfos = _commandTypeInfos;
                 entry.PropertyChanged += OnHookEntryPropertyChanged;
             }
         }
@@ -92,9 +121,13 @@ public partial class HookEventGroup : ObservableObject
     /// threaded through. Also tolerates a legacy flat shape where command/prompt/url sit on the
     /// outer object directly (older schemas / hand-edited files).
     /// </summary>
-    public static HookEventGroup FromJson(string eventName, JsonNode? node)
+    public static HookEventGroup FromJson(
+        string eventName,
+        JsonNode? node,
+        string? description = null,
+        IReadOnlyList<HookCommandTypeInfo>? commandTypeInfos = null)
     {
-        HookEventGroup group = new(eventName);
+        HookEventGroup group = new(eventName, description, commandTypeInfos);
         if (node is JsonArray arr)
         {
             foreach (JsonNode? item in arr)

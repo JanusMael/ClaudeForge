@@ -743,14 +743,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
         
-        /// <summary>
-        ///   Looks up a localized string similar to Back to list.
-        /// </summary>
-        public static string ButtonCloseViewer {
-            get {
-                return ResourceManager.GetString("ButtonCloseViewer", resourceCulture);
-            }
-        }
         
         /// <summary>
         ///   Looks up a localized string similar to Continue without saving.
@@ -830,6 +822,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string ButtonDeleteFootprint {
             get {
                 return ResourceManager.GetString("ButtonDeleteFootprint", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to These hook events aren't recognised by the current schema (they may be deprecated or misspelled) and are preserved as-is: {0}.
+        /// </summary>
+        public static string LabelHooksUnrecognizedEventsFmt {
+            get {
+                return ResourceManager.GetString("LabelHooksUnrecognizedEventsFmt", resourceCulture);
             }
         }
         
@@ -2319,6 +2320,51 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string HeaderTabProperties {
             get {
                 return ResourceManager.GetString("HeaderTabProperties", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Flow.
+        /// </summary>
+        public static string HeaderTabFlow {
+            get {
+                return ResourceManager.GetString("HeaderTabFlow", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to View flow diagram.
+        /// </summary>
+        public static string LinkHookFlowDiagram {
+            get {
+                return ResourceManager.GetString("LinkHookFlowDiagram", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Zoom out.
+        /// </summary>
+        public static string AutoNameZoomOut {
+            get {
+                return ResourceManager.GetString("AutoNameZoomOut", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Zoom in.
+        /// </summary>
+        public static string AutoNameZoomIn {
+            get {
+                return ResourceManager.GetString("AutoNameZoomIn", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Fit width.
+        /// </summary>
+        public static string ButtonFitWidth {
+            get {
+                return ResourceManager.GetString("ButtonFitWidth", resourceCulture);
             }
         }
         

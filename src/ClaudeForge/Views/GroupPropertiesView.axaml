@@ -19,10 +19,43 @@
                 BorderThickness="0,0,0,1"
                 IsVisible="{Binding ShowFilterBar}">
             <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBox Text="{Binding FilterText}"
-                         PlaceholderText="{x:Static loc:Strings.WatermarkFilterProps}"
-                         Width="300"
-                         AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterProps}" />
+                <!-- BOTH states are styled, and the Border sets NO BorderBrush attribute of its
+                     own. Two Avalonia rules bite here, and the frame stays invisible unless both
+                     are respected:
+                       1. A control's Styles apply to its DESCENDANTS, not to itself — so this
+                          selector must live on the PARENT, not inside the Border's own .Styles.
+                       2. A local value (BorderBrush="Transparent" written as an attribute)
+                          OUTRANKS every Style setter, whatever the selector. So the previous
+                          "transparent by default + orange via style" shape could never light up:
+                          the local Transparent always won. Both values therefore come from
+                          styles, and the more specific .filter-frame.nav-filter wins when the
+                          class is applied. (Same LocalValue-beats-Style hazard documented in
+                          MarkdownBodyView.) -->
+                <StackPanel.Styles>
+                    <Style Selector="Border.filter-frame">
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                    </Style>
+                    <Style Selector="Border.filter-frame.nav-filter">
+                        <Setter Property="BorderBrush" Value="#FFF57C00" />
+                    </Style>
+                </StackPanel.Styles>
+
+                <!-- When the filter was injected by a deep-link navigation
+                     (FilterFromNavigation), an orange frame matching the deep-link
+                     "Back" button (App.axaml back-button = #FFF57C00) marks it as part
+                     of that nav state. The constant 2px border (transparent by default)
+                     keeps the layout from shifting when the frame appears/clears; the frame
+                     is dropped the moment the user edits or clears the filter. -->
+                <Border Classes="filter-frame"
+                        Classes.nav-filter="{Binding FilterFromNavigation}"
+                        BorderThickness="2"
+                        CornerRadius="5"
+                        VerticalAlignment="Center">
+                    <TextBox Text="{Binding FilterText}"
+                             PlaceholderText="{x:Static loc:Strings.WatermarkFilterProps}"
+                             Width="300"
+                             AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterProps}" />
+                </Border>
                 <Button Content="{x:Static loc:Strings.LabelClearPropertyFilter}"
                         Command="{Binding ClearFilterCommand}"
                         Padding="8,4"

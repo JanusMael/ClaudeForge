@@ -1444,10 +1444,6 @@
     <value>탐색기에서 보기</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>목록으로 돌아가기</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
-  </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>마크다운 복사</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
@@ -1716,6 +1712,26 @@
   <data name="HeaderTabProperties" xml:space="preserve">
     <value>속성</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>흐름</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>흐름도 보기</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>축소</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>확대</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>너비 맞춤</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ 속성 필터 지우기</value>
@@ -2779,5 +2795,8 @@
   </data>
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>현재 모델은 노력 수준 '{0}'을(를) 지원하지 않습니다.</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>이 후크 이벤트는 현재 스키마에서 인식되지 않으며(지원이 중단되었거나 오타일 수 있음) 그대로 유지됩니다: {0}</value>
   </data>
 </root>

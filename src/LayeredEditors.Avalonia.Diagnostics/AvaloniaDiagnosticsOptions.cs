@@ -89,6 +89,30 @@ public sealed class AvaloniaDiagnosticsOptions
     public string? LiveLogWindowTitle { get; init; }
 
     /// <summary>
+    /// Create a second, host-fed <see cref="UI.LiveTailWindow"/> alongside the
+    /// F12 log window. Defaults to <c>false</c> (opt-in). When enabled,
+    /// <see cref="AvaloniaDiagnostics.InstallAvaloniaHooks"/> constructs the
+    /// window, adds a launch link (labelled <see cref="EventTailLaunchLabel"/>)
+    /// to the F12 window's header, and the host feeds it lines via
+    /// <see cref="AvaloniaDiagnostics.EnqueueEvent"/>. Independent of the log
+    /// pipeline — nothing is written to it unless the host enqueues.
+    /// </summary>
+    public bool EnableEventTailWindow { get; init; }
+
+    /// <summary>
+    /// Title for the <see cref="EnableEventTailWindow"/> window. Defaults to
+    /// <c>"Live Events"</c>.
+    /// </summary>
+    public string? EventTailWindowTitle { get; init; }
+
+    /// <summary>
+    /// Text of the launch link added to the F12 window's header when
+    /// <see cref="EnableEventTailWindow"/> is set. Defaults to
+    /// <c>"Events ▸"</c>. Only rendered when the F12 log window is also enabled.
+    /// </summary>
+    public string? EventTailLaunchLabel { get; init; }
+
+    /// <summary>
     /// Bridge Avalonia's internal logger (<c>Avalonia.Logging.Logger.Sink</c>)
     /// into Serilog so binding errors, layout warnings, etc. reach the same
     /// sinks. Defaults to <c>true</c>. Incompatible with

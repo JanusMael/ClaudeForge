@@ -1581,10 +1581,6 @@ Cancel — keep the window open.</value>
     <value>Reveal in Explorer</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Back to list</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
-  </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Copy markdown</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
@@ -1853,6 +1849,26 @@ Cancel — keep the window open.</value>
   <data name="HeaderTabProperties" xml:space="preserve">
     <value>Properties</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>Flow</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>View flow diagram</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>Zoom out</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>Zoom in</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>Fit width</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ Clear property filter</value>
@@ -2810,5 +2826,9 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>Effort '{0}' isn't supported by the current model.</value>
     <comment>Advisory on the Essentials effort card when the persisted effort is unsupported by the current model (shown on load; no coercion until the user changes the model). {0}=the unsupported effort level.</comment>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>These hook events aren't recognised by the current schema (they may be deprecated or misspelled) and are preserved as-is: {0}</value>
+    <comment>Hooks editor banner. {0} = comma-separated list of unrecognized event names found in the user's config.</comment>
   </data>
 </root>

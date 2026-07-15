@@ -1444,10 +1444,6 @@
     <value>Показать в проводнике</value>
     <comment>DEPRECATED — bind {x:Static loc:PlatformLabels.Reveal} instead so macOS shows "Reveal in Finder" and Linux shows "Show in Files".</comment>
   </data>
-  <data name="ButtonCloseViewer" xml:space="preserve">
-    <value>Назад к списку</value>
-    <comment>Button that closes the Tier 1 file viewer and returns to the inventory.</comment>
-  </data>
   <data name="ButtonCopyMarkdown" xml:space="preserve">
     <value>Копировать markdown</value>
     <comment>Button on the Tier 1 file viewer toolbar that copies the raw markdown source to the clipboard.</comment>
@@ -1716,6 +1712,26 @@
   <data name="HeaderTabProperties" xml:space="preserve">
     <value>Свойства</value>
     <comment>Tab header on the SettingsGroupEditor view.</comment>
+  </data>
+  <data name="HeaderTabFlow" xml:space="preserve">
+    <value>Поток</value>
+    <comment>Tab header on the Hooks group: hosts the hook flow diagram.</comment>
+  </data>
+  <data name="LinkHookFlowDiagram" xml:space="preserve">
+    <value>Показать схему</value>
+    <comment>Hyperlink on the Hooks Properties tab that switches to the Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomOut" xml:space="preserve">
+    <value>Уменьшить</value>
+    <comment>Accessible name for the zoom-out button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="AutoNameZoomIn" xml:space="preserve">
+    <value>Увеличить</value>
+    <comment>Accessible name for the zoom-in button on the Hooks Flow tab.</comment>
+  </data>
+  <data name="ButtonFitWidth" xml:space="preserve">
+    <value>По ширине</value>
+    <comment>Button on the Hooks Flow tab: scale the diagram to the pane width.</comment>
   </data>
   <data name="LabelClearPropertyFilter" xml:space="preserve">
     <value>✕ Очистить фильтр свойств</value>
@@ -2779,5 +2795,8 @@
   </data>
   <data name="LabelEffortUnsupportedFmt" xml:space="preserve">
     <value>Текущая модель не поддерживает уровень усилий «{0}».</value>
+  </data>
+  <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
+    <value>Эти события перехватчиков не распознаются текущей схемой (возможно, устарели или содержат опечатку) и сохраняются как есть: {0}</value>
   </data>
 </root>

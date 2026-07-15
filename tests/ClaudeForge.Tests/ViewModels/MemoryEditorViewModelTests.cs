@@ -64,8 +64,20 @@ public sealed class MemoryEditorViewModelTests
         return new MemoryEditorViewModel(client, projectRoot: null);
     }
 
-    private static FakeClaudeCodeClient NewFakeClient()
+    private FakeClaudeCodeClient NewFakeClient()
     {
+        // Re-assert the sandbox override inside the test METHOD's async flow — not
+        // only in [TestInitialize]. TestUserProfileOverride is an AsyncLocal (kept
+        // that way because ClaudeForge.Sdk.Tests runs method-level parallel and needs
+        // per-flow isolation). Under serial MSTest, the value set in the sync Setup
+        // does not always propagate into the async test method's execution context, so
+        // FootprintService.DeleteAsync's Task.Run — which reads PlatformPaths.ClaudeHome
+        // on a pool thread — occasionally captured a context WITHOUT the override and
+        // deleted from the real home instead of the sandbox. That surfaced as the flaky
+        // DeleteFootprintAsync_* failures that only appeared in the full suite. Setting
+        // it here (every real-delete test funnels through NewFakeClient, on its own
+        // flow, before the client is used) makes the later Task.Run capture the sandbox.
+        PlatformPaths.TestUserProfileOverride = _fakeHome;
         return new FakeClaudeCodeClient();
     }
 
@@ -137,6 +149,34 @@ public sealed class MemoryEditorViewModelTests
         Assert.IsTrue(vm.IsViewerVisible);
         Assert.AreEqual("hello world", vm.ViewerContent);
         Assert.AreSame(primary, vm.SelectedFile);
+        Assert.IsFalse(vm.HasViewerFrontMatter, "Plain content has no front-matter card.");
+    }
+
+    [TestMethod]
+    public async Task LoadFile_WithFrontMatter_SplitsCardFromBody()
+    {
+        Write("CLAUDE.md", "---\nname: Alpha\ndescription: does things\n---\n# Body\n\nHello.\n");
+        FakeClaudeCodeClient client = NewFakeClient();
+        MemoryEditorViewModel vm = NewVm(client);
+        await vm.RefreshAsync();
+
+        UserMemoryFile primary = vm.Tier1Groups
+                                   .Single(g => g.Category == UserMemoryCategory.PrimaryMemory)
+                                   .Files[0];
+
+        await vm.LoadFileAsync(primary);
+
+        // Front-matter is surfaced as a structured card…
+        Assert.IsTrue(vm.HasViewerFrontMatter);
+        Assert.IsNotNull(vm.ViewerFrontMatter);
+        Assert.AreEqual("Alpha", vm.ViewerFrontMatter!.Single(r => r.Key == "name").Value);
+
+        // …and stripped from the rendered body.
+        StringAssert.Contains(vm.ViewerContent, "# Body");
+        Assert.IsFalse(vm.ViewerContent!.Contains("name:"),
+            "Front-matter must not leak into the rendered markdown body.");
+        Assert.IsFalse(vm.ViewerContent!.TrimStart().StartsWith("---"),
+            "Body must not begin with the front-matter delimiter.");
     }
 
     [TestMethod]
