@@ -610,20 +610,34 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         }
     }
 
+    // Serializes the FootprintRows rebuild — the ONLY writer to that collection.
+    // In the app every caller resumes on the UI thread (ConfigureAwait(true) over the
+    // dispatcher's SynchronizationContext), so the Clear+Add below is single-threaded and
+    // this lock is uncontended. Under test there is NO SynchronizationContext, so the
+    // ctor's fire-and-forget Refresh() and a user-initiated DeleteFootprintAsync can both
+    // land their RebuildFootprintRows continuations on unsynchronized pool threads and
+    // interleave the Clear+Add — corrupting the backing List (IndexOutOfRangeException,
+    // seen only intermittently in CI). The lock makes each rebuild atomic so overlapping
+    // loads serialize to a consistent last-writer-wins state instead of crashing.
+    private readonly object _footprintRowsGate = new();
+
     private void RebuildFootprintRows(IReadOnlyList<FootprintCategoryStats> stats)
     {
-        FootprintRows.Clear();
-        long total = 0;
-        foreach (FootprintCategoryStats s in stats)
+        lock (_footprintRowsGate)
         {
-            FootprintRows.Add(new FootprintRowViewModel(s));
-            total += s.TotalBytes;
-        }
+            FootprintRows.Clear();
+            long total = 0;
+            foreach (FootprintCategoryStats s in stats)
+            {
+                FootprintRows.Add(new FootprintRowViewModel(s));
+                total += s.TotalBytes;
+            }
 
-        // Triggers IsFootprintLarge / FootprintTotalDisplay /
-        // FootprintWarningMessage notifications via the source-generator
-        // setter on the ObservableProperty.
-        FootprintTotalBytes = total;
+            // Triggers IsFootprintLarge / FootprintTotalDisplay /
+            // FootprintWarningMessage notifications via the source-generator
+            // setter on the ObservableProperty.
+            FootprintTotalBytes = total;
+        }
     }
 
     private void RebuildProjectTranscripts(IReadOnlyList<ProjectTranscriptStats> stats)
