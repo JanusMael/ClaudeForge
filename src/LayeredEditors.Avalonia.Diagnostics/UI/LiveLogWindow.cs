@@ -243,8 +243,24 @@ public static class LiveLogWindow
             ShowActivated = false,
         };
 
+        // Hide-on-close so F12 can re-show it. Closing via the OS ✕ button DESTROYS
+        // the window; the next ToggleWindow() → Show() then throws "Cannot re-show a
+        // closed window." Intercept only a user/OS window close and hide instead —
+        // let ApplicationShutdown / OSShutdown close it for real so app exit isn't
+        // blocked by a cancelled close.
+        _window.Closing += OnWindowClosing;
+
         _window.Hide();
         RefreshLogPathLink();
+    }
+
+    private static void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_window is not null && e.CloseReason == WindowCloseReason.WindowClosing)
+        {
+            e.Cancel = true;
+            _window.Hide();
+        }
     }
 
     private static ListBox BuildLogList(IBrush background)

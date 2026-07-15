@@ -149,6 +149,23 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
 
     [ObservableProperty] private string? _viewerContent;
 
+    /// <summary>
+    /// Parsed YAML front-matter of the open file rendered as key/value rows, or null
+    /// when the file has none. Lets the viewer show a rich card (like Agents &amp;
+    /// Skills) instead of dumping the raw <c>---</c> block into the markdown body.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasViewerFrontMatter))]
+    private IReadOnlyList<MemoryFrontMatterRow>? _viewerFrontMatter;
+
+    /// <summary><see langword="true"/> when the open file has front-matter to show in the card.</summary>
+    public bool HasViewerFrontMatter => ViewerFrontMatter is { Count: > 0 };
+
+    // The full on-disk file text (front-matter + body). ViewerContent now holds only
+    // the body (so it renders without the raw "---" block), so "Copy markdown" copies
+    // this to keep the copied text a complete, self-contained file.
+    private string? _rawFileContent;
+
     /// <summary><see langword="true"/> when a Tier 1 file is open in the viewer pane.</summary>
     public bool IsViewerVisible => SelectedFile is not null;
 
@@ -253,8 +270,31 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         }
 
         SelectedFile = file;
-        ViewerContent = await _codeClient.ReadMemoryFileAsync(file.AbsolutePath, CancellationToken.None)
-                                         .ConfigureAwait(true);
+        string content = await _codeClient.ReadMemoryFileAsync(file.AbsolutePath, CancellationToken.None)
+                                          .ConfigureAwait(true) ?? string.Empty;
+        _rawFileContent = content;
+
+        // Split off YAML front-matter so it renders as a structured card (like Agents
+        // & Skills) rather than a raw "---" block inside the markdown. Files without
+        // front-matter parse as Present=false with Body = the whole text, so the body
+        // path is unchanged for plain CLAUDE.md content.
+        FrontMatter fm = YamlFrontMatter.Parse(content);
+        if (fm.Present)
+        {
+            ViewerFrontMatter = fm.Fields
+                                  .Select(f => new MemoryFrontMatterRow(
+                                      f.Key,
+                                      f.Value.IsList
+                                          ? string.Join(", ", f.Value.List ?? [])
+                                          : f.Value.Scalar ?? string.Empty))
+                                  .ToList();
+            ViewerContent = fm.Body;
+        }
+        else
+        {
+            ViewerFrontMatter = null;
+            ViewerContent = content;
+        }
     }
 
     // Which Memory tab (User Memory / Footprint) is shown. VM-driven + logged
@@ -274,6 +314,8 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         Log.Information("[Memory.Command] action=Back");
         SelectedFile = null;
         ViewerContent = null;
+        ViewerFrontMatter = null;
+        _rawFileContent = null;
     }
 
     /// <summary>
@@ -294,12 +336,15 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     [RelayCommand]
     public void CopyMarkdown()
     {
-        if (string.IsNullOrEmpty(ViewerContent))
+        // Copy the full file (front-matter + body), not just the rendered body, so a
+        // paste is a complete, self-contained memory file.
+        string payload = _rawFileContent ?? ViewerContent ?? string.Empty;
+        if (string.IsNullOrEmpty(payload))
         {
             return;
         }
 
-        CopyMarkdownRequested?.Invoke(this, ViewerContent);
+        CopyMarkdownRequested?.Invoke(this, payload);
     }
 
     /// <summary>Reveal the supplied path in the platform file manager.</summary>
@@ -596,3 +641,10 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(HasProjectBreakdown));
     }
 }
+
+/// <summary>
+/// One row of a memory file's YAML front-matter, rendered as a key/value pair in the
+/// viewer card. <see cref="Value"/> is the display string — scalars verbatim, lists
+/// comma-joined.
+/// </summary>
+public sealed record MemoryFrontMatterRow(string Key, string Value);

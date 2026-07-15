@@ -630,7 +630,78 @@ public sealed class SchemaRegistry : IDisposable
             }
         }
 
+        return await EnrichAllowedValuesAsync(errors, isClaudeCode, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Best-effort pass that attaches <see cref="SchemaValidationError.AllowedValues"/>
+    /// to enum-mismatch errors, so the message can show the permitted values (from the
+    /// same <see cref="SchemaNode"/> tree the editor uses for its dropdowns) rather than
+    /// just "should match one of the enum values". Runs only when errors exist (rare,
+    /// user-facing save path); the node fetch is cached, so this is cheap. Never throws
+    /// — enrichment failure falls back to the un-enriched errors.
+    /// </summary>
+    private async Task<IReadOnlyList<SchemaValidationError>> EnrichAllowedValuesAsync(
+        List<SchemaValidationError> errors, bool isClaudeCode, CancellationToken ct)
+    {
+        if (errors.Count == 0)
+        {
+            return errors;
+        }
+
+        Dictionary<string, IReadOnlyList<string>> enumsByPath;
+        try
+        {
+            JsonSchemaNode rootNode = isClaudeCode
+                ? await GetClaudeCodeSettingsNodeAsync(ct).ConfigureAwait(false)
+                : await GetClaudeDesktopConfigNodeAsync(ct).ConfigureAwait(false);
+            enumsByPath = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+            CollectEnumPaths(SchemaTreeBuilder.BuildTopLevel(rootNode), enumsByPath);
+        }
+        catch
+        {
+            return errors;
+        }
+
+        for (int i = 0; i < errors.Count; i++)
+        {
+            // InstancePath is a JSON Pointer (/permissions/defaultMode); SchemaNode.JsonPath
+            // is dot-separated (permissions.defaultMode). Convert to match leaf enum props.
+            string dotPath = errors[i].InstancePath.TrimStart('/').Replace('/', '.');
+            if (dotPath.Length > 0 && enumsByPath.TryGetValue(dotPath, out IReadOnlyList<string>? allowed))
+            {
+                errors[i] = errors[i] with { AllowedValues = allowed };
+            }
+        }
+
         return errors;
+    }
+
+    /// <summary>
+    /// Recursively index every enum-bearing node by its dot-separated
+    /// <see cref="SchemaNode.JsonPath"/> so a validation error's instance path resolves
+    /// to its permitted values.
+    /// </summary>
+    private static void CollectEnumPaths(
+        IReadOnlyList<SchemaNode> nodes, Dictionary<string, IReadOnlyList<string>> sink)
+    {
+        foreach (SchemaNode node in nodes)
+        {
+            if (node.EnumValues.Count > 0)
+            {
+                sink[node.JsonPath] = node.EnumValues;
+            }
+
+            if (node.Properties.Count > 0)
+            {
+                CollectEnumPaths(node.Properties, sink);
+            }
+
+            if (node.ItemsSchema is { } items)
+            {
+                CollectEnumPaths([items], sink);
+            }
+        }
     }
 
     /// <summary>
@@ -753,13 +824,77 @@ public sealed class SchemaRegistry : IDisposable
             }
 
             string path = detail.InstanceLocation.ToString() ?? string.Empty;
+            // Read the offending value once per site (all messages here share the path)
+            // so the user sees WHAT they have, not just that it's wrong.
+            string? offendingValue = RenderOffendingValue(NavigateToInstance(root, path));
             foreach ((string _, string message) in errs)
             {
-                errors.Add(new SchemaValidationError(filePath, path, message));
+                errors.Add(new SchemaValidationError(filePath, path, message) { Value = offendingValue });
             }
         }
 
         return CollapseFailedAnyOfErrors(errors);
+    }
+
+    /// <summary>
+    /// Resolve a JSON-Pointer instance location (e.g. <c>/permissions/allow/0</c>)
+    /// against the parsed document, returning the node at that path or null when the
+    /// path doesn't resolve. Version-agnostic (walks the tree by hand rather than
+    /// depending on a pointer library's evaluate API); unescapes the pointer tokens
+    /// <c>~1</c>→<c>/</c> and <c>~0</c>→<c>~</c>.
+    /// </summary>
+    private static JsonNode? NavigateToInstance(JsonObject root, string instancePointer)
+    {
+        if (string.IsNullOrEmpty(instancePointer) || instancePointer == "/")
+        {
+            return root;
+        }
+
+        JsonNode? current = root;
+        foreach (string rawSeg in instancePointer.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string seg = rawSeg.Replace("~1", "/").Replace("~0", "~");
+            switch (current)
+            {
+                case JsonObject obj when obj.TryGetPropertyValue(seg, out JsonNode? child):
+                    current = child;
+                    break;
+                case JsonArray arr when int.TryParse(seg, out int idx) && idx >= 0 && idx < arr.Count:
+                    current = arr[idx];
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// Render <paramref name="node"/> as compact JSON for display in a validation
+    /// message — quoted for strings (so <c>"max"</c> reads as a string), braces for
+    /// objects/arrays — truncated so a large offending object doesn't flood the dialog.
+    /// Null in → null out (nothing to show).
+    /// </summary>
+    private static string? RenderOffendingValue(JsonNode? node)
+    {
+        if (node is null)
+        {
+            return null;
+        }
+
+        string json;
+        try
+        {
+            json = node.ToJsonString();
+        }
+        catch
+        {
+            return null;
+        }
+
+        const int max = 200;
+        return json.Length > max ? string.Concat(json.AsSpan(0, max), "…") : json;
     }
 
     /// <summary>
@@ -817,7 +952,12 @@ public sealed class SchemaRegistry : IDisposable
             collapsed.Add(new SchemaValidationError(
                 group.Key.FilePath,
                 group.Key.InstancePath,
-                summary));
+                summary)
+            {
+                // Every branch shares the instance path, so they share the offending
+                // value — carry it onto the collapsed error (e.g. the theme object).
+                Value = list[0].Value,
+            });
         }
 
         return collapsed;
@@ -905,6 +1045,21 @@ public sealed class SchemaRegistry : IDisposable
 /// <summary>One schema violation produced by <see cref="SchemaRegistry.ValidateWorkspaceAsync"/>.</summary>
 public sealed record SchemaValidationError(string FilePath, string InstancePath, string Message)
 {
+    /// <summary>
+    /// The offending value at <see cref="InstancePath"/>, rendered as compact JSON
+    /// (e.g. <c>"max"</c> or <c>{"base":"dark",…}</c>), truncated when long. Null when
+    /// the value could not be read (e.g. the failure is a missing-required-property).
+    /// Surfaced in the validation message so the user sees <em>what</em> they have.
+    /// </summary>
+    public string? Value { get; init; }
+
+    /// <summary>
+    /// The permitted values for an <c>enum</c> property, or null when the failure is
+    /// not an enum mismatch (or the options aren't known). Surfaced so the user sees
+    /// <em>what is allowed</em> instead of only "should match one of the enum values".
+    /// </summary>
+    public IReadOnlyList<string>? AllowedValues { get; init; }
+
     /// <summary>
     /// Human-readable property path, e.g.
     /// "extraKnownMarketplaces → everything-claude-code → source → repo".

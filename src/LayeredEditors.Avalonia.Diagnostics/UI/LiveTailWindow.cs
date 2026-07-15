@@ -103,8 +103,24 @@ public sealed class LiveTailWindow
             ShowActivated = false,
         };
 
+        // Hide-on-close so Toggle() can re-show it. Closing via the OS ✕ button
+        // DESTROYS the window; the next Show() then throws "Cannot re-show a closed
+        // window." Intercept only a user/OS window close and hide instead — let
+        // ApplicationShutdown / OSShutdown close it for real so app exit isn't
+        // blocked by a cancelled close.
+        _window.Closing += OnWindowClosing;
+
         _window.Hide();
         _ = DrainAsync();
+    }
+
+    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (e.CloseReason == WindowCloseReason.WindowClosing)
+        {
+            e.Cancel = true;
+            _window.Hide();
+        }
     }
 
     /// <summary>

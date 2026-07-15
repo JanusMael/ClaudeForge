@@ -187,6 +187,15 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// </summary>
     public ObservableCollection<string> FilteredOptions { get; }
 
+    /// <summary>
+    /// Rich model suggestions (committed value + friendly brand label) for the
+    /// free-form model picker, or <see langword="null"/> for every other card. When
+    /// set, the picker binds to this instead of <see cref="EnumOptions"/> so it can
+    /// display brand names ("Opus 4.8") while committing model ids, and fuzzy-match
+    /// either. Set only on the model card via its object initializer.
+    /// </summary>
+    public IReadOnlyList<ModelSuggestionItem>? ModelSuggestions { get; init; }
+
     /// <summary>True when the editor should be disabled (e.g. effort on a model that exposes none).</summary>
     [ObservableProperty] private bool _enumDisabled;
 

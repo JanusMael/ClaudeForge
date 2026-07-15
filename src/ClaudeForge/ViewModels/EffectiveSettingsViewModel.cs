@@ -29,16 +29,22 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
     private readonly ClaudeConfigClientCore _client;
     private readonly string? _projectRoot;
     private readonly IShareService? _shareService;
+    private readonly IReadOnlyDictionary<string, string> _descriptions;
     private bool _disposed;
 
     public EffectiveSettingsViewModel(
         ClaudeConfigClientCore client,
         string? projectRoot = null,
-        IShareService? shareService = null)
+        IShareService? shareService = null,
+        IReadOnlyDictionary<string, string>? descriptions = null)
     {
         _client = client;
         _projectRoot = projectRoot;
         _shareService = shareService;
+        // Top-level-key → schema description, so the property column can show help text
+        // on hover. Empty when not supplied (tests / headless) — tooltip falls back to
+        // the path.
+        _descriptions = descriptions ?? new Dictionary<string, string>();
         EffectiveJson = string.Empty;
         PropertyRows = [];
         FilterText = string.Empty;
@@ -123,7 +129,8 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
                 key,
                 layered.EffectiveValue?.ToJsonString() ?? "(null)",
                 layered.EffectiveScope,
-                layered.IsOverridden));
+                layered.IsOverridden,
+                _descriptions.GetValueOrDefault(key)));
         }
 
         rows.Sort((a, b) => string.Compare(a.Property, b.Property, StringComparison.Ordinal));
@@ -195,4 +202,12 @@ public sealed record EffectivePropertyRow(
     string Property,
     string DisplayValue,
     ConfigScope? Scope,
-    bool IsOverridden);
+    bool IsOverridden,
+    string? Description = null)
+{
+    /// <summary>
+    /// Tooltip for the property-name cell: the schema description when known, else the
+    /// raw path (so the cell always has a meaningful hover, matching the old behaviour).
+    /// </summary>
+    public string PropertyTooltip => string.IsNullOrWhiteSpace(Description) ? Property : Description!;
+}

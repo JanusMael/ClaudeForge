@@ -233,6 +233,37 @@
                                     <Panel />
                                 </DockPanel>
                             </Border>
+                            <!-- Structured front-matter card — shown only when the open file
+                                 has a YAML front-matter block (parsed by YamlFrontMatter in
+                                 the VM). Renders key/value rows instead of dumping the raw
+                                 block into the markdown body, matching the Agents & Skills
+                                 viewer. Sits between the toolbar (top) and body (fills) with
+                                 side-only borders so the three panes read as one framed box. -->
+                            <Border DockPanel.Dock="Top"
+                                    IsVisible="{Binding HasViewerFrontMatter}"
+                                    Background="{DynamicResource AppCodeBlockBackgroundBrush}"
+                                    BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                                    BorderThickness="1,0,1,0"
+                                    Padding="12,8">
+                                <ItemsControl ItemsSource="{Binding ViewerFrontMatter}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:MemoryFrontMatterRow">
+                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Key}"
+                                                           FontWeight="SemiBold"
+                                                           MinWidth="96"
+                                                           Margin="0,0,12,0"
+                                                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Value}"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
                             <Border BorderBrush="{DynamicResource AppPanelBorderBrush}"
                                     BorderThickness="1,0,1,1"
                                     Padding="12"

@@ -285,15 +285,9 @@
                 BorderThickness="0,1,0,0"
                 Padding="8,2">
             <DockPanel>
-                <!-- Loading progress bar: shown while workspaces are loading/reloading.
-                     Docked to the right so it never pushes the status text around. -->
-                <ProgressBar DockPanel.Dock="Right"
-                             IsIndeterminate="True"
-                             IsVisible="{Binding IsLoading}"
-                             Width="100" Height="4"
-                             Margin="8,0,0,0"
-                             VerticalAlignment="Center"
-                             ToolTip.Tip="{x:Static loc:Strings.TipProgressLoading}" />
+                <!-- The load progress bar that used to live here (docked right, 100x4) was
+                     too subtle for a multi-second app load — it now renders as a centered
+                     card over the content area (see the loading overlay below). -->
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                     <!-- Left: theme toggle + reload window -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
@@ -515,15 +509,54 @@
         <Grid ColumnDefinitions="240,4,*"
               IsEnabled="{Binding !IsLoading}">
 
-            <!-- Loading overlay: transparent panel over the whole content area that
-                 blocks pointer input and shows a wait cursor while settings are
-                 being loaded or rebuilt (profile switch, initial load, reload). -->
+            <!-- Loading overlay: scrims the content area, blocks pointer input, shows the
+                 wait cursor, and presents a CENTERED progress card while settings load or
+                 rebuild (initial load, profile switch, reload).
+                 App load can take several seconds and the window's visuals aren't fully
+                 painted yet during it, so the old 100px bar tucked into the status bar's
+                 bottom-right corner was far too easy to miss. This puts the progress where
+                 the eye already is, and the scrim makes it read as "the app is busy" rather
+                 than "the app is half-drawn". -->
             <Panel Grid.Column="0" Grid.ColumnSpan="3"
                    IsVisible="{Binding IsLoading}"
                    IsHitTestVisible="True"
-                   Background="Transparent"
+                   Background="#66000000"
                    Cursor="Wait"
-                   ZIndex="100" />
+                   ZIndex="100">
+                <!-- App-owned tokens, NOT the SystemControl* family: Semi.Avalonia doesn't
+                     define those reliably (it maps them dark-ish in BOTH themes), which is why
+                     the card blended into the scrim. AppCardBackgroundBrush is a fully OPAQUE
+                     card surface (#FFFFFF light / #262626 dark), so the panel reads as a solid
+                     sheet floating above the dimmed content rather than a translucent wash. -->
+                <Border HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        MinWidth="300"
+                        Padding="24,20"
+                        CornerRadius="8"
+                        Background="{DynamicResource AppCardBackgroundBrush}"
+                        BorderBrush="{DynamicResource AppPanelBorderBrush}"
+                        BorderThickness="1"
+                        BoxShadow="0 8 24 0 #66000000">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="{x:Static loc:Strings.TipProgressLoading}"
+                                   Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <!-- Transient detail (e.g. "Reloading settings.json") when the VM
+                             has one; collapses to nothing when it doesn't. -->
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   IsVisible="{Binding StatusMessage,
+                                       Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="360"
+                                   HorizontalAlignment="Center" />
+                        <ProgressBar IsIndeterminate="True" Height="4" />
+                    </StackPanel>
+                </Border>
+            </Panel>
 
             <!-- Navigation sidebar -->
             <Border Grid.Column="0"

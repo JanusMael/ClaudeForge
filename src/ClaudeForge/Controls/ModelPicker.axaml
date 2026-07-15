@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             x:Class="Bennewitz.Ninja.ClaudeForge.Controls.ModelPicker">
+
+    <!-- THE model picker — used by BOTH the Essentials card and the Model & Effort property
+         editor, which previously had two different controls: Essentials had the friendly
+         fuzzy suggestions but looked like a bare text box, while Model & Effort had the
+         chevron (combo-box affordance) but listed raw hyphenated ids. This merges both:
+         the fuzzy, friendly-named list (brand label + dim raw id) AND the chevron that
+         drops the FULL list. Typing commits a valid model id via ValueMemberBinding, so a
+         custom id can still be typed by hand. -->
+    <StackPanel Orientation="Horizontal" Spacing="4">
+        <ctrl:FuzzyModelAutoCompleteBox Name="FreeFormBox"
+                                        ItemsSource="{Binding $parent[ctrl:ModelPicker].Suggestions}"
+                                        ValueMemberBinding="{Binding Value, x:DataType=vm:ModelSuggestionItem}"
+                                        Text="{Binding $parent[ctrl:ModelPicker].Value, Mode=TwoWay, Delay=600}"
+                                        PlaceholderText="{Binding $parent[ctrl:ModelPicker].Watermark}"
+                                        MinimumPrefixLength="0"
+                                        MinWidth="260"
+                                        AutomationProperties.Name="{Binding $parent[ctrl:ModelPicker].AutomationLabel}">
+            <ctrl:FuzzyModelAutoCompleteBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ModelSuggestionItem">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Detail}" FontSize="11" Opacity="0.6" />
+                    </StackPanel>
+                </DataTemplate>
+            </ctrl:FuzzyModelAutoCompleteBox.ItemTemplate>
+        </ctrl:FuzzyModelAutoCompleteBox>
+
+        <Button Content="▾"
+                Padding="8,4"
+                VerticalAlignment="Center"
+                ToolTip.Tip="{x:Static loc:Strings.TipShowSuggestions}"
+                Click="OnDropdownClick" />
+    </StackPanel>
+</UserControl>

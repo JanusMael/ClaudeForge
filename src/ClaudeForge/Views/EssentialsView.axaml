@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
+             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.EssentialsView"
              x:DataType="vm:EssentialsViewModel">
 
@@ -143,19 +144,21 @@
                                           AutomationProperties.Name="{Binding Title}" />
 
                                 <!-- Free-form EnumString (Model): editable AutoCompleteBox so
-                                     users can type any custom id; the catalog entries are
-                                     suggestions (MinimumPrefixLength=0 surfaces them on focus). -->
+                                     users can still type any custom id. Suggestions are rich
+                                     ModelSuggestionItems (brand Label + committed Value), shown
+                                     via the template below; ValueMemberBinding commits the id
+                                     while the list displays "Opus 4.8". The control bakes in a
+                                     fuzzy filter, so "Opus" matches the alias, the id, the [1m]
+                                     variant, AND the brand label. MinimumPrefixLength=0 surfaces
+                                     the whole list on focus. -->
                                 <!-- Delay coalesces keystrokes so the model is written (and effort
                                      coercion re-run) only after the user pauses typing, not on every
                                      character — restoring the commit-ish semantics of the old ComboBox. -->
-                                <AutoCompleteBox ItemsSource="{Binding EnumOptions}"
-                                                 Text="{Binding EnumValue, Mode=TwoWay, Delay=600}"
-                                                 IsVisible="{Binding IsFreeFormEnumString}"
-                                                 FilterMode="Contains"
-                                                 MinimumPrefixLength="0"
-                                                 MinWidth="220"
-                                                 HorizontalAlignment="Left"
-                                                 AutomationProperties.Name="{Binding Title}" />
+                                <ctrl:ModelPicker Suggestions="{Binding ModelSuggestions}"
+                                                  Value="{Binding EnumValue, Mode=TwoWay}"
+                                                  IsVisible="{Binding IsFreeFormEnumString}"
+                                                  AutomationLabel="{Binding Title}"
+                                                  HorizontalAlignment="Left" />
 
                                 <!-- Read-only "current model — supports …" indicator beside the
                                      effort editor (empty/hidden on every other card). -->

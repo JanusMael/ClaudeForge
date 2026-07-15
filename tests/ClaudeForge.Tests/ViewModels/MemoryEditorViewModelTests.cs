@@ -149,6 +149,34 @@ public sealed class MemoryEditorViewModelTests
         Assert.IsTrue(vm.IsViewerVisible);
         Assert.AreEqual("hello world", vm.ViewerContent);
         Assert.AreSame(primary, vm.SelectedFile);
+        Assert.IsFalse(vm.HasViewerFrontMatter, "Plain content has no front-matter card.");
+    }
+
+    [TestMethod]
+    public async Task LoadFile_WithFrontMatter_SplitsCardFromBody()
+    {
+        Write("CLAUDE.md", "---\nname: Alpha\ndescription: does things\n---\n# Body\n\nHello.\n");
+        FakeClaudeCodeClient client = NewFakeClient();
+        MemoryEditorViewModel vm = NewVm(client);
+        await vm.RefreshAsync();
+
+        UserMemoryFile primary = vm.Tier1Groups
+                                   .Single(g => g.Category == UserMemoryCategory.PrimaryMemory)
+                                   .Files[0];
+
+        await vm.LoadFileAsync(primary);
+
+        // Front-matter is surfaced as a structured card…
+        Assert.IsTrue(vm.HasViewerFrontMatter);
+        Assert.IsNotNull(vm.ViewerFrontMatter);
+        Assert.AreEqual("Alpha", vm.ViewerFrontMatter!.Single(r => r.Key == "name").Value);
+
+        // …and stripped from the rendered body.
+        StringAssert.Contains(vm.ViewerContent, "# Body");
+        Assert.IsFalse(vm.ViewerContent!.Contains("name:"),
+            "Front-matter must not leak into the rendered markdown body.");
+        Assert.IsFalse(vm.ViewerContent!.TrimStart().StartsWith("---"),
+            "Body must not begin with the front-matter delimiter.");
     }
 
     [TestMethod]

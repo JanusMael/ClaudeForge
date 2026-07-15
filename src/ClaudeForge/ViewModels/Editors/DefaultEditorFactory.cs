@@ -119,6 +119,17 @@ public class DefaultEditorFactory
     private static LibVm.EnumPropertyEditorViewModel NewLibEnum(
         SchemaNode schema, ConfigScope editingScope)
     {
+        // `model` gets the shared rich picker — the same friendly, fuzzy-matched suggestion
+        // list Essentials uses. The generic enum editor would surface only the raw hyphenated
+        // ids from the schema's `examples`, which is what made the two pages look different.
+        if (schema.Name == "model")
+        {
+            return new ModelPropertyEditorViewModel(
+                new ClaudeSchemaAdapter(schema),
+                ClaudeScope.For(editingScope),
+                ModelSuggestionCatalog.Build());
+        }
+
         return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
     }
 

@@ -2249,7 +2249,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // visible without scrolling — the user can clear the filter bar to see context.
         if (result.Node.Editor is SettingsGroupEditorViewModel groupEditor)
         {
-            groupEditor.FilterText = result.PropertyKey;
+            groupEditor.ApplyNavigationFilter(result.PropertyKey);
 
             PermissionsEditorViewModel? permEditor = groupEditor.Editors
                                                                 .OfType<PermissionsEditorViewModel>()
@@ -2395,7 +2395,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             if (target.Editor is SettingsGroupEditorViewModel groupEditor)
             {
-                groupEditor.FilterText = msg.PropertyFilter;
+                groupEditor.ApplyNavigationFilter(msg.PropertyFilter);
 
                 // Advanced permission settings (disableBypassPermissionsMode,
                 // additionalDirectories) live inside the permissions compound
@@ -3460,7 +3460,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
-            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService),
+            Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
+                SchemaTreeBuilder.CollectDescriptions(ccNodes)),
             IsTopLevel = true,
         });
 

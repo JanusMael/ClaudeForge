@@ -31,14 +31,60 @@ internal static partial class SchemaErrorMessages
         foreach (IGrouping<string, SchemaValidationError> group in errors.GroupBy(e => e.FilePath))
         {
             sb.AppendLine();
-            sb.AppendLine(Path.GetFileName(group.Key) + ":");
+
+            // Header names the file and, when we can infer it, the scope that defines
+            // the value (e.g. "settings.local.json (Local scope):") — answering
+            // "which scope sets this?".
+            string fileName = Path.GetFileName(group.Key);
+            string? scope = ScopeLabel(group.Key);
+            sb.AppendLine(scope is null ? fileName + ":" : $"{fileName} ({scope} scope):");
+
             foreach (SchemaValidationError err in group)
             {
                 sb.AppendLine($"  • {err.DisplayPath}: {Friendly(err)}");
+
+                // Indented detail lines: WHAT the user has, and WHAT is allowed. Both
+                // are optional (populated by the validator only when known), so an
+                // unenriched error still renders exactly as before.
+                if (err.Value is { Length: > 0 } value)
+                {
+                    sb.AppendLine($"      current value: {value}");
+                }
+
+                if (err.AllowedValues is { Count: > 0 } allowed)
+                {
+                    sb.AppendLine($"      allowed values: {string.Join(", ", allowed)}");
+                }
             }
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Best-effort friendly scope label for a settings file path, or null when the
+    /// scope can't be inferred from the file name alone (a bare <c>settings.json</c>
+    /// is ambiguous between User and Project, so it is left unlabelled).
+    /// </summary>
+    private static string? ScopeLabel(string filePath)
+    {
+        string name = Path.GetFileName(filePath);
+        if (string.Equals(name, "settings.local.json", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Local";
+        }
+
+        if (string.Equals(name, "claude_desktop_config.json", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Claude Desktop";
+        }
+
+        if (name.Contains("managed", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Managed";
+        }
+
+        return null;
     }
 
     /// <summary>

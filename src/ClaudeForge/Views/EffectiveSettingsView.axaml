@@ -119,7 +119,9 @@
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate x:DataType="vm:EffectivePropertyRow">
-                                        <controls:TipCell Tip="{Binding Property}">
+                                        <!-- Tooltip shows the schema description (falls back to the
+                                             path) so hovering a property name explains what it does. -->
+                                        <controls:TipCell Tip="{Binding PropertyTooltip}">
                                             <TextBlock Text="{Binding Property}"
                                                        VerticalAlignment="Center"
                                                        Margin="12,0"

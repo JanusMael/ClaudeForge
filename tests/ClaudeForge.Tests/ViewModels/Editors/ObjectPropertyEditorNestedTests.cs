@@ -268,6 +268,114 @@ public sealed class ObjectPropertyEditorNestedTests
             "After cascading reset, the parent's IsModified must also be false.");
     }
 
+    // ── Collapse into prefix categories (large-object load perf) ──────
+
+    private static ObjectPropertyEditorViewModel ParentWithNames(params string[] names)
+    {
+        PropertyEditorViewModel[] kids = new PropertyEditorViewModel[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            kids[i] = Leaf(names[i]);
+        }
+
+        return Parent(kids);
+    }
+
+    private static string[] Prefixed(string prefix, int count)
+    {
+        string[] names = new string[count];
+        for (int i = 0; i < count; i++)
+        {
+            names[i] = prefix + i;
+        }
+
+        return names;
+    }
+
+    /// <summary>
+    /// A "pathological" object: over the threshold, with real prefix structure — mirrors
+    /// <c>env</c> (a couple of dominant prefixes plus a short tail). 80 + 70 + 2 = 152.
+    /// </summary>
+    private static ObjectPropertyEditorViewModel HugePrefixedParent()
+    {
+        List<string> names = new();
+        names.AddRange(Prefixed("CLAUDE_", 80));
+        names.AddRange(Prefixed("OTEL_", 70));
+        names.Add("misc1");
+        names.Add("misc2");
+        return ParentWithNames(names.ToArray());
+    }
+
+    [TestMethod]
+    public void SmallObject_RendersInline_NoCategories()
+    {
+        ObjectPropertyEditorViewModel vm = ParentWithNames("a", "b", "c");
+
+        Assert.IsFalse(vm.IsCollapsible, "A small object renders inline, not as categories.");
+        Assert.AreEqual(0, vm.Categories.Count);
+        Assert.AreEqual(3, vm.Children.Count);
+    }
+
+    [TestMethod]
+    public void MidSizedObject_StillRendersInline_NoAccordionImposed()
+    {
+        // A sandbox-sized object (35 children) must render inline exactly as it always did.
+        // The accordion is reserved for the pathological case (env's ~305): a list this size
+        // renders in acceptable time, so we must NOT impose a collapsed accordion on it.
+        ObjectPropertyEditorViewModel vm = ParentWithNames(Prefixed("field", 35));
+
+        Assert.IsFalse(vm.IsCollapsible,
+            "A mid-sized object must NOT be forced into a collapsed accordion.");
+        Assert.AreEqual(0, vm.Categories.Count);
+        Assert.AreEqual(35, vm.Children.Count);
+    }
+
+    [TestMethod]
+    public void HugeObject_NoUsefulPrefixes_SingleAllCategory_Collapsed()
+    {
+        // No shared prefix → one bounded "All" section (still collapsed → zero realized),
+        // never a pile of singleton categories.
+        ObjectPropertyEditorViewModel vm = ParentWithNames(Prefixed("field", 200));
+
+        Assert.IsTrue(vm.IsCollapsible);
+        Assert.AreEqual(1, vm.Categories.Count);
+        Assert.AreEqual("All", vm.Categories[0].Name);
+        Assert.AreEqual(200, vm.Categories[0].Count);
+        Assert.IsFalse(vm.Categories[0].IsExpanded, "Sections start collapsed.");
+        Assert.AreEqual(0, vm.Categories[0].VisibleChildren.Count,
+            "Collapsed → zero realized child editors (the multi-second-load fix).");
+    }
+
+    [TestMethod]
+    public void HugeObject_GroupsByBareNamePrefix_WithOther_AllCollapsed()
+    {
+        ObjectPropertyEditorViewModel vm = HugePrefixedParent();
+
+        Assert.IsTrue(vm.IsCollapsible);
+        CollectionAssert.AreEqual(
+            new[] { "CLAUDE", "OTEL", "Other" },
+            vm.Categories.Select(c => c.Name).ToArray(),
+            "Categories are the BARE prefix (no trailing '_'), alphabetical, with Other last.");
+        Assert.AreEqual(2, vm.Categories.First(c => c.Name == "Other").Count);
+        Assert.AreEqual(0, vm.Categories.Sum(c => c.VisibleChildren.Count),
+            "Every section starts collapsed → nothing realized on page load.");
+    }
+
+    [TestMethod]
+    public void ExpandingOneCategory_RealizesOnlyItsChildren()
+    {
+        ObjectPropertyEditorViewModel vm = HugePrefixedParent();
+
+        PropertyCategoryViewModel claude = vm.Categories.First(c => c.Name == "CLAUDE");
+        claude.IsExpanded = true;
+
+        Assert.AreEqual(80, claude.VisibleChildren.Count, "Expanded section binds its own children.");
+        Assert.AreEqual(0, vm.Categories.Where(c => c.Name != "CLAUDE").Sum(c => c.VisibleChildren.Count),
+            "Other sections stay collapsed → still nothing realized there.");
+        StringAssert.Contains(claude.Header, "80");
+        StringAssert.Contains(claude.Header, "CLAUDE");
+    }
+
     // ── Test plumbing ────────────────────────────────────────────────
 
     /// <summary>
