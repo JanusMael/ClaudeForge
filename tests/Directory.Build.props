@@ -16,7 +16,7 @@
     <ItemGroup>
         <!-- Test framework + coverage tooling — applied to every project under tests/.
              Previously duplicated across all 5 test csprojs. -->
-        <PackageReference Include="MSTest" Version="3.8.3" />
+        <PackageReference Include="MSTest" Version="4.2.3" />
         <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.7.0" />
         <PackageReference Update="coverlet.collector" Version="10.0.1">
             <PrivateAssets>all</PrivateAssets>
