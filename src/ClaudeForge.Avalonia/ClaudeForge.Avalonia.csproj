@@ -16,11 +16,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.5" />
+        <PackageReference Include="Avalonia" Version="12.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Semi flows transitively so a consuming app picks up matching styling
              if it opts into the Semi theme; omit-able by Fluent consumers. -->
-        <PackageReference Include="Semi.Avalonia" Version="12.0.3" PrivateAssets="" />
+        <PackageReference Include="Semi.Avalonia" Version="12.1.0" PrivateAssets="" />
     </ItemGroup>
 
     <ItemGroup>

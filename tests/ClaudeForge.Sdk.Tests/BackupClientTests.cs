@@ -147,29 +147,55 @@ public class BackupClientTests
             handler,
             CancellationToken.None);
 
-        // Drain Progress<T>'s asynchronous ThreadPool dispatch before
-        // asserting.  The SDK wraps BackupProgressHandler in Progress<T>
-        // (see BackupClient.WrapProgress), which posts callbacks to the
-        // ThreadPool when no SynchronizationContext is captured (which is
-        // the default for async test methods under MSTest).  Those callbacks
-        // run asynchronously — by the time CreateAsync's await returns,
-        // queued progress dispatches may not have reached the handler yet.
-        // The race is hidden on Windows / Linux CI runners but lost
-        // consistently on the macOS-latest ARM64 runner.  A short settle
-        // drains the queue before the count assertion fires.
-        await Task.Delay(250);
-
-        // The producer fires several phase transitions during a backup
-        // (discovery, individual file additions, manifest rewrite). The exact
-        // count varies by platform; assert we got at least one event.
-        int eventCount;
-        lock (progressEvents)
-        {
-            eventCount = progressEvents.Count;
-        }
+        // Drain Progress<T>'s asynchronous ThreadPool dispatch before asserting. The SDK
+        // wraps BackupProgressHandler in Progress<T> (see BackupClient.WrapProgress), which
+        // posts callbacks to the ThreadPool when no SynchronizationContext is captured (the
+        // default for async test methods under MSTest). Those callbacks run asynchronously,
+        // so by the time CreateAsync's await returns a queued progress dispatch may not have
+        // reached the handler yet. A FIXED settle is racy: under parallel test load the
+        // ThreadPool is saturated and a single 250 ms wait isn't always enough (lost
+        // consistently on the macOS ARM64 runner, intermittently elsewhere). Poll instead —
+        // return the instant the first event lands (fast in the common case), and only give
+        // up after a generous window, which would be a real "progress never fired" bug.
+        //
+        // The producer fires several phase transitions during a backup (discovery, per-file
+        // additions, manifest rewrite); the exact count is platform-dependent, so we assert
+        // "at least one", not an exact number.
+        int eventCount = await WaitForProgressAsync(progressEvents, minCount: 1, timeout: TimeSpan.FromSeconds(5));
 
         Assert.IsTrue(eventCount > 0,
             "Progress handler must be invoked at least once during a backup.");
+    }
+
+    /// <summary>
+    /// Polls <paramref name="progressEvents"/> (under its own lock) until it holds at least
+    /// <paramref name="minCount"/> items or <paramref name="timeout"/> elapses, returning the
+    /// final count. Replaces a brittle fixed delay for draining <see cref="Progress{T}"/>'s
+    /// asynchronous ThreadPool dispatch: it returns as soon as the events arrive rather than
+    /// betting on a single wait being long enough under load.
+    /// </summary>
+    private static async Task<int> WaitForProgressAsync(
+        List<BackupProgress> progressEvents, int minCount, TimeSpan timeout)
+    {
+        const int intervalMs = 25;
+        int maxIterations = Math.Max(1, (int)(timeout.TotalMilliseconds / intervalMs));
+        for (int i = 0; i < maxIterations; i++)
+        {
+            lock (progressEvents)
+            {
+                if (progressEvents.Count >= minCount)
+                {
+                    return progressEvents.Count;
+                }
+            }
+
+            await Task.Delay(intervalMs);
+        }
+
+        lock (progressEvents)
+        {
+            return progressEvents.Count;
+        }
     }
 
     // ── List ──────────────────────────────────────────────────────────────

@@ -247,9 +247,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.5" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.0.1" />
-        <PackageReference Include="Avalonia.Desktop" Version="12.0.5" />
+        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
         <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
         <!-- SVG support. Svg.Skia provides the standalone SKSvg API (used by AppIcon
              to render the app icon SVGs to bitmaps). Svg.Controls.Skia.Avalonia is the
@@ -260,8 +260,8 @@
              >= 5.1.1, so Svg.Skia is pinned to match. -->
         <PackageReference Include="Svg.Skia" Version="5.1.1" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.5" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.5" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Serilog (core + File + Trace sinks) flows transitively from the
              LayeredEditors.Avalonia.Diagnostics project reference below, which

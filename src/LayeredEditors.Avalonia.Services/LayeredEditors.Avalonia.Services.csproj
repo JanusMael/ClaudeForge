@@ -27,7 +27,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.5" />
+        <PackageReference Include="Avalonia" Version="12.1.0" />
         <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
              ClaudeForge.Sdk so the SDK can produce dialog models that this services
              library renders.  Couples the services lib to ClaudeForge.Sdk in this
