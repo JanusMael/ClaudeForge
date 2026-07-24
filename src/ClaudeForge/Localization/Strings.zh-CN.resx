@@ -1523,6 +1523,12 @@
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>自定义技能</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>配置（settings.json、mcp.json）</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>JSON 配置文件本身 — 用户范围（settings.json、mcp.json、managed-settings.json 及其插件、~/.claude.json）以及当前项目的 .claude/ 设置。凭据文件已有意排除。</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>跨工具内存（Codex、Gemini、OpenCode）</value>
   </data>

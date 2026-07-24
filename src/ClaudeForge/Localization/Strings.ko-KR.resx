@@ -1476,6 +1476,12 @@
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>사용자 지정 스킬</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>구성 (settings.json, mcp.json)</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>JSON 구성 파일 자체 — 사용자 범위(settings.json, mcp.json, managed-settings.json 및 드롭인, ~/.claude.json)와 열린 프로젝트의 .claude/ 설정. 자격 증명은 의도적으로 표시하지 않습니다.</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>도구 간 메모리 (Codex, Gemini, OpenCode)</value>
   </data>

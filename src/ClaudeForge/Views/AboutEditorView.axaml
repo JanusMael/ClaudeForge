@@ -127,6 +127,15 @@
             <!-- Config file actions -->
             <StackPanel Spacing="4">
                 <TextBlock Text="{x:Static loc:Strings.LabelConfigFile}" FontWeight="SemiBold" FontSize="14" />
+                <!-- Show WHICH file the buttons act on. Without this the section is just
+                     "Config file → [Open Config]", so someone looking for "where do I open
+                     the global settings.json?" can't tell this is it. Selectable so the path
+                     can be copied. -->
+                <SelectableTextBlock Text="{Binding PrimaryConfigPath}"
+                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontSize="11"
+                                     Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                     TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="{x:Static loc:Strings.ButtonOpenConfig}"
                             Command="{Binding OpenConfigCommand}"

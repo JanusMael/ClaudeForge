@@ -1450,6 +1450,12 @@ Cancelar — manter a janela aberta.</value>
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>Habilidades personalizadas</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Configuração (settings.json, mcp.json)</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Os próprios arquivos de configuração JSON — escopo do usuário (settings.json, mcp.json, managed-settings.json e seus complementos, ~/.claude.json) e as configurações .claude/ do projeto aberto. As credenciais são deliberadamente omitidas.</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>Memória entre ferramentas (Codex, Gemini, OpenCode)</value>
   </data>

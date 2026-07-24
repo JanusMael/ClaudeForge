@@ -101,8 +101,10 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(client);
         await vm.RefreshAsync();
 
-        // 9 categories total, populated and empty alike.
-        Assert.AreEqual(9, vm.Tier1Groups.Count);
+        // One group per category, populated and empty alike. Derived from the enum rather
+        // than a hardcoded count so adding a category (e.g. Configuration) doesn't fail
+        // this assertion for a reason that has nothing to do with what it's testing.
+        Assert.AreEqual(Enum.GetValues<UserMemoryCategory>().Length, vm.Tier1Groups.Count);
         UserMemoryGroupViewModel primary = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.PrimaryMemory);
         UserMemoryGroupViewModel subagent = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent);
         UserMemoryGroupViewModel slash = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.SlashCommand);

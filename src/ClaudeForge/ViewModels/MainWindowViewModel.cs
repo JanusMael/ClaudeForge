@@ -2143,10 +2143,61 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
         else if (value.Editor is AgentsSkillsEditorViewModel agentsVm)
         {
-            // Deferred first-load: the VM is constructed without an eager
-            // disk scan so profile switches don't pay the filesystem cost when
-            // the user never visits this page.  EnsureLoaded is idempotent.
-            agentsVm.EnsureLoaded();
+            // Deferred first-load (the VM is constructed without an eager disk scan so
+            // profile switches don't pay the filesystem cost when the user never visits
+            // this page) — but RE-scan on every later visit too. EnsureLoaded is one-shot
+            // by design, which meant an agent / skill / command created after the first
+            // visit stayed invisible for the rest of the session.
+            agentsVm.Refresh();
+        }
+        else if (value.Editor is ProfilesViewModel profilesVm)
+        {
+            // Profiles are directories on disk; one created outside the app (or by another
+            // ClaudeForge window) would otherwise not appear until restart.
+            profilesVm.Refresh();
+        }
+        else if (value.Editor is BackupRestoreViewModel backupVm)
+        {
+            // The archive list is a directory listing — re-read it so backups created or
+            // deleted outside the app are reflected.
+            backupVm.Refresh();
+        }
+        else if (value.Editor is AboutEditorViewModel aboutVm)
+        {
+            // Cheap re-probe of the config-file actions only (see the method's remarks):
+            // a settings.json written after launch otherwise leaves "Open Config" disabled
+            // for the session.
+            aboutVm.RefreshConfigAvailability();
+        }
+        else if (value.Editor is MemoryEditorViewModel memoryVm)
+        {
+            // Re-enumerate on every visit. The Tier 1 inventory is a filesystem
+            // snapshot taken once in the VM ctor, so a memory file created AFTER
+            // launch — e.g. the user writes a global ~/.claude/CLAUDE.md — stayed
+            // invisible until they found the Refresh button or restarted the app.
+            // Fire-and-forget: RefreshAsync serialises concurrent callers through
+            // its own gate, so this can't race the bound Refresh button.
+            memoryVm.Refresh();
+        }
+        else if (value.Editor is EssentialsViewModel essentialsVm)
+        {
+            // Essentials is a PERSISTENT VM (survives workspace reloads) that refreshed only
+            // at creation and subscribes to no change event — unlike its siblings Effective
+            // Settings and Environment, which subscribe to _client.Changed. So its cards
+            // (model / effort / token limits / update channel) went stale after an external
+            // settings edit OR an edit made on another page (e.g. changing the model on
+            // Model & Effort). Re-read on nav. Safe from self-write loops: Essentials
+            // live-writes each edit immediately, so there are no pending in-page edits for a
+            // re-read to clobber, and this fires only on nav TO the page.
+            _ = essentialsVm.RefreshAsync(ClaudeCodeSdk);
+        }
+        else if (value.Editor is EnvironmentEditorViewModel envVm)
+        {
+            // Environment rebuilds on _client.Changed for SETTINGS edits, but a pure OS
+            // environment-variable change (a User / Machine var set outside the app, no
+            // settings change) has no such signal. Re-read on nav so it's caught. Reload()
+            // preserves the current selection and is a cheap registry/env read.
+            envVm.Reload();
         }
 
         // Page-navigation trace: every landed-on page (user click, deep link, or

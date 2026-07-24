@@ -1476,6 +1476,12 @@
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>Пользовательские навыки</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Конфигурация (settings.json, mcp.json)</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Сами файлы конфигурации JSON — уровень пользователя (settings.json, mcp.json, managed-settings.json и его дополнения, ~/.claude.json) и настройки .claude/ открытого проекта. Учётные данные намеренно не показываются.</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>Память для других инструментов (Codex, Gemini, OpenCode)</value>
   </data>

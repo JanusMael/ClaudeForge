@@ -13,9 +13,9 @@
       "supportsAutoMode": true
     },
     {
-      "id": "claude-opus-4-8",
+      "id": "claude-opus-5",
       "alias": "opus",
-      "label": "Opus 4.8",
+      "label": "Opus 5",
       "legacy": false,
       "supports1m": true,
       "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
@@ -41,6 +41,16 @@
       "supportedEffortLevels": [],
       "defaultEffortLevel": null,
       "supportsAutoMode": false
+    },
+    {
+      "id": "claude-opus-4-8",
+      "alias": null,
+      "label": "Opus 4.8",
+      "legacy": true,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max", "ultracode"],
+      "defaultEffortLevel": "high",
+      "supportsAutoMode": true
     },
     {
       "id": "claude-opus-4-7",
@@ -75,7 +85,7 @@
   ],
   "aliases": {
     "fable": "claude-fable-5",
-    "opus": "claude-opus-4-8",
+    "opus": "claude-opus-5",
     "sonnet": "claude-sonnet-5",
     "haiku": "claude-haiku-4-5"
   },

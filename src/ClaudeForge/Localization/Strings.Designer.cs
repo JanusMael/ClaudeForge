@@ -3285,6 +3285,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelMemoryCategoryCrossTool", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration (settings.json, mcp.json).
+        /// </summary>
+        public static string LabelMemoryCategoryConfiguration {
+            get {
+                return ResourceManager.GetString("LabelMemoryCategoryConfiguration", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The JSON configuration files themselves.
+        /// </summary>
+        public static string TipMemoryCategoryConfiguration {
+            get {
+                return ResourceManager.GetString("TipMemoryCategoryConfiguration", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Hook scripts.

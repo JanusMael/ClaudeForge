@@ -1476,6 +1476,12 @@
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>カスタム スキル</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>設定ファイル (settings.json、mcp.json)</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>JSON 設定ファイルそのもの — ユーザー範囲 (settings.json、mcp.json、managed-settings.json とそのドロップイン、~/.claude.json) と、開いているプロジェクトの .claude/ 設定。資格情報は意図的に一覧に含めていません。</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>クロスツール メモリ (Codex、Gemini、OpenCode)</value>
   </data>
