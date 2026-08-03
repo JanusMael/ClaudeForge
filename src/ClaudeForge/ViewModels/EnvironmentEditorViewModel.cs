@@ -502,34 +502,49 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
 
         if (Dispatcher.UIThread.CheckAccess())
         {
-            Rebuild();
+            RebuildPreservingSelection();
         }
         else
         {
-            Dispatcher.UIThread.Post(Rebuild);
+            Dispatcher.UIThread.Post(RebuildPreservingSelection);
         }
+    }
 
-        return;
-
-        void Rebuild()
+    /// <summary>
+    /// Re-read every scope (OS Machine / User / Process environment + the workspace's claude
+    /// env) and rebuild the entry list, preserving the current selection by name. Guarded
+    /// against a post-Dispose call: a queued dispatcher Post can fire after <see cref="Dispose"/>
+    /// has unsubscribed the event and set <c>_disposed = true</c>, and calling
+    /// <see cref="RebuildEntries"/> → GetLayeredValueSnapshot() on a disposed client would
+    /// throw. Shared by the SDK-changed handler and the on-navigation <see cref="Reload"/>.
+    /// </summary>
+    private void RebuildPreservingSelection()
+    {
+        if (_disposed)
         {
-            // Guard: a dispatcher Post can fire after Dispose() has unsubscribed
-            // the event and set _disposed = true but the queued work is already
-            // in the queue and runs anyway. The client is disposed at that point,
-            // so calling RebuildEntries() → GetLayeredValueSnapshot() would throw.
-            if (_disposed)
-            {
-                return;
-            }
-
-            string? prevName = SelectedEntry?.Name;
-            RebuildEntries();
-            if (prevName != null)
-            {
-                SelectedEntry = AllEntries.FirstOrDefault(e =>
-                    string.Equals(e.Name, prevName, StringComparison.OrdinalIgnoreCase));
-            }
+            return;
         }
+
+        string? prevName = SelectedEntry?.Name;
+        RebuildEntries();
+        if (prevName != null)
+        {
+            SelectedEntry = AllEntries.FirstOrDefault(e =>
+                string.Equals(e.Name, prevName, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    /// <summary>
+    /// Re-read from disk when the page is navigated to. Environment already rebuilds on
+    /// <c>_client.Changed</c> for settings edits, but a pure OS-environment-variable change
+    /// (set outside the app, with no settings change) has no such signal — so without this a
+    /// User / Machine variable created outside the app wouldn't appear until a settings
+    /// reload or restart. Called by <c>MainWindowViewModel</c> when the page becomes active;
+    /// runs on the UI thread (the caller already is).
+    /// </summary>
+    public void Reload()
+    {
+        RebuildPreservingSelection();
     }
 
     public void Dispose()

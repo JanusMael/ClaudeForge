@@ -25,8 +25,8 @@ public sealed class ModelCatalogTests
     [TestMethod]
     public void Resolve_StripsContextSuffix_AndUsesAliases()
     {
-        Assert.AreEqual("claude-opus-4-8", Catalog.Resolve("opus[1m]")?.Id);
-        Assert.AreEqual("claude-opus-4-8", Catalog.Resolve("opus")?.Id);
+        Assert.AreEqual("claude-opus-5", Catalog.Resolve("opus[1m]")?.Id);
+        Assert.AreEqual("claude-opus-5", Catalog.Resolve("opus")?.Id);
         Assert.AreEqual("claude-sonnet-4-6", Catalog.Resolve("claude-sonnet-4-6[1m]")?.Id);
         Assert.IsNull(Catalog.Resolve("some-custom-model"), "Unknown id resolves to null.");
         Assert.IsNull(Catalog.Resolve(null));

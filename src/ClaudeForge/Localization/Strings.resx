@@ -1616,6 +1616,10 @@ Cancel — keep the window open.</value>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>Cross-tool memory (Codex, Gemini, OpenCode)</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Configuration (settings.json, mcp.json)</value>
+    <comment>Memory-page group header for the JSON configuration files themselves.</comment>
+  </data>
   <data name="LabelFootprintCategoryTranscripts" xml:space="preserve">
     <value>Session transcripts</value>
   </data>
@@ -1696,6 +1700,10 @@ Cancel — keep the window open.</value>
   </data>
   <data name="TipMemoryCategoryCrossTool" xml:space="preserve">
     <value>Memory files for sibling AI tools (.codex/AGENTS.md, .gemini/GEMINI.md, .opencode/*.md) that Claude reads as cross-tool context.</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>The JSON configuration files themselves — user scope (settings.json, mcp.json, managed-settings.json and its drop-ins, ~/.claude.json) and the open project's .claude/ settings. Credentials are deliberately not listed.</value>
+    <comment>Memory-page group tooltip for the Configuration category.</comment>
   </data>
   <data name="TipFootprintCategoryTranscripts" xml:space="preserve">
     <value>Every session's full conversation transcript stored as JSONL under ~/.claude/projects/&lt;mangled&gt;/. Largest single contributor to disk usage; not preserved in Standard backups.</value>

@@ -126,6 +126,16 @@ Two specific anti-patterns this file refuses on principle:
 - [ ] If you added a `permissions.defaultMode` value, add its localized label/description to `ViewModels/Catalog/CatalogLocalization.cs` (literal `Strings.<Key>` arms) and the matching `Strings` keys (all locales). Keep `ModelCatalogSchemaParityTests` green (catalog enums ↔ bundled JSON-schema enums).
 - [ ] App consumers read through the SDK: `client.Models` (`IModelCatalogAccessor`) — never the Core catalog directly (SDK-first). Full design: [`docs/MODEL-CATALOG.md`](./docs/MODEL-CATALOG.md).
 
+### X = A new model launches and takes over a family alias (e.g. Opus 5 → `opus`)
+
+The schema refresh (`scripts/refresh-schema.{ps1,sh}`) does **NOT** carry model names — schemastore.org omits them, so expect it to report "already up to date". The pickers come entirely from the catalog + two hand-curated overlays. When the `opus`/`sonnet`/… alias moves to a new snapshot, edit these four and keep the invariant **one non-legacy row per family alias**:
+
+- [ ] `ModelCatalog/model-catalog.json` — add the new row (copy the outgoing build's effort/`supports1m`/`supportsAutoMode` flags unless docs say otherwise), move the `alias` onto it, repoint the `aliases` map, and **demote the previous holder to `legacy: true`, `alias: null`** (keep the row — still a valid pin).
+- [ ] `Schemas/claude-code-settings.overlay.json` — swap the family's pinned snapshot id in `model.examples` (+ the `model.description` e.g.). This is the AutoCompleteBox list; the refresh never touches the overlay.
+- [ ] `Descriptions/claude-code-settings.enumdescriptions.json` — mirror that swap and update the alias tooltip ("today Opus N"). **Every `model.examples` value needs a key here** or `ModelPropertyPromotionTests` fails (each picker item needs a tooltip). Replace in place, don't accumulate stale rows.
+- [ ] `tests/ClaudeForge.Core.Tests/Catalog/ModelCatalogTests.cs` — update the `Resolve("opus")` / `Resolve("opus[1m]")` asserts to the new id (they hardcode the alias target). Tests that use the demoted id as a *concrete* model stay green — its capabilities didn't move.
+- [ ] Verify: `pwsh scripts/validate-model-catalog.ps1`, then `dotnet test ClaudeForge.slnx --filter "FullyQualifiedName~ModelCatalog|FullyQualifiedName~ModelPropertyPromotion"`. Full playbook + rationale: [`docs/MODEL-CATALOG.md`](./docs/MODEL-CATALOG.md) § New model launch.
+
 ### X = Adding a new share operation (new `ShareXxxCommand` in a view-model)
 
 - [ ] Accept `IShareService? shareService` as a constructor parameter (nullable — unit tests pass `null`; the app wires the real service).

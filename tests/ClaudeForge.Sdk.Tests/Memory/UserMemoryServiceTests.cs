@@ -307,4 +307,74 @@ public class UserMemoryServiceTests
         string? text = await UserMemoryService.ReadAsync(path, CancellationToken.None);
         Assert.IsNull(text);
     }
+
+    // ── Configuration category ────────────────────────────────────────────
+
+    [TestMethod]
+    public void Configuration_UserScopeJsonFiles_AreDiscovered()
+    {
+        Write("settings.json", "{}");
+        Write("mcp.json", "{}");
+        Write("managed-settings.json", "{}");
+        Write(Path.Combine("managed-settings.d", "10-policy.json"), "{}");
+        File.WriteAllText(Path.Combine(_fakeHome, ".claude.json"), "{}");
+
+        string[] names = UserMemoryService.SnapshotFiles()
+            .Where(f => f.Category == UserMemoryCategory.Configuration)
+            .Select(f => f.DisplayName)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
+        CollectionAssert.AreEquivalent(
+            new[] { ".claude.json", "managed-settings.d/10-policy.json", "managed-settings.json", "mcp.json", "settings.json" },
+            names,
+            "Every user-scope config file (including managed-settings.d drop-ins) must be discoverable.");
+    }
+
+    [TestMethod]
+    public void Configuration_KeepsFileExtension_UnlikeMemoryEntries()
+    {
+        // Memory entries strip the extension (CLAUDE.md -> "CLAUDE"); config entries must
+        // NOT, or the rows would read as a meaningless "settings" / "mcp".
+        Write("settings.json", "{}");
+
+        UserMemoryFile config = UserMemoryService.SnapshotFiles()
+            .Single(f => f.Category == UserMemoryCategory.Configuration);
+
+        Assert.AreEqual("settings.json", config.DisplayName);
+    }
+
+    [TestMethod]
+    public void Configuration_ProjectScope_IsSuffixed_SoItDoesNotLookLikeTheUserFile()
+    {
+        Write("settings.json", "{}");
+        string projectRoot = Path.Combine(_fakeHome, "proj");
+        Directory.CreateDirectory(Path.Combine(projectRoot, ".claude"));
+        File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.json"), "{}");
+        File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.local.json"), "{}");
+
+        string[] names = UserMemoryService.SnapshotFiles(projectRoot)
+            .Where(f => f.Category == UserMemoryCategory.Configuration)
+            .Select(f => f.DisplayName)
+            .ToArray();
+
+        CollectionAssert.Contains(names, "settings.json");
+        CollectionAssert.Contains(names, "settings.json (project)");
+        CollectionAssert.Contains(names, "settings.local.json (project)");
+    }
+
+    [TestMethod]
+    public void Configuration_CredentialsFile_IsNeverListed()
+    {
+        // Credentials hold live auth tokens; a one-click "open" for them in a browsable
+        // inventory is a needless disclosure risk. Must stay out of the list.
+        Write("settings.json", "{}");
+        Write(".credentials.json", "{\"token\":\"secret\"}");
+
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles();
+
+        Assert.IsFalse(
+            files.Any(f => f.AbsolutePath.Contains("credentials", StringComparison.OrdinalIgnoreCase)),
+            "The credentials file must never be surfaced in the inventory.");
+    }
 }

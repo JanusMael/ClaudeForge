@@ -38,4 +38,21 @@ public enum UserMemoryCategory
 
     /// <summary>Cross-tool memory: <c>.codex/AGENTS.md</c>, <c>.gemini/GEMINI.md</c>, <c>.opencode/*.md</c> next to <c>~/.claude/</c>.</summary>
     CrossToolMemory,
+
+    /// <summary>
+    /// The JSON configuration files themselves — user scope
+    /// (<c>~/.claude/settings.json</c>, <c>mcp.json</c>, <c>managed-settings.json</c> and its
+    /// <c>managed-settings.d/*.json</c> drop-ins, plus <c>~/.claude.json</c>) and project scope
+    /// (<c>&lt;project&gt;/.claude/settings.json</c>, <c>settings.local.json</c>, <c>mcp.json</c>).
+    /// Not "memory" in the CLAUDE.md sense, but they are the other half of what Claude reads,
+    /// and the inventory is the one place that makes every config file discoverable and
+    /// openable in an editor.
+    /// <para>
+    /// Credentials (<c>PlatformPaths.CredentialsPath</c>) are deliberately EXCLUDED: the file
+    /// holds live auth tokens, and surfacing a one-click "open" for it in a browsable list is
+    /// a needless disclosure risk. The backup pipeline gates it behind an explicit
+    /// <c>IncludeCredentials</c> flag for the same reason.
+    /// </para>
+    /// </summary>
+    Configuration,
 }

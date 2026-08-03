@@ -150,7 +150,15 @@ public partial class AboutEditorViewModel : ObservableObject
     /// Path to the primary config file for this product.
     /// Claude Code: ~/.claude/settings.json; Claude Desktop: claude_desktop_config.json.
     /// </summary>
-    private string PrimaryConfigPath => Product == AboutProduct.ClaudeCode
+    /// <remarks>
+    /// Public so the View can SHOW the resolved path next to the Open / Reveal buttons.
+    /// Without it the section reads as a bare "Config file → [Open Config]" with no
+    /// indication of WHICH file, so users hunting for "where do I open the global
+    /// settings.json?" had no way to tell this button was it. Computed from
+    /// <see cref="Product"/>, which is fixed at construction, so a one-time binding is
+    /// correct — no change notification needed.
+    /// </remarks>
+    public string PrimaryConfigPath => Product == AboutProduct.ClaudeCode
         ? PlatformPaths.UserSettingsPath
         : PlatformPaths.DesktopConfigPath;
 
@@ -226,6 +234,24 @@ public partial class AboutEditorViewModel : ObservableObject
     {
         return File.Exists(PrimaryConfigPath)
                || Directory.Exists(Path.GetDirectoryName(PrimaryConfigPath));
+    }
+
+    /// <summary>
+    /// Re-evaluate the config-file actions. <see cref="CanOpenConfig"/> and
+    /// <see cref="CanRevealConfig"/> are <c>File.Exists</c> probes, and CommunityToolkit
+    /// caches a command's CanExecute result until told otherwise — so a config written
+    /// AFTER launch (the user creates <c>~/.claude/settings.json</c>, or installs the
+    /// product) left "Open Config" stuck disabled for the rest of the session. Called when
+    /// the page becomes active.
+    /// <para>
+    /// Deliberately does NOT re-run the version probe: that shells out to the product
+    /// binary, which is far too costly to repeat on every navigation.
+    /// </para>
+    /// </summary>
+    public void RefreshConfigAvailability()
+    {
+        OpenConfigCommand.NotifyCanExecuteChanged();
+        RevealConfigCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand(CanExecute = nameof(CanOpenConfig))]

@@ -48,7 +48,7 @@ catalog; a parity test (`ModelCatalogSchemaParityTests`) locks the schema's
 {
   "schemaVersion": 1,
   "models": [
-    { "id": "claude-opus-4-8", "alias": "opus", "label": "Opus 4.8",
+    { "id": "claude-opus-5", "alias": "opus", "label": "Opus 5",
       "legacy": false, "supports1m": true,
       "supportedEffortLevels": ["low","medium","high","xhigh","max"],
       "defaultEffortLevel": "high", "supportsAutoMode": true },
@@ -56,9 +56,9 @@ catalog; a parity test (`ModelCatalogSchemaParityTests`) locks the schema's
       "legacy": false, "supports1m": false,
       "supportedEffortLevels": [], "defaultEffortLevel": null,
       "supportsAutoMode": false }
-    // … sonnet 5, fable, legacy opus-4-7/4-6 + sonnet-4-6
+    // … sonnet 5, fable, legacy opus-4-8/4-7/4-6 + sonnet-4-6
   ],
-  "aliases": { "opus": "claude-opus-4-8", "sonnet": "claude-sonnet-5", … },
+  "aliases": { "opus": "claude-opus-5", "sonnet": "claude-sonnet-5", … },
   "effortLevels": [ { "id": "low", "order": 0, "persists": true }, …,
                     { "id": "max", "order": 4, "persists": false } ],
   "defaultModes": [ { "id": "default", … },
@@ -126,3 +126,45 @@ becomes valid; the Save-Changes preview surfaces every auto-edit.
 3. `dotnet test ClaudeForge.slnx --filter "FullyQualifiedName~ModelCatalog"`.
 4. If you added a model id/alias, mirror it into the schema overlay's
    `model.examples` if you want it in the generic editor's suggestion list.
+
+## New model launch (the recurring release chore)
+
+When a new build ships and takes over a family alias — e.g. **Opus 5 becomes
+what `opus` resolves to** — the model dropdowns do **not** update themselves.
+The bundled JSON-schema refresh (`scripts/refresh-schema.{ps1,sh}`) pulls from
+schemastore.org, which **omits model names entirely**; the pickers are driven by
+the catalog plus two hand-curated overlays. So a schema refresh is *never* the
+mechanism that adds a model — expect it to report "already up to date" (or only
+a line-ending diff) while the real work is the files below. Touch them in order:
+
+1. **`ModelCatalog/model-catalog.json`** — add the new model row. Copy the
+   outgoing build's `supportedEffortLevels` / `defaultEffortLevel` /
+   `supports1m` / `supportsAutoMode` unless the docs say a capability changed.
+   Move the family `alias` (`"opus"`) onto the new row and repoint the `aliases`
+   map to the new id. **Demote the previous alias holder to `legacy: true`,
+   `alias: null`** — keep its row (it stays a valid, pinnable snapshot; it just
+   leaves the default picker and gives up the alias). Invariant, enforced by
+   `validate-model-catalog.ps1` + the parity tests: **exactly one non-legacy row
+   per family alias**.
+2. **`Schemas/claude-code-settings.overlay.json`** — in `model.examples`, swap
+   the family's pinned snapshot id (`claude-opus-4-8` → `claude-opus-5`) and the
+   matching `e.g.` in `model.description`. This array is the AutoCompleteBox
+   suggestion list; the refresh never touches the overlay. (Do **not** add model
+   values anywhere else in the overlay — see its `$comment` safety note.)
+3. **`Descriptions/claude-code-settings.enumdescriptions.json`** — mirror the
+   same id swap (the pinned-snapshot tooltip) and update the alias tooltip
+   ("today Opus N"). **Coupling:** every value in `model.examples` MUST have a
+   key here, or `ModelPropertyPromotionTests` fails (each promoted picker item
+   needs a tooltip). A description with no matching example is harmless, so
+   *replace in place* — don't accumulate stale snapshot rows.
+4. **`tests/…/Catalog/ModelCatalogTests.cs`** — the alias-resolution asserts
+   (`Resolve("opus")` / `Resolve("opus[1m]")`) hardcode the resolved id; update
+   them to the new snapshot. Tests that use the *demoted* id as a concrete model
+   (effort support, auto-mode, brand label, round-trip) keep passing unchanged —
+   only its `legacy`/`alias` flags moved, not its capabilities.
+5. Verify: `pwsh scripts/validate-model-catalog.ps1`, then
+   `dotnet test ClaudeForge.slnx --filter "FullyQualifiedName~ModelCatalog|FullyQualifiedName~ModelPropertyPromotion"`.
+
+The source layer (`ModelSuggestionCatalog`, `ModelSuggestionFilter`,
+`ModelCatalog`) is fully catalog-driven — model ids appear only in doc comments,
+never in logic, so there is nothing to change there.

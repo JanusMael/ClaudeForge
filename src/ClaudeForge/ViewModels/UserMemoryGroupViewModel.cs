@@ -27,6 +27,7 @@ public sealed class UserMemoryGroupViewModel
         UserMemoryCategory.Rule => Strings.LabelMemoryCategoryRules,
         UserMemoryCategory.Skill => Strings.LabelMemoryCategorySkills,
         UserMemoryCategory.CrossToolMemory => Strings.LabelMemoryCategoryCrossTool,
+        UserMemoryCategory.Configuration => Strings.LabelMemoryCategoryConfiguration,
         var _ => Category.ToString(),
     };
 
@@ -50,6 +51,7 @@ public sealed class UserMemoryGroupViewModel
         UserMemoryCategory.Rule => Strings.TipMemoryCategoryRules,
         UserMemoryCategory.Skill => Strings.TipMemoryCategorySkills,
         UserMemoryCategory.CrossToolMemory => Strings.TipMemoryCategoryCrossTool,
+        UserMemoryCategory.Configuration => Strings.TipMemoryCategoryConfiguration,
         var _ => string.Empty,
     };
 

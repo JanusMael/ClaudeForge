@@ -1450,6 +1450,12 @@ Abbrechen — das Fenster geöffnet lassen.</value>
   <data name="LabelMemoryCategorySkills" xml:space="preserve">
     <value>Benutzerdefinierte Skills</value>
   </data>
+  <data name="LabelMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Konfiguration (settings.json, mcp.json)</value>
+  </data>
+  <data name="TipMemoryCategoryConfiguration" xml:space="preserve">
+    <value>Die JSON-Konfigurationsdateien selbst — Benutzerebene (settings.json, mcp.json, managed-settings.json und dessen Drop-ins, ~/.claude.json) sowie die .claude/-Einstellungen des geöffneten Projekts. Anmeldeinformationen werden bewusst nicht aufgeführt.</value>
+  </data>
   <data name="LabelMemoryCategoryCrossTool" xml:space="preserve">
     <value>Tool-übergreifender Speicher (Codex, Gemini, OpenCode)</value>
   </data>

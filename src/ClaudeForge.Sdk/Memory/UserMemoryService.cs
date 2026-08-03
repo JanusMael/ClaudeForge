@@ -66,7 +66,75 @@ public static class UserMemoryService
         // than walking siblings open-endedly.
         AddCrossToolMemory(results, home);
 
+        // The JSON config files themselves, so every file Claude reads is
+        // discoverable (and openable) from one inventory.
+        AddConfiguration(results, home, projectRoot);
+
         return results;
+    }
+
+    /// <summary>
+    /// Probe the known JSON configuration files — user scope, then project scope.
+    /// Display names keep their extension (<c>settings.json</c>, not <c>settings</c>) and
+    /// project-scope entries are suffixed, so the two <c>settings.json</c> files are
+    /// distinguishable inside one group.
+    /// <para>
+    /// <see cref="PlatformPaths.CredentialsPath"/> is deliberately NOT probed — it holds live
+    /// auth tokens, and a one-click "open" for it in a browsable list is a needless disclosure
+    /// risk (the backup pipeline gates it behind an explicit opt-in for the same reason).
+    /// </para>
+    /// </summary>
+    private static void AddConfiguration(List<UserMemoryFile> results, string home, string? projectRoot)
+    {
+        // User scope.
+        AddConfigIfExists(results, PlatformPaths.UserSettingsPath, "settings.json");
+        AddConfigIfExists(results, PlatformPaths.UserMcpPath, "mcp.json");
+        AddConfigIfExists(results, PlatformPaths.ManagedSettingsPath, "managed-settings.json");
+        AddConfigIfExists(results, PlatformPaths.ClaudeJsonPath, ".claude.json");
+
+        // Managed-settings drop-ins: an admin-populated directory of *.json fragments.
+        string dropIn = PlatformPaths.ManagedSettingsDropInDir;
+        if (Directory.Exists(dropIn))
+        {
+            IEnumerable<string> fragments;
+            try
+            {
+                fragments = Directory.EnumerateFiles(dropIn, "*.json", SearchOption.TopDirectoryOnly);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                fragments = [];
+            }
+
+            foreach (string fragment in fragments)
+            {
+                AddConfigIfExists(results, fragment, $"managed-settings.d/{Path.GetFileName(fragment)}");
+            }
+        }
+
+        // Project scope — suffixed so they don't read as duplicates of the user-scope pair.
+        if (string.IsNullOrWhiteSpace(projectRoot))
+        {
+            return;
+        }
+
+        AddConfigIfExists(results, PlatformPaths.ProjectSettingsPath(projectRoot), "settings.json (project)");
+        AddConfigIfExists(results, PlatformPaths.LocalSettingsPath(projectRoot), "settings.local.json (project)");
+        AddConfigIfExists(results, PlatformPaths.ProjectMcpPath(projectRoot), "mcp.json (project)");
+    }
+
+    /// <summary>
+    /// Add one configuration file under an explicit <paramref name="displayName"/>, bypassing
+    /// <see cref="ResolveDisplayName"/>'s extension-stripping (which would render every entry
+    /// here as a bare "settings" / "mcp").
+    /// </summary>
+    private static void AddConfigIfExists(List<UserMemoryFile> results, string path, string displayName)
+    {
+        UserMemoryFile? entry = TryBuildEntry(path, UserMemoryCategory.Configuration);
+        if (entry is not null)
+        {
+            results.Add(entry with { DisplayName = displayName });
+        }
     }
 
     /// <summary>
