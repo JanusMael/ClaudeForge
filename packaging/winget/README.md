@@ -38,8 +38,9 @@ not part of the public build pipeline.
 
 ## First submission (one-time, manual)
 
-The automated workflow below uses `wingetcreate update`, which requires the
-package to already exist in winget-pkgs. The **initial** submission is manual:
+The package now exists in winget-pkgs (first submitted 2026-07 as `2026.3.708`),
+so this section is historical reference. The **initial** submission was done
+manually with the interactive wizard:
 
 1. Cut a normal release so the `ClaudeForge-win-x64.zip` / `-win-arm64.zip`
    assets exist at stable URLs.
@@ -63,17 +64,30 @@ package to already exist in winget-pkgs. The **initial** submission is manual:
 
 ## Ongoing updates (automated)
 
-`.github/workflows/winget-submit.yml` runs on every **non-prerelease** GitHub
-Release and calls `wingetcreate update` to open the version-bump PR
-automatically. It needs one repository secret:
+`.github/workflows/winget-submit.yml` is **manually dispatched**
+(`workflow_dispatch`) with an explicit version — run it after the release's
+Windows zips are signed and re-uploaded. It builds the PR from the template
+`*.yaml` files in this folder (filling in the version and freshly computed
+SHA256 hashes, and injecting the release's notes + date) and opens it with
+`wingetcreate submit`.
 
-- **`WINGET_TOKEN`** — a GitHub Personal Access Token (classic) with the
-  `public_repo` scope. `wingetcreate` uses it to fork `microsoft/winget-pkgs`
-  under your account and open the PR. Add it under
+Building from the templates keeps every release **fully populated**. Using
+`wingetcreate update` instead — as an earlier version of this workflow did —
+fetches the currently published manifest and only bumps the version + URLs, so it
+inherits whatever metadata is already published and silently drops the rich
+fields (`Author`, `Description`, `Tags`, `Moniker`, …). That is what left the
+catalog entry showing "Author: Not available" with empty release notes.
+
+It needs one repository secret:
+
+- **`WINGET_TOKEN`** — a GitHub Personal Access Token (classic) with **both** the
+  `public_repo` **and** `workflow` scopes. `wingetcreate` uses it to fork
+  `microsoft/winget-pkgs` under your account, sync that fork with upstream, and
+  open the PR. The `workflow` scope is required because syncing the fork writes
+  upstream's `.github/workflows/*` files, which GitHub refuses to let an OAuth
+  token do without it. Add it under
   *Settings → Secrets and variables → Actions → New repository secret*.
 
-Prerelease tags (`v*-rc.*`, etc.) are skipped — the community repo has no
-prerelease channel.
-
-You can also trigger the workflow manually (`workflow_dispatch`) with an explicit
-version to re-submit or back-fill a release.
+Dispatch is manual by design (there is no Release trigger): the signed-zip
+re-upload happens out of band, and submitting before it would pin the unsigned
+hash.
