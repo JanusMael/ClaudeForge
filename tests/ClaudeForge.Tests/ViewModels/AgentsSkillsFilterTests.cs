@@ -314,8 +314,11 @@ public sealed class AgentsSkillsFilterTests
             "---\nname: alpha\ndescription: Converts PDF documents\n---\n\nB.\n");
 
         var vm = new AgentsSkillsEditorViewModel(_project);
-        await vm.RefreshAsync();
 
+        // Subscribe BEFORE RefreshAsync. The refresh starts the description fill
+        // internally (LastDescriptionFill is assigned inside it), so subscribing
+        // afterwards races the fill: if it finished first, its notification was
+        // raised with no listener attached and the assert below saw nothing.
         List<string> raised = [];
         vm.PropertyChanged += (_, e) =>
         {
@@ -325,13 +328,22 @@ public sealed class AgentsSkillsFilterTests
             }
         };
 
+        await vm.RefreshAsync();
+
         if (vm.LastDescriptionFill is { } fill)
         {
             await fill;
         }
 
-        Assert.IsTrue(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredSkillItems)),
-            "The description fill must re-raise the filtered lists when it completes.");
+        // A successful refresh announces the lists exactly once; the fill announces
+        // them again when it completes. Counting (rather than checking presence)
+        // keeps the assertion race-free while still proving the SECOND, fill-driven
+        // announcement happened — presence alone would pass on the refresh's raise.
+        int skillRaises = raised.Count(
+            n => n == nameof(AgentsSkillsEditorViewModel.FilteredSkillItems));
+        Assert.IsTrue(skillRaises >= 2,
+            "The description fill must re-raise the filtered lists when it completes; "
+            + $"expected >= 2 FilteredSkillItems raises (refresh + fill), saw {skillRaises}.");
 
         // And the description is now actually matchable.
         vm.FilterText = "pdf";
