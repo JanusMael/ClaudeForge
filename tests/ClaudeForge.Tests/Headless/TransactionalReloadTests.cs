@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
@@ -55,7 +56,7 @@ public sealed class TransactionalReloadTests
         {
             if (Directory.Exists(_sandbox))
             {
-                Directory.Delete(_sandbox, recursive: true);
+                TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
             }
         }
         catch

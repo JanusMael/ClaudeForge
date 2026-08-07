@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -65,7 +66,7 @@ public sealed class DeepPathReloadTests
         {
             if (Directory.Exists(_sandbox))
             {
-                Directory.Delete(_sandbox, recursive: true);
+                TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
