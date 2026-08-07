@@ -52,7 +52,17 @@ ClaudeForge is a typed editor for all of that. Every setting shows which scope p
 
 ## Install
 
-### winget (Windows COMING SOON)
+### winget (Windows)
+
+```bash
+winget install Bennewitz.Ninja.ClaudeForge
+```
+
+Pulls the latest signed release from the [Windows Package Manager Community Repository](https://github.com/microsoft/winget-pkgs). This is a **portable** install — winget unpacks the self-contained `ClaudeForge.exe` and puts a `claudeforge` command on your `PATH`; there's no Start Menu shortcut or Add/Remove Programs entry, which is expected for portable packages. It resolves the right build for your architecture (x64 or ARM64) automatically. Update in place with:
+
+```bash
+winget upgrade Bennewitz.Ninja.ClaudeForge
+```
 
 ### Pre-built binaries
 
