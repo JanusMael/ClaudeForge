@@ -149,4 +149,11 @@ packaging/sign-release.ps1
 
 packaging/SIGNING.md
 
+# Personal winget submission notes / command transcripts (may contain PATs).
+packaging/BBWinget.md
+
+# wingetcreate's local output when run from the repo root. The authoritative
+# manifests live in microsoft/winget-pkgs; this is throwaway generation output.
+/manifests/
+
 reference/semi-avalonia/
