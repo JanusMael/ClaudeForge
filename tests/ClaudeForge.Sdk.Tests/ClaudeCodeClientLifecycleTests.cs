@@ -73,11 +73,11 @@ public class ClaudeCodeClientLifecycleTests
     {
         using ClaudeCodeClient client = new();
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => client.GetEffective<string>("model"),
             "GetEffective before OpenAsync must fail loudly.");
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => client.SetValue("model", "opus"),
             "SetValue before OpenAsync must fail loudly.");
     }
@@ -254,9 +254,9 @@ public class ClaudeCodeClientLifecycleTests
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         client.Dispose();
 
-        Assert.ThrowsException<ObjectDisposedException>(() => client.GetEffective<string>("model"));
-        Assert.ThrowsException<ObjectDisposedException>(() => client.SetValue("model", "opus"));
-        Assert.ThrowsException<ObjectDisposedException>(() => _ = client.HasUnsavedChanges);
+        Assert.ThrowsExactly<ObjectDisposedException>(() => client.GetEffective<string>("model"));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => client.SetValue("model", "opus"));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => _ = client.HasUnsavedChanges);
     }
 
     // ── DefaultScope ──────────────────────────────────────────────────────

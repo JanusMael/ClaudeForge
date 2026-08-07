@@ -127,8 +127,13 @@ public sealed class SensitiveKeysParityTests
         // Both surfaces use "[redacted]" as the marker — the literal must
         // be identical so log greps / report templates / support workflows
         // don't have to handle two different placeholders.
+        // MSTEST0032: both operands are consts, so the compiler folds these to
+        // always-true. Pinning them is the entire point of a parity test — if the
+        // two classifiers ever drifted apart, or the marker changed, this must fail.
+#pragma warning disable MSTEST0032
         Assert.AreEqual(SensitiveKeys.RedactedMarker, JsonRedactor.RedactedMarker,
             "The two classifiers must use the same redaction marker string.");
         Assert.AreEqual("[redacted]", JsonRedactor.RedactedMarker);
+#pragma warning restore MSTEST0032
     }
 }

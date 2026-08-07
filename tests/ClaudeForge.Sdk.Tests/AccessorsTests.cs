@@ -124,7 +124,7 @@ public class AccessorsTests
         Assert.IsFalse(PermissionRule.TryParse("BogusTool", out PermissionRule? _));
         Assert.IsFalse(PermissionRule.TryParse("Bash(*)", out PermissionRule? _)); // schema requires non-wildcard content
         Assert.IsFalse(PermissionRule.TryParse("Bash()", out PermissionRule? _));
-        Assert.ThrowsException<FormatException>(() => PermissionRule.Parse("BogusTool"));
+        Assert.ThrowsExactly<FormatException>(() => PermissionRule.Parse("BogusTool"));
     }
 
     // ── Hooks ─────────────────────────────────────────────────────────────

@@ -80,7 +80,7 @@ public class DefaultPropertyEditorFactoryTests
         Assert.AreEqual(1, ((ObjectPropertyEditorViewModel)vm).Children.Count);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(EditorValueType.Unknown)]
     [DataRow(EditorValueType.Dictionary)]
     [DataRow(EditorValueType.Complex)]

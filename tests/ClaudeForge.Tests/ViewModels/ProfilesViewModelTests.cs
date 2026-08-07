@@ -83,7 +83,7 @@ public sealed class ProfilesViewModelTests
     [TestMethod]
     public void Constructor_NullDialogService_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => new ProfilesViewModel(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ProfilesViewModel(null!));
     }
 
     // ── DesktopAvailable property surface ─────────────────────────────────

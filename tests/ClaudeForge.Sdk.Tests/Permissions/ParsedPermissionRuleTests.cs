@@ -107,7 +107,7 @@ public sealed class ParsedPermissionRuleTests
         Assert.IsFalse(ParsedPermissionRule.TryParse("", out _));
         Assert.IsFalse(ParsedPermissionRule.TryParse("   ", out _));
         Assert.IsFalse(ParsedPermissionRule.TryParse(null, out _));
-        Assert.ThrowsException<ArgumentException>(() => ParsedPermissionRule.Parse("  "));
+        Assert.ThrowsExactly<ArgumentException>(() => ParsedPermissionRule.Parse("  "));
     }
 
     [TestMethod]

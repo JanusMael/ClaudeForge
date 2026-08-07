@@ -14,7 +14,7 @@ public sealed class ModelSuggestionFilterTests
     private const string OpusHaystack = "claude-opus-4-8 Opus 4.8 claude-opus-4-8";
     private const string Opus1mHaystack = "opus[1m] Opus 4.8 · 1M context opus[1m]";
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Opus")]        // brand fragment, different case
     [DataRow("opus")]        // lower-case
     [DataRow("OPUS")]        // upper-case
@@ -44,7 +44,7 @@ public sealed class ModelSuggestionFilterTests
         Assert.IsTrue(ModelSuggestionFilter.Matches("   ", OpusHaystack));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("sonnet")]  // different model family
     [DataRow("opus 9")]  // right family, wrong version token
     [DataRow("haiku")]
