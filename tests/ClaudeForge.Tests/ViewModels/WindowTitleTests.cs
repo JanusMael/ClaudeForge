@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -37,7 +38,7 @@ public sealed class WindowTitleTests
         {
             try
             {
-                Directory.Delete(_sandbox, recursive: true);
+                TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

@@ -36,5 +36,21 @@ Tags:
   - avalonia
   - dotnet
 ReleaseNotesUrl: https://github.com/JanusMael/ClaudeForge/releases/tag/v<PACKAGE_VERSION>
+# `ReleaseNotes` (the release body) is injected at submission time by
+# .github/workflows/winget-submit.yml from the GitHub release — kept out of this
+# static template because it is per-version. `ReleaseDate` is likewise injected
+# into the installer manifest.
+#
+# Icons: winget's own clients render an icon from the manifest, but UniGetUI (the
+# GUI in the screenshots) uses its OWN icon/screenshot database, not this field —
+# contribute those at https://www.marticliment.com/wingetui/help/icons-and-screenshots/.
+# If you later host a stable PNG, advertise it to winget-native clients by filling
+# in and uncommenting the block below (IconSha256 is REQUIRED):
+# Icons:
+#   - IconUrl: https://github.com/JanusMael/ClaudeForge/releases/download/v<PACKAGE_VERSION>/ClaudeForge.png
+#     IconFileType: png
+#     IconResolution: custom
+#     IconTheme: default
+#     IconSha256: <SHA256_OF_ICON_PNG>
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0
