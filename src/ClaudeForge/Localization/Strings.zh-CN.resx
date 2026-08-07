@@ -2784,4 +2784,40 @@
   <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
     <value>当前架构无法识别这些挂钩事件（可能已弃用或拼写错误），将按原样保留：{0}</value>
   </data>
+  <data name="WatermarkFilterArtifacts" xml:space="preserve">
+    <value>筛选子代理、技能、命令…</value>
+    <comment>Placeholder text in the Agents &amp; Skills filter box.</comment>
+  </data>
+  <data name="LabelClearArtifactFilter" xml:space="preserve">
+    <value>✕ 清除筛选</value>
+    <comment>Button text for the clear-filter button on the Agents &amp; Skills filter bar.</comment>
+  </data>
+  <data name="TipClearArtifactFilter" xml:space="preserve">
+    <value>清除筛选并显示所有子代理、技能和命令</value>
+    <comment>Tooltip on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="AutoNameClearArtifactFilter" xml:space="preserve">
+    <value>清除筛选</value>
+    <comment>AutomationProperties.Name on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="LabelArtifactFilterCountFmt" xml:space="preserve">
+    <value>{1} 项中的 {0} 项</value>
+    <comment>Match count beside the Agents &amp; Skills filter box. {0} = rows shown, {1} = rows total.</comment>
+  </data>
+  <data name="ButtonCopyDeepLink" xml:space="preserve">
+    <value>复制深层链接</value>
+    <comment>Toolbar button on the Agents &amp; Skills detail pane: copies a --deep-link path for the open artifact.</comment>
+  </data>
+  <data name="TipCopyDeepLink" xml:space="preserve">
+    <value>复制可直接重新打开此项的命令行路径 (--deep-link)</value>
+    <comment>Tooltip on the Agents &amp; Skills copy-deep-link button.</comment>
+  </data>
+  <data name="StatusDeepLinkCopiedFmt" xml:space="preserve">
+    <value>已复制深层链接：{0}</value>
+    <comment>Transient status line after copying a deep link. {0} = the copied path.</comment>
+  </data>
+  <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
+    <value>无法打开深层链接“{0}”——没有该页面或项。</value>
+    <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
 </root>

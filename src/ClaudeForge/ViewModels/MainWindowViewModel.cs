@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Security;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -272,6 +273,50 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private const string NavTitleWelcome = "Welcome";
 
+    // Navigation node IDs — the stable, culture-invariant keys behind deep links
+    // (--deep-link) and the persisted deep path (WindowState.LastDeepPath).
+    //
+    // Deliberately SEPARATE from the NavTitle* constants above.  Those double as
+    // display labels, which is exactly why they are still hardcoded English —
+    // localizing them would break every `n.Title == NavTitle*` comparison.  These
+    // ids carry no display duty, so they stay stable when nav-tree localization
+    // eventually lands, and a persisted deep path keeps resolving across a
+    // culture change.  New lookups should prefer NodeId over Title.
+    //
+    // Uniqueness is scoped to SIBLINGS, not the whole tree: NavIdVersionInfo
+    // appears under both product headers, and a settings group name may repeat
+    // across products.  The path grammar is `<parent-id>/<child-id>`, so
+    // sibling-scoped uniqueness is all it needs.  Divider nodes get no id.
+    internal const string NavIdWelcome = "welcome";
+    internal const string NavIdEssentials = "essentials";
+    internal const string NavIdClaudeCode = "claude-code";
+    internal const string NavIdClaudeDesktop = "claude-desktop";
+    internal const string NavIdVersionInfo = "version-info";
+    internal const string NavIdEffectiveSettings = "effective-settings";
+    internal const string NavIdProfiles = "profiles";
+    internal const string NavIdBackupRestore = "backup-restore";
+    internal const string NavIdEnvironment = "environment";
+    internal const string NavIdMemory = "memory";
+    internal const string NavIdAgentsSkills = "agents-skills";
+
+    /// <summary>
+    /// The addressable top-level page ids, for the <c>--deep-link</c> usage message
+    /// a rejected path prints to the terminal.
+    /// <para>
+    /// A hand-maintained list mirroring the tree would be exactly the kind of thing
+    /// that drifts, so <c>NavigationNodeIdTests.KnownTopLevelNodeIds_MatchTheBuiltTree</c>
+    /// asserts this set equals the ids the real tree actually carries. Child pages
+    /// (e.g. <c>claude-code/permissions</c>) are omitted deliberately — they are
+    /// discoverable from the sidebar and listing them would bury the top level.
+    /// </para>
+    /// </summary>
+    internal static IReadOnlyList<string> KnownTopLevelNodeIds { get; } =
+    [
+        NavIdWelcome, NavIdEssentials, NavIdClaudeCode, NavIdClaudeDesktop,
+        NavIdEffectiveSettings, NavIdProfiles, NavIdBackupRestore, NavIdEnvironment,
+        NavIdMemory, NavIdAgentsSkills,
+    ];
+
     // One-sentence descriptions that surface as hover tooltips in the
     // navigation tree. Hard-coded English (the constants above are too,
     // for the same reason: programmatic comparisons against n.Title need
@@ -334,6 +379,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _isFollowingSystem = _cachedState.Theme == "System";
         _isDarkTheme = _cachedState.Theme == "Dark"; // false when "System" — corrected in ApplyRestoredTheme
         _lastNodeTitle = _cachedState.LastSelectedNodeTitle;
+        _lastDeepPath = _cachedState.LastDeepPath;
         _navHeaderExpanded = new Dictionary<string, bool>(_cachedState.NavHeaderExpanded);
 
         // Welcome-on-launch preference: hydrated from disk and consulted
@@ -372,6 +418,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // future surface that needs to deep-link into a schema-driven nav node)
         // sends this message.  Receiver finds the child node by Title and
         // selects it, optionally applying a property filter on the editor.
+        // Page-level view-models can't reach the status bar directly (the shell owns
+        // it), so they raise ShowStatusMessage instead — see the copy-deep-link and
+        // deep-link-failure paths.
+        WeakReferenceMessenger.Default.Register<ShowStatusMessage>(
+            this, (_, m) => OnShowStatus(m));
+
         WeakReferenceMessenger.Default.Register<NavigateToNavGroupMessage>(
             this, (_, msg) => OnNavigateToNavGroup(msg));
     }
@@ -1105,6 +1157,59 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private string? _lastNodeTitle;
 
+    // ── Deep-path capture / restore ──────────────────────────────────────
+    //
+    // The user's last in-page position (below the nav node), persisted as
+    // WindowState.LastDeepPath and re-applied on reload / launch / --deep-link.
+    //
+    // CRITICAL: this is a FIELD that SaveWindowState persists verbatim — exactly
+    // the shape _lastNodeTitle uses.  It must NOT be computed inside
+    // SaveWindowState by calling CaptureDeepPath() on the active editor.
+    // SaveWindowState has ~14 call sites and one of them is the tail of
+    // OnSelectedNodeChanged; during a reload, RestoreSelectedNode sets
+    // SelectedNode → OnSelectedNodeChanged → SaveWindowState, and the editor at
+    // that moment is freshly built and empty.  Capturing there would overwrite
+    // the good path with an empty one BEFORE the async restore reads it, so the
+    // user's place would silently stop being restored after any reload.
+    private string? _lastDeepPath;
+
+    // A deep restore waiting for its target node to become selected.  Consumed
+    // exactly once by OnSelectedNodeChanged.
+    private PendingDeepRestore? _pendingDeepRestore;
+
+    // Set only while ReloadCoreAsync is rebuilding, so RestoreSelectedNode leaves
+    // the deep restore to the reload path (which has the in-memory edit buffer)
+    // instead of also queuing its own launch-style restore.
+    private bool _suppressLaunchDeepRestore;
+
+    // Latch so the --deep-link argument is honoured on the first nav-tree build
+    // only; without it every later reload would yank the user back to the
+    // command-line target.
+    private bool _deepLinkArgConsumed;
+
+    /// <summary>
+    /// A deep-path restore queued against a specific node.
+    /// <para>
+    /// <paramref name="TransientState"/> is the opaque in-memory payload from
+    /// <see cref="IDeepNavigable.CaptureTransientState"/> — it may hold an
+    /// unsaved edit buffer, so it exists only for the duration of an in-process
+    /// reload and is never written to disk.
+    /// </para>
+    /// </summary>
+    /// <param name="AnnouncePath">
+    /// The path the user typed, when a failure to apply this restore should raise a
+    /// status warning; <see langword="null"/> to stay silent. Carried this far because
+    /// most deep links fail BELOW the node — a real page and tab with a stale item —
+    /// which only becomes knowable inside the async restore, long after
+    /// <c>TryQueueDeepRestore</c> has already returned true.
+    /// </param>
+    private sealed record PendingDeepRestore(
+        NavigationNodeViewModel Node,
+        IReadOnlyList<string> Segments,
+        DeepRestoreMode Mode,
+        object? TransientState,
+        string? AnnouncePath);
+
     /// <summary>
     /// user preference: when <see langword="true"/>, a
     /// dedicated "Welcome" nav node is added to the top of
@@ -1369,6 +1474,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             await LoadAllWorkspacesAsync();
             SetStatusState(Strings.StatusReady);
+
+            // AFTER StatusReady — emitting it any earlier gets it overwritten.
+            FlushPendingDeepLinkWarning();
         }
         catch (Exception ex)
         {
@@ -1378,6 +1486,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         finally
         {
             IsLoading = false;
+
+            // In the finally, not next to StatusReady: the restore runs
+            // fire-and-forget and can report its failure after a load fault too,
+            // and a warning that arrives once nothing will ever flush again would
+            // be swallowed outright.
+            _startupStatusSettled = true;
         }
     }
 
@@ -2015,11 +2129,28 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // (next to the Save toolbar button) updates on reload.
         ShowSaveChangesDialog = true;
 
+        // Capture the user's in-page position BEFORE the rebuild tears the editors
+        // down, and carry the transient (unsaved-edit) payload in memory so a
+        // reload no longer silently discards typed-but-unsaved front-matter.
+        //
+        // Once, OUTSIDE the do/while: on a second iteration the editors have
+        // already been rebuilt, so capturing there would record the empty
+        // freshly-built state instead of what the user actually had.
+        //
+        // Applies to EVERY caller of this method — the toolbar Reload button, a
+        // profile switch, the file watcher, and the post-restore flow — because an
+        // automatic reload eating an in-progress edit is just as bad as a manual
+        // one doing it.  Safe despite the file watcher firing often: capture is
+        // pure in-memory bookkeeping and writes nothing to disk.
+        object? reloadTransientState = CaptureDeepPath(captureTransient: true);
+        string? reloadDeepPath = _lastDeepPath;
+
         do
         {
             _reloadPending = false;
             IsLoading = true;
             SetStatusActive(Strings.StatusReloading);
+            _suppressLaunchDeepRestore = true;
             try
             {
                 await LoadAllWorkspacesAsync();
@@ -2039,8 +2170,18 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             finally
             {
                 IsLoading = false;
+                _suppressLaunchDeepRestore = false;
             }
         } while (_reloadPending);
+
+        // Put the user back where they were, in full — including any edit that was
+        // in progress, which rides across in memory via reloadTransientState.
+        // BuildNavigationTree's RestoreSelectedNode has already landed on the node
+        // by title; this restores everything BELOW it.
+        if (reloadDeepPath is not null)
+        {
+            TryQueueDeepRestore(reloadDeepPath, DeepRestoreMode.Full, reloadTransientState);
+        }
     }
 
     [RelayCommand]
@@ -2096,6 +2237,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         SaveWindowState();
     }
 
+    /// <summary>
+    /// Capture the in-page position of the page being LEFT, so a later launch can
+    /// return to it.
+    /// <para>
+    /// This has to run in <c>Changing</c>, not <c>Changed</c>. <c>SelectedNode</c> is
+    /// an <c>[ObservableProperty]</c>, so by the time <c>OnSelectedNodeChanged</c>
+    /// runs the backing field already holds the NEW node — capturing there reads the
+    /// destination page's editor instead of the one being left, and silently records
+    /// nothing (the destination usually isn't <see cref="IDeepNavigable"/> at all).
+    /// </para>
+    /// <para>
+    /// Transient (unsaved-edit) state is deliberately NOT captured here: it only
+    /// matters across an in-process reload, and persisting it is out of contract.
+    /// </para>
+    /// </summary>
+    partial void OnSelectedNodeChanging(NavigationNodeViewModel? value)
+    {
+        if (SelectedNode is { } leaving && !ReferenceEquals(leaving, value))
+        {
+            // Every addressable page, not just deep-navigable ones — see
+            // CaptureDeepPath for why a stale path is worse than a shallow one.
+            CaptureDeepPath(captureTransient: false);
+        }
+    }
+
     partial void OnSelectedNodeChanged(NavigationNodeViewModel? value)
     {
         // Deactivate the previously visible group editor so subsequent shared-scope
@@ -2108,6 +2274,15 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         else if (ActiveEditor is EnvironmentEditorViewModel prevEnv)
         {
             prevEnv.FilterText = string.Empty;
+        }
+        else if (ActiveEditor is AgentsSkillsEditorViewModel prevAgents
+                 && !ReferenceEquals(ActiveEditor, value?.Editor))
+        {
+            // Same convention as the Environment page: a user-typed filter is
+            // cleared on the way out so the next visit starts with the full list.
+            // A deep restore applies its own navigation filter afterwards, so this
+            // does not fight the restore path.
+            prevAgents.ApplyNavigationFilter(null);
         }
 
         // Manual navigation (not triggered by a deep link) clears the back stack
@@ -2207,6 +2382,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         _lastNodeTitle = value.Title;
         SaveWindowState();
+
+        // A queued deep restore fires AFTER the per-VM refresh branch above, so
+        // the walk it awaits (via LastRefresh) is already under way.  Runs after
+        // SaveWindowState deliberately: the restore mutates the page's position,
+        // and letting it write back through the save path here would persist a
+        // half-applied state.  The next genuine navigation captures it instead.
+        ApplyPendingDeepRestore(value);
     }
 
     /// <summary>
@@ -2350,6 +2532,276 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    // ── Deep-path capture / restore ──────────────────────────────────────
+
+    /// <summary>
+    /// Record the active editor's in-page position into <c>_lastDeepPath</c>,
+    /// optionally also capturing its transient (never-persisted) state.
+    /// <para>
+    /// Called at the few points where the position is known-good: navigating away
+    /// from a deep-navigable page, and immediately before a reload tears the
+    /// editors down. Deliberately NOT called from <see cref="SaveWindowState"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>
+    /// The transient payload when <paramref name="captureTransient"/> is set and
+    /// the editor produced one; otherwise <see langword="null"/>.
+    /// </returns>
+    private object? CaptureDeepPath(bool captureTransient)
+    {
+        if (SelectedNode is not { } node || node.NodeId is null)
+        {
+            // Header / divider — nothing addressable. Leave the previous value
+            // alone rather than blanking it.
+            return null;
+        }
+
+        // A page with no in-page state still gets captured, as its node path
+        // alone. `_lastDeepPath` has to describe where the user ACTUALLY is: if it
+        // only ever recorded deep-navigable pages, then navigating from a skill to
+        // (say) Essentials would leave the old skill path behind, and the next
+        // reload would yank the user back to it.
+        IReadOnlyList<string> below = [];
+        object? transient = null;
+
+        if (node.Editor is IDeepNavigable navigable)
+        {
+            try
+            {
+                below = navigable.CaptureDeepPath();
+                if (captureTransient)
+                {
+                    transient = navigable.CaptureTransientState();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Capture runs on the way out of a page and on the reload path; a
+                // misbehaving editor must never block navigation or a reload.
+                Log.Warning(ex, "[DeepLink] CaptureDeepPath failed for node={Node}", node.NodeId);
+                below = [];
+                transient = null;
+            }
+        }
+
+        List<string> segments = [.. NodePathSegments(node), .. below];
+        _lastDeepPath = NavDeepPath.Format(segments);
+        Log.Debug("[DeepLink] captured path={Path}", _lastDeepPath);
+        return transient;
+    }
+
+    /// <summary>
+    /// Record the current in-page position on the way out of the process, so the
+    /// next launch returns the user to the item they were actually looking at.
+    /// <para>
+    /// Must be called by the window's <c>Closed</c> handler BEFORE
+    /// <see cref="SaveWindowState"/>. Without it, quitting straight from an open
+    /// artifact persists whatever <c>_lastDeepPath</c> happened to hold from the
+    /// last navigation — i.e. the page before this one — because the
+    /// navigate-away capture never fired.
+    /// </para>
+    /// <para>
+    /// Deliberately not folded into <see cref="SaveWindowState"/>: that method has
+    /// many call sites, one of them mid-reload where the active editor is
+    /// freshly-rebuilt and empty (see the <c>_lastDeepPath</c> field comment).
+    /// </para>
+    /// </summary>
+    public void CaptureDeepPathForShutdown()
+    {
+        // captureTransient: false — an unsaved buffer must never be persisted, and
+        // the process is going away, so there is nothing to carry it across.
+        CaptureDeepPath(captureTransient: false);
+    }
+
+    /// <summary>
+    /// The node-addressing prefix for <paramref name="node"/> — either
+    /// <c>[id]</c> for a top-level node or <c>[parentId, id]</c> for a child.
+    /// </summary>
+    private IReadOnlyList<string> NodePathSegments(NavigationNodeViewModel node)
+    {
+        if (node.NodeId is null)
+        {
+            return [];
+        }
+
+        foreach (NavigationNodeViewModel top in NavigationTree)
+        {
+            if (ReferenceEquals(top, node))
+            {
+                return [node.NodeId];
+            }
+
+            if (top.NodeId is not null && top.Children.Contains(node))
+            {
+                return [top.NodeId, node.NodeId];
+            }
+        }
+
+        return [node.NodeId];
+    }
+
+    /// <summary>
+    /// Queue a deep restore for <paramref name="path"/> against the freshly-built
+    /// tree, and select its node so <c>OnSelectedNodeChanged</c> can apply it.
+    /// <para>
+    /// An unresolvable path is logged and dropped — a stale shortcut or a page
+    /// this install lacks (Claude Desktop absent, Welcome hidden) must never
+    /// block startup.
+    /// </para>
+    /// </summary>
+    /// <returns><see langword="true"/> when a restore was queued.</returns>
+    /// <param name="announceFailure">
+    /// When <see langword="true"/>, a well-formed-but-unresolvable path raises a
+    /// status-bar warning. Set ONLY for an explicit <c>--deep-link</c>: the user
+    /// typed that and deserves to know it didn't land. A persisted path failing to
+    /// resolve is routine — the artifact was deleted, or a profile switch changed
+    /// what exists — and nagging about it on every launch would be hostile.
+    /// </param>
+    private bool TryQueueDeepRestore(
+        string? path, DeepRestoreMode mode, object? transientState, bool announceFailure = false)
+    {
+        if (!NavDeepPath.TryParse(path, out IReadOnlyList<string> segments, out string? error))
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                Log.Information("[DeepLink] path={Path} rejected: {Error}", path, error);
+                if (announceFailure)
+                {
+                    RaiseDeepLinkWarning(path!);
+                }
+            }
+
+            return false;
+        }
+
+        NavDeepPathResolution resolution = NavDeepPath.Resolve(segments, NavigationTree);
+        if (!resolution.Resolved)
+        {
+            Log.Information("[DeepLink] path={Path} mode={Mode} resolved=false", path, mode);
+            if (announceFailure)
+            {
+                RaiseDeepLinkWarning(path!);
+            }
+
+            return false;
+        }
+
+        _pendingDeepRestore = new PendingDeepRestore(
+            resolution.Node!,
+            resolution.RemainingSegments,
+            mode,
+            transientState,
+            announceFailure ? path : null);
+
+        Log.Information(
+            "[DeepLink] path={Path} mode={Mode} resolved=true node={Node} below={Below}",
+            path, mode, resolution.Node!.NodeId, resolution.RemainingSegments.Count);
+
+        // Selecting the node is what triggers the apply. Guard against the node
+        // already being selected (the reload path re-selects the same title), in
+        // which case OnSelectedNodeChanged won't fire and we apply directly.
+        if (ReferenceEquals(SelectedNode, resolution.Node))
+        {
+            ApplyPendingDeepRestore(resolution.Node);
+        }
+        else
+        {
+            SelectedNode = resolution.Node;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a queued restore whose node has just become selected.
+    /// <para>
+    /// Fire-and-forget because <c>OnSelectedNodeChanged</c> is a synchronous
+    /// partial method and the restore has to await a filesystem walk. The
+    /// re-apply at <see cref="DispatcherPriority.Loaded"/> exists for the same
+    /// reason <see cref="RequestExpandPermissionsAdvanced"/> needs one: selecting
+    /// a node triggers a view rebuild that can land after the restore's
+    /// synchronous portion, leaving the tab selection undone.
+    /// </para>
+    /// </summary>
+    private void ApplyPendingDeepRestore(NavigationNodeViewModel node)
+    {
+        if (_pendingDeepRestore is not { } pending || !ReferenceEquals(pending.Node, node))
+        {
+            return;
+        }
+
+        // Consume exactly once, before the await, so a second navigation can't
+        // re-enter and apply it twice.
+        _pendingDeepRestore = null;
+
+        if (node.Editor is not IDeepNavigable navigable || pending.Segments.Count == 0)
+        {
+            // Segments the target page has no way to consume — an explicitly-typed
+            // link asking a not-yet-deep-navigable page for a tab or item. Landing
+            // on the page is still better than nothing, but the user asked for more
+            // than they got and silence would read as success.
+            if (pending.Segments.Count > 0 && pending.AnnouncePath is { } unusable)
+            {
+                Log.Information(
+                    "[DeepLink] {Node} is not deep-navigable; {Count} segment(s) dropped",
+                    node.NodeId, pending.Segments.Count);
+                RaiseDeepLinkWarning(unusable);
+            }
+
+            return;
+        }
+
+        LastDeepRestore = RestoreDeepPathAsync(navigable, pending);
+    }
+
+    /// <summary>
+    /// Test seam: the in-flight deep-path restore, so a test can await it
+    /// deterministically. In the app this runs fire-and-forget because
+    /// <c>OnSelectedNodeChanged</c> is a synchronous partial method. Mirrors
+    /// <c>AgentsSkillsEditorViewModel.LastRefresh</c> / <c>LastDescriptionFill</c>.
+    /// </summary>
+    internal Task? LastDeepRestore { get; private set; }
+
+    private async Task RestoreDeepPathAsync(IDeepNavigable navigable, PendingDeepRestore pending)
+    {
+        try
+        {
+            bool ok = await navigable.TryRestoreDeepPathAsync(
+                pending.Segments, pending.Mode, pending.TransientState, CancellationToken.None);
+
+            Log.Information(
+                "[DeepLink] restore applied={Applied} mode={Mode} below={Below}",
+                ok, pending.Mode, string.Join('/', pending.Segments));
+
+            // The common real-world miss: page and tab resolved, the item did not.
+            // TryQueueDeepRestore returned true long before this, so this is the
+            // ONLY place that failure is knowable.
+            if (!ok && pending.AnnouncePath is { } missed)
+            {
+                RaiseDeepLinkWarning(missed);
+            }
+
+            // The node selection above rebuilds the page's view; a tab set during
+            // the synchronous part of the restore can be clobbered by that
+            // rebuild. Re-assert once layout has settled.
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    if (navigable is AgentsSkillsEditorViewModel agents && pending.Segments.Count > 0)
+                    {
+                        agents.SelectSegment(pending.Segments[0]);
+                    }
+                },
+                DispatcherPriority.Loaded);
+        }
+        catch (Exception ex)
+        {
+            // Fire-and-forget: an unobserved throw here would take the process
+            // down on an unhandled task exception.
+            Log.Warning(ex, "[DeepLink] restore failed");
+        }
+    }
+
     /// <summary>
     /// Open the permissions "Advanced" accordion for a deep-link. Sets the flag
     /// immediately AND re-applies once the navigation's view rebuild has settled
@@ -2376,6 +2828,93 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// Switches the active editor to Environment and pre-selects the variable if visible.
     /// Saves the current node so the Back button can return here.
     /// </summary>
+    /// <summary>
+    /// Render a status announcement raised by a page view-model, routing it through
+    /// the same typed helpers every other emission uses so the pill, icon, and
+    /// auto-clear behaviour stay consistent.
+    /// </summary>
+    private void OnShowStatus(ShowStatusMessage msg)
+    {
+        switch (msg.Severity)
+        {
+            case StatusSeverity.Success:
+                SetStatusSuccess(msg.Text);
+                break;
+
+            case StatusSeverity.Warning:
+                SetStatusWarning(msg.Text);
+                break;
+        }
+    }
+
+    // A deep-link failure detected during the nav-tree build, held until the load
+    // sequence has finished emitting its own status.
+    //
+    // WHY DEFER: RestoreSelectedNode runs inside LoadAllWorkspacesAsync, and
+    // InitializeAsync unconditionally calls SetStatusState(StatusReady) the moment
+    // that returns.  Emitting the warning at detection time meant it was overwritten
+    // microseconds later and the user never saw it — the same set-then-clobbered
+    // ordering trap as computing the deep path inside SaveWindowState.
+    private string? _pendingDeepLinkWarning;
+
+    /// <summary>
+    /// <see langword="false"/> until <see cref="InitializeAsync"/> has emitted its
+    /// final status, after which a deep-link warning can go straight to the bar
+    /// instead of being queued for a flush that has already happened.
+    /// </summary>
+    private bool _startupStatusSettled;
+
+    /// <summary>
+    /// Announce that <paramref name="path"/> didn't land, whichever side of the
+    /// startup sequence the discovery happens on.
+    /// <para>
+    /// Deep-link failures surface at two very different times: a bad page id is
+    /// known synchronously during the nav-tree build (before "Ready"), while a
+    /// stale item is only known when the fire-and-forget restore finishes, which
+    /// can be either side of it. Emitting directly in the first case gets the
+    /// warning clobbered; queueing in the second case queues it for a flush that
+    /// has already run. Routing both through here removes the ordering question.
+    /// </para>
+    /// </summary>
+    private void RaiseDeepLinkWarning(string path)
+    {
+        string text = string.Format(
+            CultureInfo.CurrentCulture, Strings.StatusDeepLinkUnresolvedFmt, path);
+
+        if (!_startupStatusSettled)
+        {
+            _pendingDeepLinkWarning = text;
+            return;
+        }
+
+        // A load failure is a bigger problem than a link that didn't resolve, and
+        // Failure is the one kind that never auto-clears — don't bury it.
+        if (Status.IsFailure)
+        {
+            return;
+        }
+
+        SetStatusWarning(text);
+    }
+
+    /// <summary>
+    /// Emit any deep-link failure recorded during startup, now that the load
+    /// sequence has stopped writing its own status.
+    /// </summary>
+    private void FlushPendingDeepLinkWarning()
+    {
+        if (_pendingDeepLinkWarning is not { } text)
+        {
+            return;
+        }
+
+        _pendingDeepLinkWarning = null;
+        if (!Status.IsFailure)
+        {
+            SetStatusWarning(text);
+        }
+    }
+
     private void OnNavigateToEnvVar(NavigateToEnvVarMessage msg)
     {
         NavigationNodeViewModel? envNode = NavigationTree.FirstOrDefault(n => n.Title == NavTitleEnvironment);
@@ -2707,6 +3246,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _cachedState.X = _savedX;
         _cachedState.Y = _savedY;
         _cachedState.LastSelectedNodeTitle = _lastNodeTitle;
+
+        // Persisted verbatim from the field — see the _lastDeepPath declaration
+        // for why this must never call CaptureDeepPath() here.
+        _cachedState.LastDeepPath = _lastDeepPath;
         _cachedState.ProjectRoot = ProjectRoot;
         _cachedState.Theme = _isFollowingSystem ? "System" : IsDarkTheme ? "Dark" : "Light";
         _cachedState.SelectedProfile = SelectedProfile;
@@ -3389,6 +3932,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             NavigationTree.Add(new NavigationNodeViewModel(NavTitleWelcome, "🏠", NavDescWelcome)
             {
+                NodeId = NavIdWelcome,
                 IsTopLevel = true,
                 // Editor is intentionally null.
             });
@@ -3401,6 +3945,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // (CachyOS / COSMIC reproducer).  Plain stars render uniformly.
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEssentials, "★", NavDescEssentialsTooltip)
         {
+            NodeId = NavIdEssentials,
             Editor = _essentialsVm,
             IsTopLevel = true,
         });
@@ -3439,6 +3984,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // --- Claude Code section ---
         NavigationNodeViewModel ccHeader = new(NavTitleClaudeCode, "⚙", NavDescClaudeCode)
         {
+            NodeId = NavIdClaudeCode,
             IsTopLevel = true,
         };
         ccHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeCode, true);
@@ -3448,7 +3994,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             foreach (NavigationGroup group in builtGroups.Cc)
             {
-                ccHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
+                ccHeader.Children.Add(new NavigationNodeViewModel(group.Title)
+                {
+                    NodeId = NavDeepPath.Slug(group.Title),
+                    Editor = group.Editor,
+                });
             }
         }
         else
@@ -3463,6 +4013,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             shareService: _shareService);
         ccHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
+            // Same id as the Claude Desktop sibling below \u2014 ids are unique per
+            // parent, and the full path (claude-code/version-info vs
+            // claude-desktop/version-info) disambiguates them.
+            NodeId = NavIdVersionInfo,
             Editor = _aboutCodeVm,
         });
 
@@ -3471,6 +4025,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // --- Claude Desktop section ---
         NavigationNodeViewModel dtHeader = new(NavTitleClaudeDesktop, "🖥", NavDescClaudeDesktop)
         {
+            NodeId = NavIdClaudeDesktop,
             IsTopLevel = true,
         };
         dtHeader.IsExpanded = _navHeaderExpanded.GetValueOrDefault(NavTitleClaudeDesktop, true);
@@ -3480,7 +4035,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             foreach (NavigationGroup group in builtGroups.Dt)
             {
-                dtHeader.Children.Add(new NavigationNodeViewModel(group.Title) { Editor = group.Editor });
+                dtHeader.Children.Add(new NavigationNodeViewModel(group.Title)
+                {
+                    NodeId = NavDeepPath.Slug(group.Title),
+                    Editor = group.Editor,
+                });
             }
         }
         else
@@ -3495,6 +4054,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             shareService: _shareService);
         dtHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
+            NodeId = NavIdVersionInfo,
             Editor = _aboutDesktopVm,
         });
 
@@ -3511,6 +4071,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel("─────────────") { IsDivider = true, IsTopLevel = true });
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
+            NodeId = NavIdEffectiveSettings,
             Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
                 SchemaTreeBuilder.CollectDescriptions(ccNodes)),
             IsTopLevel = true,
@@ -3639,6 +4200,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleProfiles, "👤", NavDescProfiles)
         {
+            NodeId = NavIdProfiles,
             Editor = _profilesVm,
             IsTopLevel = true,
         });
@@ -3714,6 +4276,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _backupVm.Refresh();
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleBackupRestore, "💾", NavDescBackupRestore)
         {
+            NodeId = NavIdBackupRestore,
             Editor = _backupVm,
             IsTopLevel = true,
         });
@@ -3731,6 +4294,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         IReadOnlyList<string> suggestedEnvVars = MergeSuggestedEnvVars(schemaSuggested, EnvVarKey.AllWellKnown);
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEnvironment, "🌐", NavDescEnvironment)
         {
+            NodeId = NavIdEnvironment,
             Editor = new EnvironmentEditorViewModel(new DefaultEnvironmentProvider(), ClaudeCodeSdk, suggestedEnvVars),
             IsTopLevel = true,
         });
@@ -3742,6 +4306,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Claude Desktop (which has no CLAUDE.md-equivalent surface).
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleMemory, "🧠", NavDescMemory)
         {
+            NodeId = NavIdMemory,
             Editor = new MemoryEditorViewModel(
                 ClaudeCodeSdk,
                 ProjectRoot,
@@ -3759,7 +4324,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // a cached _agentsSkillsVm field per the AGENTS.md nav-page checklist.
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
         {
-            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess),
+            NodeId = NavIdAgentsSkills,
+            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess)
+            {
+                // The page can only build a full deep link if it knows the node it
+                // is hosted under; passing it in beats hardcoding the id twice.
+                DeepLinkNodeId = NavIdAgentsSkills,
+            },
             IsTopLevel = true,
         });
 
@@ -3788,6 +4359,40 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private void RestoreSelectedNode()
     {
+        // An explicit --deep-link wins over persisted state, but only on the FIRST
+        // nav-tree build: without the latch every later reload would drag the user
+        // back to the command-line target instead of where they had navigated to.
+        //
+        // Mode Full because the user asked for this target explicitly. There is no
+        // transient payload — a cold start has no in-memory edit buffer.
+        if (!_deepLinkArgConsumed && DebugFlags.DeepLinkPath is { } argPath)
+        {
+            _deepLinkArgConsumed = true;
+            if (TryQueueDeepRestore(argPath, DeepRestoreMode.Full, transientState: null, announceFailure: true))
+            {
+                return;
+            }
+
+            // Unresolvable (a stale shortcut, or a page this install lacks) — fall
+            // through to normal restore. A bad deep link must never block launch.
+        }
+
+        // Persisted position: mode Locate, so a relaunch returns the user to the
+        // item WITHOUT re-entering an editing experience. The buffer that made the
+        // edit meaningful died with the previous process, so re-entering the editor
+        // seeded from disk would look like unsaved work had come back.
+        //
+        // Skipped during a reload: ReloadCoreAsync queues its own Full restore
+        // (with the in-memory edit buffer) once the rebuild finishes. Without the
+        // guard both would run — a Locate pass that opens the artifact, then a Full
+        // pass that re-opens it — costing a redundant file read for no gain.
+        if (!_suppressLaunchDeepRestore
+            && _lastDeepPath is { } savedPath
+            && TryQueueDeepRestore(savedPath, DeepRestoreMode.Locate, transientState: null))
+        {
+            return;
+        }
+
         // preference-aware case: if the saved node was
         // "Welcome" but the user has since opted out (or this is a
         // fresh state and the preference is off), fall through to the

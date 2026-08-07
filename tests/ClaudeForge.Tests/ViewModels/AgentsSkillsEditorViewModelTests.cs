@@ -338,6 +338,60 @@ public sealed class AgentsSkillsEditorViewModelTests
     }
 
     [TestMethod]
+    public async Task Save_UpdatesTheListRowSubtitle_NotJustTheDetailCard()
+    {
+        // Regression: SaveAsync used to refresh only the detail pane's Card*
+        // properties. The LIST renders ArtifactRowViewModel.Subtitle, so a saved
+        // description edit kept showing the OLD text in the list until the next
+        // full RefreshAsync — the user's edit appeared not to have taken.
+        string path = Path.Combine(Home, "agents", "reviewer.md");
+        Write(path, "---\nname: reviewer\ndescription: old desc\n---\n\nBody.\n");
+
+        var vm = new AgentsSkillsEditorViewModel(_project);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is { } fill)
+        {
+            await fill;
+        }
+
+        ArtifactRowViewModel row = AgentRows(vm).Single();
+        Assert.AreEqual("old desc", row.Subtitle, "Precondition: the row shows the pre-edit description.");
+
+        await vm.LoadArtifactAsync(row);
+        vm.BeginEditCommand.Execute(null);
+        vm.EditDescription = "new desc";
+        await vm.SaveAsync();
+
+        Assert.AreEqual("new desc", row.Subtitle,
+            "The row that launched the editor must show the saved description.");
+    }
+
+    [TestMethod]
+    public async Task Save_ClearingDescription_ShowsThePlaceholderOnTheRow()
+    {
+        // Emptying the description removes the key, so the row must fall back to
+        // the same placeholder the initial load would have used — not to an empty
+        // string, and not to the stale old text.
+        string path = Path.Combine(Home, "agents", "reviewer.md");
+        Write(path, "---\nname: reviewer\ndescription: old desc\n---\n\nBody.\n");
+
+        var vm = new AgentsSkillsEditorViewModel(_project);
+        await vm.RefreshAsync();
+        if (vm.LastDescriptionFill is { } fill)
+        {
+            await fill;
+        }
+
+        ArtifactRowViewModel row = AgentRows(vm).Single();
+        await vm.LoadArtifactAsync(row);
+        vm.BeginEditCommand.Execute(null);
+        vm.EditDescription = string.Empty;
+        await vm.SaveAsync();
+
+        Assert.AreEqual("(no description)", row.Subtitle);
+    }
+
+    [TestMethod]
     public async Task Save_PreservesUnknownKeysAndComments()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -379,8 +433,8 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditName = "s2";
         await vm.SaveAsync();
 
-        Assert.IsNotNull(vm.LastSaveMessage);
-        StringAssert.StartsWith(vm.LastSaveMessage!, "Saved.");
+        Assert.IsNotNull(vm.LastActionMessage);
+        StringAssert.StartsWith(vm.LastActionMessage!, "Saved.");
     }
 
     [TestMethod]
@@ -585,8 +639,8 @@ public sealed class AgentsSkillsEditorViewModelTests
 
             // File.Replace into a read-only target throws → caught → status set.
             Assert.IsTrue(vm.IsEditing, "On save failure the editor stays in edit mode.");
-            Assert.IsNotNull(vm.LastSaveMessage);
-            StringAssert.StartsWith(vm.LastSaveMessage!, "Save failed");
+            Assert.IsNotNull(vm.LastActionMessage);
+            StringAssert.StartsWith(vm.LastActionMessage!, "Save failed");
         }
         finally
         {

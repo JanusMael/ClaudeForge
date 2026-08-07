@@ -153,6 +153,25 @@ public sealed class WindowState
     [JsonPropertyName("x")] public double? X { get; set; }
     [JsonPropertyName("y")] public double? Y { get; set; }
     [JsonPropertyName("lastNode")] public string? LastSelectedNodeTitle { get; set; }
+
+    /// <summary>
+    /// The user's last in-page position as a <c>NavDeepPath</c> string — e.g.
+    /// <c>"agents-skills/skills/pdf@user"</c>. Restored on launch so a relaunch
+    /// returns to the item, not just the page.
+    /// <para>
+    /// Supersedes <see cref="LastSelectedNodeTitle"/>, which keys on a nav node's
+    /// display <c>Title</c> and therefore stops resolving the moment the nav tree
+    /// is localized. Both are written during the transition and the deep path
+    /// wins when present; retiring the title-keyed field is a follow-up.
+    /// </para>
+    /// <para>
+    /// Contains only stable identifiers — a segment id and an artifact
+    /// <c>name@source</c>. It must never carry an unsaved edit buffer: that state
+    /// rides across an in-process reload in memory instead (see
+    /// <c>IDeepNavigable.CaptureTransientState</c>).
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("lastDeepPath")] public string? LastDeepPath { get; set; }
     [JsonPropertyName("projectRoot")] public string? ProjectRoot { get; set; }
 
     /// <summary>"System" = follow OS (default), "Dark" or "Light" = explicit override.</summary>

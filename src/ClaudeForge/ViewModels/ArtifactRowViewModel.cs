@@ -68,4 +68,25 @@ public sealed partial class ArtifactRowViewModel(EditableMemoryEntry entry) : Ob
     /// "(no description)" if the file has no description key.
     /// </summary>
     [ObservableProperty] private string? _subtitle;
+
+    /// <summary>
+    /// Whether this row is selected, for the planned multi-select export.
+    /// <para>
+    /// Groundwork only — nothing sets or renders this yet.  It lives here (on the
+    /// row) rather than in a list-level selection model because the segment lists
+    /// are <c>ItemsControl</c>s over a mixed header/row collection, which has no
+    /// selection support of its own.
+    /// </para>
+    /// <para>
+    /// <b>Known limitation:</b> this does NOT survive a refresh.
+    /// <c>MainWindowViewModel.OnSelectedNodeChanged</c> calls
+    /// <c>AgentsSkillsEditorViewModel.Refresh()</c> on every visit to the page,
+    /// which re-walks the filesystem and constructs brand-new rows — so a
+    /// selection is lost on navigate-away-and-back.  Filtering preserves it
+    /// (<c>ApplyFilter</c> projects the same instances), but durable selection
+    /// will need re-keying by <see cref="AbsolutePath"/> across a refresh before
+    /// multi-select can ship.
+    /// </para>
+    /// </summary>
+    [ObservableProperty] private bool _isSelected;
 }

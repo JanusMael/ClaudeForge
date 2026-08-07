@@ -209,14 +209,27 @@
                          contrast against the bar's mid-gray; background brushes are subtle
                          tints used by the Border wrapper so a failure/warning row reads as
                          an actionable pill rather than competing with the bar surrounds. -->
-                    <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#1B7F2A" />
-                    <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#A35200" />
+                    <!-- 2026-08-06 — the tints above were LIGHTER than the bar they sit
+                         on (#E8E8EC), so a pill only cleared its surroundings by a
+                         1.04–1.12:1 luminance ratio and read as a faint smudge. They now
+                         sit BELOW the bar at ~1.30:1, which is a visible step without
+                         becoming a block of colour.
+                         Success and Warning had no room to move on their own: their
+                         foregrounds were already at 4.54 / 5.13 against the old tint, so
+                         darkening the fill alone would have broken AA. Both foregrounds
+                         are deepened to match — which also *raises* their contrast on the
+                         plain page background, where these same brushes are reused
+                         (PermissionTesterView, GuidedRuleBuilderView, AgentsSkillsEditorView).
+                         Every pair here is >= 4.5:1 on the pill and >= 7.3:1 on the page.
+                         Recheck both numbers if you retint either half. -->
+                    <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#156321" />
+                    <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#874400" />
                     <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#A8071A" />
                     <SolidColorBrush x:Key="AppStatusActiveForegroundBrush" Color="#0050B3" />
-                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#E8F5EC" />
-                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#FFF4E5" />
-                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#FFE7E7" />
-                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#E6F0FB" />
+                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#B1D5B8" />
+                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#E6C8A7" />
+                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#F0C1C4" />
+                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#B6CEEC" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="BarButtonBackgroundBrush" Color="#FF2A2A2E" />
@@ -246,14 +259,23 @@
                          BarButtonBackgroundBrush (near-black); backgrounds are deep tints
                          that look like a pill, not white-on-black.  Matches the same hue
                          family as the Light tokens above. -->
+                    <!-- 2026-08-06 — lifted for the same reason the Light tints were
+                         deepened: against the near-black bar (#111113) these cleared
+                         their surroundings by only 1.18–1.45:1, weakest on Failure. Now
+                         ~1.81:1 across all four, so the pills read as one family instead
+                         of Failure looking flatter than the rest.
+                         Only Failure's foreground had to move (#F76262 -> #F99090); the
+                         deeper fill left it at 4.1:1 otherwise. Brightening is safe for
+                         the reuses on the plain dark page — it gains contrast there.
+                         Every pair is >= 4.5:1 on the pill and >= 7.2:1 on the page. -->
                     <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#5BD17B" />
                     <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#F0A03A" />
-                    <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#F76262" />
+                    <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#F99090" />
                     <SolidColorBrush x:Key="AppStatusActiveForegroundBrush" Color="#6BB1F2" />
-                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#143820" />
-                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#3A2B12" />
-                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#3A1717" />
-                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#102B45" />
+                    <SolidColorBrush x:Key="AppStatusSuccessBackgroundBrush" Color="#1C492A" />
+                    <SolidColorBrush x:Key="AppStatusWarningBackgroundBrush" Color="#533B18" />
+                    <SolidColorBrush x:Key="AppStatusFailureBackgroundBrush" Color="#6D2B2B" />
+                    <SolidColorBrush x:Key="AppStatusActiveBackgroundBrush" Color="#1F4262" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

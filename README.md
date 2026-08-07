@@ -34,6 +34,8 @@ ClaudeForge is a typed editor for all of that. Every setting shows which scope p
 |---|---|
 | **★ Essentials page** | Top-of-tree page that pins the highest-impact settings — token budgets, sandbox, MCP trust, model, effort level, fast mode, auto-update channel, auto-memory, and the disable-bypass-permissions safety knob. Includes a search-deep-link to take you straight to any of them. |
 | **🧠 Memory page** | Surfaces what Claude has captured about you across sessions (transcripts, prompt history, todos, cost tracker, file-edit logs) and what files Claude reads on every session. Per-category delete for privacy hygiene before sharing your machine, recording a demo, or taking screenshots. |
+| **🧩 Agents & Skills page** | Inventory and edit your sub-agents, skills, and slash commands across User, Project, and plugin scopes — structured front-matter card, raw-YAML escape hatch, and a rendered markdown body. Filter by name, description, or source to find one among hundreds; plugin-provided items are surfaced read-only. |
+| **Deep links + place-keeping** | `--deep-link page/tab/item` launches straight to a setting or artifact — see [Deep links](#deep-links). Your position is remembered across restarts, and **Reload Window** restores it in full, including an in-progress edit. |
 | **Layered settings editor** | Browse and edit all Claude Code settings across Managed → Local → Project → User scopes. Every setting shows colour-coded scope badges with explanatory tooltips. |
 | **Effective settings view** | See the fully-merged winning value for every setting at a glance, with the source scope marked. |
 | **Compound editors** | Permissions (with curated common-actions panel), Hooks (sortable + URL/script/MCP variants), MCP servers (env-var-aware), Marketplaces (with all 8 source variants), Enabled plugins. |
@@ -194,6 +196,7 @@ ClaudeForge accepts a small set of command-line flags useful for testing UI stat
 | `--windows` / `--macos` / `--linux` | Emulate the requested platform for UI-display purposes. The Desktop config path, install-banner shell command, backup-manifest platform tag, and About page render as if the host OS were the requested platform. Real platform-intrinsic APIs keep using the real host OS. |
 | `--showAllNew` | Force every property in every editor to render with the "✨ NEW" badge. Useful for QA / screenshots / verifying badge styling without mutating the schema or snapshot cache. |
 | `--culture <code>` | Override `CurrentUICulture` with the named specific culture (e.g. `en-US`, `zh-CN`, `fr-FR`). Validated against the .NET predefined-culture list — unrecognised codes are rejected with a Serilog warning and the OS default is used. Useful for verifying the resx fallback path on cultures with no satellite. |
+| `--deep-link <path>` | Launch straight into a page, tab, or item instead of wherever you left off. See [Deep links](#deep-links). |
 | `--debug-help` | Log the available flags. |
 
 Passing any flag emits a startup log line so log captures always say which flags shaped the session:
@@ -201,6 +204,63 @@ Passing any flag emits a startup log line so log captures always say which flags
 ```
 [DebugFlags] active: --showInstallBanner, --linux, --culture zh-CN
 ```
+
+## Deep links
+
+`--deep-link <path>` opens the app at a specific place rather than wherever you
+were last. Handy for shortcuts, scripts, and anything that wants to hand a user
+straight to the right setting.
+
+```
+ClaudeForge --deep-link claude-code/permissions
+ClaudeForge --deep-link agents-skills/skills/pdf
+```
+
+The path is `page[/tab][/item]`, or `product/page[/tab][/item]` for the settings
+pages nested under a product:
+
+| Path | Lands on |
+|---|---|
+| `essentials` | The Essentials page |
+| `agents-skills` | Agents & Skills |
+| `agents-skills/skills` | Agents & Skills, Skills tab |
+| `agents-skills/skills/pdf` | …with the `pdf` skill open |
+| `agents-skills/skills/pdf@user` | …disambiguated when several sources ship a `pdf` skill |
+| `claude-code/permissions` | Claude Code → Permissions |
+| `claude-code/permissions/properties` | …on its Overview tab |
+
+**You don't have to compose these by hand.** Open an agent, skill, or command and use
+**Copy deep link** in its toolbar — that puts the exact path on your clipboard,
+already qualified so it can't land on a same-named item from another plugin. It's
+also how you hand someone else a pointer to a specific artifact.
+
+Page and tab ids are stable identifiers, not display labels, so a link keeps
+working in any language. A settings page's id is its sidebar name lower-cased with
+punctuation collapsed to `-` (`MCP Servers` → `mcp-servers`).
+
+A path that doesn't work says so rather than failing quietly. A **malformed** one is
+reported on your terminal, with the valid pages listed:
+
+```
+[ClaudeForge] --deep-link 'agents-skills//pdf' rejected: path contains an empty segment.
+  Expected: --deep-link <page>[/<tab>[/<item>]]   e.g. agents-skills/skills/pdf
+  Pages: welcome, essentials, claude-code, claude-desktop, effective-settings, ...
+  Tip: open an item in the app and use "Copy deep link" rather than composing one by hand.
+```
+
+A **well-formed but unresolvable** path — a deleted skill, a product this machine
+doesn't have — raises a warning in the status bar instead, since by then the terminal
+has its prompt back. Either way the app still launches normally; a stale shortcut
+never blocks startup.
+
+When a deep link opens an item, the list behind it is filtered to that item and
+the filter box is outlined to show the narrowing came from the link. Clear the
+filter to get the full list back.
+
+Your position is also remembered on its own: quitting while an item is open and
+relaunching returns you to that item. **Reload Window** (F5) goes further and
+restores the full state including an in-progress edit — your unsaved text comes
+back with it.
 
 ## Maintenance CLI tools
 

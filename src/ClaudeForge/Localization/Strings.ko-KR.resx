@@ -2805,4 +2805,40 @@
   <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
     <value>이 후크 이벤트는 현재 스키마에서 인식되지 않으며(지원이 중단되었거나 오타일 수 있음) 그대로 유지됩니다: {0}</value>
   </data>
+  <data name="WatermarkFilterArtifacts" xml:space="preserve">
+    <value>에이전트, 스킬, 명령 필터…</value>
+    <comment>Placeholder text in the Agents &amp; Skills filter box.</comment>
+  </data>
+  <data name="LabelClearArtifactFilter" xml:space="preserve">
+    <value>✕ 필터 지우기</value>
+    <comment>Button text for the clear-filter button on the Agents &amp; Skills filter bar.</comment>
+  </data>
+  <data name="TipClearArtifactFilter" xml:space="preserve">
+    <value>필터를 지우고 모든 에이전트, 스킬, 명령을 표시합니다</value>
+    <comment>Tooltip on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="AutoNameClearArtifactFilter" xml:space="preserve">
+    <value>필터 지우기</value>
+    <comment>AutomationProperties.Name on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="LabelArtifactFilterCountFmt" xml:space="preserve">
+    <value>{1}개 중 {0}개</value>
+    <comment>Match count beside the Agents &amp; Skills filter box. {0} = rows shown, {1} = rows total.</comment>
+  </data>
+  <data name="ButtonCopyDeepLink" xml:space="preserve">
+    <value>딥 링크 복사</value>
+    <comment>Toolbar button on the Agents &amp; Skills detail pane: copies a --deep-link path for the open artifact.</comment>
+  </data>
+  <data name="TipCopyDeepLink" xml:space="preserve">
+    <value>이 항목을 직접 다시 여는 명령줄 경로를 복사합니다 (--deep-link)</value>
+    <comment>Tooltip on the Agents &amp; Skills copy-deep-link button.</comment>
+  </data>
+  <data name="StatusDeepLinkCopiedFmt" xml:space="preserve">
+    <value>딥 링크를 복사했습니다: {0}</value>
+    <comment>Transient status line after copying a deep link. {0} = the copied path.</comment>
+  </data>
+  <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
+    <value>딥 링크 '{0}'을(를) 열 수 없습니다 — 해당 페이지나 항목이 없습니다.</value>
+    <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
 </root>

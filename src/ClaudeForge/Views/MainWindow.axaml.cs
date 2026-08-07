@@ -211,6 +211,12 @@ public partial class MainWindow : Window
         {
             Log.Information("[App.Shutdown] Main window closing — hasUnsavedChanges={Unsaved}",
                 vm.HasUnsavedChanges);
+
+            // Record the in-page position (active tab / open item) BEFORE the save.
+            // Quitting straight from an open artifact never fires the navigate-away
+            // capture, so without this the next launch would restore the page the
+            // user was on *before* this one.
+            vm.CaptureDeepPathForShutdown();
             vm.SaveWindowState(Width, Height, Position.X, Position.Y);
             vm.Dispose();
         }

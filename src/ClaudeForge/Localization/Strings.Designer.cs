@@ -6857,6 +6857,87 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Filter agents, skills, commands….
+        /// </summary>
+        public static string WatermarkFilterArtifacts {
+            get {
+                return ResourceManager.GetString("WatermarkFilterArtifacts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copy deep link.
+        /// </summary>
+        public static string ButtonCopyDeepLink {
+            get {
+                return ResourceManager.GetString("ButtonCopyDeepLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copy a command-line path that reopens this item directly (--deep-link).
+        /// </summary>
+        public static string TipCopyDeepLink {
+            get {
+                return ResourceManager.GetString("TipCopyDeepLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deep link copied: {0}.
+        /// </summary>
+        public static string StatusDeepLinkCopiedFmt {
+            get {
+                return ResourceManager.GetString("StatusDeepLinkCopiedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't open the deep link '{0}' — no such page or item..
+        /// </summary>
+        public static string StatusDeepLinkUnresolvedFmt {
+            get {
+                return ResourceManager.GetString("StatusDeepLinkUnresolvedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ✕ Clear filter.
+        /// </summary>
+        public static string LabelClearArtifactFilter {
+            get {
+                return ResourceManager.GetString("LabelClearArtifactFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Clear the filter and show all agents, skills, and commands.
+        /// </summary>
+        public static string TipClearArtifactFilter {
+            get {
+                return ResourceManager.GetString("TipClearArtifactFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Clear filter.
+        /// </summary>
+        public static string AutoNameClearArtifactFilter {
+            get {
+                return ResourceManager.GetString("AutoNameClearArtifactFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} of {1}.
+        /// </summary>
+        public static string LabelArtifactFilterCountFmt {
+            get {
+                return ResourceManager.GetString("LabelArtifactFilterCountFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Filter variables….
         /// </summary>
         public static string WatermarkFilterVars {

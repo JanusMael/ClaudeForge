@@ -1,7 +1,12 @@
+using System.Diagnostics;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Views;
 
@@ -26,8 +31,28 @@ public partial class AgentsSkillsEditorView : UserControl
 
     public AgentsSkillsEditorView()
     {
+        long startTs = Stopwatch.GetTimestamp();
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+
+        // Virtualization probe, mirroring [PropView.Realized] in
+        // GroupPropertiesView.  These lists can hold hundreds of rows on a real
+        // machine, and the ScrollViewer > ItemsControl > VirtualizingStackPanel
+        // shape is only virtualizing while the viewport stays bounded — a layout
+        // change that unbounds it degrades silently into "realize everything".
+        // A healthy page reports a screenful; hundreds means virtualization broke.
+        Loaded += (_, _) => Dispatcher.UIThread.Post(
+            () =>
+            {
+                int rows = this.GetVisualDescendants()
+                               .OfType<ContentPresenter>()
+                               .Count(p => p.Content is ArtifactRowViewModel);
+                int total = (DataContext as AgentsSkillsEditorViewModel)?.AllRows.Count ?? 0;
+                Log.Information(
+                    "[AgentsSkills.Realized] rows={Realized} ofTotal={Total} sinceCtorMs={Ms:F0}",
+                    rows, total, Stopwatch.GetElapsedTime(startTs).TotalMilliseconds);
+            },
+            DispatcherPriority.Background);
     }
 
     // Clipboard bridge for the VM's "Copy markdown" command — keeps the VM free of

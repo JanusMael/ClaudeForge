@@ -27,16 +27,23 @@ never `new` an SDK client themselves.
 ## §2 Navigation tree structure
 
 ```
-NavigationTree
- ├─ NavigationNodeViewModel("Claude Code")      ← header; .Editor = null
- │   ├─ NavigationNodeViewModel("General")      ← .Editor = SettingsGroupEditorViewModel
- │   ├─ NavigationNodeViewModel("Permissions")  ← .Editor = PermissionsEditorViewModel
- │   ├─ NavigationNodeViewModel("Hooks")        ← .Editor = HooksEditorViewModel
- │   ├─ NavigationNodeViewModel("MCP Servers")  ← .Editor = McpServersEditorViewModel
+NavigationTree                                    NodeId
+ ├─ NavigationNodeViewModel("Claude Code")      ← "claude-code"       header; .Editor = null
+ │   ├─ NavigationNodeViewModel("General")      ← "general"           .Editor = SettingsGroupEditorViewModel
+ │   ├─ NavigationNodeViewModel("Permissions")  ← "permissions"       .Editor = PermissionsEditorViewModel
+ │   ├─ NavigationNodeViewModel("Hooks")        ← "hooks"             .Editor = HooksEditorViewModel
+ │   ├─ NavigationNodeViewModel("MCP Servers")  ← "mcp-servers"       .Editor = McpServersEditorViewModel
  │   └─ ...
- └─ NavigationNodeViewModel("Claude Desktop")   ← header; .Editor = null
+ └─ NavigationNodeViewModel("Claude Desktop")   ← "claude-desktop"    header; .Editor = null
      └─ ...
 ```
+
+**`Title` vs `NodeId`.** `Title` is the display label, and it is still hardcoded
+English precisely because programmatic lookups compare against it. `NodeId` is the
+culture-invariant lookup key — added so deep links and persisted UI state keep
+resolving once the nav tree is localized. **New lookups should match on `NodeId`.**
+Ids are unique among SIBLINGS only (`version-info` exists under both products);
+dividers carry none; settings-group children use `NavDeepPath.Slug(group.Title)`.
 
 **Two editor types:**
 
@@ -102,6 +109,13 @@ When adding a new specialized editor page:
 4. Add a `SearchViewModelTests` test case for the new page (see
    `ExecuteSearch_SpecializedEditor_MatchedByPageTitle` as a template).
 
+**Known gap — global search does not find Agents & Skills *items*.** That page is
+matched by page TITLE only, so global search surfaces config properties but not
+individual skills / agents / commands. Now that artifacts have stable item keys
+(`NavDeepPath.FormatItemKey`) and reveal-by-filter exists, `SelectSearchResult`
+could reuse the same restore machinery to deep-link straight to one. Deliberately
+not done yet — it is a scope decision, not an oversight.
+
 ## §5 JsonPath → NavigationNodeViewModel mapping
 
 The SDK's `SearchSchema` returns `SchemaSearchResult` with `JsonPath` but no nav target.
@@ -130,6 +144,62 @@ This lookup is O(total schema nodes) to build and O(1) per result lookup.
 If you wire `SearchViewModel` to use `SearchSchema`, build this map inside the
 existing `ExecuteSearch` method rather than caching it on the VM — the nav tree
 is rebuilt on each workspace reload.
+
+## §5b Deep-path capture / restore
+
+Addressing a position *below* a nav node — a tab, an item, an open editor — so it
+survives a reload and can be reached from the command line.
+
+| Piece | Where |
+|---|---|
+| Grammar, slug, resolution | `NavDeepPath` (pure static, no Avalonia/SDK dep) |
+| Page contract | `IDeepNavigable` + `DeepRestoreMode` |
+| Persistence | `WindowState.LastDeepPath` ← `MainWindowViewModel._lastDeepPath` |
+| Command line | `DebugFlags.DeepLinkPath` (`--deep-link <path>`) |
+| Wiring | `MainWindowViewModel.CaptureDeepPath` / `TryQueueDeepRestore` / `ApplyPendingDeepRestore` / `RestoreDeepPathAsync` |
+| Only adopter today | `AgentsSkillsEditorViewModel` |
+
+**Grammar** — `<top-level-id>[/<child-id>][/<tab-id>[/<item-key>]]`, resolved
+strictly left-to-right. That ordering is what disambiguates
+`claude-code/permissions`: segment 2 is consumed as a CHILD NODE when it matches
+one, and only later segments mean tab and item.
+
+**Two fidelities.** `DeepRestoreMode.Full` is for an in-process Reload Window and
+restores the editing experience; `Locate` is for a cold launch or an explicit
+`--deep-link` and stops at selecting the item. Cold launch is deliberately
+`Locate`: the buffer that made an edit meaningful died with the previous process,
+so re-entering the editor seeded from disk would look like unsaved work had come
+back.
+
+**Capture points** — navigating away from a deep-navigable page, and
+`ReloadCoreAsync` (once, *before* its `do/while (_reloadPending)` loop; capturing
+inside would record the already-rebuilt empty state on a second iteration).
+Reload capture applies to EVERY caller — toolbar button, profile switch, file
+watcher, post-restore — because an automatic reload eating an in-progress edit is
+no better than a manual one doing it. It is cheap: pure in-memory bookkeeping, no
+disk write.
+
+**Persistable vs transient.** `CaptureDeepPath()` returns short, culture-invariant
+segments that are safe to persist. `CaptureTransientState()` returns an opaque
+in-memory snapshot that **must never** be persisted — it holds the unsaved edit
+buffer. Reload is in-process, so that payload simply rides across in memory, which
+is what makes the reload lossless without writing user content into
+`ClaudeForge-gui-state.json` and without needing a confirm dialog. Guarded by
+`DeepPathReloadTests.Reload_DoesNotPersistTheUnsavedEditBuffer`.
+
+**Three traps**, each with an invariant in the root [`AGENTS.md`](../../../AGENTS.md) §1:
+never compute the deep path inside `SaveWindowState`; reveal via
+`ApplyNavigationFilter`, not by assigning `FilterText`; and re-raise a computed
+filtered projection after any rebuild of its source collection. A fourth, smaller
+one: a restore must await the page's **in-flight** load (`LastRefresh`) rather than
+starting its own, or the second walk rebuilds the rows underneath the restore that
+is busy resolving one.
+
+Restore is fire-and-forget (`OnSelectedNodeChanged` is a synchronous partial), so
+tests await `MainWindowViewModel.LastDeepRestore`. It also re-asserts the tab at
+`DispatcherPriority.Loaded`, for the same reason
+`RequestExpandPermissionsAdvanced` does: selecting a node triggers a view rebuild
+that can land after the synchronous part of the restore.
 
 ## §6 `WorkspaceForGui` — migration artifact
 

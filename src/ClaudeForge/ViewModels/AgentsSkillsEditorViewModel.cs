@@ -4,9 +4,11 @@ using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -25,8 +27,61 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// body (post-front-matter) renders below.
 /// </para>
 /// </summary>
-public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable
+public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable, IDeepNavigable
 {
+    // ── Segment ids ──────────────────────────────────────────────────────
+    //
+    // Stable, culture-invariant ids for the three in-page segments, mirroring
+    // GroupTab.PropertiesId / EffectiveId / JsonId.  SelectedSegmentIndex stays
+    // the TabControl's binding — these ids are the EXTERNAL contract (deep links,
+    // persisted state), so reordering the tabs can't silently repoint a saved
+    // path the way a bare index would.
+
+    /// <summary>Segment id for the Sub-agents tab.</summary>
+    public const string SegmentSubagentsId = "subagents";
+
+    /// <summary>Segment id for the Skills tab.</summary>
+    public const string SegmentSkillsId = "skills";
+
+    /// <summary>Segment id for the Slash Commands tab.</summary>
+    public const string SegmentCommandsId = "commands";
+
+    /// <summary>Map a segment id to its tab index, or <see langword="null"/> if unknown.</summary>
+    internal static int? SegmentIndexFor(string? segmentId)
+    {
+        return segmentId?.ToLowerInvariant() switch
+        {
+            SegmentSubagentsId => 0,
+            SegmentSkillsId => 1,
+            SegmentCommandsId => 2,
+            var _ => null,
+        };
+    }
+
+    /// <summary>Map a tab index to its stable segment id.</summary>
+    internal static string SegmentIdFor(int index)
+    {
+        return index switch
+        {
+            0 => SegmentSubagentsId,
+            1 => SegmentSkillsId,
+            2 => SegmentCommandsId,
+            var _ => SegmentSubagentsId,
+        };
+    }
+
+    /// <summary>
+    /// Select a segment by its stable id; no-op when the id is unknown.
+    /// Mirrors <see cref="SettingsGroupEditorViewModel.SelectTab"/>.
+    /// </summary>
+    public void SelectSegment(string? segmentId)
+    {
+        if (SegmentIndexFor(segmentId) is { } index)
+        {
+            SelectedSegmentIndex = index;
+        }
+    }
+
     private readonly string? _projectRoot;
     private readonly IShellLauncher? _shellLauncher;
     private readonly IDialogService? _dialogService;
@@ -106,14 +161,254 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     // ArtifactRowViewModel.  Flat-with-headers lets one virtualizing list
     // scroll the whole tab (nested per-group lists break virtualization).
 
-    /// <summary>Sub-agent segment: grouped headers + rows.</summary>
+    /// <summary>Sub-agent segment: grouped headers + rows. Unfiltered source of truth.</summary>
     public ObservableCollection<object> AgentItems { get; }
 
-    /// <summary>Skill segment: grouped headers + rows.</summary>
+    /// <summary>Skill segment: grouped headers + rows. Unfiltered source of truth.</summary>
     public ObservableCollection<object> SkillItems { get; }
 
-    /// <summary>Slash-command segment: grouped headers + rows.</summary>
+    /// <summary>Slash-command segment: grouped headers + rows. Unfiltered source of truth.</summary>
     public ObservableCollection<object> CommandItems { get; }
+
+    /// <summary>
+    /// Every artifact row across all three segments (headers excluded), in the
+    /// order they were built.  Exists so a future multi-select export can read
+    /// <c>AllRows.Where(r =&gt; r.IsSelected)</c> without caring how the three
+    /// per-segment lists are shaped or filtered.
+    /// </summary>
+    public IReadOnlyList<ArtifactRowViewModel> AllRows => _allRows;
+
+    private List<ArtifactRowViewModel> _allRows = [];
+
+    // ── Filter ───────────────────────────────────────────────────────────
+    //
+    // Mirrors the per-page filter that every other list-like page already has
+    // (EffectiveSettingsViewModel.FilterText / SettingsGroupEditorViewModel
+    // .FilteredEditors).  Matches an artifact's name, description, and source.
+    //
+    // The three Filtered* properties are COMPUTED, which means the bound
+    // collections are no longer observable: FillGrouped's Clear()/Add() no
+    // longer reaches the UI on its own.  NotifyFilteredListsChanged() must be
+    // called after every rebuild — see the call sites in RefreshAsync and
+    // FillDescriptionsThenNotifyAsync.  Same contract as
+    // SettingsGroupEditorViewModel, which raises FilteredEditors by hand for
+    // exactly this reason.
+
+    /// <summary>Free-text filter applied to all three segment lists.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilteredAgentItems))]
+    [NotifyPropertyChangedFor(nameof(FilteredSkillItems))]
+    [NotifyPropertyChangedFor(nameof(FilteredCommandItems))]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilter))]
+    [NotifyPropertyChangedFor(nameof(VisibleRowCount))]
+    [NotifyPropertyChangedFor(nameof(FilterSummary))]
+    private string _filterText = string.Empty;
+
+    /// <summary>
+    /// <see langword="true"/> when the current <see cref="FilterText"/> was
+    /// applied BY navigation (a deep link or a reload restore) rather than typed
+    /// by the user.  Drives the "navigated" frame on the filter box so the user
+    /// can see the list is narrowed and why.
+    /// </summary>
+    [ObservableProperty] private bool _filterFromNavigation;
+
+    // Set only around ApplyNavigationFilter's write so OnFilterTextChanged can
+    // tell a navigation-applied filter from a user edit.
+    private bool _applyingNavFilter;
+
+    /// <summary>
+    /// Apply a filter on behalf of navigation — a deep link or a deep-path
+    /// restore — and flag it as such so the view draws the "navigated" frame.
+    /// <para>
+    /// Deep-link handlers MUST use this rather than assigning
+    /// <see cref="FilterText"/> directly, which reads as a user edit and skips
+    /// the frame.  Same contract as
+    /// <see cref="SettingsGroupEditorViewModel.ApplyNavigationFilter"/>.
+    /// </para>
+    /// </summary>
+    public void ApplyNavigationFilter(string? filter)
+    {
+        _applyingNavFilter = true;
+        try
+        {
+            FilterText = filter ?? string.Empty;
+            FilterFromNavigation = !string.IsNullOrEmpty(FilterText);
+        }
+        finally
+        {
+            _applyingNavFilter = false;
+        }
+    }
+
+    /// <summary>
+    /// Any change NOT coming through <see cref="ApplyNavigationFilter"/> is a
+    /// user edit or clear, which drops the deep-link "navigated" frame.
+    /// </summary>
+    partial void OnFilterTextChanged(string value)
+    {
+        if (!_applyingNavFilter)
+        {
+            FilterFromNavigation = false;
+        }
+    }
+
+    /// <summary>Clear the filter and return every segment to its full list.</summary>
+    [RelayCommand]
+    private void ClearFilter()
+    {
+        FilterText = string.Empty;
+    }
+
+    /// <summary><see langword="true"/> when a filter is narrowing the lists.</summary>
+    public bool HasActiveFilter => !string.IsNullOrWhiteSpace(FilterText);
+
+    /// <summary>Sub-agent segment, narrowed by <see cref="FilterText"/>.</summary>
+    public IReadOnlyList<object> FilteredAgentItems => ApplyFilter(AgentItems, FilterText);
+
+    /// <summary>Skill segment, narrowed by <see cref="FilterText"/>.</summary>
+    public IReadOnlyList<object> FilteredSkillItems => ApplyFilter(SkillItems, FilterText);
+
+    /// <summary>Slash-command segment, narrowed by <see cref="FilterText"/>.</summary>
+    public IReadOnlyList<object> FilteredCommandItems => ApplyFilter(CommandItems, FilterText);
+
+    /// <summary>Rows visible in the ACTIVE segment after filtering (headers excluded).</summary>
+    public int VisibleRowCount => ActiveFilteredItems.OfType<ArtifactRowViewModel>().Count();
+
+    /// <summary>Rows in the ACTIVE segment before filtering (headers excluded).</summary>
+    public int TotalRowCount => ActiveItems.OfType<ArtifactRowViewModel>().Count();
+
+    /// <summary>
+    /// "shown of total" for the active segment, e.g. <c>"3 of 47"</c>.
+    /// <para>
+    /// Formatted here rather than via an AXAML <c>StringFormat</c> because the
+    /// format takes TWO arguments and a single-binding <c>StringFormat</c> can
+    /// only ever supply <c>{0}</c> — the count would render with a literal
+    /// <c>{1}</c> in it.
+    /// </para>
+    /// </summary>
+    public string FilterSummary => string.Format(
+        CultureInfo.CurrentCulture, Strings.LabelArtifactFilterCountFmt, VisibleRowCount, TotalRowCount);
+
+    private IReadOnlyList<object> ActiveFilteredItems => SelectedSegmentIndex switch
+    {
+        0 => FilteredAgentItems,
+        1 => FilteredSkillItems,
+        2 => FilteredCommandItems,
+        var _ => Array.Empty<object>(),
+    };
+
+    private IReadOnlyList<object> ActiveItems => SelectedSegmentIndex switch
+    {
+        0 => AgentItems,
+        1 => SkillItems,
+        2 => CommandItems,
+        var _ => Array.Empty<object>(),
+    };
+
+    /// <summary>
+    /// Narrow one segment's flat [headers + rows] sequence to the rows matching
+    /// <paramref name="filter"/>, dropping any section header whose group has no
+    /// surviving row.
+    ///
+    /// <para>
+    /// Two properties this MUST keep, both load-bearing elsewhere:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item>
+    ///     Returns a MATERIALIZED list. The view re-enumerates the bound
+    ///     collection on layout passes, so handing back a lazy query would
+    ///     re-run the whole filter each time.
+    ///   </item>
+    ///   <item>
+    ///     PROJECTS the same <see cref="ArtifactRowViewModel"/> instances rather
+    ///     than rebuilding them, so per-row state (notably
+    ///     <see cref="ArtifactRowViewModel.IsSelected"/>) survives the user
+    ///     narrowing the list.
+    ///   </item>
+    /// </list>
+    /// <para>
+    /// Pure and static so it is unit-testable without constructing the VM.
+    /// </para>
+    /// </summary>
+    internal static List<object> ApplyFilter(IEnumerable<object> flat, string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return [.. flat];
+        }
+
+        List<object> result = [];
+        ArtifactSectionHeaderViewModel? pendingHeader = null;
+
+        foreach (object item in flat)
+        {
+            if (item is ArtifactSectionHeaderViewModel header)
+            {
+                // Buffered, not emitted: a header earns its place only once a
+                // row beneath it survives the filter.
+                pendingHeader = header;
+                continue;
+            }
+
+            if (item is ArtifactRowViewModel row)
+            {
+                if (!MatchesFilter(row, filter!))
+                {
+                    continue;
+                }
+
+                if (pendingHeader is not null)
+                {
+                    result.Add(pendingHeader);
+                    pendingHeader = null;
+                }
+
+                result.Add(row);
+                continue;
+            }
+
+            // Fail open on an unrecognised item type: if a third item kind is
+            // ever added to these lists, it stays visible rather than silently
+            // vanishing the moment the user types in the filter box.
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Match an artifact against the filter on name, description, or source.
+    /// <para>
+    /// <see cref="ArtifactRowViewModel.Subtitle"/> (the front-matter
+    /// description) is filled asynchronously by
+    /// <see cref="FillDescriptionsAsync"/>, so a filter typed before that
+    /// completes cannot match on it yet — which is why the fill re-raises the
+    /// filtered-list notifications when it finishes.
+    /// </para>
+    /// </summary>
+    private static bool MatchesFilter(ArtifactRowViewModel row, string filter)
+    {
+        return row.DisplayName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || row.Source.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || (row.Subtitle is { } subtitle
+                   && subtitle.Contains(filter, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Re-raise the computed filtered-list properties (and the counts derived
+    /// from them).  Required after ANY rebuild of the underlying
+    /// <see cref="ObservableCollection{T}"/>s, because the view binds the
+    /// computed projections rather than the collections themselves.
+    /// </summary>
+    private void NotifyFilteredListsChanged()
+    {
+        OnPropertyChanged(nameof(FilteredAgentItems));
+        OnPropertyChanged(nameof(FilteredSkillItems));
+        OnPropertyChanged(nameof(FilteredCommandItems));
+        OnPropertyChanged(nameof(VisibleRowCount));
+        OnPropertyChanged(nameof(TotalRowCount));
+        OnPropertyChanged(nameof(FilterSummary));
+    }
 
     [ObservableProperty] private bool _isBusy;
 
@@ -134,6 +429,8 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     [NotifyCanExecuteChangedFor(nameof(BeginEditCommand))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleRawModeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CopyDeepLinkCommand))]
+    [NotifyPropertyChangedFor(nameof(CanCopyDeepLink))]
     private ArtifactRowViewModel? _selectedArtifact;
 
     /// <summary><see langword="true"/> when a row is selected and the detail pane should show.</summary>
@@ -153,8 +450,13 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
     // Which segment (Sub-agents / Skills / Slash Commands) the TabControl shows.
     // VM-driven so the change is observable + logged, not view-only. 0=Sub-agents,
-    // 1=Skills, 2=Slash Commands.
-    [ObservableProperty] private int _selectedSegmentIndex;
+    // 1=Skills, 2=Slash Commands.  The counts are per-active-segment, so they
+    // have to re-read when the segment changes.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VisibleRowCount))]
+    [NotifyPropertyChangedFor(nameof(TotalRowCount))]
+    [NotifyPropertyChangedFor(nameof(FilterSummary))]
+    private int _selectedSegmentIndex;
 
     partial void OnSelectedSegmentIndexChanged(int value)
     {
@@ -238,7 +540,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     [ObservableProperty] private string? _editBody;
 
     /// <summary>Transient post-save status line shown under the detail toolbar.</summary>
-    [ObservableProperty] private string? _lastSaveMessage;
+    [ObservableProperty] private string? _lastActionMessage;
 
     // ── Raw front-matter editing (mutually exclusive with the typed fields) ──
     //
@@ -312,11 +614,30 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         _refreshLock.Dispose();
     }
 
-    /// <summary>Synchronous shortcut for the ctor — fire-and-forget refresh.</summary>
+    /// <summary>
+    /// Synchronous shortcut for the ctor and for
+    /// <c>MainWindowViewModel.OnSelectedNodeChanged</c> — fire-and-forget refresh.
+    /// The task is retained in <see cref="LastRefresh"/> so a deep-path restore
+    /// can await THIS walk instead of starting a competing one.
+    /// </summary>
     public void Refresh()
     {
-        _ = RefreshAsync();
+        LastRefresh = RefreshAsync();
     }
+
+    /// <summary>
+    /// The most recent refresh task, so a caller that needs the rows can await
+    /// the walk already in flight.
+    /// <para>
+    /// Without this seam a deep-path restore would call
+    /// <see cref="RefreshAsync"/> itself; because that serialises on
+    /// <c>_refreshLock</c>, the restore would queue a SECOND full filesystem walk
+    /// behind the one <c>OnSelectedNodeChanged</c> already started, and that
+    /// second walk would rebuild every row underneath the restore that was busy
+    /// resolving one. Same rationale as <see cref="LastDescriptionFill"/>.
+    /// </para>
+    /// </summary>
+    public Task? LastRefresh { get; private set; }
 
     /// <summary>
     /// Re-walk the scope-aware service and rebuild the three segment lists.
@@ -348,14 +669,23 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
                 FillGrouped(AgentItems, entries, UserMemoryCategory.Subagent, rows);
                 FillGrouped(SkillItems, entries, UserMemoryCategory.Skill, rows);
                 FillGrouped(CommandItems, entries, UserMemoryCategory.SlashCommand, rows);
+                _allRows = rows;
 
+                // The view binds the COMPUTED Filtered* projections, so the
+                // Clear()/Add() above does not reach the UI on its own.  Without
+                // this the lists would silently stop updating on refresh.
+                NotifyFilteredListsChanged();
+
+                // Rows only — FillGrouped appends artifacts to `rows` and never the
+                // section headers, so the previous "incl. headers" wording was
+                // misleading when cross-reading this against [AgentsSkills.Realized].
                 Log.Information(
-                    "[AgentsSkills.Refresh] rows={Rows} (agents+skills+commands incl. headers)", rows.Count);
+                    "[AgentsSkills.Refresh] rows={Rows} (agents+skills+commands, headers excluded)", rows.Count);
 
                 // Kick the lazy description fill — rows are already on screen.
                 // Captured (not discarded) so tests can await completion
                 // deterministically; in the app it runs fire-and-forget.
-                LastDescriptionFill = FillDescriptionsAsync(rows, fillCt);
+                LastDescriptionFill = FillDescriptionsThenNotifyAsync(rows, fillCt);
             }
             catch (Exception ex)
             {
@@ -367,6 +697,11 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
                 AgentItems.Clear();
                 SkillItems.Clear();
                 CommandItems.Clear();
+                _allRows = [];
+                // Same reason as the success path: the view binds the computed
+                // projections, so the clear has to be announced explicitly or
+                // the UI keeps rendering the stale lists.
+                NotifyFilteredListsChanged();
             }
             finally
             {
@@ -429,6 +764,49 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     }
 
     /// <summary>
+    /// The list-row subtitle for a front-matter description: the description
+    /// itself, or a placeholder when the file declares none.
+    /// <para>
+    /// Shared by the background fill and by <see cref="SaveAsync"/> so a saved
+    /// edit renders its row exactly the way the initial load would have — the
+    /// two drifting apart is what made a saved description look stale.
+    /// </para>
+    /// </summary>
+    private static string NormaliseSubtitle(string? description)
+    {
+        return string.IsNullOrWhiteSpace(description) ? NoDescriptionPlaceholder : description!;
+    }
+
+    // Pre-existing untranslated placeholder, kept verbatim so this change is
+    // behaviour-preserving; localising it is a separate concern from the
+    // stale-row fix (it would need a new resx key in all eight cultures).
+    private const string NoDescriptionPlaceholder = "(no description)";
+
+    /// <summary>
+    /// Run the lazy description fill, then re-raise the filtered-list
+    /// notifications.
+    /// <para>
+    /// The description is one of the filter's match fields but arrives
+    /// asynchronously, so a filter typed while the fill is still running can
+    /// only match on name and source. Re-raising once at the end lets those
+    /// description matches appear without re-running the filter per row.
+    /// </para>
+    /// </summary>
+    private async Task FillDescriptionsThenNotifyAsync(
+        IReadOnlyList<ArtifactRowViewModel> rows, CancellationToken ct)
+    {
+        await FillDescriptionsAsync(rows, ct).ConfigureAwait(true);
+
+        // A superseded fill must not disturb the newer refresh's lists.
+        if (ct.IsCancellationRequested)
+        {
+            return;
+        }
+
+        NotifyFilteredListsChanged();
+    }
+
+    /// <summary>
     /// Lazily fill each row's <see cref="ArtifactRowViewModel.Subtitle"/> from
     /// the file's <c>description</c> front-matter.  Reads happen on the thread
     /// pool (bounded 8 KiB head-read each); results are marshalled back to set
@@ -457,7 +835,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
                 // Back on the UI thread (ConfigureAwait(true)) — safe to set
                 // the observable property.
-                row.Subtitle = string.IsNullOrWhiteSpace(description) ? "(no description)" : description;
+                row.Subtitle = NormaliseSubtitle(description);
             }
         }
         catch (OperationCanceledException)
@@ -495,7 +873,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         // and clears the transient save message.
         IsEditing = false;
         IsRawMode = false;
-        LastSaveMessage = null;
+        LastActionMessage = null;
 
         string? text;
         try
@@ -554,7 +932,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         _currentFrontMatter = null;
         IsEditing = false;
         IsRawMode = false;
-        LastSaveMessage = null;
+        LastActionMessage = null;
         ResetCard();
     }
 
@@ -715,7 +1093,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         EditModel = CardModel;
         EditTools = CardTools;
         EditBody = ViewerBody;
-        LastSaveMessage = null;
+        LastActionMessage = null;
         IsRawMode = false; // always start in the typed editor
         IsEditing = true;
 
@@ -729,7 +1107,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     {
         IsEditing = false;
         IsRawMode = false;
-        LastSaveMessage = null;
+        LastActionMessage = null;
     }
 
     /// <summary>
@@ -795,7 +1173,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
-            LastSaveMessage = string.Format(
+            LastActionMessage = string.Format(
                 CultureInfo.CurrentCulture, Strings.StatusArtifactSaveFailedFmt, ex.Message);
             Log.Warning(ex, "[AgentsSkills.Command] action=Save FAILED path={Path}", row.AbsolutePath);
             return;
@@ -810,10 +1188,17 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         PopulateCard(row, saved);
         ViewerBody = saved.Present ? saved.Body : written ?? string.Empty;
 
+        // Push the saved description back onto the LIST row.  PopulateCard only
+        // refreshes the detail pane's Card* properties, so without this the row
+        // in the segment list keeps rendering the pre-edit description until the
+        // next full refresh.  Deliberately not a RefreshAsync() — that would
+        // rebuild every row and drop the selection the user is looking at.
+        row.Subtitle = NormaliseSubtitle(CardDescription);
+
         IsEditing = false;
         IsRawMode = false;
         RawValidationMessage = null;
-        LastSaveMessage = FirstSaveHint();
+        LastActionMessage = FirstSaveHint();
 
         Log.Information("[AgentsSkills.UserEdit] action=Save kind={Kind} scope={Scope} name={Name}",
             row.Entry.Category, row.Entry.Scope, row.DisplayName);
@@ -949,6 +1334,309 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
         _restartHintShownThisSession = true;
         return Strings.StatusArtifactSavedRestartHint;
+    }
+
+    // ── Deep-path capture / restore (IDeepNavigable) ─────────────────────
+
+    /// <summary>
+    /// The in-memory snapshot carried across an in-process reload. Holds the
+    /// UNSAVED edit buffer, which is why it is never persisted — see
+    /// <see cref="IDeepNavigable.CaptureTransientState"/>.
+    /// </summary>
+    /// <remarks>
+    /// A record so it is trivially immutable; the restore reads it once.
+    /// </remarks>
+    internal sealed record ArtifactEditSnapshot(
+        bool IsEditing,
+        bool IsRawMode,
+        string? EditName,
+        string? EditDescription,
+        string? EditModel,
+        string? EditTools,
+        string? EditBody,
+        string? EditRawFrontMatter);
+
+    /// <summary>Map an artifact category to the segment that lists it.</summary>
+    internal static string SegmentIdForCategory(UserMemoryCategory category)
+    {
+        return category switch
+        {
+            UserMemoryCategory.Subagent => SegmentSubagentsId,
+            UserMemoryCategory.Skill => SegmentSkillsId,
+            UserMemoryCategory.SlashCommand => SegmentCommandsId,
+            var _ => SegmentSubagentsId,
+        };
+    }
+
+    /// <summary>
+    /// The navigation <c>NodeId</c> this page is hosted under, assigned by
+    /// <c>MainWindowViewModel</c> at construction (same shape as
+    /// <c>BackupRestoreViewModel.InitialProjectRoot</c>).
+    /// <para>
+    /// Needed because <see cref="CaptureDeepPath"/> returns only the segments
+    /// BELOW the node — the node prefix is the host's knowledge. Passing it in
+    /// rather than hardcoding the id here keeps a single source of truth: a
+    /// duplicated literal would be exactly the kind of parallel list that drifts.
+    /// </para>
+    /// <para>
+    /// <see langword="null"/> in unit tests, which simply disables
+    /// <see cref="CopyDeepLinkCommand"/>.
+    /// </para>
+    /// </summary>
+    public string? DeepLinkNodeId
+    {
+        get => _deepLinkNodeId;
+        set
+        {
+            _deepLinkNodeId = value;
+            CopyDeepLinkCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private string? _deepLinkNodeId;
+
+    /// <summary>
+    /// <see langword="true"/> when there is an open artifact AND a host node id,
+    /// so a shareable deep link can actually be composed.
+    /// </summary>
+    public bool CanCopyDeepLink => SelectedArtifact is not null && !string.IsNullOrEmpty(DeepLinkNodeId);
+
+    /// <summary>
+    /// Put a <c>--deep-link</c> path for the open artifact on the clipboard.
+    /// <para>
+    /// This is the feature's discoverability answer: the path grammar is
+    /// documented, but nobody should have to derive an id by hand — they copy it
+    /// from the item they are already looking at. It doubles as the way to share a
+    /// pointer to an artifact in a ticket or a runbook.
+    /// </para>
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCopyDeepLink))]
+    private void CopyDeepLink()
+    {
+        if (DeepLinkNodeId is not { } nodeId || SelectedArtifact is null)
+        {
+            return;
+        }
+
+        string path = NavDeepPath.Format([nodeId, .. CaptureDeepPath()]);
+
+        // Reuses the view's existing clipboard bridge — clipboard access needs
+        // TopLevel, which is a view concern.
+        CopyMarkdownRequested?.Invoke(this, path);
+
+        string confirmation = string.Format(
+            CultureInfo.CurrentCulture, Strings.StatusDeepLinkCopiedFmt, path);
+
+        // Announced in TWO places on purpose. The page-local line keeps the copied
+        // path readable next to the button that produced it (it's the thing the user
+        // wants to see and maybe re-read), while the shell's status pill is where
+        // this app confirms every other completed action — an 11px grey line alone
+        // is easy to miss, which is exactly what happened in review.
+        LastActionMessage = confirmation;
+        WeakReferenceMessenger.Default.Send(
+            new ShowStatusMessage(confirmation, StatusSeverity.Success));
+
+        Log.Information("[AgentsSkills.Command] action=CopyDeepLink path={Path}", path);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> CaptureDeepPath()
+    {
+        // No open artifact: the visible segment alone is the position.
+        if (SelectedArtifact is not { } row)
+        {
+            return [SegmentIdFor(SelectedSegmentIndex)];
+        }
+
+        // With an artifact open, derive the segment from the ARTIFACT'S category
+        // rather than from SelectedSegmentIndex.  The two normally agree (you have
+        // to be on a tab to click a row in it), but deriving from the item makes
+        // the pair self-consistent by construction — a captured path can never
+        // name a segment that doesn't contain the item it points at.
+        string segment = SegmentIdForCategory(row.Entry.Category);
+
+        // Fully-qualified (name@source) rather than a bare name so the restore
+        // can't land on a same-named artifact from a different scope or plugin.
+        return [segment, NavDeepPath.FormatItemKey(row.DisplayName, row.Source)];
+    }
+
+    /// <inheritdoc />
+    public object? CaptureTransientState()
+    {
+        // Only worth carrying when there is an edit in progress; a plain viewing
+        // position is already fully described by the deep path.
+        if (!IsEditing)
+        {
+            return null;
+        }
+
+        return new ArtifactEditSnapshot(
+            IsEditing: true,
+            IsRawMode: IsRawMode,
+            EditName: EditName,
+            EditDescription: EditDescription,
+            EditModel: EditModel,
+            EditTools: EditTools,
+            EditBody: EditBody,
+            EditRawFrontMatter: EditRawFrontMatter);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryRestoreDeepPathAsync(
+        IReadOnlyList<string> segments,
+        DeepRestoreMode mode,
+        object? transientState,
+        CancellationToken ct)
+    {
+        if (segments is null || segments.Count == 0)
+        {
+            return false;
+        }
+
+        // Segment first: even if the item can't be found, landing on the right
+        // tab is strictly better than landing on the default one.
+        SelectSegment(segments[0]);
+
+        if (segments.Count < 2)
+        {
+            return true;
+        }
+
+        // The rows come from a filesystem walk that OnSelectedNodeChanged has
+        // already kicked off.  Await THAT one rather than starting a second.
+        if (LastRefresh is { } inFlight)
+        {
+            try
+            {
+                await inFlight.ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                // RefreshAsync guards itself and leaves the lists empty on
+                // failure; nothing to restore, but never surface it as a crash.
+                Log.Warning(ex, "[DeepLink] refresh faulted before restore; nothing to select");
+                return false;
+            }
+        }
+
+        if (ct.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        ArtifactRowViewModel? target = ResolveArtifact(segments[0], segments[1]);
+        if (target is null)
+        {
+            Log.Information(
+                "[DeepLink] artifact not found segment={Segment} item={Item}", segments[0], segments[1]);
+            return false;
+        }
+
+        await LoadArtifactAsync(target).ConfigureAwait(true);
+        if (ct.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        // Reveal the row in the list behind the detail pane by filtering to it,
+        // which is how the app already surfaces deep-linked property targets
+        // (SettingsGroupEditorViewModel.ApplyNavigationFilter).  Goes through
+        // ApplyNavigationFilter, NOT FilterText, so the "navigated" frame shows
+        // and the user can see why the list is narrowed.
+        ApplyNavigationFilter(target.DisplayName);
+
+        if (mode == DeepRestoreMode.Full && transientState is ArtifactEditSnapshot snapshot)
+        {
+            RestoreEditSnapshot(snapshot);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Find the row an item key names within one segment.
+    /// <para>
+    /// Accepts <c>name@source</c> (exact, and what <see cref="CaptureDeepPath"/>
+    /// emits) or a bare <c>name</c> (what a human types). A bare name that
+    /// matches more than one row logs the ambiguity and takes the first, because
+    /// landing somewhere reasonable beats refusing to navigate.
+    /// </para>
+    /// </summary>
+    private ArtifactRowViewModel? ResolveArtifact(string segmentId, string itemKey)
+    {
+        IReadOnlyList<object> items = SegmentIndexFor(segmentId) switch
+        {
+            0 => AgentItems,
+            1 => SkillItems,
+            2 => CommandItems,
+            var _ => Array.Empty<object>(),
+        };
+
+        List<ArtifactRowViewModel> rows = items.OfType<ArtifactRowViewModel>().ToList();
+        (string name, string? source) = NavDeepPath.SplitItemKey(itemKey);
+
+        if (source is not null)
+        {
+            ArtifactRowViewModel? exact = rows.FirstOrDefault(
+                r => string.Equals(r.DisplayName, name, StringComparison.OrdinalIgnoreCase)
+                     && string.Equals(r.Source, source, StringComparison.OrdinalIgnoreCase));
+            if (exact is not null)
+            {
+                return exact;
+            }
+
+            // The source may have gone away (plugin uninstalled) while the name
+            // survives elsewhere — fall through to a name-only match rather than
+            // giving up on an otherwise-valid target.
+        }
+
+        List<ArtifactRowViewModel> byName = rows
+                                            .Where(r => string.Equals(
+                                                r.DisplayName, name, StringComparison.OrdinalIgnoreCase))
+                                            .ToList();
+
+        if (byName.Count > 1)
+        {
+            Log.Information(
+                "[DeepLink] item key '{Item}' is ambiguous ({Count} matches); taking the first. "
+                + "Qualify it as name@source to disambiguate.",
+                itemKey, byName.Count);
+        }
+
+        return byName.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Put an in-progress edit back after an in-process reload, so the user's
+    /// unsaved text survives a Reload Window instead of being silently discarded.
+    /// </summary>
+    private void RestoreEditSnapshot(ArtifactEditSnapshot snapshot)
+    {
+        if (!snapshot.IsEditing || !CanEdit)
+        {
+            return;
+        }
+
+        // BeginEdit seeds the fields from the freshly-loaded card, then the
+        // snapshot overwrites them with what the user had actually typed.
+        BeginEdit();
+
+        EditName = snapshot.EditName;
+        EditDescription = snapshot.EditDescription;
+        EditModel = snapshot.EditModel;
+        EditTools = snapshot.EditTools;
+        EditBody = snapshot.EditBody;
+
+        if (snapshot.IsRawMode)
+        {
+            // Setting IsRawMode re-seeds the raw box from the typed fields via
+            // OnIsRawModeChanged, so the captured raw text has to be re-applied
+            // after the toggle, not before.
+            IsRawMode = true;
+            EditRawFrontMatter = snapshot.EditRawFrontMatter;
+        }
+
+        Log.Information("[DeepLink] restored in-progress edit raw={Raw}", snapshot.IsRawMode);
     }
 
     // ── Card population ──────────────────────────────────────────────────

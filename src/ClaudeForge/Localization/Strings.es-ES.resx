@@ -2793,4 +2793,40 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
   <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
     <value>El esquema actual no reconoce estos eventos de hook (pueden estar obsoletos o mal escritos) y se conservan tal cual: {0}</value>
   </data>
+  <data name="WatermarkFilterArtifacts" xml:space="preserve">
+    <value>Filtrar agentes, skills, comandos…</value>
+    <comment>Placeholder text in the Agents &amp; Skills filter box.</comment>
+  </data>
+  <data name="LabelClearArtifactFilter" xml:space="preserve">
+    <value>✕ Borrar filtro</value>
+    <comment>Button text for the clear-filter button on the Agents &amp; Skills filter bar.</comment>
+  </data>
+  <data name="TipClearArtifactFilter" xml:space="preserve">
+    <value>Borrar el filtro y mostrar todos los agentes, skills y comandos</value>
+    <comment>Tooltip on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="AutoNameClearArtifactFilter" xml:space="preserve">
+    <value>Borrar filtro</value>
+    <comment>AutomationProperties.Name on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="LabelArtifactFilterCountFmt" xml:space="preserve">
+    <value>{0} de {1}</value>
+    <comment>Match count beside the Agents &amp; Skills filter box. {0} = rows shown, {1} = rows total.</comment>
+  </data>
+  <data name="ButtonCopyDeepLink" xml:space="preserve">
+    <value>Copiar enlace directo</value>
+    <comment>Toolbar button on the Agents &amp; Skills detail pane: copies a --deep-link path for the open artifact.</comment>
+  </data>
+  <data name="TipCopyDeepLink" xml:space="preserve">
+    <value>Copia una ruta de línea de comandos que vuelve a abrir este elemento directamente (--deep-link)</value>
+    <comment>Tooltip on the Agents &amp; Skills copy-deep-link button.</comment>
+  </data>
+  <data name="StatusDeepLinkCopiedFmt" xml:space="preserve">
+    <value>Enlace directo copiado: {0}</value>
+    <comment>Transient status line after copying a deep link. {0} = the copied path.</comment>
+  </data>
+  <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
+    <value>No se pudo abrir el enlace directo «{0}»: no existe esa página ni ese elemento.</value>
+    <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
 </root>

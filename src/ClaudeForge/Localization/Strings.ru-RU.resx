@@ -2805,4 +2805,40 @@
   <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
     <value>Эти события перехватчиков не распознаются текущей схемой (возможно, устарели или содержат опечатку) и сохраняются как есть: {0}</value>
   </data>
+  <data name="WatermarkFilterArtifacts" xml:space="preserve">
+    <value>Фильтр агентов, навыков, команд…</value>
+    <comment>Placeholder text in the Agents &amp; Skills filter box.</comment>
+  </data>
+  <data name="LabelClearArtifactFilter" xml:space="preserve">
+    <value>✕ Очистить фильтр</value>
+    <comment>Button text for the clear-filter button on the Agents &amp; Skills filter bar.</comment>
+  </data>
+  <data name="TipClearArtifactFilter" xml:space="preserve">
+    <value>Очистить фильтр и показать все агенты, навыки и команды</value>
+    <comment>Tooltip on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="AutoNameClearArtifactFilter" xml:space="preserve">
+    <value>Очистить фильтр</value>
+    <comment>AutomationProperties.Name on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="LabelArtifactFilterCountFmt" xml:space="preserve">
+    <value>{0} из {1}</value>
+    <comment>Match count beside the Agents &amp; Skills filter box. {0} = rows shown, {1} = rows total.</comment>
+  </data>
+  <data name="ButtonCopyDeepLink" xml:space="preserve">
+    <value>Копировать прямую ссылку</value>
+    <comment>Toolbar button on the Agents &amp; Skills detail pane: copies a --deep-link path for the open artifact.</comment>
+  </data>
+  <data name="TipCopyDeepLink" xml:space="preserve">
+    <value>Копирует путь для командной строки, который снова открывает этот элемент (--deep-link)</value>
+    <comment>Tooltip on the Agents &amp; Skills copy-deep-link button.</comment>
+  </data>
+  <data name="StatusDeepLinkCopiedFmt" xml:space="preserve">
+    <value>Прямая ссылка скопирована: {0}</value>
+    <comment>Transient status line after copying a deep link. {0} = the copied path.</comment>
+  </data>
+  <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
+    <value>Не удалось открыть прямую ссылку «{0}» — такой страницы или элемента нет.</value>
+    <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
 </root>

@@ -2805,4 +2805,40 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
   <data name="LabelHooksUnrecognizedEventsFmt" xml:space="preserve">
     <value>Ces événements de hook ne sont pas reconnus par le schéma actuel (ils sont peut-être obsolètes ou mal orthographiés) et sont conservés tels quels : {0}</value>
   </data>
+  <data name="WatermarkFilterArtifacts" xml:space="preserve">
+    <value>Filtrer les agents, compétences, commandes…</value>
+    <comment>Placeholder text in the Agents &amp; Skills filter box.</comment>
+  </data>
+  <data name="LabelClearArtifactFilter" xml:space="preserve">
+    <value>✕ Effacer le filtre</value>
+    <comment>Button text for the clear-filter button on the Agents &amp; Skills filter bar.</comment>
+  </data>
+  <data name="TipClearArtifactFilter" xml:space="preserve">
+    <value>Effacer le filtre et afficher tous les agents, compétences et commandes</value>
+    <comment>Tooltip on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="AutoNameClearArtifactFilter" xml:space="preserve">
+    <value>Effacer le filtre</value>
+    <comment>AutomationProperties.Name on the Agents &amp; Skills clear-filter button.</comment>
+  </data>
+  <data name="LabelArtifactFilterCountFmt" xml:space="preserve">
+    <value>{0} sur {1}</value>
+    <comment>Match count beside the Agents &amp; Skills filter box. {0} = rows shown, {1} = rows total.</comment>
+  </data>
+  <data name="ButtonCopyDeepLink" xml:space="preserve">
+    <value>Copier le lien direct</value>
+    <comment>Toolbar button on the Agents &amp; Skills detail pane: copies a --deep-link path for the open artifact.</comment>
+  </data>
+  <data name="TipCopyDeepLink" xml:space="preserve">
+    <value>Copie un chemin de ligne de commande qui rouvre directement cet élément (--deep-link)</value>
+    <comment>Tooltip on the Agents &amp; Skills copy-deep-link button.</comment>
+  </data>
+  <data name="StatusDeepLinkCopiedFmt" xml:space="preserve">
+    <value>Lien direct copié : {0}</value>
+    <comment>Transient status line after copying a deep link. {0} = the copied path.</comment>
+  </data>
+  <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
+    <value>Impossible d'ouvrir le lien direct « {0} » — page ou élément introuvable.</value>
+    <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
 </root>

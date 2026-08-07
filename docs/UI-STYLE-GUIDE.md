@@ -144,14 +144,38 @@ instance) via typed `SetStatusXxx` helpers.
 
 | Kind | Foreground (light/dark) | Background (light/dark) | Visual | Lifecycle |
 |---|---|---|---|---|
-| Active | `#0050B3` / `#6BB1F2` | `#E6F0FB` / `#102B45` | blue pill, "…" glyph | no auto-clear |
-| Success | `#1B7F2A` / `#5BD17B` | `#E8F5EC` / `#143820` | green pill, ✓ glyph | auto-clear ~6s |
-| Warning | `#A35200` / `#F0A03A` | `#FFF4E5` / `#3A2B12` | amber pill, ⚠ glyph | auto-clear ~10s |
-| Failure | `#A8071A` / `#F76262` | `#FFE7E7` / `#3A1717` | red pill, ✗ glyph, × dismiss | sticks until dismissed |
+| Active | `#0050B3` / `#6BB1F2` | `#B6CEEC` / `#1F4262` | blue pill, "…" glyph | no auto-clear |
+| Success | `#156321` / `#5BD17B` | `#B1D5B8` / `#1C492A` | green pill, ✓ glyph | auto-clear ~6s |
+| Warning | `#874400` / `#F0A03A` | `#E6C8A7` / `#533B18` | amber pill, ⚠ glyph | auto-clear ~10s |
+| Failure | `#A8071A` / `#F99090` | `#F0C1C4` / `#6D2B2B` | red pill, ✗ glyph, × dismiss | sticks until dismissed |
 | State | — | — | quiet plain text, no pill | replaced by next Set |
 
 **Design principle**: each pill kind is dual-coded (colour + glyph) so
 colour-blind / colourblind-mode users still see the severity.
+
+**Two contrast budgets, not one** (retint 2026-08-06). A pill has to clear
+*two* surfaces, and they pull in opposite directions:
+
+1. **Fill vs the bar it sits on** — `BarBackgroundBrush`, `#E8E8EC` light /
+   `#111113` dark. The original light tints were *lighter* than the bar and
+   cleared it by only 1.04–1.12:1, so a pill read as a faint smudge. All four
+   now sit below the bar at ~1.30:1 light and above it at ~1.81:1 dark.
+2. **Glyph + text vs the fill** — never below **4.5:1** (AA Normal; the text is
+   11px, so the large-text exemption does not apply).
+
+Deepening a light fill spends budget 2 to buy budget 1. Success and Warning had
+none left (4.54 / 5.13 against the old tint), so their foregrounds moved too;
+dark Failure needed the same on its side. Note that a fill crossing *through*
+the bar's own luminance makes the ratio dip toward 1.0 before it climbs — so
+nudging a tint the "right" direction can make separation briefly worse. Measure,
+don't eyeball.
+
+**Before retinting either half, recheck both numbers.** These foreground brushes
+are reused on the plain page background (`PermissionTesterView`,
+`GuidedRuleBuilderView`, `PermissionsBuildView`, `AgentsSkillsEditorView`) where
+there is no pill fill at all; all stay ≥ 7.2:1 there. The direction that helps
+the pill happens to help the page too — darker on light, brighter on dark — but
+that is a property of this palette, not a rule to assume.
 
 **Anti-pattern**: writing to a legacy `StatusMessage` setter that routes
 to `StatusKind.State` makes a failure render as quiet gray text. The

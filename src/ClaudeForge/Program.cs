@@ -4,6 +4,7 @@ using Bennewitz.Ninja.ClaudeForge.Core.Backup;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
+using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
 using Serilog;
@@ -21,6 +22,25 @@ internal sealed class Program
         //    isn't configured yet); deferred warnings + the active-flags
         //    summary are flushed by LogActiveFlags() in Step 4 below.
         DebugFlags.Initialize(args);
+
+        // 1b. A rejected --deep-link is the one parse failure the USER needs to see
+        //     on their terminal, not just in the rolling log.  This binary is a
+        //     WinExe, so stdout is detached at startup — without the console attach
+        //     a typo'd path is completely silent and the app just opens somewhere
+        //     unexpected, with no clue anywhere the user would look.  Printed here
+        //     (rather than via the deferred-warning path) because it must land
+        //     while the invoking shell is still waiting on us.
+        if (DebugFlags.DeepLinkPathError is { } deepLinkError)
+        {
+            TryAttachParentConsole();
+            Console.Error.WriteLine("[ClaudeForge] " + deepLinkError);
+            Console.Error.WriteLine(
+                "  Expected: --deep-link <page>[/<tab>[/<item>]]   e.g. agents-skills/skills/pdf");
+            Console.Error.WriteLine("  Pages: " + string.Join(", ", MainWindowViewModel.KnownTopLevelNodeIds));
+            Console.Error.WriteLine(
+                "  Tip: open an item in the app and use \"Copy deep link\" rather than composing one by hand.");
+            Console.Error.WriteLine("  Continuing with a normal launch.");
+        }
 
         // 2. Culture — must run before any UI is constructed: Semi.Avalonia
         //    reads CultureInfo.CurrentUICulture to pick its locale bundle.

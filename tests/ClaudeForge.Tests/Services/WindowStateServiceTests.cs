@@ -228,6 +228,47 @@ public sealed class WindowStateServiceTests
     }
 
     [TestMethod]
+    public void LastDeepPath_RoundTripsThroughSaveAndLoad()
+    {
+        // The user's in-page position (segment + artifact) must survive a
+        // save-then-load cycle so a relaunch returns them to the item, not just
+        // the page.
+        WindowState toSave = new() { LastDeepPath = "agents-skills/skills/pdf@User" };
+        WindowStateService.Save(toSave);
+
+        WindowState loaded = WindowStateService.Load();
+
+        Assert.AreEqual("agents-skills/skills/pdf@User", loaded.LastDeepPath);
+    }
+
+    [TestMethod]
+    public void LastDeepPath_DefaultsToNullOnCleanInstall()
+    {
+        WindowStateService.Delete();
+
+        Assert.IsNull(WindowStateService.Load().LastDeepPath,
+            "A fresh install has no remembered position.");
+    }
+
+    [TestMethod]
+    public void LastDeepPath_MissingJsonField_DeserialisesToNull()
+    {
+        // Forward-compat: a state file written by a build that predates the field
+        // must load cleanly rather than throwing.
+        string dir = Path.Combine(_sandbox, ".claude", "cache");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(
+            Path.Combine(dir, "ClaudeForge-gui-state.json"),
+            """{"width":1200,"height":900,"lastNode":"Essentials"}""");
+
+        WindowState loaded = WindowStateService.Load();
+
+        Assert.IsNull(loaded.LastDeepPath);
+        Assert.AreEqual("Essentials", loaded.LastSelectedNodeTitle,
+            "The legacy title-keyed field still loads during the transition.");
+    }
+
+    [TestMethod]
     public void DismissedUpdateVersions_RoundTripsAllEntriesInOrder()
     {
         // User dismisses two consecutive releases (rare in practice but

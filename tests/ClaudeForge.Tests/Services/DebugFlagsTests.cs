@@ -337,4 +337,102 @@ public sealed class DebugFlagsTests
 
         Assert.IsFalse(DebugFlags.SimulateUpdate);
     }
+
+    // -----------------------------------------------------------------------
+    // --deep-link <path>
+    //
+    // Two-token flag that launches the GUI at a specific page / tab / item.
+    // Validation here is SHAPE-only (NavDeepPath.TryParse); whether the path
+    // names a page this install actually has is decided later against the built
+    // navigation tree, because a stale shortcut must never block startup.
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void Initialize_NoDeepLinkFlag_LeavesPathNull()
+    {
+        DebugFlags.Initialize([]);
+        Assert.IsNull(DebugFlags.DeepLinkPath);
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_AcceptsAWellFormedPath()
+    {
+        DebugFlags.Initialize(["--deep-link", "agents-skills/skills/pdf"]);
+        Assert.AreEqual("agents-skills/skills/pdf", DebugFlags.DeepLinkPath);
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_AcceptsAPageOnlyPath()
+    {
+        DebugFlags.Initialize(["--deep-link", "essentials"]);
+        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_CaseInsensitiveFlagName()
+    {
+        DebugFlags.Initialize(["--DEEP-LINK", "essentials"]);
+        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_MissingValue_IsIgnored()
+    {
+        // Last arg with nothing after it — must not throw or index past the end.
+        DebugFlags.Initialize(["--deep-link"]);
+        Assert.IsNull(DebugFlags.DeepLinkPath);
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_MalformedValue_IsRejected()
+    {
+        DebugFlags.Initialize(["--deep-link", "/leading-separator"]);
+        Assert.IsNull(DebugFlags.DeepLinkPath, "A malformed path must be rejected, not stored.");
+
+        DebugFlags.ResetForTesting();
+        DebugFlags.Initialize(["--deep-link", "a/b/c/d/e"]);
+        Assert.IsNull(DebugFlags.DeepLinkPath, "Too many segments must be rejected.");
+
+        DebugFlags.ResetForTesting();
+        DebugFlags.Initialize(["--deep-link", "a//b"]);
+        Assert.IsNull(DebugFlags.DeepLinkPath, "An empty interior segment must be rejected.");
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_ValueThenNextFlag_BothProcessed()
+    {
+        // The value must be consumed WITHOUT swallowing the flag that follows it.
+        DebugFlags.Initialize(["--deep-link", "essentials", "--linux"]);
+
+        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "A following --linux must be processed as its own flag — no greedy consumption.");
+    }
+
+    [TestMethod]
+    public void Initialize_DeepLink_DoesNotSwallowAFollowingFlagAsItsValue()
+    {
+        // "--linux" is a legal NavDeepPath shape, so without care it would be
+        // accepted as the deep-link value and the platform flag would vanish.
+        // Documented behaviour: the value IS consumed positionally, so a user who
+        // omits the path gets the next flag eaten. Assert what actually happens so
+        // the trade-off is visible rather than accidental.
+        DebugFlags.Initialize(["--deep-link", "--linux"]);
+
+        Assert.AreEqual("--linux", DebugFlags.DeepLinkPath,
+            "Positional consumption means a missing value eats the next token; " +
+            "the resulting path simply fails to resolve later.");
+        Assert.IsNull(DebugFlags.EmulatedPlatform);
+    }
+
+    [TestMethod]
+    public void ResetForTesting_ClearsDeepLinkPath()
+    {
+        DebugFlags.Initialize(["--deep-link", "essentials"]);
+        Assert.IsNotNull(DebugFlags.DeepLinkPath);
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsNull(DebugFlags.DeepLinkPath);
+    }
 }

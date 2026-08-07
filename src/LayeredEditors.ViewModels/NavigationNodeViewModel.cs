@@ -19,6 +19,28 @@ public partial class NavigationNodeViewModel : ObservableObject
     /// <summary>Display label for this node.</summary>
     public string Title { get; }
 
+    /// <summary>
+    /// Stable, culture-invariant identifier for this node — the key used by
+    /// deep links (<c>--deep-link</c>) and by persisted UI state.
+    /// <para>
+    /// Distinct from <see cref="Title"/> on purpose. <see cref="Title"/> is a
+    /// display label; the app currently hardcodes English there precisely
+    /// because programmatic lookups compare against it, and localizing the nav
+    /// tree would break every one of those comparisons. <see cref="NodeId"/> is
+    /// the lookup key that survives localization, so new code should match on
+    /// it rather than on <see cref="Title"/>.
+    /// </para>
+    /// <para>
+    /// Nullable, and <c>init</c>-only like <see cref="Editor"/> /
+    /// <see cref="IsDivider"/> / <see cref="IsTopLevel"/>, so the many existing
+    /// <see cref="NavigationNodeViewModel"/> constructions in tests compile
+    /// unchanged. Two categories legitimately carry <see langword="null"/>:
+    /// divider nodes (several share one placeholder title and none is
+    /// selectable) and ad-hoc nodes built by tests.
+    /// </para>
+    /// </summary>
+    public string? NodeId { get; init; }
+
     /// <summary>Optional icon glyph or resource key.</summary>
     public string? Icon { get; }
 

@@ -14,6 +14,33 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Added
 
+- **Filter on the Agents & Skills page** — narrows all three segments
+  (Sub-agents / Skills / Slash Commands) by artifact name, description, or source,
+  with a match count and a clear button. Section headers drop out when their group
+  has no surviving row, so there are no orphan "Yours" / "Plugin" labels above
+  nothing. Long lists no longer have to be scrolled to find a known item.
+- **Deep links (`--deep-link <path>`)** — launch straight into a page, tab, or
+  item: `--deep-link claude-code/permissions`,
+  `--deep-link agents-skills/skills/pdf`. The grammar is
+  `page[/tab][/item]` (or `product/page[/…]`), keyed on new stable
+  `NavigationNodeViewModel.NodeId` identifiers rather than display labels, so a
+  link keeps resolving in any language. A deep-linked item is revealed by
+  filtering the list to it, with the filter box outlined to show the narrowing
+  came from navigation. An unresolvable path is logged and ignored — it never
+  blocks launch. See the README "Deep links" section.
+- **"Copy deep link"** on the Agents & Skills detail toolbar — puts a ready-to-use
+  `--deep-link` path for the open artifact on the clipboard, fully qualified as
+  `name@source`, so nobody has to derive an id by hand (and a path can be pasted into
+  a ticket or a runbook). A malformed `--deep-link` now reports itself on the terminal
+  with the valid pages listed instead of failing silently — the binary is a `WinExe`,
+  so it attaches to the parent console to do it — and a well-formed-but-unresolvable
+  path raises a status-bar warning. An unresolvable *persisted* path stays quiet,
+  since that is routine after deleting an artifact.
+- **Your place is kept below the page level** — the active tab and open item are
+  persisted (`WindowState.lastDeepPath`) and restored on relaunch, instead of only
+  the page. **Reload Window** restores the full state, including an edit in
+  progress (see Fixed). Reusable via the new `IDeepNavigable` contract; the
+  Agents & Skills page is the first adopter.
 - **Model catalog** — a single bundled source of truth
   (`src/ClaudeForge.Core/Assets/ModelCatalog/model-catalog.json`) for the allowed
   `model` / `effortLevel` / `permissions.defaultMode` values and their
@@ -39,6 +66,18 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   the build on by-name/reflective resource access (`Strings.ResourceManager`,
   `typeof(Strings)`) in project source, keeping its literal-`Strings.<Key>`
   analysis sound.
+
+### Fixed
+
+- **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
+  the detail pane but never the row's subtitle, which is what the list renders —
+  so editing a `description` and saving kept showing the old text until the next
+  full refresh, making the edit look like it hadn't taken.
+- **Reload Window silently discarded an in-progress front-matter edit.** That
+  editor writes files directly, so its buffer never counted toward
+  `HasUnsavedChanges` and nothing warned. The unsaved text now rides across the
+  in-process reload in memory and comes back with the editor — the user's actual
+  text, not a re-read from disk. It is never written to the UI-state file.
 
 ### Changed
 

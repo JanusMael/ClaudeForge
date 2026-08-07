@@ -1,5 +1,6 @@
 using System.Globalization;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
@@ -136,6 +137,42 @@ public static class DebugFlags
     public static bool SimulateUpdate { get; private set; }
 
     /// <summary>
+    /// Navigation deep path supplied via <c>--deep-link &lt;path&gt;</c>, launching
+    /// the app straight into a page, tab, or item — e.g.
+    /// <c>--deep-link agents-skills/skills/pdf</c> or
+    /// <c>--deep-link claude-code/permissions</c>. <see langword="null"/> means
+    /// "no deep link; restore the persisted position as usual".
+    /// <para>
+    /// Unlike the CLI-bypass tools (<c>--cleanup-restore-sidecars</c>), this one
+    /// LAUNCHES the GUI rather than running a task and exiting, so it belongs with
+    /// the debug flags. Grammar and resolution live in
+    /// <see cref="ViewModels.NavDeepPath"/>; segments address
+    /// <c>NavigationNodeViewModel.NodeId</c>, never a display title, so a path
+    /// keeps working when the nav tree is localized.
+    /// </para>
+    /// <para>
+    /// Validation here is SHAPE-ONLY. Whether the path names a page this install
+    /// actually has is decided later against the built navigation tree
+    /// (<c>MainWindowViewModel.RestoreSelectedNode</c>), and an unresolvable path
+    /// is logged and ignored — a stale shortcut must never block startup.
+    /// </para>
+    /// </summary>
+    public static string? DeepLinkPath { get; private set; }
+
+    /// <summary>
+    /// Why a supplied <c>--deep-link</c> value was rejected, or
+    /// <see langword="null"/> when none was supplied or it parsed cleanly.
+    /// <para>
+    /// Exposed separately from <see cref="_deferredWarnings"/> because this one has
+    /// to reach the USER's terminal, not just the rolling log. The app is a
+    /// <c>WinExe</c>, so stdout is detached at startup: <c>Program.Main</c> pairs
+    /// this with <c>TryAttachParentConsole()</c> so a mistyped path says so
+    /// instead of silently opening the wrong page.
+    /// </para>
+    /// </summary>
+    public static string? DeepLinkPathError { get; private set; }
+
+    /// <summary>
     /// Parse-time validation messages accumulated during <see cref="Initialize"/>
     /// — emitted by <see cref="LogActiveFlags"/> after the Serilog pipeline
     /// is configured.  We can't log directly during <see cref="Initialize"/>
@@ -236,6 +273,31 @@ public static class DebugFlags
                     SimulateUpdate = true;
                     break;
 
+                // Two-token flag — consume the next arg as the value, same shape
+                // as --culture above.
+                case "--deep-link":
+                    if (i + 1 >= args.Length)
+                    {
+                        _deferredWarnings.Add(
+                            "[DebugFlags] --deep-link flag requires a value "
+                            + "(e.g. --deep-link agents-skills/skills/pdf); ignoring.");
+                        break;
+                    }
+
+                    string requestedPath = args[++i]; // advance past the value.
+                    if (NavDeepPath.TryParse(requestedPath, out _, out string? pathError))
+                    {
+                        DeepLinkPath = requestedPath;
+                    }
+                    else
+                    {
+                        _deferredWarnings.Add(
+                            $"[DebugFlags] --deep-link '{requestedPath}' rejected: {pathError}. "
+                            + "Expected <page>[/<tab>[/<item>]], e.g. agents-skills/skills/pdf.");
+                    }
+
+                    break;
+
                 // Help / discovery: defer the help message so it surfaces in the log
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
@@ -243,7 +305,7 @@ public static class DebugFlags
                     _deferredWarnings.Add(
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
-                        "--simulate-update, " +
+                        "--simulate-update, --deep-link <path>, " +
                         "--cleanup-restore-sidecars, --debug-help");
                     break;
             }
@@ -322,6 +384,8 @@ public static class DebugFlags
         ShowAllNewBadges = false;
         CultureOverride = null;
         SimulateUpdate = false;
+        DeepLinkPath = null;
+        DeepLinkPathError = null;
         _deferredWarnings.Clear();
         PlatformInfo.ResetForTesting();
     }
@@ -351,6 +415,11 @@ public static class DebugFlags
         if (SimulateUpdate)
         {
             yield return "--simulate-update";
+        }
+
+        if (DeepLinkPath != null)
+        {
+            yield return "--deep-link " + DeepLinkPath;
         }
     }
 }

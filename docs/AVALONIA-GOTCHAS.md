@@ -208,6 +208,29 @@ References: `ObjectPropertyEditorViewModel` (prefix categories + lazy `VisibleCh
 
 ## Bindings / view-model
 
+### Binding `ItemsSource` to a computed filtered projection silently unsubscribes the view from collection changes
+
+**Symptom:** A list stops updating on refresh. Items added to the backing `ObservableCollection` never appear; nothing throws and nothing is logged. The filter still works, which makes it look like a data problem rather than a notification one.
+
+**Cause:** `ItemsSource="{Binding Items}"` on an `ObservableCollection` subscribes the view to `INotifyCollectionChanged`, so `Clear()` / `Add()` reach the UI on their own. Change it to a computed projection — `ItemsSource="{Binding FilteredItems}"` where `FilteredItems => ApplyFilter(Items, FilterText)` — and that subscription is gone: the view is now bound to a plain list that the getter rebuilds, and it only re-reads when `PropertyChanged` fires for `FilteredItems`. Mutating `Items` no longer notifies anything the view is listening to.
+
+**Fix:** Raise the projection explicitly after every rebuild of the source collection — including error paths, and including any asynchronous fill that populates a field the filter matches on.
+
+```csharp
+private void NotifyFilteredListsChanged()
+{
+    OnPropertyChanged(nameof(FilteredAgentItems));
+    OnPropertyChanged(nameof(FilteredSkillItems));
+    OnPropertyChanged(nameof(FilteredCommandItems));
+}
+```
+
+Call it at the end of the refresh (both the success and the `catch` branch that clears the lists), and again when a lazy per-row fill completes — a filter typed before descriptions have loaded can't match them yet, so the fill has to re-announce.
+
+**Where:** `AgentsSkillsEditorViewModel.NotifyFilteredListsChanged` (with `FillDescriptionsThenNotifyAsync` for the async half); `SettingsGroupEditorViewModel` raises `FilteredEditors` by hand for the same reason. Regression test: `AgentsSkillsFilterTests.RefreshAsync_RaisesFilteredListNotifications`. Invariant: root [`AGENTS.md`](../AGENTS.md) §1.
+
+**Related:** a two-argument format string cannot be applied with a single-binding `StringFormat` — `{Binding Count, StringFormat={x:Static loc:Strings.SomeFmt}}` fills `{0}` and leaves a literal `{1}` on screen. Format it in the view-model instead (`AgentsSkillsEditorViewModel.FilterSummary`).
+
 ### Compiled bindings don't reliably re-evaluate manual `OnPropertyChanged` for getter-only properties
 
 **Symptom:** A computed `bool IsXyz => predicate(this);` property with a manual `OnPropertyChanged(nameof(IsXyz))` notification doesn't update bindings on Linux (and sometimes Windows). Works after a workspace reload but not on first edit.

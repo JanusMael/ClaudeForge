@@ -161,15 +161,79 @@
                 </DockPanel>
             </Border>
 
+            <!-- Filter bar.  Narrows all three segments at once (name /
+                 description / source); the count shows how much is hidden.
+                 Mirrors the property-filter bar in GroupPropertiesView, including
+                 the deep-link "navigated" frame. -->
+            <Border DockPanel.Dock="Top" Margin="16,0,16,0" Padding="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <!-- BOTH border states come from styles and the Border below sets
+                         NO BorderBrush attribute, because two Avalonia rules bite here
+                         and the frame stays invisible unless both are respected:
+                           1. A control's Styles apply to its DESCENDANTS, not itself —
+                              so these selectors must live on the PARENT.
+                           2. A local value (an attribute) OUTRANKS every Style setter,
+                              whatever the selector — so a default written inline could
+                              never be overridden by the .nav-filter class.
+                         Same shape as GroupPropertiesView's filter frame. -->
+                    <StackPanel.Styles>
+                        <Style Selector="Border.filter-frame">
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                        </Style>
+                        <Style Selector="Border.filter-frame.nav-filter">
+                            <Setter Property="BorderBrush" Value="#FFF57C00" />
+                        </Style>
+                    </StackPanel.Styles>
+
+                    <!-- Orange frame (matching the deep-link Back button) marks a
+                         filter injected by navigation — a deep link or a reload
+                         restore — so the user can see why the list is narrowed. The
+                         constant 2px transparent border keeps the layout from
+                         shifting when the frame appears or clears. -->
+                    <Border Classes="filter-frame"
+                            Classes.nav-filter="{Binding FilterFromNavigation}"
+                            BorderThickness="2"
+                            CornerRadius="5"
+                            VerticalAlignment="Center">
+                        <TextBox Text="{Binding FilterText}"
+                                 PlaceholderText="{x:Static loc:Strings.WatermarkFilterArtifacts}"
+                                 Width="300"
+                                 AutomationProperties.Name="{x:Static loc:Strings.WatermarkFilterArtifacts}" />
+                    </Border>
+
+                    <!-- Bound to the VM-formatted summary, not a StringFormat: the
+                         format takes two arguments and a single-binding StringFormat
+                         can only supply {0}, so {1} would render literally. -->
+                    <TextBlock Text="{Binding FilterSummary}"
+                               IsVisible="{Binding HasActiveFilter}"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+
+                    <Button Content="{x:Static loc:Strings.LabelClearArtifactFilter}"
+                            Command="{Binding ClearFilterCommand}"
+                            Padding="8,4"
+                            FontSize="11"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding HasActiveFilter}"
+                            ToolTip.Tip="{x:Static loc:Strings.TipClearArtifactFilter}"
+                            AutomationProperties.Name="{x:Static loc:Strings.AutoNameClearArtifactFilter}" />
+                </StackPanel>
+            </Border>
+
             <!-- Each tab: a single virtualizing ItemsControl over the flat
                  [headers + rows] collection, in a ScrollViewer.  The bounded
                  viewport lets the VirtualizingStackPanel materialise only the
-                 visible rows, so long plugin lists stay responsive. -->
+                 visible rows, so long plugin lists stay responsive.
+                 ItemsSource binds the FILTERED projection, which is a computed
+                 property — so the VM must announce it after every rebuild
+                 (NotifyFilteredListsChanged); the underlying ObservableCollection
+                 mutations no longer reach the UI on their own. -->
             <TabControl Margin="16,0,16,16"
                         SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}">
                 <TabItem Header="{x:Static loc:Strings.TabAgents}">
                     <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding AgentItems}" Margin="0,8,0,0">
+                        <ItemsControl ItemsSource="{Binding FilteredAgentItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel />
@@ -181,7 +245,7 @@
 
                 <TabItem Header="{x:Static loc:Strings.TabSkills}">
                     <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding SkillItems}" Margin="0,8,0,0">
+                        <ItemsControl ItemsSource="{Binding FilteredSkillItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel />
@@ -193,7 +257,7 @@
 
                 <TabItem Header="{x:Static loc:Strings.TabSlashCommands}">
                     <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding CommandItems}" Margin="0,8,0,0">
+                        <ItemsControl ItemsSource="{Binding FilteredCommandItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <VirtualizingStackPanel />
@@ -279,12 +343,24 @@
                         Command="{Binding CopyMarkdownCommand}"
                         Padding="10,4" Margin="4,0,0,0"
                         AutomationProperties.Name="{x:Static loc:Strings.ButtonCopyMarkdown}" />
+                <!-- Copies a deep-link path for this artifact (the value the
+                     command-line flag takes). This is how a user discovers the path
+                     grammar: they never have to derive an id, they copy it from the
+                     item they're looking at, and can paste it into a ticket or a
+                     runbook. NOTE: an XML comment may not contain a double hyphen,
+                     so the flag name is deliberately not spelled out here. -->
+                <Button DockPanel.Dock="Right"
+                        Content="{x:Static loc:Strings.ButtonCopyDeepLink}"
+                        Command="{Binding CopyDeepLinkCommand}"
+                        Padding="10,4" Margin="4,0,0,0"
+                        ToolTip.Tip="{x:Static loc:Strings.TipCopyDeepLink}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonCopyDeepLink}" />
             </DockPanel>
 
             <!-- Transient post-save status line. -->
             <TextBlock DockPanel.Dock="Top"
-                       Text="{Binding LastSaveMessage}"
-                       IsVisible="{Binding LastSaveMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding LastActionMessage}"
+                       IsVisible="{Binding LastActionMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                        Foreground="{DynamicResource AppSecondaryTextBrush}"
                        FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
 
