@@ -3,16 +3,29 @@ name: Submit to winget
 # Manually-dispatched winget submission for Bennewitz.Ninja.ClaudeForge.
 #
 # Run this AFTER the release's Windows zips have been SIGNED and re-uploaded.
-# winget records a SHA256 that wingetcreate computes from the live release
-# asset, so submitting BEFORE the signed re-upload would pin the unsigned hash —
-# hence manual, and always after signing.
+# winget records a SHA256 computed from the live release asset, so submitting
+# BEFORE the signed re-upload would pin the unsigned hash — hence manual, and
+# always after signing.
 #
-# FIRST-TIME NOTE: `wingetcreate update` requires the package to already exist in
-# winget-pkgs, so the very first submission of the brand-new package is manual —
-# see packaging/winget/README.md. This workflow keeps it current thereafter.
+# WHAT THIS DOES
+# --------------
+# Builds the COMPLETE manifest from the templates in packaging/winget/*.yaml —
+# the single source of truth, carrying the full catalog metadata (Author,
+# Description, Moniker, Tags, Copyright, LicenseUrl, …). It fills in the version
+# and freshly computed SHA256 hashes, injects the GitHub release's notes + date,
+# and opens the winget-pkgs PR via `wingetcreate submit`.
 #
-# Requires repository secret WINGET_TOKEN: a GitHub PAT (classic) with the
-# `public_repo` scope, used by wingetcreate to fork winget-pkgs and open the PR.
+# This deliberately does NOT use `wingetcreate update`. `update` fetches the
+# CURRENTLY PUBLISHED manifest and only bumps the version + URLs, which means it
+# inherits whatever metadata is already published and silently drops the rich
+# fields — that is exactly how earlier submissions ended up sparse ("Author: Not
+# available", empty release notes). Submitting the template keeps every release
+# fully populated.
+#
+# Requires repository secret WINGET_TOKEN: a GitHub PAT (classic) with BOTH the
+# `public_repo` AND `workflow` scopes. `wingetcreate` forks winget-pkgs and syncs
+# the fork with upstream; because upstream carries .github/workflows/* files, the
+# fork sync is refused without the `workflow` scope. See packaging/winget/README.md.
 
 on:
   workflow_dispatch:
@@ -27,42 +40,106 @@ permissions:
 
 jobs:
   winget:
-    name: Update winget manifest
+    name: Submit winget manifest
     runs-on: windows-latest
+    env:
+      # Passed via env (not inline ${{ }}) so untrusted input can't be injected
+      # into the script body.
+      VERSION_INPUT: ${{ github.event.inputs.version }}
+      REPO: ${{ github.repository }}
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Resolve version + asset URLs
-        id: vars
+      - name: Checkout (manifest templates)
+        uses: actions/checkout@v4
+
+      - name: Build manifests from templates and submit
         shell: pwsh
         run: |
-          $ver = "${{ github.event.inputs.version }}" -replace '^v', ''
-          if (-not $ver) { Write-Error "A version input is required."; exit 1 }
+          $ErrorActionPreference = 'Stop'
 
-          $tag  = "v$ver"
-          $base = "https://github.com/${{ github.repository }}/releases/download/$tag"
-          "version=$ver"                          | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "x64=$base/ClaudeForge-win-x64.zip"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "arm64=$base/ClaudeForge-win-arm64.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          Write-Host "Submitting Bennewitz.Ninja.ClaudeForge $ver"
-
-      - name: Update winget manifest and open PR
-        shell: pwsh
-        env:
-          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
           if (-not $env:WINGET_TOKEN) {
-            Write-Error "WINGET_TOKEN secret is not set. Create a GitHub PAT (classic) with the 'public_repo' scope and add it as the repo secret WINGET_TOKEN. See packaging/winget/README.md."
+            Write-Error "WINGET_TOKEN secret is not set. Create a GitHub PAT (classic) with the 'public_repo' AND 'workflow' scopes and add it as the repo secret WINGET_TOKEN. See packaging/winget/README.md."
             exit 1
           }
 
-          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          $ver = $env:VERSION_INPUT -replace '^v', ''
+          if (-not $ver) { Write-Error "A version input is required."; exit 1 }
+          $tag      = "v$ver"
+          $base     = "https://github.com/$($env:REPO)/releases/download/$tag"
+          $x64Url   = "$base/ClaudeForge-win-x64.zip"
+          $arm64Url = "$base/ClaudeForge-win-arm64.zip"
+          Write-Host "Submitting Bennewitz.Ninja.ClaudeForge $ver"
 
-          # `update` fetches the current manifest from winget-pkgs and bumps the
-          # version + URLs, recomputing each installer's SHA256 from the live
-          # (now signed) asset and preserving the nested-portable structure.
-          # --urls order matches the manifest's installers (x64, then arm64).
-          .\wingetcreate.exe update Bennewitz.Ninja.ClaudeForge `
-            --version "${{ steps.vars.outputs.version }}" `
-            --urls "${{ steps.vars.outputs.x64 }}" "${{ steps.vars.outputs.arm64 }}" `
-            --submit `
-            --token $env:WINGET_TOKEN
+          # 1. Download the (signed) release assets and compute their SHA256.
+          #    winget-pkgs validation recomputes these from the same URLs, so the
+          #    hashes must match the live assets exactly.
+          New-Item -ItemType Directory -Force -Path dl | Out-Null
+          Invoke-WebRequest -Uri $x64Url   -OutFile dl/x64.zip
+          Invoke-WebRequest -Uri $arm64Url -OutFile dl/arm64.zip
+          $sha64  = (Get-FileHash dl/x64.zip   -Algorithm SHA256).Hash
+          $shaArm = (Get-FileHash dl/arm64.zip -Algorithm SHA256).Hash
+          Write-Host "x64   SHA256 $sha64"
+          Write-Host "arm64 SHA256 $shaArm"
+
+          # 2. Stage the templates with version + hashes substituted in.
+          $stage = Join-Path $env:RUNNER_TEMP 'wingetmanifests'
+          if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Get-ChildItem packaging/winget/*.yaml | ForEach-Object {
+            $text = (Get-Content $_.FullName -Raw).
+              Replace('<PACKAGE_VERSION>', $ver).
+              Replace('<SHA256_X64>',   $sha64).
+              Replace('<SHA256_ARM64>', $shaArm)
+            Set-Content -Path (Join-Path $stage $_.Name) -Value $text -Encoding utf8
+          }
+          $localeFile    = Join-Path $stage 'Bennewitz.Ninja.ClaudeForge.locale.en-US.yaml'
+          $installerFile = Join-Path $stage 'Bennewitz.Ninja.ClaudeForge.installer.yaml'
+
+          # 3. Best-effort enrichment from the GitHub release: ReleaseDate (installer
+          #    manifest) and ReleaseNotes (locale manifest). Any failure here degrades
+          #    gracefully — the manifest still submits, just without these extras
+          #    (ReleaseNotesUrl is always present from the template).
+          try {
+            $raw = gh release view $tag --repo $env:REPO --json publishedAt,body 2>$null
+            if ($LASTEXITCODE -eq 0 -and $raw) {
+              $rel = $raw | ConvertFrom-Json
+
+              if ($rel.publishedAt) {
+                $date = ([datetimeoffset]$rel.publishedAt).ToString('yyyy-MM-dd')
+                Add-Content -Path $installerFile -Value "ReleaseDate: $date" -Encoding utf8
+                Write-Host "ReleaseDate: $date"
+              }
+
+              $body = $rel.body
+              if ($body) {
+                # Normalize newlines, drop leading/trailing blank lines, cap length
+                # (winget limits ReleaseNotes to 10000 chars), then emit a YAML
+                # literal block with every line indented 2 spaces.
+                $body = ($body -replace "`r", '').Trim()
+                if ($body.Length -gt 9000) { $body = $body.Substring(0, 9000).Trim() }
+                $indented = ($body -split "`n" | ForEach-Object { '  ' + $_ }) -join "`n"
+                Add-Content -Path $localeFile -Value "ReleaseNotes: |-`n$indented" -Encoding utf8
+                Write-Host "Injected ReleaseNotes ($($body.Length) chars)."
+              }
+            }
+            else {
+              Write-Host "::warning::Could not read release $tag metadata; submitting without ReleaseNotes/ReleaseDate."
+            }
+          }
+          catch {
+            Write-Host "::warning::Release enrichment failed ($($_.Exception.Message)); submitting without ReleaseNotes/ReleaseDate."
+          }
+
+          Write-Host "----- staged locale manifest -----"
+          Get-Content $localeFile
+
+          # 4. Download wingetcreate and submit the completed manifest folder.
+          #    `submit` forks winget-pkgs, syncs the fork with upstream, commits the
+          #    manifests, and opens the PR (non-interactive: --token + --no-open).
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe submit $stage `
+            --prtitle "New version: Bennewitz.Ninja.ClaudeForge version $ver" `
+            --token $env:WINGET_TOKEN `
+            --no-open
