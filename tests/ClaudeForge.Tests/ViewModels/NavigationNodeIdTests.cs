@@ -1,4 +1,5 @@
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
@@ -50,7 +51,7 @@ public sealed class NavigationNodeIdTests
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_sandbox))
         {
-            Directory.Delete(_sandbox, recursive: true);
+            TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
         }
     }
 

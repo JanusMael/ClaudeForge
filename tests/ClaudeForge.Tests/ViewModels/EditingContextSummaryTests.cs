@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.ComponentModel;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -40,7 +41,7 @@ public sealed class EditingContextSummaryTests
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_sandbox))
         {
-            Directory.Delete(_sandbox, recursive: true);
+            TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
         }
     }
 

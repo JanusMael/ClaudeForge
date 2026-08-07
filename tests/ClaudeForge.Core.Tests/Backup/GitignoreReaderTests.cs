@@ -222,7 +222,13 @@ public sealed class GitignoreReaderTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    [Timeout(2000)] // 2s wall-clock; the match timeout is 200ms so should finish fast
+    // 15s wall-clock. The behaviour under test is the 200ms regex match timeout,
+    // which makes this finish in ~40ms on any unloaded machine — the budget only
+    // needs to be large enough to distinguish "bailed out" from "hung forever"
+    // (without the guard this backtracks effectively indefinitely). The previous
+    // 2s was tight enough that a CPU-starved CI Windows runner tripped it,
+    // failing the build on a machine hiccup rather than a real regression.
+    [Timeout(15000)]
     public void IsIgnored_PathologicalPattern_ReturnsFalseWithinTimeout()
     {
         // Patterns like "a*a*a*a*a*z" end with a literal that is absent from the input,
