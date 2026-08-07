@@ -86,6 +86,16 @@ public partial class UpdateBannerViewModel : ObservableObject
     public bool HasReleaseUrl => !string.IsNullOrWhiteSpace(ReleaseUrl);
 
     /// <summary>
+    /// Raised when the user dismisses a genuine (tagged) banner via
+    /// <see cref="DismissCommand"/>.  The host — <see cref="MainWindowViewModel"/>
+    /// — subscribes to stop its periodic (4-hourly) update re-check loop: a
+    /// dismiss is "stop surfacing updates for now" for the rest of the session.
+    /// Does <b>not</b> fire on the defensive null-tag hide (no real banner was
+    /// dismissed), so a programmatic hide can't spuriously stop the loop.
+    /// </summary>
+    public event EventHandler? Dismissed;
+
+    /// <summary>
     /// Decide whether to surface the banner given a fresh result from
     /// <see cref="AppUpdateService.CheckOncePerLaunchAsync"/>.  Reads
     /// the persisted dismiss list from disk every call so the latest
@@ -161,5 +171,10 @@ public partial class UpdateBannerViewModel : ObservableObject
         }
 
         IsVisible = false;
+
+        // Signal the host so it can stop the periodic re-check loop — the user
+        // has actively closed the banner and doesn't want it re-surfaced this
+        // session (a strictly newer release next launch is a separate story).
+        Dismissed?.Invoke(this, EventArgs.Empty);
     }
 }
