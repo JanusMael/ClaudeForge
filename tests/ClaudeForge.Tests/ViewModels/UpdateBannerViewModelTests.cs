@@ -219,4 +219,42 @@ public sealed class UpdateBannerViewModelTests
         Assert.AreEqual(0, persisted.DismissedUpdateVersions.Count,
             "Dismissing with no tag must not pollute the persisted list with empty / null entries.");
     }
+
+    // ── Dismissed event (stops the host's periodic re-check loop) ────────
+
+    [TestMethod]
+    public void Dismiss_RaisesDismissedEvent_SoHostCanStopRecheckTimer()
+    {
+        UpdateBannerViewModel vm = new();
+        vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
+            "v2.0.0",
+            new Version(2, 0, 0),
+            "https://github.com/x/y/releases/tag/v2.0.0"));
+        Assert.IsTrue(vm.IsVisible, "Setup: banner must be visible before dismiss.");
+
+        int raised = 0;
+        vm.Dismissed += (_, _) => raised++;
+
+        vm.DismissCommand.Execute(null);
+
+        Assert.AreEqual(1, raised,
+            "A genuine dismiss MUST raise Dismissed exactly once so MainWindowViewModel stops the " +
+            "4-hourly re-check loop.");
+    }
+
+    [TestMethod]
+    public void Dismiss_WithNullTagName_DoesNotRaiseDismissedEvent()
+    {
+        // The defensive null-tag hide is not a genuine dismiss — it must not
+        // stop the host's re-check loop.
+        UpdateBannerViewModel vm = new() { IsVisible = true, LatestTagName = null };
+        bool raised = false;
+        vm.Dismissed += (_, _) => raised = true;
+
+        vm.DismissCommand.Execute(null);
+
+        Assert.IsFalse(raised,
+            "The null-tag defensive hide must NOT raise Dismissed — no real banner was dismissed, so " +
+            "the periodic loop should keep running.");
+    }
 }

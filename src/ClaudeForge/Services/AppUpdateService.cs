@@ -5,7 +5,7 @@ using Serilog;
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 
 /// <summary>
-/// Process-wide host for the once-per-launch GitHub update check.
+/// Process-wide host for the app's GitHub update checks.
 ///
 /// <para>
 /// Owns three concerns the pure
@@ -26,10 +26,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Services;
 /// </list>
 ///
 /// <para>
-/// Single entry point: <see cref="CheckOncePerLaunchAsync"/>.  Callers
-/// fire and forget — the result is delivered via the returned Task and
-/// every failure mode collapses to <see cref="UpdateCheckResult.NoUpdate"/>
-/// (silent-skip contract).
+/// Entry points: <see cref="CheckOncePerLaunchAsync"/> (launch check, latched
+/// to once per process), <see cref="CheckPeriodicAsync"/> (the 4-hourly
+/// re-check — unlatched, but still opt-out-gated), and
+/// <see cref="CheckManualAsync"/> (the About-dialog button, which bypasses the
+/// opt-out).  Callers fire and forget — the result is delivered via the returned
+/// Task and every failure mode collapses to
+/// <see cref="UpdateCheckResult.NoUpdate"/> (silent-skip contract).
 /// </para>
 /// </summary>
 internal static class AppUpdateService
@@ -103,6 +106,40 @@ internal static class AppUpdateService
             return UpdateCheckResult.NoUpdate();
         }
 
+        return await RunAutoCheckAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Periodic re-check driven by <c>MainWindowViewModel</c>'s 4-hourly timer
+    /// after the launch check.  Deliberately does NOT consume the once-per-launch
+    /// latch — that latch guards only the single launch-time kick, and this is
+    /// meant to fire repeatedly for the life of the window.  It DOES keep the
+    /// same <see cref="WindowState.CheckForUpdatesOnLaunch"/> opt-out,
+    /// <see cref="DebugFlags.SimulateUpdate"/> short-circuit, and
+    /// silent-skip-on-failure contract as <see cref="CheckOncePerLaunchAsync"/>.
+    ///
+    /// <para>
+    /// This is the key distinction from <see cref="CheckManualAsync"/>, which
+    /// bypasses the opt-out because an explicit button click IS consent.  A
+    /// background timer is not consent — a user who disabled the auto-check must
+    /// get no periodic banners either — so the opt-out is honoured here.
+    /// </para>
+    /// </summary>
+    public static async Task<UpdateCheckResult> CheckPeriodicAsync(
+        CancellationToken ct = default)
+    {
+        return await RunAutoCheckAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Shared body of the automatic (non-manual) checks — the launch check and
+    /// the periodic re-check.  Honours the user opt-out, then either synthesises
+    /// a simulated result (QA) or makes the live GitHub call.  Reads
+    /// <see cref="WindowState.CheckForUpdatesOnLaunch"/> fresh on every call, so a
+    /// mid-session toggle takes effect on the next check without a restart.
+    /// </summary>
+    private static async Task<UpdateCheckResult> RunAutoCheckAsync(CancellationToken ct)
+    {
         // User opt-out: respected even when --simulate-update is set.
         // (If a QA tester disables the check via the Essentials toggle,
         // they expect NO banner to appear — even simulated ones.)
@@ -110,7 +147,7 @@ internal static class AppUpdateService
         if (!state.CheckForUpdatesOnLaunch)
         {
             Log.Information(
-                "[UpdateCheck] User has disabled the on-launch check (CheckForUpdatesOnLaunch=false); skipping.");
+                "[UpdateCheck] Automatic update check skipped — CheckForUpdatesOnLaunch is disabled.");
             return UpdateCheckResult.NoUpdate();
         }
 

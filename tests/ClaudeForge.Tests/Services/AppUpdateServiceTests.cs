@@ -230,4 +230,75 @@ public sealed class AppUpdateServiceTests
         Assert.IsTrue(third.IsUpdateAvailable,
             "A third manual check must still produce a result (re-click-friendly).");
     }
+
+    // ── CheckPeriodicAsync ──────────────────────────────────────────────
+    //
+    // The periodic re-check (MainWindowViewModel's 4-hourly timer) must:
+    //   - Bypass the once-per-launch latch (it fires repeatedly by design).
+    //   - RESPECT the user-toggle opt-out — a background timer is NOT explicit
+    //     consent, so this is the key behavioural difference from CheckManual.
+    //   - Still honour --simulate-update for QA.
+
+    [TestMethod]
+    public async Task CheckPeriodicAsync_BypassesOncePerLaunchLatch()
+    {
+        // Consume the launch latch first via the auto path.
+        DebugFlags.Initialize(["--simulate-update"]);
+        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
+        Assert.IsTrue(auto.IsUpdateAvailable, "Setup: launch check must produce a result.");
+
+        UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync();
+        Assert.IsFalse(autoAgain.IsUpdateAvailable, "Setup: launch latch confirmed.");
+
+        // Periodic must still produce a real result despite the consumed latch.
+        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
+        Assert.IsTrue(periodic.IsUpdateAvailable,
+            "CheckPeriodicAsync MUST bypass the once-per-launch latch — it re-checks on a timer, " +
+            "so the launch latch (which guards only the single launch kick) must not gate it.");
+    }
+
+    [TestMethod]
+    public async Task CheckPeriodicAsync_RespectsUserToggleOptOut()
+    {
+        // User has the Essentials toggle OFF.  Unlike the manual button, the
+        // periodic timer is not explicit consent — it must skip, like the launch
+        // check does.
+        WindowStateService.Save(new WindowState { CheckForUpdatesOnLaunch = false });
+        DebugFlags.Initialize(["--simulate-update"]);
+
+        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
+
+        Assert.IsFalse(periodic.IsUpdateAvailable,
+            "CheckPeriodicAsync MUST respect the opt-out (CheckForUpdatesOnLaunch=false) — a background " +
+            "re-check is not consent. This is the key distinction from CheckManualAsync, which bypasses it.");
+    }
+
+    [TestMethod]
+    public async Task CheckPeriodicAsync_CanFireMultipleTimes()
+    {
+        // Each timer tick is independent — no latch is consumed.
+        DebugFlags.Initialize(["--simulate-update"]);
+
+        UpdateCheckResult first = await AppUpdateService.CheckPeriodicAsync();
+        UpdateCheckResult second = await AppUpdateService.CheckPeriodicAsync();
+
+        Assert.IsTrue(first.IsUpdateAvailable);
+        Assert.IsTrue(second.IsUpdateAvailable,
+            "Periodic checks must not consume a latch — every 4-hourly tick is independent.");
+    }
+
+    [TestMethod]
+    public async Task CheckPeriodicAsync_HonoursSimulateUpdateFlag()
+    {
+        DebugFlags.Initialize(["--simulate-update"]);
+        Version current = typeof(AppUpdateService).Assembly.GetName().Version!;
+
+        UpdateCheckResult result = await AppUpdateService.CheckPeriodicAsync();
+
+        Assert.IsTrue(result.IsUpdateAvailable);
+        Assert.IsNotNull(result.LatestVersion);
+        Assert.IsTrue(result.LatestVersion! > current,
+            "Periodic + simulate must synthesise a version strictly greater than current — " +
+            "same synth contract as the launch path.");
+    }
 }

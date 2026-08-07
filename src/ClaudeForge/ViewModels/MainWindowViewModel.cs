@@ -398,6 +398,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // during construction.
         _checkForUpdatesOnLaunch = _cachedState.CheckForUpdatesOnLaunch;
 
+        // A user dismiss of the update banner permanently stops the periodic
+        // (4-hourly) re-check loop for this session — "stop telling me about
+        // updates for now". Unsubscribed in Dispose.
+        UpdateBanner.Dismissed += OnUpdateBannerDismissed;
+
         // Seed geometry cache so no-arg SaveWindowState() calls preserve the
         // restored dimensions instead of falling back to 1200×750 defaults.
         _savedWidth = _cachedState.Width;
@@ -1324,6 +1329,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     UpdateBanner.ApplyResult(result);
+
+                    // Kick off the periodic re-check loop now that the launch
+                    // check has applied. Starts whether or not a banner surfaced
+                    // (per the request: re-check every 4h unless the user
+                    // dismisses); a dismiss is the only thing that stops it.
+                    StartUpdateRecheckLoop();
                 });
             }
             catch (Exception ex)
@@ -1337,6 +1348,103 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     "[UpdateCheck] Unhandled exception during launch-time check; banner stays hidden");
             }
         });
+    }
+
+    /// <summary>
+    /// Interval between periodic update re-checks that follow the launch check.
+    /// Four hours: unobtrusive, but short enough that a release published during
+    /// a long-running session still surfaces the same day.
+    /// </summary>
+    private static readonly TimeSpan UpdateRecheckInterval = TimeSpan.FromHours(4);
+
+    /// <summary>
+    /// Cancels the periodic update re-check loop.  Non-null only while the loop
+    /// is running; nulled when never started, on user dismiss, or on dispose.
+    /// </summary>
+    private CancellationTokenSource? _updateRecheckCts;
+
+    /// <summary>
+    /// Latches <see langword="true"/> the moment the user dismisses an update
+    /// banner this session.  Stops the periodic re-check loop and prevents a
+    /// later launch-continuation race from restarting it.
+    /// </summary>
+    private bool _updateBannerDismissed;
+
+    /// <summary>
+    /// Start the periodic (4-hourly) update re-check loop — unless the user has
+    /// already dismissed a banner this session, the loop is already running, or
+    /// the VM is disposed.  Each iteration re-checks via
+    /// <see cref="AppUpdateService.CheckPeriodicAsync"/> (no launch latch, but
+    /// still opt-out-gated) and re-applies to <see cref="UpdateBanner"/>, which
+    /// keeps honouring the persisted per-version dismiss list — so only a
+    /// genuinely newer release (or one never seen) surfaces.  All VM-state access
+    /// stays on the UI thread; only the network await runs off it.
+    /// </summary>
+    private void StartUpdateRecheckLoop()
+    {
+        if (_disposed || _updateBannerDismissed || _updateRecheckCts is not null)
+        {
+            return;
+        }
+
+        _updateRecheckCts = new CancellationTokenSource();
+        CancellationToken ct = _updateRecheckCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    await Task.Delay(UpdateRecheckInterval, ct).ConfigureAwait(false);
+
+                    Core.Updates.UpdateCheckResult result =
+                        await AppUpdateService.CheckPeriodicAsync(ct).ConfigureAwait(false);
+
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        // A dismiss can race in between the delay firing and this
+                        // marshal; don't resurrect a banner the user just closed.
+                        if (!_updateBannerDismissed)
+                        {
+                            UpdateBanner.ApplyResult(result);
+                        }
+                    });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on dismiss / dispose — the loop is meant to end here.
+            }
+            catch (Exception ex)
+            {
+                Log.Information(
+                    ex,
+                    "[UpdateCheck] Unhandled exception in the periodic re-check loop; loop ends, banner unchanged");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Stop the periodic re-check loop (idempotent).  Called from
+    /// <see cref="OnUpdateBannerDismissed"/> and <see cref="Dispose"/>.
+    /// </summary>
+    private void StopUpdateRecheckLoop()
+    {
+        _updateRecheckCts?.Cancel();
+        _updateRecheckCts?.Dispose();
+        _updateRecheckCts = null;
+    }
+
+    /// <summary>
+    /// The user dismissed the update banner: latch the loop off and stop it.
+    /// Wired to <see cref="UpdateBannerViewModel.Dismissed"/> in the ctor; the
+    /// event fires on the UI thread (the Dismiss command runs there).
+    /// </summary>
+    private void OnUpdateBannerDismissed(object? sender, EventArgs e)
+    {
+        _updateBannerDismissed = true;
+        StopUpdateRecheckLoop();
     }
 
     /// <summary>
@@ -4630,6 +4738,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _backupStateSaveCts?.Cancel();
         _backupStateSaveCts?.Dispose();
         _backupStateSaveCts = null;
+
+        // Stop the periodic update re-check loop and unsubscribe from the banner.
+        UpdateBanner.Dismissed -= OnUpdateBannerDismissed;
+        StopUpdateRecheckLoop();
+
         // search debounce CTS lives on SearchViewModel now.
         Search.Dispose();
         DisposeNavigationEditors();
