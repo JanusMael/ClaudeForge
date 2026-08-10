@@ -30,11 +30,23 @@ public sealed record EffortLevelInfo(string Id, int Order, bool Persists);
 /// <param name="Experimental">True for not-yet-GA modes (e.g. <c>delegate</c>).</param>
 /// <param name="RequiresAutoCapableModel">True when the mode only takes effect on an auto-capable model (e.g. <c>auto</c>).</param>
 /// <param name="UserScopeOnly">True when the mode is silently ignored outside User scope (e.g. <c>auto</c>).</param>
+/// <param name="AliasOf">
+/// When non-null, this id is an accepted spelling of another mode (e.g. <c>manual</c>
+/// → <c>default</c>) rather than a distinct mode. Aliases are carried so the
+/// settings <c>defaultMode</c> enum stays in parity with the upstream schema, and so
+/// a persisted alias round-trips untouched — but they are not offered as separate
+/// choices in the editor. Null for real modes.
+/// </param>
 public sealed record DefaultModeCatalogInfo(
     string Id,
     bool Experimental,
     bool RequiresAutoCapableModel,
-    bool UserScopeOnly);
+    bool UserScopeOnly,
+    string? AliasOf = null)
+{
+    /// <summary>True when this entry is an alias of another mode rather than a mode in its own right.</summary>
+    public bool IsAlias => AliasOf is not null;
+}
 
 /// <summary>
 /// Immutable, structural source of truth for the inter-related model /
@@ -93,7 +105,12 @@ public sealed class ModelCatalog
 
         List<DefaultModeCatalogInfo> modes = (dto.DefaultModes ?? [])
             .Where(d => !string.IsNullOrWhiteSpace(d.Id))
-            .Select(d => new DefaultModeCatalogInfo(d.Id!, d.Experimental, d.RequiresAutoCapableModel, d.UserScopeOnly))
+            .Select(d => new DefaultModeCatalogInfo(
+                d.Id!,
+                d.Experimental,
+                d.RequiresAutoCapableModel,
+                d.UserScopeOnly,
+                string.IsNullOrWhiteSpace(d.AliasOf) ? null : d.AliasOf))
             .ToList();
 
         return new ModelCatalog(models, aliases, efforts, modes);

@@ -65,7 +65,8 @@ public sealed record DefaultModeInfo(
     string Value,
     string ClaudeLabel,
     string Description,
-    bool IsExperimental = false)
+    bool IsExperimental = false,
+    bool IsAlias = false)
 {
     /// <summary>
     /// Friendly wording (Claude's own label, e.g. "Bypass Permission Checks")
@@ -202,6 +203,10 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     /// applies the culture, capturing the wrong language. The catalog is the
     /// source of truth for which modes exist + their order + the experimental
     /// flag; the camelCase <c>Value</c> strings are what Claude Code persists.
+    /// Alias entries (<c>IsAlias</c>, e.g. <c>manual</c> → <c>default</c>) are
+    /// included here so a persisted alias can still be displayed, but callers
+    /// filter them out of the offered list — see the constructor and
+    /// <see cref="ApplyDefaultModeConstraint"/>.
     /// Falls back to the shared bundled catalog when constructed without a client
     /// (e.g. in tests) so the list is never empty.
     /// </summary>
@@ -213,7 +218,8 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                 m.Id,
                 CatalogLocalization.DefaultModeLabel(m.Id),
                 CatalogLocalization.DefaultModeDescription(m.Id),
-                m.Experimental))
+                m.Experimental,
+                m.IsAlias))
             .ToList();
     }
 
@@ -546,7 +552,10 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
         _client = client;
         _editorFactory = editorFactory;
         _allDefaultModeInfos = BuildDefaultModeInfos();
-        DefaultModeInfos = _allDefaultModeInfos;
+        // Aliases (e.g. "manual" → "default") are kept in _allDefaultModeInfos so a
+        // persisted alias can still be shown, but are never OFFERED as a choice —
+        // they'd read as a duplicate of the mode they alias.
+        DefaultModeInfos = [.. _allDefaultModeInfos.Where(m => !m.IsAlias)];
         AllowList = [];
         DenyList = [];
         AskList = [];
@@ -888,6 +897,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
 
         string? effectiveModel = _client.GetEffective<string>("model");
         List<DefaultModeInfo> eligible = _allDefaultModeInfos
+            .Where(m => !m.IsAlias)
             .Where(m => _client.Models.IsDefaultModeAllowed(m.Value, effectiveModel, scope))
             .ToList();
 
@@ -905,7 +915,10 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                 eligible.Add(current);
             }
 
-            ShowAutoModeWarning = true;
+            // An alias (e.g. a persisted "manual") is excluded from the offered list
+            // but is NOT a capability/scope problem — it takes effect exactly like the
+            // mode it aliases. Showing the auto-mode advisory there would be wrong.
+            ShowAutoModeWarning = current is null or { IsAlias: false };
         }
         else
         {

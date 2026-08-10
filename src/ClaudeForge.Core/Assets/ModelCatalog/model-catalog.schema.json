@@ -62,7 +62,12 @@
           "id": { "type": "string", "minLength": 1 },
           "experimental": { "type": "boolean" },
           "requiresAutoCapableModel": { "type": "boolean" },
-          "userScopeOnly": { "type": "boolean" }
+          "userScopeOnly": { "type": "boolean" },
+          "aliasOf": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "description": "When set, this id is an accepted spelling of another mode (e.g. 'manual' -> 'default') rather than a distinct mode. Aliases exist so the settings enum stays in parity with the upstream schema and a persisted alias round-trips untouched, but they are NOT offered as separate choices in the editor."
+          }
         }
       }
     }

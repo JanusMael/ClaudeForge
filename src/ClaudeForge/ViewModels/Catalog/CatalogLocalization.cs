@@ -20,7 +20,11 @@ internal static class CatalogLocalization
     /// <summary>Friendly label for a <c>permissions.defaultMode</c> id (e.g. <c>auto</c> → "Auto").</summary>
     public static string DefaultModeLabel(string id) => id switch
     {
-        "default" => Strings.DefaultModeClaudeDefault,
+        // "manual" is an accepted alias of "default" (the CLI / IDE UIs relabelled
+        // the mode "Manual" in v2.1.200). Same mode, so it reuses the same strings
+        // rather than inventing a second set of translations — it is only ever shown
+        // when a user already has it persisted; it is not offered as a choice.
+        "default" or "manual" => Strings.DefaultModeClaudeDefault,
         "acceptEdits" => Strings.DefaultModeClaudeAcceptEdits,
         "plan" => Strings.DefaultModeClaudePlan,
         "auto" => Strings.DefaultModeClaudeAuto,
@@ -33,7 +37,8 @@ internal static class CatalogLocalization
     /// <summary>One-line description for a <c>permissions.defaultMode</c> id.</summary>
     public static string DefaultModeDescription(string id) => id switch
     {
-        "default" => Strings.DefaultModeDescDefault,
+        // See DefaultModeLabel: "manual" is an alias of "default".
+        "default" or "manual" => Strings.DefaultModeDescDefault,
         "acceptEdits" => Strings.DefaultModeDescAcceptEdits,
         "plan" => Strings.DefaultModeDescPlan,
         "auto" => Strings.DefaultModeDescAuto,
