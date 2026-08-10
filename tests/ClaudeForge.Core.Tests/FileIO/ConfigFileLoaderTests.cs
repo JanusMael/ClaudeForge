@@ -83,7 +83,7 @@ public class ConfigFileLoaderTests
 
         SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             ConfigFileLoader.SaveAsync(doc));
     }
 

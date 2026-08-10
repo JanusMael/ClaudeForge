@@ -69,7 +69,7 @@ public sealed class PlatformInfoTests
     [TestMethod]
     public void Emulated_UnknownId_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => EmulatedPlatformInfo.ForId("freebsd"));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => EmulatedPlatformInfo.ForId("freebsd"));
     }
 
     // -----------------------------------------------------------------------
@@ -108,7 +108,7 @@ public sealed class PlatformInfoTests
     [TestMethod]
     public void OverrideForDebug_NullArgument_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() => PlatformInfo.OverrideForDebug(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => PlatformInfo.OverrideForDebug(null!));
     }
 
     // -----------------------------------------------------------------------

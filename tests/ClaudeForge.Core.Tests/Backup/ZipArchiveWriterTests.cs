@@ -102,7 +102,7 @@ public sealed class ZipArchiveWriterTests
     [DataRow("foo/./bar")]
     public void NormaliseEntryName_RejectsDangerousPaths(string bad)
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             ZipArchiveWriter.NormaliseEntryName(bad));
     }
 
