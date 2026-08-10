@@ -22,10 +22,11 @@ public static class PermissionTools
     /// </summary>
     public static readonly IReadOnlyList<string> Names =
     [
-        "Agent", "Bash", "Cd", "Edit", "ExitPlanMode", "Glob", "Grep", "KillShell", "LSP",
-        "Monitor", "MultiEdit", "NotebookEdit", "PowerShell", "Read", "Skill", "TaskCreate", "TaskGet",
+        "Agent", "Artifact", "Bash", "Cd", "Edit", "EnterWorktree", "ExitPlanMode", "Glob", "Grep",
+        "KillShell", "LSP", "Monitor", "MultiEdit", "NotebookEdit", "PowerShell", "Read",
+        "ShareOnboardingGuide", "Skill", "TaskCreate", "TaskGet",
         "TaskList", "TaskOutput", "TaskStop", "TaskUpdate", "TodoWrite", "ToolSearch",
-        "WebFetch", "WebSearch", "Write",
+        "WebFetch", "WebSearch", "Workflow", "Write",
     ];
 
     /// <summary>Ordinal membership set built from <see cref="Names"/>.</summary>

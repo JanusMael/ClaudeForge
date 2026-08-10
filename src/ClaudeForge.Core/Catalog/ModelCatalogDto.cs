@@ -41,4 +41,5 @@ internal sealed class DefaultModeDto
     [JsonPropertyName("experimental")] public bool Experimental { get; set; }
     [JsonPropertyName("requiresAutoCapableModel")] public bool RequiresAutoCapableModel { get; set; }
     [JsonPropertyName("userScopeOnly")] public bool UserScopeOnly { get; set; }
+    [JsonPropertyName("aliasOf")] public string? AliasOf { get; set; }
 }

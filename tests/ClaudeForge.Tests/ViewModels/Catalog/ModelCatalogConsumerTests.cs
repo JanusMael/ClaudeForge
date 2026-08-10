@@ -46,14 +46,27 @@ public sealed class ModelCatalogConsumerTests
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
 
+        // Alias entries (e.g. "manual" → "default") are deliberately NOT offered —
+        // they'd read as a duplicate of the mode they alias — so the offered list
+        // mirrors the catalog's real modes, in order.
         CollectionAssert.AreEqual(
-            ModelCatalogProvider.Default.AllDefaultModes.Select(d => d.Id).ToList(),
+            ModelCatalogProvider.Default.AllDefaultModes.Where(d => !d.IsAlias).Select(d => d.Id).ToList(),
             vm.DefaultModeInfos.Select(i => i.Value).ToList(),
-            "DefaultModeInfos must mirror the catalog's default modes, in order.");
+            "DefaultModeInfos must mirror the catalog's non-alias default modes, in order.");
 
         DefaultModeInfo? delegateInfo = vm.DefaultModeInfos.FirstOrDefault(i => i.Value == "delegate");
         Assert.IsNotNull(delegateInfo);
         Assert.IsTrue(delegateInfo!.IsExperimental, "delegate is experimental in the catalog.");
+
+        // Lock the alias contract in both directions: the catalog carries the alias
+        // (so the settings enum stays in parity with the schema and a persisted
+        // value round-trips), but the editor never offers it as a choice.
+        Assert.IsTrue(
+            ModelCatalogProvider.Default.AllDefaultModes.Any(d => d.Id == "manual" && d.AliasOf == "default"),
+            "The catalog must carry 'manual' as an alias of 'default' — the schema's defaultMode enum includes it.");
+        Assert.IsFalse(
+            vm.DefaultModeInfos.Any(i => i.Value == "manual"),
+            "An alias must not be offered as a separate choice; 'manual' is just 'default' relabelled.");
     }
 
     [TestMethod]

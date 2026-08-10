@@ -104,6 +104,7 @@
     { "id": "auto", "experimental": false, "requiresAutoCapableModel": true, "userScopeOnly": true },
     { "id": "dontAsk", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
     { "id": "bypassPermissions", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false },
-    { "id": "delegate", "experimental": true, "requiresAutoCapableModel": false, "userScopeOnly": false }
+    { "id": "delegate", "experimental": true, "requiresAutoCapableModel": false, "userScopeOnly": false },
+    { "id": "manual", "experimental": false, "requiresAutoCapableModel": false, "userScopeOnly": false, "aliasOf": "default" }
   ]
 }
