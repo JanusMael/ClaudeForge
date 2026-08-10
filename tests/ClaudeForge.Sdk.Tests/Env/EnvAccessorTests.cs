@@ -331,7 +331,7 @@ public sealed class EnvAccessorTests
         // for null inputs (a subclass of ArgumentException) — catch the
         // base type so either is accepted.
         using ClaudeCodeClient client = await OpenAsync();
-        Assert.ThrowsException<ArgumentNullException>(() => client.Env.Get(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => client.Env.Get(null!));
     }
 
     [TestMethod]
@@ -341,6 +341,6 @@ public sealed class EnvAccessorTests
         // throws plain ArgumentException (NOT ArgumentNullException, since
         // the input is non-null).
         using ClaudeCodeClient client = await OpenAsync();
-        Assert.ThrowsException<ArgumentException>(() => client.Env.Set("   ", "v"));
+        Assert.ThrowsExactly<ArgumentException>(() => client.Env.Set("   ", "v"));
     }
 }

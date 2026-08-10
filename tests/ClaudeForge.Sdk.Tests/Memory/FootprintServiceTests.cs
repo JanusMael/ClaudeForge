@@ -143,7 +143,7 @@ public class FootprintServiceTests
         FootprintService svc = new(fake);
         WriteUnder("history.jsonl");
 
-        await Assert.ThrowsExceptionAsync<IOException>(() =>
+        await Assert.ThrowsExactlyAsync<IOException>(() =>
             svc.DeleteAsync(FootprintCategory.PromptHistory, CancellationToken.None));
     }
 
@@ -255,15 +255,15 @@ public class FootprintServiceTests
         WriteUnder("history.jsonl", "should-survive");
         FootprintService svc = NewService();
 
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync("../history.jsonl", CancellationToken.None));
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync("foo/bar", CancellationToken.None));
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync("foo\\bar", CancellationToken.None));
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync("C:foo", CancellationToken.None));
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync(string.Empty, CancellationToken.None));
 
         // Defence-in-depth assertion: nothing under ~/.claude/ outside the

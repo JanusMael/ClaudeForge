@@ -32,7 +32,11 @@ public sealed class UnifiedProfileEntryTests
     {
         // The sentinel string must be identical so that persisted profile names
         // round-trip correctly through SelectedProfile (string) and SelectedProfileEntry.
+        // MSTEST0032: both are consts, so this folds to always-true. Catching the day
+        // someone changes one and not the other is exactly why the assert is here.
+#pragma warning disable MSTEST0032
         Assert.AreEqual(MainWindowViewModel.GlobalProfileSentinel, UnifiedProfileEntry.GlobalName);
+#pragma warning restore MSTEST0032
     }
 
     // -----------------------------------------------------------------------

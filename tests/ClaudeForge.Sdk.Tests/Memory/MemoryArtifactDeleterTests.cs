@@ -122,7 +122,7 @@ public sealed class MemoryArtifactDeleterTests
     [TestMethod]
     public async Task DeleteAsync_BlankPath_Throws()
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(
+        await Assert.ThrowsExactlyAsync<ArgumentException>(
             () => MemoryArtifactDeleter.DeleteAsync("   ", isSkill: false, CancellationToken.None));
     }
 

@@ -60,7 +60,7 @@ public sealed class ConfigFileLoaderSaveErrorTests
         string path = Path.Combine(_sandbox, "ro.json");
         SettingsDocument doc = NewDoc(path, isReadOnly: true);
 
-        InvalidOperationException ex = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => ConfigFileLoader.SaveAsync(doc));
+        InvalidOperationException ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => ConfigFileLoader.SaveAsync(doc));
 
         StringAssert.Contains(ex.Message, "read-only");
         StringAssert.Contains(ex.Message, path);
@@ -205,7 +205,7 @@ public sealed class ConfigFileLoaderSaveErrorTests
         using CancellationTokenSource cts = new();
         await cts.CancelAsync(); // pre-cancel so WriteAllTextAsync sees the token already faulted
 
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() => ConfigFileLoader.SaveAsync(doc, ct: cts.Token));
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => ConfigFileLoader.SaveAsync(doc, ct: cts.Token));
 
         Assert.IsFalse(File.Exists(path),
             "Cancelled save must not leave a destination file behind.");

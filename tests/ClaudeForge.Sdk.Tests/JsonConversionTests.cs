@@ -64,7 +64,7 @@ public sealed class JsonConversionTests
         // require reflection-based serialisation, which breaks under
         // PublishTrimmed=true. Locking the message shape so callers can
         // surface a useful hint via the exception text.
-        NotSupportedException ex = Assert.ThrowsException<NotSupportedException>(() =>
+        NotSupportedException ex = Assert.ThrowsExactly<NotSupportedException>(() =>
             JsonConversion.ConvertToJsonNode(new DateTime(2026, 4, 29)));
         StringAssert.Contains(ex.Message, "JSON primitive");
         StringAssert.Contains(ex.Message, "JsonNode");

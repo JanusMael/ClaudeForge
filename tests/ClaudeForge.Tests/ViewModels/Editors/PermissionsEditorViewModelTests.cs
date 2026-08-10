@@ -551,7 +551,7 @@ public class PermissionsEditorViewModelTests
             "Network operation must include `Bash(wsl curl *)`.");
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("linux")]
     [DataRow("macos")]
     public void ToolActionGroups_OnNonWindows_OmitsWslGroup(string platformId)
@@ -638,7 +638,7 @@ public class PermissionsEditorViewModelTests
         Assert.IsFalse(file!.IsExpanded, "A never-expanded group must remain collapsed across the rebuild.");
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Bash(wsl ls *)")]
     [DataRow("Bash(wsl find *)")]
     [DataRow("Bash(wsl grep *)")]

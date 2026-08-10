@@ -480,7 +480,7 @@ public sealed class BackupEngineTests
     {
         // Argument validation is contract — null request is a programmer
         // error, not a runtime "expected failure", and is allowed to throw.
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
             BackupEngine.Default.CreateAsync(null!));
     }
 

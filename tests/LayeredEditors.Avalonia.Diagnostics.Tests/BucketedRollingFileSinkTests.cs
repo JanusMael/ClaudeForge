@@ -289,30 +289,30 @@ public sealed class BucketedRollingFileSinkTests
     [DataRow(48)] // larger than 24
     public void Ctor_InvalidBucketSizeHours_Throws(int hours)
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new BucketedRollingFileSink(_dir, bucketSize: TimeSpan.FromHours(hours)));
     }
 
     [TestMethod]
     public void Ctor_FractionalBucketSize_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new BucketedRollingFileSink(_dir, bucketSize: TimeSpan.FromMinutes(90)));
     }
 
     [TestMethod]
     public void Ctor_ZeroBucketSize_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new BucketedRollingFileSink(_dir, bucketSize: TimeSpan.Zero));
     }
 
     [TestMethod]
     public void Ctor_NonPositiveRetention_Throws()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new BucketedRollingFileSink(_dir, retention: TimeSpan.Zero));
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
             new BucketedRollingFileSink(_dir, retention: TimeSpan.FromDays(-1)));
     }
 
@@ -323,14 +323,14 @@ public sealed class BucketedRollingFileSinkTests
     [DataRow("bad/slash")]
     public void Ctor_InvalidPrefix_Throws(string prefix)
     {
-        Assert.ThrowsException<ArgumentException>(() =>
+        Assert.ThrowsExactly<ArgumentException>(() =>
             new BucketedRollingFileSink(_dir, fileNamePrefix: prefix));
     }
 
     [TestMethod]
     public void Ctor_NullLogsDirectory_Throws()
     {
-        Assert.ThrowsException<ArgumentNullException>(() =>
+        Assert.ThrowsExactly<ArgumentNullException>(() =>
             new BucketedRollingFileSink(logsDirectory: null!));
     }
 
@@ -343,7 +343,11 @@ public sealed class BucketedRollingFileSinkTests
     {
         Assert.AreEqual(TimeSpan.FromHours(8), BucketedRollingFileSink.DefaultBucketSize);
         Assert.AreEqual(TimeSpan.FromDays(3), BucketedRollingFileSink.DefaultRetention);
+        // MSTEST0032: const-vs-literal, so the compiler folds it to always-true.
+        // Pinning the published default is the point — changing the const must fail here.
+#pragma warning disable MSTEST0032
         Assert.AreEqual("app", BucketedRollingFileSink.DefaultFileNamePrefix);
+#pragma warning restore MSTEST0032
     }
 
     [TestMethod]

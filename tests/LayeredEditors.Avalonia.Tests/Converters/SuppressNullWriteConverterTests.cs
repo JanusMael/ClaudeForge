@@ -76,6 +76,11 @@ public sealed class SuppressNullWriteConverterTests
     [TestMethod]
     public void Instance_IsSingleton()
     {
+        // MSTEST0032: flagged as always-true because both sides are syntactically
+        // identical. That is the point — this pins Instance as a true singleton.
+        // If it ever became `=> new SuppressNullWriteConverter()`, this would fail.
+#pragma warning disable MSTEST0032
         Assert.AreSame(SuppressNullWriteConverter.Instance, SuppressNullWriteConverter.Instance);
+#pragma warning restore MSTEST0032
     }
 }
