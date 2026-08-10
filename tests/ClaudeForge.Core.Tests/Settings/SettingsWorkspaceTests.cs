@@ -93,7 +93,7 @@ public class SettingsWorkspaceTests
         SettingsDocument doc = new(ConfigScope.Managed, "/managed.json", new JsonObject(), isReadOnly: true);
         SettingsWorkspace workspace = new([doc]);
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             workspace.SetValue("model", JsonValue.Create("x"), ConfigScope.Managed));
     }
 

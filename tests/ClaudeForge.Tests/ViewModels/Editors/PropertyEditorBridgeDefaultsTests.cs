@@ -68,7 +68,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
     {
         BothDefaultsLeaf leaf = new(S("x"), ConfigScope.User);
 
-        InvalidOperationException ex = Assert.ThrowsException<InvalidOperationException>(() => leaf.ToJsonValue());
+        InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(() => leaf.ToJsonValue());
 
         StringAssert.Contains(ex.Message, "BothDefaultsLeaf",
             "Diagnostic must name the offending leaf type.");
@@ -131,7 +131,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
         LayeredValue layered = new("x", []);
 
         InvalidOperationException ex =
-            Assert.ThrowsException<InvalidOperationException>(() => leaf.LoadFromLayered(layered, ConfigScope.User));
+            Assert.ThrowsExactly<InvalidOperationException>(() => leaf.LoadFromLayered(layered, ConfigScope.User));
 
         StringAssert.Contains(ex.Message, "LoadFromLayered");
         StringAssert.Contains(ex.Message, "LoadFromValue");

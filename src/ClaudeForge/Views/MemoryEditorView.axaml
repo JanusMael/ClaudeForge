@@ -106,6 +106,7 @@
                                                                         HorizontalContentAlignment="Left"
                                                                         FontWeight="SemiBold"
                                                                         Padding="0"
+                                                                        Cursor="Hand"
                                                                         ToolTip.Tip="{Binding AbsolutePath}"
                                                                         AutomationProperties.Name="{Binding DisplayName, StringFormat='Open memory file {0}'}"
                                                                         Command="{Binding $parent[ItemsControl;1].((vm:MemoryEditorViewModel)DataContext).LoadFileCommand}"

@@ -53,46 +53,57 @@
              can't be the whole-row button anymore (a Button can't host the
              action Buttons), so the row is a Border + Grid like the Memory tab.
              The Source chip (User / Project / plugin name) disambiguates
-             same-named artifacts from different plugins.  ToolTip on the name +
-             chip surfaces the file's full absolute path. -->
+             same-named artifacts from different plugins, and opens the detail
+             pane too — name, subtitle and chip are all one clickable run.
+             ToolTip on the name + chip surfaces the file's full absolute path. -->
         <DataTemplate x:DataType="vm:ArtifactRowViewModel">
             <Border Padding="10,8" Margin="0,2"
                     CornerRadius="4"
                     Background="{DynamicResource BarButtonBackgroundBrush}">
-                <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
-                    <!-- Name + subtitle: click opens the detail pane.  Transparent
-                         flat button so it reads as a link, not a nested box. -->
+                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                    <!-- Name + subtitle + Source chip are ONE button, so the whole
+                         left-hand run is a single clickable surface with a single
+                         hover highlight.  (Two adjacent buttons rendered as two
+                         separate hover backgrounds with a seam between them.)
+                         Transparent flat button so it reads as a link, not a nested
+                         box; the chip keeps its own Border chrome inside.
+                         The two ToolTips stay independent by living on the inner
+                         StackPanel / chip Border rather than on the button. -->
                     <Button Grid.Column="0"
                             Background="Transparent" BorderThickness="0" Padding="0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                             VerticalAlignment="Center"
-                            ToolTip.Tip="{Binding AbsolutePath}"
+                            Cursor="Hand"
                             Command="{Binding $parent[ItemsControl].((vm:AgentsSkillsEditorViewModel)DataContext).LoadArtifactCommand}"
                             CommandParameter="{Binding}"
                             AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
-                        <StackPanel Spacing="1">
-                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding Subtitle}" FontSize="11"
-                                       Foreground="{DynamicResource AppSecondaryTextBrush}"
-                                       TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </Button>
+                        <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="0" Spacing="1"
+                                        VerticalAlignment="Center"
+                                        ToolTip.Tip="{Binding AbsolutePath}">
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Subtitle}" FontSize="11"
+                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
 
-                    <!-- Source chip. -->
-                    <Border Grid.Column="1"
-                            Background="{DynamicResource AppPanelBorderBrush}"
-                            CornerRadius="3" Padding="5,1"
-                            VerticalAlignment="Center" Margin="6,0"
-                            ToolTip.Tip="{Binding AbsolutePath}">
-                        <TextBlock Text="{Binding Source}" FontSize="10"
-                                   Foreground="{DynamicResource AppSecondaryTextBrush}" />
-                    </Border>
+                            <!-- Source chip. -->
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource AppPanelBorderBrush}"
+                                    CornerRadius="3" Padding="5,1"
+                                    VerticalAlignment="Center" Margin="6,0"
+                                    ToolTip.Tip="{Binding AbsolutePath}">
+                                <TextBlock Text="{Binding Source}" FontSize="10"
+                                           Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                            </Border>
+                        </Grid>
+                    </Button>
 
                     <!-- Per-row actions: Open in editor + Reveal + Delete.
                          Delete is red (like the Footprint tab) and shown only for
                          writable (User / Project) rows — plugin rows are read-only
                          and never deletable.  Skills delete the whole directory. -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4"
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
                                 VerticalAlignment="Center">
                         <Button Content="{x:Static loc:Strings.ButtonOpenInEditor}"
                                 FontSize="11" Padding="6,2"

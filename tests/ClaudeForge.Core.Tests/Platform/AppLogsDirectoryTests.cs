@@ -52,7 +52,12 @@ public sealed class AppLogsDirectoryTests
     {
         // The property is a computed getter (not cached), but while the override
         // is pinned by TestInitialize the two reads must return the same path.
+        // MSTEST0032: the analyzer sees two syntactically identical expressions and
+        // calls the comparison always-true. Repeated evaluation IS the subject under
+        // test — a getter that recomputed a different path each read would fail here.
+#pragma warning disable MSTEST0032
         Assert.AreEqual(PlatformPaths.AppLogsDirectory, PlatformPaths.AppLogsDirectory);
+#pragma warning restore MSTEST0032
     }
 
     [TestMethod]

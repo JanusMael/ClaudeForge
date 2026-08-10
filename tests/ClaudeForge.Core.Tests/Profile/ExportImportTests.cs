@@ -163,7 +163,7 @@ public sealed class ExportImportTests
     public async Task Export_FailsWhenProfileDoesNotExist()
     {
         string dest = Path.Combine(_sandbox, "nope.json");
-        await Assert.ThrowsExceptionAsync<FileNotFoundException>(() =>
+        await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
             ProfileEngine.ExportProfileAsync("nonexistent", dest));
     }
 
@@ -183,7 +183,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "old.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
         StringAssert.Contains(ex.Message, "Incompatible export version",
             "Error message must surface the version mismatch clearly.");
     }
@@ -205,7 +205,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "exists.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        IOException ex = await Assert.ThrowsExceptionAsync<IOException>(() => ProfileEngine.ImportProfileAsync(path));
+        IOException ex = await Assert.ThrowsExactlyAsync<IOException>(() => ProfileEngine.ImportProfileAsync(path));
         StringAssert.Contains(ex.Message, "already exists",
             "Error must mirror claudectx's 'profile %q already exists' phrasing.");
     }
@@ -245,7 +245,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "nosettings.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     [TestMethod]
@@ -254,7 +254,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "broken.json");
         await File.WriteAllTextAsync(path, "{ this is not valid json ");
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     // ── Path-traversal guards (security regressions) ───────────────────────
@@ -277,7 +277,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "traversal.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
         StringAssert.Contains(ex.Message, "not a valid",
             "Error message must surface the rejection clearly.");
 
@@ -312,7 +312,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "abs.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     [TestMethod]
@@ -345,7 +345,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "backslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     [TestMethod]
@@ -362,7 +362,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "fslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     [TestMethod]
@@ -381,7 +381,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "dotdot.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
     }
 
     [TestMethod]
@@ -392,7 +392,7 @@ public sealed class ExportImportTests
         string json = Path.Combine(_sandbox, "src.json");
         await ProfileEngine.ExportProfileAsync("legitimate", json);
 
-        await Assert.ThrowsExceptionAsync<InvalidDataException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
             ProfileEngine.ImportProfileAsync(json, overrideName: "../escape"));
     }
 

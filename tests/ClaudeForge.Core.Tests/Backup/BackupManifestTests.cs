@@ -11,7 +11,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Backup;
 [TestClass]
 public sealed class BackupManifestTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(BackupMode.SettingsOnly, "windows")]
     [DataRow(BackupMode.SettingsOnly, "macos")]
     [DataRow(BackupMode.SettingsOnly, "linux")]

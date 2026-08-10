@@ -89,6 +89,10 @@ public sealed class SensitiveKeysTests
     {
         // Lock the public marker text — anything that travels into bug
         // reports relies on this exact spelling.
+        // MSTEST0032: const-vs-literal folds to always-true; locking the marker
+        // is precisely what this test exists to do.
+#pragma warning disable MSTEST0032
         Assert.AreEqual("[redacted]", SensitiveKeys.RedactedMarker);
+#pragma warning restore MSTEST0032
     }
 }

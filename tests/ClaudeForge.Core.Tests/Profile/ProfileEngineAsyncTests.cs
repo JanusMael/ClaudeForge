@@ -96,54 +96,54 @@ public sealed class ProfileEngineAsyncTests
 
     // ── Argument validation ──────────────────────────────────────────
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     [DataRow("\t")]
     public async Task CreateFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => ProfileEngine.CreateFromLiveAsync(name));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => ProfileEngine.CreateFromLiveAsync(name));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     public async Task ApplyProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(name));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(name));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     public async Task SyncFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => ProfileEngine.SyncFromLiveAsync(name));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => ProfileEngine.SyncFromLiveAsync(name));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     public async Task CreateDesktopProfileFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() =>
             ProfileEngine.CreateDesktopProfileFromLiveAsync(name));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     public async Task ApplyDesktopProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("")]
     [DataRow(" ")]
     public async Task SyncDesktopFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsExceptionAsync<ArgumentException>(() => ProfileEngine.SyncDesktopFromLiveAsync(name));
+        await Assert.ThrowsExactlyAsync<ArgumentException>(() => ProfileEngine.SyncDesktopFromLiveAsync(name));
     }
 
     [TestMethod]
@@ -151,7 +151,7 @@ public sealed class ProfileEngineAsyncTests
     {
         // ArgumentException.ThrowIfNullOrWhiteSpace specifically raises
         // ArgumentNullException for null; ArgumentException for whitespace.
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => ProfileEngine.CreateFromLiveAsync(null!));
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() => ProfileEngine.CreateFromLiveAsync(null!));
     }
 
     // ── Cancellation propagation ─────────────────────────────────────
@@ -170,7 +170,7 @@ public sealed class ProfileEngineAsyncTests
         // .NET's File.WriteAllTextAsync raises TaskCanceledException
         // (a subclass of OperationCanceledException) on a pre-cancelled
         // token; both exception types are valid signals here.
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() =>
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() =>
             ProfileEngine.CreateFromLiveAsync("p", cts.Token));
     }
 
@@ -185,7 +185,7 @@ public sealed class ProfileEngineAsyncTests
         // .NET's File.WriteAllTextAsync raises TaskCanceledException
         // (a subclass of OperationCanceledException) on a pre-cancelled
         // token; both exception types are valid signals here.
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() =>
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() =>
             ProfileEngine.ApplyProfileToLiveAsync("p", autoSync: false, cts.Token));
     }
 
@@ -197,7 +197,7 @@ public sealed class ProfileEngineAsyncTests
         // Profile directory exists but contains no settings.json.
         Directory.CreateDirectory(ProfileDir("orphan"));
 
-        FileNotFoundException ex = await Assert.ThrowsExceptionAsync<FileNotFoundException>(() =>
+        FileNotFoundException ex = await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
             ProfileEngine.ApplyProfileToLiveAsync("orphan"));
 
         StringAssert.Contains(ex.Message, "orphan",
@@ -394,7 +394,7 @@ public sealed class ProfileEngineAsyncTests
         // Profile directory exists but contains no claude_desktop_config.json.
         Directory.CreateDirectory(DesktopProfileDir("d-orphan"));
 
-        FileNotFoundException ex = await Assert.ThrowsExceptionAsync<FileNotFoundException>(() =>
+        FileNotFoundException ex = await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
             ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan"));
 
         StringAssert.Contains(ex.Message, "d-orphan");
