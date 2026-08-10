@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout (manifest templates)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build manifests from templates and submit
         shell: pwsh
