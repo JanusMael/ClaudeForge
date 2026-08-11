@@ -91,3 +91,41 @@ It needs one repository secret:
 Dispatch is manual by design (there is no Release trigger): the signed-zip
 re-upload happens out of band, and submitting before it would pin the unsigned
 hash.
+
+## Three ways to submit — pick exactly one
+
+All three end in the same `wingetcreate submit`. Running two for one release opens
+two PRs against the same manifest, which winget-pkgs asks contributors not to do
+(2026.3.810 did exactly that — see the incident notes in `packaging/BBWinget.md`).
+
+| Path | How it fires | Leaves an Actions run? |
+|---|---|---|
+| `packaging/sign-release.ps1` | **Dispatches the workflow itself** at the end, unless `-SkipWinget` | yes |
+| `.github/workflows/winget-submit.yml` | `gh workflow run winget-submit.yml -f version=<ver>` | yes |
+| `packaging/Submit-Winget.ps1` | run locally; submits straight from your machine | **no** |
+
+**The normal release is: run `sign-release.ps1` and stop — it already submits.** The
+other two are for re-submitting after a failure, or when you passed `-SkipWinget`.
+
+Both submit paths refuse to run when an open winget-pkgs PR already exists for that
+package + version.
+
+## Why order matters: CI cannot sign
+
+The release workflow publishes **unsigned** zips. `sign-release.ps1` signs them with
+the SimplySign cloud certificate — which only exists on a developer machine, never in
+CI — re-uploads them **in place**, and only then submits. Because `wingetcreate` pins
+a SHA256 computed from the *live* asset, submitting first would publish the hash of an
+unsigned binary permanently.
+
+So neither path trusts the caller to get the order right: each cracks the downloaded
+zips and requires a **valid Authenticode signature** on `ClaudeForge.exe`, aborting
+otherwise.
+
+## Keep the templates complete
+
+`wingetcreate submit` builds the manifest **only** from the `*.yaml` files in this
+folder. Unlike `update`, it does **not** inherit anything from the published version —
+so any field missing here is silently dropped from the catalog entry. That is how the
+`Documentations` (Wiki) entry disappeared in 2026.3.810. When adding a manifest field,
+add it to the template, not to a one-off submission.

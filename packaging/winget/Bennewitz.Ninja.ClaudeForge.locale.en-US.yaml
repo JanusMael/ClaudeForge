@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
 #
 # Default-locale manifest (template). Publisher is the author's name; the
 # PackageIdentifier prefix (Bennewitz.Ninja) is the author's namespace — the two
@@ -36,6 +36,13 @@ Tags:
   - avalonia
   - dotnet
 ReleaseNotesUrl: https://github.com/JanusMael/ClaudeForge/releases/tag/v<PACKAGE_VERSION>
+# Carried over from the 2026.3.708 / 2026.3.724 published manifests. `wingetcreate
+# submit` builds the manifest ONLY from this template — unlike `update`, it does not
+# inherit fields from the published version — so anything omitted here is silently
+# dropped from the catalog entry. That is exactly how this was lost in 2026.3.810.
+Documentations:
+  - DocumentLabel: Wiki
+    DocumentUrl: https://github.com/JanusMael/ClaudeForge/wiki
 # `ReleaseNotes` (the release body) is injected at submission time by
 # .github/workflows/winget-submit.yml from the GitHub release — kept out of this
 # static template because it is per-version. `ReleaseDate` is likewise injected
@@ -53,4 +60,4 @@ ReleaseNotesUrl: https://github.com/JanusMael/ClaudeForge/releases/tag/v<PACKAGE
 #     IconTheme: default
 #     IconSha256: <SHA256_OF_ICON_PNG>
 ManifestType: defaultLocale
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0

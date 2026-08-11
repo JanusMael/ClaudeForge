@@ -40,6 +40,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Decode child-process stdout as UTF-8. `gh` emits UTF-8; without this PowerShell
+# decodes it using the console's OEM code page, so any non-ASCII character in the
+# release body is mangled before it ever reaches the manifest — an em dash (U+2014,
+# bytes E2 80 94) lands as "ΓÇö". Shipped that way in 2026.3.810; don't again.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 $Repo        = 'JanusMael/ClaudeForge'
 $PackageId   = 'Bennewitz.Ninja.ClaudeForge'
 $TemplateDir = Join-Path $PSScriptRoot 'winget'
@@ -49,6 +55,19 @@ if (-not $Version) {
 }
 $Version = $Version -replace '^v', ''
 if (-not $Version) { throw 'A version is required.' }
+
+# Duplicate guard. There are three ways to submit — this script, a manual
+# `gh workflow run winget-submit.yml`, and packaging/sign-release.ps1, which
+# dispatches that workflow automatically unless you pass -SkipWinget. Running two
+# of them for one release opens two PRs against the same manifest, which
+# winget-pkgs explicitly asks contributors not to do (2026.3.810 did exactly this).
+$existing = gh api "search/issues?q=repo:microsoft/winget-pkgs+author:JanusMael+type:pr+state:open+in:title+$PackageId" `
+    --jq ".items[] | select(.title | contains(\"$Version\")) | \"#\(.number) \(.title)\"" 2>$null
+if ($LASTEXITCODE -eq 0 -and $existing) {
+    throw ("An open winget-pkgs PR already exists for $PackageId ${Version}:`n  $existing`n" +
+           'Close it first, or let that submission finish. ' +
+           'Note sign-release.ps1 already dispatches winget-submit.yml unless -SkipWinget is passed.')
+}
 
 $tag      = "v$Version"
 $base     = "https://github.com/$Repo/releases/download/$tag"
@@ -68,6 +87,25 @@ New-Item -ItemType Directory -Force -Path $dl, $stage | Out-Null
 Write-Host 'Downloading release assets...'
 Invoke-WebRequest -Uri $x64Url   -OutFile (Join-Path $dl 'x64.zip')
 Invoke-WebRequest -Uri $arm64Url -OutFile (Join-Path $dl 'arm64.zip')
+# Signing gate — refuse to submit unsigned binaries. The release workflow publishes
+# UNSIGNED zips; sign-release.ps1 signs them and re-uploads in place. Submitting
+# before that pins the SHA256 of an unsigned asset and publishes it permanently.
+# Verify the precondition rather than assuming the caller got the order right.
+# Kept in sync with the same gate in .github/workflows/winget-submit.yml.
+foreach ($arch in 'x64', 'arm64') {
+    $ex = Join-Path $dl "extract-$arch"
+    Expand-Archive -Path (Join-Path $dl "$arch.zip") -DestinationPath $ex -Force
+    $exe = Get-ChildItem $ex -Filter ClaudeForge.exe -Recurse | Select-Object -First 1
+    if (-not $exe) { throw "$arch zip does not contain ClaudeForge.exe — cannot verify signing." }
+    $sig = Get-AuthenticodeSignature $exe.FullName
+    Write-Host "  $arch Authenticode: $($sig.Status)"
+    if ($sig.Status -ne 'Valid') {
+        throw ("$arch ClaudeForge.exe is not validly signed (status: $($sig.Status)). " +
+               'Sign and re-upload the release assets first — run packaging/sign-release.ps1.')
+    }
+}
+Remove-Item (Join-Path $dl 'extract-x64'), (Join-Path $dl 'extract-arm64') -Recurse -Force
+
 $sha64  = (Get-FileHash (Join-Path $dl 'x64.zip')   -Algorithm SHA256).Hash
 $shaArm = (Get-FileHash (Join-Path $dl 'arm64.zip') -Algorithm SHA256).Hash
 Write-Host "  x64   SHA256 $sha64"
