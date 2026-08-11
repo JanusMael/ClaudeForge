@@ -64,8 +64,27 @@ jobs:
             exit 1
           }
 
+          # Decode `gh` output as UTF-8. Without this the console's OEM code page
+          # mangles non-ASCII in the release body before it reaches the manifest
+          # (an em dash lands as "ΓÇö"). Kept in sync with packaging/Submit-Winget.ps1.
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
           $ver = $env:VERSION_INPUT -replace '^v', ''
           if (-not $ver) { Write-Error "A version input is required."; exit 1 }
+
+          # Duplicate guard. Three paths can submit: this workflow (manually), this
+          # workflow dispatched automatically by packaging/sign-release.ps1 (unless
+          # -SkipWinget), and packaging/Submit-Winget.ps1 locally. Two of them firing
+          # for one release opens two PRs against the same manifest, which winget-pkgs
+          # asks contributors not to do — 2026.3.810 shipped exactly that.
+          $existing = gh api "search/issues?q=repo:microsoft/winget-pkgs+author:JanusMael+type:pr+state:open+in:title+Bennewitz.Ninja.ClaudeForge" `
+            --jq ".items[] | select(.title | contains(`"$ver`")) | `"#\(.number) \(.title)`"" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $existing) {
+            Write-Error ("An open winget-pkgs PR already exists for Bennewitz.Ninja.ClaudeForge ${ver}:`n  $existing`n" +
+                         "Close it first, or let that submission finish. Note sign-release.ps1 dispatches this workflow automatically unless -SkipWinget is passed.")
+            exit 1
+          }
+
           $tag      = "v$ver"
           $base     = "https://github.com/$($env:REPO)/releases/download/$tag"
           $x64Url   = "$base/ClaudeForge-win-x64.zip"
@@ -78,6 +97,40 @@ jobs:
           New-Item -ItemType Directory -Force -Path dl | Out-Null
           Invoke-WebRequest -Uri $x64Url   -OutFile dl/x64.zip
           Invoke-WebRequest -Uri $arm64Url -OutFile dl/arm64.zip
+          # 1a. SIGNING GATE — refuse to submit unsigned binaries.
+          #
+          #     CI cannot sign: the SimplySign cloud certificate is only available to
+          #     packaging/sign-release.ps1 on a developer machine. The release workflow
+          #     publishes UNSIGNED zips; sign-release.ps1 then signs them, re-uploads in
+          #     place, and dispatches this workflow. So this workflow is only correct
+          #     AFTER that re-upload — dispatched too early it would pin the SHA256 of an
+          #     unsigned asset and publish it to the winget catalog permanently.
+          #
+          #     Rather than trusting the caller, verify the precondition itself: crack
+          #     each zip and require a VALID Authenticode signature on ClaudeForge.exe.
+          #     This holds however the workflow was triggered.
+          foreach ($arch in 'x64', 'arm64') {
+            $ex = "dl/extract-$arch"
+            Expand-Archive -Path "dl/$arch.zip" -DestinationPath $ex -Force
+            $exe = Get-ChildItem $ex -Filter ClaudeForge.exe -Recurse | Select-Object -First 1
+            if (-not $exe) {
+              Write-Error "$arch zip does not contain ClaudeForge.exe — cannot verify signing."
+              exit 1
+            }
+            $sig = Get-AuthenticodeSignature $exe.FullName
+            Write-Host "$arch Authenticode: $($sig.Status) — $($sig.SignerCertificate.Subject)"
+            if ($sig.Status -ne 'Valid') {
+              Write-Error ("$arch ClaudeForge.exe is not validly signed (status: $($sig.Status)). " +
+                           'The release assets have not been signed and re-uploaded yet. Run ' +
+                           'packaging/sign-release.ps1 (it signs, re-uploads, then dispatches this ' +
+                           'workflow) instead of dispatching this workflow directly.')
+              exit 1
+            }
+          }
+          Remove-Item dl/extract-x64, dl/extract-arm64 -Recurse -Force
+
+          # Hash the ZIP as published — computed after the signing gate so a failed
+          # gate can never leave a usable hash behind.
           $sha64  = (Get-FileHash dl/x64.zip   -Algorithm SHA256).Hash
           $shaArm = (Get-FileHash dl/arm64.zip -Algorithm SHA256).Hash
           Write-Host "x64   SHA256 $sha64"

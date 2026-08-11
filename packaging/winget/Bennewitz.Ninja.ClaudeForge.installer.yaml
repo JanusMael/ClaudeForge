@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 #
 # Installer manifest (template).
 #
@@ -28,4 +28,4 @@ Installers:
     InstallerUrl: https://github.com/JanusMael/ClaudeForge/releases/download/v<PACKAGE_VERSION>/ClaudeForge-win-arm64.zip
     InstallerSha256: <SHA256_ARM64>
 ManifestType: installer
-ManifestVersion: 1.6.0
+ManifestVersion: 1.12.0
