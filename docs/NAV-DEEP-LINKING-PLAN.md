@@ -1,9 +1,14 @@
 # Plan — list filtering, deep-path restore, and `--deep-link`
 
-> Status: **IMPLEMENTED, no known defects** — branch
-> `feat/nav-deep-linking-and-list-search`, **entirely uncommitted** (0 commits; HEAD is
-> still main's `478100f`). Review from the dirty working tree.
-> Gates: build 0 warnings · 2702 passed / 11 skipped / 0 failed · trim publish 0 IL warnings.
+> Status: **SHIPPED — historical record.** This is not a work item; it documents a
+> feature that is in `main` and in the product. The working branch
+> `feat/nav-deep-linking-and-list-search` was merged and pruned; `--deep-link` lives in
+> `ClaudeForge/Services/DebugFlags.cs` and the search/filter surface in
+> `SearchViewModel` + `MainWindowViewModel`. Verify by those members, not by ancestry —
+> the repo squash-merges, which defeats ancestry, patch-id, and subject checks.
+> Gates **as recorded at the time of shipping**: build 0 warnings · 2702 passed /
+> 11 skipped / 0 failed · trim publish 0 IL warnings. The suite has grown since; do not
+> read that count as current.
 > Fact-shaped per [`AGENTS.md`](../AGENTS.md): claims cite a file, type, or member,
 > never a line number.
 >

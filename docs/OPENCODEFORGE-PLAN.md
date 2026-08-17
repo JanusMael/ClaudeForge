@@ -28,23 +28,32 @@
 >
 > ### Implementation status — 2026-08-17
 >
-> Branch **`feat/agentforge-opencodeforge`**, 10 commits, **not yet pushed**. Suite green
-> throughout: **2,716 passed · 11 skipped · 0 failed · 0 warnings**.
+> Branch **`feat/agentforge-opencodeforge`**, 11 commits, **not yet pushed**. Suite green
+> throughout: **2,719 passed · 11 skipped · 0 failed · 0 warnings**.
 >
 > | Phase | Status |
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
-> | 1 — Rename + neutralize | 🟡 **1a–1f done**; **1g/1h remain** |
-> | 2+ | not started |
+> | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
+> | 2 — `AgentForge.Jsonc` | **next** |
 >
 > **Done in Phase 1:** resource prefix derived (not hardcoded) + guarded ·
 > `AgentForge.Abstractions` created and the `LayeredEditors.Avalonia.Services → ClaudeForge.Sdk`
 > violation removed · **all three assembly renames landed** (`AgentForge.Core`,
 > `AgentForge.Sdk`, plus `IAgentConfigClient` / `AgentConfigClientCore`) · AI-facing docs
 > repointed · **`ClaudeForge.Sdk.Claude` split out (1f)**, with `ClaudeForge.Sdk.Claude.Tests`
-> alongside it. **Remaining: 1g** (rename the MCP sample — it is already retargeted and its
-> README corrected) **· 1h** (stale `SchemaRegistry` load-order comment,
-> `NAV-DEEP-LINKING-PLAN.md` header).
+> alongside it · **1g** — the MCP sample retargeted to both SDK assemblies, plumbing moved to
+> `IClaudeConfigClient`, README corrected; **no rename needed** (directory, `PackageId`, and
+> namespaces already agree, and `ClaudeForge.Samples.*` is accurate for a Claude-specific
+> sample) · **1h** — the `SchemaRegistry` load-order rot fixed in all four places and now
+> **test-guarded**, `NAV-DEEP-LINKING-PLAN.md` re-headed as a shipped historical record.
+>
+> **1g's real finding was not the rename.** The sample's csproj comment asserted it
+> "deliberately references ONLY AgentForge.Sdk" — which step 1f falsified the moment it added
+> the second `ProjectReference` directly beneath that comment. Adding a reference silently
+> turns the sentence above it into a lie, and nothing checks. Same class of rot as the four
+> load-order comments: **after any structural edit, re-read the prose adjacent to what you
+> changed** (Phase 1 trap 4).
 >
 > **1f in one paragraph, because the shape is not obvious from the instruction.** Moving the
 > five accessors was the easy half; the dependency had to *invert*. `IAgentConfigClient` lost
@@ -1924,11 +1933,21 @@ The runtime chain in `SchemaRegistry.GetSchemaAsync` is
 **memory cache → bundled resource (+ overlay) → disk cache → HTTPS fetch → empty fallback.**
 Bundled deliberately outranks disk and network so hand-curated overlay content always wins.
 
-> ⚠ The class-level doc comment on `SchemaRegistry` states the order as
-> "memory cache → disk cache → HTTP fetch → bundled fallback" — **that is wrong** and
-> contradicts both the method-level comment on `GetSchemaAsync` and the code. Fix it in
-> Phase 1; a future maintainer reading only the class summary would draw the opposite
-> conclusion about which copy wins.
+> ✅ **Fixed in Phase 1 (1h), and it was worse than recorded here.** The order was stated
+> backwards in **four** places, not one: `SchemaRegistry`'s class summary, its
+> `GetClaudeCodeSettingsNodeAsync` summary, and the `<remarks>` of **two** promotion tests
+> (`ModelPropertyPromotionTests`, `OutputStylePropertyPromotionTests`) — where "SchemaRegistry
+> prefers the on-disk cache" was given as the *reason for the tests' design*. Only the
+> `GetSchemaAsync` method comment was right.
+>
+> **The deeper problem was that nothing asserted the ordering at all**, so prose was its only
+> record. New `SchemaLoadPrecedenceTests` (3 tests) now locks it behaviourally: bundled beats a
+> populated disk cache, the overlay-only `model` enum promotion survives the whole chain, and
+> — the other direction — a schema with no bundled resource still falls through to disk, so
+> "bundled-first" cannot silently become "bundled-only". **Canaried** by guarding the bundled
+> branch with `!File.Exists(diskPath)` (making the code match the wrong comment): the two
+> precedence tests failed with the authored diagnostics, the fall-through test correctly stayed
+> green.
 
 Hand-curated additions live in a sibling `*.overlay.json` applied via RFC 7396 JSON Merge
 Patch, fail-open on malformed overlay. `scripts/refresh-schema.ps1` refreshes only the base
@@ -2554,8 +2573,13 @@ Generalize `scripts/refresh-schema.ps1` to the four-schema table; widen
 `schema-refresh.yml`'s drift check to all of `Assets/Schemas/`; add the property-count /
 missing-key CI guard. Add the in-app *Check for schema updates* action, `SchemaProvenance`,
 the per-product opt-in promotion, the provenance badge, and the `--schema-source` debug
-flag. **Fix the stale `SchemaRegistry` class doc comment** (see the Schema updates section)
-— or do that in Phase 1, it costs nothing.
+flag. ~~**Fix the stale `SchemaRegistry` class doc comment**~~ — ✅ **done in Phase 1 (1h)**,
+along with three more instances of the same inverted claim, plus a new
+`SchemaLoadPrecedenceTests` guard. See the *Schema updates* section. **This phase must not
+regress it:** the per-product opt-in promotion deliberately lets a *fetched* schema outrank
+bundled, so it changes the very ordering those tests lock. Update them as part of the
+promotion work rather than deleting them — they are what will tell you the opt-in wired the
+precedence the way you meant.
 
 ### Phase 14 — Backup / Restore + data footprint
 
