@@ -39,6 +39,7 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | Project | Description |
 |---------|-------------|
 | `src/AgentForge.Abstractions` | Product-neutral contracts, BCL-only — no UI, no serialization, no product knowledge |
+| `src/AgentForge.Jsonc` | Comment- and formatting-preserving JSONC reader + edit-based writer. Framework-only, no package references. See [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md) |
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
 | `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
 | `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
@@ -47,6 +48,7 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `tests/AgentForge.Core.Tests` | Domain logic |
 | `tests/AgentForge.Sdk.Tests` | Product-neutral SDK contracts + regression tests. Builds without either product — uses its own `TestConfigClient` where a live client is needed |
 | `tests/ClaudeForge.Sdk.Claude.Tests` | Claude accessor round-trips, permission matchers, client lifecycle |
+| `tests/AgentForge.Jsonc.Tests` | Scanner/parser/editor contracts for the JSONC writer — comment and formatting preservation, and the refuse-to-edit-unparseable-input guarantee |
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
@@ -92,6 +94,10 @@ Open an issue first if you're planning:
 - `ClaudeForge` — Avalonia UI. View-models bind to SDK clients, never directly to Core.
 
 If you're adding a feature that touches data, ask yourself: "would this make sense in a CLI version of the app?" If yes, the logic belongs in Core or the SDK, not in a view-model.
+
+### Saving config files
+
+Config writes go through `IConfigWriter`; the default preserves the user's comments, blank lines, key order, and indentation by editing only the spans that changed. **Don't add a code path that serializes a whole config document** — that is what the deprecated `LegacySerializingWriter` does, and it exists only as a one-release escape hatch behind `--writer legacy`. Contract and rationale: [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md).
 
 ### Trim safety (`PublishTrimmed=true`)
 
