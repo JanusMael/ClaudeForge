@@ -28,6 +28,18 @@
              (e.g. asserting every async method requires a non-defaulted CT). -->
         <InternalsVisibleTo Include="AgentForge.Sdk.Tests"/>
 
+        <!-- The Claude-domain half of the SDK. Its accessors project the workspace
+             through GetEffectiveNode / GetScopeValue and report mutations through
+             RaiseChangedFromAccessor, all of which are internal deliberately: they
+             traffic in JsonNode, which the public SDK surface keeps out (see
+             HookEvent.PreservedFields for the same reasoning). Making them public
+             to serve one consumer would be a worse trade than this grant.
+
+             NOTE: this is an assembly attribute, not a reference — AgentForge.Sdk
+             still cannot see anything in ClaudeForge.Sdk.Claude, and
+             AssemblyLayeringTests still holds. -->
+        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude"/>
+
         <!-- ClaudeForge (the GUI) is granted internals visibility for the duration
              of the SDK migration. The GUI uses the
              internal `FromExistingWorkspace` constructor to wrap a pre-loaded

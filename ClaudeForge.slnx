@@ -15,6 +15,7 @@
         <Project Path="src/ClaudeForge/ClaudeForge.csproj"/>
         <Project Path="src/AgentForge.Core/AgentForge.Core.csproj"/>
         <Project Path="src/AgentForge.Sdk/AgentForge.Sdk.csproj"/>
+        <Project Path="src/ClaudeForge.Sdk.Claude/ClaudeForge.Sdk.Claude.csproj"/>
         <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
         <Project Path="src/LayeredEditors.ViewModels/LayeredEditors.ViewModels.csproj"/>
         <Project Path="src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj"/>

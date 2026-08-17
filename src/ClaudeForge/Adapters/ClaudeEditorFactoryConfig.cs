@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 
@@ -13,7 +14,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// Claude-specific and therefore live in App, not the library.
 /// <para>
 /// As editors migrate onto the SDK accessors the factory
-/// closure injects the per-product <see cref="IAgentConfigClient"/> so the
+/// closure injects the per-product <see cref="IClaudeConfigClient"/> so the
 /// migrated editor can read typed records via <c>client.Plugins</c> /
 /// <c>client.Hooks</c> / etc. The <paramref name="sdkClient"/> parameter is
 /// optional: legacy registrations still work, and tests / fixtures that
@@ -33,7 +34,7 @@ public static class ClaudeEditorFactoryConfig
     /// strongly-typed accessor surface. When <c>null</c>, the editor falls
     /// back to its legacy <c>JsonNode</c>-based load path.
     /// </param>
-    public static void Register(CompositeEditorFactory factory, AgentConfigClientCore? sdkClient = null)
+    public static void Register(CompositeEditorFactory factory, IClaudeConfigClient? sdkClient = null)
     {
         // Migrated onto SDK accessor.
         factory.Register(
@@ -86,7 +87,7 @@ public static class ClaudeEditorFactoryConfig
     /// Optional SDK client to inject into migrated editors. See
     /// <see cref="Register"/> for the migration semantics.
     /// </param>
-    public static CompositeEditorFactory CreateDefault(AgentConfigClientCore? sdkClient = null)
+    public static CompositeEditorFactory CreateDefault(IClaudeConfigClient? sdkClient = null)
     {
         CompositeEditorFactory factory = new();
         Register(factory, sdkClient);

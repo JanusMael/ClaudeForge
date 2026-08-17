@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
 namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Converters;
 

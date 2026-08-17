@@ -1,7 +1,8 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 

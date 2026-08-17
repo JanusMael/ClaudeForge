@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 
@@ -14,7 +15,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 /// </summary>
 internal static class PermissionsTool
 {
-    public static Task<int> AddAllowAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
+    public static Task<int> AddAllowAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -35,7 +36,7 @@ internal static class PermissionsTool
         return Task.FromResult(0);
     }
 
-    public static Task<int> ListAllowAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
+    public static Task<int> ListAllowAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
     {
         _ = args;
         ct.ThrowIfCancellationRequested();

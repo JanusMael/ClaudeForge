@@ -14,5 +14,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+        <ProjectReference Include="..\..\src\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
     </ItemGroup>
 </Project>

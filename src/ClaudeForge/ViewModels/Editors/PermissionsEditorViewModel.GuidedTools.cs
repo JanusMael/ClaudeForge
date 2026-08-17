@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 

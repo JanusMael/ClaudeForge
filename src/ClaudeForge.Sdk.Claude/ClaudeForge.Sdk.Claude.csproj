@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Sdk.Claude</RootNamespace>
+        <AssemblyName>ClaudeForge.Sdk.Claude</AssemblyName>
+        <Description>
+            Claude-domain half of the SDK: the config surfaces that exist only because Claude
+            Code / Claude Desktop define them — hooks, plugin marketplaces, enabled plugins,
+            the model catalog's effort/auto-mode rules, and Claude's permission rule syntax —
+            plus the two concrete clients (ClaudeCodeClient, ClaudeDesktopClient).
+
+            Split out of AgentForge.Sdk so the shared SDK holds only what a second agent
+            product can reuse. The dependency runs one way: this project references
+            AgentForge.Sdk, never the reverse. AssemblyLayeringTests enforces that.
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude.Tests"/>
+
+        <!-- TRANSITIONAL, paired with the ProjectReference in
+             tests/AgentForge.Sdk.Tests: the Claude-domain tests still live in that
+             project and reach ClaudeCodeClient.FromExistingWorkspace plus the
+             internal PreservedFields bags. Both go away when those tests move to
+             ClaudeForge.Sdk.Claude.Tests. -->
+        <InternalsVisibleTo Include="AgentForge.Sdk.Tests"/>
+
+        <!-- Same expiring grants AgentForge.Sdk carries, for the same reason: the GUI and
+             its tests still construct clients through the internal FromExistingWorkspace
+             overload to share one SettingsWorkspace with the legacy view-model state.
+             Remove alongside the AgentForge.Sdk grants when 4.3.7 retires the wrap path. -->
+        <InternalsVisibleTo Include="ClaudeForge"/>
+        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
+    </ItemGroup>
+</Project>

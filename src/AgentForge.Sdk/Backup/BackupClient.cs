@@ -22,9 +22,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Backup;
 /// <remarks>
 /// <para>
 /// Per-product: a <see cref="BackupClient"/> instance is configured with which
-/// product(s) the underlying Core engine should include. <see cref="ClaudeCodeClient"/>
+/// product(s) the underlying Core engine should include. The Claude Code client
 /// constructs one with <c>includeClaudeCode=true, includeClaudeDesktop=false</c>;
-/// <see cref="ClaudeDesktopClient"/> does the inverse. Cross-product unified
+/// the Claude Desktop client does the inverse. Cross-product unified
 /// backups (the existing GUI's behaviour) are out of scope for v1 — the GUI swap
 /// in 4.3.7 either invokes both clients in sequence or wraps them in a
 /// higher-level orchestrator added later.

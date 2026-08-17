@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
 

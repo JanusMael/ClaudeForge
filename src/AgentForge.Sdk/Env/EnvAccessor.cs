@@ -14,10 +14,10 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Env;
 /// </summary>
 /// <remarks>
 /// Path convention: dotted JsonPath (<c>env.&lt;KEY&gt;</c>) for
-/// individual var reads / writes.  This matches how
-/// <see cref="Bennewitz.Ninja.AgentForge.Sdk.Permissions.PermissionsAccessor"/> writes
-/// nested fields like <c>permissions.allow</c> — the underlying
-/// SettingsWorkspace handles the parent-object merge correctly.
+/// individual var reads / writes.  This matches how every other accessor
+/// writes nested fields (the permissions accessor's <c>permissions.allow</c>,
+/// for instance) — the underlying SettingsWorkspace handles the
+/// parent-object merge correctly.
 /// </remarks>
 internal sealed class EnvAccessor : IEnvAccessor
 {

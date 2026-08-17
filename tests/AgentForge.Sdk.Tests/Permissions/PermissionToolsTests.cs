@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
 

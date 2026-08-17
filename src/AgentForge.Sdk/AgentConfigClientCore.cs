@@ -4,24 +4,21 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
-using Bennewitz.Ninja.AgentForge.Sdk.Hooks;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
-using Bennewitz.Ninja.AgentForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
-using Bennewitz.Ninja.AgentForge.Sdk.Models;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
-using Bennewitz.Ninja.AgentForge.Sdk.Plugins;
 using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk;
 
 /// <summary>
-/// Shared implementation of <see cref="IAgentConfigClient"/>. Both
-/// <see cref="ClaudeCodeClient"/> and <see cref="ClaudeDesktopClient"/> derive
-/// from this; they only need to override the file-discovery strategy and the
-/// <see cref="IsClaudeCode"/> flag for schema validation.
+/// Shared, product-neutral implementation of <see cref="IAgentConfigClient"/>:
+/// discovery, the merged-scope read/write model, saving, validation, and the
+/// threading contract. Concrete clients derive from it and supply the
+/// file-discovery strategy plus the <see cref="IsClaudeCode"/> flag for schema
+/// validation. Claude's clients do so via <c>ClaudeConfigClientBase</c> in
+/// <c>ClaudeForge.Sdk.Claude</c>, which adds the Claude-only accessors on top.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -41,9 +38,13 @@ namespace Bennewitz.Ninja.AgentForge.Sdk;
 /// servers do not benefit measurably).
 /// </para>
 /// <para>
-/// Implementation of the typed accessors (<see cref="Permissions"/>, etc.)
-/// and <see cref="Backup"/> is intentionally still <see cref="NotImplementedException"/>
-/// at this layer — those land in 4.3.4 and 4.3.5 respectively.
+/// This class implements only the accessors whose config surface a second agent
+/// product can share — <see cref="McpServers"/>, <see cref="Env"/>, and
+/// <see cref="Backup"/>. Accessors for surfaces that exist only because Claude
+/// defines them (hooks, plugin marketplaces, enabled plugins, the model catalog's
+/// effort rules, Claude's permission rule syntax) are added by the derived
+/// Claude client base in <c>ClaudeForge.Sdk.Claude</c>; deriving classes for
+/// another product supply their own.
 /// </para>
 /// </remarks>
 public abstract class AgentConfigClientCore : IAgentConfigClient
@@ -54,10 +55,9 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     private readonly bool _ownsSchemaRegistry;
 
     /// <summary>
-    /// Construct the shared core. The default constructor that consumers see on
-    /// <see cref="ClaudeCodeClient"/> / <see cref="ClaudeDesktopClient"/> creates
-    /// a fresh <see cref="SchemaRegistry"/>; tests inject one via the internal
-    /// overload.
+    /// Construct the shared core. The default constructor that consumers see on a
+    /// concrete client creates a fresh <see cref="SchemaRegistry"/>; tests inject
+    /// one via the internal overload.
     /// </summary>
     /// <param name="defaultScope">Scope mutations target when not specified.</param>
     /// <param name="schemaRegistry">Optional injected schema registry (tests).</param>
@@ -314,76 +314,23 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         }
     }
 
-    private IPermissionsAccessor? _permissionsAccessor;
-    private IHooksAccessor? _hooksAccessor;
     private IMcpServersAccessor? _mcpServersAccessor;
-    private IMarketplacesAccessor? _marketplacesAccessor;
-    private IEnabledPluginsAccessor? _pluginsAccessor;
     private IEnvAccessor? _envAccessor;
-
-    /// <inheritdoc/>
-    public IPermissionsAccessor Permissions => _permissionsAccessor ??= new PermissionsAccessor(this);
-
-    /// <inheritdoc/>
-    public IHooksAccessor Hooks => _hooksAccessor ??= new HooksAccessor(this);
-
-    /// <summary>
-    /// Hook lifecycle events from the currently-loaded settings schema — each
-    /// event's name plus its schema description (the <c>hooks</c> node's child
-    /// properties). The fresh, schema-driven set the GUI's schema tree is built
-    /// from too. Empty before <see cref="OpenAsync"/> or when the schema exposes no
-    /// <c>hooks.properties</c>. Consumed by the Hooks accessor's <c>KnownEvents</c>
-    /// so headless callers and the editor share one source of truth — including the
-    /// descriptions, not just the names.
-    /// </summary>
-    internal IReadOnlyList<HookEventInfo> SchemaHookEvents()
-    {
-        SchemaNode? hooks = _cachedSchemaNodes?.FirstOrDefault(n =>
-            string.Equals(n.Name, "hooks", StringComparison.Ordinal));
-        if (hooks is not null)
-        {
-            return hooks.Properties.Select(p => new HookEventInfo(p.Name, p.Description)).ToList();
-        }
-
-        // No cached schema tree — the client was constructed via FromExistingWorkspace
-        // (the GUI's path) and never ran OpenAsync, so _cachedSchemaNodes is null. Read the
-        // event names + descriptions straight from the bundled schema (same source, same
-        // descriptions) so KnownEvents — and thus the editor's per-event tooltips/labels —
-        // stay populated regardless of how the client was built. Mirrors SchemaHookCommandVariants.
-        return IsClaudeCode
-            ? SchemaRegistry.GetHookEvents("claude-code-settings.json")
-            : [];
-    }
-
-    /// <summary>
-    /// Hook command variants from the settings schema's <c>$defs.hookCommand.anyOf</c> —
-    /// each variant's <c>type</c> discriminator, description, and field descriptions. Read
-    /// from the bundled merged schema JSON because the <c>anyOf</c> variants don't survive the
-    /// flattened <see cref="SchemaNode"/> tree the GUI builds from (unlike <see cref="SchemaHookEvents"/>,
-    /// which reads that tree); the bundled schema is the same source the tree derives from, so
-    /// they stay consistent. Empty for non-Claude-Code clients — hooks are a Claude Code concept.
-    /// Consumed by the Hooks accessor's <c>KnownCommandTypes</c> so headless callers and the editor
-    /// share one source for the per-type picker text and per-field descriptions.
-    /// </summary>
-    internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
-        IsClaudeCode
-            ? SchemaRegistry.GetHookCommandVariants("claude-code-settings.json")
-            : [];
 
     /// <inheritdoc/>
     public IMcpServersAccessor McpServers => _mcpServersAccessor ??= new McpServersAccessor(this);
 
     /// <inheritdoc/>
-    public IMarketplacesAccessor Marketplaces => _marketplacesAccessor ??= new MarketplacesAccessor(this);
-
-    /// <inheritdoc/>
-    public IEnabledPluginsAccessor Plugins => _pluginsAccessor ??= new EnabledPluginsAccessor(this);
-
-    /// <inheritdoc/>
     public IEnvAccessor Env => _envAccessor ??= new EnvAccessor(this);
 
-    /// <inheritdoc/>
-    public IModelCatalogAccessor Models => ModelCatalogProvider.Default;
+    /// <summary>
+    /// The flattened schema tree for the loaded settings document, or
+    /// <see langword="null"/> when the client was built via a pre-loaded workspace
+    /// and never ran <see cref="OpenAsync"/>. Exposed to derived classes so
+    /// product-specific accessors can read schema-declared vocabulary (hook events,
+    /// permission tool names) without this class needing to know what any of it means.
+    /// </summary>
+    protected IReadOnlyList<SchemaNode>? CachedSchemaNodes => _cachedSchemaNodes;
 
     private IBackupClient? _backupClient;
 

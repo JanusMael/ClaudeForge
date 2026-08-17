@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;

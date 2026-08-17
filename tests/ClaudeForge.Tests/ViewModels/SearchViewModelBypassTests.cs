@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -37,7 +38,7 @@ public sealed class SearchViewModelBypassTests
         JsonObject root = new();
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc]);
-        AgentConfigClientCore client = ClaudeCodeClient.FromExistingWorkspace(
+        ClaudeConfigClientBase client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         EssentialsViewModel essentials = new(client, new FakeEnvironmentProvider());
 

@@ -4,6 +4,7 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -149,7 +150,7 @@ public static class NavigationTreeBuilder
         SettingsWorkspace workspace,
         Func<Task<string?>>? browseDialog = null,
         SharedScopeContext? sharedScope = null,
-        AgentConfigClientCore? sdkClient = null,
+        ClaudeConfigClientBase? sdkClient = null,
         IUnsupportedShapeSink? unsupportedShapeSink = null)
     {
         // One factory per call: SDK-aware editors capture this client when
@@ -216,7 +217,7 @@ public static class NavigationTreeBuilder
         SharedScopeContext? sharedScope,
         Func<Task<string?>>? browseDialog,
         DefaultEditorFactory factory,
-        AgentConfigClientCore? sdkClient)
+        ClaudeConfigClientBase? sdkClient)
     {
         SharedScopeContext context = sharedScope ?? new SharedScopeContext();
         string description = GroupDescriptions.TryGetValue(groupTitle, out string? d) ? d : string.Empty;
