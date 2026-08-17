@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 

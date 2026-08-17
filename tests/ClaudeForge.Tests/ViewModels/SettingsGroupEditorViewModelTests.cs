@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 // App-bridge StringPropertyEditorViewModel deleted; alias library leaf.
@@ -323,7 +323,7 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsWorkspace ws = MakeWorkspace(
             (ConfigScope.Project, """{"model":"opus"}"""),
             (ConfigScope.User, "{}"));
-        using ClaudeConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);
@@ -351,7 +351,7 @@ public partial class SettingsGroupEditorViewModelTests
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace ws = MakeWorkspace((ConfigScope.User, "{}"));
-        using ClaudeConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);
@@ -707,7 +707,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// which leaks the WHOLE <c>env</c> JSON object (including any
     /// <c>ANTHROPIC_API_KEY</c>) into the rolling log file.  The fix routes
     /// values through <c>FormatValueForAuditLog</c> which redacts when the
-    /// path is sensitive per <see cref="Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics.SensitiveKeys"/>
+    /// path is sensitive per <see cref="Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.SensitiveKeys"/>
     /// and summarises (no contents) for compound values whose nested keys
     /// might also be secret-bearing.
     /// </summary>

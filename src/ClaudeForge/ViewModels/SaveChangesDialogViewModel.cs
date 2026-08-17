@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;

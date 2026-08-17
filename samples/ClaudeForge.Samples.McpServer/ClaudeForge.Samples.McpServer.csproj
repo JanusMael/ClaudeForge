@@ -4,7 +4,7 @@
         <!--
           This sample exists to prove the SDK is Avalonia-free and headless-consumable. 
           It deliberately references
-          ONLY ClaudeForge.Sdk; if a future change accidentally pulls Avalonia into
+          ONLY AgentForge.Sdk; if a future change accidentally pulls Avalonia into
           the SDK's transitive reference closure this project will start failing to
           build with package-version conflicts long before the GUI does.
         -->
@@ -13,6 +13,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <ProjectReference Include="..\..\src\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
     </ItemGroup>
 </Project>

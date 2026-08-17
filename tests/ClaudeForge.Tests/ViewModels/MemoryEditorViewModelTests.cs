@@ -1,14 +1,14 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
-using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.AgentForge.Sdk.Hooks;
+using Bennewitz.Ninja.AgentForge.Sdk.Marketplaces;
+using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk.Plugins;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -59,7 +59,7 @@ public sealed class MemoryEditorViewModelTests
         File.WriteAllText(full, content);
     }
 
-    private static MemoryEditorViewModel NewVm(IClaudeConfigClient? client)
+    private static MemoryEditorViewModel NewVm(IAgentConfigClient? client)
     {
         return new MemoryEditorViewModel(client, projectRoot: null);
     }
@@ -68,7 +68,7 @@ public sealed class MemoryEditorViewModelTests
     {
         // Re-assert the sandbox override inside the test METHOD's async flow — not
         // only in [TestInitialize]. TestUserProfileOverride is an AsyncLocal (kept
-        // that way because ClaudeForge.Sdk.Tests runs method-level parallel and needs
+        // that way because AgentForge.Sdk.Tests runs method-level parallel and needs
         // per-flow isolation). Under serial MSTest, the value set in the sync Setup
         // does not always propagate into the async test method's execution context, so
         // FootprintService.DeleteAsync's Task.Run — which reads PlatformPaths.ClaudeHome
@@ -389,7 +389,7 @@ public sealed class MemoryEditorViewModelTests
             return vm.RefreshAsync();
         }
 
-        private sealed class InnerClient : IClaudeConfigClient
+        private sealed class InnerClient : IAgentConfigClient
         {
             private readonly Action _onSnapshot;
 
@@ -901,11 +901,11 @@ public sealed class MemoryEditorViewModelTests
     }
 
     /// <summary>
-    /// Minimal client stub — exposes only the four IClaudeConfigClient methods
+    /// Minimal client stub — exposes only the four IAgentConfigClient methods
     /// the Memory page touches. Avoids the full ClaudeCodeClient open/discover
     /// machinery so tests stay fast and don't require fixture settings files.
     /// </summary>
-    private sealed class FakeClaudeCodeClient : IClaudeConfigClient
+    private sealed class FakeClaudeCodeClient : IAgentConfigClient
     {
         // ── Memory + footprint methods (delegate to the static SDK helpers) ─
         public IReadOnlyList<UserMemoryFile> SnapshotUserMemoryFiles(string? projectRoot = null)

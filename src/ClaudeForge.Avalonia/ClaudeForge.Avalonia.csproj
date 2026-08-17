@@ -7,7 +7,7 @@
         <Description>
             Reusable Avalonia controls + view-models for editing Claude Code
             permission rules: a guided per-tool rule builder, a dry-run rule
-            tester, and an education panel. Depends on ClaudeForge.Sdk (for the
+            tester, and an education panel. Depends on AgentForge.Sdk (for the
             rule parser / matchers / resolver) + Avalonia + CommunityToolkit.Mvvm.
             Hosts adapt their own data source via the IPermissionRuleSource /
             IPermissionRuleSink / IPermissionPathPicker abstractions so the
@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj" />
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
     </ItemGroup>
 
     <ItemGroup>

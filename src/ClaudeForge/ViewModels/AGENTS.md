@@ -57,7 +57,7 @@ A node with `Editor == null` is a header (section divider); never add a result t
 ## §3 `SearchViewModel` contract
 
 `SearchViewModel` (`SearchViewModel.cs`) is intentionally **decoupled from the SDK**.
-It receives delegates, not `IClaudeConfigClient` references:
+It receives delegates, not `IAgentConfigClient` references:
 
 ```csharp
 new SearchViewModel(
@@ -73,9 +73,9 @@ new SearchViewModel(
   are the same objects built from `SchemaTreeBuilder.BuildTopLevel` — no double-fetch needed.
 
 **If you need SDK-backed search** (e.g. to add ranking, to expose search to non-GUI
-consumers), use `IClaudeConfigClient.SearchSchema(query)` from the SDK layer and
+consumers), use `IAgentConfigClient.SearchSchema(query)` from the SDK layer and
 map results back to nav nodes via the path-to-node lookup described in §5 below.
-See `src/ClaudeForge.Sdk/AGENTS.md §2` for the SDK / navigation boundary contract.
+See `src/AgentForge.Sdk/AGENTS.md §2` for the SDK / navigation boundary contract.
 
 **Synthetic results (deep-links with no backing schema property):** `ExecuteSearch`
 adds pinned `IsSynthetic` rows for common gotchas — `--dangerouslySkipPermissions`
@@ -203,7 +203,7 @@ that can land after the synchronous part of the restore.
 
 ## §6 `WorkspaceForGui` — migration artifact
 
-`ClaudeConfigClientCore.WorkspaceForGui` (internal property) returns the live
+`AgentConfigClientCore.WorkspaceForGui` (internal property) returns the live
 `SettingsWorkspace` directly. It exists so MWVM and editor factory chains can keep
 their `workspace.GetLayeredValue` / `workspace.SetValue` paths during the partial
 SDK migration (Pass 4.3.7). Once the full editor pipeline migrates to SDK accessors,

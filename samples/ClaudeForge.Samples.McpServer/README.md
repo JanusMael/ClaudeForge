@@ -1,17 +1,17 @@
 # Claude Config MCP server (sample)
 
-A minimal headless consumer of `ClaudeForge.Sdk`.
+A minimal headless consumer of `AgentForge.Sdk`.
 
 ## Why it exists
 
 This project proves two SDK contracts:
 
 1. **The SDK is Avalonia-free.** This project's `.csproj` references *only*
-   `ClaudeForge.Sdk`. If a future change accidentally pulls Avalonia into the
+   `AgentForge.Sdk`. If a future change accidentally pulls Avalonia into the
    SDK's transitive closure, this build will start failing with package
    conflicts long before the GUI does.
 2. **The SDK is consumable from a strictly headless context.** The whole
-   `IClaudeConfigClient` surface — typed accessors, generic escape hatch,
+   `IAgentConfigClient` surface — typed accessors, generic escape hatch,
    backup/restore — runs from a console process with no UI thread, no
    dispatcher, and no Core types in any consumer-facing call site.
 
@@ -64,8 +64,8 @@ dotnet run --project samples/ClaudeConfigMcpServer -- restore-backup /tmp/claude
 | File                        | What it shows                                                            |
 |-----------------------------|--------------------------------------------------------------------------|
 | `Program.cs`                | Single client instance per process; argv-style command dispatch.         |
-| `Tools/GetEffectiveTool.cs` | `IClaudeConfigClient.GetEffective<T>(path)` for merged reads.            |
-| `Tools/SetValueTool.cs`     | `IClaudeConfigClient.SetValue<T>(path, value)` — generic escape hatch.   |
+| `Tools/GetEffectiveTool.cs` | `IAgentConfigClient.GetEffective<T>(path)` for merged reads.            |
+| `Tools/SetValueTool.cs`     | `IAgentConfigClient.SetValue<T>(path, value)` — generic escape hatch.   |
 | `Tools/SaveTool.cs`         | `SaveAsync(force=false)` + `SchemaValidationException` error path.       |
 | `Tools/PermissionsTool.cs`  | Strongly-typed `IPermissionsAccessor` + `PermissionRule.TryParse`.       |
 | `Tools/BackupTool.cs`       | `IBackupClient` Create / List / Restore + async `BackupProgressHandler`. |

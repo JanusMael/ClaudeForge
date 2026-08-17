@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Tests.ViewModels; // FakeEnvironmentProvider
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Catalog;
@@ -14,7 +14,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Catalog;
 [TestClass]
 public sealed class ModelCatalogConsumerTests
 {
-    private static ClaudeConfigClientCore MakeClient(string userJson = "{}")
+    private static AgentConfigClientCore MakeClient(string userJson = "{}")
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
@@ -22,7 +22,7 @@ public sealed class ModelCatalogConsumerTests
         return ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
-    private static EssentialsViewModel MakeEssentials(ClaudeConfigClientCore? client = null)
+    private static EssentialsViewModel MakeEssentials(AgentConfigClientCore? client = null)
         => new(client ?? MakeClient(), new FakeEnvironmentProvider());
 
     private static SchemaNode PermissionsSchema()

@@ -1,8 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
@@ -24,7 +24,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Services;
 /// SDK-first migration history (2026-05-01 → 2026-05-05):
 /// <list type="bullet">
 ///   <item>Diff machinery moved to <see cref="JsonDiff"/> in
-///     <c>ClaudeForge.Sdk.Diagnostics</c>.</item>
+///     <c>AgentForge.Sdk.Diagnostics</c>.</item>
 ///   <item>Sensitive-key classifier moved to <see cref="SensitiveKeys"/>
 ///     in the same SDK namespace.</item>
 ///   <item>Compat wrappers (<c>DiffJsonObjects</c>, <c>IsSensitiveKey</c>,
@@ -41,8 +41,8 @@ internal static class WorkspaceDiagnostics
     /// non-null one contributes its own snapshot.
     /// </summary>
     internal static void LogPendingChanges(
-        ClaudeConfigClientCore? claudeCodeSdk,
-        ClaudeConfigClientCore? claudeDesktopSdk)
+        AgentConfigClientCore? claudeCodeSdk,
+        AgentConfigClientCore? claudeDesktopSdk)
     {
         if (claudeCodeSdk is not null)
         {

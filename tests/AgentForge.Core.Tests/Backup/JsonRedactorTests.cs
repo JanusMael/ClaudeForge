@@ -11,9 +11,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// classifier is replaced with the literal string <c>"[redacted]"</c>.
 /// </summary>
 /// <remarks>
-/// Parity with the live Sdk classifier (<c>ClaudeForge.Sdk.Diagnostics.SensitiveKeys</c>)
+/// Parity with the live Sdk classifier (<c>AgentForge.Sdk.Diagnostics.SensitiveKeys</c>)
 /// is enforced separately by the cross-project test in
-/// <c>tests/ClaudeForge.Sdk.Tests/Diagnostics/SensitiveKeysParityTests.cs</c>.
+/// <c>tests/AgentForge.Sdk.Tests/Diagnostics/SensitiveKeysParityTests.cs</c>.
 /// This file focuses on the redactor's behaviour against representative
 /// config shapes.
 /// </remarks>

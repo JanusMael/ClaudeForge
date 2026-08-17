@@ -107,14 +107,14 @@ public sealed class SettingsDocument
     /// Structural equality on two <see cref="JsonObject"/>s with the
     /// tool-managed <c>"//"</c> header-comment key removed from BOTH sides
     /// before comparison.  Mirrors the strip behaviour of
-    /// <c>ClaudeForge.Sdk.Diagnostics.JsonDiff.Compute</c> so the two
+    /// <c>AgentForge.Sdk.Diagnostics.JsonDiff.Compute</c> so the two
     /// implementations never disagree on whether content is "dirty".
     /// </summary>
     /// <remarks>
     /// Clones both inputs before stripping so the call doesn't mutate the
     /// live document tree.  The clones are short-lived (single comparison)
     /// so the GC cost is negligible.  Hot-path concern: this runs on every
-    /// SDK <see cref="ClaudeConfigClientCore.Changed"/> event; if it ever
+    /// SDK <see cref="AgentConfigClientCore.Changed"/> event; if it ever
     /// shows up in a profile, switch to a per-key DeepEquals walk that
     /// skips the metadata key without cloning.
     /// </remarks>

@@ -5,9 +5,9 @@ using System.Security;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.AgentForge.Sdk.Models;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
@@ -18,8 +18,8 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// Top-of-tree synthetic page that pins the high-importance
 /// Claude Code settings as inline-editable cards.  Curated, not schema-driven:
 /// each card knows which underlying accessor it talks to (<see cref="IEnvAccessor"/>
-/// for the token env vars, <see cref="IClaudeConfigClient.SetValue{T}(string, T)"/> /
-/// <see cref="IClaudeConfigClient.GetEffective{T}"/> for everything else) and
+/// for the token env vars, <see cref="IAgentConfigClient.SetValue{T}(string, T)"/> /
+/// <see cref="IAgentConfigClient.GetEffective{T}"/> for everything else) and
 /// supplies a tailored "why this matters" body, a danger-banner predicate
 /// (where applicable), and a deep-link target for "View in &lt;group&gt;".
 /// <para>
@@ -78,7 +78,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     /// </summary>
     public const string CardIdCheckForUpdates = "checkForUpdatesOnLaunch";
 
-    private IClaudeConfigClient? _client;
+    private IAgentConfigClient? _client;
     private readonly IEnvironmentProvider _envProvider;
     private readonly Func<bool>? _checkForUpdatesRead;
     private readonly Action<bool>? _checkForUpdatesWrite;
@@ -114,7 +114,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     /// persistence + <c>_cachedState</c> stay consistent.
     /// </param>
     public EssentialsViewModel(
-        IClaudeConfigClient? client,
+        IAgentConfigClient? client,
         IEnvironmentProvider envProvider,
         Func<bool>? checkForUpdatesRead = null,
         Action<bool>? checkForUpdatesWrite = null)
@@ -164,7 +164,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable
     /// Clients can call this with <see langword="null"/> after disposal or
     /// during shutdown — the cards will read empty values without throwing.
     /// </remarks>
-    public async Task RefreshAsync(IClaudeConfigClient? client = null)
+    public async Task RefreshAsync(IAgentConfigClient? client = null)
     {
         // Honor the documented post-disposal contract (see remarks): a refresh
         // requested after disposal — or racing shutdown — is a safe no-op. The gate

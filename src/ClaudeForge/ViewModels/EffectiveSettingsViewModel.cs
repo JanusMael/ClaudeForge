@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,23 +17,23 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// stays current without requiring a manual Refresh click.
 /// </summary>
 /// <remarks>
-/// ctor takes <see cref="ClaudeConfigClientCore"/>
+/// ctor takes <see cref="AgentConfigClientCore"/>
 /// directly. Reads (compute-effective, defined keys, layered probes) flow
 /// through the SDK's internal snapshot helpers; auto-refresh subscribes to
-/// the SDK's <see cref="IClaudeConfigClient.Changed"/> event (which
+/// the SDK's <see cref="IAgentConfigClient.Changed"/> event (which
 /// includes the workspace.Changed forwarder shipped in step 8 — so editor
 /// direct writes still trigger refresh).
 /// </remarks>
 public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
 {
-    private readonly ClaudeConfigClientCore _client;
+    private readonly AgentConfigClientCore _client;
     private readonly string? _projectRoot;
     private readonly IShareService? _shareService;
     private readonly IReadOnlyDictionary<string, string> _descriptions;
     private bool _disposed;
 
     public EffectiveSettingsViewModel(
-        ClaudeConfigClientCore client,
+        AgentConfigClientCore client,
         string? projectRoot = null,
         IShareService? shareService = null,
         IReadOnlyDictionary<string, string>? descriptions = null)

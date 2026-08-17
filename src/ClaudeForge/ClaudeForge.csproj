@@ -274,7 +274,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Core\AgentForge.Core.csproj"/>
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
         <ProjectReference Include="..\ClaudeForge.Avalonia\ClaudeForge.Avalonia.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>

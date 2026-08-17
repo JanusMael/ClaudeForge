@@ -1,16 +1,16 @@
 using Bennewitz.Ninja.AgentForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 
 /// <summary>
 /// <c>save</c> — runs schema validation and persists dirty documents to disk.
-/// Demonstrates <see cref="IClaudeConfigClient.SaveAsync"/> and the
+/// Demonstrates <see cref="IAgentConfigClient.SaveAsync"/> and the
 /// <see cref="SchemaValidationException"/> error path.
 /// </summary>
 internal static class SaveTool
 {
-    public static async Task<int> RunAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static async Task<int> RunAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         _ = args;
         try

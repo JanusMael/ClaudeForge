@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
-using MarketplaceEntry = Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces.MarketplaceEntry;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Marketplaces;
+using MarketplaceEntry = Bennewitz.Ninja.AgentForge.Sdk.Marketplaces.MarketplaceEntry;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 

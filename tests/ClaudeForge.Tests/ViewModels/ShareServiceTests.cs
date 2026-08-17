@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -158,12 +158,12 @@ public class BackupShareCommandTests
 [TestClass]
 public class EffectiveSettingsShareCommandTests
 {
-    private static ClaudeConfigClientCore MakeClient()
+    private static AgentConfigClientCore MakeClient()
     {
         // Wrap an in-memory empty SettingsWorkspace via the internal
         // FromExistingWorkspace overload — avoids disk I/O and
         // TestUserProfileOverride leakage across tests. The grant lives
-        // in ClaudeForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
+        // in AgentForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
         SettingsWorkspace ws = new([]);
         return ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());

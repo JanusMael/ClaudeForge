@@ -14,11 +14,11 @@ namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 /// Walks every key in the input <see cref="JsonObject"/> tree (objects
 /// AND nested objects inside arrays).  For each key, calls
 /// <see cref="IsSensitiveKey"/> on the KEY (not the dotted path) — the
-/// classifier mirrors <c>ClaudeForge.Sdk.Diagnostics.SensitiveKeys.IsSensitive</c>
+/// classifier mirrors <c>AgentForge.Sdk.Diagnostics.SensitiveKeys.IsSensitive</c>
 /// so the three redaction surfaces (audit-log live-write, save-diff log,
 /// sanitized backup) agree on what "secret" means.  The duplication is
 /// intentional: <c>AgentForge.Core</c> cannot reference
-/// <c>ClaudeForge.Sdk</c> per the layering contract.  Parity is enforced
+/// <c>AgentForge.Sdk</c> per the layering contract.  Parity is enforced
 /// by <c>JsonRedactor_AndSensitiveKeys_AgreeOnClassification</c> in the
 /// Sdk test project, which calls both sides against a shared sample set
 /// and asserts identical answers.
@@ -67,7 +67,7 @@ public static class JsonRedactor
     /// <c>privateKey</c>, <c>rsa_private</c>, etc.), and three
     /// <c>access_key</c> hyphen/underscore/concatenated variants for
     /// AWS-style identifiers.  Lockstep with
-    /// <c>ClaudeForge.Sdk.Diagnostics.SensitiveKeys</c> per invariant
+    /// <c>AgentForge.Sdk.Diagnostics.SensitiveKeys</c> per invariant
     /// I18.
     /// </remarks>
     private static readonly string[] SubstringTokens =
@@ -81,7 +81,7 @@ public static class JsonRedactor
 
     /// <summary>
     /// Classify a single key as sensitive.  Mirror of
-    /// <c>ClaudeForge.Sdk.Diagnostics.SensitiveKeys.IsSensitive</c>;
+    /// <c>AgentForge.Sdk.Diagnostics.SensitiveKeys.IsSensitive</c>;
     /// parity enforced by the Sdk-side cross test
     /// <c>SensitiveKeysParityTests</c>.
     /// </summary>
@@ -211,7 +211,7 @@ public static class JsonRedactor
                         // Replace regardless of original type — int, bool,
                         // null, object, array all become the redacted
                         // marker.  The literal matches
-                        // ClaudeForge.Sdk.Diagnostics.SensitiveKeys.RedactedMarker
+                        // AgentForge.Sdk.Diagnostics.SensitiveKeys.RedactedMarker
                         // so all three redaction surfaces (audit log, save
                         // diff, sanitized backup) emit an identical string —
                         // parity enforced by the Sdk-side cross test.

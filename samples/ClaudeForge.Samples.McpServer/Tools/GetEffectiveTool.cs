@@ -1,15 +1,15 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 
 /// <summary>
 /// <c>get-effective &lt;path&gt;</c> — reads the merged effective value at the
 /// given dotted path and prints it to stdout. Demonstrates
-/// <see cref="IClaudeConfigClient.GetEffective{T}(string)"/>.
+/// <see cref="IAgentConfigClient.GetEffective{T}(string)"/>.
 /// </summary>
 internal static class GetEffectiveTool
 {
-    public static Task<int> RunAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static Task<int> RunAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
