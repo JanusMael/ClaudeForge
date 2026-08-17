@@ -8,7 +8,7 @@ using Bennewitz.Ninja.ClaudeForge.Converters;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -52,7 +52,7 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
     private bool _selfWriting;
 
     private readonly IEnvironmentProvider _envProvider;
-    private readonly ClaudeConfigClientCore? _client;
+    private readonly AgentConfigClientCore? _client;
     private readonly IReadOnlyList<string> _suggestedEnvVarNames;
 
     // Variables whose names match the allowlist are shown when ShowAll is false.
@@ -103,7 +103,7 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
 
     public EnvironmentEditorViewModel(
         IEnvironmentProvider envProvider,
-        ClaudeConfigClientCore? client,
+        AgentConfigClientCore? client,
         IReadOnlyList<string>? suggestedEnvVarNames = null)
     {
         _envProvider = envProvider;

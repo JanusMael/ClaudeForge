@@ -1,19 +1,19 @@
 using System.Text;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer;
 
 /// <summary>
-/// Headless example consumer of the <c>ClaudeForge.Sdk</c> v1 surface.
+/// Headless example consumer of the <c>AgentForge.Sdk</c> v1 surface.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This project exists to prove
 /// that the SDK is Avalonia-free and consumable from a strictly headless
 /// context (an MCP server, a CLI, a daemon, etc.). It builds with
-/// <c>net10.0</c> and references only <c>ClaudeForge.Sdk</c>; if any future
+/// <c>net10.0</c> and references only <c>AgentForge.Sdk</c>; if any future
 /// change pulls Avalonia into the SDK's transitive closure, this project will
 /// start failing to build with package-version conflicts.
 /// </para>
@@ -35,7 +35,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer;
 ///   <item>
 ///     <b>REPL mode</b> — invoked with no args. Reads command lines from stdin,
 ///     dispatches each against the same long-lived
-///     <see cref="IClaudeConfigClient"/> instance. This is the closer
+///     <see cref="IAgentConfigClient"/> instance. This is the closer
 ///     analogue to an MCP server: multiple tool calls share state, and the
 ///     consumer chooses when to invoke <c>save</c>. Exit with <c>quit</c>,
 ///     <c>exit</c>, or EOF (Ctrl-D / closed pipe).
@@ -76,7 +76,7 @@ internal static class Program
     }
 
     private static async Task<int> DispatchOnceAsync(
-        IClaudeConfigClient client,
+        IAgentConfigClient client,
         string[] args,
         CancellationToken ct)
     {
@@ -91,7 +91,7 @@ internal static class Program
         }
     }
 
-    private static async Task<int> RunReplAsync(IClaudeConfigClient client, CancellationToken ct)
+    private static async Task<int> RunReplAsync(IAgentConfigClient client, CancellationToken ct)
     {
         await Console.Error.WriteLineAsync(
             "ClaudeForge.Samples.McpServer REPL — type 'help' for commands, 'quit' to exit.");
@@ -145,7 +145,7 @@ internal static class Program
         return 0;
     }
 
-    private static Task<int> DispatchAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    private static Task<int> DispatchAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         return args[0] switch
         {
@@ -203,7 +203,7 @@ internal static class Program
 
     private static void PrintUsage()
     {
-        Console.Error.WriteLine("Claude Config MCP server (sample) — exercises ClaudeForge.Sdk.");
+        Console.Error.WriteLine("Claude Config MCP server (sample) — exercises AgentForge.Sdk.");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Commands:");
         Console.Error.WriteLine("  get-effective <path>");

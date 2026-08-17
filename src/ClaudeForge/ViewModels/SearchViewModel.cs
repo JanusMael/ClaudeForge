@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
@@ -12,7 +12,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 /// <summary>
 /// Pairs a navigation section title (e.g. "Claude Code") with the SDK
-/// <see cref="IClaudeConfigClient.SearchSchema"/> delegate for that product.
+/// <see cref="IAgentConfigClient.SearchSchema"/> delegate for that product.
 /// Consumed by <see cref="SearchViewModel"/> to surface property-level results
 /// for specialized editors (Permissions, Hooks, MCP Servers) whose schema
 /// nodes are not available via <c>SettingsGroupEditorViewModel.SchemaNodes</c>.
@@ -62,7 +62,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Optional providers that delegate to the SDK's
-    /// <see cref="IClaudeConfigClient.SearchSchema"/> per product section. Re-evaluated
+    /// <see cref="IAgentConfigClient.SearchSchema"/> per product section. Re-evaluated
     /// on every search pass so a workspace reload (which rebuilds the SDK clients)
     /// is reflected without re-creating the search VM.  When <see langword="null"/>
     /// (e.g. unit tests that don't need SDK-backed search), specialized editors

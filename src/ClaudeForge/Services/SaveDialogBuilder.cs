@@ -1,9 +1,9 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
@@ -35,8 +35,8 @@ internal static class SaveDialogBuilder
     /// written to").
     /// </param>
     internal static SaveChangesDialogViewModel? Build(
-        ClaudeConfigClientCore? claudeCodeSdk,
-        ClaudeConfigClientCore? claudeDesktopSdk,
+        AgentConfigClientCore? claudeCodeSdk,
+        AgentConfigClientCore? claudeDesktopSdk,
         bool isRestoreContext = false)
     {
         List<SaveChangeSectionViewModel> sections = new();

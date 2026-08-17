@@ -5,10 +5,10 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MarketplaceSourceKind = Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces.MarketplaceSourceKind;
+using MarketplaceSourceKind = Bennewitz.Ninja.AgentForge.Sdk.Marketplaces.MarketplaceSourceKind;
 
 // Alias the SDK namespaces — both ConfigScope and MarketplaceEntry collide
 // with names defined in this file. Reaching the SDK types via Sdk.* keeps
@@ -129,7 +129,7 @@ public partial class MarketplacesEditorViewModel : PropertyEditorViewModel
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPluginsEditorViewModel migration.
-    private readonly IClaudeConfigClient? _client;
+    private readonly IAgentConfigClient? _client;
 
     // Suppresses IsModified during LoadFromLayered bulk population.
     private bool _isLoading;
@@ -157,7 +157,7 @@ public partial class MarketplacesEditorViewModel : PropertyEditorViewModel
     public MarketplacesEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IClaudeConfigClient? client)
+        IAgentConfigClient? client)
         : base(schema, editingScope)
     {
         _client = client;
@@ -353,8 +353,8 @@ public partial class MarketplacesEditorViewModel : PropertyEditorViewModel
             if (_client is not null)
             {
                 ConfigScope sdkScope = editingScope;
-                IReadOnlyList<Sdk.Marketplaces.MarketplaceEntry> snapshot = _client.Marketplaces.GetAt(sdkScope);
-                foreach (Sdk.Marketplaces.MarketplaceEntry sdkEntry in snapshot)
+                IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Marketplaces.MarketplaceEntry> snapshot = _client.Marketplaces.GetAt(sdkScope);
+                foreach (Bennewitz.Ninja.AgentForge.Sdk.Marketplaces.MarketplaceEntry sdkEntry in snapshot)
                 {
                     MarketplaceEntry entry = new(
                         sdkEntry.Name,

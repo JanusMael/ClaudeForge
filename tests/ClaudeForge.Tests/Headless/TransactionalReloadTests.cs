@@ -2,7 +2,7 @@ using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -94,8 +94,8 @@ public sealed class TransactionalReloadTests
             MainWindowViewModel vm = BuildViewModel();
 
             await vm.LoadAllWorkspacesAsync();
-            ClaudeConfigClientCore? firstCc = vm.ClaudeCodeSdk;
-            ClaudeConfigClientCore? firstDt = vm.ClaudeDesktopSdk;
+            AgentConfigClientCore? firstCc = vm.ClaudeCodeSdk;
+            AgentConfigClientCore? firstDt = vm.ClaudeDesktopSdk;
             Assert.IsNotNull(firstCc);
             Assert.IsNotNull(firstDt);
 
@@ -120,8 +120,8 @@ public sealed class TransactionalReloadTests
             // Initial load succeeds with valid JSON.
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            ClaudeConfigClientCore? origCc = vm.ClaudeCodeSdk;
-            ClaudeConfigClientCore? origDt = vm.ClaudeDesktopSdk;
+            AgentConfigClientCore? origCc = vm.ClaudeCodeSdk;
+            AgentConfigClientCore? origDt = vm.ClaudeDesktopSdk;
             Assert.IsNotNull(origCc);
             Assert.IsNotNull(origDt);
 
@@ -158,8 +158,8 @@ public sealed class TransactionalReloadTests
             // Setup: both products initially valid; load succeeds.
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            ClaudeConfigClientCore? origCc = vm.ClaudeCodeSdk;
-            ClaudeConfigClientCore? origDt = vm.ClaudeDesktopSdk;
+            AgentConfigClientCore? origCc = vm.ClaudeCodeSdk;
+            AgentConfigClientCore? origDt = vm.ClaudeDesktopSdk;
 
             // Now: CC is updated to a NEW valid value (would normally
             // trigger an SDK swap), AND DT is malformed.  The

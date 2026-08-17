@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Sdk.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- AgentForge.Sdk → AgentForge.Core is transitive, so the Sdk tests
+             can also reach Core types like AgentForge.Core.Backup.JsonRedactor.
+             The cross-project parity test (SensitiveKeysParityTests) exercises
+             both classifiers in a single suite. -->
+        <ProjectReference Include="..\..\src\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+    </ItemGroup>
+</Project>

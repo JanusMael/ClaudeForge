@@ -1,5 +1,5 @@
 using System.Globalization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -18,7 +18,7 @@ public sealed class ProjectTranscriptRowViewModel
         _stats = stats;
     }
 
-    /// <summary>Raw mangled directory name; needed by <see cref="Bennewitz.Ninja.ClaudeForge.Sdk.IClaudeConfigClient.DeleteProjectTranscriptsAsync"/>.</summary>
+    /// <summary>Raw mangled directory name; needed by <see cref="Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient.DeleteProjectTranscriptsAsync"/>.</summary>
     public string MangledName => _stats.MangledName;
 
     /// <summary>Best-effort decoded display name (e.g. <c>/Users/brian/myproject</c>).</summary>

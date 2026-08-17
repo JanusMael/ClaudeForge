@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching;
 
 namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
 

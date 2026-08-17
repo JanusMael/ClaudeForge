@@ -9,7 +9,7 @@ namespace Bennewitz.Ninja.AgentForge.Core.Platform;
 public static class PlatformPaths
 {
     // Test-only overrides are backed by AsyncLocal, NOT a plain static, so they
-    // isolate per logical async flow. ClaudeForge.Sdk.Tests runs method-level
+    // isolate per logical async flow. AgentForge.Sdk.Tests runs method-level
     // PARALLEL ([assembly: Parallelize]), and 12+ of its fixtures set this override;
     // AsyncLocal keeps each concurrently-running test's sandbox from leaking into
     // another (a plain static races there — ~48 failures/run). In production the

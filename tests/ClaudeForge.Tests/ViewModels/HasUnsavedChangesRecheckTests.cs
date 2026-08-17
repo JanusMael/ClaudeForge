@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -68,7 +68,7 @@ public sealed class HasUnsavedChangesRecheckTests
             // the editor pipeline does not need to be exercised directly here;
             // we are testing the SDK Changed forwarder → HasActualChanges chain.
             // 4.3.7 step 14: prefer the SDK seam over the legacy workspace one.
-            ClaudeConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
+            AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
             Assert.IsNotNull(client, "Initialize must have created the Claude Code SDK client.");
 
             client!.SetValue("model", "opus", ConfigScope.User);
@@ -111,7 +111,7 @@ public sealed class HasUnsavedChangesRecheckTests
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
-            ClaudeConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
+            AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
             Assert.IsNotNull(client);
 
             // Edit: deviate from baseline.

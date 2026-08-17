@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Backup;
 using BackupMode = Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 /// </summary>
 internal static class BackupTool
 {
-    public static async Task<int> ListAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static async Task<int> ListAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         if (args.Length < 2)
         {
@@ -41,7 +41,7 @@ internal static class BackupTool
         return 0;
     }
 
-    public static async Task<int> CreateAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static async Task<int> CreateAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         if (args.Length < 2)
         {
@@ -74,7 +74,7 @@ internal static class BackupTool
         return 0;
     }
 
-    public static async Task<int> RestoreAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static async Task<int> RestoreAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         if (args.Length < 2)
         {

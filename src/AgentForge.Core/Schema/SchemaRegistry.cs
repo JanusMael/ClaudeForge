@@ -1071,7 +1071,7 @@ public sealed record SchemaValidationError(string FilePath, string InstancePath,
 }
 
 /// <summary>
-/// Thrown by <c>IClaudeConfigClient.SaveAsync</c> when one or more dirty
+/// Thrown by <c>IAgentConfigClient.SaveAsync</c> when one or more dirty
 /// documents fail schema validation and the caller did not pass
 /// <c>force: true</c>.
 /// </summary>

@@ -2,8 +2,8 @@ using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -100,7 +100,7 @@ public sealed class ReloadHardeningTests
             // Initial valid load.
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            ClaudeConfigClientCore? initialCc = vm.ClaudeCodeSdk;
+            AgentConfigClientCore? initialCc = vm.ClaudeCodeSdk;
             Assert.IsNotNull(initialCc);
 
             // Step 1: write malformed JSON, reload bails (H-1 contract).

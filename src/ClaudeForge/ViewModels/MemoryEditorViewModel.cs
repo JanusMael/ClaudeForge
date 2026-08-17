@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,7 +19,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// </summary>
 public sealed partial class MemoryEditorViewModel : ObservableObject
 {
-    private readonly IClaudeConfigClient? _codeClient;
+    private readonly IAgentConfigClient? _codeClient;
     private readonly string? _projectRoot;
     private readonly IDialogService? _dialogService;
     private readonly IShellLauncher? _shellLauncher;
@@ -37,7 +37,7 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     private readonly SemaphoreSlim _refreshLock = new(initialCount: 1, maxCount: 1);
 
     public MemoryEditorViewModel(
-        IClaudeConfigClient? codeClient,
+        IAgentConfigClient? codeClient,
         string? projectRoot,
         IDialogService? dialogService,
         IShellLauncher? shellLauncher)
@@ -56,7 +56,7 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     /// Convenience constructor used by tests / fixtures that don't need
     /// shell-launch or dialog plumbing.
     /// </summary>
-    public MemoryEditorViewModel(IClaudeConfigClient? codeClient, string? projectRoot)
+    public MemoryEditorViewModel(IAgentConfigClient? codeClient, string? projectRoot)
         : this(codeClient, projectRoot, dialogService: null, shellLauncher: null)
     {
     }

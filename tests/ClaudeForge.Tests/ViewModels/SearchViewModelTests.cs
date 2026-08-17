@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 // NavigationNodeViewModel lives in the reusable Avalonia editor library —

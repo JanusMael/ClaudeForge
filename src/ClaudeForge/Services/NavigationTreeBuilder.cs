@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -138,7 +138,7 @@ public static class NavigationTreeBuilder
     /// a private context is created for each group (used by unit tests and simple callers).
     /// </param>
     /// <param name="sdkClient">
-    /// Optional <see cref="IClaudeConfigClient"/> for the product section being built.
+    /// Optional <see cref="IAgentConfigClient"/> for the product section being built.
     /// When supplied, migrated editors drive their load through the
     /// SDK's typed accessors instead of raw <c>JsonNode</c> manipulation. The factory
     /// closure captures the client once per call so every group VM in this section
@@ -149,7 +149,7 @@ public static class NavigationTreeBuilder
         SettingsWorkspace workspace,
         Func<Task<string?>>? browseDialog = null,
         SharedScopeContext? sharedScope = null,
-        ClaudeConfigClientCore? sdkClient = null,
+        AgentConfigClientCore? sdkClient = null,
         IUnsupportedShapeSink? unsupportedShapeSink = null)
     {
         // One factory per call: SDK-aware editors capture this client when
@@ -216,7 +216,7 @@ public static class NavigationTreeBuilder
         SharedScopeContext? sharedScope,
         Func<Task<string?>>? browseDialog,
         DefaultEditorFactory factory,
-        ClaudeConfigClientCore? sdkClient)
+        AgentConfigClientCore? sdkClient)
     {
         SharedScopeContext context = sharedScope ?? new SharedScopeContext();
         string description = GroupDescriptions.TryGetValue(groupTitle, out string? d) ? d : string.Empty;

@@ -6,12 +6,12 @@ using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
-using HookEvent = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookEvent;
+using HookCommandType = Bennewitz.Ninja.AgentForge.Sdk.Hooks.HookCommandType;
+using HookEvent = Bennewitz.Ninja.AgentForge.Sdk.Hooks.HookEvent;
 
 // Alias the SDK HookEvent so it's reachable without fully-qualifying. The
 // editor's HookEntry now uses the SDK HookCommandType directly — the former
@@ -29,7 +29,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces / McpServers
     // editor migrations.
-    private readonly IClaudeConfigClient? _client;
+    private readonly IAgentConfigClient? _client;
 
     // The hook events the schema currently accepts, derived FRESH from the
     // schema node this editor was built with (its hooks.properties children).
@@ -75,7 +75,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
     public HooksEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IClaudeConfigClient? client)
+        IAgentConfigClient? client)
         : base(schema, editingScope)
     {
         _client = client;
@@ -113,7 +113,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
     /// when the schema doesn't carry one (offline / no client). Mirrors how the event list
     /// prefers the SDK's <c>KnownEvents</c> and degrades to the curated fallback.
     /// </summary>
-    private static IReadOnlyList<HookCommandTypeInfo> BuildCommandTypeInfos(IClaudeConfigClient? client)
+    private static IReadOnlyList<HookCommandTypeInfo> BuildCommandTypeInfos(IAgentConfigClient? client)
     {
         IReadOnlyList<HookCommandVariantInfo> variants = client?.Hooks.KnownCommandTypes ?? [];
         if (variants.Count == 0)

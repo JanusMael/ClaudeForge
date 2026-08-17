@@ -1,7 +1,7 @@
 using System.Text;
 using Bennewitz.Ninja.ClaudeForge.Avalonia.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 

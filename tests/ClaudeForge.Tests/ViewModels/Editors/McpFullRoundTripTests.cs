@@ -2,7 +2,7 @@
 // editor → user-mutation → SDK → disk round-trip suite for the MCP
 // servers editor.  Mirrors HooksFullRoundTripTests' fixture pattern.
 
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 

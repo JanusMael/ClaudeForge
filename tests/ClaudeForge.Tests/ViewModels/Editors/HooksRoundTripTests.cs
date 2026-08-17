@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -275,7 +275,7 @@ public class HooksRoundTripTests
     /// <summary>
     /// Same scenario as above, but driven through the SDK-backed editor
     /// path that production uses (HooksEditorViewModel constructed with
-    /// an IClaudeConfigClient).  After the editor "writes" via
+    /// an IAgentConfigClient).  After the editor "writes" via
     /// ToJsonValue → workspace.SetValue, a fresh editor is constructed
     /// against the same workspace and assertions check that the second
     /// editor sees BOTH the header and the allowedEnvVar — i.e. that the

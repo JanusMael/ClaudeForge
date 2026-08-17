@@ -1,10 +1,10 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Sdk;
 
 /// <summary>
-/// Tests for <see cref="IClaudeConfigClient.SearchSchema"/>.
+/// Tests for <see cref="IAgentConfigClient.SearchSchema"/>.
 /// Uses a sandboxed profile path so <c>ConfigFileDiscoverer</c> reads/writes
 /// within the temp directory, never touching the user's real <c>~/.claude/</c>.
 /// The bundled schema resource is always available; no HTTP calls are made.

@@ -18,7 +18,7 @@
 //      model (async / statusMessage / model), mutate other fields,
 //      verify preserved fields persist verbatim across save+reload.
 
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 

@@ -12,8 +12,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// The shared foundation only stays shared if it cannot see either product. Nothing in the
 /// build enforces that — a <c>ProjectReference</c> in the wrong direction compiles perfectly
 /// — so it regresses quietly. It already did: <c>LayeredEditors.Avalonia.Services</c>, a
-/// product-neutral services library, referenced <c>ClaudeForge.Sdk</c> for years purely to
-/// name four dialog primitives. Nobody noticed because nothing looked.
+/// product-neutral services library, referenced <c>ClaudeForge.Sdk</c> (as it was then named)
+/// for years purely to name four dialog primitives. Nobody noticed because nothing looked.
 /// </para>
 /// <para>
 /// <b>Two checks, because either alone has a blind spot:</b>
@@ -35,9 +35,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// The csproj check is not redundant: the compiler <b>omits unused references from the
 /// assembly reference table entirely</b>, so a declared-but-not-yet-used bad reference is
 /// invisible to reflection. Verified the hard way — an earlier version of this class had
-/// only the reflection check, and adding a live <c>ClaudeForge.Sdk</c> reference to
-/// <c>AgentForge.Abstractions</c> did not fail it. That is exactly the state a violation is
-/// in immediately before someone starts depending on it, which is when it is cheapest to fix.
+/// only the reflection check, and adding a live reference from <c>AgentForge.Abstractions</c>
+/// to a product project did not fail it. That is exactly the state a violation is in
+/// immediately before someone starts depending on it, which is when it is cheapest to fix.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -103,7 +103,7 @@ public sealed class AssemblyLayeringTests
             foreach (string reference in referencePaths)
             {
                 // Check every path segment, not just the file name. A project file does not
-                // have to be named after its directory — 'ClaudeForge.Sdk\Renamed.csproj'
+                // have to be named after its directory — 'ClaudeForge.Avalonia\Renamed.csproj'
                 // is a real violation that a file-name-only check would wave through.
                 string[] segments = reference.Replace('\\', '/').Split('/',
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

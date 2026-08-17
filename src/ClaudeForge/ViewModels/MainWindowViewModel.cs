@@ -18,10 +18,10 @@ using Bennewitz.Ninja.AgentForge.Core.Profile;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
@@ -70,7 +70,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // legacy _workspace / _desktopWorkspace fields
     // retired. The SDK clients (ClaudeCodeSdk / ClaudeDesktopSdk) are the
     // only state holders. NavigationTreeBuilder.BuildGroups derives the
-    // backing SettingsWorkspace via ClaudeConfigClientCore.WorkspaceForGui
+    // backing SettingsWorkspace via AgentConfigClientCore.WorkspaceForGui
     // for the SettingsGroupEditorViewModel + factory chain that still
     // consumes workspace.GetLayeredValue.
 
@@ -84,8 +84,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // MWVM can reach internal helpers (SnapshotDirtyDocuments — 4.3.7 step 9)
     // without a cast at every call site. Both ClaudeCodeClient and
     // ClaudeDesktopClient derive from this base.
-    internal ClaudeConfigClientCore? ClaudeCodeSdk { get; private set; }
-    internal ClaudeConfigClientCore? ClaudeDesktopSdk { get; private set; }
+    internal AgentConfigClientCore? ClaudeCodeSdk { get; private set; }
+    internal AgentConfigClientCore? ClaudeDesktopSdk { get; private set; }
 
     private bool _disposed;
 
@@ -653,13 +653,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // SearchSchema has a defaulted maxResults parameter — so wrap in a one-arg
         // lambda that takes the SDK default.
         List<SchemaSearchProvider> list = new(2);
-        ClaudeConfigClientCore? cc = ClaudeCodeSdk;
+        AgentConfigClientCore? cc = ClaudeCodeSdk;
         if (cc is not null)
         {
             list.Add(new SchemaSearchProvider(NavTitleClaudeCode, q => cc.SearchSchema(q)));
         }
 
-        ClaudeConfigClientCore? dt = ClaudeDesktopSdk;
+        AgentConfigClientCore? dt = ClaudeDesktopSdk;
         if (dt is not null)
         {
             list.Add(new SchemaSearchProvider(NavTitleClaudeDesktop, q => dt.SearchSchema(q)));
@@ -3534,7 +3534,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Wire dirty-tracking onto the SDK clients' <see cref="Sdk.IClaudeConfigClient.Changed"/>
+    /// Wire dirty-tracking onto the SDK clients' <see cref="Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient.Changed"/>
     /// event. the SDK forwards every workspace mutation
     /// (SDK-initiated or via direct <c>workspace.SetValue</c> from the editor
     /// live-write loop), so MWVM only needs to subscribe in one place.
@@ -3578,7 +3578,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// recomputation is identical for all three.
     /// </summary>
     /// <remarks>
-    /// Phase 1.1 — UI-thread dispatch. The SDK raises <see cref="Sdk.IClaudeConfigClient.Changed"/>
+    /// Phase 1.1 — UI-thread dispatch. The SDK raises <see cref="Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient.Changed"/>
     /// synchronously from whatever thread invoked the mutation. Most callers
     /// are on the UI thread (editor property changes, Save command), but
     /// file-watcher reloads, backup/restore, and profile-switch paths can
@@ -3635,7 +3635,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Test seam: returns the live <see cref="Sdk.ClaudeConfigClientCore"/>
+    /// Test seam: returns the live <see cref="Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore"/>
     /// so tests can drive <c>SetValue</c> / <c>RemoveValue</c> through the
     /// SDK and see the same Changed-event flow that production code does.
     /// Returns <see langword="null"/> before
@@ -3647,7 +3647,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <c>GetClaudeCodeWorkspaceForTesting()</c> seam was retired in step 15
     /// — every test path now flows through the SDK.
     /// </remarks>
-    internal ClaudeConfigClientCore? GetClaudeCodeSdkClientForTesting()
+    internal AgentConfigClientCore? GetClaudeCodeSdkClientForTesting()
     {
         return ClaudeCodeSdk;
     }
@@ -3905,7 +3905,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Aggregate of <see cref="IClaudeConfigClient.ValidateAllAsync"/> across
+    /// Aggregate of <see cref="IAgentConfigClient.ValidateAllAsync"/> across
     /// both product clients, returning every currently-invalid field in the
     /// loaded workspace (not just user-introduced deltas).  Backs the
     /// post-reload schema-violation banner.
@@ -4071,8 +4071,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // the whole load, so nothing can navigate to a not-yet-attached node.
         SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
         SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
-        ClaudeConfigClientCore? ccSdk = ClaudeCodeSdk;
-        ClaudeConfigClientCore? dtSdk = ClaudeDesktopSdk;
+        AgentConfigClientCore? ccSdk = ClaudeCodeSdk;
+        AgentConfigClientCore? dtSdk = ClaudeDesktopSdk;
         System.Diagnostics.Stopwatch editorBuildSw = System.Diagnostics.Stopwatch.StartNew();
         (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
             await Task.Run(() => (

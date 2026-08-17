@@ -10,8 +10,8 @@ using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -37,7 +37,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     // the GUI's GetLayeredValue / placeholder-JSON paths are quasi-internal
     // and not yet promoted to a public SDK API. Null in test fixtures
     // that construct the VM via the workspace-only convenience ctor.
-    private readonly ClaudeConfigClientCore? _sdkClient;
+    private readonly AgentConfigClientCore? _sdkClient;
     private readonly Func<Task<string?>>? _browseDialog;
     private readonly DefaultEditorFactory _factory;
     private readonly SharedScopeContext _sharedScope;
@@ -59,7 +59,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     //
     // dual-guard contract.
     // This flag pairs with `_suppressForwarder` in
-    // `ClaudeForge.Sdk.ClaudeConfigClientCore` to prevent the SDK Changed →
+    // `AgentForge.Sdk.AgentConfigClientCore` to prevent the SDK Changed →
     // editor reload → SDK SetValue → SDK Changed infinite loop:
     //   * `_selfWriting` (here) blocks the editor from rebuilding when the
     //     workspace.Changed it just caused fires back.
@@ -108,7 +108,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         Func<Task<string?>>? browseDialog = null,
         DefaultEditorFactory? factory = null,
         string groupDescription = "",
-        ClaudeConfigClientCore? sdkClient = null,
+        AgentConfigClientCore? sdkClient = null,
         IGroupTabCustomizer? tabCustomizer = null)
     {
         GroupName = groupName;
@@ -666,7 +666,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         //      before the rebuild can fire SDK accessor reads. This is the
         //      cheap win — no rebuild work, no events fired.
         //
-        //   2. (architectural fix) `ClaudeConfigClientCore`'s `_stateLock` is
+        //   2. (architectural fix) `AgentConfigClientCore`'s `_stateLock` is
         //      now thread-reentrant via EnterStateLock / ExitStateLock helpers.
         //      Even if a future workspace.Changed subscriber forgets to set a
         //      `_selfWriting`-style guard, same-thread re-entry into SDK

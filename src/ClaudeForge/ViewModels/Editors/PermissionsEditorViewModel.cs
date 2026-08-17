@@ -8,16 +8,16 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Catalog;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching.PermissionBucket;
-using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionDefaultMode;
-using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRule;
-using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRuleNormalizer;
+using PermissionBucket = Bennewitz.Ninja.AgentForge.Sdk.Permissions.Matching.PermissionBucket;
+using PermissionDefaultMode = Bennewitz.Ninja.AgentForge.Sdk.Permissions.PermissionDefaultMode;
+using PermissionRule = Bennewitz.Ninja.AgentForge.Sdk.Permissions.PermissionRule;
+using PermissionRuleNormalizer = Bennewitz.Ninja.AgentForge.Sdk.Permissions.PermissionRuleNormalizer;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 // Alias the SDK to disambiguate ConfigScope and reach the typed Permissions
@@ -530,7 +530,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces / McpServers
     // / Hooks editor migrations.
-    private readonly IClaudeConfigClient? _client;
+    private readonly IAgentConfigClient? _client;
 
     // Generic editor factory used to auto-surface schema keys this editor does
     // not render bespoke-ly. Optional: null in legacy/test fixtures, in which
@@ -545,7 +545,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
     public PermissionsEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IClaudeConfigClient? client,
+        IAgentConfigClient? client,
         DefaultEditorFactory? editorFactory = null)
         : base(schema, editingScope)
     {
