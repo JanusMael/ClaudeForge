@@ -14,6 +14,7 @@
         <Project Path="src/AgentForge.Abstractions/AgentForge.Abstractions.csproj"/>
         <Project Path="src/ClaudeForge/ClaudeForge.csproj"/>
         <Project Path="src/AgentForge.Core/AgentForge.Core.csproj"/>
+        <Project Path="src/AgentForge.Jsonc/AgentForge.Jsonc.csproj"/>
         <Project Path="src/AgentForge.Sdk/AgentForge.Sdk.csproj"/>
         <Project Path="src/ClaudeForge.Sdk.Claude/ClaudeForge.Sdk.Claude.csproj"/>
         <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
@@ -29,6 +30,7 @@
     <Folder Name="/tests/">
         <Project Path="tests/ClaudeForge.Tests/ClaudeForge.Tests.csproj"/>
         <Project Path="tests/AgentForge.Core.Tests/AgentForge.Core.Tests.csproj"/>
+        <Project Path="tests/AgentForge.Jsonc.Tests/AgentForge.Jsonc.Tests.csproj"/>
         <Project Path="tests/AgentForge.Sdk.Tests/AgentForge.Sdk.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Sdk.Claude.Tests/ClaudeForge.Sdk.Claude.Tests.csproj"/>
         <Project Path="tests/LayeredEditors.Avalonia.Tests/LayeredEditors.Avalonia.Tests.csproj"/>
