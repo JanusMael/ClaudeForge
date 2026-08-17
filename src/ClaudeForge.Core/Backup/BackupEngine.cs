@@ -1014,8 +1014,12 @@ public sealed class BackupEngine
         Assembly assembly = typeof(SchemaRegistry).Assembly;
         foreach (string resourceName in assembly.GetManifestResourceNames())
         {
-            // Only include resources under ClaudeForge.Core.Assets.Schemas.*
-            const string prefix = "Bennewitz.Ninja.ClaudeForge.Core.Assets.Schemas.";
+            // Only include resources under Assets/Schemas/. The prefix is derived from the
+            // assembly's root namespace (see ResourceHelper) rather than written out here:
+            // a hardcoded copy that stops matching bundles ZERO schemas, and RestoreEngine
+            // then reads the missing folder as "archive predates bundling" and silently
+            // skips validation.
+            string prefix = ResourceHelper.SchemasPrefix;
             if (!resourceName.StartsWith(prefix, StringComparison.Ordinal))
             {
                 continue;

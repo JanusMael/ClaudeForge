@@ -18,7 +18,7 @@ internal static class BundledResource
     public static byte[]? TryRead(string subNamespace, string fileName)
     {
         Assembly assembly = typeof(BundledResource).Assembly;
-        string resourceName = $"{ResourceHelper.ResourcePrefix}.Core.Assets.{subNamespace}.{fileName}";
+        string resourceName = ResourceHelper.AssetName(subNamespace, fileName);
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {

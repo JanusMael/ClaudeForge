@@ -25,7 +25,7 @@ public sealed class ThemePropertyPromotionTests
     private static JsonSchemaNode LoadBundledClaudeCodeRoot()
     {
         Assembly assembly = typeof(Core.Schema.SchemaRegistry).Assembly;
-        const string resourceName = ResourceHelper.ResourcePrefix + ".Core.Assets.Schemas.claude-code-settings.json";
+        string resourceName = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");

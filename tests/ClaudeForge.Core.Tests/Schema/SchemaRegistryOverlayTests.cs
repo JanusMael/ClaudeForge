@@ -307,7 +307,7 @@ public sealed class SchemaRegistryOverlayTests
     private static byte[]? ReadBaseResource(string cacheFileName)
     {
         Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = ResourceHelper.ResourcePrefix + $".Core.Assets.Schemas.{cacheFileName}";
+        string resourceName = ResourceHelper.AssetName("Schemas", cacheFileName);
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {
