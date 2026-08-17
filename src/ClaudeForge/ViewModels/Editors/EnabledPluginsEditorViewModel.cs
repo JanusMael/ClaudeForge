@@ -5,12 +5,13 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.AgentForge.Sdk.Plugins;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 // Alias the SDK namespace so ConfigScope unambiguously refers to the Core type
-// in this file. The SDK type is reached via Sdk.IAgentConfigClient / ConfigScope.
+// in this file. The SDK type is reached via Sdk.IClaudeConfigClient / ConfigScope.
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -59,7 +60,7 @@ public partial class PluginEntry : ObservableObject
 /// → bool (or, per the schema's anyOf, array-of-strings) entries.
 /// </summary>
 /// <remarks>
-/// when an <see cref="IAgentConfigClient"/> is supplied via
+/// when an <see cref="IClaudeConfigClient"/> is supplied via
 /// the constructor, <see cref="LoadFromLayered"/> reads its initial entries
 /// through the SDK's typed accessor (<c>client.Plugins.GetAt(scope)</c>)
 /// instead of decoding the raw <see cref="JsonObject"/> stored in the
@@ -73,7 +74,7 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures and
     // non-migrated call sites continue to work unchanged.
-    private readonly IAgentConfigClient? _client;
+    private readonly IClaudeConfigClient? _client;
 
     // Set while LoadFromLayered is running so CollectionChanged and PropertyChanged
     // handlers do not prematurely flip IsModified to true during the initial load.
@@ -102,7 +103,7 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
     public EnabledPluginsEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IAgentConfigClient? client)
+        IClaudeConfigClient? client)
         : base(schema, editingScope)
     {
         _client = client;

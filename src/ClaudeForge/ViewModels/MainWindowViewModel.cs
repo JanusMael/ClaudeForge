@@ -28,6 +28,7 @@ using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -82,10 +83,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // fields are deleted and the SDK clients become the only state holders.
     // Typed as the concrete public-abstract base rather than the interface so
     // MWVM can reach internal helpers (SnapshotDirtyDocuments — 4.3.7 step 9)
-    // without a cast at every call site. Both ClaudeCodeClient and
-    // ClaudeDesktopClient derive from this base.
-    internal AgentConfigClientCore? ClaudeCodeSdk { get; private set; }
-    internal AgentConfigClientCore? ClaudeDesktopSdk { get; private set; }
+    // without a cast at every call site. ClaudeConfigClientBase specifically,
+    // not AgentConfigClientCore: it is the one that carries the Claude-only
+    // accessors (Hooks, Permissions, Marketplaces, Plugins, Models) the editor
+    // view-models below take as IClaudeConfigClient. Both ClaudeCodeClient and
+    // ClaudeDesktopClient derive from it.
+    internal ClaudeConfigClientBase? ClaudeCodeSdk { get; private set; }
+    internal ClaudeConfigClientBase? ClaudeDesktopSdk { get; private set; }
 
     private bool _disposed;
 
@@ -4071,8 +4075,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // the whole load, so nothing can navigate to a not-yet-attached node.
         SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
         SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
-        AgentConfigClientCore? ccSdk = ClaudeCodeSdk;
-        AgentConfigClientCore? dtSdk = ClaudeDesktopSdk;
+        ClaudeConfigClientBase? ccSdk = ClaudeCodeSdk;
+        ClaudeConfigClientBase? dtSdk = ClaudeDesktopSdk;
         System.Diagnostics.Stopwatch editorBuildSw = System.Diagnostics.Stopwatch.StartNew();
         (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
             await Task.Run(() => (

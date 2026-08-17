@@ -3,12 +3,10 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 namespace Bennewitz.Ninja.AgentForge.Sdk.Env;
 
 /// <summary>
-/// Strongly-typed accessor for the <c>env</c> map under Claude Code
-/// settings.json.  Mirrors the
-/// <see cref="Bennewitz.Ninja.AgentForge.Sdk.Permissions.IPermissionsAccessor"/> shape:
-/// generic dictionary surface for arbitrary keys plus typed convenience
-/// properties for the well-known high-importance ones declared in
-/// <see cref="EnvVarKey"/>.
+/// Strongly-typed accessor for the <c>env</c> map under settings.json.
+/// Mirrors the shape the other typed accessors use: a generic dictionary
+/// surface for arbitrary keys plus typed convenience properties for the
+/// well-known high-importance ones declared in <see cref="EnvVarKey"/>.
 /// <para>
 /// <strong>Scope of this accessor:</strong> the persisted-config slice
 /// only — the <c>settings.json</c> <c>env</c> object.  The OS-level

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 // NavigationNodeViewModel lives in the reusable Avalonia editor library —
 // the GlobalUsings imports the namespace explicitly so this file can use
 // the unqualified name throughout.

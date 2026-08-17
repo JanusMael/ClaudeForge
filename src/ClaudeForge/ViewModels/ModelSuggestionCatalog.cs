@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Core.Catalog;
-using Bennewitz.Ninja.AgentForge.Sdk.Models;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

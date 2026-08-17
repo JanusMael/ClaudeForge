@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using BackupMode = Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;

@@ -1,9 +1,10 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Sdk.Hooks;
-using Bennewitz.Ninja.AgentForge.Sdk.Marketplaces;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
-using Bennewitz.Ninja.AgentForge.Sdk.Plugins;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 

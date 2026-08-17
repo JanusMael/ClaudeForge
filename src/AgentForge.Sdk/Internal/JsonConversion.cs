@@ -20,7 +20,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Internal;
 /// Consumers who need to round-trip arbitrary <c>T</c> values should either
 /// pass a pre-built <see cref="JsonNode"/> / <see cref="JsonObject"/>
 /// / <see cref="JsonArray"/>, or use the strongly-typed accessors
-/// (<see cref="IAgentConfigClient.Permissions"/> et al.) which know the
+/// (<see cref="IAgentConfigClient.McpServers"/> et al.) which know the
 /// shape of the values they expose.
 /// </para>
 /// </remarks>

@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
-using Bennewitz.Ninja.AgentForge.Sdk.Hooks;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 

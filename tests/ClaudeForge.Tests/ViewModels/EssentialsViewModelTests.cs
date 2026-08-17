@@ -5,6 +5,7 @@ using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -14,7 +15,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// client, danger-banner predicates, env-var source attribution, and the
 /// amber-callout deep-link surface.
 /// <para>
-/// Uses a real <see cref="Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore"/> over an
+/// Uses a real <see cref="Bennewitz.Ninja.AgentForge.Sdk.ClaudeConfigClientBase"/> over an
 /// in-memory <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace"/> via
 /// <c>FromExistingWorkspace</c> — same pattern as
 /// <c>EnvironmentEditorViewModelTests</c> — to avoid disk I/O while still
@@ -25,7 +26,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 public sealed class EssentialsViewModelTests
 {
     /// <summary>Builds a ClaudeCodeClient over an in-memory User workspace.</summary>
-    private static AgentConfigClientCore MakeClient(string userJson = "{}")
+    private static ClaudeConfigClientBase MakeClient(string userJson = "{}")
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
@@ -35,7 +36,7 @@ public sealed class EssentialsViewModelTests
     }
 
     private static EssentialsViewModel MakeVm(
-        AgentConfigClientCore? client = null,
+        ClaudeConfigClientBase? client = null,
         FakeEnvironmentProvider? envProvider = null)
     {
         return new EssentialsViewModel(client ?? MakeClient(), envProvider ?? new FakeEnvironmentProvider());
@@ -108,7 +109,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task BoolCard_WriteThroughSdk_PersistsToWorkspace()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -125,7 +126,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task BoolCard_NullValue_RemovesProperty()
     {
-        AgentConfigClientCore client = MakeClient("""{"enableAllProjectMcpServers": true}""");
+        ClaudeConfigClientBase client = MakeClient("""{"enableAllProjectMcpServers": true}""");
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -143,7 +144,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task EnumCard_WriteThroughSdk_PersistsModel()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -157,7 +158,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task IntCard_EnvVarRoundTrip_PersistsToEnvMap()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -171,7 +172,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task IntCard_NullValue_RemovesEnvKey()
     {
-        AgentConfigClientCore client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "32000"}}""");
+        ClaudeConfigClientBase client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "32000"}}""");
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -187,7 +188,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task StringListCard_AddEntry_PersistsArray()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 
@@ -205,7 +206,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task StringListCard_RemoveEntry_PersistsRemoval()
     {
-        AgentConfigClientCore client = MakeClient(
+        ClaudeConfigClientBase client = MakeClient(
             """{"sandbox": {"network": {"allowedDomains": ["github.com", "registry.npmjs.org"]}}}""");
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
@@ -261,7 +262,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task EnvSource_PrefersSettingsJson_OverOsUser()
     {
-        AgentConfigClientCore client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "1000"}}""");
+        ClaudeConfigClientBase client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "1000"}}""");
         FakeEnvironmentProvider env = new();
         env.User["MAX_THINKING_TOKENS"] = "9999";
 
@@ -280,7 +281,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task EnvSource_OsUser_WhenSettingsJsonIsEmpty()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         FakeEnvironmentProvider env = new();
         env.User["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = "8000";
 
@@ -323,7 +324,7 @@ public sealed class EssentialsViewModelTests
     public async Task RefreshAsync_RunsEnvProbeOnThreadPool()
     {
         ThreadCapturingEnvProvider env = new();
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
 
         // Run RefreshAsync from a dedicated non-thread-pool thread so the
         // "caller is NOT the thread pool" baseline isn't accidentally
@@ -381,7 +382,7 @@ public sealed class EssentialsViewModelTests
         // where the bug used to manifest.
         ManualResetEventSlim gate = new(initialState: false);
         GatedEnvProvider env = new(gate);
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
 
         // ctor fires RefreshAsync fire-and-forget; the synchronous portion
         // of ReadEnvIntAsync runs to completion (IsLoading=true → IntValue
@@ -418,14 +419,14 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task IntValueWrite_AfterRefreshWithNewClient_PropagatesToNewClient()
     {
-        AgentConfigClientCore clientA = MakeClient();
+        ClaudeConfigClientBase clientA = MakeClient();
         FakeEnvironmentProvider env = new();
         EssentialsViewModel vm = new(clientA, env);
         await vm.RefreshAsync(); // first refresh completes
 
         // Simulate a profile switch — new SDK client over a different
         // in-memory workspace.
-        AgentConfigClientCore clientB = MakeClient();
+        ClaudeConfigClientBase clientB = MakeClient();
         await vm.RefreshAsync(clientB);
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxOutputTokens)!;
@@ -453,7 +454,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task IntValueWrite_AppearsInSaveDialogDiff()
     {
-        AgentConfigClientCore client = MakeClient();
+        ClaudeConfigClientBase client = MakeClient();
         FakeEnvironmentProvider env = new();
         EssentialsViewModel vm = new(client, env);
         await vm.RefreshAsync();
@@ -585,7 +586,7 @@ public sealed class EssentialsViewModelTests
     [TestMethod]
     public async Task RefreshAsync_WithNewClient_RebindsValues()
     {
-        AgentConfigClientCore firstClient = MakeClient("""{"model": "haiku"}""");
+        ClaudeConfigClientBase firstClient = MakeClient("""{"model": "haiku"}""");
         EssentialsViewModel vm = MakeVm(firstClient);
         await vm.RefreshAsync();
 
@@ -593,7 +594,7 @@ public sealed class EssentialsViewModelTests
         Assert.AreEqual("haiku", modelCard.EnumValue, "Initial read.");
 
         // Simulate workspace reload: swap in a fresh client and re-bind.
-        AgentConfigClientCore secondClient = MakeClient("""{"model": "opus"}""");
+        ClaudeConfigClientBase secondClient = MakeClient("""{"model": "opus"}""");
         await vm.RefreshAsync(secondClient);
 
         Assert.AreEqual("opus", modelCard.EnumValue,
@@ -607,7 +608,7 @@ public sealed class EssentialsViewModelTests
         // bool. The Bool card must read "disable" -> checked and write checked ->
         // "disable" / unchecked -> remove. Writing a raw bool fails schema validation
         // (the reported bug).
-        AgentConfigClientCore client =
+        ClaudeConfigClientBase client =
             MakeClient("""{"permissions":{"disableBypassPermissionsMode":"disable"}}""");
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
@@ -630,7 +631,7 @@ public sealed class EssentialsViewModelTests
     {
         // The free-form model combo, left as whitespace, must be treated as "unset" —
         // never pinned as model=" " (the Essentials sibling of the model="" ghost).
-        AgentConfigClientCore client = MakeClient("""{"model":"opus"}""");
+        ClaudeConfigClientBase client = MakeClient("""{"model":"opus"}""");
         EssentialsViewModel vm = MakeVm(client);
         await vm.RefreshAsync();
 

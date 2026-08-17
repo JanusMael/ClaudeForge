@@ -2,20 +2,16 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
-using Bennewitz.Ninja.AgentForge.Sdk.Hooks;
-using Bennewitz.Ninja.AgentForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
-using Bennewitz.Ninja.AgentForge.Sdk.Models;
-using Bennewitz.Ninja.AgentForge.Sdk.Permissions;
-using Bennewitz.Ninja.AgentForge.Sdk.Plugins;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk;
 
 /// <summary>
-/// Avalonia-independent client for reading, writing, backing up, and
-/// restoring Claude configuration. Two concrete implementations:
-/// <see cref="ClaudeCodeClient"/> and <see cref="ClaudeDesktopClient"/>.
+/// UI-framework-independent client for reading, writing, backing up, and
+/// restoring an agent tool's configuration. This interface carries only what is
+/// common to any such tool; a product's own SDK derives from it to add the
+/// accessors for config surfaces only that product defines.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -139,20 +135,8 @@ public interface IAgentConfigClient : IDisposable
 
     // ── Strongly-typed accessors ───────────────────────────────────────────
 
-    /// <summary>Permissions accessor — Allow/Deny/Ask lists and DefaultMode.</summary>
-    IPermissionsAccessor Permissions { get; }
-
-    /// <summary>Hooks accessor — pre/post tool-use hooks.</summary>
-    IHooksAccessor Hooks { get; }
-
     /// <summary>MCP servers accessor — typed servers keyed by name.</summary>
     IMcpServersAccessor McpServers { get; }
-
-    /// <summary>Marketplaces accessor — typed marketplace entries.</summary>
-    IMarketplacesAccessor Marketplaces { get; }
-
-    /// <summary>Enabled plugins accessor.</summary>
-    IEnabledPluginsAccessor Plugins { get; }
 
     /// <summary>
     /// Environment-variable accessor — typed reads / writes for the
@@ -166,16 +150,6 @@ public interface IAgentConfigClient : IDisposable
     /// non-GUI consumers can use it cleanly.
     /// </summary>
     IEnvAccessor Env { get; }
-
-    /// <summary>
-    /// Model-catalog accessor — the allowed <c>model</c> / <c>effortLevel</c> /
-    /// <c>permissions.defaultMode</c> values and their inter-relationships
-    /// (which effort levels a model supports, whether a model supports auto
-    /// mode, the nearest-analog coercion rule). Backed by the bundled
-    /// <c>model-catalog.json</c>; read-only and Avalonia-free so non-GUI
-    /// consumers can use it.
-    /// </summary>
-    IModelCatalogAccessor Models { get; }
 
     // ── Generic escape hatch ───────────────────────────────────────────────
 

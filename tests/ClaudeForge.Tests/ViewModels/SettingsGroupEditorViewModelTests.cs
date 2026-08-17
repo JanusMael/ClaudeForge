@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 // App-bridge StringPropertyEditorViewModel deleted; alias library leaf.
 using StringPropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.StringPropertyEditorViewModel;
