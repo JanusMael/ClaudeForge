@@ -160,6 +160,33 @@ public static class DebugFlags
     public static string? DeepLinkPath { get; private set; }
 
     /// <summary>
+    /// Config writer selected via <c>--writer legacy|jsonc</c>.
+    /// <see langword="null"/> means the default, comment-preserving writer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A one-release escape hatch, not a supported mode. The comment-preserving writer is
+    /// the highest-consequence code path in the product — a bug corrupts config for every
+    /// user — so <c>--writer legacy</c> restores the pre-Phase-2 whole-document
+    /// re-serializer without needing a new build. <c>--writer jsonc</c> is accepted too so
+    /// the flag reads symmetrically and a script can pin the default explicitly.
+    /// </para>
+    /// <para>
+    /// <b>The value is a name, not the writer itself.</b> <c>DebugFlags</c> lives in the app
+    /// assembly and the save path lives in <c>AgentForge.Core</c>, which must never
+    /// reference the app; resolving the name into an <c>IConfigWriter</c> happens where the
+    /// SDK client is constructed. See <c>docs/JSONC-WRITER.md</c>.
+    /// </para>
+    /// <para>
+    /// <b>Remove this flag, both writers' selection logic, and
+    /// <c>LegacySerializingWriter</c> after one clean release.</b> Two writers means every
+    /// future save-path change has to be correct twice, and the lossy one is the one nobody
+    /// will remember to test.
+    /// </para>
+    /// </remarks>
+    public static string? ConfigWriterName { get; private set; }
+
+    /// <summary>
     /// Why a supplied <c>--deep-link</c> value was rejected, or
     /// <see langword="null"/> when none was supplied or it parsed cleanly.
     /// <para>
@@ -298,6 +325,39 @@ public static class DebugFlags
 
                     break;
 
+                // Two-token flag. Validated against the known names here rather than
+                // deferred, so a typo falls back to the safe (preserving) writer with a
+                // warning instead of silently selecting the lossy one.
+                case "--writer":
+                    if (i + 1 >= args.Length)
+                    {
+                        _deferredWarnings.Add(
+                            "[DebugFlags] --writer flag requires a value "
+                            + "(--writer legacy or --writer jsonc); ignoring.");
+                        break;
+                    }
+
+                    // PEEK, don't consume. Because the value is validated against a closed
+                    // set, a rejected token can still be a valid flag in its own right —
+                    // `--writer --linux` should reject the writer AND honour --linux, rather
+                    // than swallowing it. Contrast --deep-link, which consumes positionally
+                    // by design because any string is a syntactically plausible path.
+                    string requestedWriter = args[i + 1];
+                    if (string.Equals(requestedWriter, "legacy", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(requestedWriter, "jsonc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ConfigWriterName = requestedWriter.ToLowerInvariant();
+                        i++; // consume the value only now that it is known to be one
+                    }
+                    else
+                    {
+                        _deferredWarnings.Add(
+                            $"[DebugFlags] --writer '{requestedWriter}' rejected: expected "
+                            + "'legacy' or 'jsonc'. Using the default comment-preserving writer.");
+                    }
+
+                    break;
+
                 // Help / discovery: defer the help message so it surfaces in the log
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
@@ -305,7 +365,7 @@ public static class DebugFlags
                     _deferredWarnings.Add(
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
-                        "--simulate-update, --deep-link <path>, " +
+                        "--simulate-update, --deep-link <path>, --writer <legacy|jsonc>, " +
                         "--cleanup-restore-sidecars, --debug-help");
                     break;
             }
@@ -386,6 +446,7 @@ public static class DebugFlags
         SimulateUpdate = false;
         DeepLinkPath = null;
         DeepLinkPathError = null;
+        ConfigWriterName = null;
         _deferredWarnings.Clear();
         PlatformInfo.ResetForTesting();
     }
@@ -420,6 +481,14 @@ public static class DebugFlags
         if (DeepLinkPath != null)
         {
             yield return "--deep-link " + DeepLinkPath;
+        }
+
+        if (ConfigWriterName != null)
+        {
+            // Worth being in the active-flags log line: the two writers produce different
+            // bytes for identical input, so a bug report that does not say which one ran is
+            // much harder to act on.
+            yield return "--writer " + ConfigWriterName;
         }
     }
 }

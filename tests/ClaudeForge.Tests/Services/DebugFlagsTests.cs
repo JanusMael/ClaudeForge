@@ -435,4 +435,83 @@ public sealed class DebugFlagsTests
 
         Assert.IsNull(DebugFlags.DeepLinkPath);
     }
+
+    // ── --writer <legacy|jsonc> ──────────────────────────────────────────────
+    //
+    // The one-release escape hatch for the comment-preserving writer. Unlike
+    // --deep-link, an unrecognised value must NOT be accepted positionally: the two
+    // writers produce different bytes, and a typo silently selecting the lossy one is
+    // exactly the failure this flag exists to protect against.
+
+    [TestMethod]
+    public void Initialize_NoWriterFlag_LeavesWriterUnset()
+    {
+        DebugFlags.Initialize([]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "Unset means the default comment-preserving writer.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterLegacy_SelectsLegacy()
+    {
+        DebugFlags.Initialize(["--writer", "legacy"]);
+
+        Assert.AreEqual("legacy", DebugFlags.ConfigWriterName);
+    }
+
+    [TestMethod]
+    public void Initialize_WriterJsonc_IsAcceptedAndNormalized()
+    {
+        // Accepted so a script can pin the default explicitly and the flag reads
+        // symmetrically; it resolves to the same writer as omitting the flag.
+        DebugFlags.Initialize(["--writer", "JSONC"]);
+
+        Assert.AreEqual("jsonc", DebugFlags.ConfigWriterName,
+            "Value should be normalized to lower case so downstream comparisons are ordinal.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterUnknownValue_FallsBackToTheSafeWriter()
+    {
+        DebugFlags.Initialize(["--writer", "legcy"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "A typo must fall back to the preserving writer, never to the lossy one.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterMissingValue_DoesNotEatTheNextFlag()
+    {
+        // Contrast with --deep-link, which consumes positionally by design. Here the
+        // value is validated against a closed set, so a following flag is rejected as a
+        // writer name and still takes effect as a flag.
+        DebugFlags.Initialize(["--writer", "--linux"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName);
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "Validation against a closed set means the swallowed token is not silently lost "
+            + "the way an unvalidated positional value would be.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterAtEndOfArgs_IsIgnoredWithoutThrowing()
+    {
+        DebugFlags.Initialize(["--writer"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName);
+    }
+
+    [TestMethod]
+    public void ResetForTesting_ClearsConfigWriterName()
+    {
+        DebugFlags.Initialize(["--writer", "legacy"]);
+        Assert.IsNotNull(DebugFlags.ConfigWriterName);
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "Static flag state must not bleed into the next test — a leaked 'legacy' here "
+            + "would silently make other tests assert against the lossy writer.");
+    }
 }
