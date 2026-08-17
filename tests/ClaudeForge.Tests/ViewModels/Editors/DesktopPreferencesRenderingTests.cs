@@ -22,7 +22,7 @@ public class DesktopPreferencesRenderingTests
         // Load the bundled schema resource directly, bypassing SchemaRegistry's on-disk cache
         // so the test asserts against the repository schema rather than a stale user cache.
         Assembly assembly = typeof(SchemaRegistry).Assembly;
-        const string resourceName = Core.ResourceHelper.ResourcePrefix + ".Core.Assets.Schemas.claude-desktop-config.json";
+        string resourceName = Core.ResourceHelper.AssetName("Schemas", "claude-desktop-config.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");
