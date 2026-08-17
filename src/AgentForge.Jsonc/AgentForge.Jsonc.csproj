@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Jsonc</RootNamespace>
+        <AssemblyName>AgentForge.Jsonc</AssemblyName>
+        <Description>
+            Comment- and formatting-preserving JSONC reader plus an edit-based writer.
+
+            Writes by replacing the minimal text span for each changed path rather than
+            re-serializing the document, so comments, blank lines, key order, indentation
+            style, and line endings survive a save untouched — they are never rewritten.
+
+            Framework-only by design: no package references. It is a text-editing
+            component, and staying dependency-free is what keeps it testable in isolation
+            and safe to reason about, since a bug here corrupts user config.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AgentForge.Jsonc.Tests"/>
+    </ItemGroup>
+</Project>

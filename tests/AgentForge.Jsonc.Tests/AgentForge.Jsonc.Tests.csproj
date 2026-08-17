@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Jsonc.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Only the library under test. AgentForge.Jsonc is framework-only by design,
+             so these tests need nothing else — which is the point: a text-editing
+             component whose bug corrupts user config should be testable in isolation. -->
+        <ProjectReference Include="..\..\src\AgentForge.Jsonc\AgentForge.Jsonc.csproj"/>
+    </ItemGroup>
+</Project>
