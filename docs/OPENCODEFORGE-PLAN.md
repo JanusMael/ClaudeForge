@@ -28,14 +28,26 @@
 >
 > ### Implementation status — 2026-08-17
 >
-> Branch **`feat/agentforge-opencodeforge`**, 11 commits, **not yet pushed**. Suite green
-> throughout: **2,719 passed · 11 skipped · 0 failed · 0 warnings**.
+> Branch **`feat/agentforge-opencodeforge`**, 15 commits, **not yet pushed**. Suite green
+> throughout: **2,783 passed · 11 skipped · 0 failed · 0 warnings**.
 >
 > | Phase | Status |
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
-> | 2 — `AgentForge.Jsonc` | **next** |
+> | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md) |
+> | 3 — Generalize the scope model | **next** |
+>
+> **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
+> `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
+> comment**; the throw was caught and turned into an *empty* `JsonObject`; the next save then
+> serialized that emptiness over the file. **One comment, or one stray character, was enough
+> to lose a config.** The plan predicted the OpenCode consequence but recorded "nothing is at
+> risk today" — that was wrong for any Claude user who had ever hand-added a comment.
+>
+> ⚠ **Untested against a real install.** Every guarantee is covered by unit and end-to-end
+> tests, all canaried, but nothing has exercised the new save path through the GUI against a
+> real `~/.claude/settings.json`. **Do that before this branch goes near `main`.**
 >
 > **Done in Phase 1:** resource prefix derived (not hardcoded) + guarded ·
 > `AgentForge.Abstractions` created and the `LayeredEditors.Avalonia.Services → ClaudeForge.Sdk`
@@ -495,7 +507,7 @@ up with *no* creating phase despite three Problems depending on the first. Expli
 | `AgentForge.Abstractions` | **Phase 1** ✅ | Must precede Phase 2 (`IConfigWriter`). Grows a contract per later phase. |
 | `AgentForge.Core` · `AgentForge.Sdk` | Phase 1 ✅ | Renames of the existing projects |
 | `ClaudeForge.Sdk.Claude` | Phase 1 ✅ | Claude-domain accessors split out. Also created `ClaudeForge.Sdk.Claude.Tests` — the shared test project must stay buildable without a product, which `AssemblyLayeringTests` now enforces for `tests/` too. |
-| `AgentForge.Jsonc` | Phase 2 | BCL-only dependencies |
+| `AgentForge.Jsonc` | Phase 2 ✅ | Framework-only, no package references. `AgentForge.Jsonc.Tests` alongside it. **`AgentForge.Core` now references it and `AgentForge.Abstractions`** — both shared, so layering is unaffected. |
 | `AgentForge.Avalonia.Shell` · `AgentForge.Localization` | Phase 5 | The shell extraction + resx split |
 | ~~`AgentForge.Permissions` · `AgentForge.Avalonia.Permissions`~~ | — | **Cut.** Passes 8 and 11 found nothing to put in them. |
 | `OpenCode.Sdk` | Phase 7 | |
@@ -2199,6 +2211,34 @@ that intent in `AGENTS.md` so it doesn't become permanent.
 > selects the implementation at composition time. This is the same shape the plan already
 > uses for `IMergePolicy` and `IPermissionModel`, so it costs nothing extra — but getting
 > it wrong here would be discovered only at compile time, after the writer is built.
+
+> ### ✅ Phase 2 shipped — what the plan got right, and the four things it did not say
+>
+> The prescribed shape was exactly right and was followed unchanged: `IConfigWriter` in
+> `AgentForge.Abstractions`, two implementations, injection into `ConfigFileLoader`, app-side
+> flag resolution. Full contract in **[`docs/JSONC-WRITER.md`](./JSONC-WRITER.md)**.
+>
+> 1. **The read side was the real bug.** See the status header — a commented file loaded as
+>    *empty* and the next save overwrote it. The plan said "nothing is at risk today". Wrong.
+> 2. **There is exactly ONE save call site** in the product (`AgentConfigClientCore`), so the
+>    flag threads through constructors and needs no global mutable state. The plan implied
+>    broader plumbing.
+> 3. **No new change-tracking was needed** — `SettingsDocument.BaselineRoot` already existed,
+>    and baseline-vs-current *is* the change set. Only `OriginalText` had to be added.
+>    ⚠ **It must be refreshed after every save**, or every save after the first silently falls
+>    back to re-serializing against stale text.
+> 4. **Apply changes one at a time, re-parsing between each.** Batching edits from a single
+>    parse yields two insertions at the same offset, which `TextEdit.Apply` correctly rejects
+>    as overlapping.
+>
+> **Stamp decision: option 2** (write only when something else changed), so a no-op save is
+> genuinely byte-identical. That obsoleted two existing tests which had correctly encoded the
+> old unconditional contract; both were updated with in-place notes rather than quietly
+> rewritten.
+>
+> ⚠ **`--writer legacy` and `LegacySerializingWriter` are now a live removal debt**, recorded
+> as a hard invariant in `AGENTS.md`. Delete the flag, `SelectedConfigWriter`, and the legacy
+> writer together after one clean release.
 
 ### Phase 3 — Generalize the scope model (Problem 1)
 
