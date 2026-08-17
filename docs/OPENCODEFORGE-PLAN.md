@@ -26,6 +26,30 @@
 > **Deferred re-checkpoint** section: 11 items must be re-validated against a used install
 > before Phases 10 and 14 ship.
 >
+> ### Implementation status — 2026-08-17
+>
+> Branch **`feat/agentforge-opencodeforge`**, 6 commits, **not yet pushed**. Suite green
+> throughout: **2,716 passed · 11 skipped · 0 failed · 0 warnings**.
+>
+> | Phase | Status |
+> |---|---|
+> | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
+> | 1 — Rename + neutralize | 🟡 **1a–1e done**; **1f/1g/1h remain** |
+> | 2+ | not started |
+>
+> **Done in Phase 1:** resource prefix derived (not hardcoded) + guarded ·
+> `AgentForge.Abstractions` created and the `LayeredEditors.Avalonia.Services → ClaudeForge.Sdk`
+> violation removed · **all three assembly renames landed** (`AgentForge.Core`,
+> `AgentForge.Sdk`, plus `IAgentConfigClient` / `AgentConfigClientCore`) · AI-facing docs
+> repointed. **Remaining: 1f** (split Claude-domain accessors into `ClaudeForge.Sdk.Claude`)
+> **· 1g** (retarget the MCP sample) **· 1h** (stale `SchemaRegistry` load-order comment,
+> `NAV-DEEP-LINKING-PLAN.md` header).
+>
+> **Three guards were added and canaried** — read them before changing the layering or moving
+> files: `ResourceNamePrefixTests`, `AssemblyLayeringTests`, `BuildFilePathIntegrityTests`.
+> The Phase 1 risk table below was **corrected by measurement**; two of its four verdicts
+> were wrong. Trust the corrected table, not the original claim.
+>
 > **Review pass 1 found and fixed:** the schema load order stated **backwards twice** — the
 > exact stale comment this plan flags as wrong elsewhere · `samples/ClaudeForge.Samples.McpServer`
 > breaks on the rename and was never mentioned · `--writer legacy` was architecturally
