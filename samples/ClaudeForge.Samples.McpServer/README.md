@@ -1,19 +1,26 @@
 # Claude Config MCP server (sample)
 
-A minimal headless consumer of `AgentForge.Sdk`.
+A minimal headless consumer of `AgentForge.Sdk` + `ClaudeForge.Sdk.Claude`.
 
 ## Why it exists
 
 This project proves two SDK contracts:
 
-1. **The SDK is Avalonia-free.** This project's `.csproj` references *only*
-   `AgentForge.Sdk`. If a future change accidentally pulls Avalonia into the
-   SDK's transitive closure, this build will start failing with package
-   conflicts long before the GUI does.
+1. **The SDK is Avalonia-free.** This project's `.csproj` references *only* the
+   two SDK assemblies. If a future change accidentally pulls Avalonia into their
+   transitive closure, this build will start failing with package conflicts long
+   before the GUI does.
 2. **The SDK is consumable from a strictly headless context.** The whole
-   `IAgentConfigClient` surface — typed accessors, generic escape hatch,
+   `IClaudeConfigClient` surface — the product-neutral `IAgentConfigClient`
+   members plus Claude's typed accessors, the generic escape hatch, and
    backup/restore — runs from a console process with no UI thread, no
    dispatcher, and no Core types in any consumer-facing call site.
+
+Which assembly a member comes from is worth noticing while reading this sample:
+`GetEffective` / `SetValue` / `SaveAsync` / `Backup` are neutral
+(`AgentForge.Sdk`), while `client.Permissions` is Claude-specific
+(`ClaudeForge.Sdk.Claude`). A sample for a second agent tool would keep the
+former verbatim and replace the latter.
 
 The "MCP server" framing is illustrative: a real MCP server would speak the
 [Model Context Protocol](https://modelcontextprotocol.io/) over stdio JSON-RPC
@@ -25,7 +32,7 @@ out of scope here — adding it would not exercise more of the SDK.
 From the repo root:
 
 ```bash
-dotnet run --project samples/ClaudeConfigMcpServer -- <command> [args...]
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- <command> [args...]
 ```
 
 ### Commands
@@ -45,18 +52,18 @@ dotnet run --project samples/ClaudeConfigMcpServer -- <command> [args...]
 
 ```bash
 # Read the current effective model.
-dotnet run --project samples/ClaudeConfigMcpServer -- get-effective model
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- get-effective model
 
 # Set a permission rule and save.
-dotnet run --project samples/ClaudeConfigMcpServer -- permissions-add-allow "Bash(git status)"
-dotnet run --project samples/ClaudeConfigMcpServer -- save
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- permissions-add-allow "Bash(git status)"
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- save
 
 # Create a backup.
-dotnet run --project samples/ClaudeConfigMcpServer -- create-backup /tmp/claude-backups
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- create-backup /tmp/claude-backups
 
 # List and restore.
-dotnet run --project samples/ClaudeConfigMcpServer -- list-backups /tmp/claude-backups
-dotnet run --project samples/ClaudeConfigMcpServer -- restore-backup /tmp/claude-backups/backup-20251010-093000.zip
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- list-backups /tmp/claude-backups
+dotnet run --project samples/ClaudeForge.Samples.McpServer -- restore-backup /tmp/claude-backups/backup-20251010-093000.zip
 ```
 
 ## Code map

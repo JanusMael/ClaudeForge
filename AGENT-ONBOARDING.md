@@ -49,7 +49,8 @@ agent might Read. The `AGENTS.md` set surfaces those contracts up front.
 | [`src/ClaudeForge/ViewModels/AGENTS.md`](./src/ClaudeForge/ViewModels/AGENTS.md) | ViewModel layer: MainWindowViewModel integration hub, navigation tree structure, `SearchViewModel` contract, JsonPath→NavNode mapping, test seams. |
 | [`src/ClaudeForge/ViewModels/Editors/AGENTS.md`](./src/ClaudeForge/ViewModels/Editors/AGENTS.md) | Compound-editor contract: the force-fire `MarkModified` pattern, the `_isLoading` guard, `OnResetToInherited` semantics, child-subscription bookkeeping, the parity table, test-pattern templates. |
 | [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) | Workspace / scope / dirty-tracking semantics: `ConfigScope` ↔ `ClaudeScope._cache` coupling, `IsDirty` vs `HasActualChanges()`, merge semantics, `_selfWriting` guard. |
-| [`src/AgentForge.Sdk/AGENTS.md`](./src/AgentForge.Sdk/AGENTS.md) | SDK architecture: `IAgentConfigClient` surface, `_suppressForwarder` + `_selfWriting` dual guard, `_cachedSchemaNodes`, `Changed` threading model. |
+| [`src/AgentForge.Sdk/AGENTS.md`](./src/AgentForge.Sdk/AGENTS.md) | Product-neutral SDK architecture: `IAgentConfigClient` surface, `_suppressForwarder` + `_selfWriting` dual guard, `_cachedSchemaNodes`, `Changed` threading model, and the Claude-shaped residue still awaiting its phase. |
+| [`src/ClaudeForge.Sdk.Claude/AGENTS.md`](./src/ClaudeForge.Sdk.Claude/AGENTS.md) | The Claude-only SDK half: why each of the five accessors resisted generalization, the three types that keep the dependency one-directional, permission rule-order semantics, the schema-driven hook vocabulary and its non-obvious second source, opaque-JSON preservation. |
 
 The structure is **hybrid**: a root index plus per-folder sidecars where
 local-invariant density is high enough to justify them. A flat directory of
