@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 
@@ -8,10 +8,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 /// </summary>
 /// <remarks>
 /// <para>
-/// SDK-side mirror of <c>ClaudeForge.Core.Backup.BackupManifest</c>. The Sdk keeps
+/// SDK-side mirror of <c>AgentForge.Core.Backup.BackupManifest</c>. The Sdk keeps
 /// its own record surface so no JSON-serialization attributes leak into the public
 /// contract; Core's manifest is projected to this type at the SDK boundary.
-/// <see cref="Mode"/> is the shared <c>Core.Backup.BackupMode</c> — formerly a
+/// <see cref="Mode"/> is the shared <c>AgentForge.Core.Backup.BackupMode</c> — formerly a
 /// duplicated Sdk-local enum, consolidated since both surfaces enumerate the same
 /// backup modes.
 /// </para>

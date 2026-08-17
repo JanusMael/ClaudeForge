@@ -1,5 +1,5 @@
 using System.Globalization;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Serilog;
 
@@ -78,7 +78,7 @@ public static class DebugFlags
     /// is not polluted; the next launch without the flag resumes correctly.
     /// </para>
     /// <para>
-    /// Wired via <see cref="Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaTreeBuilder.BuildTopLevel(JsonSchemaNode, ISet{string}?, bool)"/>
+    /// Wired via <see cref="Bennewitz.Ninja.AgentForge.Core.Schema.SchemaTreeBuilder.BuildTopLevel(JsonSchemaNode, ISet{string}?, bool)"/>
     /// — passing <c>flagAllAsNew: true</c> bypasses the normal "diff against
     /// snapshot" logic and stamps every node with <c>IsNew = true</c>.
     /// </para>

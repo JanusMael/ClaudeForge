@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Catalog;
+using Bennewitz.Ninja.AgentForge.Core.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Env;

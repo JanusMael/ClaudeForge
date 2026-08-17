@@ -15,7 +15,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// amber-callout deep-link surface.
 /// <para>
 /// Uses a real <see cref="Bennewitz.Ninja.ClaudeForge.Sdk.ClaudeConfigClientCore"/> over an
-/// in-memory <see cref="Bennewitz.Ninja.ClaudeForge.Core.Settings.SettingsWorkspace"/> via
+/// in-memory <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace"/> via
 /// <c>FromExistingWorkspace</c> — same pattern as
 /// <c>EnvironmentEditorViewModelTests</c> — to avoid disk I/O while still
 /// exercising the production SetValue / GetEffective / Env path.

@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Adapters;

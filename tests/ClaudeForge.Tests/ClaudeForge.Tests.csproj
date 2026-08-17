@@ -9,7 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
+        <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
         <ProjectReference Include="..\..\src\ClaudeForge\ClaudeForge.csproj"/>
         <ProjectReference Include="..\..\src\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
     </ItemGroup>

@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;

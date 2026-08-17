@@ -1,5 +1,5 @@
 using System.Security;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 

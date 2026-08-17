@@ -54,7 +54,7 @@ public static class BashRuleMatcher
 {
     // Defensive cap against a pathological user pattern; a timeout is treated as
     // "no match" rather than throwing into the UI. Mirrors GitignoreReader's
-    // stance (src/ClaudeForge.Core/Backup/GitignoreReader.cs).
+    // stance (src/AgentForge.Core/Backup/GitignoreReader.cs).
     private static readonly TimeSpan s_timeout = TimeSpan.FromMilliseconds(100);
 
     /// <summary>

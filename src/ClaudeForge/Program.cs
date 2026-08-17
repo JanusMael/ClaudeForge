@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Avalonia;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -174,7 +174,7 @@ internal sealed class Program
     /// <summary>
     /// Dispatch for the <c>--cleanup-restore-sidecars</c> command-line
     /// flag.  Walks <c>~/.claude/</c>, deletes every <c>*.bak</c> file
-    /// left behind by <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.RestoreEngine"/>'s
+    /// left behind by <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.RestoreEngine"/>'s
     /// pre-restore sidecar pattern, and prints a human-readable summary
     /// to stderr (visible regardless of how the binary was launched) plus
     /// a Serilog entry for post-mortem grepping.
@@ -182,7 +182,7 @@ internal sealed class Program
     /// CLI-only by design: the operation is unconditionally destructive
     /// and best performed as an explicit maintenance step the user has
     /// consciously chosen.  GUI does not expose this — see the comment
-    /// on <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.RestoreSidecarCleanup"/>
+    /// on <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.RestoreSidecarCleanup"/>
     /// for the full rationale.
     /// </para>
     /// </summary>

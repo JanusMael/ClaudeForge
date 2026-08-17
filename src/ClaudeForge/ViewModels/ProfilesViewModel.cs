@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Profile;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Profile;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -432,7 +432,7 @@ public partial class ProfilesViewModel : ObservableObject
     //  JSON format the claudectx CLI tool uses.  Profile data is converted
     //  via ProfileEngine.ExportProfileAsync / ImportProfileAsync; the GUI
     //  only owns the file-picker / status-message wiring.  Keeps the
-    //  SDK-first separation: all logic lives in ClaudeForge.Core.Profile.
+    //  SDK-first separation: all logic lives in AgentForge.Core.Profile.
     // -----------------------------------------------------------------------
 
     // ---- Export ----

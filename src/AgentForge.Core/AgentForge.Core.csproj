@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Core</RootNamespace>
+        <AssemblyName>AgentForge.Core</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
+        <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
+             file discovery errors).  No Avalonia dependency — safe to reference from Core. -->
+        <PackageReference Include="Serilog" Version="4.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
+        <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
+        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Test project needs access to the internal BackupJsonContext so it can exercise
+             the exact same serialisation path that production uses under trimming. -->
+        <InternalsVisibleTo Include="AgentForge.Core.Tests"/>
+        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
+    </ItemGroup>
+</Project>

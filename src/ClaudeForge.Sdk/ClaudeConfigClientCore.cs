@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.FileIO;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
@@ -13,7 +13,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
 using Json.Schema;
-using SchemaRegistry = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaRegistry;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk;
 
@@ -1351,7 +1351,7 @@ public abstract class ClaudeConfigClientCore : IClaudeConfigClient
     }
 
     // ToCoreScope translation removed in 4.3.7 step 5: SDK now uses
-    // ClaudeForge.Core.Settings.ConfigScope directly so the SDK ↔ Core
+    // AgentForge.Core.Settings.ConfigScope directly so the SDK ↔ Core
     // boundary is identity. Previously the SDK carried its own parallel
     // enum and forced a switch on every mutation.
 

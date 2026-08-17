@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Updates;
+using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

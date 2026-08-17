@@ -52,6 +52,6 @@ public interface IBackupClient
 /// </summary>
 /// <remarks>
 /// Replaces the synchronous <c>IProgress&lt;BackupProgress&gt;.Report</c>
-/// pattern used by <c>ClaudeForge.Core.Backup.BackupEngine</c>.
+/// pattern used by <c>AgentForge.Core.Backup.BackupEngine</c>.
 /// </remarks>
 public delegate ValueTask BackupProgressHandler(BackupProgress progress);

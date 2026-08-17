@@ -5,8 +5,8 @@ using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
-using Schema_SchemaNode = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaNode;
-using SchemaNode = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaNode;
+using Schema_SchemaNode = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode;
+using SchemaNode = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

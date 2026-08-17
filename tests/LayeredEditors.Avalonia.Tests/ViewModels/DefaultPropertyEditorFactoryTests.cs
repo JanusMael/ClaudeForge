@@ -181,7 +181,7 @@ public class CompositePropertyEditorFactoryTests
     // Verifies the plan's hard Definition of Done:
     //   "A non-Claude, non-JSON consumer can drive the library end-to-end
     //    — creating editors, reading/writing values through the workspace,
-    //    firing ValueChanged — without touching ClaudeForge.Core or System.Text.Json."
+    //    firing ValueChanged — without touching AgentForge.Core or System.Text.Json."
 
     [TestMethod]
     public void NonClaudeConsumer_EndToEnd_NoJsonNoDomainTypes()

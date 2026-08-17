@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 

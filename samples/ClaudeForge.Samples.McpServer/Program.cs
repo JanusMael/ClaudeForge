@@ -1,5 +1,5 @@
 using System.Text;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 

@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 

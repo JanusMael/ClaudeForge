@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -13,7 +13,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// handler unconditionally set <c>HasUnsavedChanges = true</c> on every
 /// <c>workspace.Changed</c> event. After a set-then-reset cycle (user edits a
 /// field, then clicks Reset which writes the original value back into the
-/// workspace), the workspace's <see cref="Bennewitz.Ninja.ClaudeForge.Core.Settings.SettingsDocument.IsDirty"/>
+/// workspace), the workspace's <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsDocument.IsDirty"/>
 /// flag stayed true (it is a one-way latch), but <c>HasActualChanges()</c>
 /// correctly returned false. The Save button stayed enabled even though
 /// nothing actually differed from the baseline. The new handler computes

@@ -1,12 +1,12 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
-using BackupMode = Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupMode;
+using BackupMode = Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests;
 
 /// <summary>
 /// End-to-end tests for the SDK's <see cref="IBackupClient"/> bridge over
-/// <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupEngine"/>. Each test exercises
+/// <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine"/>. Each test exercises
 /// the full pipeline against a real on-disk profile via
 /// <see cref="PlatformPaths.TestUserProfileOverride"/> — no mocks, no fakes
 /// at the engine layer.

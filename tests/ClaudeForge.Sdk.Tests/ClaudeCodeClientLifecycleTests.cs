@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests;
 

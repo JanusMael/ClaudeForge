@@ -1,5 +1,5 @@
 using System.Net.Http;
-using Bennewitz.Ninja.ClaudeForge.Core.Updates;
+using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
