@@ -53,7 +53,7 @@ for the full list.
 
 ## The contract
 
-Defined in `src/ClaudeForge.Core/Platform/IPlatformInfo.cs`:
+Defined in `src/AgentForge.Core/Platform/IPlatformInfo.cs`:
 
 ```csharp
 public interface IPlatformInfo
@@ -130,7 +130,7 @@ which surfaces are eligible for redirection.
 
 ## Production code path
 
-`src/ClaudeForge.Core/Platform/PlatformInfo.cs`:
+`src/AgentForge.Core/Platform/PlatformInfo.cs`:
 
 ```csharp
 public static class PlatformInfo
@@ -390,9 +390,9 @@ the same emulation power without the construction-graph churn.
 
 ### Why is `EmulatedPlatformInfo` not in `ClaudeForge` (the App project)?
 
-It lives in `ClaudeForge.Core.Platform` next to `IPlatformInfo` so the
+It lives in `AgentForge.Core.Platform` next to `IPlatformInfo` so the
 `Core` project can be self-tested with emulation in
-`ClaudeForge.Core.Tests`. If `EmulatedPlatformInfo` were in the App
+`AgentForge.Core.Tests`. If `EmulatedPlatformInfo` were in the App
 layer, Core tests would have to duplicate it, drifting from the
 production behaviour over time.
 

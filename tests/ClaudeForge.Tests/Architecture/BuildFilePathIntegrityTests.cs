@@ -41,8 +41,14 @@ public sealed class BuildFilePathIntegrityTests
     /// literal forms these files actually use, and must not try to parse shell or YAML.
     /// Trailing glob segments (<c>/**</c>, <c>/*</c>) are trimmed before the check.
     /// </summary>
+    /// <remarks>
+    /// <c>*</c> must be allowed in the FIRST segment too, not only in later ones. Docs write
+    /// <c>src/LayeredEditors.*</c> to mean a family of projects; without the wildcard there,
+    /// the match truncates to <c>src/LayeredEditors.</c>, trailing punctuation is stripped,
+    /// and the result is reported as a missing path that was never claimed to exist.
+    /// </remarks>
     private static readonly Regex RepoPathRegex = new(
-        @"(?<path>(?:src|tests)/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._*-]+)*)",
+        @"(?<path>(?:src|tests)/[A-Za-z0-9._*-]+(?:/[A-Za-z0-9._*-]+)*)",
         RegexOptions.Compiled);
 
     private static string FindRepoRoot()
@@ -86,6 +92,47 @@ public sealed class BuildFilePathIntegrityTests
         {
             yield return f;
         }
+
+        // Root-level guidance docs and the per-area AGENTS.md sidecars. These are what a
+        // fresh agent context reads first, so a stale path here does more damage than a
+        // stale path in code: it sends the next reader to a directory that no longer exists
+        // and quietly undermines trust in the rest of the document.
+        //
+        // docs/ is deliberately EXCLUDED — plan documents legitimately name files that do
+        // not exist yet (future assemblies) and paths as they were before a rename. Asserting
+        // against those would be wrong, not just noisy.
+        foreach (string f in Directory.GetFiles(repoRoot, "*.md"))
+        {
+            // CHANGELOG is a historical record. Entries describe the tree as it was at that
+            // release, so a path that has since moved is CORRECT there, not stale — the same
+            // reason docs/ is excluded.
+            if (Path.GetFileName(f).Equals("CHANGELOG.md", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            yield return f;
+        }
+
+        foreach (string area in new[] { "src", "tests" })
+        {
+            string areaDir = Path.Combine(repoRoot, area);
+            if (!Directory.Exists(areaDir))
+            {
+                continue;
+            }
+
+            foreach (string f in Directory.GetFiles(areaDir, "AGENTS.md", SearchOption.AllDirectories))
+            {
+                if (!f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                        StringComparison.Ordinal)
+                    && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}",
+                        StringComparison.Ordinal))
+                {
+                    yield return f;
+                }
+            }
+        }
     }
 
     [TestMethod]
@@ -115,6 +162,10 @@ public sealed class BuildFilePathIntegrityTests
                 {
                     string candidate = match.Groups["path"].Value;
 
+                    // Prose ends sentences with the path: "…lives in src/Foo." Strip trailing
+                    // sentence punctuation before testing for existence.
+                    candidate = candidate.TrimEnd('.', ',', ';', ':', ')');
+
                     // Trim trailing glob segments: 'src/X/Assets/**' -> 'src/X/Assets'.
                     while (candidate.EndsWith("/**", StringComparison.Ordinal)
                            || candidate.EndsWith("/*", StringComparison.Ordinal))
@@ -124,6 +175,20 @@ public sealed class BuildFilePathIntegrityTests
 
                     // A '*' anywhere else is a pattern we cannot resolve to one path.
                     if (candidate.Contains('*', StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    // An elision in prose ("src/Foo/...Bar.cs") is not a path claim.
+                    if (candidate.Contains("...", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    // Build outputs only exist after a build/publish, so their absence says
+                    // nothing about whether the documentation is correct.
+                    if (candidate.Contains("/bin/", StringComparison.Ordinal)
+                        || candidate.Contains("/obj/", StringComparison.Ordinal))
                     {
                         continue;
                     }

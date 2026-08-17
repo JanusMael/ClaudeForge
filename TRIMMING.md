@@ -429,7 +429,7 @@ the suppression comment.
 
 ## Our code is trim-clean — keep it that way
 
-The following rules keep `ClaudeForge`, `ClaudeForge.Core`, and the
+The following rules keep `ClaudeForge`, `AgentForge.Core`, and the
 `LayeredEditors.*` projects out of this file:
 
 - **Use source-generated `JsonSerializerContext`** — see `CoreJsonContext` /

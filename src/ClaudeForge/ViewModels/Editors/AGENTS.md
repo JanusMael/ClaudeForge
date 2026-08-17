@@ -77,7 +77,7 @@ but document why explicitly (Hooks does, see its `MarkModified` xmldoc).
 
 ## 3. `OnResetToInherited` contract
 
-Sequence in the base class (`src/LayeredEditors.Avalonia/ViewModels/PropertyEditorViewModel.cs`):
+Sequence in the base class (`src/LayeredEditors.ViewModels/PropertyEditorViewModel.cs`):
 
 ```csharp
 protected virtual void ResetToInherited()

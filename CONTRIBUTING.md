@@ -38,16 +38,16 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 
 | Project | Description |
 |---------|-------------|
-| `src/ClaudeForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
-| `src/ClaudeForge.Sdk` | Typed accessors over Core (the public consumer surface — `IClaudeConfigClient` + accessors) |
+| `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
+| `src/AgentForge.Sdk` | Typed accessors over Core (the public consumer surface — `IAgentConfigClient` + accessors) |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
-| `tests/ClaudeForge.Core.Tests` | Domain logic |
-| `tests/ClaudeForge.Sdk.Tests` | SDK accessor contracts + regression tests |
+| `tests/AgentForge.Core.Tests` | Domain logic |
+| `tests/AgentForge.Sdk.Tests` | SDK accessor contracts + regression tests |
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
-When in doubt about which project a file belongs in: if it has Avalonia / Semi.Avalonia references it's `ClaudeForge`; if it's pure JSON / file-IO / domain logic it's `ClaudeForge.Core` or `ClaudeForge.Sdk`.
+When in doubt about which project a file belongs in: if it has Avalonia / Semi.Avalonia references it's `ClaudeForge`; if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`.
 
 ---
 
@@ -65,8 +65,8 @@ When in doubt about which project a file belongs in: if it has Avalonia / Semi.A
 Open an issue first if you're planning:
 
 - **Architectural changes** (swapping a package, restructuring SDK / Core / GUI separation, adding a new top-level project).
-- **New bundled schema files** — the schema-loading priority is documented in `CLAUDE.md`; choosing where to embed something has follow-on consequences. To **refresh** an existing bundled schema from its upstream source, see `scripts/refresh-schema.{sh,ps1}` — they download from `json.schemastore.org`, validate, show a diff, and write atomically. The PowerShell variant is also invoked weekly by `.github/workflows/schema-refresh.yml`, which opens a `chore/schema-refresh` PR if upstream has drifted; reviewers inspect the diff before merging. Any ClaudeForge hand-curated additions (notably the `default` + `examples` on the top-level `model` property, which drive the UI's AutoCompleteBox) live in the sibling `claude-code-settings.overlay.json` and are never touched by a refresh — the runtime merges them via RFC 7396 JSON Merge Patch. Guard tests under `tests/ClaudeForge.Core.Tests/Schema/` lock that contract.
-- **Breaking changes to `IClaudeConfigClient`** — that's a public API; we want intentional churn. (The `Models` accessor — `IModelCatalogAccessor`, backed by the bundled `model-catalog.json` — is part of this surface; the catalog is the source of truth for `model`/`effortLevel`/`permissions.defaultMode` values + their relationships, validated by `scripts/validate-model-catalog.ps1`.)
+- **New bundled schema files** — the schema-loading priority is documented in `CLAUDE.md`; choosing where to embed something has follow-on consequences. To **refresh** an existing bundled schema from its upstream source, see `scripts/refresh-schema.{sh,ps1}` — they download from `json.schemastore.org`, validate, show a diff, and write atomically. The PowerShell variant is also invoked weekly by `.github/workflows/schema-refresh.yml`, which opens a `chore/schema-refresh` PR if upstream has drifted; reviewers inspect the diff before merging. Any ClaudeForge hand-curated additions (notably the `default` + `examples` on the top-level `model` property, which drive the UI's AutoCompleteBox) live in the sibling `claude-code-settings.overlay.json` and are never touched by a refresh — the runtime merges them via RFC 7396 JSON Merge Patch. Guard tests under `tests/AgentForge.Core.Tests/Schema/` lock that contract.
+- **Breaking changes to `IAgentConfigClient`** — that's a public API; we want intentional churn. (The `Models` accessor — `IModelCatalogAccessor`, backed by the bundled `model-catalog.json` — is part of this surface; the catalog is the source of truth for `model`/`effortLevel`/`permissions.defaultMode` values + their relationships, validated by `scripts/validate-model-catalog.ps1`.)
 - **Anything that touches the Backup / Restore engine.** Sharp safety invariants there (path-traversal protection, partial-write rollback, B4Forge-suffix files); subtle changes can corrupt user data.
 - **Anything that touches the Profile import path.** See commit `854ed7e` for the path-traversal CRITICAL fix that's now pinned by 7 regression tests; don't regress it.
 
@@ -76,8 +76,8 @@ Open an issue first if you're planning:
 
 ### SDK-first separation
 
-- `ClaudeForge.Core` — domain model. No Avalonia. No UI dependencies.
-- `ClaudeForge.Sdk` — typed accessors over Core. `IClaudeConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
+- `AgentForge.Core` — domain model. No Avalonia. No UI dependencies.
+- `AgentForge.Sdk` — typed accessors over Core. `IAgentConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
 - `ClaudeForge` — Avalonia UI. View-models bind to SDK clients, never directly to Core.
 
 If you're adding a feature that touches data, ask yourself: "would this make sense in a CLI version of the app?" If yes, the logic belongs in Core or the SDK, not in a view-model.
@@ -124,7 +124,7 @@ AXAML binds via `{x:Static loc:Strings.YourKeyName}`. See [LOCALIZATION.md](./LO
 
 ### PII / security awareness
 
-- Secret-bearing keys are auto-redacted by `SensitiveKeys.IsSensitive` before logging — see `src/ClaudeForge.Sdk/Diagnostics/SensitiveKeys.cs`. The classifier checks PATH SEGMENTS, so anything under `env`, `headers`, `credentials`, `auth` is auto-redacted regardless of nesting.
+- Secret-bearing keys are auto-redacted by `SensitiveKeys.IsSensitive` before logging — see `src/AgentForge.Sdk/Diagnostics/SensitiveKeys.cs`. The classifier checks PATH SEGMENTS, so anything under `env`, `headers`, `credentials`, `auth` is auto-redacted regardless of nesting.
 - If you add a new code path that emits user values, check whether they could contain secrets before logging. Trust `SensitiveKeys.IsSensitive` rather than ad-hoc regex.
 - New file paths in logs are usually fine (they tend to contain the user's username only — accepted PII for a tool the user is running on their own machine), but flag for review if a path could contain values not normally in `~/.claude/` or `~/.config/`.
 
@@ -168,7 +168,7 @@ Existing commits show `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@ant
 - [ ] `dotnet test --no-build` passes — 0 failed, no new skips. Compare against the most recent green run on `main`.
 - [ ] `dotnet publish src/ClaudeForge -c Release -r win-x64` succeeds with zero ILLink warnings.
 - [ ] **If you touched the GUI:** launched the published binary and clicked through the affected pages (lifetime / asset-bundling regressions are easy to ship and only show up at runtime).
-- [ ] **If you touched the SDK accessor public surface:** ran the contract tests in `tests/ClaudeForge.Sdk.Tests/` to confirm no breaks.
+- [ ] **If you touched the SDK accessor public surface:** ran the contract tests in `tests/AgentForge.Sdk.Tests/` to confirm no breaks.
 - [ ] **If you added a new resx key:** all three files (`Strings.resx`, `Strings.zh-CN.resx`, `Strings.Designer.cs`) are in sync.
 - [ ] **If you touched privacy-sensitive code** (logging, file paths, env vars): no new PII or secret leaks.
 - [ ] Commit messages explain the WHY, not just the what.
