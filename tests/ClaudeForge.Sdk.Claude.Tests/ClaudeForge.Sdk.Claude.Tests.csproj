@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- AgentForge.Sdk and AgentForge.Core come in transitively, so tests here
+             can reach the neutral client machinery and Core types they assert
+             against (SettingsWorkspace, SchemaRegistry). -->
+        <ProjectReference Include="..\..\src\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
+    </ItemGroup>
+</Project>

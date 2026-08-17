@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
 /// <summary>
 /// Guards the single-source permission tool-name taxonomy (<see cref="PermissionTools"/>).

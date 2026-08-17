@@ -145,11 +145,20 @@ A test for this contract is in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedCha
 | `InternalsVisibleTo("ClaudeForge.Tests")`                            | In `AgentForge.Sdk.csproj` — grants access to all `internal` members |
 | `InternalsVisibleTo("ClaudeForge.Sdk.Claude")`                       | Also in `AgentForge.Sdk.csproj`. Lets the Claude accessors reach `GetEffectiveNode` / `GetScopeValue` / `RaiseChangedFromAccessor`, which stay `internal` to keep `JsonNode` off the public surface. An assembly attribute, **not** a reference — the layering rule is untouched. |
 
-> **This assembly has no concrete client of its own**, so every test here that
-> needs a live client constructs a `ClaudeCodeClient` from
-> `ClaudeForge.Sdk.Claude`. That is a real gap, not a convention: the neutral core
-> cannot currently be exercised without a product. Introducing a test-only neutral
-> `AgentConfigClientCore` subclass is the fix.
+> **This assembly has no concrete client of its own** — the two real ones are
+> Claude's. Tests here that need a live client use
+> `tests/AgentForge.Sdk.Tests/TestConfigClient.cs`, a local `AgentConfigClientCore`
+> subclass, so this project builds without referencing either product. Do not
+> reintroduce a `ProjectReference` to `ClaudeForge.*` to get a client;
+> `AssemblyLayeringTests` now scans `tests/` and will fail.
+>
+> `TestConfigClient` is **not** a product-neutral client, because one cannot be
+> written yet: `IsClaudeCode` is a `bool` selecting between two *Claude* schemas and
+> `ConfigFileDiscoverer` only knows Claude layouts. It discovers and validates as
+> Claude Code; what it buys is that the assembly dependency is honest and the
+> remaining assumption sits in one labelled file. Tests that assert something about
+> Claude *specifically* belong in `ClaudeForge.Sdk.Claude.Tests` against the real
+> client — using the fake there would assert against a copy of the thing under test.
 
 `SearchSchema` does not have its own seam; the integration test pattern is:
 set `TestUserProfileOverride`, construct `ClaudeCodeClient()`, call `OpenAsync(null, ct)`,

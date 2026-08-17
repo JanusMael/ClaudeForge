@@ -28,6 +28,11 @@
              (e.g. asserting every async method requires a non-defaulted CT). -->
         <InternalsVisibleTo Include="AgentForge.Sdk.Tests"/>
 
+        <!-- The Claude SDK's tests assert round-trips by reading the raw stored node
+             back via the internal GetScopeValue, and inspect the internal
+             PreservedFields bags. Same test-seam grant as above, one project over. -->
+        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude.Tests"/>
+
         <!-- The Claude-domain half of the SDK. Its accessors project the workspace
              through GetEffectiveNode / GetScopeValue and report mutations through
              RaiseChangedFromAccessor, all of which are internal deliberately: they

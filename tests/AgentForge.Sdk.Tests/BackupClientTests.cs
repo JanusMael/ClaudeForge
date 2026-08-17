@@ -1,6 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using BackupMode = Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
@@ -49,9 +48,9 @@ public class BackupClientTests
         }
     }
 
-    private async Task<ClaudeCodeClient> OpenClientWithSettingsAsync()
+    private async Task<TestConfigClient> OpenClientWithSettingsAsync()
     {
-        ClaudeCodeClient client = new();
+        TestConfigClient client = new();
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         // Seed real settings so the backup archive has content.
         client.SetValue("model", "claude-sonnet-4");
@@ -64,7 +63,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task CreateAsync_WritesArchiveToDestinationDirectory()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         BackupArchive archive = await client.Backup.CreateAsync(
             new BackupRequest(
@@ -91,7 +90,7 @@ public class BackupClientTests
         // surface; the SDK delegates it straight to Core's engine and the manifest
         // round-trips the mode back out. (Sanitized archives are non-restorable by
         // design — enforced by Core's RestoreEngine, not by the mode's absence here.)
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         BackupArchive archive = await client.Backup.CreateAsync(
             new BackupRequest(
@@ -110,7 +109,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task CreateAsync_WithCredentialsFlag_ProducesPrefixedFilename()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         BackupArchive archive = await client.Backup.CreateAsync(
             new BackupRequest(
@@ -128,7 +127,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task CreateAsync_OnProgressHandler_FiresMultipleTimes()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         List<BackupProgress> progressEvents = new();
         BackupProgressHandler handler = p =>
@@ -204,7 +203,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task ListAsync_ReturnsCreatedArchives()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         BackupArchive first = await client.Backup.CreateAsync(
             new BackupRequest(BackupMode.SettingsOnly, _backupDir, IncludeCredentials: false),
@@ -229,7 +228,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task ListAsync_OnEmptyOrMissingDirectory_ReturnsEmptyList()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
         string emptyDir = Path.Combine(Path.GetDirectoryName(_backupDir)!, "no-archives");
         Directory.CreateDirectory(emptyDir);
 
@@ -242,7 +241,7 @@ public class BackupClientTests
     [TestMethod]
     public async Task RestoreAsync_RoundTripsSettingsViaArchive()
     {
-        using ClaudeCodeClient client = await OpenClientWithSettingsAsync();
+        using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         // Capture the value we'll re-instate after a destructive change.
         string? originalModel = client.GetEffective<string>("model");

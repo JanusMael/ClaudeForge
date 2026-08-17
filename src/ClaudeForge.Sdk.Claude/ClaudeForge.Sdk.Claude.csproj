@@ -22,14 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Reaches ClaudeCodeClient.FromExistingWorkspace and the internal
+             PreservedFields / OpaqueInnerJson bags. -->
         <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude.Tests"/>
-
-        <!-- TRANSITIONAL, paired with the ProjectReference in
-             tests/AgentForge.Sdk.Tests: the Claude-domain tests still live in that
-             project and reach ClaudeCodeClient.FromExistingWorkspace plus the
-             internal PreservedFields bags. Both go away when those tests move to
-             ClaudeForge.Sdk.Claude.Tests. -->
-        <InternalsVisibleTo Include="AgentForge.Sdk.Tests"/>
 
         <!-- Same expiring grants AgentForge.Sdk carries, for the same reason: the GUI and
              its tests still construct clients through the internal FromExistingWorkspace

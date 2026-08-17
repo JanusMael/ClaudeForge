@@ -3,8 +3,9 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 
 /// <summary>
 /// Verifies the four fields

@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
@@ -26,7 +25,7 @@ public sealed class AgentConfigClientAsyncTests
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc]);
-        return ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+        return TestConfigClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
     /// <summary>
@@ -41,7 +40,7 @@ public sealed class AgentConfigClientAsyncTests
         SettingsDocument managed = new(ConfigScope.Managed, "managed.json", managedRoot, isReadOnly: true);
         SettingsDocument user = new(ConfigScope.User, "user.json", userRoot, isReadOnly: false);
         SettingsWorkspace ws = new([managed, user]);
-        return ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+        return TestConfigClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
     // ── Functional parity ────────────────────────────────────────────────────
@@ -189,7 +188,7 @@ public sealed class AgentConfigClientAsyncTests
     {
         // A not-opened client throws EnsureOpen INSIDE the lock (after acquiring it).
         // If the finally didn't release, the next acquisition would hang forever.
-        using var notOpen = new ClaudeCodeClient();
+        using var notOpen = new TestConfigClient();
 
         await AssertThrowsAsync(() => notOpen.SetValueAsync("model", "x", CancellationToken.None));
 

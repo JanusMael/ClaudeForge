@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
 /// <summary>
 /// File-path matching for Read/Edit/Write rules — the four gitignore anchor
