@@ -39,6 +39,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// to a product project did not fail it. That is exactly the state a violation is in
 /// immediately before someone starts depending on it, which is when it is cheapest to fix.
 /// </para>
+/// <para>
+/// <b>The csproj check scans <c>tests/</c> as well as <c>src/</c>,</b> because a shared
+/// <i>test</i> project pointed at a product is the same violation wearing a disguise: it
+/// proves the shared assembly can no longer be exercised without the product, which is the
+/// property the layering rule exists to protect. This gap was real — while
+/// <c>ClaudeForge.Sdk.Claude</c> was being split out, <c>AgentForge.Sdk.Tests</c> briefly
+/// referenced it, and neither check fired. The reflection check missed it because it only
+/// inspects assemblies sitting in <i>this</i> test project's output directory, and one test
+/// assembly does not land in another's.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class AssemblyLayeringTests
@@ -50,26 +60,38 @@ public sealed class AssemblyLayeringTests
 
     // ── csproj-level check (the leading indicator) ───────────────────────────
 
-    private static string FindSourceDirectory()
+    /// <summary>
+    /// The directories a shared project can live in. <c>tests/</c> is included on
+    /// purpose — see the class remarks.
+    /// </summary>
+    private static readonly string[] ScannedDirectories = ["src", "tests"];
+
+    private static string FindRepositoryRoot()
     {
         string? dir = AppContext.BaseDirectory;
         for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
         {
-            string candidate = Path.Combine(dir, "src");
-            if (Directory.Exists(candidate))
+            if (Directory.Exists(Path.Combine(dir, "src")))
             {
-                return candidate;
+                return dir;
             }
 
             dir = Path.GetDirectoryName(dir);
         }
 
         throw new InvalidOperationException(
-            $"Could not locate src/ by walking up from '{AppContext.BaseDirectory}'.");
+            $"Could not locate the repository root (a directory containing src/) by walking "
+            + $"up from '{AppContext.BaseDirectory}'.");
     }
 
+    private static IReadOnlyList<string> ScannedRoots =>
+        [.. ScannedDirectories
+             .Select(d => Path.Combine(FindRepositoryRoot(), d))
+             .Where(Directory.Exists)];
+
     private static IReadOnlyList<string> SharedProjectFiles =>
-        Directory.GetFiles(FindSourceDirectory(), $"{SharedPrefix}.*.csproj", SearchOption.AllDirectories);
+        [.. ScannedRoots.SelectMany(root =>
+            Directory.GetFiles(root, $"{SharedPrefix}.*.csproj", SearchOption.AllDirectories))];
 
     [TestMethod]
     public void AtLeastOneSharedProjectExists_SoTheseTestsAreNotVacuous()
@@ -78,9 +100,19 @@ public sealed class AssemblyLayeringTests
         // no-op pass — the classic way an architecture test quietly stops testing anything.
         Assert.IsTrue(
             SharedProjectFiles.Count > 0,
-            $"No '{SharedPrefix}.*.csproj' found under {FindSourceDirectory()}. Either the "
-            + "shared projects were renamed (update this test) or they no longer exist, in "
-            + "which case the layering rule is unguarded.");
+            $"No '{SharedPrefix}.*.csproj' found under {string.Join(" or ", ScannedRoots)}. "
+            + "Either the shared projects were renamed (update this test) or they no longer "
+            + "exist, in which case the layering rule is unguarded.");
+
+        // Both roots must actually contribute, or a rename under one of them silently
+        // narrows the guard while this test keeps passing on the other's projects.
+        foreach (string root in ScannedRoots)
+        {
+            Assert.IsTrue(
+                SharedProjectFiles.Any(p => p.StartsWith(root, StringComparison.OrdinalIgnoreCase)),
+                $"No '{SharedPrefix}.*.csproj' found under '{root}', so that directory is "
+                + "unguarded. If the shared projects there were renamed, update this test.");
+        }
     }
 
     [TestMethod]

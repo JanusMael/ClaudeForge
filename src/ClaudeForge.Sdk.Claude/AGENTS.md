@@ -108,10 +108,13 @@ Same seams as the neutral half, with the clients now living here:
 | `InternalsVisibleTo("ClaudeForge.Sdk.Claude.Tests")` | The intended home for this project's tests |
 | `InternalsVisibleTo("ClaudeForge")` / `("ClaudeForge.Tests")` | Expiring grants, same lifetime as the `AgentForge.Sdk` ones — remove when 4.3.7 retires the pre-loaded-workspace wrap path |
 
-> **Tests for this project currently live in `tests/AgentForge.Sdk.Tests`**, which
-> is why that project has a `TRANSITIONAL` `ProjectReference` here and this
-> project grants it internals. A project named `AgentForge.*` must not depend on a
-> product; both go away when those tests move to
-> `ClaudeForge.Sdk.Claude.Tests`. `AssemblyLayeringTests` does **not** currently
-> catch this — it scans `src/` only, and its reflection check happens not to see
-> that test assembly.
+Tests live in `tests/ClaudeForge.Sdk.Claude.Tests` — the accessor round-trips, the
+permission matchers, the schema-driven hook vocabulary, and the client lifecycle.
+They also hold `InternalsVisibleTo` on `AgentForge.Sdk`, because round-trip tests
+read the raw stored node back through the internal `GetScopeValue`.
+
+> Keep the split honest when adding tests. A test that asserts neutral behaviour —
+> the scope model, save/validate, the threading contract, backup, MCP servers, env —
+> belongs in `AgentForge.Sdk.Tests` against its local `TestConfigClient`, not here.
+> `AssemblyLayeringTests` scans `tests/` as well as `src/`, so a shared test project
+> reaching for a real client to save effort fails the build.

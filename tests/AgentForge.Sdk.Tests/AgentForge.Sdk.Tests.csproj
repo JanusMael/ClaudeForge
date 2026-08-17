@@ -10,9 +10,9 @@
              The cross-project parity test (SensitiveKeysParityTests) exercises
              both classifiers in a single suite. -->
         <ProjectReference Include="..\..\src\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
-        <!-- TRANSITIONAL: the Claude-domain tests in this project have not moved to
-             ClaudeForge.Sdk.Claude.Tests yet. A project named AgentForge.* must not
-             depend on a product; this reference goes away with that move. -->
-        <ProjectReference Include="..\..\src\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
+        <!-- Deliberately NO reference to any ClaudeForge.* project. This project
+             tests the product-neutral SDK, so it must be buildable without either
+             product; tests that need a live client use the local TestConfigClient.
+             Claude-domain tests live in tests/ClaudeForge.Sdk.Claude.Tests. -->
     </ItemGroup>
 </Project>

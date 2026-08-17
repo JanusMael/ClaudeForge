@@ -5,8 +5,9 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 
 /// <summary>
 /// End-to-end tests for the five strongly-typed accessors. Each test exercises

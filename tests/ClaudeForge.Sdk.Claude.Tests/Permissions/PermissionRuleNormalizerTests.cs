@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
 /// <summary>
 /// Add-time canonicalization: Bash/PowerShell trailing-wildcard specifiers

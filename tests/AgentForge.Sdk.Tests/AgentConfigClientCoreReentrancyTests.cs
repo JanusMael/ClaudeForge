@@ -1,5 +1,4 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
@@ -69,7 +68,7 @@ public sealed class AgentConfigClientCoreReentrancyTests
     {
         // Repro the user-hit pattern: a Changed handler that calls back
         // into the SDK on the same thread that just called SetValue.
-        using ClaudeCodeClient client = new();
+        using TestConfigClient client = new();
         Task openTask = client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         openTask.Wait(TimeSpan.FromSeconds(10));
 
@@ -97,7 +96,7 @@ public sealed class AgentConfigClientCoreReentrancyTests
     {
         // GetEffective from inside a Changed-fire-context that triggers
         // another GetEffective. This is the read-then-read variant.
-        using ClaudeCodeClient client = new();
+        using TestConfigClient client = new();
         Task openTask = client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         openTask.Wait(TimeSpan.FromSeconds(10));
 
@@ -129,7 +128,7 @@ public sealed class AgentConfigClientCoreReentrancyTests
         // thread, two DIFFERENT threads must still serialise. This guards
         // against an over-eager "skip the wait" that would let two
         // threads mutate concurrently.
-        using ClaudeCodeClient client = new();
+        using TestConfigClient client = new();
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         int iterations = 50;
@@ -163,7 +162,7 @@ public sealed class AgentConfigClientCoreReentrancyTests
         // This exercises the +1 / +1 / +1 / -1 / -1 / -1 unwinding of the
         // depth counter. A bug in the depth math would either deadlock
         // or release the lock prematurely.
-        using ClaudeCodeClient client = new();
+        using TestConfigClient client = new();
         client.OpenAsync(projectRoot: null, ct: CancellationToken.None).Wait(TimeSpan.FromSeconds(10));
 
         int handlerInvocations = 0;

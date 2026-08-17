@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
 /// <summary>
 /// Structural decomposition of permission rules into tool / specifier / MCP

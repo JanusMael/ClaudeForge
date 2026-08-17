@@ -1,6 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Env;
 
@@ -44,9 +43,9 @@ public sealed class EnvAccessorTests
         }
     }
 
-    private async Task<ClaudeCodeClient> OpenAsync()
+    private async Task<TestConfigClient> OpenAsync()
     {
-        ClaudeCodeClient client = new();
+        TestConfigClient client = new();
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         return client;
     }
@@ -56,7 +55,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task Set_AndGet_RoundTripsArbitraryKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set("CUSTOM_KEY", "custom-value");
 
         Assert.AreEqual("custom-value", client.Env.Get("CUSTOM_KEY"));
@@ -65,7 +64,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task Set_NullValue_RemovesKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set("CUSTOM_KEY", "first");
         Assert.AreEqual("first", client.Env.Get("CUSTOM_KEY"));
 
@@ -82,7 +81,7 @@ public sealed class EnvAccessorTests
         // semantics applied to a string-typed surface.  The runtime would
         // never act on an empty env value so making the SDK collapse it
         // to "remove" is the correct behaviour.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set("CUSTOM_KEY", "first");
         client.Env.Set("CUSTOM_KEY", string.Empty);
 
@@ -92,14 +91,14 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task Get_UnsetKey_ReturnsNull()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         Assert.IsNull(client.Env.Get("NEVER_SET"));
     }
 
     [TestMethod]
     public async Task All_ReflectsEverySetKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set("KEY_A", "a");
         client.Env.Set("KEY_B", "b");
         client.Env.Set("KEY_C", "c");
@@ -115,7 +114,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task All_EmptyEnv_ReturnsEmptyDictionary()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
 
         IReadOnlyDictionary<string, string> snapshot = client.Env.All;
 
@@ -128,7 +127,7 @@ public sealed class EnvAccessorTests
     {
         // Locks the per-scope read path: GetAt(scope) reads only the
         // value stored at that scope, no merging across other scopes.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.SetAt("SCOPED_KEY", "user-scope-value", ConfigScope.User);
 
         Assert.AreEqual("user-scope-value", client.Env.GetAt("SCOPED_KEY", ConfigScope.User));
@@ -144,7 +143,7 @@ public sealed class EnvAccessorTests
     {
         // Verify the on-disk representation matches what the runtime
         // expects: nested under "env" as a string→string map.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set("MY_VAR", "42");
         await client.SaveAsync(force: true, CancellationToken.None);
 
@@ -158,7 +157,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task MaxThinkingTokens_RoundTripsAsInt()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.MaxThinkingTokens = 32000;
 
         Assert.AreEqual(32000, client.Env.MaxThinkingTokens);
@@ -169,7 +168,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task MaxThinkingTokens_NullClearsKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.MaxThinkingTokens = 8000;
         client.Env.MaxThinkingTokens = null;
 
@@ -184,7 +183,7 @@ public sealed class EnvAccessorTests
         // "MAX_THINKING_TOKENS": "abc" should yield null on the typed
         // getter, not throw.  Matches the rest of the SDK's
         // best-effort-read posture.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set(EnvVarKey.MaxThinkingTokens, "not-a-number");
 
         Assert.IsNull(client.Env.MaxThinkingTokens);
@@ -197,7 +196,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task MaxOutputTokens_RoundTripsAsInt()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.MaxOutputTokens = 8192;
 
         Assert.AreEqual(8192, client.Env.MaxOutputTokens);
@@ -209,7 +208,7 @@ public sealed class EnvAccessorTests
     {
         // CLAUDE_CODE_MAX_OUTPUT_TOKENS — note the prefix.  Distinct
         // from MaxThinkingTokens which is bare MAX_THINKING_TOKENS.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.MaxOutputTokens = 4096;
         await client.SaveAsync(force: true, CancellationToken.None);
 
@@ -223,7 +222,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task DisableAutoMemory_True_StoresAsOne()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = true;
 
         Assert.IsTrue(client.Env.DisableAutoMemory);
@@ -234,7 +233,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task DisableAutoMemory_False_StoresAsZero()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = false;
 
         Assert.IsFalse(client.Env.DisableAutoMemory);
@@ -244,7 +243,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task DisableAutoMemory_NullClearsKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = true;
         client.Env.DisableAutoMemory = null;
 
@@ -259,7 +258,7 @@ public sealed class EnvAccessorTests
         // "false" are NOT what Claude Code uses — accepting them would
         // mask a typo.  Verify the stored "true" comes back as null on
         // the typed getter (the raw string is still readable).
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.Set(EnvVarKey.DisableAutoMemory, "true");
 
         Assert.IsNull(client.Env.DisableAutoMemory,
@@ -270,7 +269,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task DisableAutoUpdater_RoundTripsAsOneZero()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoUpdater = true;
         Assert.AreEqual("1", client.Env.Get(EnvVarKey.DisableAutoUpdater));
 
@@ -283,7 +282,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task AnthropicModel_RoundTripsAsString()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.AnthropicModel = "claude-opus-4-5";
 
         Assert.AreEqual("claude-opus-4-5", client.Env.AnthropicModel);
@@ -293,7 +292,7 @@ public sealed class EnvAccessorTests
     [TestMethod]
     public async Task AnthropicModel_NullClearsKey()
     {
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         client.Env.AnthropicModel = "claude-haiku";
         client.Env.AnthropicModel = null;
 
@@ -307,7 +306,7 @@ public sealed class EnvAccessorTests
     {
         // End-to-end: write via typed setters → save → reload → verify
         // both the typed getters AND the on-disk JSON shape.
-        using (ClaudeCodeClient writer = await OpenAsync())
+        using (TestConfigClient writer = await OpenAsync())
         {
             writer.Env.MaxThinkingTokens = 32000;
             writer.Env.MaxOutputTokens = 8192;
@@ -316,7 +315,7 @@ public sealed class EnvAccessorTests
             await writer.SaveAsync(force: true, CancellationToken.None);
         }
 
-        using ClaudeCodeClient reader = await OpenAsync();
+        using TestConfigClient reader = await OpenAsync();
         Assert.AreEqual(32000, reader.Env.MaxThinkingTokens);
         Assert.AreEqual(8192, reader.Env.MaxOutputTokens);
         Assert.IsTrue(reader.Env.DisableAutoMemory);
@@ -331,7 +330,7 @@ public sealed class EnvAccessorTests
         // ArgumentException.ThrowIfNullOrWhiteSpace throws ArgumentNullException
         // for null inputs (a subclass of ArgumentException) — catch the
         // base type so either is accepted.
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         Assert.ThrowsExactly<ArgumentNullException>(() => client.Env.Get(null!));
     }
 
@@ -341,7 +340,7 @@ public sealed class EnvAccessorTests
         // Whitespace-only takes the ThrowIfNullOrWhiteSpace branch that
         // throws plain ArgumentException (NOT ArgumentNullException, since
         // the input is non-null).
-        using ClaudeCodeClient client = await OpenAsync();
+        using TestConfigClient client = await OpenAsync();
         Assert.ThrowsExactly<ArgumentException>(() => client.Env.Set("   ", "v"));
     }
 }

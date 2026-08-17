@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
@@ -38,9 +37,9 @@ public sealed class McpServersAccessorRoundTripTests
         return new SettingsWorkspace([doc]);
     }
 
-    private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)
+    private static TestConfigClient MakeClient(SettingsWorkspace ws)
     {
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return TestConfigClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
     }
 
@@ -65,7 +64,7 @@ public sealed class McpServersAccessorRoundTripTests
             },
         };
         SettingsWorkspace ws = MakeWorkspace(input);
-        using ClaudeCodeClient client = MakeClient(ws);
+        using TestConfigClient client = MakeClient(ws);
 
         McpServer? server = client.McpServers.Get("omega-memory");
 
@@ -90,7 +89,7 @@ public sealed class McpServersAccessorRoundTripTests
             },
         };
         SettingsWorkspace ws = MakeWorkspace(input);
-        using ClaudeCodeClient client = MakeClient(ws);
+        using TestConfigClient client = MakeClient(ws);
 
         McpServer server = client.McpServers.Get("omega-memory")!;
         client.McpServers.Set("omega-memory", server);
@@ -120,7 +119,7 @@ public sealed class McpServersAccessorRoundTripTests
             },
         };
         SettingsWorkspace ws = MakeWorkspace(input);
-        using ClaudeCodeClient client = MakeClient(ws);
+        using TestConfigClient client = MakeClient(ws);
 
         // Construct an McpServer manually with a PreservedFields entry
         // that collides with the typed Command property.
@@ -152,7 +151,7 @@ public sealed class McpServersAccessorRoundTripTests
             ["c"] = new JsonObject { ["type"] = "stdio", ["command"] = "cc", ["description"] = "desc c" },
         };
         SettingsWorkspace ws = MakeWorkspace(input);
-        using ClaudeCodeClient client = MakeClient(ws);
+        using TestConfigClient client = MakeClient(ws);
 
         // Materialise everything, then write each back (simulating the
         // editor's load+flush cycle).
@@ -189,7 +188,7 @@ public sealed class McpServersAccessorRoundTripTests
             },
         };
         SettingsWorkspace ws = MakeWorkspace(input);
-        using ClaudeCodeClient client = MakeClient(ws);
+        using TestConfigClient client = MakeClient(ws);
 
         McpServer server = client.McpServers.Get("s")!;
         client.McpServers.Set("s", server);

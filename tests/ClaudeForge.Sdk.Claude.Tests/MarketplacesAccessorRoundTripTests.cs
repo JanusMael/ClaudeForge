@@ -3,8 +3,9 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 
 /// <summary>
 /// regression tests for <see cref="MarketplacesAccessor"/>'s

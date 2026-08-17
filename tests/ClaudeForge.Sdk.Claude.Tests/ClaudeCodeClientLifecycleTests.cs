@@ -2,8 +2,9 @@ using System.Reflection;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 
 /// <summary>
 /// Integration tests for the SDK lifecycle methods (Open / Reload / Save) and

@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Permissions;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
 /// <summary>
 /// Bash glob matching for a single (already split + wrapper-stripped) command.

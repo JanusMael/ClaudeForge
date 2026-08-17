@@ -45,7 +45,8 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
 | `tests/AgentForge.Core.Tests` | Domain logic |
-| `tests/AgentForge.Sdk.Tests` | SDK accessor contracts + regression tests |
+| `tests/AgentForge.Sdk.Tests` | Product-neutral SDK contracts + regression tests. Builds without either product — uses its own `TestConfigClient` where a live client is needed |
+| `tests/ClaudeForge.Sdk.Claude.Tests` | Claude accessor round-trips, permission matchers, client lifecycle |
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
