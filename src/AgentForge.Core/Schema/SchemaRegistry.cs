@@ -11,7 +11,14 @@ namespace Bennewitz.Ninja.AgentForge.Core.Schema;
 
 /// <summary>
 /// Manages loading and caching of JSON schemas.
-/// Loading priority: memory cache → disk cache → HTTP fetch → bundled fallback.
+/// <para>
+/// Loading priority: <b>memory cache → bundled resource (+ overlay) → disk cache →
+/// HTTPS fetch → empty schema</b>. Note that <b>bundled outranks both the disk cache
+/// and the network</b>, which is the opposite of a normal cache hierarchy and is
+/// deliberate: only the bundled copy has its hand-curated <c>*.overlay.json</c>
+/// sibling merged in. See <see cref="GetSchemaAsync"/> for the full rationale, and
+/// <c>SchemaLoadPrecedenceTests</c> for the behavioural guard.
+/// </para>
 /// </summary>
 public sealed class SchemaRegistry : IDisposable
 {
@@ -31,7 +38,7 @@ public sealed class SchemaRegistry : IDisposable
 
     /// <summary>
     /// Get the Claude Code settings schema root node.
-    /// Uses the standard loading chain: memory → disk → HTTP → bundled fallback.
+    /// Uses the standard loading chain: memory → bundled (+ overlay) → disk → HTTPS → empty.
     /// </summary>
     public async Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)
     {

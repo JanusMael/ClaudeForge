@@ -16,9 +16,14 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// </summary>
 /// <remarks>
 /// Loads the embedded bundled schema directly rather than going through
-/// <see cref="Json.Schema.SchemaRegistry"/> — the disk cache at <c>~/.claude/cache/schemas/</c>
-/// is stale on developer machines and would mask a regression in the repository
-/// schema until the cache was manually refreshed.
+/// <see cref="Core.Schema.SchemaRegistry"/>, keeping this a unit assertion over the
+/// repository schema with no cache or global-registration state to manage.
+/// <para>
+/// Not because a stale disk cache could mask a regression — the registry reads the
+/// bundled resource <i>ahead of</i> the disk cache and the network. An earlier
+/// version of this remark had that backwards; <c>SchemaLoadPrecedenceTests</c> now
+/// guards the ordering behaviourally.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class OutputStylePropertyPromotionTests

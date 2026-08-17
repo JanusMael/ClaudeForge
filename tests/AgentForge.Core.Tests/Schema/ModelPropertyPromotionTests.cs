@@ -15,10 +15,16 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// </summary>
 /// <remarks>
 /// Loads the embedded bundled schema resource directly rather than going through
-/// <see cref="Core.Schema.SchemaRegistry"/>. <see cref="Core.Schema.SchemaRegistry"/> prefers the on-disk
-/// cache at <c>~/.claude/cache/schemas/</c>, which on a developer machine is stale
-/// until refreshed from the network — so a test routed through it would assert
-/// against a user's cached copy rather than the repository schema we just edited.
+/// <see cref="Core.Schema.SchemaRegistry"/>, so this test asserts against the
+/// repository schema as a unit — no cache state, no global JsonSchema.Net
+/// registration, nothing to reset between runs.
+/// <para>
+/// It is <b>not</b> because the registry would return a stale cached copy: the
+/// registry reads the bundled resource <i>before</i> the disk cache and the network
+/// (see <c>SchemaRegistry.GetSchemaAsync</c>), precisely so the overlay always wins.
+/// An earlier version of this remark claimed the opposite; <c>SchemaLoadPrecedenceTests</c>
+/// now guards the real ordering behaviourally.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class ModelPropertyPromotionTests

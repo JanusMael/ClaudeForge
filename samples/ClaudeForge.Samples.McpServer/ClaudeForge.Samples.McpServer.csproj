@@ -2,11 +2,12 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <!--
-          This sample exists to prove the SDK is Avalonia-free and headless-consumable. 
-          It deliberately references
-          ONLY AgentForge.Sdk; if a future change accidentally pulls Avalonia into
-          the SDK's transitive reference closure this project will start failing to
-          build with package-version conflicts long before the GUI does.
+          This sample exists to prove the SDK is Avalonia-free and headless-consumable.
+          It deliberately references ONLY the two SDK assemblies — AgentForge.Sdk for
+          the product-neutral surface and ClaudeForge.Sdk.Claude for the Claude
+          accessors. If a future change accidentally pulls Avalonia into either one's
+          transitive reference closure, this project starts failing to build with
+          package-version conflicts long before the GUI does.
         -->
         <IsPackable>false</IsPackable>
         <PackageId>ClaudeForge.Samples.McpServer</PackageId>
