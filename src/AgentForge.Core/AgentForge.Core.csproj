@@ -13,6 +13,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The comment-preserving writer, and the neutral IConfigWriter contract it and
+             the legacy writer both implement. Both are AgentForge.*, so the layering rule
+             is unaffected. -->
+        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
+        <ProjectReference Include="..\AgentForge.Jsonc\AgentForge.Jsonc.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
         <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
         <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>

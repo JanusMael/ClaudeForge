@@ -51,6 +51,29 @@ public sealed class SettingsDocument
     /// </summary>
     public JsonObject? BaselineRoot { get; private set; }
 
+    /// <summary>
+    /// The file's text exactly as it was read, or <see langword="null"/> when the file did
+    /// not exist. Refreshed after each successful save.
+    /// </summary>
+    /// <remarks>
+    /// Kept so the edit-based writer can rewrite only the spans that changed. Without the
+    /// original text there is nothing to preserve and the writer has to fall back to
+    /// re-serializing the whole document — which is what loses comments and formatting.
+    /// Pairs with <see cref="BaselineRoot"/>: the text says what the file looks like, the
+    /// baseline says what it meant, and the difference between the baseline and
+    /// <see cref="Root"/> is the change set to apply.
+    /// </remarks>
+    public string? OriginalText { get; private set; }
+
+    /// <summary>
+    /// Record the text this document was parsed from. Called by the loader immediately
+    /// after construction and after each save.
+    /// </summary>
+    internal void SetOriginalText(string? text)
+    {
+        OriginalText = text;
+    }
+
     public bool IsReadOnly { get; }
     public bool IsDirty { get; private set; }
     public DateTimeOffset? LastModified { get; private set; }
