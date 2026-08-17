@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -56,13 +57,15 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     internal static ClaudeCodeClient FromExistingWorkspace(
         SettingsWorkspace workspace,
         ConfigScope defaultScope,
-        SchemaRegistry schemaRegistry)
+        SchemaRegistry schemaRegistry,
+        IConfigWriter? configWriter = null)
     {
-        return new ClaudeCodeClient(defaultScope, schemaRegistry, workspace);
+        return new ClaudeCodeClient(defaultScope, schemaRegistry, workspace, configWriter);
     }
 
-    private ClaudeCodeClient(ConfigScope defaultScope, SchemaRegistry schemaRegistry, SettingsWorkspace preLoaded)
-        : base(defaultScope, schemaRegistry, preLoaded)
+    private ClaudeCodeClient(ConfigScope defaultScope, SchemaRegistry schemaRegistry,
+                             SettingsWorkspace preLoaded, IConfigWriter? configWriter)
+        : base(defaultScope, schemaRegistry, preLoaded, configWriter)
     {
     }
 

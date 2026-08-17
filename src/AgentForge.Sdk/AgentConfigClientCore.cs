@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -71,15 +72,22 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// parameter and its associated <c>InternalsVisibleTo("ClaudeForge")</c>
     /// grant become unused and should be removed.
     /// </param>
+    /// <param name="configWriter">
+    /// Writer used when persisting. <see langword="null"/> means
+    /// <see cref="ConfigFileLoader.DefaultWriter"/> — the comment-preserving one — so
+    /// callers that do not care get the right behaviour by omission.
+    /// </param>
     protected AgentConfigClientCore(
         ConfigScope defaultScope,
         SchemaRegistry? schemaRegistry,
-        SettingsWorkspace? preLoadedWorkspace = null)
+        SettingsWorkspace? preLoadedWorkspace = null,
+        IConfigWriter? configWriter = null)
     {
         DefaultScope = defaultScope;
         _schemaRegistry = schemaRegistry ?? new SchemaRegistry();
         _ownsSchemaRegistry = schemaRegistry is null;
         _workspace = preLoadedWorkspace;
+        ConfigWriter = configWriter;
 
         // Subscribe to the pre-loaded workspace's Changed event so SDK consumers
         // see EVERY mutation, including ones initiated outside the SDK (e.g. the
@@ -91,6 +99,18 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
             preLoadedWorkspace.Changed += OnWorkspaceChanged;
         }
     }
+
+    /// <summary>
+    /// Writer this client persists through, or <see langword="null"/> to use
+    /// <see cref="ConfigFileLoader.DefaultWriter"/>.
+    /// </summary>
+    /// <remarks>
+    /// Set at construction and never mutated, because it is a process-wide policy chosen
+    /// once from a command-line flag. Threading it through the constructor rather than
+    /// reading a global keeps the layering intact: the flag is parsed in the app, which
+    /// Core cannot see, and this is the seam that carries the decision down.
+    /// </remarks>
+    protected IConfigWriter? ConfigWriter { get; }
 
     /// <summary>
     /// Discover the set of config files this client is responsible for.
@@ -502,7 +522,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         {
             ThrowIfDisposed();
             EnsureOpen();
-            await ConfigFileLoader.SaveDirtyAsync(_workspace!, headerComment, ct)
+            await ConfigFileLoader.SaveDirtyAsync(_workspace!, headerComment, ct, ConfigWriter)
                                   .ConfigureAwait(false);
         }
         finally

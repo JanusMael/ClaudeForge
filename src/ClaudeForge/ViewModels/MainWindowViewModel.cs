@@ -12,6 +12,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Core;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Profile;
@@ -885,6 +886,36 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// last touched it.  Uses local time with AM/PM so the value is immediately readable.
     /// The wording makes clear this only tracks tool saves — manual edits won't update it.
     /// </summary>
+    /// <summary>
+    /// Resolve <c>--writer</c> into a writer instance, or <see langword="null"/> for the
+    /// default comment-preserving one.
+    /// </summary>
+    /// <remarks>
+    /// This method is the whole reason <c>IConfigWriter</c> lives in
+    /// <c>AgentForge.Abstractions</c>: the flag is parsed here in the app, the save happens
+    /// in <c>AgentForge.Core</c>, and Core must never reference the app. Resolving the name
+    /// at the composition point is what keeps that boundary intact.
+    /// <para>
+    /// Logged at Warning for <c>legacy</c> because it is a lossy mode a user opted into
+    /// under duress — if config formatting later looks mangled, the log should already say
+    /// why. Remove alongside the flag after one clean release.
+    /// </para>
+    /// </remarks>
+    private static IConfigWriter? SelectedConfigWriter()
+    {
+        if (!string.Equals(DebugFlags.ConfigWriterName, "legacy", StringComparison.Ordinal))
+        {
+            // Both null (unset) and "jsonc" mean the default; naming it explicitly on the
+            // command line should not take a different code path from omitting it.
+            return null;
+        }
+
+        Log.Warning("[Config] --writer legacy selected: saves will re-serialize the whole "
+                    + "document, discarding comments, blank lines, and indentation style. "
+                    + "This hatch exists for one release only.");
+        return new LegacySerializingWriter();
+    }
+
     private string MakeHeaderComment()
     {
         return $"ClaudeForge v{AppVersion} last saved this file on {DateTime.Now:MM-dd-yyyy hh:mm:ss tt}" +
@@ -3828,13 +3859,15 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // SDK client is the only state holder. On reload, dispose the
         // previous SDK client so its SemaphoreSlim doesn't leak. The
         // injected SchemaRegistry is owned by MWVM, so it survives.
+        IConfigWriter? writer = SelectedConfigWriter();
+
         ClaudeCodeSdk?.Dispose();
         ClaudeCodeSdk = ClaudeCodeClient.FromExistingWorkspace(
-            ccCandidate, ConfigScope.User, _schemaRegistry);
+            ccCandidate, ConfigScope.User, _schemaRegistry, writer);
 
         ClaudeDesktopSdk?.Dispose();
         ClaudeDesktopSdk = ClaudeDesktopClient.FromExistingWorkspace(
-            dtCandidate, ConfigScope.User, _schemaRegistry);
+            dtCandidate, ConfigScope.User, _schemaRegistry, writer);
 
         // Recompute the install-guidance banner.
         //

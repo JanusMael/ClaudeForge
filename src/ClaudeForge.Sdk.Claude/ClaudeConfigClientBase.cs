@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -36,12 +37,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 /// </remarks>
 public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeConfigClient
 {
-    /// <inheritdoc cref="AgentConfigClientCore(ConfigScope, SchemaRegistry?, SettingsWorkspace?)"/>
+    /// <inheritdoc cref="AgentConfigClientCore(ConfigScope, SchemaRegistry?, SettingsWorkspace?, IConfigWriter?)"/>
     protected ClaudeConfigClientBase(
         ConfigScope defaultScope,
         SchemaRegistry? schemaRegistry,
-        SettingsWorkspace? preLoadedWorkspace = null)
-        : base(defaultScope, schemaRegistry, preLoadedWorkspace)
+        SettingsWorkspace? preLoadedWorkspace = null,
+        IConfigWriter? configWriter = null)
+        : base(defaultScope, schemaRegistry, preLoadedWorkspace, configWriter)
     {
     }
 

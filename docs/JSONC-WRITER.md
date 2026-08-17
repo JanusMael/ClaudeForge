@@ -86,17 +86,38 @@ unconditional would pass everything else.
 `DefaultWriter`. The interface lives in `AgentForge.Abstractions` because the selection
 happens in the app while the call site is deep in Core, and neither may reference the other.
 
+```bash
+ClaudeForge --writer legacy
+```
+
+**How the selection reaches the save.** `DebugFlags` is in the app assembly and Core must
+never reference it, so the flag carries a *name*, not a writer:
+
+```
+DebugFlags.ConfigWriterName            "legacy" | "jsonc" | null
+  → MainWindowViewModel.SelectedConfigWriter()      resolves to IConfigWriter?
+  → ClaudeCodeClient.FromExistingWorkspace(…, writer)
+  → AgentConfigClientCore.ConfigWriter              set at construction, never mutated
+  → ConfigFileLoader.SaveDirtyAsync(…, writer)
+```
+
+`--writer jsonc` is accepted so a script can pin the default explicitly; it resolves to the
+same writer as omitting the flag. An **unrecognised value falls back to the preserving
+writer** with a warning — a typo must never silently select the lossy one. The flag *peeks*
+at its value rather than consuming it, so `--writer --linux` rejects the writer name and
+still honours `--linux`; contrast `--deep-link`, which consumes positionally because any
+string is a plausible path. Selecting `legacy` logs at Warning, so if formatting later looks
+mangled the log already says why.
+
 > ### ⚠ Remove the hatch after one clean release
 >
-> Two writers means every future save-path change has to be correct twice, and the lossy
-> one is the one nobody will remember to test.
+> Delete `--writer` parsing, `DebugFlags.ConfigWriterName`,
+> `MainWindowViewModel.SelectedConfigWriter()`, `LegacySerializingWriter`, and the
+> `IConfigWriter` parameter threading. Two writers means every future save-path change has
+> to be correct twice, and the lossy one is the one nobody will remember to test.
+> Recorded as a hard invariant in [`AGENTS.md`](../AGENTS.md) so it does not become permanent.
 > `LegacyWriter_StillReSerializes_SoTheContrastIsExplicit` asserts the fallback *is* lossy,
 > so the cost of reaching for it is documented rather than discovered.
-
-**Still to wire:** the `--writer legacy` command-line flag itself. The seam and both
-implementations exist and are tested; the app does not yet parse the flag or thread its
-selection to the save call sites, so today the hatch is reachable from code but not from
-the command line.
 
 ## How the diff works
 
