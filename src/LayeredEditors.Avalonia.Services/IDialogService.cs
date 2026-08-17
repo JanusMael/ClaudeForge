@@ -1,5 +1,5 @@
 using System.Text;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 

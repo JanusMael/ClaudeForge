@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Abstractions</RootNamespace>
+        <AssemblyName>AgentForge.Abstractions</AssemblyName>
+        <Description>
+            Product-neutral contracts shared by every AgentForge-based app (ClaudeForge,
+            OpenCodeForge). Deliberately dependency-free beyond the BCL: no UI, no
+            serialization, no product knowledge — so any host can reference it without
+            inheriting a stack.
+
+            Currently holds the dialog primitives (DialogMessage and friends). Later phases
+            add the scope model, merge policy, permission vocabulary, and product descriptor
+            as each is generalized out of the Claude-specific code.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+    </PropertyGroup>
+</Project>

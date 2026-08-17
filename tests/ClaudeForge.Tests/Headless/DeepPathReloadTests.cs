@@ -5,7 +5,7 @@ using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 

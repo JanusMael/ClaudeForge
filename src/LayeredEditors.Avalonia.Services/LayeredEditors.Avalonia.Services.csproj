@@ -28,12 +28,13 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
-        <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
-             ClaudeForge.Sdk so the SDK can produce dialog models that this services
-             library renders.  Couples the services lib to ClaudeForge.Sdk in this
-             codebase; if the lib is ever extracted for another app, the dialog
-             types can be split into a third project at that time. -->
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment*) live in
+             AgentForge.Abstractions. This library previously referenced ClaudeForge.Sdk
+             for them, which meant a product-neutral services library depended on a
+             Claude-specific SDK purely to name four primitives. Splitting them into the
+             abstractions assembly removes the violation with no added indirection —
+             this library uses exactly those four types and never SdkDialogs. -->
+        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
     </ItemGroup>
 
     <!-- Explicit MAUI Essentials package reference required for net8+ when UseMauiEssentials=true -->

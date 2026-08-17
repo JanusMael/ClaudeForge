@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;

@@ -11,6 +11,7 @@
             <File Path="src/publish/publish-osx-x64.ps1"/>
             <File Path="src/publish/publish-osx-arm64.ps1"/>
         </Folder>
+        <Project Path="src/AgentForge.Abstractions/AgentForge.Abstractions.csproj"/>
         <Project Path="src/ClaudeForge/ClaudeForge.csproj"/>
         <Project Path="src/ClaudeForge.Core/ClaudeForge.Core.csproj"/>
         <Project Path="src/ClaudeForge.Sdk/ClaudeForge.Sdk.csproj"/>
