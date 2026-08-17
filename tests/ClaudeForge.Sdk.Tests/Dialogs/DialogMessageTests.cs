@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Dialogs;

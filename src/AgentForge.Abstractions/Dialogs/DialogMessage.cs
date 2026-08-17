@@ -1,18 +1,16 @@
-namespace Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+namespace Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 
 /// <summary>
-/// Visual + behavioural category that <see cref="Bennewitz.Ninja.ClaudeForge.Sdk"/>-aware
-/// hosts use to pick header colour, glyph, and confirm-button styling for
-/// confirm and alert dialogs.  Categorisation lets the SDK signal intent
-/// (destructive vs. neutral vs. error) without each call site having to
-/// micro-manage styling.
+/// Visual + behavioural category that dialog-aware hosts use to pick header colour,
+/// glyph, and confirm-button styling for confirm and alert dialogs.  Categorisation
+/// lets the producer signal intent (destructive vs. neutral vs. error) without each
+/// call site having to micro-manage styling.
 /// </summary>
 /// <remarks>
-/// Lives in the SDK so producer and consumer share a single source of
-/// truth: <see cref="IClaudeConfigClient"/> implementations may return
-/// <see cref="DialogMessage"/> instances tagged with a category, and the
-/// hosting GUI / CLI / test harness reads the same value back.  The SDK
-/// itself does not render anything.
+/// Lives in the abstractions assembly so producer and consumer share a single source
+/// of truth: an SDK may return <see cref="DialogMessage"/> instances tagged with a
+/// category, and the hosting GUI / CLI / test harness reads the same value back.
+/// Nothing here renders anything, and nothing here knows which product it is serving.
 /// </remarks>
 public enum DialogCategory
 {
@@ -116,7 +114,7 @@ public sealed record DialogSegment(
 ///     DialogMessage.Builder()
 ///         .Text("Apply profile '").Bold(profileName).Text("' to ")
 ///         .Path(targetPath)
-///         .Text("? See ").Hyperlink("the docs", "https://docs.claude.com/profiles").Text(".")
+///         .Text("? See ").Hyperlink("the docs", docsUrl).Text(".")
 ///         .Build();
 /// </code>
 /// </example>

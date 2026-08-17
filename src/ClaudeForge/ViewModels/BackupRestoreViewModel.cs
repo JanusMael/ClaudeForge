@@ -8,7 +8,7 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Core.Backup;
 using Bennewitz.Ninja.ClaudeForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
