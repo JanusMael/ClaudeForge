@@ -28,22 +28,39 @@
 >
 > ### Implementation status — 2026-08-17
 >
-> Branch **`feat/agentforge-opencodeforge`**, 6 commits, **not yet pushed**. Suite green
+> Branch **`feat/agentforge-opencodeforge`**, 10 commits, **not yet pushed**. Suite green
 > throughout: **2,716 passed · 11 skipped · 0 failed · 0 warnings**.
 >
 > | Phase | Status |
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
-> | 1 — Rename + neutralize | 🟡 **1a–1e done**; **1f/1g/1h remain** |
+> | 1 — Rename + neutralize | 🟡 **1a–1f done**; **1g/1h remain** |
 > | 2+ | not started |
 >
 > **Done in Phase 1:** resource prefix derived (not hardcoded) + guarded ·
 > `AgentForge.Abstractions` created and the `LayeredEditors.Avalonia.Services → ClaudeForge.Sdk`
 > violation removed · **all three assembly renames landed** (`AgentForge.Core`,
 > `AgentForge.Sdk`, plus `IAgentConfigClient` / `AgentConfigClientCore`) · AI-facing docs
-> repointed. **Remaining: 1f** (split Claude-domain accessors into `ClaudeForge.Sdk.Claude`)
-> **· 1g** (retarget the MCP sample) **· 1h** (stale `SchemaRegistry` load-order comment,
+> repointed · **`ClaudeForge.Sdk.Claude` split out (1f)**, with `ClaudeForge.Sdk.Claude.Tests`
+> alongside it. **Remaining: 1g** (rename the MCP sample — it is already retargeted and its
+> README corrected) **· 1h** (stale `SchemaRegistry` load-order comment,
 > `NAV-DEEP-LINKING-PLAN.md` header).
+>
+> **1f in one paragraph, because the shape is not obvious from the instruction.** Moving the
+> five accessors was the easy half; the dependency had to *invert*. `IAgentConfigClient` lost
+> the five properties, `IClaudeConfigClient` re-declares them, and a new
+> `ClaudeConfigClientBase` sits between the two concrete clients and `AgentConfigClientCore`
+> so both share one copy of the accessor wiring — that middle class is what makes the split
+> one-directional instead of circular. `SchemaHookEvents` / `SchemaHookCommandVariants` had to
+> move with Hooks because they *return* Hooks types; they read the schema tree through a new
+> `protected CachedSchemaNodes`. The accessors reach `internal` `JsonNode` members, so
+> `AgentForge.Sdk` grants `InternalsVisibleTo("ClaudeForge.Sdk.Claude")` — an attribute, not a
+> reference, so the layering rule is untouched. Three things were deliberately **not** folded
+> in: `IsClaudeCode` stays on the neutral core (needs Phases 3–4's product descriptor), the
+> Claude model-catalog *data* stays in `AgentForge.Core` (moving it drags an embedded resource
+> and `BackupEngine`'s schema bundling along), and `Memory/`'s closed enums stay (Phase 10).
+> `AssemblyLayeringTests` was extended to scan `tests/` — a shared *test* project referencing
+> a product was an uncovered hole, and it was briefly occupied during this step.
 >
 > **Three guards were added and canaried** — read them before changing the layering or moving
 > files: `ResourceNamePrefixTests`, `AssemblyLayeringTests`, `BuildFilePathIntegrityTests`.
@@ -466,9 +483,9 @@ up with *no* creating phase despite three Problems depending on the first. Expli
 
 | Assembly | Created in | Note |
 |---|---|---|
-| `AgentForge.Abstractions` | **Phase 1** | Must precede Phase 2 (`IConfigWriter`). Grows a contract per later phase. |
-| `AgentForge.Core` · `AgentForge.Sdk` | Phase 1 | Renames of the existing projects |
-| `ClaudeForge.Sdk.Claude` | Phase 1 | Claude-domain accessors split out |
+| `AgentForge.Abstractions` | **Phase 1** ✅ | Must precede Phase 2 (`IConfigWriter`). Grows a contract per later phase. |
+| `AgentForge.Core` · `AgentForge.Sdk` | Phase 1 ✅ | Renames of the existing projects |
+| `ClaudeForge.Sdk.Claude` | Phase 1 ✅ | Claude-domain accessors split out. Also created `ClaudeForge.Sdk.Claude.Tests` — the shared test project must stay buildable without a product, which `AssemblyLayeringTests` now enforces for `tests/` too. |
 | `AgentForge.Jsonc` | Phase 2 | BCL-only dependencies |
 | `AgentForge.Avalonia.Shell` · `AgentForge.Localization` | Phase 5 | The shell extraction + resx split |
 | ~~`AgentForge.Permissions` · `AgentForge.Avalonia.Permissions`~~ | — | **Cut.** Passes 8 and 11 found nothing to put in them. |
