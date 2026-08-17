@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Hooks;
 

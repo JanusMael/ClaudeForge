@@ -5,8 +5,8 @@ using System.Globalization;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Threading;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
@@ -1310,7 +1310,7 @@ public sealed class BackupRowViewModel : ObservableObject
     /// case-insensitive matching so a manifest with
     /// <c>"claudecode"</c> (different case) doesn't fall through to the
     /// verbose-passthrough branch.  Today the manifest strings are
-    /// written by <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupEngine"/> with
+    /// written by <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine"/> with
     /// exact casing, but a drag-dropped archive from a third-party tool
     /// could supply any casing.  The unknown-name passthrough preserves
     /// the ORIGINAL casing so unfamiliar product names render as-typed.

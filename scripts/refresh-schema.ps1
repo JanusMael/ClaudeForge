@@ -2,7 +2,7 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# The bundled schema at src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json
+# The bundled schema at src/AgentForge.Core/Assets/Schemas/claude-code-settings.json
 # is the AUTHORITATIVE source the runtime reads — even when the app's HTTP refresh
 # downloads a newer copy into ~/.claude/cache/schemas/, the runtime priority
 # (memory cache > bundled embedded > disk cache > HTTP fetch > empty fallback)
@@ -61,7 +61,7 @@ $ErrorActionPreference = 'Stop'
 # of cwd (CI / nested shells / etc.).
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot    = Resolve-Path (Join-Path $ScriptDir '..')
-$TargetPath  = Join-Path $RepoRoot 'src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json'
+$TargetPath  = Join-Path $RepoRoot 'src/AgentForge.Core/Assets/Schemas/claude-code-settings.json'
 $UpstreamUrl = 'https://json.schemastore.org/claude-code-settings.json'
 
 Write-Host ""
@@ -174,7 +174,7 @@ Write-Host ""
 # ---------------------------------------------------------------------------
 Write-Host "Note: " -ForegroundColor Cyan -NoNewline
 Write-Host "hand-curated additions live in"
-Write-Host "      src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.overlay.json"
+Write-Host "      src/AgentForge.Core/Assets/Schemas/claude-code-settings.overlay.json"
 Write-Host "      and are applied at load time via RFC 7396 JSON Merge Patch."
 Write-Host "      This refresh did NOT touch them; they will surface in the merged"
 Write-Host "      runtime schema unchanged."

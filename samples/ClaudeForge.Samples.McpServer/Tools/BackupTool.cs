@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
-using BackupMode = Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupMode;
+using BackupMode = Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 

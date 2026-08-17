@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Core.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
+    </ItemGroup>
+</Project>

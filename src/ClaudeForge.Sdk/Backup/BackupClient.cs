@@ -1,12 +1,13 @@
 using System.Globalization;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using CoreBackup = Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 
 /// <summary>
 /// Default <see cref="IBackupClient"/> implementation. Bridges the SDK's
-/// public surface to <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupEngine"/>:
+/// public surface to <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine"/>:
 ///
 /// <list type="bullet">
 ///   <item>Projects SDK <see cref="BackupRequest"/> / <see cref="BackupArchive"/>
@@ -48,8 +49,8 @@ internal sealed class BackupClient : IBackupClient
 
     /// <summary>
     /// Construct a backup client that produces archives covering the requested
-    /// product set. Pass <see cref="Core.Backup.BackupEngine.Default"/> for the
-    /// production engine; tests may pass a custom <see cref="Core.Backup.BackupEngine"/>
+    /// product set. Pass <see cref="CoreBackup.BackupEngine.Default"/> for the
+    /// production engine; tests may pass a custom <see cref="CoreBackup.BackupEngine"/>
     /// constructed with stub collaborators.
     /// </summary>
     public BackupClient(
@@ -82,7 +83,7 @@ internal sealed class BackupClient : IBackupClient
         string prefix = request.IncludeCredentials ? "backup-with-creds" : "backup";
         string destPath = Path.Combine(request.OutputDirectory, $"{prefix}-{stamp}.zip");
 
-        Core.Backup.BackupRequest coreReq = new()
+        CoreBackup.BackupRequest coreReq = new()
         {
             DestinationZipPath = destPath,
             Mode = request.Mode,
@@ -93,7 +94,7 @@ internal sealed class BackupClient : IBackupClient
             KeepLast = request.KeepLast,
         };
 
-        IProgress<Core.Backup.BackupProgress>? coreProgress = WrapProgress(onProgress);
+        IProgress<CoreBackup.BackupProgress>? coreProgress = WrapProgress(onProgress);
         BackupResult result = await _engine.CreateAsync(coreReq, coreProgress, ct).ConfigureAwait(false);
 
         if (!result.Succeeded || result.Manifest is null || result.ArchivePath is null)
@@ -146,8 +147,8 @@ internal sealed class BackupClient : IBackupClient
                 StringComparison.OrdinalIgnoreCase),
         };
 
-        IProgress<Core.Backup.BackupProgress>? coreProgress = WrapProgress(onProgress);
-        Core.Backup.RestoreResult
+        IProgress<CoreBackup.BackupProgress>? coreProgress = WrapProgress(onProgress);
+        CoreBackup.RestoreResult
             result = await _engine.RestoreAsync(coreEntry, coreProgress, ct).ConfigureAwait(false);
 
         return new RestoreResult(
@@ -163,14 +164,14 @@ internal sealed class BackupClient : IBackupClient
 
     // ── Bridges ──────────────────────────────────────────────────────────
 
-    private static IProgress<Core.Backup.BackupProgress>? WrapProgress(BackupProgressHandler? onProgress)
+    private static IProgress<CoreBackup.BackupProgress>? WrapProgress(BackupProgressHandler? onProgress)
     {
         if (onProgress is null)
         {
             return null;
         }
 
-        return new Progress<Core.Backup.BackupProgress>(p =>
+        return new Progress<CoreBackup.BackupProgress>(p =>
         {
             // Fire-and-forget per the back-pressure note above. Discard the
             // returned ValueTask so the C# compiler doesn't warn about the
@@ -185,7 +186,7 @@ internal sealed class BackupClient : IBackupClient
         });
     }
 
-    private static BackupManifest ProjectManifest(Core.Backup.BackupManifest core)
+    private static BackupManifest ProjectManifest(CoreBackup.BackupManifest core)
     {
         return new BackupManifest(
             Kind: core.Kind,
@@ -205,9 +206,9 @@ internal sealed class BackupClient : IBackupClient
             Warnings: core.Warnings.ToList());
     }
 
-    private static Core.Backup.BackupManifest ProjectManifestToCore(BackupManifest sdk)
+    private static CoreBackup.BackupManifest ProjectManifestToCore(BackupManifest sdk)
     {
-        return new Core.Backup.BackupManifest
+        return new CoreBackup.BackupManifest
         {
             Kind = sdk.Kind,
             SchemaVersion = sdk.SchemaVersion,
@@ -218,7 +219,7 @@ internal sealed class BackupClient : IBackupClient
             Clients = sdk.Clients.ToList(),
             Projects = sdk.Projects.ToList(),
             Worktrees = sdk.Worktrees
-                           .Select(w => new Core.Backup.BackupWorktreeEntry
+                           .Select(w => new CoreBackup.BackupWorktreeEntry
                                { ProjectRoot = w.ProjectRoot, WorktreePath = w.WorktreePath })
                            .ToList(),
             IncludedCredentials = sdk.IncludedCredentials,

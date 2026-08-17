@@ -99,7 +99,7 @@ public static class SensitiveKeys
         // privateKey / rsa_private) and three access_key
         // hyphen/underscore/concatenated variants for AWS-style
         // identifiers.  Lockstep with
-        // ClaudeForge.Core.Backup.JsonRedactor.SubstringTokens
+        // AgentForge.Core.Backup.JsonRedactor.SubstringTokens
         return key.Contains("token", StringComparison.OrdinalIgnoreCase)
                || key.Contains("secret", StringComparison.OrdinalIgnoreCase)
                || key.Contains("password", StringComparison.OrdinalIgnoreCase)

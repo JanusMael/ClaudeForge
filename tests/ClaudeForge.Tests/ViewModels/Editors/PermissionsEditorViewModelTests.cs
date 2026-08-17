@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;

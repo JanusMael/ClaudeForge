@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
 using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;

@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- ClaudeForge.Sdk → ClaudeForge.Core is transitive, so the Sdk tests
-             can also reach Core types like ClaudeForge.Core.Backup.JsonRedactor.
+        <!-- ClaudeForge.Sdk → AgentForge.Core is transitive, so the Sdk tests
+             can also reach Core types like AgentForge.Core.Backup.JsonRedactor.
              The cross-project parity test (SensitiveKeysParityTests) exercises
              both classifiers in a single suite. -->
         <ProjectReference Include="..\..\src\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>

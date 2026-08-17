@@ -35,8 +35,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// The csproj check is not redundant: the compiler <b>omits unused references from the
 /// assembly reference table entirely</b>, so a declared-but-not-yet-used bad reference is
 /// invisible to reflection. Verified the hard way — an earlier version of this class had
-/// only the reflection check, and adding a live <c>ClaudeForge.Core</c> reference to
-/// <c>AgentForge.Abstractions</c> did not fail it.
+/// only the reflection check, and adding a live <c>ClaudeForge.Sdk</c> reference to
+/// <c>AgentForge.Abstractions</c> did not fail it. That is exactly the state a violation is
+/// in immediately before someone starts depending on it, which is when it is cheapest to fix.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -101,12 +102,18 @@ public sealed class AssemblyLayeringTests
 
             foreach (string reference in referencePaths)
             {
-                string referencedProject = Path.GetFileNameWithoutExtension(
-                    reference.Replace('\\', '/'));
+                // Check every path segment, not just the file name. A project file does not
+                // have to be named after its directory — 'ClaudeForge.Sdk\Renamed.csproj'
+                // is a real violation that a file-name-only check would wave through.
+                string[] segments = reference.Replace('\\', '/').Split('/',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                if (ProductPrefixes.Any(p => referencedProject.StartsWith(p, StringComparison.Ordinal)))
+                bool isViolation = segments.Any(segment =>
+                    ProductPrefixes.Any(p => segment.StartsWith(p, StringComparison.Ordinal)));
+
+                if (isViolation)
                 {
-                    violations.Add($"{shared}.csproj -> {referencedProject}");
+                    violations.Add($"{shared}.csproj -> {reference}");
                 }
             }
         }

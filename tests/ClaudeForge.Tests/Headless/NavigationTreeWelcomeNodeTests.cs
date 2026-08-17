@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;

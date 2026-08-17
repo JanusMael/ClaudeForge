@@ -10,13 +10,13 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using Bennewitz.Ninja.ClaudeForge.Core;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.FileIO;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Profile;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Profile;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
@@ -33,7 +33,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Json.Schema;
 using Serilog;
-using SchemaRegistry = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaRegistry;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
@@ -1321,7 +1321,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             try
             {
-                Core.Updates.UpdateCheckResult result =
+                Bennewitz.Ninja.AgentForge.Core.Updates.UpdateCheckResult result =
                     await AppUpdateService.CheckOncePerLaunchAsync().ConfigureAwait(true);
                 // Marshal the apply to the UI thread — UpdateBannerViewModel
                 // raises PropertyChanged events that must hit the UI sync
@@ -1398,7 +1398,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 {
                     await Task.Delay(UpdateRecheckInterval, ct).ConfigureAwait(false);
 
-                    Core.Updates.UpdateCheckResult result =
+                    Bennewitz.Ninja.AgentForge.Core.Updates.UpdateCheckResult result =
                         await AppUpdateService.CheckPeriodicAsync(ct).ConfigureAwait(false);
 
                     await Dispatcher.UIThread.InvokeAsync(() =>

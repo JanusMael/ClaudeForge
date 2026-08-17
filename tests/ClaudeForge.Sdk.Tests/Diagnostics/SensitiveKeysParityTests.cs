@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Diagnostics;
@@ -11,10 +11,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Diagnostics;
 ///         <c>ClaudeForge.Sdk.Diagnostics</c> — used by the audit-log
 ///         live-write path and the save-diff log.</item>
 ///   <item><see cref="JsonRedactor.IsSensitiveKey"/> in
-///         <c>ClaudeForge.Core.Backup</c> — used by
+///         <c>AgentForge.Core.Backup</c> — used by
 ///         <see cref="BackupMode.Sanitized"/> archives.</item>
 /// </list>
-/// The duplication is intentional — <c>ClaudeForge.Core</c> can't reference
+/// The duplication is intentional — <c>AgentForge.Core</c> can't reference
 /// <c>ClaudeForge.Sdk</c> per the layering contract, so the redactor inlines
 /// its own copy of the classifier.  This test is the guard against drift:
 /// any new sensitive-token added to one side must be added to the other,

@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;

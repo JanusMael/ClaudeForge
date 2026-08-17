@@ -30,7 +30,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 /// </para>
 /// <para>
 /// The glob→regex conversion is adapted from
-/// <c>src/ClaudeForge.Core/Backup/GitignoreReader.cs</c> (that type is internal,
+/// <c>src/AgentForge.Core/Backup/GitignoreReader.cs</c> (that type is internal,
 /// disk-oriented, and backup-specific, so the algorithm is reimplemented here
 /// rather than referenced).
 /// </para>

@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;

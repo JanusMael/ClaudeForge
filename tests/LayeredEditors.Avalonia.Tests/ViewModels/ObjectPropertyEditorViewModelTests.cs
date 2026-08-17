@@ -158,7 +158,7 @@ public class ObjectPropertyEditorViewModelTests
 
     // ── End-to-end: non-Claude consumer ──────────────────────────────────────
     // This is the hard acceptance test from the plan: a non-JSON, non-Claude
-    // consumer can drive the library without touching ClaudeForge.Core or
+    // consumer can drive the library without touching AgentForge.Core or
     // System.Text.Json.
 
     // ── Child-change propagation (B.3 coverage gap #6) ───────────────────────

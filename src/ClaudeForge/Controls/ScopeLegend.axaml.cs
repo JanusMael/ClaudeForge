@@ -2,7 +2,7 @@ using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Bennewitz.Ninja.ClaudeForge.Converters;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;

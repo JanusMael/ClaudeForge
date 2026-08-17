@@ -5,7 +5,7 @@
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:core="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
+             xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Settings"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"

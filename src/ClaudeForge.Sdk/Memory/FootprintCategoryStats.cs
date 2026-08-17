@@ -4,7 +4,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 /// Tier 2 footprint stats for a single <see cref="FootprintCategory"/>.
 /// Point-in-time snapshot of the on-disk size and file count, plus the
 /// "in Standard backup?" badge that mirrors
-/// <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.BackupEngine"/>'s skip decisions.
+/// <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine"/>'s skip decisions.
 /// </summary>
 /// <param name="Category">The category this row reports on.</param>
 /// <param name="AbsolutePath">

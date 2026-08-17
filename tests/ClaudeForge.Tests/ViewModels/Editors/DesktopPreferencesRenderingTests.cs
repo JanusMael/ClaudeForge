@@ -2,8 +2,9 @@ using System.Reflection;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Json.Schema;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
-using SchemaRegistry = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaRegistry;
-using SchemaValueType = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaValueType;
+using ResourceHelper = Bennewitz.Ninja.AgentForge.Core.ResourceHelper;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
+using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -22,7 +23,7 @@ public class DesktopPreferencesRenderingTests
         // Load the bundled schema resource directly, bypassing SchemaRegistry's on-disk cache
         // so the test asserts against the repository schema rather than a stale user cache.
         Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = Core.ResourceHelper.AssetName("Schemas", "claude-desktop-config.json");
+        string resourceName = ResourceHelper.AssetName("Schemas", "claude-desktop-config.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");

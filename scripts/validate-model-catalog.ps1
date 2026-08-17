@@ -6,7 +6,7 @@
 # Unlike the JSON schema (refreshed from schemastore.org by refresh-schema.ps1),
 # the model catalog has NO upstream machine-readable source — the harvested
 # Claude docs are prose, so the curated file
-# `src/ClaudeForge.Core/Assets/ModelCatalog/model-catalog.json` IS the source of
+# `src/AgentForge.Core/Assets/ModelCatalog/model-catalog.json` IS the source of
 # truth. This script is therefore a VALIDATION GATE, not a downloader: it asserts
 # the curated data is internally consistent (every supported effort level is a
 # real level, every alias resolves to a real model, every default effort is
@@ -33,7 +33,7 @@ $ErrorActionPreference = 'Stop'
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot  = Resolve-Path (Join-Path $ScriptDir '..')
-$Dir       = Join-Path $RepoRoot 'src/ClaudeForge.Core/Assets/ModelCatalog'
+$Dir       = Join-Path $RepoRoot 'src/AgentForge.Core/Assets/ModelCatalog'
 $Catalog   = Join-Path $Dir 'model-catalog.json'
 $Schema    = Join-Path $Dir 'model-catalog.schema.json'
 $Overlay   = Join-Path $Dir 'model-catalog.overlay.json'

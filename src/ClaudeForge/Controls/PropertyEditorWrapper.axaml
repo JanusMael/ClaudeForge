@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
              xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
-             xmlns:settings="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
+             xmlns:settings="using:Bennewitz.Ninja.AgentForge.Core.Settings"
              xmlns:abs="using:Bennewitz.Ninja.LayeredEditors.Abstractions"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"

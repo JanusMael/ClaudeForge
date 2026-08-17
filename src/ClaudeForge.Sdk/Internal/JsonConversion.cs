@@ -4,7 +4,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
 
 /// <summary>
 /// Trim-safe conversion between SDK consumer types and the underlying
-/// <see cref="JsonNode"/> shape that <see cref="Bennewitz.Ninja.ClaudeForge.Core.Settings.SettingsWorkspace"/>
+/// <see cref="JsonNode"/> shape that <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace"/>
 /// stores.
 /// </summary>
 /// <remarks>
@@ -28,7 +28,7 @@ internal static class JsonConversion
 {
     /// <summary>
     /// Convert an SDK consumer value to the <see cref="JsonNode"/> shape
-    /// <see cref="Bennewitz.Ninja.ClaudeForge.Core.Settings.SettingsWorkspace.SetValue"/> requires.
+    /// <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace.SetValue"/> requires.
     /// </summary>
     public static JsonNode? ConvertToJsonNode<T>(T value)
     {
