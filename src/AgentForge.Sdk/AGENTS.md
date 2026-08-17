@@ -3,6 +3,14 @@
 Cross-file invariants and "if you do X also touch Y" rules for the SDK layer.
 Read alongside the root [`AGENTS.md`](../../AGENTS.md).
 
+> **This assembly is product-neutral and must stay that way.** `AgentForge.*` may
+> never reference `ClaudeForge.*` or `OpenCode.*` — `AssemblyLayeringTests` enforces
+> it against both the `.csproj` files and the compiled reference tables. The
+> Claude-only half of the SDK lives in
+> [`src/ClaudeForge.Sdk.Claude`](../ClaudeForge.Sdk.Claude/AGENTS.md) and depends on
+> this one, never the reverse. Before adding anything here, ask whether a second
+> agent tool could implement it; if not, it belongs in a product assembly.
+
 ---
 
 ## §1 What the SDK IS and what it has
@@ -15,11 +23,27 @@ thread-safe interface. It has:
 | Workspace I/O (load, save, reload)              | `AgentConfigClientCore.OpenAsync` / `SaveAsync` / `ReloadAsync`     |
 | Sync read/write                                 | `GetEffective` / `SetValue` / `RemoveValue` in `AgentConfigClientCore.cs` |
 | Async read/write (cancellable, single-lock)     | `GetEffectiveAsync` / `SetValueAsync` / `RemoveValueAsync`; `SetValueIfChangedAsync` = atomic, **scope-specific** ghost-guard (writes only if the value at the target scope changes) |
-| Schema content tree (`SchemaNode` objects)      | cached in `_cachedSchemaNodes` after `OpenAsync`                     |
+| Schema content tree (`SchemaNode` objects)      | cached in `_cachedSchemaNodes` after `OpenAsync`; exposed to subclasses as `protected CachedSchemaNodes` |
 | Text search over schema content                 | `SearchSchema` in `AgentConfigClientCore.cs`                        |
-| Typed accessors (Permissions, Hooks, MCP, etc.) | `Permissions/`, `Hooks/`, `McpServers/`, `Marketplaces/`, `Plugins/` |
+| Typed accessors that generalize (MCP, env)      | `McpServers/`, `Env/`                                                |
 | `Changed` event                                 | fires after every mutation / save / reload                           |
 | Backup / restore                                | `Backup/BackupClient.cs` + Core `BackupEngine`                       |
+
+**Accessors that are NOT here.** `Permissions`, `Hooks`, `Marketplaces`, `Plugins`,
+and `Models` were on `IAgentConfigClient` until Phase 1 step 1f. They are Claude
+config surfaces, so they now hang off `IClaudeConfigClient` in
+`ClaudeForge.Sdk.Claude`. Reaching for `client.Permissions` on an
+`IAgentConfigClient` will not compile — that is the point. See that project's
+sidecar for why each one resisted generalization.
+
+**Known Claude-shaped residue still in this assembly**, deferred to its planned
+phase rather than left undocumented:
+
+| Residue | Why it is still here |
+|---|---|
+| `protected abstract bool IsClaudeCode` | Selects the schema and flows into Core's `SchemaRegistry.Validate*Workspace`. Replacing it needs the `ProductDescriptor` / schema-id work in Phases 3–4. |
+| `Memory/` — `UserMemoryCategory`, `FootprintCategory` | Closed enums naming Claude's artifact kinds and footprint dirs. Phase 10 converts them. |
+| `Env/EnvVarKey` | Convenience properties for `CLAUDE_CODE_*` keys. The generic dictionary surface around them is neutral. |
 
 ## §2 What the SDK does NOT have
 
@@ -40,12 +64,10 @@ an editor page must maintain their own `JsonPath → NavigationNodeViewModel` ma
 
 | File                        | Role                                                                     |
 |-----------------------------|--------------------------------------------------------------------------|
-| `IAgentConfigClient.cs`    | Public interface; the contract consumers depend on                       |
-| `AgentConfigClientCore.cs` | Abstract base; all shared implementation                                 |
-| `ClaudeCodeClient.cs`       | Claude Code concrete; overrides `DiscoverFiles`, `IsClaudeCode=true`     |
-| `ClaudeDesktopClient.cs`    | Claude Desktop concrete; overrides `DiscoverFiles`, `IsClaudeCode=false` |
+| `IAgentConfigClient.cs`    | Public interface; the product-neutral contract consumers depend on       |
+| `AgentConfigClientCore.cs` | Abstract base; all shared implementation. Has no concrete subclass in this assembly — the two Claude clients derive from `ClaudeConfigClientBase` in `ClaudeForge.Sdk.Claude`. |
 | `SchemaSearchResult.cs`     | Return type of `SearchSchema`                                            |
-| `Models/IModelCatalogAccessor.cs` | `IAgentConfigClient.Models` — allowed `model`/`effortLevel`/`permissions.defaultMode` values + their relationships (which efforts a model supports, auto-mode gating) + the nearest-analog coercion rule. Backed by Core's bundled `model-catalog.json`; shared via `ModelCatalogProvider.Default`. The relationship/coercion logic is domain code here (not in any view-model) so it's CLI/MCP-usable. See [docs/MODEL-CATALOG.md](../../docs/MODEL-CATALOG.md). |
+| `Dialogs/SdkDialogs.cs`     | Dialog factories that encode SDK wording (`SaveSucceeded(writtenPaths)`). The dialog *primitives* they build live in `AgentForge.Abstractions`. |
 
 ## §4 `preLoadedWorkspace` injection — migration artifact
 
@@ -116,11 +138,18 @@ A test for this contract is in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedCha
 
 | Seam                                                                 | How to use                                                            |
 |----------------------------------------------------------------------|-----------------------------------------------------------------------|
-| `internal ClaudeCodeClient(ConfigScope, SchemaRegistry)`             | Inject a test-controlled `SchemaRegistry`                             |
-| `ClaudeCodeClient.FromExistingWorkspace(workspace, scope, registry)` | Supply pre-built workspace (GUI migration tests)                      |
+| `internal ClaudeCodeClient(ConfigScope, SchemaRegistry)`             | Inject a test-controlled `SchemaRegistry`. Lives in `ClaudeForge.Sdk.Claude`. |
+| `ClaudeCodeClient.FromExistingWorkspace(workspace, scope, registry)` | Supply pre-built workspace (GUI migration tests). Same project.        |
 | `PlatformPaths.TestUserProfileOverride = sandbox`                    | Redirect `~/.claude/` to a temp dir                                   |
 | `DebugFlags.ResetForTesting()`                                       | Reset all debug flags + `PlatformInfo.Current` in `[TestCleanup]`     |
 | `InternalsVisibleTo("ClaudeForge.Tests")`                            | In `AgentForge.Sdk.csproj` — grants access to all `internal` members |
+| `InternalsVisibleTo("ClaudeForge.Sdk.Claude")`                       | Also in `AgentForge.Sdk.csproj`. Lets the Claude accessors reach `GetEffectiveNode` / `GetScopeValue` / `RaiseChangedFromAccessor`, which stay `internal` to keep `JsonNode` off the public surface. An assembly attribute, **not** a reference — the layering rule is untouched. |
+
+> **This assembly has no concrete client of its own**, so every test here that
+> needs a live client constructs a `ClaudeCodeClient` from
+> `ClaudeForge.Sdk.Claude`. That is a real gap, not a convention: the neutral core
+> cannot currently be exercised without a product. Introducing a test-only neutral
+> `AgentConfigClientCore` subclass is the fix.
 
 `SearchSchema` does not have its own seam; the integration test pattern is:
 set `TestUserProfileOverride`, construct `ClaudeCodeClient()`, call `OpenAsync(null, ct)`,

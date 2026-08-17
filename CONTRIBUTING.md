@@ -38,8 +38,10 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 
 | Project | Description |
 |---------|-------------|
+| `src/AgentForge.Abstractions` | Product-neutral contracts, BCL-only — no UI, no serialization, no product knowledge |
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
-| `src/AgentForge.Sdk` | Typed accessors over Core (the public consumer surface — `IAgentConfigClient` + accessors) |
+| `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
+| `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
 | `tests/AgentForge.Core.Tests` | Domain logic |
@@ -48,6 +50,13 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
 When in doubt about which project a file belongs in: if it has Avalonia / Semi.Avalonia references it's `ClaudeForge`; if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`.
+
+**`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** The shared
+foundation only stays shared if it cannot see either product, and a
+`ProjectReference` in the wrong direction compiles perfectly — so
+`AssemblyLayeringTests` guards it, reading both the `.csproj` files and the
+compiled reference tables. If a type you are adding to `AgentForge.*` needs to
+know that Claude exists, it belongs in `ClaudeForge.Sdk.Claude` instead.
 
 ---
 
@@ -77,7 +86,8 @@ Open an issue first if you're planning:
 ### SDK-first separation
 
 - `AgentForge.Core` — domain model. No Avalonia. No UI dependencies.
-- `AgentForge.Sdk` — typed accessors over Core. `IAgentConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
+- `AgentForge.Sdk` — product-neutral typed accessors over Core. `IAgentConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
+- `ClaudeForge.Sdk.Claude` — the Claude-specific accessors and the two concrete clients. `IClaudeConfigClient` extends `IAgentConfigClient` with them, so `client.Permissions` / `.Hooks` / `.Marketplaces` / `.Plugins` / `.Models` require this project.
 - `ClaudeForge` — Avalonia UI. View-models bind to SDK clients, never directly to Core.
 
 If you're adding a feature that touches data, ask yourself: "would this make sense in a CLI version of the app?" If yes, the logic belongs in Core or the SDK, not in a view-model.
