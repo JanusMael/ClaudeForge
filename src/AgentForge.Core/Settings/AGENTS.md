@@ -29,10 +29,10 @@ that the compiler will not always warn you about:
   `private ConfigScope _lastScope;` with no initialiser and depend on it. The
   richer shape compiles, passes 2,791 of 2,792 tests, and silently changes what
   those fields mean.
-- **`ToString()` is consumed as data.** `ClaudeScope` builds its `Id` from
-  `ToLowerInvariant()` and its `DisplayName` from `ToUpperInvariant()`, and three
-  AXAML converters resolve brushes, tooltips and labels through it. It must keep
-  returning `"Managed"` / `"Local"` / `"Project"` / `"User"`.
+- **`ToString()` is consumed as data.** Three AXAML converters resolve brushes, tooltips
+  and labels through the name, and `ClaudeScope` takes `Id` from `ConfigScope.Id` and
+  upper-cases `DisplayName` for the chiclets. It must keep returning `"Managed"` /
+  `"Local"` / `"Project"` / `"User"`. Breaking the lower-casing of `Id` fails **15** tests.
 - **You cannot use it as a default parameter value or a `case` label** — neither is a
   compile-time constant. Use an overload (or `ConfigScope?` plus a coalesce when other
   optional parameters follow), and `when` guards instead of constant patterns.
@@ -45,6 +45,47 @@ product's ladder may have more than one (OpenCode has managed *and* macOS MDM).
 
 All of the above is pinned by `tests/AgentForge.Core.Tests/Settings/ConfigScopeTests.cs`;
 every assertion there exists because its failure is otherwise silent.
+
+### 1.1 `ScopeLadder` — the ladder is the product's, not this assembly's (Phase 4f)
+
+Source: `ScopeLadder.cs`. Guard: `tests/AgentForge.Core.Tests/Settings/ScopeLadderTests.cs`.
+
+The table above is **one ladder — Claude's**. It used to live as two private arrays inside
+`ConfigScope`, which meant product-neutral code answered ladder questions with Claude's
+answers. Handing that a longer ladder failed *silently*: rungs past the fourth reported
+`IsReadOnly` as `false`, so **policy-locked settings became editable**, and their name came
+back as the bare ordinal, breaking every name-keyed brush and tooltip lookup.
+
+A product supplies `ScopeLadder` through `AgentConfigClientCore.Scopes`, exactly as it
+supplies `IMergePolicy`. A ladder is an ordered list of `ScopeRung(Name, IsReadOnly)`,
+**highest-priority first** — the index becomes `ConfigScope.Ordinal`, so listing them the
+other way round inverts precedence everywhere with no other symptom (reversing Claude's
+fails **26** tests).
+
+⚠ **Three things not to "simplify":**
+
+- **`ScopeLadder.Default` IS Claude's ladder, and a scope built from it stores `null`** for
+  its ladder field. That is what keeps `default(ConfigScope) == Managed` under plain struct
+  equality, and what keeps the four `ConfigScope` statics equal to the scopes a Claude client
+  hands out. Roughly 1,100 test sites name `ConfigScope.User`; without the null encoding they
+  would all compare unequal to the client's own `User`.
+- **`ClaudeConfigClientBase.Scopes` returns `ScopeLadder.Default`, not a fresh instance.**
+  Ladder identity is by instance, so a private copy of the same four rungs produces scopes
+  that compare unequal to everything else. A product holds **one** ladder and hands it out.
+- **`_isDefault` is a field, not `ReferenceEquals(this, Default)`.** `Default`'s own
+  constructor builds its scope list, and at that moment the `Default` property is still
+  `null` — so the reference test is false during exactly the one construction that needs it
+  true, and `ConfigScope.All`'s scopes end up unequal to `ConfigScope.Managed`. Two
+  `ConfigScopeTests` catch the broken form; ⚠ `ClaudeScopeTests` does **not**, because its
+  cache is built from `ConfigScope.All` and stays self-consistent while being wrong.
+
+Scope questions in product-neutral code go to the ladder (`Scopes.DefaultEditableScope`),
+never to a named scope. Claude-specific code — the discoverer, the scope legend, the
+converters — may still name `ConfigScope.Managed` freely.
+
+⏳ **Still to do:** `ConfigFileDiscoverer` names scopes in 10 places. It knows only Claude's
+file layouts, so parameterising it is a product-model change with its own owning phase, not a
+scope change.
 
 ---
 
