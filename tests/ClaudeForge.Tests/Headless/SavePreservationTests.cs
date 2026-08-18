@@ -189,6 +189,70 @@ public sealed class SavePreservationTests
             + "preservation test above may be passing for the wrong reason.");
     }
 
+    [TestMethod]
+    public async Task GuiSave_WritesEveryProductsChanges_NotJustTheFirstSection()
+    {
+        // Written because nothing covered it. Phase 4d replaced MainWindowViewModel's two
+        // named SDK fields with a list of ProductSection, so save / validate / snapshot /
+        // subscribe / dispose / export all became `foreach`. A canary that made every one of
+        // those loops cover only the FIRST open section — silently one-product — passed all
+        // 2,814 tests. Every other test in the suite exercises one product at a time.
+        (string Cc, string Dt) after = await Session.Dispatch(
+            async () =>
+            {
+                MainWindowViewModel vm = BuildViewModel();
+                await vm.LoadAllWorkspacesAsync();
+
+                Assert.AreEqual(2, vm.Sections.Count(s => s.Client is not null),
+                    "Precondition: both product sections must be open, or a one-product save "
+                    + "would satisfy the assertions below by default.");
+
+                // One edit per product, then ONE save through the GUI's own path.
+                vm.ClaudeCodeSdk!.SetValue("cleanupPeriodDays", 45, ConfigScope.User);
+                vm.ClaudeDesktopSdk!.SetValue(
+                    "preferences", new JsonObject { ["theme"] = "dark" }, ConfigScope.User);
+
+                await vm.SaveForBackupOrRestoreAsync(isRestoreContext: false);
+
+                return (await File.ReadAllTextAsync(CcSettingsPath),
+                        await File.ReadAllTextAsync(PlatformPaths.DesktopConfigPath));
+            },
+            CancellationToken.None);
+
+        Assert.AreEqual(45, TopLevelInt(after.Cc, "cleanupPeriodDays"),
+            "Claude Code's edit must reach disk.");
+        StringAssert.Contains(after.Dt, "\"theme\"",
+            "Claude Desktop's edit must reach disk too. If only Claude Code's did, a lifecycle "
+            + "loop is covering one section instead of all of them — which is exactly what the "
+            + "two named fields this list replaced made easy to get wrong.");
+    }
+
+    [TestMethod]
+    public async Task HasUnsavedChanges_TrueWhenOnlyTheLastSectionIsDirty()
+    {
+        // The counter-direction, and the cheaper half of the same hole: a "first product
+        // only" read of dirtiness leaves Save disabled for a Desktop-only edit, because
+        // Claude Code is first in the list and clean. Asserting on the LAST section makes
+        // ordering load-bearing in the test rather than incidental.
+        bool dirty = await Session.Dispatch(
+            async () =>
+            {
+                MainWindowViewModel vm = BuildViewModel();
+                await vm.LoadAllWorkspacesAsync();
+                Assert.IsFalse(vm.HasUnsavedChanges, "Precondition: a fresh load is clean.");
+
+                vm.Sections[^1].Client!.SetValue(
+                    "preferences", new JsonObject { ["theme"] = "dark" }, ConfigScope.User);
+
+                return vm.HasUnsavedChanges;
+            },
+            CancellationToken.None);
+
+        Assert.IsTrue(dirty,
+            "An edit to the last product section must mark the window dirty. If it does not, "
+            + "the dirty check stops at the first section and the user cannot save the change.");
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────
 
     private static MainWindowViewModel BuildViewModel()

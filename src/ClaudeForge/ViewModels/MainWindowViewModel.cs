@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Security;
@@ -89,8 +89,57 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // accessors (Hooks, Permissions, Marketplaces, Plugins, Models) the editor
     // view-models below take as IClaudeConfigClient. Both ClaudeCodeClient and
     // ClaudeDesktopClient derive from it.
-    internal ClaudeConfigClientBase? ClaudeCodeSdk { get; private set; }
-    internal ClaudeConfigClientBase? ClaudeDesktopSdk { get; private set; }
+    // The products this shell hosts, in navigation order. THE source of truth for every
+    // lifecycle operation below — save, validate, snapshot, subscribe, dispose, export,
+    // search all iterate this rather than naming two fields. See ProductSection for what is
+    // and is not N-product yet.
+    private readonly List<ProductSection> _sections =
+    [
+        new(SchemaRegistry.ClaudeCodeProduct, NavTitleClaudeCode,
+            () => Strings.WorkspaceNameClaudeCode, "ClaudeCode/.claude/settings.json"),
+        new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
+            () => Strings.WorkspaceNameClaudeDesktop, "ClaudeDesktop/claude_desktop_config.json"),
+    ];
+
+    internal IReadOnlyList<ProductSection> Sections => _sections;
+
+    /// <summary>Every section whose client is open, in navigation order.</summary>
+    private IEnumerable<ProductSection> OpenSections => _sections.Where(s => s.Client is not null);
+
+    private ProductSection SectionFor(ProductDescriptor product)
+    {
+        return _sections.Single(s => string.Equals(s.Product.Id, product.Id, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Open clients paired with the localized name to label their changes under, for the
+    /// save-confirmation dialog and the pending-change log.
+    /// </summary>
+    /// <remarks>
+    /// The display name is resolved HERE, per call, rather than stored: it is resource-backed,
+    /// and the two consumers render it into user-visible text.
+    /// </remarks>
+    private IEnumerable<(AgentConfigClientCore Client, string DisplayName)> DirtySources()
+    {
+        return OpenSections.Select(s => ((AgentConfigClientCore)s.Client!, s.WorkspaceDisplayName()));
+    }
+
+    // Named accessors over the list. Kept — not a transitional shim — because the pages that
+    // use them are Claude-Code-specific by design (Essentials, Environment, Effective
+    // settings) and naming the product reads better than indexing a list. What changed is
+    // that they are no longer the storage: the section is, so nothing can iterate one and
+    // miss the other.
+    internal ClaudeConfigClientBase? ClaudeCodeSdk
+    {
+        get => SectionFor(SchemaRegistry.ClaudeCodeProduct).Client;
+        private set => SectionFor(SchemaRegistry.ClaudeCodeProduct).Client = value;
+    }
+
+    internal ClaudeConfigClientBase? ClaudeDesktopSdk
+    {
+        get => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client;
+        private set => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client = value;
+    }
 
     private bool _disposed;
 
@@ -657,17 +706,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // swap (workspace reload). Method-group conversion isn't usable here because
         // SearchSchema has a defaulted maxResults parameter — so wrap in a one-arg
         // lambda that takes the SDK default.
-        List<SchemaSearchProvider> list = new(2);
-        AgentConfigClientCore? cc = ClaudeCodeSdk;
-        if (cc is not null)
+        List<SchemaSearchProvider> list = new(_sections.Count);
+        foreach (ProductSection section in OpenSections)
         {
-            list.Add(new SchemaSearchProvider(NavTitleClaudeCode, q => cc.SearchSchema(q)));
-        }
-
-        AgentConfigClientCore? dt = ClaudeDesktopSdk;
-        if (dt is not null)
-        {
-            list.Add(new SchemaSearchProvider(NavTitleClaudeDesktop, q => dt.SearchSchema(q)));
+            // Capture the client in a local per iteration so the lambda closes over THIS
+            // client rather than re-reading section.Client, which a workspace reload swaps.
+            AgentConfigClientCore client = section.Client!;
+            list.Add(new SchemaSearchProvider(section.NavTitle, q => client.SearchSchema(q)));
         }
 
         return list;
@@ -1711,7 +1756,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             }
         }
 
-        if (ClaudeCodeSdk is null && ClaudeDesktopSdk is null)
+        if (!OpenSections.Any())
         {
             SetStatusWarning(Strings.StatusNothingToSave);
             return;
@@ -1728,7 +1773,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             // Log all pending changes before any modal dialog appears so the
             // changes are always visible in the rolling log and the F12 debug window.
-            WorkspaceDiagnostics.LogPendingChanges(ClaudeCodeSdk, ClaudeDesktopSdk);
+            WorkspaceDiagnostics.LogPendingChanges(DirtySources());
 
             // ── Schema validation ────────────────────────────────────────────────
             // Validate dirty documents before showing any confirmation or writing files.
@@ -1788,7 +1833,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // If there are no content differences (e.g., Save is pressed twice), or the user
             // previously unchecked "Show this dialog on save", skip the dialog.
             SaveChangesDialogViewModel? summaryVm =
-                SaveDialogBuilder.Build(ClaudeCodeSdk, ClaudeDesktopSdk, isRestoreContext);
+                SaveDialogBuilder.Build(DirtySources(), isRestoreContext);
             // diagnostic logging for the "silent save" bug report.
             // The user reported clicking Save (button enabled => HasUnsavedChanges
             // is true => structural diff is non-empty) but no dialog appearing.
@@ -1918,14 +1963,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // untouched if it already exists.
                 // 4.3.7 step 9: route through the SDK's dirty-doc snapshot when
                 // available — only the FilePath is needed for the B4Forge copy.
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
-                    CreateB4ForgeBackupsFromPaths(ClaudeCodeSdk.SnapshotDirtyDocuments());
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    CreateB4ForgeBackupsFromPaths(ClaudeDesktopSdk.SnapshotDirtyDocuments());
+                    CreateB4ForgeBackupsFromPaths(section.Client!.SnapshotDirtyDocuments());
                 }
 
                 // route through the SDK's SaveAsync
@@ -1937,14 +1977,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // (after the user opted into "save anyway"), or silently re-validate
                 // after auto-fixes — both are wrong. Falls back to the legacy
                 // SaveDirtyAsync path before the SDK clients are constructed.
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
-                    await ClaudeCodeSdk.SaveAsync(force: true, comment, CancellationToken.None);
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    await ClaudeDesktopSdk.SaveAsync(force: true, comment, CancellationToken.None);
+                    await section.Client!.SaveAsync(force: true, comment, CancellationToken.None);
                 }
 
                 // Suppress the file watcher's reaction to our own write. See
@@ -2060,14 +2095,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         CancellationToken ct = default)
     {
         List<SchemaValidationError> all = [];
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            all.AddRange(await ClaudeCodeSdk.ValidateAsync(ct));
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            all.AddRange(await ClaudeDesktopSdk.ValidateAsync(ct));
+            all.AddRange(await section.Client!.ValidateAsync(ct));
         }
 
         return all;
@@ -3241,7 +3271,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (ClaudeCodeSdk is null && ClaudeDesktopSdk is null)
+        if (!OpenSections.Any())
         {
             SetStatusWarning(Strings.StatusNothingToExport);
             return;
@@ -3263,21 +3293,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     HeaderComment = comment,
                 };
 
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
                     JsonObject stamped = EffectiveConfigBuilder.Stamp(
-                        ClaudeCodeSdk.ComputeEffectiveSnapshot(), comment);
+                        section.Client!.ComputeEffectiveSnapshot(), comment);
                     writer.AddTextEntry(
-                        "ClaudeCode/.claude/settings.json",
-                        stamped.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    JsonObject stamped = EffectiveConfigBuilder.Stamp(
-                        ClaudeDesktopSdk.ComputeEffectiveSnapshot(), comment);
-                    writer.AddTextEntry(
-                        "ClaudeDesktop/claude_desktop_config.json",
+                        section.ExportEntryPath,
                         stamped.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                 }
 
@@ -3582,27 +3603,17 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </remarks>
     private void SubscribeWorkspaceChangedEvents()
     {
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            ClaudeCodeSdk.Changed += OnSdkClientChanged;
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            ClaudeDesktopSdk.Changed += OnSdkClientChanged;
+            section.Client!.Changed += OnSdkClientChanged;
         }
     }
 
     private void UnsubscribeWorkspaceChangedEvents()
     {
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            ClaudeCodeSdk.Changed -= OnSdkClientChanged;
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            ClaudeDesktopSdk.Changed -= OnSdkClientChanged;
+            section.Client!.Changed -= OnSdkClientChanged;
         }
     }
 
@@ -3665,8 +3676,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private bool ComputeHasActualChanges()
     {
-        return (ClaudeCodeSdk?.HasUnsavedChanges ?? false) ||
-               (ClaudeDesktopSdk?.HasUnsavedChanges ?? false);
+        return OpenSections.Any(s => s.Client!.HasUnsavedChanges);
     }
 
     /// <summary>
@@ -3953,14 +3963,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         CancellationToken ct = default)
     {
         List<SchemaValidationError> all = [];
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            all.AddRange(await ClaudeCodeSdk.ValidateAllAsync(ct));
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            all.AddRange(await ClaudeDesktopSdk.ValidateAllAsync(ct));
+            all.AddRange(await section.Client!.ValidateAllAsync(ct));
         }
 
         return all;
@@ -4813,10 +4818,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // SDK clients release their internal SemaphoreSlim. Dispose them before
         // the SchemaRegistry below so they don't observe a half-disposed registry.
-        ClaudeCodeSdk?.Dispose();
-        ClaudeCodeSdk = null;
-        ClaudeDesktopSdk?.Dispose();
-        ClaudeDesktopSdk = null;
+        foreach (ProductSection section in _sections)
+        {
+            section.Client?.Dispose();
+            section.Client = null;
+        }
         _watcher?.Dispose();
         _schemaRegistry.Dispose();
     }

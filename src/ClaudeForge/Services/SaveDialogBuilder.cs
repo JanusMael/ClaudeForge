@@ -34,9 +34,14 @@ internal static class SaveDialogBuilder
     /// confirmation ("will be restored to") rather than save ("will be
     /// written to").
     /// </param>
+    /// <param name="sources">
+    /// Open clients paired with the name their changes are grouped under. A sequence rather
+    /// than one parameter per product — the dialog renders whatever it is handed, in order,
+    /// and never needed to know there were exactly two.
+    /// </param>
+    /// <param name="isRestoreContext">Switches the wording from "will be written" to "will be restored".</param>
     internal static SaveChangesDialogViewModel? Build(
-        AgentConfigClientCore? claudeCodeSdk,
-        AgentConfigClientCore? claudeDesktopSdk,
+        IEnumerable<(AgentConfigClientCore Client, string DisplayName)> sources,
         bool isRestoreContext = false)
     {
         List<SaveChangeSectionViewModel> sections = new();
@@ -45,16 +50,9 @@ internal static class SaveDialogBuilder
             ? Strings.LabelWillBeRestoredTo
             : Strings.LabelWillBeWrittenTo;
 
-        if (claudeCodeSdk is not null)
+        foreach ((AgentConfigClientCore client, string displayName) in sources)
         {
-            AppendSdkSections(sections, claudeCodeSdk.SnapshotDirtyDocuments(), Strings.WorkspaceNameClaudeCode,
-                actionVerb);
-        }
-
-        if (claudeDesktopSdk is not null)
-        {
-            AppendSdkSections(sections, claudeDesktopSdk.SnapshotDirtyDocuments(), Strings.WorkspaceNameClaudeDesktop,
-                actionVerb);
+            AppendSdkSections(sections, client.SnapshotDirtyDocuments(), displayName, actionVerb);
         }
 
         return sections.Count == 0

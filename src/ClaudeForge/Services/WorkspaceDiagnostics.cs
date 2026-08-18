@@ -40,18 +40,17 @@ internal static class WorkspaceDiagnostics
     /// log. SDK clients may be <see langword="null"/> (pre-load); each
     /// non-null one contributes its own snapshot.
     /// </summary>
+    /// <param name="sources">
+    /// Open clients paired with the name to label their changes under. A sequence rather than
+    /// one parameter per product: this method has no business knowing how many products the
+    /// shell hosts, and it never did — it only needed each client and its label.
+    /// </param>
     internal static void LogPendingChanges(
-        AgentConfigClientCore? claudeCodeSdk,
-        AgentConfigClientCore? claudeDesktopSdk)
+        IEnumerable<(AgentConfigClientCore Client, string DisplayName)> sources)
     {
-        if (claudeCodeSdk is not null)
+        foreach ((AgentConfigClientCore client, string displayName) in sources)
         {
-            LogSdkChanges(claudeCodeSdk.SnapshotDirtyDocuments(), Strings.WorkspaceNameClaudeCode);
-        }
-
-        if (claudeDesktopSdk is not null)
-        {
-            LogSdkChanges(claudeDesktopSdk.SnapshotDirtyDocuments(), Strings.WorkspaceNameClaudeDesktop);
+            LogSdkChanges(client.SnapshotDirtyDocuments(), displayName);
         }
     }
 
