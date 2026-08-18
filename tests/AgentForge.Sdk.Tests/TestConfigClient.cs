@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -24,15 +25,15 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 /// removes the reference.
 /// </para>
 /// <para>
-/// <b>What this is NOT.</b> It is not a product-neutral client, because one cannot
-/// be written today. <see cref="IsClaudeCode"/> is a <c>bool</c> on the shared core
-/// that selects between exactly two <i>Claude</i> schemas, and
-/// <see cref="ConfigFileDiscoverer"/> only knows Claude layouts — both of which live
-/// in the shared assemblies and are documented deferrals (Phases 3–4 replace the
-/// flag with a product descriptor). So this client discovers Claude's files and
-/// validates against Claude's schema; what it buys is that the <i>assembly
-/// dependency</i> is honest and the remaining Claude assumption sits in one
-/// labelled file instead of spread across a dozen test fixtures.
+/// <b>What this is NOT.</b> It is not a product-neutral client, though it is closer
+    /// than it was. The <c>bool IsClaudeCode</c> that used to select between exactly two
+    /// Claude schemas is gone — <see cref="Product"/> is a <see cref="ProductDescriptor"/>,
+    /// so this type could name any product's schema. What still ties it to Claude is
+    /// <see cref="ConfigFileDiscoverer"/>, which only knows Claude's file layouts and
+    /// remains a documented deferral. So this client discovers Claude's files and
+    /// validates against Claude's schema; what it buys is that the <i>assembly
+    /// dependency</i> is honest and the remaining Claude assumption sits in one
+    /// labelled file instead of spread across a dozen test fixtures.
 /// </para>
 /// <para>
 /// <b>When to use the real client instead.</b> If a test asserts something about
@@ -96,11 +97,11 @@ internal sealed class TestConfigClient : AgentConfigClientCore
 
     /// <inheritdoc/>
     /// <remarks>
-    /// <see langword="true"/> because the alternative is Claude Desktop's schema, not
-    /// a neutral one — see the class remarks. Nothing about these tests depends on
-    /// which of the two is chosen beyond the schema being loadable.
+    /// Claude Code's descriptor because the alternative bundled schema is Claude
+    /// Desktop's, not a neutral one — see the class remarks. Nothing about these tests
+    /// depends on which of the two is chosen beyond the schema being loadable.
     /// </remarks>
-    protected override bool IsClaudeCode => true;
+    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()

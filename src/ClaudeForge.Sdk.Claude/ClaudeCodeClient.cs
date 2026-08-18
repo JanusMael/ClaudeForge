@@ -95,7 +95,7 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     }
 
     /// <inheritdoc/>
-    protected override bool IsClaudeCode => true;
+    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()

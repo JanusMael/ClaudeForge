@@ -92,9 +92,10 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
         // event names + descriptions straight from the bundled schema (same source, same
         // descriptions) so KnownEvents — and thus the editor's per-event tooltips/labels —
         // stay populated regardless of how the client was built. Mirrors SchemaHookCommandVariants.
-        return IsClaudeCode
-            ? SchemaRegistry.GetHookEvents("claude-code-settings.json")
-            : [];
+        // No product test needed: GetHookEvents returns empty for a schema with no hooks
+        // section, which is exactly what Desktop's is. The former `IsClaudeCode ? … : []`
+        // hardcoded that answer instead of reading it.
+        return SchemaRegistry.GetHookEvents(Product.SchemaFileName);
     }
 
     /// <summary>
@@ -108,7 +109,5 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
     /// share one source for the per-type picker text and per-field descriptions.
     /// </summary>
     internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
-        IsClaudeCode
-            ? SchemaRegistry.GetHookCommandVariants("claude-code-settings.json")
-            : [];
+        SchemaRegistry.GetHookCommandVariants(Product.SchemaFileName);
 }

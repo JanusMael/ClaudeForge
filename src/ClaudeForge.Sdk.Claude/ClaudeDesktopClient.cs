@@ -70,7 +70,7 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
     }
 
     /// <inheritdoc/>
-    protected override bool IsClaudeCode => false;
+    protected override ProductDescriptor Product => SchemaRegistry.ClaudeDesktopProduct;
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
