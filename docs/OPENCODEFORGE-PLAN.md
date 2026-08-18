@@ -28,16 +28,17 @@
 >
 > ### Implementation status — 2026-08-17
 >
-> Branch **`feat/agentforge-opencodeforge`**, 15 commits, **not yet pushed**. Suite green
-> throughout: **2,783 passed · 11 skipped · 0 failed · 0 warnings**.
+> Branch **`feat/agentforge-opencodeforge`**, 22 commits, **not yet pushed** (`origin/main`
+> still `930eb41`). Suite green throughout: **2,801 passed · 11 skipped · 0 failed ·
+> 0 warnings**.
 >
 > | Phase | Status |
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
-> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4** retires them |
-> | 3 — Generalize the scope model | **next** |
+> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
+> | 4 — Product model | 🔶 **4a done** — `ProductDescriptor` replaced `IsClaudeCode`. **4b–4f remain** — see the Phase 4 section |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -2291,11 +2292,51 @@ the root invariant table, `AGENT-ONBOARDING.md`, and the `Core/Settings` sidecar
 > compiles and the converters are unit-tested, but the template's runtime binding is only
 > provable by running the app.
 
-### Phase 4 — Generalize the product model (Problems 2 + 3)
+### Phase 4 — Generalize the product model (Problems 2 + 3) — 🔶 **4a done**
 
 `ProductSection` list replaces the named SDK fields; `ProductDescriptor` replaces
 `IsClaudeCode`; `IMergePolicy` replaces the hardcoded rules. Re-register Claude Code and
 Claude Desktop through the new path and prove behavioural identity.
+
+**This phase is five separable commits, not one.** Splitting it:
+
+| | Piece | Status |
+|---|---|---|
+| **4a** | `ProductDescriptor` replaces `AgentConfigClientCore.IsClaudeCode` | ✅ `101554b` |
+| **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returns `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ⬜ |
+| **4c** | `IMergePolicy` (Problem 2) | ⬜ |
+| **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ⬜ |
+| **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ⬜ |
+| **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ⬜ |
+
+4d and 4e are each comparable in size to the whole of Phase 3.
+
+> **⚠ 4a's canary found a hole that applies to every remaining piece — read this before 4b.**
+>
+> Transposing the two products — pointing Claude Desktop's descriptor at Claude Code's
+> schema, which is exactly the mistake a product refactor introduces — **passed all 2,798
+> tests.** Desktop's schema selection and its no-hooks behaviour were completely unguarded.
+> Desktop configs would have validated against Claude Code's schema, and the Hooks editor
+> would have been offered for a product that has none, with a green suite.
+>
+> Closed by `tests/AgentForge.Core.Tests/Schema/ProductDescriptorSchemaTests.cs`; the
+> transposition now fails two of its three tests. **Assume the same hole exists for 4b–4f.
+> Canary each by transposing the two products, not merely by running the suite** — "green
+> after the refactor" demonstrates almost nothing here, because so little of the suite
+> distinguishes the two products in the first place.
+
+**What 4a actually did**, since the plan's one-line description understates it: every use
+of the boolean was choosing a schema, so the descriptor names the schema
+(`{ Id, DisplayName, SchemaUrl, SchemaFileName }`) rather than the product. The five
+ternaries that each restated "Claude Code's URL and file name, else Desktop's" collapse
+into two descriptors declared once on `SchemaRegistry`. The `bool` overloads and the two
+Claude-named node accessors **stay** as thin wrappers — the GUI and a good number of tests
+call them, and retiring them is a separate public-surface change.
+
+The hooks gate in `ClaudeConfigClientBase` was **deleted rather than translated**:
+`GetHookEvents` / `GetHookCommandVariants` already return empty for a schema with no hooks
+section, which is precisely what Desktop's is, so passing `Product.SchemaFileName`
+unconditionally reads the fact instead of hardcoding it.
 
 ### Phase 5 — Extract the shell
 
