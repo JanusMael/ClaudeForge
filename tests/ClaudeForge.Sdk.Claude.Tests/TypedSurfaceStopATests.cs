@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
@@ -25,7 +25,7 @@ public sealed class TypedSurfaceStopATests
     private static SettingsWorkspace MakeWorkspace(JsonObject settings)
     {
         SettingsDocument doc = new(ConfigScope.User, "settings.json", settings, isReadOnly: false);
-        return new SettingsWorkspace([doc]);
+        return new SettingsWorkspace([doc], ClaudeMergePolicy.Instance);
     }
 
     private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)

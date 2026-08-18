@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -19,7 +19,7 @@ public partial class SettingsGroupEditorViewModelTests
             JsonObject root = (JsonObject)JsonNode.Parse(e.Json)!;
             return new SettingsDocument(e.Scope, $"{e.Scope}.json", root, isReadOnly: false);
         });
-        return new SettingsWorkspace(docs);
+        return new SettingsWorkspace(docs, ClaudeMergePolicy.Instance);
     }
 
     private static SchemaNode MakeNode(string jsonPath, string name,

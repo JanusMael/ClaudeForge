@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -128,6 +128,18 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// and a third product needs no new case here.
     /// </remarks>
     protected abstract ProductDescriptor Product { get; }
+
+    /// <summary>
+    /// How this product's layered values combine — which paths union across scopes and in
+    /// which order. Handed to every <see cref="SettingsWorkspace"/> this client loads.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="Product"/> because a descriptor is data (it names a schema)
+    /// while a policy is behaviour. Claude's rules lived as a private static inside
+    /// <c>SettingsWorkspace</c>, which silently applied them to whatever product opened a
+    /// workspace; declaring them here makes a product state its own.
+    /// </remarks>
+    protected abstract IMergePolicy MergePolicy { get; }
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -384,7 +396,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         // Discover and load OUTSIDE the lock — the load is async I/O. We then
         // briefly take the lock to publish the new workspace into the field.
         IReadOnlyList<DiscoveredFile> files = DiscoverFiles(projectRoot);
-        SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, ct).ConfigureAwait(false);
+        SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, MergePolicy, ct).ConfigureAwait(false);
 
         // Build schema node cache outside the lock. GetClaudeCode/DesktopSettingsNodeAsync
         // uses SchemaRegistry's memory cache after the first load — subsequent calls are
@@ -435,7 +447,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         }
 
         IReadOnlyList<DiscoveredFile> files = DiscoverFiles(projectRoot);
-        SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, ct).ConfigureAwait(false);
+        SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, MergePolicy, ct).ConfigureAwait(false);
 
         // Refresh schema node cache on reload (schema may have been updated on
         // disk since the last open). Memory-cached after first access, so cheap.

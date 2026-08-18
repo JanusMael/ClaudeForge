@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
 
@@ -24,7 +24,7 @@ public sealed class AgentConfigClientAsyncTests
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Instance);
         return TestConfigClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
@@ -39,7 +39,7 @@ public sealed class AgentConfigClientAsyncTests
         JsonObject userRoot = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument managed = new(ConfigScope.Managed, "managed.json", managedRoot, isReadOnly: true);
         SettingsDocument user = new(ConfigScope.User, "user.json", userRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([managed, user]);
+        SettingsWorkspace ws = new([managed, user], TestMergePolicy.Instance);
         return TestConfigClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 

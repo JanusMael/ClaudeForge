@@ -1,4 +1,5 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
@@ -91,7 +92,7 @@ public class SettingsWorkspaceTests
     public void SetValue_ReadOnlyScope_Throws()
     {
         SettingsDocument doc = new(ConfigScope.Managed, "/managed.json", new JsonObject(), isReadOnly: true);
-        SettingsWorkspace workspace = new([doc]);
+        SettingsWorkspace workspace = new([doc], TestMergePolicy.Inferring);
 
         Assert.ThrowsExactly<InvalidOperationException>(() =>
             workspace.SetValue("model", JsonValue.Create("x"), ConfigScope.Managed));
@@ -118,13 +119,78 @@ public class SettingsWorkspaceTests
         Assert.AreEqual(60, effective["cleanupPeriodDays"]!.GetValue<int>());
     }
 
+    // ───────────────────────────────────────────────────────────────────────
+    //  The workspace uses the policy it was HANDED
+    //
+    //  Claude's list of union-merged paths used to be a private static field on
+    //  SettingsWorkspace, so every workspace in the process merged Claude's way whatever
+    //  product opened it. The two tests below are the pair that would have caught that:
+    //  identical documents, two different policies, two different effective values. If a
+    //  hardcoded rule ever returns, one of them goes red.
+    // ───────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void GetLayeredValue_UnionsWhenThePolicyDeclaresThePath()
+    {
+        SettingsWorkspace workspace = MakeWorkspace(
+            TestMergePolicy.Declaring("tools"),
+            (ConfigScope.Project, """{"tools":["b"]}"""),
+            (ConfigScope.User, """{"tools":["a"]}"""));
+
+        LayeredValue value = workspace.GetLayeredValue("tools");
+
+        JsonArray tools = (JsonArray)value.EffectiveValue!;
+        CollectionAssert.AreEquivalent(
+            new[] { "b", "a" },
+            tools.Select(t => t!.GetValue<string>()).ToArray(),
+            "A declared path unions both scopes' contributions.");
+    }
+
+    [TestMethod]
+    public void GetLayeredValue_ReplacesWhenThePolicyDoesNotUnion()
+    {
+        // Same documents, same key, a policy that never unions: the highest-priority scope
+        // replaces the rest, and the lower scope's entry is absent rather than appended.
+        SettingsWorkspace workspace = MakeWorkspace(
+            TestMergePolicy.NeverUnions,
+            (ConfigScope.Project, """{"tools":["b"]}"""),
+            (ConfigScope.User, """{"tools":["a"]}"""));
+
+        LayeredValue value = workspace.GetLayeredValue("tools");
+
+        JsonArray tools = (JsonArray)value.EffectiveValue!;
+        CollectionAssert.AreEqual(
+            new[] { "b" },
+            tools.Select(t => t!.GetValue<string>()).ToArray(),
+            "Without a union rule, Project replaces User outright — this is OpenCode's "
+            + "documented behaviour for most of its array keys, so the workspace must be "
+            + "able to express it.");
+    }
+
+    [TestMethod]
+    public void Constructor_NullPolicy_Throws()
+    {
+        // A defaulted policy is what would let a new product silently inherit Claude's
+        // rules, so omitting one is a programmer error rather than a shrug.
+        SettingsDocument doc = new(ConfigScope.User, "/user.json", new JsonObject(), isReadOnly: false);
+
+        Assert.ThrowsExactly<ArgumentNullException>(() => new SettingsWorkspace([doc], null!));
+    }
+
     private static SettingsWorkspace MakeWorkspace(params (ConfigScope Scope, string Json)[] entries)
+    {
+        return MakeWorkspace(TestMergePolicy.Inferring, entries);
+    }
+
+    private static SettingsWorkspace MakeWorkspace(
+        IMergePolicy policy,
+        params (ConfigScope Scope, string Json)[] entries)
     {
         IEnumerable<SettingsDocument> docs = entries.Select(e =>
         {
             JsonObject root = (JsonObject)JsonNode.Parse(e.Json)!;
             return new SettingsDocument(e.Scope, $"{e.Scope}.json", root, isReadOnly: false);
         });
-        return new SettingsWorkspace(docs);
+        return new SettingsWorkspace(docs, policy);
     }
 }

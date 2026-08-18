@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -239,7 +239,7 @@ public sealed class HooksEditorLoadPathMutationTests
         // Wrap in a workspace + SDK client (production code path).
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 
@@ -274,7 +274,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 
@@ -316,7 +316,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 
@@ -354,7 +354,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 

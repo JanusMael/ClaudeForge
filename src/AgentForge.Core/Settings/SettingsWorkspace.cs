@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -6,32 +7,29 @@ namespace Bennewitz.Ninja.AgentForge.Core.Settings;
 /// Aggregates all SettingsDocuments for one configuration file type and provides
 /// layered read/write access with merge semantics.
 /// </summary>
+/// <remarks>
+/// The merge rules arrive as an <see cref="IMergePolicy"/>. This class used to hold Claude's
+/// list of union-merged paths as a private static, which made every workspace in the process
+/// a Claude workspace no matter which product opened it. The policy is a required
+/// constructor argument rather than a defaulted one, so a new product cannot inherit
+/// Claude's rules by omission.
+/// </remarks>
 public sealed class SettingsWorkspace
 {
-    // Array paths per Claude Code documentation — these MERGE across scopes rather than override
-    private static readonly HashSet<string> ArrayPaths = new(StringComparer.Ordinal)
-    {
-        "claudeMdExcludes",
-        "availableModels",
-        "httpHookAllowedEnvVars",
-        "allowedHttpHookUrls",
-        "permissions.allow",
-        "permissions.deny",
-        "permissions.ask",
-        "permissions.additionalDirectories",
-        "enabledMcpjsonServers",
-        "disabledMcpjsonServers",
-        "companyAnnouncements",
-    };
-
     private readonly List<SettingsDocument> _documents;
+    private readonly IMergePolicy _mergePolicy;
 
-    public SettingsWorkspace(IEnumerable<SettingsDocument> documents)
+    public SettingsWorkspace(IEnumerable<SettingsDocument> documents, IMergePolicy mergePolicy)
     {
+        ArgumentNullException.ThrowIfNull(mergePolicy);
+        _mergePolicy = mergePolicy;
         // Sort highest-priority first, by the scope's own declared ordinal rather than a
         // cast, so a product with a different ladder orders correctly without changes here.
         _documents = documents.OrderBy(d => d.Scope.Ordinal).ToList();
     }
+
+    /// <summary>The product's merge rules, as supplied at construction.</summary>
+    public IMergePolicy MergePolicy => _mergePolicy;
 
     public IReadOnlyList<SettingsDocument> Documents => _documents;
 
@@ -45,8 +43,7 @@ public sealed class SettingsWorkspace
                                    .Select(d => new ScopeEntry(d.Scope, d.Root[key], d.FilePath))
                                    .ToList();
 
-        bool? isArray = ArrayPaths.Contains(key) ? true : null;
-        MergeResult merged = MergeEngine.Merge(entries, isArray);
+        MergeResult merged = MergeEngine.Merge(entries, key, _mergePolicy);
 
         return new LayeredValue(key, entries)
         {
@@ -117,7 +114,7 @@ public sealed class SettingsWorkspace
     /// </summary>
     public JsonObject ComputeEffective()
     {
-        return MergeEngine.ComputeEffective(_documents, ArrayPaths);
+        return MergeEngine.ComputeEffective(_documents, _mergePolicy);
     }
 
     /// <summary>

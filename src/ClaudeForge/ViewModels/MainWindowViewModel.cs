@@ -3828,8 +3828,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         SettingsWorkspace dtCandidate;
         try
         {
-            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles);
-            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles);
+            // Both candidates are Claude products, so both take Claude's merge rules —
+            // the same policy the SDK clients supply for their own loads.
+            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles, ClaudeMergePolicy.Instance);
+            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles, ClaudeMergePolicy.Instance);
         }
         catch (Exception ex) when (ex is JsonException
                                        or IOException

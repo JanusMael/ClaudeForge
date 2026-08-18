@@ -47,6 +47,15 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
     {
     }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Overridden here rather than per-client because both Claude products merge the same
+    /// way: Desktop's config declares no array paths at all, so Claude Code's list cannot
+    /// match one of its documents. <see cref="AgentConfigClientCore.Product"/> stays
+    /// per-client because the two products genuinely name different schemas.
+    /// </remarks>
+    protected override IMergePolicy MergePolicy => ClaudeMergePolicy.Instance;
+
     private IPermissionsAccessor? _permissionsAccessor;
     private IHooksAccessor? _hooksAccessor;
     private IMarketplacesAccessor? _marketplacesAccessor;

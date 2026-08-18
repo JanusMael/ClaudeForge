@@ -1,4 +1,4 @@
-// (Permissions): comprehensive disk →
+﻿// (Permissions): comprehensive disk →
 // SDK → editor → user-mutation → SDK → disk round-trip suite for the
 // Permissions editor.  Mirrors HooksFullRoundTripTests + McpFullRoundTripTests'
 // fixture pattern.
@@ -36,7 +36,7 @@ public class PermissionsFullRoundTripTests
             }
 
             SettingsDocument doc = new(ConfigScope.User, "settings.json", rootObj, isReadOnly: false);
-            SettingsWorkspace ws = new([doc]);
+            SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
             ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
                 ws, ConfigScope.User,
                 new SchemaRegistry(new HttpClient()));

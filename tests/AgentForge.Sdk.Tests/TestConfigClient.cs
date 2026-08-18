@@ -104,6 +104,15 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// A local policy, not Claude's: <c>ClaudeMergePolicy</c> lives in
+    /// <c>ClaudeForge.Sdk.Claude</c>, and referencing it from here would be the assembly
+    /// inversion this whole type exists to avoid. It unions any all-array path, which is
+    /// what these tests' merge expectations were written against.
+    /// </remarks>
+    protected override IMergePolicy MergePolicy => TestMergePolicy.Instance;
+
+    /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
         return new BackupClient(

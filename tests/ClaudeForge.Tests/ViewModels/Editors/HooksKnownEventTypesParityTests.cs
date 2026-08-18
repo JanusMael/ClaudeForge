@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
+﻿namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
 /// <summary>
 /// The "overlay ⊆ schema" guard. The editor now derives its live hook-event list
@@ -28,7 +28,7 @@ public sealed class HooksKnownEventTypesParityTests
     private static SettingsWorkspace WorkspaceWithEvent(string eventName)
     {
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         JsonObject hooks = new()
         {
             [eventName] = new JsonArray(new JsonObject

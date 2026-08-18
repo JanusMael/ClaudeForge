@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
+﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -18,7 +18,7 @@ public sealed class DeprecatedFilterTests
             JsonObject root = (JsonObject)JsonNode.Parse(e.Json)!;
             return new SettingsDocument(e.Scope, $"{e.Scope}.json", root, isReadOnly: false);
         });
-        return new SettingsWorkspace(docs);
+        return new SettingsWorkspace(docs, ClaudeMergePolicy.Instance);
     }
 
     [TestMethod]

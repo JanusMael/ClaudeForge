@@ -1,4 +1,4 @@
-// (MCP): comprehensive disk → SDK →
+﻿// (MCP): comprehensive disk → SDK →
 // editor → user-mutation → SDK → disk round-trip suite for the MCP
 // servers editor.  Mirrors HooksFullRoundTripTests' fixture pattern.
 
@@ -35,7 +35,7 @@ public class McpFullRoundTripTests
             }
 
             SettingsDocument doc = new(ConfigScope.User, "settings.json", rootObj, isReadOnly: false);
-            SettingsWorkspace ws = new([doc]);
+            SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
             ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
                 ws, ConfigScope.User,
                 new SchemaRegistry(new HttpClient()));

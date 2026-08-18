@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
@@ -19,7 +19,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.User, JsonValue.Create("user-value"), "user.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: false);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
         Assert.AreEqual("managed-value", result.EffectiveValue?.GetValue<string>());
         Assert.AreEqual(ConfigScope.Managed, result.EffectiveScope);
@@ -34,7 +34,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, JsonValue.Create("project"), "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: false);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
         Assert.AreEqual("user", result.EffectiveValue?.GetValue<string>());
         Assert.AreEqual(ConfigScope.User, result.EffectiveScope);
@@ -48,7 +48,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Local, JsonValue.Create(42), "local.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: false);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
         Assert.AreEqual(42, result.EffectiveValue?.GetValue<int>());
         Assert.AreEqual(ConfigScope.Local, result.EffectiveScope);
@@ -57,14 +57,14 @@ public class MergeEngineTests
     [TestMethod]
     public void NoEntries_ReturnsNull()
     {
-        MergeResult result = MergeEngine.Merge([], isArray: false);
+        MergeResult result = MergeEngine.Merge([], "key", TestMergePolicy.NeverUnions);
 
         Assert.IsNull(result.EffectiveValue);
         Assert.IsNull(result.EffectiveScope);
     }
 
     // -----------------------------------------------------------------------
-    // Inferred array-ness (isArray == null): only a uniform all-array set unions
+    // Inferring policy: only a uniform all-array set unions
     // -----------------------------------------------------------------------
 
     [TestMethod]
@@ -80,7 +80,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.User, new JsonArray("comp-a"), "user.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries); // isArray null → inferred
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         Assert.IsTrue(result.EffectiveValue is JsonValue jv && jv.GetValue<bool>(),
             "The higher-priority Project bool must win over the lower-priority User array.");
@@ -98,7 +98,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, new JsonArray("b"), "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries); // inferred
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonArray? arr = result.EffectiveValue as JsonArray;
         Assert.IsNotNull(arr);
@@ -119,7 +119,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Local, new JsonArray("c", "d"), "local.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: true);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         List<string> items = arr.Select(x => x!.GetValue<string>()).OrderBy(s => s).ToList();
@@ -135,7 +135,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, new JsonArray("x", "z"), "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: true);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         Assert.AreEqual(3, arr.Count); // x, y, z — x not duplicated
     }
@@ -156,7 +156,7 @@ public class MergeEngineTests
                 "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: true);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         Assert.AreEqual(1, arr.Count);
     }
@@ -177,7 +177,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, project, "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
         Assert.AreEqual("user-a", obj["a"]!.GetValue<string>()); // only user defines a
@@ -198,7 +198,7 @@ public class MergeEngineTests
             MakeDoc(ConfigScope.Project, """{"cleanupPeriodDays":90,"language":"en"}"""),
         ];
 
-        JsonObject effective = MergeEngine.ComputeEffective(docs);
+        JsonObject effective = MergeEngine.ComputeEffective(docs, TestMergePolicy.Inferring);
 
         Assert.AreEqual("sonnet", effective["model"]!.GetValue<string>());
         Assert.AreEqual(30, effective["cleanupPeriodDays"]!.GetValue<int>()); // user wins
@@ -225,7 +225,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, null, "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: false);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
         Assert.IsNull(result.EffectiveValue);
         Assert.IsNull(result.EffectiveScope);
@@ -244,7 +244,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.User, new JsonArray("a", "b"), "user.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: true);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         List<string> items = arr.Select(x => x!.GetValue<string>()).OrderBy(s => s).ToList();
@@ -266,9 +266,8 @@ public class MergeEngineTests
             MakeDoc(ConfigScope.User, """{"permissions":{"allow":["Bash(*)","Read(*)"]}}"""),
             MakeDoc(ConfigScope.Project, """{"permissions":{"allow":["Edit(*)"]}}"""),
         ];
-        HashSet<string> arrayPaths = new(StringComparer.Ordinal) { "permissions.allow" };
 
-        JsonObject effective = MergeEngine.ComputeEffective(docs, arrayPaths);
+        JsonObject effective = MergeEngine.ComputeEffective(docs, TestMergePolicy.Declaring("permissions.allow"));
 
         JsonArray allow = (JsonArray)effective["permissions"]!["allow"]!;
         HashSet<string> items = allow.Select(x => x!.GetValue<string>()).ToHashSet();
@@ -290,8 +289,9 @@ public class MergeEngineTests
             MakeDoc(ConfigScope.Project, """{"permissions":{"allow":["Edit(*)"]}}"""),
         ];
 
-        // No arrayPaths hint — nested allow should be treated as scalar; User wins.
-        JsonObject effective = MergeEngine.ComputeEffective(docs, arrayPaths: null);
+        // The policy declares nothing, so the nested allow is unioned only if inference
+        // says so — both sides are arrays, so it is.
+        JsonObject effective = MergeEngine.ComputeEffective(docs, TestMergePolicy.Inferring);
 
         JsonArray allow = (JsonArray)effective["permissions"]!["allow"]!;
         List<string> items = allow.Select(x => x!.GetValue<string>()).ToList();
@@ -328,7 +328,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, project, "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
         // Only Project defined "model"; result must contain it.
@@ -352,7 +352,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.Project, project, "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
         // User's null reference is treated as absent; Project's value is the only defined one.
@@ -369,14 +369,14 @@ public class MergeEngineTests
     [TestMethod]
     public void Merge_InferredArray_WhenAllDefinedValuesAreArrays()
     {
-        // No isArray hint; Merge should infer array semantics from the actual values.
+        // An inferring policy derives array semantics from the actual values.
         ScopeEntry[] entries =
         [
             new ScopeEntry(ConfigScope.User, new JsonArray("alpha", "beta"), "user.json"),
             new ScopeEntry(ConfigScope.Project, new JsonArray("beta", "gamma"), "project.json"),
         ];
 
-        MergeResult result = MergeEngine.Merge(entries, isArray: null);
+        MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         List<string> items = arr.Select(x => x!.GetValue<string>()).OrderBy(s => s).ToList();
@@ -385,5 +385,123 @@ public class MergeEngineTests
         // The engine must produce the union.
         CollectionAssert.AreEqual(new[] { "alpha", "beta", "gamma" }, items,
             "Result must be a union when array-ness is inferred from actual JsonArray values.");
+    }
+
+    // -----------------------------------------------------------------------
+    // The policy seam itself. Neither behaviour below is reachable through
+    // Claude's policy, so without these tests the two knobs IMergePolicy adds
+    // would sit unexercised until a second product arrived to discover them.
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void Union_HighestPriorityFirst_PutsTheWinningScopesEntriesFirst()
+    {
+        // The baseline the next test contrasts with — asserted on ORDER, not membership,
+        // because order is the whole subject. Every other union test here sorts first.
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.Project, new JsonArray("proj"), "project.json"),
+            new ScopeEntry(ConfigScope.User, new JsonArray("user"), "user.json"),
+        ];
+
+        MergeResult result = MergeEngine.Merge(entries, "instructions", TestMergePolicy.Inferring);
+
+        JsonArray arr = (JsonArray)result.EffectiveValue!;
+        CollectionAssert.AreEqual(
+            new[] { "proj", "user" },
+            arr.Select(x => x!.GetValue<string>()).ToArray(),
+            "Claude's order: the highest-priority scope's entries lead.");
+    }
+
+    [TestMethod]
+    public void Union_LowestPriorityFirst_ReversesTheConcatenationOrder()
+    {
+        // OpenCode's measured order (Spike S1): a global `instructions` entry precedes the
+        // project's. Not cosmetic there — OpenCode resolves a permission map by LAST match,
+        // so a merged map assembled from the wrong end inverts the user's intent. The
+        // engine has to be able to produce this without an OpenCode policy existing.
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.Project, new JsonArray("proj"), "project.json"),
+            new ScopeEntry(ConfigScope.User, new JsonArray("user"), "user.json"),
+        ];
+
+        MergeResult result = MergeEngine.Merge(entries, "instructions", TestMergePolicy.InferringLowestFirst);
+
+        JsonArray arr = (JsonArray)result.EffectiveValue!;
+        CollectionAssert.AreEqual(
+            new[] { "user", "proj" },
+            arr.Select(x => x!.GetValue<string>()).ToArray(),
+            "Lowest-priority contributions lead when the policy says so.");
+
+        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope,
+            "Union order describes where the result starts, NOT which scope is credited: "
+            + "the effective scope stays the highest-priority contributor either way.");
+    }
+
+    [TestMethod]
+    public void DeclaringOnlyPolicy_UndeclaredAllArrayPath_IsReplacedNotUnioned()
+    {
+        // The shape OpenCode needs and Claude must not have: `disabled_providers` is an
+        // array in both scopes, yet the higher scope replaces the lower outright. A policy
+        // that inferred union-ness from the values would silently resurrect a provider the
+        // user disabled. This is why inference is the policy's call and not the engine's.
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.Project, new JsonArray("openai"), "project.json"),
+            new ScopeEntry(ConfigScope.User, new JsonArray("anthropic"), "user.json"),
+        ];
+
+        MergeResult result = MergeEngine.Merge(
+            entries, "disabled_providers", TestMergePolicy.DeclaringOnly("instructions"));
+
+        JsonArray arr = (JsonArray)result.EffectiveValue!;
+        CollectionAssert.AreEqual(
+            new[] { "openai" },
+            arr.Select(x => x!.GetValue<string>()).ToArray(),
+            "An undeclared path must be replaced when the policy does not infer.");
+        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope);
+    }
+
+    [TestMethod]
+    public void Policy_RulesOnTheDottedChildPath_NotJustTheTopLevelKey()
+    {
+        // The prefix threading is load-bearing: "permissions.allow" has to be recognisable
+        // while merging the enclosing "permissions" object, or a nested declaration silently
+        // does nothing. Declares the child ONLY, and turns inference off so a pass would
+        // have to come from the path actually being matched.
+        SettingsDocument[] docs =
+        [
+            MakeDoc(ConfigScope.User, """{"permissions":{"allow":["Bash(*)"],"deny":["Edit(*)"]}}"""),
+            MakeDoc(ConfigScope.Project, """{"permissions":{"allow":["Read(*)"],"deny":["Write(*)"]}}"""),
+        ];
+
+        JsonObject effective = MergeEngine.ComputeEffective(
+            docs, TestMergePolicy.DeclaringOnly("permissions.allow"));
+
+        JsonArray allow = (JsonArray)effective["permissions"]!["allow"]!;
+        CollectionAssert.AreEquivalent(
+            new[] { "Bash(*)", "Read(*)" },
+            allow.Select(x => x!.GetValue<string>()).ToArray(),
+            "permissions.allow is declared, so it unions.");
+
+        JsonArray deny = (JsonArray)effective["permissions"]!["deny"]!;
+        CollectionAssert.AreEqual(
+            new[] { "Edit(*)" },
+            deny.Select(x => x!.GetValue<string>()).ToArray(),
+            "permissions.deny is NOT declared and inference is off, so User replaces Project. "
+            + "Proves the policy is consulted per dotted child path rather than per top-level key.");
+    }
+
+    [TestMethod]
+    public void Merge_NullPolicy_Throws()
+    {
+        ScopeEntry[] entries =
+        [
+            new ScopeEntry(ConfigScope.User, JsonValue.Create("x"), "user.json"),
+        ];
+
+        Assert.ThrowsExactly<ArgumentNullException>(() => MergeEngine.Merge(entries, "key", null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => MergeEngine.ComputeEffective([], null!));
     }
 }

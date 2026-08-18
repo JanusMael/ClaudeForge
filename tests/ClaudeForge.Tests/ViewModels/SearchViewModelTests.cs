@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
@@ -496,10 +496,9 @@ public class SearchViewModelTests
             },
 
         ];
-        SettingsWorkspace workspace = new([
-            new SettingsDocument(ConfigScope.User, "user.json",
-                new JsonObject(), isReadOnly: false)
-        ]);
+        SettingsWorkspace workspace = new(
+            [new SettingsDocument(ConfigScope.User, "user.json", new JsonObject(), isReadOnly: false)],
+            ClaudeMergePolicy.Instance);
         SettingsGroupEditorViewModel groupVm = new(
             "Permissions", nodes, workspace);
 
@@ -535,10 +534,9 @@ public class SearchViewModelTests
             new("permissions.deny", "deny") { ValueType = SchemaValueType.Array },
             new("model", "model") { ValueType = SchemaValueType.String },
         ];
-        SettingsWorkspace workspace = new([
-            new SettingsDocument(ConfigScope.User, "user.json",
-                new JsonObject(), isReadOnly: false)
-        ]);
+        SettingsWorkspace workspace = new(
+            [new SettingsDocument(ConfigScope.User, "user.json", new JsonObject(), isReadOnly: false)],
+            ClaudeMergePolicy.Instance);
         SettingsGroupEditorViewModel groupVm = new(
             "General", nodes, workspace);
 
@@ -572,7 +570,7 @@ public class SearchViewModelTests
     {
         JsonObject root = new();
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         EssentialsViewModel essentialsVm = new(client, new FakeEnvironmentProvider());
@@ -587,9 +585,9 @@ public class SearchViewModelTests
     {
         // If a future commit adds a new EssentialsCardKind / card without
         // wiring its trigger phrases, this test surfaces the gap.
-        SettingsWorkspace ws = new([
-            new SettingsDocument(ConfigScope.User, "u.json", new JsonObject(), isReadOnly: false)
-        ]);
+        SettingsWorkspace ws = new(
+            [new SettingsDocument(ConfigScope.User, "u.json", new JsonObject(), isReadOnly: false)],
+            ClaudeMergePolicy.Instance);
         ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         EssentialsViewModel vm = new(client, new FakeEnvironmentProvider());

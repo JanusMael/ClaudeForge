@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -165,7 +165,7 @@ public class EffectiveSettingsShareCommandTests
         // FromExistingWorkspace overload — avoids disk I/O and
         // TestUserProfileOverride leakage across tests. The grant lives
         // in AgentForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
-        SettingsWorkspace ws = new([]);
+        SettingsWorkspace ws = new([], ClaudeMergePolicy.Instance);
         return ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }

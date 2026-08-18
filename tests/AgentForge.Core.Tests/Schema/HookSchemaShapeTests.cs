@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -53,7 +53,7 @@ public sealed class HookSchemaShapeTests
     private static SettingsWorkspace WorkspaceIntroducingHook(string eventName, JsonNode innerHook)
     {
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
 
         JsonObject hookEntry = new()
         {

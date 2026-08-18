@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Sdk;
+﻿using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
@@ -22,7 +22,7 @@ public sealed class PermissionsAutoModeGatingTests
             ["permissions"] = new JsonObject { ["defaultMode"] = defaultMode },
         };
         SettingsDocument doc = new(scope, "settings.json", root, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, scope, new SchemaRegistry(new HttpClient()));
 

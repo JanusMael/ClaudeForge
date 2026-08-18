@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
@@ -19,7 +19,7 @@ public sealed class MarketplacesAccessorRoundTripTests
     {
         JsonObject root = new() { ["extraKnownMarketplaces"] = (JsonObject)marketplacesBlock.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", root, isReadOnly: false);
-        return new SettingsWorkspace([doc]);
+        return new SettingsWorkspace([doc], ClaudeMergePolicy.Instance);
     }
 
     private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)
