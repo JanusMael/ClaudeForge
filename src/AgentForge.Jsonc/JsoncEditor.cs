@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -416,5 +417,28 @@ public static class JsoncEditor
         count <= 0 ? string.Empty : string.Concat(Enumerable.Repeat(unit, count));
 
     /// <summary>Quote and escape a member name using the same rules as the serializer.</summary>
-    private static string Quote(string name) => JsonSerializer.Serialize(name);
+    /// <remarks>
+    /// ⚠ <b>Not <c>JsonSerializer.Serialize(name)</c>, and not for style.</b> That overload is
+    /// the reflection-based one, so it carries <c>RequiresUnreferencedCode</c> and fails the
+    /// Release publish with <c>IL2026</c> → <c>NETSDK1144</c> under
+    /// <c>PublishTrimmed=true</c>. A Debug build cannot see it; the CI trim check is what
+    /// catches it.
+    /// <para>
+    /// <see cref="Utf8JsonWriter.WriteStringValue(string?)"/> is the same code path the
+    /// serializer itself uses for a string, minus the reflection — so the escaping is
+    /// identical by construction rather than by resemblance. Pinned against
+    /// <c>JsonSerializer.Serialize</c> as an oracle in <c>JsoncEditorQuoteTests</c>, which is
+    /// free to use the reflection overload because test assemblies are not trimmed.
+    /// </para>
+    /// </remarks>
+    internal static string Quote(string name)
+    {
+        ArrayBufferWriter<byte> buffer = new();
+        using (Utf8JsonWriter writer = new(buffer))
+        {
+            writer.WriteStringValue(name);
+        }
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
 }
