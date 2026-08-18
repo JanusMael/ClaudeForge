@@ -53,11 +53,13 @@ public sealed class SchemaRegistry : IDisposable
     /// than five branches to find.
     /// </remarks>
     public static readonly ProductDescriptor ClaudeCodeProduct =
-        new("claude-code", "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json");
+        new("claude-code", "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",
+            ArchiveFolder: "ClaudeCode");
 
     /// <inheritdoc cref="ClaudeCodeProduct"/>
     public static readonly ProductDescriptor ClaudeDesktopProduct =
-        new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json");
+        new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",
+            ArchiveFolder: "ClaudeDesktop");
 
     /// <summary>
     /// Get the settings schema root node for <paramref name="product"/>.

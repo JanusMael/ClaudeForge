@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
@@ -239,11 +239,11 @@ public sealed class BackupEngine
         try
         {
             // --- Claude Code ---
-            if (request.IncludeClaudeCode)
+            if (request.Includes(SchemaRegistry.ClaudeCodeProduct))
             {
                 if (File.Exists(PlatformPaths.ClaudeJsonPath))
                 {
-                    writer.AddFile(PlatformPaths.ClaudeJsonPath, "ClaudeCode/claude.json");
+                    writer.AddFile(PlatformPaths.ClaudeJsonPath, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude.json");
                 }
 
                 if (Directory.Exists(PlatformPaths.ClaudeHome))
@@ -261,7 +261,7 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, projectRoot, $"ClaudeCode/projects/{name}");
+                    AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/projects/{name}");
                 }
 
                 foreach (BackupWorktreeEntry wt in worktrees)
@@ -274,11 +274,11 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, wt.WorktreePath, $"ClaudeCode/worktrees/{wtName}");
+                    AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/worktrees/{wtName}");
                     // Stash the worktree's project-root mapping so restore can re-locate it.
                     BackupWorktreeEntry meta = new() { ProjectRoot = wt.ProjectRoot, WorktreePath = wt.WorktreePath };
                     string metaJson = JsonSerializer.Serialize(meta, BackupJsonContext.Default.BackupWorktreeEntry);
-                    writer.AddTextEntry($"ClaudeCode/worktrees/{wtName}/.worktree-meta.json", metaJson);
+                    writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
                 }
             }
 
@@ -287,26 +287,26 @@ public sealed class BackupEngine
             // .desktop-current active-profile pointer. Log files are excluded — they
             // are runtime-only artefacts, can't be meaningfully restored, and may be
             // locked by a running Claude Desktop process.
-            if (request.IncludeClaudeDesktop)
+            if (request.Includes(SchemaRegistry.ClaudeDesktopProduct))
             {
                 if (File.Exists(PlatformPaths.DesktopConfigPath))
                 {
                     writer.AddFile(PlatformPaths.DesktopConfigPath,
-                        "ClaudeDesktop/claude_desktop_config.json");
+                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/claude_desktop_config.json");
                 }
 
                 // Desktop profiles directory (parallel to CLI's ~/.claude/profiles/).
                 if (Directory.Exists(PlatformPaths.DesktopProfilesDirectory))
                 {
                     writer.AddDirectory(PlatformPaths.DesktopProfilesDirectory,
-                        "ClaudeDesktop/profiles");
+                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/profiles");
                 }
 
                 // Active-profile pointer so the restore reinstates which profile was live.
                 if (File.Exists(PlatformPaths.DesktopCurrentProfileFilePath))
                 {
                     writer.AddFile(PlatformPaths.DesktopCurrentProfileFilePath,
-                        "ClaudeDesktop/.desktop-current");
+                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/.desktop-current");
                 }
             }
 
@@ -510,7 +510,7 @@ public sealed class BackupEngine
                 continue;
             }
 
-            writer.AddFile(file, $"ClaudeCode/claude-dir/{Path.GetFileName(file)}");
+            writer.AddFile(file, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude-dir/{Path.GetFileName(file)}");
         }
 
         foreach (string sub in Directory.EnumerateDirectories(PlatformPaths.ClaudeHome))
@@ -521,7 +521,7 @@ public sealed class BackupEngine
                 continue;
             }
 
-            writer.AddDirectory(sub, $"ClaudeCode/claude-dir/{name}");
+            writer.AddDirectory(sub, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude-dir/{name}");
         }
     }
 
@@ -706,20 +706,19 @@ public sealed class BackupEngine
         return MergeExplicitAndDiscovered(_fs, explicitDirs, discovered);
     }
 
+    /// <summary>
+    /// The manifest's <c>clients</c> array: each requested product's archive folder name.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ These strings are PERSISTED and read back by the restore browser, which is why they
+    /// come from <see cref="ProductDescriptor.ArchiveFolder"/> rather than being re-stated
+    /// here. Before Phase 4d this method rebuilt the list from two booleans, so the same two
+    /// literals existed in the manifest builder, in every folder path below, and again in
+    /// <c>RestoreEngine</c>.
+    /// </remarks>
     private static List<string> BuildClientList(BackupRequest r)
     {
-        List<string> list = [];
-        if (r.IncludeClaudeCode)
-        {
-            list.Add("ClaudeCode");
-        }
-
-        if (r.IncludeClaudeDesktop)
-        {
-            list.Add("ClaudeDesktop");
-        }
-
-        return list;
+        return r.Products.Select(p => p.ArchiveFolder).ToList();
     }
 
     private static string GetAppVersion()

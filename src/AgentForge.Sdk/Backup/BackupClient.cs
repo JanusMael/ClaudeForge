@@ -1,4 +1,5 @@
-using System.Globalization;
+﻿using System.Globalization;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using CoreBackup = Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
@@ -22,9 +23,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Backup;
 /// <remarks>
 /// <para>
 /// Per-product: a <see cref="BackupClient"/> instance is configured with which
-/// product(s) the underlying Core engine should include. The Claude Code client
-/// constructs one with <c>includeClaudeCode=true, includeClaudeDesktop=false</c>;
-/// the Claude Desktop client does the inverse. Cross-product unified
+/// product(s) the underlying Core engine should include. Each concrete client passes
+/// its own product descriptor, so the client no longer restates its identity as a pair
+/// of booleans the other product also has to answer. Cross-product unified
 /// backups (the existing GUI's behaviour) are out of scope for v1 — the GUI swap
 /// in 4.3.7 either invokes both clients in sequence or wraps them in a
 /// higher-level orchestrator added later.
@@ -44,8 +45,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Backup;
 internal sealed class BackupClient : IBackupClient
 {
     private readonly BackupEngine _engine;
-    private readonly bool _includeClaudeCode;
-    private readonly bool _includeClaudeDesktop;
+    private readonly IReadOnlyList<ProductDescriptor> _products;
 
     /// <summary>
     /// Construct a backup client that produces archives covering the requested
@@ -53,14 +53,20 @@ internal sealed class BackupClient : IBackupClient
     /// production engine; tests may pass a custom <see cref="CoreBackup.BackupEngine"/>
     /// constructed with stub collaborators.
     /// </summary>
+    /// <param name="engine">The engine that writes archives.</param>
+    /// <param name="products">
+    /// Products this client's archives cover. Replaced a
+    /// <c>(bool includeClaudeCode, bool includeClaudeDesktop)</c> pair, which meant a client
+    /// could only ever describe one of two products — and which every concrete client
+    /// answered by restating its own identity as two literals. A client now passes its own
+    /// <c>Product</c> descriptor instead.
+    /// </param>
     public BackupClient(
         BackupEngine engine,
-        bool includeClaudeCode,
-        bool includeClaudeDesktop)
+        IReadOnlyList<ProductDescriptor> products)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
-        _includeClaudeCode = includeClaudeCode;
-        _includeClaudeDesktop = includeClaudeDesktop;
+        _products = products ?? throw new ArgumentNullException(nameof(products));
     }
 
     public async Task<BackupArchive> CreateAsync(
@@ -87,8 +93,7 @@ internal sealed class BackupClient : IBackupClient
         {
             DestinationZipPath = destPath,
             Mode = request.Mode,
-            IncludeClaudeCode = _includeClaudeCode,
-            IncludeClaudeDesktop = _includeClaudeDesktop,
+            Products = _products,
             IncludeCredentials = request.IncludeCredentials,
             ExplicitProjectDirs = request.ExplicitProjectDirs ?? Array.Empty<string>(),
             KeepLast = request.KeepLast,

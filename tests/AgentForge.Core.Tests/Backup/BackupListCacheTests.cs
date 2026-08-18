@@ -1,5 +1,6 @@
-using Bennewitz.Ninja.AgentForge.Core.Backup;
+﻿using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -65,8 +66,7 @@ public sealed class BackupListCacheTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         // First List: parses + caches.
@@ -90,8 +90,7 @@ public sealed class BackupListCacheTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         // Prime the cache.
@@ -115,8 +114,7 @@ public sealed class BackupListCacheTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         // Populate the cache.
@@ -133,8 +131,7 @@ public sealed class BackupListCacheTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         IReadOnlyList<BackupEntry> afterRecreate = BackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(1, afterRecreate.Count);
@@ -149,8 +146,7 @@ public sealed class BackupListCacheTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         IReadOnlyList<BackupEntry> first = BackupEngine.Default.List(_fakeHome);
