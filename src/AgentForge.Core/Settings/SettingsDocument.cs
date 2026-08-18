@@ -74,6 +74,42 @@ public sealed class SettingsDocument
         OriginalText = text;
     }
 
+    /// <summary>
+    /// Why this document's file could not be read as JSON, or <see langword="null"/> when it
+    /// loaded normally. An empty <see cref="Root"/> alone cannot be distinguished from a
+    /// genuinely empty file, which is the whole reason this exists.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>A document carrying this is a placeholder, not content.</b>
+    /// <see cref="ConfigFileLoader.LoadAsync"/> deliberately does not throw — a corrupt file
+    /// must still degrade to an empty-root document rather than crash the editor, a contract
+    /// pinned by <c>ConfigFileLoaderTests</c>. But the caller that reloads the whole app needs
+    /// to distinguish "this file is empty" from "this file could not be parsed", because
+    /// swapping an unparseable file into memory and then saving would **overwrite the user's
+    /// real settings with an empty object**. That was live: the loader's own comment noted "a
+    /// subsequent save will overwrite the file's current contents".
+    /// </para>
+    /// <para>
+    /// <b>Set for parse and I/O failures only</b> — a malformed file or one locked mid-write
+    /// are both transient states an external editor produces, and a reload should decline to
+    /// act on them. A permission failure is <i>not</i> flagged: it is a persistent condition,
+    /// so bailing on it would make every subsequent reload bail too, and the deliberate
+    /// degradation to "settings appear empty" is the better outcome there.
+    /// </para>
+    /// <para>
+    /// Discovered 2026-08-18 by un-inerting <c>TransactionalReloadTests</c>, whose three
+    /// assertions of this contract had never been able to fail.
+    /// </para>
+    /// </remarks>
+    public string? LoadFailure { get; private set; }
+
+    /// <summary>Record why this document could not be parsed. See <see cref="LoadFailure"/>.</summary>
+    internal void SetLoadFailure(string reason)
+    {
+        LoadFailure = reason;
+    }
+
     public bool IsReadOnly { get; }
     public bool IsDirty { get; private set; }
     public DateTimeOffset? LastModified { get; private set; }

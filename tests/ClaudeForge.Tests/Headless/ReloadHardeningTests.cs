@@ -122,7 +122,6 @@ public sealed class ReloadHardeningTests
     // ── H-1 recovery: malformed reload must not break subsequent reloads ──
 
     [TestMethod]
-    [Ignore("QUARANTINED 2026-08-18 — same root cause as TransactionalReloadTests' malformed-JSON tests: there is no 'malformed bail' to recover from, because LoadAsync turns the parse failure into an empty document and the swap proceeds.")]
     public async Task LoadAllWorkspacesAsync_AfterMalformedBail_RecoversOnNextValidReload()
     {
         bool ran = await Session.Dispatch(async () =>

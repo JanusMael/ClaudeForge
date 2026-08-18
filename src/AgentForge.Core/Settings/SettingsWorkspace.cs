@@ -34,6 +34,19 @@ public sealed class SettingsWorkspace
     public IReadOnlyList<SettingsDocument> Documents => _documents;
 
     /// <summary>
+    /// Documents whose file could not be read as JSON — see
+    /// <see cref="SettingsDocument.LoadFailure"/>. Empty for a clean load.
+    /// </summary>
+    /// <remarks>
+    /// Exists so a caller can decide whether this workspace is fit to swap into a live
+    /// application <i>before</i> doing so. A workspace built over an unparseable file is
+    /// structurally valid and looks merely empty, which is exactly how an unparseable file
+    /// used to be swapped in and then saved over the user's real settings.
+    /// </remarks>
+    public IEnumerable<SettingsDocument> FailedDocuments =>
+        _documents.Where(d => d.LoadFailure is not null);
+
+    /// <summary>
     /// Get the layered value for a top-level JSON key.
     /// </summary>
     public LayeredValue GetLayeredValue(string key)

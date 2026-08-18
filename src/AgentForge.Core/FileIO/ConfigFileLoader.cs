@@ -47,6 +47,7 @@ public static class ConfigFileLoader
     {
         JsonObject root;
         string? originalText = null;
+        string? loadFailure = null;
 
         if (!file.Exists)
         {
@@ -72,19 +73,28 @@ public static class ConfigFileLoader
             }
             catch (Exception ex) when (ex is JsonException or IOException)
             {
-                // Still resilient to a genuinely corrupt file, but no longer silent: this
-                // path means the next save will overwrite whatever is there, which the
-                // user deserves to have a record of.
+                // Still resilient to a genuinely corrupt file, and no longer silent — but the
+                // log line alone was not enough. A caller reloading the whole app cannot tell
+                // this empty root from a genuinely empty file, so it used to swap the
+                // placeholder into memory and the next save overwrote the user's real
+                // settings. SetLoadFailure below is what makes the difference observable
+                // without making this method throw (see SettingsDocument.LoadFailure).
                 Log.Warning(ex, "[Config] {Path} could not be parsed; loading it as empty. "
                                 + "A subsequent save will overwrite the file's current contents.",
                             file.FilePath);
                 root = new JsonObject();
                 originalText = null;
+                loadFailure = ex.Message;
             }
         }
 
         SettingsDocument document = new(file.Scope, file.FilePath, root, file.IsReadOnly);
         document.SetOriginalText(originalText);
+        if (loadFailure is not null)
+        {
+            document.SetLoadFailure(loadFailure);
+        }
+
         return document;
     }
 
