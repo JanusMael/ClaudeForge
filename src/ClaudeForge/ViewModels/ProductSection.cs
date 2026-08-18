@@ -45,21 +45,27 @@ internal sealed class ProductSection
     /// than a string because these ARE resource-backed, and freezing the value at
     /// construction would show a stale name after a culture change.
     /// </param>
-    /// <param name="exportEntryPath">
-    /// Archive-relative path this product's stamped effective config is written to by the
-    /// profile export.
+    /// <param name="exportEntryRelativePath">
+    /// Where this product's stamped effective config lands <i>inside its own archive
+    /// folder</i> — the part after <see cref="ProductDescriptor.ArchiveFolder"/>. Given
+    /// relative rather than whole because the folder segment is not this type's to invent:
+    /// <see cref="ExportManifest.Clients"/> lists the same folder names, and a reader uses
+    /// that list to know which folders the archive contains. Composing the path from the
+    /// descriptor makes the two agree structurally instead of by matching literals.
     /// </param>
     internal ProductSection(
         ProductDescriptor product,
         string navTitle,
         Func<string> workspaceDisplayName,
-        string exportEntryPath)
+        string exportEntryRelativePath)
     {
         Product = product;
         NavTitle = navTitle;
         WorkspaceDisplayName = workspaceDisplayName;
-        ExportEntryPath = exportEntryPath;
+        _exportEntryRelativePath = exportEntryRelativePath;
     }
+
+    private readonly string _exportEntryRelativePath;
 
     internal ProductDescriptor Product { get; }
 
@@ -68,7 +74,11 @@ internal sealed class ProductSection
     /// <inheritdoc cref="ProductSection(ProductDescriptor, string, Func{string}, string)"/>
     internal Func<string> WorkspaceDisplayName { get; }
 
-    internal string ExportEntryPath { get; }
+    /// <summary>
+    /// Archive-relative path this product's stamped effective config is written to by the
+    /// Export command, rooted at the product's <see cref="ProductDescriptor.ArchiveFolder"/>.
+    /// </summary>
+    internal string ExportEntryPath => $"{Product.ArchiveFolder}/{_exportEntryRelativePath}";
 
     /// <summary>
     /// The live client, or <see langword="null"/> before the first workspace load and after

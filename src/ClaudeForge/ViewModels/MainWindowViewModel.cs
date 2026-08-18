@@ -96,9 +96,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly List<ProductSection> _sections =
     [
         new(SchemaRegistry.ClaudeCodeProduct, NavTitleClaudeCode,
-            () => Strings.WorkspaceNameClaudeCode, "ClaudeCode/.claude/settings.json"),
+            () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json"),
         new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
-            () => Strings.WorkspaceNameClaudeDesktop, "ClaudeDesktop/claude_desktop_config.json"),
+            () => Strings.WorkspaceNameClaudeDesktop, "claude_desktop_config.json"),
     ];
 
     internal IReadOnlyList<ProductSection> Sections => _sections;
@@ -3288,8 +3288,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     CreatedUtc = DateTime.UtcNow,
                     Platform = PlatformPaths.PlatformId,
                     AppVersion = AppVersion,
-                    IncludesClaudeCode = ClaudeCodeSdk is not null,
-                    IncludesClaudeDesktop = ClaudeDesktopSdk is not null,
+                    // Same sequence the entry loop below walks, so the manifest's product
+                    // list and the archive's folders cannot disagree. The pair of
+                    // `ClaudeCodeSdk is not null` checks this replaced said the same thing
+                    // only as long as there were exactly two products.
+                    Clients = [.. OpenSections.Select(s => s.Product.ArchiveFolder)],
                     HeaderComment = comment,
                 };
 
