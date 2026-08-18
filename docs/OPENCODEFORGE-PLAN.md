@@ -38,7 +38,7 @@
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
-> | 4 — Product model | 🔶 **4a done** — `ProductDescriptor` replaced `IsClaudeCode`. **4b–4f remain** — see the Phase 4 section |
+> | 4 — Product model | 🔶 **4a + 4b done** — `ProductDescriptor` replaced *both* `IsClaudeCode` booleans. **4c–4f remain** — see the Phase 4 section |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -410,8 +410,8 @@ stated exit or it is just optimism:
 1. **The app already ships two products in one shell.** `MainWindowViewModel` builds
    header nodes for `NavTitleClaudeCode` / `NavTitleClaudeDesktop`, each backed by a
    `ClaudeConfigClientCore` subclass. `ClaudeDesktopClient` overrides only
-   `DiscoverFiles(projectRoot)`, `IsClaudeCode`, `CreateBackupClient()`, and
-   `SnapshotUserMemoryFiles()`. **Every OpenCode section is another subclass.**
+   `DiscoverFiles(projectRoot)`, `Product` (`IsClaudeCode` until 4a), `CreateBackupClient()`,
+   and `SnapshotUserMemoryFiles()`. **Every OpenCode section is another subclass.**
 
 2. **`ClaudeDesktopClient` is the precedent for a product with a different scope set** —
    User-scope-only, not project-aware.
@@ -570,8 +570,10 @@ hint already threaded through `MergeCore` is the seam.
 fields. Drafts 2–12 said "~15 places"; **the actual count is 31 references to
 `ClaudeDesktopSdk` alone**, before counting `ClaudeCodeSdk` — save, validate, effective
 snapshot, search providers, change subscribe/unsubscribe, dispose, backup, export, and the
-install-banner logic. `ClaudeConfigClientCore` carries
-`protected abstract bool IsClaudeCode`, used in 8 places for schema selection.
+install-banner logic. `ClaudeConfigClientCore` carried
+`protected abstract bool IsClaudeCode`, used in 8 places for schema selection — **4a
+replaced it with `protected abstract ProductDescriptor Product`**; the field count below is
+still current.
 
 > ⚠ **Draft 10 scoped this to `MainWindowViewModel`. It is threaded through the SDK's
 > public API and a persisted format as well** — a two-boolean product model, not two fields:
@@ -600,8 +602,9 @@ Desktop), so the app must handle N products, not 3.
 - Replace `bool IsClaudeCode` with a `ProductDescriptor` naming the schema key — deletes
   the boolean rather than adding a third case. **There are two such booleans, not one:**
   `ClaudeConfigClientCore.IsClaudeCode` *and* `RestoreEngine.FindConfigFilesToValidate`,
-  which returns `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the
+  which returned `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the
   first, so the restore-validation path would have kept a two-product assumption.
+  ✅ **Both done — 4a (`101554b`) and 4b (`629bca7`).**
 - Break `LayeredEditors.Avalonia.Services` → `ClaudeForge.Sdk`.
 - **Persisted manifest formats need a versioning decision — draft 10 never mentioned them.**
   `ExportManifest` carries `includesClaudeCode` / `includesClaudeDesktop` **booleans** with
@@ -2303,7 +2306,7 @@ Claude Desktop through the new path and prove behavioural identity.
 | | Piece | Status |
 |---|---|---|
 | **4a** | `ProductDescriptor` replaces `AgentConfigClientCore.IsClaudeCode` | ✅ `101554b` |
-| **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returns `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ⬜ |
+| **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returned `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ✅ `629bca7` |
 | **4c** | `IMergePolicy` (Problem 2) | ⬜ |
 | **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ⬜ |
 | **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ⬜ |
@@ -2324,6 +2327,11 @@ Claude Desktop through the new path and prove behavioural identity.
 > Canary each by transposing the two products, not merely by running the suite** — "green
 > after the refactor" demonstrates almost nothing here, because so little of the suite
 > distinguishes the two products in the first place.
+>
+> **4b confirmed the prediction.** The restore-validation path had the same hole: every
+> test that reached it seeded Claude Code data only, so the Desktop routing and two of the
+> four archive locations were unguarded. The refactor was green before the guard existed.
+> **Keep predicting the hole for 4c–4f.**
 
 **What 4a actually did**, since the plan's one-line description understates it: every use
 of the boolean was choosing a schema, so the descriptor names the schema
@@ -2337,6 +2345,24 @@ The hooks gate in `ClaudeConfigClientBase` was **deleted rather than translated*
 `GetHookEvents` / `GetHookCommandVariants` already return empty for a schema with no hooks
 section, which is precisely what Desktop's is, so passing `Product.SchemaFileName`
 unconditionally reads the fact instead of hardcoding it.
+
+**What 4b actually did.** The boolean was again only ever a schema file name, so the fix is
+the same shape — but the interesting part was the *other* product knowledge in the same
+method. `FindConfigFilesToValidate` also hardcoded, per product, which archive-relative
+directory to look in, which file names to look for, and whether to recurse: four
+`yield return` blocks. Those became a **table** of
+`(ProductDescriptor, ArchiveDir, FileNames, Depth)` rows, so adding OpenCode's config
+locations is a row rather than a fifth block. Two details worth keeping:
+
+- **Enumeration order is load-bearing enough to preserve deliberately.** Warnings
+  accumulate in file order, so the loop goes one file *name* at a time rather than one
+  directory at a time, reproducing the old "every `settings.json`, then every
+  `settings.local.json`" sequence.
+- **The archive layout is still duplicated with `BackupEngine`**, literals on both sides
+  (`"ClaudeCode"`, `"ClaudeDesktop"`, `claude-dir`, `profiles`). Centralizing it belongs
+  with **4d**. ⚠ Nothing fails loudly if only one side moves: a file that stops being
+  found simply stops being validated, and validation is informational. The new test pins
+  all four locations by archive-relative path, which is the closest available guard.
 
 ### Phase 5 — Extract the shell
 

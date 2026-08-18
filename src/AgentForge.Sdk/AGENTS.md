@@ -41,7 +41,6 @@ phase rather than left undocumented:
 
 | Residue | Why it is still here |
 |---|---|
-| `protected abstract bool IsClaudeCode` | Selects the schema and flows into Core's `SchemaRegistry.Validate*Workspace`. Replacing it needs the `ProductDescriptor` / schema-id work in Phases 3–4. |
 | `Memory/` — `UserMemoryCategory`, `FootprintCategory` | Closed enums naming Claude's artifact kinds and footprint dirs. Phase 10 converts them. |
 | `Env/EnvVarKey` | Convenience properties for `CLAUDE_CODE_*` keys. The generic dictionary surface around them is neutral. |
 
@@ -152,9 +151,10 @@ A test for this contract is in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedCha
 > reintroduce a `ProjectReference` to `ClaudeForge.*` to get a client;
 > `AssemblyLayeringTests` now scans `tests/` and will fail.
 >
-> `TestConfigClient` is **not** a product-neutral client, because one cannot be
-> written yet: `IsClaudeCode` is a `bool` selecting between two *Claude* schemas and
-> `ConfigFileDiscoverer` only knows Claude layouts. It discovers and validates as
+> `TestConfigClient` is **not** a product-neutral client, though Phase 4a moved it
+> closer: schema selection is now a `ProductDescriptor`, so it could name any
+> product's schema. What still ties it to Claude is `ConfigFileDiscoverer`, which
+> only knows Claude's file layouts. It discovers and validates as
 > Claude Code; what it buys is that the assembly dependency is honest and the
 > remaining assumption sits in one labelled file. Tests that assert something about
 > Claude *specifically* belong in `ClaudeForge.Sdk.Claude.Tests` against the real
