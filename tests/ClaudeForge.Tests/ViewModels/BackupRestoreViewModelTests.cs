@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Reflection;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -1397,6 +1398,85 @@ public sealed class BackupRestoreViewModelTests
             "When InitialProjectRoot is set, BuildBackupRequest must thread it into " +
             "ExplicitProjectDirs verbatim — that's how BackupEngine.AddProjectClaudeData " +
             "learns to include the project's `.claude` directory.");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Per-product checkbox selection → BackupRequest.Products
+    //
+    //  Written because NOTHING covered this surface. Before Phase 4d-3 the Backup tab held
+    //  two fixed checkboxes bound to IncludeClaudeCode / IncludeClaudeDesktop, and no test
+    //  referenced either property — so which products a backup actually covered was
+    //  untested end to end, in a feature whose whole job is choosing what to copy.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void SelectableProducts_DefaultToEveryHostedProduct_Selected()
+    {
+        BackupRestoreViewModel vm = new(new StubDialogService());
+
+        Assert.AreEqual(2, vm.SelectableProducts.Count,
+            "Both hosted products must be offered.");
+        Assert.IsTrue(vm.SelectableProducts.All(p => p.IsSelected),
+            "Default is everything included — the behaviour the two checkboxes had.");
+        CollectionAssert.AreEqual(
+            new[] { Strings.CheckboxClaudeCode, Strings.CheckboxClaudeDesktop },
+            vm.SelectableProducts.Select(p => p.DisplayName).ToArray(),
+            "Labels must still come from the resource table, in display order — the nine "
+            + "locale translations are unchanged by moving the checkboxes into a template.");
+    }
+
+    [TestMethod]
+    public void BuildBackupRequest_CarriesOnlyTheSelectedProducts()
+    {
+        BackupRestoreViewModel vm = new(new StubDialogService());
+
+        // Deselect the FIRST product, so a request that ignored selection and listed
+        // everything, and one that stopped at the first entry, both fail.
+        vm.SelectableProducts[0].IsSelected = false;
+
+        BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
+
+        Assert.AreEqual(1, request.Products.Count,
+            "Only the still-selected product may be requested.");
+        Assert.IsFalse(request.Includes(SchemaRegistry.ClaudeCodeProduct),
+            "Deselecting Claude Code must actually exclude it — otherwise the checkbox is "
+            + "decorative and the user's choice is silently ignored.");
+        Assert.IsTrue(request.Includes(SchemaRegistry.ClaudeDesktopProduct));
+    }
+
+    [TestMethod]
+    public void BuildBackupRequest_WithNothingSelected_RequestsNoProducts()
+    {
+        // Legal and deliberately not gated: the engine produces a valid empty archive
+        // (manifest + bundled schemas) rather than rejecting the request.
+        BackupRestoreViewModel vm = new(new StubDialogService());
+        foreach (BackupProductViewModel product in vm.SelectableProducts)
+        {
+            product.IsSelected = false;
+        }
+
+        BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
+
+        Assert.AreEqual(0, request.Products.Count);
+    }
+
+    [TestMethod]
+    public void SelectableProducts_ComeFromTheInjectedProductList()
+    {
+        // The shell passes its own section list, so the checkboxes cannot drift from the
+        // products the window actually hosts. A product with no translated label falls back
+        // to its own display name rather than failing to render.
+        ProductDescriptor other = new(
+            "other-agent", "Other Agent", "bundled://other", "other.json", ArchiveFolder: "OtherAgent");
+
+        BackupRestoreViewModel vm = new(new StubDialogService(), shareService: null, products: [other]);
+
+        Assert.AreEqual(1, vm.SelectableProducts.Count);
+        Assert.AreEqual("Other Agent", vm.SelectableProducts[0].DisplayName,
+            "An unrecognised product falls back to its descriptor's display name.");
+
+        BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
+        Assert.IsTrue(request.Includes(other));
     }
 
     [TestMethod]
