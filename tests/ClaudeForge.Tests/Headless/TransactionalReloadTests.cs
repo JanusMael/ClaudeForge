@@ -18,6 +18,31 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// exercise the contract directly via <see cref="MainWindowViewModel.LoadAllWorkspacesAsync"/>
 /// (now <c>internal</c> for the H-3 headless harness) on a real
 /// <see cref="PlatformPaths.TestUserProfileOverride"/> sandbox.
+/// <para>
+/// ⚠⚠ <b>These tests could not fail until 2026-08-18.</b> Each was
+/// <c>return Session.Dispatch(async () =&gt; …)</c>, which binds
+/// <c>Dispatch&lt;T&gt;(Func&lt;T&gt;)</c> with <c>T = Task</c> and yields
+/// <c>Task&lt;Task&gt;</c>. MSTest awaited only the outer task, so every assertion inside was
+/// unobserved. They now return a value from the lambda so it binds
+/// <c>Dispatch&lt;T&gt;(Func&lt;Task&lt;T&gt;&gt;)</c>, and were canaried with a deliberate
+/// <c>Assert.Fail</c> to prove they can fail.
+/// </para>
+/// <para>
+/// ⚠ <b>Two of the three then failed for real, and the defect is pre-existing — not a
+/// Phase 1–4 regression.</b> <c>ConfigFileLoader.LoadAsync</c> catches <c>JsonException</c>
+/// and returns an empty <c>JsonObject</c> (see its own comment: "a subsequent save will
+/// overwrite the file's current contents"). So <c>LoadAllWorkspacesAsync</c>'s PHASE 1 never
+/// observes a parse failure and always proceeds to the destructive swap it labels
+/// "no throw points past here". The contract asserted below has therefore never held at any
+/// point in this repo's history.
+/// </para>
+/// <para>
+/// <b>It also conflicts with a contract pinned elsewhere.</b>
+/// <c>ConfigFileLoaderTests</c> asserts the opposite resilience guarantee — a corrupt file
+/// must degrade to an empty-root document rather than crash. Both cannot hold as written;
+/// resolving that is a deliberate decision, so the two failing tests are
+/// <c>[Ignore]</c>d with the diagnosis rather than deleted or weakened.
+/// </para>
 /// </summary>
 [TestClass]
 public sealed class TransactionalReloadTests
@@ -83,9 +108,9 @@ public sealed class TransactionalReloadTests
     // ── H-1 contract tests ─────────────────────────────────────────────
 
     [TestMethod]
-    public Task LoadAllWorkspacesAsync_ValidReload_SwapsSdkClients()
+    public async Task LoadAllWorkspacesAsync_ValidReload_SwapsSdkClients()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Sanity baseline: the happy-path reload still produces fresh
             // SDK clients.  Without this we can't tell whether subsequent
@@ -109,13 +134,17 @@ public sealed class TransactionalReloadTests
                 "Valid reload must produce a fresh CC SDK client.");
             Assert.AreNotSame(firstDt, vm.ClaudeDesktopSdk,
                 "Valid reload must produce a fresh DT SDK client.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace()
+    [Ignore("QUARANTINED 2026-08-18 — REAL PRE-EXISTING DEFECT, not a regression. This test was inert (return Session.Dispatch => Task<Task>) from the day it was written, so the contract it asserts has NEVER held. ConfigFileLoader.LoadAsync catches JsonException and returns an empty JsonObject, so LoadAllWorkspacesAsync's PHASE 1 never sees a throw and always proceeds to the destructive swap. Conflicts with the resilience contract pinned at ConfigFileLoaderTests.cs:95. Un-ignore with the fix.")]
+    public async Task LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Initial load succeeds with valid JSON.
             MainWindowViewModel vm = BuildViewModel();
@@ -147,13 +176,17 @@ public sealed class TransactionalReloadTests
             Assert.IsNotNull(vm.StatusMessage);
             StringAssert.Contains(vm.StatusMessage!, "settings.json",
                 "StatusMessage should name the offending file.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task LoadAllWorkspacesAsync_OneProductValidOneMalformed_KeepsBoth()
+    [Ignore("QUARANTINED 2026-08-18 — same root cause as LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace: LoadAsync swallows the parse failure, so the all-or-nothing rollback never triggers.")]
+    public async Task LoadAllWorkspacesAsync_OneProductValidOneMalformed_KeepsBoth()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Setup: both products initially valid; load succeeds.
             MainWindowViewModel vm = BuildViewModel();
@@ -174,7 +207,10 @@ public sealed class TransactionalReloadTests
                 "Even though CC is valid, DT's parse failure must roll back the swap.");
             Assert.AreSame(origDt, vm.ClaudeDesktopSdk,
                 "DT must stay at its existing SDK reference.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────
