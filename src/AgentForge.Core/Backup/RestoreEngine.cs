@@ -987,30 +987,32 @@ internal static class RestoreEngine
     /// <see cref="ProductDescriptor.SchemaFileName"/>.
     /// </para>
     /// <para>
-    /// ⚠ These archive-relative paths mirror the ones <see cref="BackupEngine"/> writes, and
-    /// are still literal strings on both sides. A layout change has to be made in both
-    /// places; nothing here fails loudly if only one moves — a file that stops being found
-    /// simply stops being validated, and validation is informational.
+    /// The top-level folder is <b>not</b> restated here: each row takes it from its own
+    /// <see cref="ProductDescriptor.ArchiveFolder"/>, the same property
+    /// <see cref="BackupEngine"/> writes with. Phase 4b left those as literals on both sides
+    /// and flagged the hazard — a folder renamed on one side only does not error, it silently
+    /// stops matching, and a config that stops being found just stops being validated.
+    /// Only the sub-paths below (<c>claude-dir</c>, <c>profiles</c>) remain per-row data.
     /// </para>
     /// </remarks>
-    private static readonly (ProductDescriptor Product, string[] ArchiveDir, string[] FileNames, SearchOption Depth)[]
+    private static readonly (ProductDescriptor Product, string[] SubDir, string[] FileNames, SearchOption Depth)[]
         ValidatableConfigs =
         [
             // Claude Code: claude.json at the product root — deliberately NOT recursive, or a
             // claude.json captured under projects/ would be validated as a settings file.
-            (SchemaRegistry.ClaudeCodeProduct, ["ClaudeCode"], ["claude.json"],
+            (SchemaRegistry.ClaudeCodeProduct, [], ["claude.json"],
                 SearchOption.TopDirectoryOnly),
 
             // Claude Code: settings.json / settings.local.json anywhere under claude-dir.
-            (SchemaRegistry.ClaudeCodeProduct, ["ClaudeCode", "claude-dir"],
+            (SchemaRegistry.ClaudeCodeProduct, ["claude-dir"],
                 ["settings.json", "settings.local.json"], SearchOption.AllDirectories),
 
             // Claude Desktop: the main config.
-            (SchemaRegistry.ClaudeDesktopProduct, ["ClaudeDesktop"], ["claude_desktop_config.json"],
+            (SchemaRegistry.ClaudeDesktopProduct, [], ["claude_desktop_config.json"],
                 SearchOption.TopDirectoryOnly),
 
             // Claude Desktop: every profile config, whatever it is named.
-            (SchemaRegistry.ClaudeDesktopProduct, ["ClaudeDesktop", "profiles"], ["*.json"],
+            (SchemaRegistry.ClaudeDesktopProduct, ["profiles"], ["*.json"],
                 SearchOption.AllDirectories),
         ];
 
@@ -1021,10 +1023,10 @@ internal static class RestoreEngine
     private static IEnumerable<(string FilePath, ProductDescriptor Product)> FindConfigFilesToValidate(
         string tempRoot)
     {
-        foreach ((ProductDescriptor product, string[] archiveDir, string[] fileNames, SearchOption depth)
+        foreach ((ProductDescriptor product, string[] subDir, string[] fileNames, SearchOption depth)
                  in ValidatableConfigs)
         {
-            string dir = Path.Combine([tempRoot, .. archiveDir]);
+            string dir = Path.Combine([tempRoot, product.ArchiveFolder, .. subDir]);
             if (!Directory.Exists(dir))
             {
                 continue;

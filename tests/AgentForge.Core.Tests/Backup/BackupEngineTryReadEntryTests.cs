@@ -1,5 +1,6 @@
-using Bennewitz.Ninja.AgentForge.Core.Backup;
+﻿using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -88,8 +89,7 @@ public sealed class BackupEngineTryReadEntryTests
         BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, "Test prerequisite: backup must be creatable.");
 

@@ -5,8 +5,10 @@ using System.Globalization;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Threading;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
@@ -661,12 +663,35 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     /// goes here.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// The products the two checkboxes currently select, in navigation order.
+    /// </summary>
+    /// <remarks>
+    /// The single place the checkbox pair is translated into the product set the engine
+    /// takes. It stays a pair for now: 4d-3 replaces the two fixed checkboxes with a
+    /// per-product list, and this method is what that list will feed.
+    /// </remarks>
+    private IReadOnlyList<ProductDescriptor> SelectedProducts()
+    {
+        List<ProductDescriptor> products = [];
+        if (IncludeClaudeCode)
+        {
+            products.Add(SchemaRegistry.ClaudeCodeProduct);
+        }
+
+        if (IncludeClaudeDesktop)
+        {
+            products.Add(SchemaRegistry.ClaudeDesktopProduct);
+        }
+
+        return products;
+    }
+
     internal BackupRequest BuildBackupRequest(string destinationZipPath) => new()
     {
         DestinationZipPath = destinationZipPath,
         Mode = Mode,
-        IncludeClaudeCode = IncludeClaudeCode,
-        IncludeClaudeDesktop = IncludeClaudeDesktop,
+        Products = SelectedProducts(),
         IncludeCredentials = IncludeCredentials,
         KeepLast = KeepLast,
 

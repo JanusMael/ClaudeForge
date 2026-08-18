@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
@@ -937,8 +937,7 @@ public sealed class BackupRestoreViewModelTests
             BackupResult created = await BackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
             });
             Assert.IsTrue(created.Succeeded, "Test prerequisite: backup must create.");
 
@@ -988,8 +987,7 @@ public sealed class BackupRestoreViewModelTests
             BackupResult created = await BackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
             });
             Assert.IsTrue(created.Succeeded);
 

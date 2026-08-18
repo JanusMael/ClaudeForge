@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+﻿using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -75,10 +75,9 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
-        return new BackupClient(
-            engine: BackupEngine.Default,
-            includeClaudeCode: false,
-            includeClaudeDesktop: true);
+        // This client's own descriptor — the product it already declares as
+        // Product, rather than a boolean pair restating it.
+        return new BackupClient(BackupEngine.Default, [Product]);
     }
 
     /// <summary>

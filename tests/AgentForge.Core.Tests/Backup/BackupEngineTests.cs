@@ -1,10 +1,11 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 // Interlocked + Thread for the parallel-precompute test
 
@@ -71,8 +72,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -95,8 +95,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -113,8 +112,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -146,14 +144,12 @@ public sealed class BackupEngineTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = first,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = second,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         // Force the second one to have a later LastWriteTime.
@@ -179,8 +175,7 @@ public sealed class BackupEngineTests
             await BackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = path,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
             });
             File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddDays(-5 + i));
         }
@@ -190,8 +185,7 @@ public sealed class BackupEngineTests
         await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = trigger,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
             KeepLast = 2,
         });
 
@@ -210,8 +204,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
@@ -259,8 +252,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -285,8 +277,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -332,8 +323,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -362,8 +352,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = backupDest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(createResult.Succeeded, createResult.Message);
 
@@ -442,8 +431,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -499,18 +487,17 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = false,
-            IncludeClaudeDesktop = true,
+            Products = [SchemaRegistry.ClaudeDesktopProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
         Assert.IsTrue(
             entries.Any(e => e.EndsWith("ClaudeDesktop/claude_desktop_config.json", StringComparison.Ordinal)),
-            "Desktop config file must be bundled when IncludeClaudeDesktop=true.");
+            "Desktop config file must be bundled when its product is in the requested set.");
         Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal)
                                         && e != "ClaudeCode/claude.json"),
-            "When IncludeClaudeCode=false, no ClaudeCode/* files should be bundled.");
+            "When Claude Code is absent from the requested set, no ClaudeCode/* files should be bundled.");
     }
 
     [TestMethod]
@@ -534,8 +521,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = false,
-            IncludeClaudeDesktop = true,
+            Products = [SchemaRegistry.ClaudeDesktopProduct],
         });
 
         Assert.IsTrue(result.Succeeded);
@@ -562,8 +548,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = true,
+            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -581,7 +566,7 @@ public sealed class BackupEngineTests
     [TestMethod]
     public async Task CreateAsync_BothProductsExcluded_StillProducesValidArchive()
     {
-        // Edge case: caller sets IncludeClaudeCode = IncludeClaudeDesktop = false.
+        // Edge case: caller requests an EMPTY product set.
         // Result should still be a valid empty backup (manifest + schemas);
         // the contract is permissive — we don't reject the request as a
         // programmer error.
@@ -590,8 +575,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = false,
-            IncludeClaudeDesktop = false,
+            Products = [],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -613,8 +597,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -644,8 +627,7 @@ public sealed class BackupEngineTests
                 {
                     DestinationZipPath = dest,
                     Mode = BackupMode.SettingsOnly,
-                    IncludeClaudeCode = true,
-                    IncludeClaudeDesktop = false,
+                    Products = [SchemaRegistry.ClaudeCodeProduct],
                 },
                 ct: ct);
 
@@ -690,8 +672,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
@@ -720,8 +701,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -753,8 +733,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -784,8 +763,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -812,8 +790,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -839,8 +816,7 @@ public sealed class BackupEngineTests
         BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -905,8 +881,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = true,
+            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
@@ -938,6 +913,97 @@ public sealed class BackupEngineTests
                 + $"schema — under which '{property}' is legal. Warnings were: "
                 + string.Join(" | ", restore.ValidationWarnings!));
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ProductDescriptor.ArchiveFolder is a PERSISTED contract
+    //
+    //  Phase 4d-2 made one property the single source for both the archive's top-level
+    //  folder names and the manifest's `clients` entries — replacing the same two literals
+    //  restated in the manifest builder, in every folder path, and again in RestoreEngine.
+    //
+    //  That centralisation has a cost worth guarding: because both the writer and the
+    //  reader now read the SAME property, changing it moves both sides at once and stays
+    //  self-consistent. New archives would work perfectly while every archive already on
+    //  the user's disk quietly stopped matching. Renaming Claude Code's folder does fail
+    //  ten tests today, but only incidentally — via hardcoded path strings in unrelated
+    //  assertions — and NOTHING asserted the value the engine writes into `clients`.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public void ArchiveFolderNames_AreTheValuesAlreadyOnUsersDisks()
+    {
+        // Deliberately a value-pinning test. These two strings are baked into every archive
+        // ClaudeForge has ever written; they are not free to change, and the only way to say
+        // so is to write them down somewhere a change has to walk past.
+        Assert.AreEqual("ClaudeCode", SchemaRegistry.ClaudeCodeProduct.ArchiveFolder);
+        Assert.AreEqual("ClaudeDesktop", SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+
+        // Not derived from Id, and must not be "fixed" to match it: the ids were chosen for
+        // code, the folder names were already on disk.
+        Assert.AreNotEqual(
+            SchemaRegistry.ClaudeCodeProduct.Id,
+            SchemaRegistry.ClaudeCodeProduct.ArchiveFolder,
+            "The two vocabularies differ on purpose — claude-code vs ClaudeCode. Collapsing "
+            + "them would orphan every existing archive.");
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_WritesEachRequestedProductsArchiveFolderIntoTheManifest()
+    {
+        // The writer side of the same contract, and the gap the folder-rename canary exposed:
+        // the restore browser reads manifest.clients to label each archive, and renders an
+        // unrecognised value raw. So a changed folder name produces archives that look wrong
+        // in the UI without any test noticing.
+        Directory.CreateDirectory(PlatformPaths.DesktopConfigDir);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
+
+        string dest = Path.Combine(_fakeHome, "clients-manifest.zip");
+        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+        });
+        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.IsNotNull(create.Manifest);
+
+        CollectionAssert.AreEqual(
+            new[] { "ClaudeCode", "ClaudeDesktop" },
+            create.Manifest!.Clients.ToArray(),
+            "The manifest's clients array must carry each requested product's ArchiveFolder, "
+            + "in request order. These strings are persisted and read back by the restore "
+            + "browser's client column.");
+
+        // And the folders those names describe must be where the files actually landed —
+        // the two halves of the contract have to agree.
+        List<string> entries = ListEntries(dest);
+        foreach (string folder in create.Manifest!.Clients)
+        {
+            Assert.IsTrue(
+                entries.Any(e => e.StartsWith(folder + "/", StringComparison.Ordinal)),
+                $"Manifest lists '{folder}' but no archive entry lives under '{folder}/'.");
+        }
+    }
+
+    [TestMethod]
+    public async Task CreateAsync_OmittedProduct_IsAbsentFromTheManifestClientsArray()
+    {
+        // Counter-direction: without this, a BuildClientList that ignored the request and
+        // always listed both products would satisfy the test above.
+        string dest = Path.Combine(_fakeHome, "clients-manifest-cc-only.zip");
+        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
+        });
+        Assert.IsTrue(create.Succeeded, create.Message);
+
+        CollectionAssert.AreEqual(
+            new[] { "ClaudeCode" },
+            create.Manifest!.Clients.ToArray(),
+            "Only the requested product may appear in the manifest.");
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -998,8 +1064,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -1036,8 +1101,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
             IncludeCredentials = true, // user opted in — sanitized still wins
         });
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -1066,8 +1130,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -1101,8 +1164,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = backupDest,
             Mode = BackupMode.Sanitized,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
@@ -1167,8 +1229,7 @@ public sealed class BackupEngineTests
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            IncludeClaudeCode = true,
-            IncludeClaudeDesktop = false,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -1409,8 +1470,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 
@@ -1501,8 +1561,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
                 // NO explicit project — exercises the "Full backup with no
                 // project selected" path the user asked about.
             });
@@ -1558,8 +1617,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
             });
 
             Assert.IsTrue(result.Succeeded, result.Message);
@@ -1605,8 +1663,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
             });
 
             Assert.IsTrue(result.Succeeded, result.Message);
@@ -1646,8 +1703,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
                 ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
             });
 
@@ -1710,8 +1766,7 @@ public sealed class BackupEngineTests
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                IncludeClaudeCode = true,
-                IncludeClaudeDesktop = false,
+                Products = [SchemaRegistry.ClaudeCodeProduct],
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 
