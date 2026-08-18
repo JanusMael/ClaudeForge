@@ -35,7 +35,8 @@
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
-> | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md) |
+> | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
+> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4** retires them |
 > | 3 — Generalize the scope model | **next** |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
@@ -2240,10 +2241,55 @@ that intent in `AGENTS.md` so it doesn't become permanent.
 > as a hard invariant in `AGENTS.md`. Delete the flag, `SelectedConfigWriter`, and the legacy
 > writer together after one clean release.
 
-### Phase 3 — Generalize the scope model (Problem 1)
+### Phase 3 — Generalize the scope model (Problem 1) — ✅ **complete**
 
-Two commits as described. Delete the `ClaudeScope._cache` invariant from `AGENTS.md` when
-it stops existing.
+Two commits, as described. The `ClaudeScope._cache` invariant is gone from `AGENTS.md`,
+the root invariant table, `AGENT-ONBOARDING.md`, and the `Core/Settings` sidecar.
+
+> **Four things this section got wrong — worth reading before Phase 4 repeats them.**
+>
+> 1. **"Everything still compiles" after commit 1 is false.** Six defaulted parameters
+>    (`= ConfigScope.User` is not a compile-time constant), sixteen constant patterns
+>    across four converters, four `Enum.GetValues<ConfigScope>()`, and five `(int)` casts
+>    all break. All loud, all cheap — but it is not a free first step.
+>
+> 2. **The reference count was 4.5× low** — 314 across 69 files became **1,412 across
+>    147**. It did not matter: only **18 files** needed edits, because most references are
+>    ordinary uses that compile unchanged against a struct. Count edit sites, not
+>    references.
+>
+> 3. ⚠ **The proposed shape would have shipped a silent bug.**
+>    `ConfigScopeId(string Id, int Priority, string DisplayName, bool IsReadOnly)` gives an
+>    all-zero `default` whose `Id` is null, and a dozen editors declare
+>    `private ConfigScope _lastScope;` with no initialiser, relying on it being `Managed`.
+>    That shape was built and run against the full suite: **exactly one failure out of
+>    2,792**, and only because commit 1 adds the test that catches it. All 1,391
+>    `ClaudeForge.Tests` stayed green. `ConfigScope` is therefore backed by a **single int
+>    ordinal**; the richer shape belongs in Phase 4 where a `ProductDescriptor` supplies it.
+>
+> 4. **`MergeEngine` needed no change.** It never names a scope — it relies purely on
+>    entries arriving highest-priority-first. Its Claude-specific *merge rules* are
+>    Problem 2, i.e. Phase 4. The real Claude assumptions were three:
+>    `LayeredValue.IsManagedLocked`, `AgentConfigClientCore.EditableScopes` (both
+>    `== ConfigScope.Managed`, now `Scope.IsReadOnly`), and `ClaudeScope` itself.
+>
+> **"Delete the statics" was deliberately not done.** `ConfigScope.User` and friends have
+> **58 uses in `src/` but 1,074 in tests**, and nothing supplies a `ScopeSet` until
+> Phase 4. Deleting them now would be a diff dominated by mechanical test churn, against an
+> abstraction that does not exist yet, and Phase 4 would likely churn it again. The statics
+> survive as Claude's canonical set; `ConfigScope.All` **is** the ordered scope set that
+> `ClaudeScope` and the id-resolution fallback now build themselves from. **Phase 4 owns
+> retiring them**, once a product descriptor can supply scopes.
+>
+> **The invariant was replaced by a test, not just deleted.** The old `AGENTS.md` entry
+> said in as many words that a mis-ordered cache "produces the wrong wrapper silently" and
+> that there was **no runtime check**. `ClaudeScopeTests.For_ReturnsTheWrapperForTheScopeItWasAsked`
+> is now that check, and it fails 33 tests when the mapping is mirrored.
+>
+> **Not covered by any test:** the scope-chiclet `DataTemplate` in
+> `SettingsGroupEditorView.axaml` binds a `ConfigScope` through three converters. It
+> compiles and the converters are unit-tested, but the template's runtime binding is only
+> provable by running the app.
 
 ### Phase 4 — Generalize the product model (Problems 2 + 3)
 

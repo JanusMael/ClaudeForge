@@ -279,10 +279,13 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
                 }
 
                 List<ConfigScope> list = _workspace.Documents
-                                                   .Where(d => d.Scope != ConfigScope.Managed && !d.IsReadOnly)
+                                                   // Ask the scope whether it is policy-controlled rather than
+                                                   // naming Managed: this class is product-neutral, and a ladder
+                                                   // may have more than one read-only rung.
+                                                   .Where(d => !d.Scope.IsReadOnly && !d.IsReadOnly)
                                                    .Select(d => d.Scope)
                                                    .Distinct()
-                                                   .OrderBy(s => (int)s)
+                                                   .OrderBy(s => s.Ordinal)
                                                    .ToList();
 
                 return list.Count > 0 ? list : [ConfigScope.User];

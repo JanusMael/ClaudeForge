@@ -28,8 +28,9 @@ public sealed class SettingsWorkspace
 
     public SettingsWorkspace(IEnumerable<SettingsDocument> documents)
     {
-        // Sort highest-priority (Managed=0) first
-        _documents = documents.OrderBy(d => (int)d.Scope).ToList();
+        // Sort highest-priority first, by the scope's own declared ordinal rather than a
+        // cast, so a product with a different ladder orders correctly without changes here.
+        _documents = documents.OrderBy(d => d.Scope.Ordinal).ToList();
     }
 
     public IReadOnlyList<SettingsDocument> Documents => _documents;

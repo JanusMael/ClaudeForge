@@ -128,6 +128,26 @@ public class ConfigScopeTests
     }
 
     /// <summary>
+    /// <c>IsReadOnly</c> is what product-neutral code asks instead of comparing against
+    /// <see cref="ConfigScope.Managed"/>. Claude has exactly one policy rung; the point of
+    /// the property is that a second product need not have exactly one, so the assertion
+    /// is written as "the read-only scopes are precisely these" rather than "Managed is
+    /// read-only".
+    /// </summary>
+    [TestMethod]
+    public void IsReadOnly_MarksPreciselyThePolicyScopes()
+    {
+        CollectionAssert.AreEqual(
+            new[] { ConfigScope.Managed },
+            ConfigScope.All.Where(s => s.IsReadOnly).ToArray(),
+            "Managed is Claude's only policy-controlled scope.");
+
+        Assert.IsFalse(ConfigScope.User.IsReadOnly);
+        Assert.IsFalse(ConfigScope.Project.IsReadOnly);
+        Assert.IsFalse(ConfigScope.Local.IsReadOnly);
+    }
+
+    /// <summary>
     /// <c>MergeResult.EffectiveScope</c> and <c>LayeredValue.EffectiveScope</c> are
     /// <c>ConfigScope?</c>, where null means "no scope defines this". Managed is ordinal
     /// zero, so a nullable wrapper that confused the two would silently attribute every

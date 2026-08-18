@@ -10,28 +10,28 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// </summary>
 /// <remarks>
 /// Cached singletons — identity equality works correctly with <c>AreSame</c>.
-/// Priority formula: <c>3 - (int)configScope</c>
-///   Managed=0 → Priority=3 (highest)
-///   Local=1   → Priority=2
-///   Project=2 → Priority=1
-///   User=3    → Priority=0 (lowest)
-///
-/// IMPORTANT — cache ordering: the <see cref="_cache"/> array is indexed by the
-/// numeric value of <see cref="ConfigScope"/> (see <see cref="For"/>). Entries
-/// MUST match the current <c>ConfigScope</c> enum order; otherwise
-/// <c>For(ConfigScope.User)</c> would silently return the wrapper for a
-/// different scope. After the post-Project-scope priority correction the
-/// enum order is Managed=0, Local=1, Project=2, User=3 — the order below.
+/// Priority inverts the scope ladder: the highest-priority scope (lowest ordinal)
+/// gets the highest <see cref="Priority"/>, so for Claude's four scopes
+/// Managed=0 → 3, Local=1 → 2, Project=2 → 1, User=3 → 0.
+/// <para>
+/// The cache used to be an <b>array indexed by the numeric value of</b>
+/// <see cref="ConfigScope"/>, which made "entries must match the enum's declaration
+/// order" a hard invariant documented in <c>AGENTS.md</c> — get it wrong and
+/// <c>For(ConfigScope.User)</c> silently returned a different scope's wrapper. It is now
+/// a dictionary built from <see cref="ConfigScope.All"/>, so the ordering coupling is
+/// gone: reordering or extending the ladder cannot mis-map a scope, and the invariant no
+/// longer exists to be violated.
+/// </para>
 /// </remarks>
 public sealed class ClaudeScope : IEditorScope
 {
-    private static readonly ClaudeScope[] _cache =
-    [
-        new(ConfigScope.Managed), // index 0
-        new(ConfigScope.Local), // index 1
-        new(ConfigScope.Project), // index 2
-        new(ConfigScope.User), // index 3
-    ];
+    /// <summary>
+    /// Keyed by scope rather than indexed by ordinal — see the class remarks. Built from
+    /// <see cref="ConfigScope.All"/> so a scope added to the ladder is wrapped
+    /// automatically instead of falling off the end of a hand-maintained array.
+    /// </summary>
+    private static readonly Dictionary<ConfigScope, ClaudeScope> _cache =
+        ConfigScope.All.ToDictionary(scope => scope, scope => new ClaudeScope(scope));
 
     private ClaudeScope(ConfigScope source)
     {
@@ -39,7 +39,7 @@ public sealed class ClaudeScope : IEditorScope
         Priority = ToLibraryPriority(source);
         Id = source.ToString().ToLowerInvariant();
         DisplayName = source.ToString().ToUpperInvariant();
-        IsReadOnly = source == ConfigScope.Managed;
+        IsReadOnly = source.IsReadOnly;
     }
 
     /// <summary>The underlying <see cref="ConfigScope"/> value.</summary>
@@ -53,7 +53,10 @@ public sealed class ClaudeScope : IEditorScope
     /// <summary>Return the singleton <see cref="ClaudeScope"/> for the given <see cref="ConfigScope"/>.</summary>
     public static ClaudeScope For(ConfigScope scope)
     {
-        return _cache[(int)scope];
+        return _cache.TryGetValue(scope, out ClaudeScope? wrapper)
+            ? wrapper
+            : throw new ArgumentOutOfRangeException(
+                nameof(scope), scope, "No ClaudeScope wrapper exists for this scope.");
     }
 
     /// <summary>
@@ -67,21 +70,28 @@ public sealed class ClaudeScope : IEditorScope
             return cs.Source;
         }
 
-        // Fall back to ID-based resolution for fakes / test doubles
-        return scope.Id switch
+        // Fall back to ID-based resolution for fakes / test doubles. Resolved against
+        // ConfigScope.All rather than a hand-written list of the four ids, so the mapping
+        // cannot drift out of step with the ladder.
+        foreach (ConfigScope candidate in ConfigScope.All)
         {
-            "managed" => ConfigScope.Managed,
-            "user" => ConfigScope.User,
-            "project" => ConfigScope.Project,
-            "local" => ConfigScope.Local,
-            var _ => throw new ArgumentException($"Cannot map scope '{scope.Id}' to ConfigScope.", nameof(scope)),
-        };
+            if (string.Equals(candidate.ToString(), scope.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                return candidate;
+            }
+        }
+
+        throw new ArgumentException($"Cannot map scope '{scope.Id}' to ConfigScope.", nameof(scope));
     }
 
     /// <summary>Single canonical formula: inverts ConfigScope's lower=higher-priority convention.</summary>
+    /// <remarks>
+    /// Derived from the ladder's length rather than the literal 3, so adding a scope does
+    /// not silently push every priority off by one.
+    /// </remarks>
     public static int ToLibraryPriority(ConfigScope scope)
     {
-        return 3 - (int)scope;
+        return ConfigScope.All.Count - 1 - scope.Ordinal;
     }
 
     public override string ToString()
