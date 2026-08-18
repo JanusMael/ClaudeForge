@@ -60,8 +60,20 @@ public sealed class ExportManifest
     /// which folders an export contains. Both sides derive from
     /// <see cref="ProductDescriptor.ArchiveFolder"/> so they cannot drift apart.
     /// </remarks>
+    /// <remarks>
+    /// The setter coalesces null because a property initialiser does <b>not</b> survive an
+    /// explicit JSON <c>null</c> — it only covers an <i>absent</i> field. Without this,
+    /// <c>"clients": null</c> makes every enumeration of this list throw, which is a worse
+    /// answer than an empty list for a field that is merely odd rather than corrupt.
+    /// </remarks>
     [JsonPropertyName("clients")]
-    public List<string> Clients { get; set; } = new();
+    public List<string> Clients
+    {
+        get => _clients;
+        set => _clients = value ?? [];
+    }
+
+    private List<string> _clients = [];
 
     /// <summary>
     /// <b>Schema v1 only — read, never written.</b> Populated when
