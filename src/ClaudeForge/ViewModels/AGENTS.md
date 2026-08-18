@@ -33,6 +33,14 @@ entry path, and its live `Client`. `_sections` is the list; `Sections` exposes i
 `OpenSections` filters to the opened ones, and `SectionFor(product)` resolves one by
 `ProductDescriptor.Id`.
 
+⚠ **`ExportEntryPath` is composed, not given.** A section is constructed with only the path
+*inside* its product's folder (`".claude/settings.json"`); the folder segment comes from
+`ProductDescriptor.ArchiveFolder`. Do not pass a whole path back in. `ExportManifest.Clients`
+lists those same folder names, and a reader of an export archive takes that list as the
+folders to look in — deriving both from one property is what keeps them from disagreeing.
+Covered by `ExportArchiveTests`, which asserts every folder the manifest names really exists
+in the archive.
+
 `ClaudeCodeSdk` / `ClaudeDesktopSdk` still exist and are still widely called, but they now
 read *through* `_sections` — they are a convenience for the many editor call sites that
 genuinely mean "the Claude Code client", not the place the client lives.
@@ -47,6 +55,11 @@ validate, snapshot, subscribe/unsubscribe, dirty check, export, dispose. `Client
 > save, validate, subscribe, dispose and export — **passed all 2,814 tests.** The suite
 > exercises one product at a time, so a regression here is invisible by default.
 > **Any test asserting multi-product behaviour must open two sections deliberately.**
+>
+> Two-section guards exist now, and they are the ones to extend rather than replace:
+> `SavePreservationTests` (save reaches every product; the last section alone marks the window
+> dirty) and `ExportArchiveTests` (the export manifest names every open product). Both open
+> two sections and both were canaried against a first-section-only implementation.
 
 **Deliberately still per-product, not oversights:** the navigation tree (different icons,
 node ids and descriptions, and Claude Code has pages Desktop has none of — Phase 5 owns it),

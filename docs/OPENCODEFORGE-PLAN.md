@@ -38,7 +38,7 @@
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
-> | 4 — Product model | 🔶 **4a–4d done** — both `IsClaudeCode` booleans replaced, merge rules are the product's own statement, and the shell hosts a list of product sections. **4e–4f remain** — see the Phase 4 section |
+> | 4 — Product model | 🔶 **4a–4e done** — both `IsClaudeCode` booleans replaced, merge rules are the product's own statement, the shell hosts a list of product sections, and an export names its products in a list at schema v2. **Only 4f remains** — see the Phase 4 section |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -115,7 +115,8 @@
 > construction" claim is retracted. Also: bundling OpenCode schemas in Phase 7 silently
 > changes **ClaudeForge's** archive contents · `ExportManifest` is a versioned persisted
 > format with product booleans and no migration plan (while its sibling `BackupManifest`
-> already uses a list) · a **second** `IsClaudeCode` boolean in `RestoreEngine` ·
+> already uses a list) — ✅ **migrated in 4e (`636fb34`)** · a **second** `IsClaudeCode`
+> boolean in `RestoreEngine` ·
 > `ProfileEngine` has a doubled Code/Desktop surface that makes "root-parameterize it" a
 > real job, not a footnote.
 >
@@ -159,6 +160,7 @@
 > the two-product model is **baked into the SDK's public backup API** (`BackupClient`
 > constructor, `BackupRequest`), the Backup page's bound checkboxes, and `ExportManifest` —
 > Problem 3 is the second-largest refactor in the plan, not a `MainWindowViewModel` cleanup.
+> ✅ **All four are now done: 4d-2 (`886494d`), 4d-3 (`a56fad7`) and 4e (`636fb34`).**
 >
 > **Review pass 8 — I repeated the pass-7 mistake while diagnosing it.** Pass 7 asserted
 > `PermissionTesterViewModel` was "genuinely shared" *without reading it*. It is not: it
@@ -593,7 +595,7 @@ still current.
 > | `BackupRequest.IncludeClaudeCode` / `.IncludeClaudeDesktop` | request record |
 > | `ClaudeCodeClient.CreateBackupClient()` → `(true, false)`; Desktop → `(false, true)` | per-product wiring |
 > | `BackupRestoreViewModel._includeClaudeCode` / `_includeClaudeDesktop` | `[ObservableProperty]` **bound to UI checkboxes** |
-> | `ExportManifest.IncludesClaudeCode` / `.IncludesClaudeDesktop` | **persisted, versioned** (see below) |
+> | `ExportManifest.IncludesClaudeCode` / `.IncludesClaudeDesktop` | **persisted, versioned** (see below) — ✅ **4e (`636fb34`)**, now `clients` at schema v2 |
 >
 > Consequences the plan must budget for: the backup API becomes a **product set** rather
 > than two flags (a public-surface change, caught by `PublicSurfaceContractTests`); the
@@ -2318,7 +2320,7 @@ Claude Desktop through the new path and prove behavioural identity.
 | **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returned `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ✅ `629bca7` |
 | **4c** | `IMergePolicy` (Problem 2) | ✅ `4255c12` |
 | **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ✅ **3 commits** — `c9eecfe` (shell lifecycle) · `886494d` (backup product set) · `a56fad7` (per-product checkboxes) |
-| **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ⬜ |
+| **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ✅ `636fb34` |
 | **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ⬜ |
 
 4d and 4e are each comparable in size to the whole of Phase 3. **4d took three commits**,
@@ -2386,6 +2388,68 @@ identity, then the view.
 > self-consistent — new archives work perfectly while every archive already on a user's
 > disk quietly stops matching. Guarded by three tests that pin the persisted strings and the
 > manifest the engine writes.
+
+**What 4e actually did (`636fb34`), and the premise it corrected.**
+
+`ExportManifest` now carries `clients: List<string>` at `CurrentSchemaVersion = 2`, written
+from the open-section list — which also retired the last
+`ClaudeCodeSdk is not null` / `ClaudeDesktopSdk is not null` pair in the shell, the two lines
+4d deliberately left here.
+
+- **`ProductSection` gained a fourth archive-folder site.** Its export paths were the whole
+  strings `"ClaudeCode/.claude/settings.json"` and
+  `"ClaudeDesktop/claude_desktop_config.json"`. It now takes only the part *inside* the
+  product's folder and composes the rest from `ProductDescriptor.ArchiveFolder` — the same
+  duplication 4d-2 centralised in `BackupEngine` and `RestoreEngine` but did not reach. Not
+  tidiness: a reader takes `clients` as the list of folders to look in, so the manifest and
+  the entry paths must agree, and deriving both from one property makes that structural.
+- **`ExportManifest.TryRead` maps v1's booleans onto the list** and rejects a non-export
+  kind, an unknown future version, and malformed JSON. **It has no caller** — nothing reads
+  an export back. Kept anyway because the format is on users' disks, and because without a
+  read path the written shape cannot be round-tripped in a test at all. When v1 archives are
+  old enough to abandon, delete the two legacy properties and the v1 branch **together**.
+- ⚠ **A missing `schemaVersion` does not deserialise to `0`.** The property has an
+  initialiser, and System.Text.Json leaves an initialised value untouched when the field is
+  absent — so such a manifest arrives claiming to be v2, and a purely version-gated migration
+  silently ignores its booleans and reports an export covering nothing. A test written for
+  that case failed and is why `TryRead` also falls back when the list came out empty while a
+  legacy field was present. **Any future `schemaVersion`-gated migration in this repo has the
+  same trap.**
+- ✅ **`ExportManifest` has no SDK twin**, unlike `BackupManifest`. The "must update **both**"
+  warning recorded under *Incidental finding* above applies to `BackupManifest` and
+  `BackupMode`, not to this file — there is exactly one `ExportManifest` type.
+
+> ⚠⚠ **The plan's stated reason for the v1 read path was wrong, and this is the correction.**
+> It said these booleans are *"written into exported profiles that other builds read back"*,
+> citing profile export/import as a shipped, documented feature. That conflates two unrelated
+> artefacts. **Profile export is `ExportedProfile`** — snake_case, `version: "1.0.0"`,
+> claudectx-compatible, and carrying **no product booleans at all**. `ExportManifest` is the
+> metadata inside a `claude-export-*.zip` written by the Export command, and it is
+> **never deserialised anywhere in `src` or `tests`**. So there was no v1 read path to
+> preserve and no reader that could break. The migration is worth doing on its own terms —
+> two adjacent persisted formats contradicting each other on the same question — not to avert
+> data loss.
+
+> **⚠ 4e's coverage finding, and its canaries.**
+>
+> **Nothing had ever tested this surface.** No test referenced `ExportManifest`,
+> `ZipArchiveWriter.SerialiseExportManifest` or `MainWindowViewModel.ExportAsync`, so which
+> products an export claimed to cover was unguarded end to end. 16 tests close it:
+> `ExportManifestTests` (14) on the DTO and both schema versions, and `ExportArchiveTests`
+> (2) on the archive the GUI actually writes — **with two sections open deliberately.**
+>
+> | Canary | Result |
+> |---|---|
+> | `Assert.Fail` inside the dispatched lambda | both GUI tests red — the dispatch shape observes assertions |
+> | Manifest built from the **first** open section only | both GUI tests red (one on the product list, one on its precondition) |
+> | Export entry paths hardcoded to one product's folder | the folder test red, naming the disagreement and listing the archive's real entries |
+> | v1 boolean mapping disabled | 4 red; the `false,false` row correctly stayed green |
+>
+> ⚠ `Assert.AreEqual(2, ExportManifest.CurrentSchemaVersion)` **fails the build** —
+> `MSTEST0032`, two compile-time constants folded into a tautology. The version is pinned
+> through the serialised bytes instead, which also covers the JSON property name. Same family
+> as the `if (false)` canary that would not compile: **use a comparison the compiler cannot
+> fold.**
 
 > **⚠ 4a's canary found a hole that applies to every remaining piece — read this before 4b.**
 >
@@ -2877,6 +2941,12 @@ precedence the way you meant.
   > change** — archive layout *and* manifest. Version them together, and add restore tests
   > against a **pre-change archive fixture** committed to the repo; a format change that only
   > round-trips with itself is how backup tools lose people's data.
+  >
+  > ⚠ **Half of that is now spent: 4e (`636fb34`) already took `ExportManifest` to schema v2.**
+  > So Phase 10 changes the archive layout against a manifest that is *already* at v2 — bump
+  > it again and extend `ExportManifest.TryRead` in the same commit. 4e's own tests cover both
+  > of its versions but there is **still no committed pre-change archive fixture**; that part
+  > of this recommendation is unspent and belongs with the layout change.
 
   > ⚠ **Draft 10 claimed `AdditionalDirectoriesResolver` and `BackupEngine` "already model
   > extra dirs — configuration, not new mechanism". That is wrong.**
