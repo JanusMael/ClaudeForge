@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Avalonia.Headless;
 using Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -37,7 +37,8 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
         var root = await registry.GetClaudeCodeSettingsNodeAsync();
         IReadOnlyList<SchemaNode> nodes = SchemaTreeBuilder.BuildTopLevel(root);
         SettingsWorkspace workspace = new(
-            [new SettingsDocument(ConfigScope.User, "User.json", new JsonObject(), isReadOnly: false)]);
+            [new SettingsDocument(ConfigScope.User, "User.json", new JsonObject(), isReadOnly: false)],
+            ClaudeMergePolicy.Instance);
 
         // Construct every group plus its child property editors on a worker thread, exactly as
         // MainWindowViewModel.BuildNavigationTreeAsync does on startup.

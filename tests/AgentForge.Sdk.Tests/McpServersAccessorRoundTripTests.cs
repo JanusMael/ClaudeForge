@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 
@@ -34,7 +34,7 @@ public sealed class McpServersAccessorRoundTripTests
     {
         JsonObject root = new() { ["mcpServers"] = (JsonObject)mcpServersBlock.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", root, isReadOnly: false);
-        return new SettingsWorkspace([doc]);
+        return new SettingsWorkspace([doc], TestMergePolicy.Instance);
     }
 
     private static TestConfigClient MakeClient(SettingsWorkspace ws)

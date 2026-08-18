@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -63,7 +63,7 @@ public class EnvironmentEditorViewModelTests
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
-        return new SettingsWorkspace([doc]);
+        return new SettingsWorkspace([doc], ClaudeMergePolicy.Instance);
     }
 
     /// <summary>

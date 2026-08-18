@@ -1,38 +1,46 @@
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Settings;
 
 /// <summary>
-/// Implements Claude Code's documented settings merge rules:
-///  - Arrays: UNION across all scopes (all entries combined, duplicates removed)
-///  - Non-arrays: highest-priority scope wins (Managed > Local > Project > User)
+/// Executes layered-configuration merging. The rules that vary by product live in the
+/// <see cref="IMergePolicy"/> every entry point requires:
+///  - Unioned paths: contributions combined across scopes, duplicates removed, in the
+///    policy's <see cref="IMergePolicy.UnionOrder"/>
+///  - Everything else scalar: highest-priority scope wins (for Claude, Managed > Local >
+///    Project > User)
 ///  - Objects: deep merge — each key resolved independently by recursion
 /// </summary>
+/// <remarks>
+/// The engine never names a scope; it relies only on entries arriving highest-priority
+/// first, which is <c>SettingsWorkspace</c>'s job. There is deliberately <b>no</b> overload
+/// that omits the policy: a defaulted policy would silently give a new product Claude
+/// Code's merge rules, which is precisely the failure this seam exists to prevent.
+/// </remarks>
 public static class MergeEngine
 {
     /// <summary>
-    /// Compute the effective value for a set of scope entries.
+    /// Compute the effective value for a set of scope entries at <paramref name="path"/>.
     /// </summary>
     /// <param name="entries">Entries ordered highest-priority first (Managed first).</param>
-    /// <param name="isArray">
-    ///   True if the schema says this path holds an array (arrays UNION; non-arrays override).
-    ///   When null, array-ness is inferred from the actual JSON values.
-    /// </param>
+    /// <param name="path">Dotted path these entries were read from, for the policy to rule on.</param>
+    /// <param name="policy">The product's merge rules.</param>
     public static MergeResult Merge(
         IReadOnlyList<ScopeEntry> entries,
-        bool? isArray = null)
+        string path,
+        IMergePolicy policy)
     {
-        return MergeCore(entries, isArray, arrayPaths: null, keyPrefix: string.Empty);
+        ArgumentNullException.ThrowIfNull(policy);
+        return MergeCore(entries, path, policy);
     }
 
-    // Internal overload that carries the full arrayPaths set and the current key
-    // prefix so recursive object merges can match dotted paths like
-    // "permissions.allow" even when merging the nested "permissions" object.
+    // Carries the current dotted path so recursive object merges can rule on paths like
+    // "permissions.allow" even while merging the enclosing "permissions" object.
     private static MergeResult MergeCore(
         IReadOnlyList<ScopeEntry> entries,
-        bool? isArray,
-        IReadOnlySet<string>? arrayPaths,
-        string keyPrefix)
+        string path,
+        IMergePolicy policy)
     {
         if (entries.Count == 0)
         {
@@ -46,26 +54,25 @@ public static class MergeEngine
             return new MergeResult(null, null);
         }
 
-        // Determine whether this is an array merge. When the schema hasn't declared
-        // array-ness (isArray == null), infer it — but ONLY treat the node as a
-        // union-merged array when EVERY defined scope value is an array. A MIXED set
-        // (e.g. one scope holds a bool and another an array for the same key — legal for
+        // Ask the policy whether this path unions. `everyValueIsArray` is handed over
+        // because a product may infer union-ness when its schema has not declared the path
+        // — but ONLY when EVERY defined scope value is an array. A MIXED set (e.g. one
+        // scope holds a bool and another an array for the same key — legal for
         // `enabledPlugins`, whose values are anyOf[array, bool]) is NOT a uniform array
-        // path: falling through keeps the documented "non-arrays: highest-priority scope
-        // wins" rule instead of letting MergeArrays silently drop the non-array
-        // (higher-priority) value into a union. Schema-declared array paths pass
-        // isArray == true and are unaffected.
-        bool treatAsArray = isArray ?? defined.All(e => e.Value is JsonArray);
-
-        if (treatAsArray)
+        // path, and a policy that infers will see false and fall through to
+        // highest-priority-wins rather than letting MergeArrays silently drop the
+        // non-array (higher-priority) value into a union. A policy that declares the path
+        // unions regardless of the values, which is how schema-declared array paths keep
+        // their behaviour when one scope holds something odd.
+        if (policy.UnionsAt(path, defined.All(e => e.Value is JsonArray)))
         {
-            return MergeArrays(defined);
+            return MergeArrays(defined, policy.UnionOrder);
         }
 
         // Check if all defined values are objects — if so, deep merge
         if (defined.All(e => e.Value is JsonObject))
         {
-            return MergeObjects(defined, arrayPaths, keyPrefix);
+            return MergeObjects(defined, path, policy);
         }
 
         // Non-array, non-object: highest-priority scope wins
@@ -73,7 +80,7 @@ public static class MergeEngine
         return new MergeResult(winner.Value?.DeepClone(), winner.Scope);
     }
 
-    private static MergeResult MergeArrays(List<ScopeEntry> defined)
+    private static MergeResult MergeArrays(List<ScopeEntry> defined, MergeUnionOrder order)
     {
         // `seen` tracks already-included items by structural equality so semantically
         // equal objects with differently-ordered keys ({"a":1,"b":2} and {"b":2,"a":1})
@@ -89,7 +96,16 @@ public static class MergeEngine
         List<JsonNode> seen = new();
         JsonArray result = new();
 
-        foreach (ScopeEntry entry in defined)
+        // `defined` arrives highest-priority first. A policy that unions lowest-first walks
+        // it backwards — which changes the ORDER of the result, and for a product whose
+        // last matching rule wins, order is semantics rather than presentation. Dedupe
+        // still keeps the FIRST occurrence encountered, so the surviving copy of a
+        // duplicated entry belongs to whichever end the policy starts from.
+        IEnumerable<ScopeEntry> contributions = order == MergeUnionOrder.LowestPriorityFirst
+            ? Enumerable.Reverse(defined)
+            : defined;
+
+        foreach (ScopeEntry entry in contributions)
         {
             if (entry.Value is not JsonArray arr)
             {
@@ -114,15 +130,17 @@ public static class MergeEngine
             }
         }
 
-        // Effective scope = the highest-priority scope that contributed items
+        // Effective scope = the highest-priority scope that contributed items. Independent
+        // of UnionOrder on purpose: the order describes where the result STARTS, not which
+        // scope is credited with it.
         ConfigScope? effectiveScope = defined.FirstOrDefault(e => e.Value is JsonArray arr && arr.Count > 0)?.Scope;
         return new MergeResult(result, effectiveScope);
     }
 
     private static MergeResult MergeObjects(
         List<ScopeEntry> defined,
-        IReadOnlySet<string>? arrayPaths,
-        string keyPrefix)
+        string keyPrefix,
+        IMergePolicy policy)
     {
         JsonObject result = new();
         IEnumerable<string> allKeys = defined
@@ -142,13 +160,10 @@ public static class MergeEngine
                                               new ScopeEntry(e.Scope, ((JsonObject)e.Value!)[key], e.SourceFilePath))
                                           .ToList();
 
-            // Let the caller-provided arrayPaths set govern array vs. override semantics for
-            // nested keys — dotted paths resolve here.  Only pass `true` when the path is
-            // explicitly listed; pass `null` (infer from actual values) otherwise.  Passing
-            // `false` would force scalar-wins semantics even for actual JSON arrays that are
-            // simply not listed in arrayPaths, silently dropping lower-scope contributions.
-            bool? childIsArray = arrayPaths?.Contains(childPath) is true ? true : null;
-            MergeResult childMerge = MergeCore(keyEntries, childIsArray, arrayPaths, childPath);
+            // The policy rules on the child's dotted path, which is why the prefix is
+            // threaded: "permissions.allow" has to be recognisable while merging the
+            // enclosing "permissions" object.
+            MergeResult childMerge = MergeCore(keyEntries, childPath, policy);
             if (childMerge.EffectiveValue != null)
             {
                 result[key] = childMerge.EffectiveValue;
@@ -164,15 +179,16 @@ public static class MergeEngine
     /// Documents should be ordered highest-priority first.
     /// </summary>
     /// <param name="documents">Documents ordered highest-priority first.</param>
-    /// <param name="arrayPaths">
-    /// Set of dotted key paths that should be treated as arrays (union-merged).
-    /// Supports nested paths such as <c>"permissions.allow"</c> — the engine
-    /// threads this set recursively so nested objects also honour the hint.
+    /// <param name="policy">
+    /// The product's merge rules. Consulted per dotted key path, including nested ones such
+    /// as <c>"permissions.allow"</c> — the engine threads the path recursively so a policy
+    /// can rule on nested keys too.
     /// </param>
     public static JsonObject ComputeEffective(
         IReadOnlyList<SettingsDocument> documents,
-        IReadOnlySet<string>? arrayPaths = null)
+        IMergePolicy policy)
     {
+        ArgumentNullException.ThrowIfNull(policy);
         if (documents.Count == 0)
         {
             return new JsonObject();
@@ -192,8 +208,7 @@ public static class MergeEngine
                                        .Select(d => new ScopeEntry(d.Scope, d.Root[key], d.FilePath))
                                        .ToList();
 
-            bool? isArray = arrayPaths?.Contains(key) is true ? true : null;
-            MergeResult merged = MergeCore(entries, isArray, arrayPaths, key);
+            MergeResult merged = MergeCore(entries, key, policy);
             if (merged.EffectiveValue != null)
             {
                 result[key] = merged.EffectiveValue;

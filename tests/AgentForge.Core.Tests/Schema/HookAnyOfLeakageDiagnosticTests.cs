@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -82,7 +82,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json",
             baseline.DeepClone()!.AsObject(),
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
         ws.SetValue("hooks", edited["hooks"]!.DeepClone(), ConfigScope.User);
 
         using SchemaRegistry registry = CreateRegistry();
@@ -127,9 +127,9 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         // EVERY anyOf branch, so no sibling passes — the errors must come
         // through. Without this counter-test, an over-aggressive suppressor
         // would silently swallow legitimate user mistakes.
-        SettingsWorkspace ws = new([
-            new SettingsDocument(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false)
-        ]);
+        SettingsWorkspace ws = new(
+            [new SettingsDocument(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false)],
+            TestMergePolicy.Inferring);
         ws.SetValue("hooks", new JsonObject
         {
             ["Stop"] = new JsonArray(new JsonObject

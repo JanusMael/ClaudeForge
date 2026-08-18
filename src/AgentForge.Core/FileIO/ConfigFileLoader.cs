@@ -184,6 +184,7 @@ public static class ConfigFileLoader
     /// </summary>
     public static async Task<SettingsWorkspace> LoadWorkspaceAsync(
         IReadOnlyList<DiscoveredFile> files,
+        IMergePolicy mergePolicy,
         CancellationToken ct = default)
     {
         List<SettingsDocument> documents = new(files.Count);
@@ -193,7 +194,7 @@ public static class ConfigFileLoader
             documents.Add(doc);
         }
 
-        return new SettingsWorkspace(documents);
+        return new SettingsWorkspace(documents, mergePolicy);
     }
 
     /// <summary>

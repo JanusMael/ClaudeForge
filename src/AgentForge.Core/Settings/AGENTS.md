@@ -114,40 +114,51 @@ this contract was broken.
 
 Source: `MergeEngine.cs`.
 
-Three merge strategies, dispatched by JSON shape and `ArrayPaths`:
+Three merge strategies, dispatched by JSON shape and by the product's
+`IMergePolicy`:
 
-1. **Arrays → UNION across all scopes** (`MergeArrays`). Walk highest-priority
-   first; union by stringified item. Effective scope is the highest-priority
-   scope contributing at least one item.
+1. **Unioned paths → contributions combined across scopes** (`MergeArrays`),
+   in the policy's `UnionOrder`, deduplicated structurally. Effective scope is
+   the highest-priority scope contributing at least one item — **independent of
+   `UnionOrder`**, which says where the result starts, not who is credited.
 2. **Objects → deep merge** (`MergeObjects`). Each key resolved independently
-   by recursion. Dotted child paths (`"permissions.allow"`) threaded through
-   so nested array-keys still get UNION semantics.
-3. **Scalars / mixed → highest-priority scope wins** (`MergeCore`).
+   by recursion. Dotted child paths (`"permissions.allow"`) threaded through so
+   the policy can rule on nested keys too.
+3. **Everything else → highest-priority scope wins** (`MergeCore`).
 
-Array-path opt-in is explicit, governed by `SettingsWorkspace.ArrayPaths`:
+Only 1's *selection* and its order are product-specific. 2 and 3 are universal,
+so they stay in the engine.
 
-```
-claudeMdExcludes
-availableModels
-httpHookAllowedEnvVars
-allowedHttpHookUrls
-permissions.allow
-permissions.deny
-permissions.ask
-permissions.additionalDirectories
-enabledMcpjsonServers
-disabledMcpjsonServers
-companyAnnouncements
-```
+### The merge rules are the product's, not this assembly's
 
-Adding a new array-merged path: add it to `ArrayPaths`, add a regression test
-in `tests/AgentForge.Core.Tests/Settings/MergeEngineTests.cs` (or wherever
-existing array-merge tests live).
+⚠ **`MergeEngine` and `SettingsWorkspace` no longer know any product's rules,
+and must not learn them again.** Phase 4c moved Claude's list of union-merged
+paths (`claudeMdExcludes`, `permissions.allow/deny/ask/additionalDirectories`,
+…) out of a private static on `SettingsWorkspace` and into
+`ClaudeMergePolicy` in `ClaudeForge.Sdk.Claude`, beside Claude's clients. Read
+that type for the list; it is deliberately recorded in exactly one place.
 
-**Subtle rule** in `MergeObjects`: passing `false` as `childIsArray` would
-force scalar-wins semantics even for actual JSON arrays not listed in
-`ArrayPaths`, silently dropping lower-scope contributions. The code passes
-`null` (auto-detect from value type) instead. Don't change that to `false`.
+- `MergeEngine.Merge` / `.ComputeEffective` **require** an `IMergePolicy`.
+  There is no overload without one, on purpose: a defaulted policy is how a new
+  product silently inherits Claude's rules.
+- `SettingsWorkspace`'s constructor requires one too, and throws on null.
+- A client supplies its own via `AgentConfigClientCore.MergePolicy`.
+- Tests in `AgentForge.*` projects use their local `TestMergePolicy` — they must
+  not reference `ClaudeMergePolicy`, which would invert the assembly layering.
+
+Adding a union-merged path for Claude: add it to `ClaudeMergePolicy.ArrayPaths`
+**and** to `DeclaredUnionPaths` in
+`tests/ClaudeForge.Sdk.Claude.Tests/ClaudeMergePolicyTests.cs`, which enumerates
+the whole list. Before that test existed, emptying the list outright failed
+nothing in the suite.
+
+**Subtle rule** kept from the pre-policy code: a policy that answers "does not
+union" for a path whose every scope value *is* a JSON array forces
+highest-priority-wins and drops the lower scopes' entries. That is correct and
+intended for OpenCode (Spike S1: most of its array keys replace), and wrong for
+Claude — which is why `ClaudeMergePolicy` also unions any all-array path it has
+not declared. Don't "simplify" that inference away; it is the pre-existing
+behaviour and one of the two products depends on it.
 
 ---
 

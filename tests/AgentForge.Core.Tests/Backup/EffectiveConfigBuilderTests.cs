@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -16,7 +16,7 @@ public sealed class EffectiveConfigBuilderTests
     {
         JsonObject userRoot = new() { ["theme"] = "dark", ["autoSave"] = true };
         SettingsDocument userDoc = new(ConfigScope.User, "/tmp/settings.json", userRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([userDoc]);
+        SettingsWorkspace ws = new([userDoc], TestMergePolicy.Inferring);
 
         JsonObject result = EffectiveConfigBuilder.BuildEffective(ws, "test stamp");
 
@@ -31,7 +31,7 @@ public sealed class EffectiveConfigBuilderTests
     public void BuildEffective_EmptyWorkspaceStillProducesStamp()
     {
         SettingsDocument doc = new(ConfigScope.User, "/tmp/settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
 
         JsonObject result = EffectiveConfigBuilder.BuildEffective(ws, "empty");
         Assert.AreEqual(1, result.Count);

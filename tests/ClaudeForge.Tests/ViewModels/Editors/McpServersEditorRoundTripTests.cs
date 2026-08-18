@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -56,7 +56,7 @@ public sealed class McpServersEditorRoundTripTests
 
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 
@@ -128,7 +128,7 @@ public sealed class McpServersEditorRoundTripTests
 
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 
@@ -167,7 +167,7 @@ public sealed class McpServersEditorRoundTripTests
         // Wrap in workspace + SDK client.
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
             ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
 

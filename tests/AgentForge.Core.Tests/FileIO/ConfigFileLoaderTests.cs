@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Core.FileIO;
+﻿using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.FileIO;
@@ -206,7 +206,7 @@ public class ConfigFileLoaderTests
                 new(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings, pathB, true, false),
             ];
 
-            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files);
+            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring);
 
             Assert.AreEqual(2, workspace.Documents.Count);
             // Documents iterate in priority order. Project (= 2) outranks
@@ -244,7 +244,7 @@ public class ConfigFileLoaderTests
                 new(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, pathA, true, false),
                 new(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings, pathB, false, false),
             ];
-            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files);
+            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring);
 
             // Mutate ONLY document A — B remains clean.
             SettingsDocument docA = workspace.Documents.Single(d => d.Scope == ConfigScope.User);

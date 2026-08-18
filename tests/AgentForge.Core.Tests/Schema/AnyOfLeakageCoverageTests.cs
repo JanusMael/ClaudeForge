@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -86,7 +86,7 @@ public sealed class AnyOfLeakageCoverageTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json",
             baseline.DeepClone()!.AsObject(),
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
         ws.SetValue(key, value, ConfigScope.User);
         return ws;
     }
@@ -346,7 +346,7 @@ public sealed class AnyOfLeakageCoverageTests
                 ["model"] = 42, // single type-mismatch error
             },
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
 
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, isClaudeCode: true);

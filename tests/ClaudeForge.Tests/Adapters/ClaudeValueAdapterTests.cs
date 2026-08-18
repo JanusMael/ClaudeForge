@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Adapters;
+﻿using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
@@ -188,7 +188,7 @@ public class ClaudeValueAdapterTests
         [
             new SettingsDocument(ConfigScope.User, "/fake/settings.json", new JsonObject(), isReadOnly: false),
         ];
-        SettingsWorkspace workspace = new(docs);
+        SettingsWorkspace workspace = new(docs, ClaudeMergePolicy.Instance);
         ClaudeWorkspaceAdapter adapter = new(workspace);
 
         ValueChangedEventArgs? received = null;
@@ -208,7 +208,7 @@ public class ClaudeValueAdapterTests
         [
             new SettingsDocument(ConfigScope.User, "/fake/settings.json", new JsonObject(), isReadOnly: false),
         ];
-        SettingsWorkspace workspace = new(docs);
+        SettingsWorkspace workspace = new(docs, ClaudeMergePolicy.Instance);
         ClaudeWorkspaceAdapter adapter = new(workspace);
 
         adapter.SetValue("flag", true, ClaudeScope.For(ConfigScope.User));
@@ -226,7 +226,7 @@ public class ClaudeValueAdapterTests
         [
             new SettingsDocument(ConfigScope.User, "/fake/settings.json", new JsonObject(), isReadOnly: false),
         ];
-        SettingsWorkspace workspace = new(docs);
+        SettingsWorkspace workspace = new(docs, ClaudeMergePolicy.Instance);
         ClaudeWorkspaceAdapter adapter = new(workspace);
 
         adapter.SetValue("myKey", "hello", ClaudeScope.For(ConfigScope.User));
@@ -247,7 +247,7 @@ public class ClaudeValueAdapterTests
             new SettingsDocument(ConfigScope.Managed, "/m", new JsonObject(), isReadOnly: true),
             new SettingsDocument(ConfigScope.User, "/u", new JsonObject(), isReadOnly: false),
         ];
-        SettingsWorkspace workspace = new(docs);
+        SettingsWorkspace workspace = new(docs, ClaudeMergePolicy.Instance);
         ClaudeWorkspaceAdapter adapter = new(workspace);
 
         string[] ids = adapter.AvailableScopes.Select(s => s.Id).ToArray();

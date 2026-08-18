@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
+﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 // the App-bridge StringPropertyEditorViewModel was deleted;
 // reference the library leaf via alias.
@@ -47,7 +47,7 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
             JsonObject root = (JsonObject)JsonNode.Parse(e.Json)!;
             return new SettingsDocument(e.Scope, $"{e.Scope}.json", root, isReadOnly: false);
         });
-        return new SettingsWorkspace(docs);
+        return new SettingsWorkspace(docs, ClaudeMergePolicy.Instance);
     }
 
     private static SchemaNode MakeNode(string jsonPath, string name,

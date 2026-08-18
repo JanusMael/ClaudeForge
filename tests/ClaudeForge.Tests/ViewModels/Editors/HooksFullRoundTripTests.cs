@@ -1,4 +1,4 @@
-// comprehensive disk → SDK → editor →
+﻿// comprehensive disk → SDK → editor →
 // user-mutation → SDK → disk round-trip suite for the Hooks editor.
 //
 // What this file tests that the existing HooksRoundTripTests does not:
@@ -66,7 +66,7 @@ public class HooksFullRoundTripTests
             }
 
             SettingsDocument doc = new(ConfigScope.User, "settings.json", rootObj, isReadOnly: false);
-            SettingsWorkspace ws = new([doc]);
+            SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
             ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
                 ws, ConfigScope.User,
                 new SchemaRegistry(new HttpClient()));

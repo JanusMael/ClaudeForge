@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -64,7 +64,7 @@ public sealed class HookValidationDeltaTests
             ["hooks"] = hooksObject,
         };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
         // Unrelated edit (e.g. user changed permissions.defaultMode in the
         // app — but for these tests, anything that dirties the doc without
         // touching hooks works).
@@ -149,7 +149,7 @@ public sealed class HookValidationDeltaTests
         using SchemaRegistry registry = CreateRegistry();
         // Baseline: clean (no hooks).
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
+        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
 
         // User adds a new malformed hook via the editor.
         JsonObject hooks = new()
