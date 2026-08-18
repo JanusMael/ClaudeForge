@@ -864,6 +864,82 @@ public sealed class BackupEngineTests
         }
     }
 
+    [TestMethod]
+    public async Task RestoreAsync_ValidatesEveryConfigLocationAgainstItsOwnProductsSchema()
+    {
+        // Written because nothing covered this. Every pre-existing validation test above
+        // seeds Claude Code data only, so the Desktop half of the routing — and two of the
+        // four archive locations the validator looks in — were completely unguarded.
+        //
+        // Each file below violates ITS OWN product's schema while being perfectly valid
+        // under the other's, which makes this the transposition canary Phase 4a's finding
+        // asked for: point either product's descriptor at the other's schema, or mis-assign
+        // a row in RestoreEngine's ValidatableConfigs table, and these assertions go quiet
+        // rather than merely changing.
+        //   • claude-code-settings.json types cleanupPeriodDays as integer, and does not
+        //     mention `preferences` at all (root additionalProperties: true).
+        //   • claude-desktop-config.json types preferences as object, and does not mention
+        //     `cleanupPeriodDays` at all (root allows extras too).
+        const string violatesClaudeCode = """{"cleanupPeriodDays":"not-a-number"}""";
+        const string violatesDesktop = """{"preferences":"not-an-object"}""";
+
+        // ClaudeCode/claude.json  (top-level, non-recursive row)
+        await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude.json"), violatesClaudeCode);
+        // ClaudeCode/claude-dir/settings.json + settings.local.json  (recursive row, both names)
+        await File.WriteAllTextAsync(
+            Path.Combine(_fakeHome, ".claude", "settings.json"), violatesClaudeCode);
+        await File.WriteAllTextAsync(
+            Path.Combine(_fakeHome, ".claude", "settings.local.json"), violatesClaudeCode);
+
+        // ClaudeDesktop/claude_desktop_config.json  (top-level, non-recursive row)
+        Directory.CreateDirectory(PlatformPaths.DesktopConfigDir);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, violatesDesktop);
+        // ClaudeDesktop/profiles/work/...  (recursive row)
+        Directory.CreateDirectory(Path.Combine(PlatformPaths.DesktopProfilesDirectory, "work"));
+        await File.WriteAllTextAsync(
+            Path.Combine(PlatformPaths.DesktopProfilesDirectory, "work", "claude_desktop_config.json"),
+            violatesDesktop);
+
+        string dest = Path.Combine(_fakeHome, "backup-both-products.zip");
+        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            IncludeClaudeCode = true,
+            IncludeClaudeDesktop = true,
+        });
+        Assert.IsTrue(create.Succeeded, create.Message);
+
+        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        Assert.IsTrue(restore.Succeeded, "Validation is informational — restore must still succeed.");
+        Assert.IsNotNull(restore.ValidationWarnings, "Five violating config files must produce warnings.");
+
+        // Warnings are formatted "<archive-relative path>: <instance path>: <message>", so
+        // each row of the layout table is attributable by path.
+        (string ArchivePath, string Property)[] cases =
+        [
+            ("ClaudeCode/claude.json", "cleanupPeriodDays"),
+            ("ClaudeCode/claude-dir/settings.json", "cleanupPeriodDays"),
+            ("ClaudeCode/claude-dir/settings.local.json", "cleanupPeriodDays"),
+            ("ClaudeDesktop/claude_desktop_config.json", "preferences"),
+            ("ClaudeDesktop/profiles/work/claude_desktop_config.json", "preferences"),
+        ];
+
+        foreach ((string archivePath, string property) in cases)
+        {
+            Assert.IsTrue(
+                restore.ValidationWarnings!.Any(w =>
+                    w.Contains(archivePath, StringComparison.Ordinal)
+                    && w.Contains(property, StringComparison.Ordinal)),
+                $"'{archivePath}' must be validated against its own product's schema and report "
+                + $"'{property}'. Either that archive location dropped out of "
+                + "RestoreEngine.ValidatableConfigs, or it is now routed to the other product's "
+                + $"schema — under which '{property}' is legal. Warnings were: "
+                + string.Join(" | ", restore.ValidationWarnings!));
+        }
+    }
+
     // ───────────────────────────────────────────────────────────────────────
     //  Helpers
     // ───────────────────────────────────────────────────────────────────────

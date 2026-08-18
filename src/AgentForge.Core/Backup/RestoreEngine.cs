@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
@@ -750,7 +751,7 @@ internal static class RestoreEngine
         }
 
         const string marker = JsonRedactor.RedactedMarker;
-        foreach ((string filePath, bool _) in FindConfigFilesToValidate(tempRoot))
+        foreach ((string filePath, ProductDescriptor _) in FindConfigFilesToValidate(tempRoot))
         {
             string content;
             try
@@ -852,7 +853,8 @@ internal static class RestoreEngine
                 return warnings; // old backup — skip
             }
 
-            // Load bundled schemas by name so we can route ClaudeCode vs Desktop.
+            // Load bundled schemas by file name so each config file can be routed to the
+            // schema its own product names (ProductDescriptor.SchemaFileName).
             Dictionary<string, JsonSchema> schemaByName = new(StringComparer.OrdinalIgnoreCase);
             foreach (string schemaFile in Directory.EnumerateFiles(schemasDir, "*.json"))
             {
@@ -881,12 +883,11 @@ internal static class RestoreEngine
 
             EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };
 
-            foreach ((string filePath, bool isClaudeCode) in FindConfigFilesToValidate(tempRoot))
+            foreach ((string filePath, ProductDescriptor product) in FindConfigFilesToValidate(tempRoot))
             {
                 ct.ThrowIfCancellationRequested();
 
-                string schemaName = isClaudeCode ? "claude-code-settings.json" : "claude-desktop-config.json";
-                if (!schemaByName.TryGetValue(schemaName, out JsonSchema? schema))
+                if (!schemaByName.TryGetValue(product.SchemaFileName, out JsonSchema? schema))
                 {
                     continue;
                 }
@@ -972,49 +973,72 @@ internal static class RestoreEngine
     }
 
     /// <summary>
-    /// Enumerates config files under <paramref name="tempRoot"/> that should be
-    /// validated, paired with a flag indicating whether to use the Claude Code schema
-    /// (<c>true</c>) or the Claude Desktop schema (<c>false</c>).
+    /// Which config files a backup archive can contain, as data: each row pairs the product
+    /// whose schema validates those files with the archive-relative directory they live in,
+    /// the file names to look for there, and whether to recurse.
     /// </summary>
-    private static IEnumerable<(string FilePath, bool IsClaudeCode)> FindConfigFilesToValidate(string tempRoot)
+    /// <remarks>
+    /// <para>
+    /// This replaces a <c>bool IsClaudeCode</c> that the validator turned straight back into
+    /// one of two schema file names with a ternary — the <i>second</i> such boolean in the
+    /// codebase; Phase 4a removed the first, on <c>AgentConfigClientCore</c>. Naming the
+    /// product per row makes a third product one more row instead of a third branch, and
+    /// reduces the schema selection at the call site to a dictionary lookup on
+    /// <see cref="ProductDescriptor.SchemaFileName"/>.
+    /// </para>
+    /// <para>
+    /// ⚠ These archive-relative paths mirror the ones <see cref="BackupEngine"/> writes, and
+    /// are still literal strings on both sides. A layout change has to be made in both
+    /// places; nothing here fails loudly if only one moves — a file that stops being found
+    /// simply stops being validated, and validation is informational.
+    /// </para>
+    /// </remarks>
+    private static readonly (ProductDescriptor Product, string[] ArchiveDir, string[] FileNames, SearchOption Depth)[]
+        ValidatableConfigs =
+        [
+            // Claude Code: claude.json at the product root — deliberately NOT recursive, or a
+            // claude.json captured under projects/ would be validated as a settings file.
+            (SchemaRegistry.ClaudeCodeProduct, ["ClaudeCode"], ["claude.json"],
+                SearchOption.TopDirectoryOnly),
+
+            // Claude Code: settings.json / settings.local.json anywhere under claude-dir.
+            (SchemaRegistry.ClaudeCodeProduct, ["ClaudeCode", "claude-dir"],
+                ["settings.json", "settings.local.json"], SearchOption.AllDirectories),
+
+            // Claude Desktop: the main config.
+            (SchemaRegistry.ClaudeDesktopProduct, ["ClaudeDesktop"], ["claude_desktop_config.json"],
+                SearchOption.TopDirectoryOnly),
+
+            // Claude Desktop: every profile config, whatever it is named.
+            (SchemaRegistry.ClaudeDesktopProduct, ["ClaudeDesktop", "profiles"], ["*.json"],
+                SearchOption.AllDirectories),
+        ];
+
+    /// <summary>
+    /// Enumerates config files under <paramref name="tempRoot"/> that should be validated,
+    /// each paired with the product whose schema validates it.
+    /// </summary>
+    private static IEnumerable<(string FilePath, ProductDescriptor Product)> FindConfigFilesToValidate(
+        string tempRoot)
     {
-        // Claude Code: claude.json at root level
-        string claudeJson = Path.Combine(tempRoot, "ClaudeCode", "claude.json");
-        if (File.Exists(claudeJson))
+        foreach ((ProductDescriptor product, string[] archiveDir, string[] fileNames, SearchOption depth)
+                 in ValidatableConfigs)
         {
-            yield return (claudeJson, true);
-        }
-
-        // Claude Code: settings.json / settings.local.json anywhere under claude-dir
-        string claudeDir = Path.Combine(tempRoot, "ClaudeCode", "claude-dir");
-        if (Directory.Exists(claudeDir))
-        {
-            foreach (string f in Directory.EnumerateFiles(claudeDir, "settings.json", SearchOption.AllDirectories))
+            string dir = Path.Combine([tempRoot, .. archiveDir]);
+            if (!Directory.Exists(dir))
             {
-                yield return (f, true);
+                continue;
             }
 
-            foreach (string f in Directory.EnumerateFiles(claudeDir, "settings.local.json",
-                         SearchOption.AllDirectories))
+            // One file NAME at a time rather than one directory at a time: preserves the
+            // order the four hardcoded yield blocks produced (every settings.json, then
+            // every settings.local.json), which is the order warnings accumulate in.
+            foreach (string fileName in fileNames)
             {
-                yield return (f, true);
-            }
-        }
-
-        // Claude Desktop: main config
-        string desktopConfig = Path.Combine(tempRoot, "ClaudeDesktop", "claude_desktop_config.json");
-        if (File.Exists(desktopConfig))
-        {
-            yield return (desktopConfig, false);
-        }
-
-        // Claude Desktop: profile configs
-        string desktopProfiles = Path.Combine(tempRoot, "ClaudeDesktop", "profiles");
-        if (Directory.Exists(desktopProfiles))
-        {
-            foreach (string f in Directory.EnumerateFiles(desktopProfiles, "*.json", SearchOption.AllDirectories))
-            {
-                yield return (f, false);
+                foreach (string file in Directory.EnumerateFiles(dir, fileName, depth))
+                {
+                    yield return (file, product);
+                }
             }
         }
     }
