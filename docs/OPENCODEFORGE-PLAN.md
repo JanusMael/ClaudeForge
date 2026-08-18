@@ -51,6 +51,46 @@
 > tests, all canaried, but nothing has exercised the new save path through the GUI against a
 > real `~/.claude/settings.json`. **Do that before this branch goes near `main`.**
 >
+> ### ⚠⚠ Verification status — and what still REQUIRES a remote CI run
+>
+> The branch is deliberately **local and unpushed** (maintainer's decision, 2026-08-18), so
+> **CI has never executed on any commit of Phases 1–4.** CI's gates were therefore reproduced
+> locally. **One of them failed on its first-ever run**, which is the reason this section
+> exists rather than being an abundance of caution:
+>
+> > `JsoncEditor.Quote` used the reflection-based `JsonSerializer.Serialize` overload, so the
+> > Release publish failed with `IL2026` → `NETSDK1144`. It shipped in **Phase 2** and
+> > survived Phases 3 and 4 **while 2,861 Debug tests passed over it** — Debug does not trim,
+> > so no local test run could ever have seen it. Fixed in `807087c`.
+>
+> | Gate | Status |
+> |---|---|
+> | Debug build + full suite (Windows) | ✅ 2,884 passed · 0 failed · 11 skipped |
+> | **Trim check** — `dotnet publish src/ClaudeForge -c Release -r linux-x64 --self-contained true` | ✅ **after `807087c`**; zero `IL2xxx` |
+> | Release build + full suite (Windows) | ✅ 2,884 · 0 · 11 — identical to Debug |
+> | `scripts/validate-model-catalog.ps1` + its 30 tests | ✅ |
+> | **CI OS matrix — `ubuntu-latest`, `macos-latest`** | ❌ **NEVER RUN** |
+> | **CodeQL** | ❌ **NEVER RUN** |
+>
+> **The two unrun gates are not reproducible locally and must run remotely before this branch
+> merges.** What they would cover that nothing else does:
+>
+> - **The suite actually executing on Linux and macOS.** Only Windows has run it. Phases 1–4
+>   touched serialization, archive layout, and per-product config paths — the three areas
+>   where an OS assumption is most plausible. The relevant code *is* written OS-aware on
+>   purpose (`BackupEngine` and `AdditionalDirectoriesResolver` both select
+>   `OrdinalIgnoreCase` vs `Ordinal` per platform, with the Linux case commented), and the
+>   JSONC tests build their input as inline strings with explicit `\r\n` escapes rather than
+>   reading checked-in fixtures, so neither path-casing nor line endings are *known* to be at
+>   risk. **That is an argument for expecting a pass, not evidence of one.**
+> - **`Avalonia.Headless` on non-Windows.** Related: the 19 inert headless tests
+>   (`Task<Task>`, outer awaited only) are still inert and are scheduled for Phase 5.
+> - **CodeQL's C# analysis**, which has never seen the renamed assemblies or the new
+>   `AgentForge.*` layering.
+>
+> **Do not report Phases 1–4 as CI-verified.** They are locally verified, which — as `807087c`
+> demonstrated — is a strictly weaker claim.
+>
 > **Done in Phase 1:** resource prefix derived (not hardcoded) + guarded ·
 > `AgentForge.Abstractions` created and the `LayeredEditors.Avalonia.Services → ClaudeForge.Sdk`
 > violation removed · **all three assembly renames landed** (`AgentForge.Core`,
