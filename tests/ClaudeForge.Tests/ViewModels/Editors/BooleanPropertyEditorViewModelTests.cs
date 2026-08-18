@@ -18,10 +18,10 @@ public class BooleanPropertyEditorViewModelTests
     }
 
     private static LibVm.BooleanPropertyEditorViewModel NewVm(
-        SchemaNode? schema = null, ConfigScope scope = ConfigScope.User)
+        SchemaNode? schema = null, ConfigScope? scope = null)
     {
         return new LibVm.BooleanPropertyEditorViewModel(new ClaudeSchemaAdapter(schema ?? BoolSchema()),
-            ClaudeScope.For(scope));
+            ClaudeScope.For(scope ?? ConfigScope.User));
     }
 
     private static LayeredValue EmptyLayered(string key = "testBool")

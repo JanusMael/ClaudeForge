@@ -44,7 +44,14 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 /// </remarks>
 internal sealed class TestConfigClient : AgentConfigClientCore
 {
-    public TestConfigClient(ConfigScope defaultScope = ConfigScope.User)
+    // Overload rather than a defaulted parameter: ConfigScope is a struct as of Phase 3,
+    // and a default parameter value must be a compile-time constant.
+    public TestConfigClient()
+        : this(ConfigScope.User)
+    {
+    }
+
+    public TestConfigClient(ConfigScope defaultScope)
         : base(defaultScope, schemaRegistry: null)
     {
     }

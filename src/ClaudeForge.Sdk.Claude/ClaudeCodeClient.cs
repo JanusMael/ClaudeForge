@@ -22,12 +22,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 /// </remarks>
 public sealed class ClaudeCodeClient : ClaudeConfigClientBase
 {
+    /// <summary>Construct a client whose mutations target <see cref="ConfigScope.User"/>.</summary>
+    /// <remarks>
+    /// An overload rather than a defaulted parameter: <see cref="ConfigScope"/> became a
+    /// struct in Phase 3, and a default parameter value must be a compile-time constant,
+    /// which a static property never is. Do not "simplify" this pair back into
+    /// <c>ConfigScope defaultScope = ConfigScope.User</c> — it cannot compile.
+    /// </remarks>
+    public ClaudeCodeClient()
+        : this(ConfigScope.User)
+    {
+    }
+
     /// <summary>Construct a client whose mutations target <paramref name="defaultScope"/> by default.</summary>
     /// <param name="defaultScope">
     /// Scope used by accessor mutations and unscoped <see cref="IAgentConfigClient.SetValue{T}(string, T)"/>
     /// calls. Per-call overrides go through the explicit-scope overload.
     /// </param>
-    public ClaudeCodeClient(ConfigScope defaultScope = ConfigScope.User)
+    public ClaudeCodeClient(ConfigScope defaultScope)
         : base(defaultScope, schemaRegistry: null)
     {
     }

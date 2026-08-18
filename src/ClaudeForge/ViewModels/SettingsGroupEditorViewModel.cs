@@ -140,11 +140,11 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         string groupName,
         IReadOnlyList<SchemaNode> schemaNodes,
         SettingsWorkspace workspace,
-        ConfigScope initialScope = ConfigScope.User,
+        ConfigScope? initialScope = null,
         Func<Task<string?>>? browseDialog = null,
         DefaultEditorFactory? factory = null)
         : this(groupName, schemaNodes, workspace,
-            new SharedScopeContext(initialScope),
+            new SharedScopeContext(initialScope ?? ConfigScope.User),
             browseDialog, factory)
     {
     }

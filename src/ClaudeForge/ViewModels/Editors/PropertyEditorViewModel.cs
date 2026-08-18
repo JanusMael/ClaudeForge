@@ -259,7 +259,7 @@ public abstract class PropertyEditorViewModel
     private static LayeredValue BuildFallbackLayeredValue(IEditorValue value, ConfigScope editingScope)
     {
         // Produce entries for the scopes that have an explicit value
-        ConfigScope[] allScopes = Enum.GetValues<ConfigScope>();
+        IReadOnlyList<ConfigScope> allScopes = ConfigScope.All;
         List<ScopeEntry> entries = new();
         foreach (ConfigScope scope in allScopes)
         {

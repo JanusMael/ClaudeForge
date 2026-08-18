@@ -21,7 +21,17 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// </summary>
 public sealed partial class SharedScopeContext : ObservableObject
 {
-    public SharedScopeContext(ConfigScope initialScope = ConfigScope.User)
+    /// <summary>Start editing at <see cref="ConfigScope.User"/>.</summary>
+    /// <remarks>
+    /// An overload rather than a defaulted parameter: <see cref="ConfigScope"/> is a
+    /// struct as of Phase 3, so <c>= ConfigScope.User</c> is not a compile-time constant.
+    /// </remarks>
+    public SharedScopeContext()
+        : this(ConfigScope.User)
+    {
+    }
+
+    public SharedScopeContext(ConfigScope initialScope)
     {
         _editingScope = initialScope;
         _availableScopes = [ConfigScope.User]; // safe minimum; updated by MainWindowViewModel

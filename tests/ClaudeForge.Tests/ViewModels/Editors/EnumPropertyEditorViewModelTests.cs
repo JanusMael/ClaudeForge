@@ -31,9 +31,9 @@ public class EnumPropertyEditorViewModelTests
     }
 
     private static LibVm.EnumPropertyEditorViewModel NewVm(
-        SchemaNode schema, ConfigScope scope = ConfigScope.User)
+        SchemaNode schema, ConfigScope? scope = null)
     {
-        return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(scope));
+        return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(scope ?? ConfigScope.User));
     }
 
     private static void Load(

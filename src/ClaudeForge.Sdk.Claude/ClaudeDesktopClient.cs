@@ -21,8 +21,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 /// </remarks>
 public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
 {
+    /// <inheritdoc cref="ClaudeCodeClient()"/>
+    public ClaudeDesktopClient()
+        : this(ConfigScope.User)
+    {
+    }
+
     /// <inheritdoc cref="ClaudeCodeClient(ConfigScope)"/>
-    public ClaudeDesktopClient(ConfigScope defaultScope = ConfigScope.User)
+    public ClaudeDesktopClient(ConfigScope defaultScope)
         : base(defaultScope, schemaRegistry: null)
     {
     }

@@ -154,7 +154,9 @@ public partial class PermissionsEditorViewModel : IPermissionRuleSink, IPermissi
     IReadOnlyList<ScopedPermissionRules> IPermissionRuleSource.GetAllScopeRules()
     {
         List<ScopedPermissionRules> result = [];
-        foreach (ConfigScope scope in Enum.GetValues<ConfigScope>())
+        // ConfigScope.All replaces Enum.GetValues<ConfigScope>() and preserves its
+        // declaration-order enumeration; ConfigScope is a struct as of Phase 3.
+        foreach (ConfigScope scope in ConfigScope.All)
         {
             if (scope == _lastScope)
             {
