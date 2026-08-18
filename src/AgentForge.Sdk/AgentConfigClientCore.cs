@@ -141,6 +141,18 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// </remarks>
     protected abstract IMergePolicy MergePolicy { get; }
 
+    /// <summary>
+    /// The layers this product's configuration can be defined at, highest-priority first.
+    /// </summary>
+    /// <remarks>
+    /// Declared alongside <see cref="MergePolicy"/> and for the same reason: the ladder used
+    /// to be two arrays hardcoded inside <see cref="ConfigScope"/>, so product-neutral code
+    /// answered ladder questions with Claude's answers. Asked here instead of naming a scope,
+    /// because a product with more rungs than Claude's four had its policy-controlled ones
+    /// silently reported as editable.
+    /// </remarks>
+    protected abstract ScopeLadder Scopes { get; }
+
     // ── State ──────────────────────────────────────────────────────────────
 
     private readonly SemaphoreSlim _stateLock = new(1, 1);
@@ -291,7 +303,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
             {
                 if (_workspace is null)
                 {
-                    return [ConfigScope.User];
+                    return [Scopes.DefaultEditableScope];
                 }
 
                 List<ConfigScope> list = _workspace.Documents
@@ -304,7 +316,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
                                                    .OrderBy(s => s.Ordinal)
                                                    .ToList();
 
-                return list.Count > 0 ? list : [ConfigScope.User];
+                return list.Count > 0 ? list : [Scopes.DefaultEditableScope];
             }
             finally
             {
