@@ -38,7 +38,7 @@
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
-> | 4 — Product model | 🔶 **4a + 4b done** — `ProductDescriptor` replaced *both* `IsClaudeCode` booleans. **4c–4f remain** — see the Phase 4 section |
+> | 4 — Product model | 🔶 **4a–4c done** — both `IsClaudeCode` booleans replaced; merge rules are now the product's own statement. **4d–4f remain** — see the Phase 4 section |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -555,14 +555,23 @@ delete the statics.
 
 ### Problem 2 — Merge semantics are Claude's, hardcoded
 
-`MergeEngine`'s doc comment states Claude's rules verbatim: arrays UNION, non-arrays
+`MergeEngine`'s doc comment stated Claude's rules verbatim: arrays UNION, non-arrays
 highest-scope-wins, objects deep-merge. OpenCode documents only that configs "merge rather
-than replace" — **array behaviour unverified** (Spike S1).
+than replace" — **array behaviour unverified** at the time this was written; S1 has since
+measured it. The problem statement missed one site: **Claude's list of union-merged paths
+was a private static field on `SettingsWorkspace`**, so the rules were not only stated in
+the core, they were *owned* by it.
 
 **Solution.** `IMergePolicy` in `AgentForge.Abstractions`, with `ClaudeMergePolicy`
 (today's exact behaviour, locked by existing `MergeEngine` tests) and
 `OpenCodeMergePolicy`. `MergeEngine` takes the policy as a parameter; the `arrayPaths`
 hint already threaded through `MergeCore` is the seam.
+
+> ✅ **Done in 4c (`4255c12`) for the interface and `ClaudeMergePolicy`**; `OpenCodeMergePolicy`
+> stays with Phase 7. ⚠ "**locked by existing `MergeEngine` tests**" was **wrong** — they
+> locked the engine's *execution*, not Claude's *rules*: emptying Claude's whole path list
+> failed exactly one test, the one written in that commit. See the canary table under
+> Phase 4.
 
 ### Problem 3 — Product wiring is hardcoded for exactly two
 
@@ -2307,7 +2316,7 @@ Claude Desktop through the new path and prove behavioural identity.
 |---|---|---|
 | **4a** | `ProductDescriptor` replaces `AgentConfigClientCore.IsClaudeCode` | ✅ `101554b` |
 | **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returned `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ✅ `629bca7` |
-| **4c** | `IMergePolicy` (Problem 2) | ⬜ |
+| **4c** | `IMergePolicy` (Problem 2) | ✅ `4255c12` |
 | **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ⬜ |
 | **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ⬜ |
 | **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ⬜ |
@@ -2363,6 +2372,44 @@ locations is a row rather than a fifth block. Two details worth keeping:
   with **4d**. ⚠ Nothing fails loudly if only one side moves: a file that stops being
   found simply stops being validated, and validation is informational. The new test pins
   all four locations by archive-relative path, which is the closest available guard.
+
+**What 4c actually did.** `IMergePolicy` carries exactly two decisions —
+`UnionsAt(path, everyValueIsArray)` and `UnionOrder` — because those are the only two the
+two products disagree on. Objects deep-merge and non-unioned values go to the
+highest-priority scope in both, so the engine keeps them. Claude's list of union-merged
+paths moved from a private static on `SettingsWorkspace` into `ClaudeMergePolicy` in
+`ClaudeForge.Sdk.Claude`; a client supplies its own through the new
+`AgentConfigClientCore.MergePolicy`.
+
+- **The plan said the `arrayPaths` hint "is the seam", and that was right** — the whole
+  refactor is that hint becoming a question asked of a policy. What the plan did not
+  mention is that the hint's *inference* rule (an undeclared all-array path unions) is
+  itself a Claude behaviour that OpenCode must not inherit, which is why the predicate
+  takes `everyValueIsArray` instead of just a path.
+- **`UnionOrder` is not in the plan's description but is required by its own S1 findings.**
+  Claude concatenates highest-priority first, OpenCode lowest-first. Both orders are
+  tested now, via a test policy, so the branch is covered before Phase 7 exists to use it.
+- **No overload omits the policy** — not on the engine, not on `SettingsWorkspace`. All
+  throw on null. A defaulted policy is exactly how a new product silently inherits
+  Claude's rules. Cost: 52 call sites across four test projects. That churn is the point.
+- `OpenCodeMergePolicy` is deliberately **not** here; Phase 7 owns it, with one test per
+  key of S1's table against a client that can exercise it.
+
+> **⚠ 4c's canaries found two more unguarded rules — the same shape as 4a's finding.**
+>
+> | Canary | Result |
+> |---|---|
+> | Empty Claude's declared union list **entirely** | **1 failure** — only the new `ClaudeMergePolicyTests`. 2,813 others green. |
+> | Flip Claude's `UnionOrder` | **1 failure** — again only the new test. |
+> | `UnionsAt` returns `true` unconditionally | **~22 failures** across the SDK and Claude test projects. |
+> | Engine stops consulting the policy | **3 failures** — exactly the new seam tests. |
+>
+> So the "don't union scalars and objects" direction was well covered end-to-end, while
+> **which paths union, and in what order, was not covered at all.** The reason is
+> structural and worth remembering for 4d–4f: nearly every workspace built in tests holds
+> **one document**, and a single scope has nothing to merge with. Multi-scope behaviour is
+> therefore under-tested across the board — assume it, and construct two scopes explicitly
+> when asserting anything about merging.
 
 ### Phase 5 — Extract the shell
 
@@ -2470,6 +2517,11 @@ are ordered this way — do not merge them.
   `plugin` union (lowest layer first); `disabled_providers`, `enabled_providers`,
   `skills.paths`, `skills.urls`, `experimental.primary_tools` replace; objects deep-merge;
   scalars last-wins. One test per key.
+  - The interface it implements **already exists** (4c): `UnionsAt(path, everyValueIsArray)`
+    returns true only for the two union keys — **do not infer from the values**, or a
+    replace-key silently unions and resurrects a provider the user disabled — and
+    `UnionOrder` is `LowestPriorityFirst`. Both engine branches are already tested via a
+    test policy, so this is implementing a covered seam, not proving a new one.
 - `OpenCodePermissionModel` (parse/format the nested map; glob matcher) — ⛔ **key order is
   semantically load-bearing and the LAST match wins.** Never re-serialize the map in a
   different order. See the merge-inversion hazard under S1.
