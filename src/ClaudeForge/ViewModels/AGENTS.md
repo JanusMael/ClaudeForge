@@ -12,8 +12,9 @@ Read alongside the root [`AGENTS.md`](../../../AGENTS.md) and
 
 | Owned resource            | Field / property                                                 |
 |---------------------------|------------------------------------------------------------------|
-| Claude Code SDK client    | `ClaudeCodeSdk : ClaudeCodeClient?`                              |
-| Claude Desktop SDK client | `ClaudeDesktopSdk : ClaudeDesktopClient?`                        |
+| **Hosted products**       | **`_sections : List<ProductSection>`** — the storage (see below) |
+| Claude Code SDK client    | `ClaudeCodeSdk : ClaudeConfigClientBase?` — **facade** over `_sections` |
+| Claude Desktop SDK client | `ClaudeDesktopSdk : ClaudeConfigClientBase?` — **facade** over `_sections` |
 | Shared schema registry    | `_schemaRegistry : SchemaRegistry`                               |
 | Navigation tree           | `NavigationTree : ObservableCollection<NavigationNodeViewModel>` |
 | Search VM                 | `SearchVm : SearchViewModel`                                     |
@@ -23,6 +24,33 @@ Read alongside the root [`AGENTS.md`](../../../AGENTS.md) and
 MWVM is the **only** place where SDK clients are constructed, opened, and disposed.
 Editor VMs and search VMs receive delegates or already-constructed objects — they
 never `new` an SDK client themselves.
+
+### §1.1 `ProductSection` is the storage; the two named SDK properties are facades
+
+⚠ **Do not add a third named `…Sdk` field.** A hosted product is a `ProductSection`
+(`ProductSection.cs`): its `ProductDescriptor`, nav title, workspace display name, export
+entry path, and its live `Client`. `_sections` is the list; `Sections` exposes it,
+`OpenSections` filters to the opened ones, and `SectionFor(product)` resolves one by
+`ProductDescriptor.Id`.
+
+`ClaudeCodeSdk` / `ClaudeDesktopSdk` still exist and are still widely called, but they now
+read *through* `_sections` — they are a convenience for the many editor call sites that
+genuinely mean "the Claude Code client", not the place the client lives.
+
+**Every lifecycle operation iterates the list**, and must keep doing so: open, save,
+validate, snapshot, subscribe/unsubscribe, dirty check, export, dispose. `Client` is typed
+`ClaudeConfigClientBase` (not the neutral core) because the editor VMs take
+`IClaudeConfigClient` — correct for this app; Phase 5 parameterises it.
+
+> ⚠⚠ **This is the single largest coverage hole found in the whole OpenCodeForge effort.**
+> Making every one of those loops cover only the *first* section — a silently one-product
+> save, validate, subscribe, dispose and export — **passed all 2,814 tests.** The suite
+> exercises one product at a time, so a regression here is invisible by default.
+> **Any test asserting multi-product behaviour must open two sections deliberately.**
+
+**Deliberately still per-product, not oversights:** the navigation tree (different icons,
+node ids and descriptions, and Claude Code has pages Desktop has none of — Phase 5 owns it),
+and `UpdateScopeContextScopes`, whose Desktop branch carries a documented binding workaround.
 
 ## §2 Navigation tree structure
 
