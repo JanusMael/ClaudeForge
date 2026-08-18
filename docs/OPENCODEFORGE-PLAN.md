@@ -37,8 +37,8 @@
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
-> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
-> | 4 — Product model | 🔶 **4a–4e done** — both `IsClaudeCode` booleans replaced, merge rules are the product's own statement, the shell hosts a list of product sections, and an export names its products in a list at schema v2. **Only 4f remains** — see the Phase 4 section |
+> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. 4f then made the *ladder* the product's (`ScopeLadder`) and **kept the statics** — measured as 2 real edit sites, not 1,150 |
+> | 4 — Product model | ✅ **complete (4a–4f)** — both `IsClaudeCode` booleans replaced, merge rules and the scope ladder are the product's own statements, the shell hosts a list of product sections, and an export names its products in a list at schema v2. One deferral stated explicitly: `ConfigFileDiscoverer` still knows only Claude's file layouts |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -2321,7 +2321,7 @@ Claude Desktop through the new path and prove behavioural identity.
 | **4c** | `IMergePolicy` (Problem 2) | ✅ `4255c12` |
 | **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ✅ **3 commits** — `c9eecfe` (shell lifecycle) · `886494d` (backup product set) · `a56fad7` (per-product checkboxes) |
 | **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ✅ `636fb34` |
-| **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ⬜ |
+| **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ✅ `1bbbe4b` — **as a `ScopeLadder` seam; the statics stay, see below** |
 
 4d and 4e are each comparable in size to the whole of Phase 3. **4d took three commits**,
 split on where the risk changed: the shell's lifecycle, the backup API + persisted archive
@@ -2388,6 +2388,63 @@ identity, then the view.
 > self-consistent — new archives work perfectly while every archive already on a user's
 > disk quietly stops matching. Guarded by three tests that pin the persisted strings and the
 > manifest the engine writes.
+
+**What 4f actually did (`1bbbe4b`), and why "retire the statics" was the wrong frame.**
+
+The ladder — not the statics — was the product coupling. `ConfigScope` held it as two
+private arrays, `["Managed", "Local", "Project", "User"]` and `[true, false, false, false]`,
+inside product-neutral `AgentForge.Core`. **Given a longer ladder that fails silently
+rather than loudly:** rungs past the fourth report `IsReadOnly` as `false`, so
+policy-locked settings become editable, and their name comes back as the bare ordinal,
+breaking the name-keyed brush and tooltip lookups. OpenCode has six rungs and two
+read-only ones, so both were already waiting.
+
+`ScopeLadder` (ordered `ScopeRung(Name, IsReadOnly)`, highest-priority first) is now
+supplied by the product through `AgentConfigClientCore.Scopes`, **exactly as
+`IMergePolicy` is** — 4c's seam shape, reused. `ConfigScope` keeps the int ordinal as its
+identity and derives `Ordinal`, `Id`, `DisplayName`, `IsReadOnly`, `Ladder`.
+
+⚠⚠ **The scoping measurement is the transferable part.** "Retire the statics" reads as
+1,150 references across 96 files. Counting **edit sites** rather than references — Phase
+3's lesson — the real number is **2**: of 15 references in neutral assemblies, 10 are in
+`ConfigFileDiscoverer` (Claude-layout code already in neutral Core as a documented
+deferral), 3 are doc comments, and 2 are genuine neutral behaviour, both in
+`EditableScopes`' hardcoded `[ConfigScope.User]` fallback. The other 33 src references are
+Claude code naming Claude's scopes, which is correct. **The statics therefore stay** — the
+maintainer's call, and the opposite of the plan's literal wording.
+
+They stay affordably because of one encoding: **`ScopeLadder.Default` IS Claude's ladder,
+and a scope built from it stores `null` for its ladder field.** That preserves
+`default(ConfigScope) == Managed` under plain struct equality (Phase 3's invariant) and
+keeps the four statics equal to the scopes a Claude client hands out. Without it, all
+~1,100 test sites naming `ConfigScope.User` would compare unequal to the client's own
+`User`, and 4f would have looked like a thousand unrelated failures.
+
+> **⚠ 4f's two traps, both worth carrying forward.**
+>
+> 1. **Static initialisation order.** `ScopeAt` first decided "am I the default ladder" with
+>    `ReferenceEquals(this, Default)` — but `Default`'s own constructor builds its scope
+>    list, and the `Default` property is still `null` at that moment. The test was false
+>    during exactly the one construction that needed it true, so `ConfigScope.All`'s scopes
+>    carried a non-null ladder while `ConfigScope.Managed`, built later, carried null, and
+>    they compared **unequal**. Fixed with an explicit `_isDefault` field. **A lazily
+>    initialised static that its own constructor consults is a trap wherever it appears.**
+> 2. ⚠ **`ClaudeScopeTests` stayed green through that whole failure**, because
+>    `ClaudeScope._cache` is built from `ConfigScope.All` and was therefore
+>    *self-consistent while wrong*. Third instance of this shape — the other two are
+>    4d-2's `ArchiveFolder` (writer and reader read the same property) and 4c's
+>    single-document workspaces. **A test whose fixture derives from the thing under test
+>    cannot detect that thing moving.**
+>
+> | Canary | Result |
+> |---|---|
+> | `ReferenceEquals` instead of `_isDefault` | **2 red** — both pre-existing Phase 3 tests |
+> | `EditableScopes` fallback back to `ConfigScope.User` | 2 red, message names the regression |
+> | `ConfigScope.Id` no longer lower-cased | **15 red** |
+> | Default ladder's rungs reversed | **26 red** |
+>
+> Ordering and the `Id` contract are well guarded; the neutral-code fallback was **not**
+> guarded at all before 4f, which is why `ProductScopeLadderTests` exists.
 
 **What 4e actually did (`636fb34`), and the premise it corrected.**
 
