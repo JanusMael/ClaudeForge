@@ -21,20 +21,48 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// harness itself works.
 /// </para>
 /// <para>
-/// Pattern for adding a new headless test:
+/// Pattern for adding a new SYNCHRONOUS headless test — the two below:
 /// <code>
 /// [TestMethod]
-/// public Task MyTest() =&gt; Session.Dispatch(async () =&gt;
+/// public Task MyTest() =&gt; Session.Dispatch(() =&gt;
 /// {
-///     // Now on the headless UI thread.  Construct controls, fire
-///     // dispatcher work, await async ops as if you were in a real app.
+///     // Now on the headless UI thread.  Construct controls and fire
+///     // dispatcher work as if you were in a real app.
 ///     var window = new Window { Width = 800, Height = 600 };
 ///     window.Show();
-///     await Dispatcher.UIThread.InvokeAsync(() =&gt; { /* user-thread work */ });
 ///     Assert.IsTrue(window.IsVisible);
 ///     window.Close();
-/// });
+/// }, CancellationToken.None);
 /// </code>
+/// A non-async lambda binds to <c>Dispatch(Action, CancellationToken)</c> and is safe.
+/// </para>
+/// <para>
+/// ⚠ <b>An ASYNC body needs a different shape, or the test cannot fail.</b> Writing
+/// <c>Session.Dispatch(async () =&gt; { … })</c> binds to
+/// <c>Dispatch&lt;T&gt;(Func&lt;T&gt;, CancellationToken)</c> with <c>T = Task</c>, so the call
+/// returns <c>Task&lt;Task&gt;</c>. The framework awaits only the OUTER task, which completes
+/// the moment the lambda hands back its inner task — every assertion after the first
+/// <c>await</c> runs unobserved and its exception is swallowed. Adding a single
+/// <c>await</c> does not help; the inner task still goes unawaited. <b>Return a value
+/// from the lambda</b> so it binds <c>Dispatch&lt;T&gt;(Func&lt;Task&lt;T&gt;&gt;, …)</c>, which
+/// unwraps properly:
+/// <code>
+/// [TestMethod]
+/// public async Task MyAsyncTest()
+/// {
+///     string result = await Session.Dispatch(async () =&gt;
+///     {
+///         var vm = BuildViewModel();
+///         await vm.LoadAllWorkspacesAsync();
+///         return vm.SomeValue;          // ← the return is what makes this observable
+///     }, CancellationToken.None);
+///
+///     Assert.AreEqual("expected", result);
+/// }
+/// </code>
+/// <c>Headless/SavePreservationTests.cs</c> is the worked example. Whichever shape you
+/// use, <b>canary it</b>: put <c>Assert.Fail("canary")</c> inside and confirm the test
+/// actually reports Failed before trusting a green run.
 /// </para>
 /// </remarks>
 [TestClass]
