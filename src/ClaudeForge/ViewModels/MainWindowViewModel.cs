@@ -603,6 +603,22 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Status text for a file that loaded as a placeholder rather than content — see
+    /// <see cref="SettingsDocument.LoadFailure"/>.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of <see cref="SanitiseExceptionForStatus"/> for the case where there is no
+    /// exception to report: the loader swallowed it deliberately and recorded the reason
+    /// instead. Same privacy rule — only <see cref="Path.GetFileName"/> reaches the status
+    /// pill, never the directory, because failure pills do not auto-clear and stay on screen
+    /// through a screen-share.
+    /// </remarks>
+    internal static string SanitiseLoadFailureForStatus(string filePath, string? reason)
+    {
+        return $"{Path.GetFileName(filePath)}: {SafeShortMessage(reason ?? string.Empty)}";
+    }
+
+    /// <summary>
     /// Sanitise an exception message: strip absolute-path fragments
     /// and truncate to the status-bar length budget.
     /// </summary>
@@ -3860,6 +3876,34 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 Strings.StatusReloadFailedFmt,
                 SanitiseExceptionForStatus(ex, path)));
             return; // bail BEFORE touching any state
+        }
+
+        // ⚠ The catch above is NOT sufficient on its own, and for years it was the only check.
+        // ConfigFileLoader deliberately does not throw on a malformed file — it degrades to an
+        // empty root so the editor survives a corrupt file (a contract pinned by
+        // ConfigFileLoaderTests). So a truncate-then-rewrite race produces a workspace that
+        // loads "successfully" and merely looks empty, PHASE 1 sees no exception, and the swap
+        // below installs it. The next save then writes that emptiness over the user's real
+        // settings — exactly what the loader's own comment warned about.
+        //
+        // Ask the candidates whether their files actually parsed. Both are checked before
+        // either is installed, which is what makes the reload all-or-nothing ACROSS products:
+        // a valid Claude Code file must not be swapped in while Claude Desktop's is corrupt.
+        //
+        // Found 2026-08-18 by un-inerting TransactionalReloadTests, whose three assertions of
+        // this contract had never been able to fail.
+        SettingsDocument? unparseable = ccCandidate.FailedDocuments
+                                                   .Concat(dtCandidate.FailedDocuments)
+                                                   .FirstOrDefault();
+        if (unparseable is not null)
+        {
+            Log.Warning(
+                "[Reload] {File} could not be parsed ({Reason}); existing in-memory workspace preserved",
+                unparseable.FilePath, unparseable.LoadFailure);
+            SetStatusFailure(string.Format(
+                Strings.StatusReloadFailedFmt,
+                SanitiseLoadFailureForStatus(unparseable.FilePath, unparseable.LoadFailure)));
+            return; // bail BEFORE touching any state — same contract as the catch above
         }
 
         // ── PHASE 2 — destructive swap (no throw points past here) ──────────

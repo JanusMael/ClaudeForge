@@ -141,7 +141,6 @@ public sealed class TransactionalReloadTests
     }
 
     [TestMethod]
-    [Ignore("QUARANTINED 2026-08-18 — REAL PRE-EXISTING DEFECT, not a regression. This test was inert (return Session.Dispatch => Task<Task>) from the day it was written, so the contract it asserts has NEVER held. ConfigFileLoader.LoadAsync catches JsonException and returns an empty JsonObject, so LoadAllWorkspacesAsync's PHASE 1 never sees a throw and always proceeds to the destructive swap. Conflicts with the resilience contract pinned at ConfigFileLoaderTests.cs:95. Un-ignore with the fix.")]
     public async Task LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -183,7 +182,6 @@ public sealed class TransactionalReloadTests
     }
 
     [TestMethod]
-    [Ignore("QUARANTINED 2026-08-18 — same root cause as LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace: LoadAsync swallows the parse failure, so the all-or-nothing rollback never triggers.")]
     public async Task LoadAllWorkspacesAsync_OneProductValidOneMalformed_KeepsBoth()
     {
         bool ran = await Session.Dispatch(async () =>
