@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Json.Schema;
@@ -40,23 +41,51 @@ public sealed class SchemaRegistry : IDisposable
     /// Get the Claude Code settings schema root node.
     /// Uses the standard loading chain: memory → bundled (+ overlay) → disk → HTTPS → empty.
     /// </summary>
-    public async Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)
+    /// <summary>
+    /// The two products this registry knew by name before Phase 4. They are declared once,
+    /// here, instead of being re-stated as a ternary at each of the five call sites that
+    /// used to branch on an <c>isClaudeCode</c> flag.
+    /// </summary>
+    /// <remarks>
+    /// This does not teach <c>AgentForge.Core</c> anything it did not already know — the
+    /// URLs and file names were already hardcoded throughout this file. It concentrates
+    /// that knowledge so the eventual product/shared split has one thing to move rather
+    /// than five branches to find.
+    /// </remarks>
+    public static readonly ProductDescriptor ClaudeCodeProduct =
+        new("claude-code", "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json");
+
+    /// <inheritdoc cref="ClaudeCodeProduct"/>
+    public static readonly ProductDescriptor ClaudeDesktopProduct =
+        new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json");
+
+    /// <summary>
+    /// Get the settings schema root node for <paramref name="product"/>.
+    /// Uses the standard loading chain: memory → bundled (+ overlay) → disk → HTTPS → empty.
+    /// </summary>
+    public async Task<JsonSchemaNode> GetSettingsNodeAsync(
+        ProductDescriptor product,
+        CancellationToken ct = default)
     {
-        JsonSchema schema = await GetSchemaAsync(ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json", ct);
+        ArgumentNullException.ThrowIfNull(product);
+        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
         // Root is non-null for any successfully parsed schema; the fallback ParseSchema("{}")
         // may return null Root, which would indicate a library contract break — throw explicitly.
         return schema.Root
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
     }
 
+    public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)
+    {
+        return GetSettingsNodeAsync(ClaudeCodeProduct, ct);
+    }
+
     /// <summary>
     /// Get the Claude Desktop config schema root node.
     /// </summary>
-    public async Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct = default)
+    public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct = default)
     {
-        JsonSchema schema = await GetSchemaAsync("bundled://claude-desktop-config", "claude-desktop-config.json", ct);
-        return schema.Root
-               ?? throw new InvalidOperationException("Loaded schema had a null root node.");
+        return GetSettingsNodeAsync(ClaudeDesktopProduct, ct);
     }
 
     /// <summary>Shared empty result for <see cref="GetEnumDescriptions"/>.</summary>
@@ -605,14 +634,22 @@ public sealed class SchemaRegistry : IDisposable
     /// entries describing each violation.  Returns an empty list without blocking when the
     /// schema could not be loaded (fail-open — we never prevent saves due to missing schema).
     /// </returns>
-    public async Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
+    public Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
         SettingsWorkspace workspace,
         bool isClaudeCode,
         CancellationToken ct = default)
     {
-        JsonSchema schema = isClaudeCode
-            ? await GetSchemaAsync(ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json", ct)
-            : await GetSchemaAsync("bundled://claude-desktop-config", "claude-desktop-config.json", ct);
+        return ValidateWorkspaceAsync(workspace, isClaudeCode ? ClaudeCodeProduct : ClaudeDesktopProduct, ct);
+    }
+
+    /// <inheritdoc cref="ValidateWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>
+    public async Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
+        SettingsWorkspace workspace,
+        ProductDescriptor product,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
 
         List<SchemaValidationError> errors = new();
         EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };
@@ -637,7 +674,7 @@ public sealed class SchemaRegistry : IDisposable
             }
         }
 
-        return await EnrichAllowedValuesAsync(errors, isClaudeCode, ct).ConfigureAwait(false);
+        return await EnrichAllowedValuesAsync(errors, product, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -649,7 +686,7 @@ public sealed class SchemaRegistry : IDisposable
     /// — enrichment failure falls back to the un-enriched errors.
     /// </summary>
     private async Task<IReadOnlyList<SchemaValidationError>> EnrichAllowedValuesAsync(
-        List<SchemaValidationError> errors, bool isClaudeCode, CancellationToken ct)
+        List<SchemaValidationError> errors, ProductDescriptor product, CancellationToken ct)
     {
         if (errors.Count == 0)
         {
@@ -659,9 +696,7 @@ public sealed class SchemaRegistry : IDisposable
         Dictionary<string, IReadOnlyList<string>> enumsByPath;
         try
         {
-            JsonSchemaNode rootNode = isClaudeCode
-                ? await GetClaudeCodeSettingsNodeAsync(ct).ConfigureAwait(false)
-                : await GetClaudeDesktopConfigNodeAsync(ct).ConfigureAwait(false);
+            JsonSchemaNode rootNode = await GetSettingsNodeAsync(product, ct).ConfigureAwait(false);
             enumsByPath = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
             CollectEnumPaths(SchemaTreeBuilder.BuildTopLevel(rootNode), enumsByPath);
         }
@@ -733,14 +768,22 @@ public sealed class SchemaRegistry : IDisposable
     ///   surfaced even when the workspace is otherwise clean.</description></item>
     /// </list>
     /// </remarks>
-    public async Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
+    public Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
         SettingsWorkspace workspace,
         bool isClaudeCode,
         CancellationToken ct = default)
     {
-        JsonSchema schema = isClaudeCode
-            ? await GetSchemaAsync(ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json", ct)
-            : await GetSchemaAsync("bundled://claude-desktop-config", "claude-desktop-config.json", ct);
+        return ValidateAllWorkspaceAsync(workspace, isClaudeCode ? ClaudeCodeProduct : ClaudeDesktopProduct, ct);
+    }
+
+    /// <inheritdoc cref="ValidateAllWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>
+    public async Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
+        SettingsWorkspace workspace,
+        ProductDescriptor product,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
 
         List<SchemaValidationError> errors = new();
         EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };

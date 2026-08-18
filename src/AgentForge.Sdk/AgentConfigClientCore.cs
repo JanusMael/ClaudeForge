@@ -17,7 +17,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk;
 /// Shared, product-neutral implementation of <see cref="IAgentConfigClient"/>:
 /// discovery, the merged-scope read/write model, saving, validation, and the
 /// threading contract. Concrete clients derive from it and supply the
-/// file-discovery strategy plus the <see cref="IsClaudeCode"/> flag for schema
+/// file-discovery strategy plus the <see cref="Product"/> descriptor for schema
 /// validation. Claude's clients do so via <c>ClaudeConfigClientBase</c> in
 /// <c>ClaudeForge.Sdk.Claude</c>, which adds the Claude-only accessors on top.
 /// </summary>
@@ -120,10 +120,14 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     protected abstract IReadOnlyList<DiscoveredFile> DiscoverFiles(string? projectRoot);
 
     /// <summary>
-    /// Used by <see cref="ValidateAsync"/> to pick the right schema. Always
-    /// <see langword="true"/> for Claude Code, <see langword="false"/> for Desktop.
+    /// Identifies this client's product and names the schema its config validates against.
     /// </summary>
-    protected abstract bool IsClaudeCode { get; }
+    /// <remarks>
+    /// Replaced a <c>bool IsClaudeCode</c> that meant "Claude Code, else Claude Desktop".
+    /// Every use of it was choosing a schema, so the descriptor names the schema directly
+    /// and a third product needs no new case here.
+    /// </remarks>
+    protected abstract ProductDescriptor Product { get; }
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -385,9 +389,8 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         // Build schema node cache outside the lock. GetClaudeCode/DesktopSettingsNodeAsync
         // uses SchemaRegistry's memory cache after the first load — subsequent calls are
         // near-zero cost. SchemaTreeBuilder.BuildTopLevel is CPU-bound and fast.
-        JsonSchemaNode schemaRoot = IsClaudeCode
-            ? await _schemaRegistry.GetClaudeCodeSettingsNodeAsync(ct).ConfigureAwait(false)
-            : await _schemaRegistry.GetClaudeDesktopConfigNodeAsync(ct).ConfigureAwait(false);
+        JsonSchemaNode schemaRoot =
+            await _schemaRegistry.GetSettingsNodeAsync(Product, ct).ConfigureAwait(false);
         IReadOnlyList<SchemaNode> freshNodes = SchemaTreeBuilder.BuildTopLevel(schemaRoot);
 
         await EnterStateLockAsync(ct).ConfigureAwait(false);
@@ -436,9 +439,8 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
 
         // Refresh schema node cache on reload (schema may have been updated on
         // disk since the last open). Memory-cached after first access, so cheap.
-        JsonSchemaNode schemaRoot = IsClaudeCode
-            ? await _schemaRegistry.GetClaudeCodeSettingsNodeAsync(ct).ConfigureAwait(false)
-            : await _schemaRegistry.GetClaudeDesktopConfigNodeAsync(ct).ConfigureAwait(false);
+        JsonSchemaNode schemaRoot =
+            await _schemaRegistry.GetSettingsNodeAsync(Product, ct).ConfigureAwait(false);
         IReadOnlyList<SchemaNode> freshNodes = SchemaTreeBuilder.BuildTopLevel(schemaRoot);
 
         await EnterStateLockAsync(ct).ConfigureAwait(false);
@@ -561,7 +563,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         // SDK passes it through unchanged. Previously this method projected
         // each error into a flatter SDK-local record which lost the structural
         // InstancePath needed by the GUI's friendly-message formatter.
-        return await _schemaRegistry.ValidateWorkspaceAsync(ws, IsClaudeCode, ct)
+        return await _schemaRegistry.ValidateWorkspaceAsync(ws, Product, ct)
                                     .ConfigureAwait(false);
     }
 
@@ -586,7 +588,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         // Same off-lock execution rationale as ValidateAsync above.
         // Routes through the Core's full-validation entry so pre-existing
         // (non-delta) errors surface — required for the post-reload banner.
-        return await _schemaRegistry.ValidateAllWorkspaceAsync(ws, IsClaudeCode, ct)
+        return await _schemaRegistry.ValidateAllWorkspaceAsync(ws, Product, ct)
                                     .ConfigureAwait(false);
     }
 
