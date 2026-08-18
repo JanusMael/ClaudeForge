@@ -20,7 +20,7 @@ public sealed class ScopeToDisplayNameConverterTests
     [TestMethod]
     public void Converts_EachConfigScope_ToNonEmptyDisplayLabel()
     {
-        foreach (ConfigScope scope in Enum.GetValues<ConfigScope>())
+        foreach (ConfigScope scope in ConfigScope.All)
         {
             string? label = Convert(scope) as string;
             Assert.IsFalse(string.IsNullOrWhiteSpace(label),

@@ -36,13 +36,8 @@ public sealed class ScopeToDisplayNameConverter : IValueConverter
     /// </summary>
     internal static string DisplayFor(ConfigScope scope)
     {
-        return scope switch
-        {
-            ConfigScope.Managed => "Managed",
-            ConfigScope.User => "User",
-            ConfigScope.Project => "Project",
-            ConfigScope.Local => "Local",
-            var _ => scope.ToString(),
-        };
+        // As in ScopeToBrushConverter: the four explicit arms each returned the same
+        // string the fallback produces, so the switch was redundant.
+        return scope.ToString();
     }
 }

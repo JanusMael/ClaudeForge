@@ -19,10 +19,10 @@ public class StringArrayPropertyEditorViewModelTests
     }
 
     private static LibVm.StringArrayPropertyEditorViewModel NewVm(
-        SchemaNode? schema = null, ConfigScope scope = ConfigScope.User)
+        SchemaNode? schema = null, ConfigScope? scope = null)
     {
         return new LibVm.StringArrayPropertyEditorViewModel(new ClaudeSchemaAdapter(schema ?? ArraySchema()),
-            ClaudeScope.For(scope));
+            ClaudeScope.For(scope ?? ConfigScope.User));
     }
 
     private static void Load(

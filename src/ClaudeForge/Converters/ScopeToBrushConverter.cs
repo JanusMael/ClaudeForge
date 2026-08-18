@@ -54,13 +54,10 @@ public sealed class ScopeToBrushConverter : IValueConverter
     /// </summary>
     internal static string ConfigScopeId(ConfigScope scope)
     {
-        return scope switch
-        {
-            ConfigScope.Managed => "managed",
-            ConfigScope.User => "user",
-            ConfigScope.Project => "project",
-            ConfigScope.Local => "local",
-            var _ => scope.ToString().ToLowerInvariant(),
-        };
+        // The switch this replaces listed the four scopes explicitly and then fell back to
+        // exactly this expression, so every arm was already returning what the fallback
+        // returns. ConfigScope.ToString() is the single source of that name — see its
+        // remarks, which pin the strings precisely because this lookup consumes them.
+        return scope.ToString().ToLowerInvariant();
     }
 }

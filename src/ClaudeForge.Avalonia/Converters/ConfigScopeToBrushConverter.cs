@@ -25,13 +25,16 @@ public sealed class ConfigScopeToBrushConverter : IValueConverter
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
+        // `when` guards rather than constant patterns: ConfigScope is a struct as of
+        // Phase 3, and only a compile-time constant can be a pattern. The guards compare
+        // by value, which is what the constant patterns did anyway.
         return value is ConfigScope scope
             ? scope switch
             {
-                ConfigScope.Managed => Managed,
-                ConfigScope.Local => Local,
-                ConfigScope.Project => Project,
-                ConfigScope.User => User,
+                _ when scope == ConfigScope.Managed => Managed,
+                _ when scope == ConfigScope.Local => Local,
+                _ when scope == ConfigScope.Project => Project,
+                _ when scope == ConfigScope.User => User,
                 var _ => Neutral,
             }
             : Neutral;

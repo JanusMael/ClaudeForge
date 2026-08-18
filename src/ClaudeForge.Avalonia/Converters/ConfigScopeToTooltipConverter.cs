@@ -17,13 +17,14 @@ public sealed class ConfigScopeToTooltipConverter : IValueConverter
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
+        // `when` guards rather than constant patterns — see ConfigScopeToBrushConverter.
         return value is ConfigScope scope
             ? scope switch
             {
-                ConfigScope.Managed => "managed — organisation-controlled; highest priority, read-only",
-                ConfigScope.User => "user — your personal defaults (~/.claude/settings.json)",
-                ConfigScope.Project => "project — shared with the repo (.claude/settings.json)",
-                ConfigScope.Local => "local — machine-local overrides (.claude/settings.local.json)",
+                _ when scope == ConfigScope.Managed => "managed — organisation-controlled; highest priority, read-only",
+                _ when scope == ConfigScope.User => "user — your personal defaults (~/.claude/settings.json)",
+                _ when scope == ConfigScope.Project => "project — shared with the repo (.claude/settings.json)",
+                _ when scope == ConfigScope.Local => "local — machine-local overrides (.claude/settings.local.json)",
                 var _ => null,
             }
             : null;

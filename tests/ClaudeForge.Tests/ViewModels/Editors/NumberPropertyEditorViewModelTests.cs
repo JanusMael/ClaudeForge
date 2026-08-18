@@ -23,9 +23,9 @@ public class NumberPropertyEditorViewModelTests
     }
 
     private static LibVm.NumberPropertyEditorViewModel NewVm(
-        SchemaNode schema, ConfigScope scope = ConfigScope.User)
+        SchemaNode schema, ConfigScope? scope = null)
     {
-        return new LibVm.NumberPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(scope));
+        return new LibVm.NumberPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(scope ?? ConfigScope.User));
     }
 
     private static void Load(
