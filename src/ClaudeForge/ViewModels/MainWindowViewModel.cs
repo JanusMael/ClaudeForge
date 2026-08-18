@@ -4372,7 +4372,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // OnBackupStateChanged on every Backup VM update.
         if (_backupVm is null)
         {
-            _backupVm = new BackupRestoreViewModel(DialogServiceForViewAccess, _shareService)
+            // The shell's own section list drives the Backup tab's per-product checkboxes,
+            // so the two lists cannot drift: a product this window hosts is a product the
+            // user can back up.
+            _backupVm = new BackupRestoreViewModel(
+                DialogServiceForViewAccess,
+                _shareService,
+                _sections.Select(s => s.Product).ToList())
             {
                 CredentialsPreference = _cachedState.IncludeCredentialsInBackup,
                 LastBackupUtc = _cachedState.LastBackupUtc,

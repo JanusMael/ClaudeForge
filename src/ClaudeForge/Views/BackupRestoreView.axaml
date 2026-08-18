@@ -219,12 +219,25 @@
                         </Border>
 
                         <TextBlock Text="{x:Static loc:Strings.LabelClients}" FontWeight="SemiBold" Margin="0,8,0,0" />
-                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeCode}"
-                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeCode}"
-                                  IsChecked="{Binding IncludeClaudeCode}" />
-                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeDesktop}"
-                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeDesktop}"
-                                  IsChecked="{Binding IncludeClaudeDesktop}" />
+                        <!-- One checkbox per hosted product, from SelectableProducts. Was two
+                             fixed CheckBox elements bound to IncludeClaudeCode /
+                             IncludeClaudeDesktop, which enumerated products in markup. The
+                             labels are still resource-backed — the item view-model resolves
+                             them, so the nine-locale translations are unchanged. -->
+                        <ItemsControl ItemsSource="{Binding SelectableProducts}">
+                            <ItemsControl.ItemTemplate>
+                                <!-- x:DataType explicitly, like the two DataTemplates further
+                                     down: with it, these bindings are COMPILED against the item
+                                     view-model, so renaming DisplayName or IsSelected breaks the
+                                     build instead of silently rendering an empty list. It is also
+                                     what keeps them trim-safe. -->
+                                <DataTemplate x:DataType="vm:BackupProductViewModel">
+                                    <CheckBox Content="{Binding DisplayName}"
+                                              AutomationProperties.Name="{Binding DisplayName}"
+                                              IsChecked="{Binding IsSelected}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
                         <!-- 2026-05-15 — the IncludeCredentials checkbox was removed in
                              favour of always-prompting via the credentials dialog at

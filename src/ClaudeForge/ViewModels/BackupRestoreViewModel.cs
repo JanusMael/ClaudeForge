@@ -173,7 +173,17 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     // PersistentStateChanged and RebuildBackupList are not invoked redundantly.
     private bool _initialized;
 
-    public BackupRestoreViewModel(IDialogService dialogService, IShareService? shareService = null)
+    /// <param name="dialogService">Modal host for the credentials prompt and confirmations.</param>
+    /// <param name="shareService">Optional share target for exported archives.</param>
+    /// <param name="products">
+    /// Products offered as checkboxes, in order. Optional so the many tests that construct
+    /// this VM keep working; the shell passes its own section list, which is authoritative.
+    /// Defaults to the two products this app hosts.
+    /// </param>
+    public BackupRestoreViewModel(
+        IDialogService dialogService,
+        IShareService? shareService = null,
+        IReadOnlyList<ProductDescriptor>? products = null)
     {
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         _shareService = shareService;
@@ -181,9 +191,34 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
         _backupDirectory = string.Empty; // deliberately no default — user must choose
         _restoreDirectory = string.Empty;
         _mode = BackupMode.SettingsOnly;
-        _includeClaudeCode = true;
-        _includeClaudeDesktop = true;
+        SelectableProducts = new ObservableCollection<BackupProductViewModel>(
+            (products ?? [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct])
+            .Select(p => new BackupProductViewModel(p, CheckboxLabelFor(p), isSelected: true)));
         _keepLast = 7;
+    }
+
+    /// <summary>
+    /// Localized label for a product's include-in-backup checkbox.
+    /// </summary>
+    /// <remarks>
+    /// A lookup, not a branch per product: an unrecognised product falls back to its own
+    /// display name, so adding one shows an untranslated label rather than failing to
+    /// render. The two entries exist because these labels are translated into nine locales
+    /// and <see cref="ProductDescriptor.DisplayName"/> is not.
+    /// </remarks>
+    private static string CheckboxLabelFor(ProductDescriptor product)
+    {
+        if (string.Equals(product.Id, SchemaRegistry.ClaudeCodeProduct.Id, StringComparison.Ordinal))
+        {
+            return Strings.CheckboxClaudeCode;
+        }
+
+        if (string.Equals(product.Id, SchemaRegistry.ClaudeDesktopProduct.Id, StringComparison.Ordinal))
+        {
+            return Strings.CheckboxClaudeDesktop;
+        }
+
+        return product.DisplayName;
     }
 
     // -----------------------------------------------------------------------
@@ -203,8 +238,11 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ShowSecretsWarning))]
     private BackupMode _mode;
 
-    [ObservableProperty] private bool _includeClaudeCode;
-    [ObservableProperty] private bool _includeClaudeDesktop;
+    /// <summary>
+    /// Products offered as include-in-backup checkboxes, in display order. Replaced a fixed
+    /// pair of booleans and the two <c>CheckBox</c> elements that bound to them.
+    /// </summary>
+    public ObservableCollection<BackupProductViewModel> SelectableProducts { get; }
 
     /// <summary>
     /// True when the selected mode does NOT scrub secrets — i.e. SettingsOnly
@@ -667,24 +705,12 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
     /// The products the two checkboxes currently select, in navigation order.
     /// </summary>
     /// <remarks>
-    /// The single place the checkbox pair is translated into the product set the engine
-    /// takes. It stays a pair for now: 4d-3 replaces the two fixed checkboxes with a
-    /// per-product list, and this method is what that list will feed.
+    /// An empty result is legal and not gated: unchecking everything produces a valid empty
+    /// archive (manifest + bundled schemas), which the engine permits deliberately.
     /// </remarks>
     private IReadOnlyList<ProductDescriptor> SelectedProducts()
     {
-        List<ProductDescriptor> products = [];
-        if (IncludeClaudeCode)
-        {
-            products.Add(SchemaRegistry.ClaudeCodeProduct);
-        }
-
-        if (IncludeClaudeDesktop)
-        {
-            products.Add(SchemaRegistry.ClaudeDesktopProduct);
-        }
-
-        return products;
+        return SelectableProducts.Where(p => p.IsSelected).Select(p => p.Product).ToList();
     }
 
     internal BackupRequest BuildBackupRequest(string destinationZipPath) => new()
