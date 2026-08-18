@@ -56,6 +56,24 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
     /// </remarks>
     protected override IMergePolicy MergePolicy => ClaudeMergePolicy.Instance;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// Both Claude products share one ladder — <c>Managed &gt; Local &gt; Project &gt; User</c>
+    /// — even though Claude Desktop only ever discovers a User-scope file. That asymmetry is
+    /// handled by discovery, not by the ladder: <see cref="AgentConfigClientCore.EditableScopes"/>
+    /// derives from the documents actually found, so Desktop offers exactly the one scope it has.
+    /// A ladder is the vocabulary of possible rungs, not a claim that every rung is populated.
+    /// </para>
+    /// <para>
+    /// This is <see cref="ScopeLadder.Default"/> rather than a fresh instance, and that is
+    /// load-bearing: scopes from the default ladder are the ones the <c>ConfigScope</c> statics
+    /// hand out, so a client returning its own copy here would produce scopes that compare
+    /// unequal to <c>ConfigScope.User</c> at every one of the ~1,100 sites that name it.
+    /// </para>
+    /// </remarks>
+    protected override ScopeLadder Scopes => ScopeLadder.Default;
+
     private IPermissionsAccessor? _permissionsAccessor;
     private IHooksAccessor? _hooksAccessor;
     private IMarketplacesAccessor? _marketplacesAccessor;

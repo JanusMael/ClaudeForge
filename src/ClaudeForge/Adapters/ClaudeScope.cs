@@ -37,8 +37,12 @@ public sealed class ClaudeScope : IEditorScope
     {
         Source = source;
         Priority = ToLibraryPriority(source);
-        Id = source.ToString().ToLowerInvariant();
-        DisplayName = source.ToString().ToUpperInvariant();
+        // Id comes from the scope's own ladder rung rather than re-casing ToString() here:
+        // the scope knows its name, and a product with a different ladder gets its own.
+        // The upper-casing stays — chiclets render in caps, which is presentation and
+        // deliberately not baked into ConfigScope.DisplayName.
+        Id = source.Id;
+        DisplayName = source.DisplayName.ToUpperInvariant();
         IsReadOnly = source.IsReadOnly;
     }
 

@@ -57,6 +57,22 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     {
     }
 
+    /// <summary>
+    /// <see cref="ScopeLadder.Default"/>, and — unlike <c>TestMergePolicy</c> — deliberately
+    /// <b>not</b> a distinct ladder.
+    /// </summary>
+    /// <remarks>
+    /// A test double normally proves neutral code makes no assumption by stating something
+    /// different from the real product, which is exactly what <c>TestMergePolicy</c> does. A
+    /// ladder cannot play that game: this client discovers its files through
+    /// <see cref="ConfigFileDiscoverer"/>, which knows only Claude's layouts and stamps each
+    /// document with a default-ladder scope. A ladder that disagreed with the scopes its own
+    /// documents carry would be an incoherent double, not a stricter one. The assumption is
+    /// therefore still concentrated in `ConfigFileDiscoverer` — see the class remarks — and
+    /// a genuinely different ladder becomes testable when that file is parameterised.
+    /// </remarks>
+    protected override ScopeLadder Scopes => ScopeLadder.Default;
+
     public TestConfigClient(ConfigScope defaultScope, SchemaRegistry schemaRegistry)
         : base(defaultScope, schemaRegistry)
     {

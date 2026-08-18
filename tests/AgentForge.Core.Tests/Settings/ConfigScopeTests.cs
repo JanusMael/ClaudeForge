@@ -148,6 +148,41 @@ public class ConfigScopeTests
     }
 
     /// <summary>
+    /// <see cref="ConfigScope.Id"/> is the stable machine key the scope-chiclet brush and
+    /// tooltip converters are keyed by, and <c>ClaudeScope.Id</c> now takes it directly
+    /// instead of lower-casing <see cref="ConfigScope.ToString"/> itself. Pinned to the
+    /// literal strings rather than derived from <see cref="ConfigScope.DisplayName"/>, so a
+    /// change to the casing rule cannot pass by agreeing with itself.
+    /// </summary>
+    [TestMethod]
+    public void Id_IsTheLowerCasedMemberName_WhichAxamlLookupsKeyOn()
+    {
+        CollectionAssert.AreEqual(
+            new[] { "managed", "local", "project", "user" },
+            ConfigScope.All.Select(s => s.Id).ToArray());
+    }
+
+    /// <summary>
+    /// Phase 4f added <see cref="ConfigScope.DisplayName"/> alongside
+    /// <see cref="ConfigScope.ToString"/>. They must agree — <c>ToString</c> is documented as
+    /// consumed-as-data, and two spellings of the same fact drifting apart is how the load
+    /// order in step 1h came to be stated backwards in four places.
+    /// </summary>
+    [TestMethod]
+    public void DisplayName_AgreesWithToString_AndIsNotUpperCased()
+    {
+        foreach (ConfigScope scope in ConfigScope.All)
+        {
+            Assert.AreEqual(scope.ToString(), scope.DisplayName);
+        }
+
+        Assert.AreEqual("User", ConfigScope.User.DisplayName,
+            "Not \"USER\". The chiclets render in caps, but that upper-casing belongs to "
+            + "ClaudeScope — baking presentation into a Core model is what this separation "
+            + "exists to avoid.");
+    }
+
+    /// <summary>
     /// <c>MergeResult.EffectiveScope</c> and <c>LayeredValue.EffectiveScope</c> are
     /// <c>ConfigScope?</c>, where null means "no scope defines this". Managed is ordinal
     /// zero, so a nullable wrapper that confused the two would silently attribute every
