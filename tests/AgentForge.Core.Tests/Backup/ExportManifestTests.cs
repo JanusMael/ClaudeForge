@@ -215,6 +215,29 @@ public sealed class ExportManifestTests
             "A truncated or corrupt manifest must return null, not throw at the call site.");
     }
 
+    [TestMethod]
+    public void TryRead_ExplicitNullClients_DoesNotThrow()
+    {
+        // System.Text.Json honours an explicit JSON null over a property initialiser, so
+        // `"clients": null` really does leave the list null — the initialiser only covers an
+        // ABSENT field. Every other guard in TryRead returns null for bad input; this one
+        // must not be the exception that throws instead.
+        string nullList =
+            """
+            {
+              "kind": "export",
+              "schemaVersion": 2,
+              "clients": null
+            }
+            """;
+
+        ExportManifest? read = ExportManifest.TryRead(Utf8(nullList));
+
+        Assert.IsNotNull(read, "An explicit null list is odd, not corrupt.");
+        Assert.AreEqual(0, read!.Clients.Count,
+            "It must normalise to an empty list so callers can enumerate it without a null check.");
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────
 
     private static MemoryStream Utf8(string json) => new(Encoding.UTF8.GetBytes(json));
