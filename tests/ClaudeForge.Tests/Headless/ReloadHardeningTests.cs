@@ -52,23 +52,26 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// </para>
 /// <list type="number">
 ///   <item>
-///     <b>Malformed-reload recovery</b> — there is no bail to recover from, because
-///     <c>ConfigFileLoader.LoadAsync</c> swallows the parse failure into an empty document.
-///     Same root cause as <see cref="TransactionalReloadTests"/>.
+///     <b>Malformed-reload recovery</b> — there was no bail to recover from, because
+///     <c>ConfigFileLoader.LoadAsync</c> swallowed the parse failure into an empty document.
+///     ✅ <b>Fixed</b> via <c>SettingsDocument.LoadFailure</c>; see
+///     <see cref="TransactionalReloadTests"/>. This test is live again.
 ///   </item>
 ///   <item>
-///     <b>Use-after-dispose under concurrent reload</b> — the reload disposes a
-///     <c>ClaudeCodeClient</c> while <c>BuildNavigationTreeAsync</c> is still constructing
-///     editors against it, so <c>PermissionsAccessor.GetDefaultModeAt</c> throws
-///     <c>ObjectDisposedException</c>. This is a genuine crash path in the running app
-///     (file-watcher reload racing a user-triggered one), and it needs a fix independent of
-///     the malformed-JSON one — the <c>_reloadPending</c> coalescing guard this test was
-///     written to cover does not protect the tree build.
+///     <b>Use-after-dispose under concurrent reload</b> — still quarantined, and the
+///     attribution in this class's original summary was wrong. <c>_reloadPending</c> guards
+///     <c>ReloadCoreAsync</c>; the test below calls <c>LoadAllWorkspacesAsync</c> <i>directly</i>,
+///     which has no concurrency guard at all, so it never exercised the coalescing it
+///     describes. The defect is nonetheless real and reachable in the app by another route —
+///     <c>OpenProjectAsync</c> sets <c>IsLoading</c> but never checks it, and awaits a folder
+///     dialog first, so a file-watcher reload can begin while that dialog is open. See the
+///     <c>[Ignore]</c> reason on the test for the full diagnosis and why the obvious
+///     coalescing fix would introduce a worse bug.
 ///   </item>
 /// </list>
 /// <para>
-/// Both are <c>[Ignore]</c>d with the diagnosis rather than weakened, so the finding survives
-/// in the suite instead of in a commit message.
+/// The remaining one is <c>[Ignore]</c>d with its diagnosis rather than weakened, so the
+/// finding survives in the suite instead of in a commit message.
 /// </para>
 /// </summary>
 [TestClass]
@@ -159,7 +162,7 @@ public sealed class ReloadHardeningTests
     // ── Reload concurrency: rapid back-to-back reloads must converge ──
 
     [TestMethod]
-    [Ignore("QUARANTINED 2026-08-18 — SEPARATE REAL DEFECT: use-after-dispose. Concurrent LoadAllWorkspacesAsync calls dispose a ClaudeCodeClient while BuildNavigationTreeAsync is still constructing editors against it, so PermissionsAccessor.GetDefaultModeAt throws ObjectDisposedException. Also never observable before un-inerting. Needs its own fix, independent of the malformed-JSON one.")]
+    [Ignore("QUARANTINED 2026-08-18 — REAL DEFECT (use-after-dispose), AND this test attributes it to the wrong guard. _reloadPending lives in ReloadCoreAsync; this test calls LoadAllWorkspacesAsync directly, which has NO concurrency guard, so it never exercised the coalescing it describes. The underlying defect is real and reachable in the app, but via a different path: OpenProjectAsync sets IsLoading = true yet never CHECKS it, and it awaits a folder dialog first — so a file-watcher reload can start while that dialog is open and then Open Project proceeds anyway. Two overlapping LoadAllWorkspacesAsync calls interleave on the UI dispatcher, one disposing ClaudeCodeSdk while the other is inside BuildNavigationTreeAsync, and PermissionsAccessor.GetDefaultModeAt throws ObjectDisposedException. FIX BELONGS IN LoadAllWorkspacesAsync, not in each caller: serialize overlapping calls so each still performs a full load in order. Do NOT coalesce them into one shared Task — OpenProjectAsync mutates ProjectRoot before loading, so joining an in-flight load would silently never open the new project. Needs its own session: a non-reentrant lock here risks deadlock if the load path re-enters, which this codebase has already hit once (see AgentConfigClientCore's _stateLock reentrancy support).")]
     public async Task LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock()
     {
         bool ran = await Session.Dispatch(async () =>
