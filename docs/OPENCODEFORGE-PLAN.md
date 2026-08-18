@@ -38,7 +38,7 @@
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. Statics deliberately kept: **Phase 4f** retires them |
-> | 4 — Product model | 🔶 **4a–4c done** — both `IsClaudeCode` booleans replaced; merge rules are now the product's own statement. **4d–4f remain** — see the Phase 4 section |
+> | 4 — Product model | 🔶 **4a–4d done** — both `IsClaudeCode` booleans replaced, merge rules are the product's own statement, and the shell hosts a list of product sections. **4e–4f remain** — see the Phase 4 section |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -2317,11 +2317,75 @@ Claude Desktop through the new path and prove behavioural identity.
 | **4a** | `ProductDescriptor` replaces `AgentConfigClientCore.IsClaudeCode` | ✅ `101554b` |
 | **4b** | The **second** `IsClaudeCode` — `RestoreEngine.FindConfigFilesToValidate` returned `(string FilePath, bool IsClaudeCode)` in Core. Draft 10 named only the first. | ✅ `629bca7` |
 | **4c** | `IMergePolicy` (Problem 2) | ✅ `4255c12` |
-| **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ⬜ |
+| **4d** | `ProductSection` list replaces `MainWindowViewModel`'s two named SDK fields — **31 `ClaudeDesktopSdk` + 40 `ClaudeCodeSdk` references**, plus `BackupClient`'s public `(includeClaudeCode, includeClaudeDesktop)` constructor and the Backup page's two fixed checkboxes | ✅ **3 commits** — `c9eecfe` (shell lifecycle) · `886494d` (backup product set) · `a56fad7` (per-product checkboxes) |
 | **4e** | `ExportManifest` v1 → v2 (booleans → `Clients` list), **with a v1 read path** | ⬜ |
 | **4f** | Retire the `ConfigScope` statics (deferred from Phase 3) | ⬜ |
 
-4d and 4e are each comparable in size to the whole of Phase 3.
+4d and 4e are each comparable in size to the whole of Phase 3. **4d took three commits**,
+split on where the risk changed: the shell's lifecycle, the backup API + persisted archive
+identity, then the view.
+
+**What 4d actually did, and what it left.**
+
+- **`c9eecfe` — the shell's lifecycle.** `ProductSection` (descriptor · nav title · workspace
+  display name · export entry path · live client) became the storage; save, validate,
+  snapshot, subscribe/unsubscribe, dirty check, export and disposal iterate it. **66
+  references in `MainWindowViewModel` → 27.** `WorkspaceDiagnostics.LogPendingChanges` and
+  `SaveDialogBuilder.Build` took one parameter per product and now take a sequence of
+  (client, display name) pairs — neither ever needed to know how many products exist.
+- **`886494d` — the backup API, and the two id vocabularies.** `BackupRequest.Products`
+  (`required`, no default — the pair it replaced both defaulted to `true`, so omitting them
+  quietly backed up everything) and `BackupClient(engine, products)`. Each Claude client
+  passes `[Product]`, the descriptor it already declares.
+  **`ProductDescriptor` gained `ArchiveFolder`**, resolving the fact that
+  `ProductDescriptor.Id` (`claude-code`) and the archive side (`ClaudeCode` — folder names
+  *and* the manifest's persisted `clients` entries) were two vocabularies for the same
+  products. That property is now the single source for 7 folder literals in `BackupEngine`
+  and the 4-row layout table in `RestoreEngine` — **the duplication 4b explicitly flagged
+  and could not fix.**
+- **`a56fad7` — the view.** An `ItemsControl` over `SelectableProducts` replaces two fixed
+  checkboxes. Labels stay resource-backed (nine locales) via the item view-model, with a
+  fallback to the descriptor's display name for an untranslated product.
+
+**Deliberately NOT collapsed — do not "fix" these incidentally:**
+
+- **The navigation tree stays per-product.** Different icons, node ids and descriptions, and
+  Claude Code has pages (Essentials, Environment, Effective settings, Permissions, Hooks)
+  Claude Desktop has none of. That is two page compositions sharing a header shape, not one
+  applied twice. **Phase 5 owns it.**
+- **`UpdateScopeContextScopes`** — its Desktop branch carries a documented workaround for a
+  binding artefact; the asymmetry is intentional.
+- **`BackupEngine`'s two bundling bodies are still hardcoded Claude path-walkers**
+  (`ClaudeHome`, `DesktopConfigPath`, profiles, the worktree probe). The product set decides
+  *whether* each block runs; it does not describe *what* to collect. That needs a per-product
+  footprint description, and `FootprintCategory` is one of the six closed enums **Phase 10**
+  owns.
+- **`ProductSection.Client` is a `ClaudeConfigClientBase`**, not the neutral core, because
+  the editor view-models take `IClaudeConfigClient`. Correct for *this* app; Phase 5
+  parameterises it.
+
+> **⚠ 4d's canaries — the breadth record, and a new failure mode.**
+>
+> | Canary | Result |
+> |---|---|
+> | Every shell lifecycle loop covers only the FIRST open section | **passed all 2,814 tests** |
+> | Transposing the two products behind the named accessors | 6 existing tests fail |
+> | Renaming Claude Code's `ArchiveFolder` | 10 tests fail — but every one only *incidentally*, via hardcoded path strings; **nothing asserted the value written into `manifest.clients`** |
+> | `BuildClientList` ignoring the request and always listing both | 1 test (the one written for it) |
+> | Renaming a bound member in the item view-model | **build error** (`AVLN2000`), thanks to `x:DataType` on the template |
+>
+> **The one-product canary is the worst hole found in Phase 4**, and the cause is
+> structural: *every other test in the suite exercises one product at a time*, so a
+> silently one-product save, validate, subscribe, dispose and export looked perfectly
+> healthy. Same root cause as 4c's finding that almost every test workspace holds one
+> document. **Anything asserting multi-product or multi-scope behaviour has to construct
+> two of them deliberately.**
+>
+> ⚠ **New failure mode introduced by centralising `ArchiveFolder`:** the writer and the
+> reader now read the same property, so changing it moves both sides at once and stays
+> self-consistent — new archives work perfectly while every archive already on a user's
+> disk quietly stops matching. Guarded by three tests that pin the persisted strings and the
+> manifest the engine writes.
 
 > **⚠ 4a's canary found a hole that applies to every remaining piece — read this before 4b.**
 >
