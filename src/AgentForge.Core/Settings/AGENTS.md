@@ -10,51 +10,68 @@
 
 Source: `ConfigScope.cs`.
 
-| Scope     | Value | Priority | File path                               | Notes                                                     |
-|-----------|------:|---------:|-----------------------------------------|-----------------------------------------------------------|
-| `Managed` |     0 |  Highest | (varies by OS)                          | Read-only. Set by enterprise/MDM. Cannot be overridden.   |
-| `Local`   |     1 |          | `<project>/.claude/settings.local.json` | Gitignored, personal. Highest among user-editable scopes. |
-| `Project` |     2 |          | `<project>/.claude/settings.json`       | Committed, shared with team.                              |
-| `User`    |     3 |   Lowest | `~/.claude/settings.json`               | Applies to every project.                                 |
+| Scope     | Ordinal | Priority | File path                               | Notes                                                     |
+|-----------|--------:|---------:|-----------------------------------------|-----------------------------------------------------------|
+| `Managed` |       0 |  Highest | (varies by OS)                          | Read-only. Set by enterprise/MDM. Cannot be overridden.   |
+| `Local`   |       1 |          | `<project>/.claude/settings.local.json` | Gitignored, personal. Highest among user-editable scopes. |
+| `Project` |       2 |          | `<project>/.claude/settings.json`       | Committed, shared with team.                              |
+| `User`    |       3 |   Lowest | `~/.claude/settings.json`               | Applies to every project.                                 |
 
-**Priority rule**: lower numeric value = higher priority. `MergeEngine` orders
-documents by `(int)Scope` ascending so Managed comes first.
+**Priority rule**: lower ordinal = higher priority. `SettingsWorkspace` and
+`LayeredValue` both order by `Scope.Ordinal` ascending, so Managed comes first.
 
-`LayeredValue` orders entries the same way:
-`entries.OrderBy(e => (int)e.Scope).ToList()`.
+**It is a `readonly record struct`, not an `enum`** (Phase 3). Three consequences
+that the compiler will not always warn you about:
+
+- **`default(ConfigScope)` is `Managed`**, exactly as the enum's `default` was. This
+  is why the struct is backed by a single ordinal rather than a record of
+  `(Id, Priority, DisplayName, IsReadOnly)`: a dozen editors declare
+  `private ConfigScope _lastScope;` with no initialiser and depend on it. The
+  richer shape compiles, passes 2,791 of 2,792 tests, and silently changes what
+  those fields mean.
+- **`ToString()` is consumed as data.** `ClaudeScope` builds its `Id` from
+  `ToLowerInvariant()` and its `DisplayName` from `ToUpperInvariant()`, and three
+  AXAML converters resolve brushes, tooltips and labels through it. It must keep
+  returning `"Managed"` / `"Local"` / `"Project"` / `"User"`.
+- **You cannot use it as a default parameter value or a `case` label** — neither is a
+  compile-time constant. Use an overload (or `ConfigScope?` plus a coalesce when other
+  optional parameters follow), and `when` guards instead of constant patterns.
+
+`ConfigScope.All` replaces `Enum.GetValues<ConfigScope>()` and preserves declaration
+order, which is visible: the scope legend and the property editor's per-scope rows
+render in it. `ConfigScope.IsReadOnly` marks the policy-controlled rungs — **use it
+instead of comparing against `Managed`** in product-neutral code, because another
+product's ladder may have more than one (OpenCode has managed *and* macOS MDM).
+
+All of the above is pinned by `tests/AgentForge.Core.Tests/Settings/ConfigScopeTests.cs`;
+every assertion there exists because its failure is otherwise silent.
 
 ---
 
-## 2. `ClaudeScope._cache` invariant
+## 2. `ClaudeScope` — the ordering invariant is GONE (Phase 3)
 
-Source: `src/ClaudeForge/Adapters/ClaudeScope.cs` (`_cache` array).
+Source: `src/ClaudeForge/Adapters/ClaudeScope.cs`.
+
+This section used to document a hard invariant: `_cache` was an array indexed by
+`(int)scope`, so its entries had to appear in `ConfigScope` numeric order, and getting
+it wrong made `For(ConfigScope.User)` silently return another scope's wrapper.
+
+**That invariant no longer exists.** `_cache` is now a dictionary built from
+`ConfigScope.All`, so a scope cannot be mis-mapped by reordering, and a scope added to
+the ladder is wrapped automatically instead of falling off the end of a hand-maintained
+array:
 
 ```csharp
-private static readonly ClaudeScope[] _cache =
-[
-    new(ConfigScope.Managed), // index 0
-    new(ConfigScope.Local),   // index 1
-    new(ConfigScope.Project), // index 2
-    new(ConfigScope.User),    // index 3
-];
-
-public static ClaudeScope For(ConfigScope scope) => _cache[(int)scope];
+private static readonly Dictionary<ConfigScope, ClaudeScope> _cache =
+    ConfigScope.All.ToDictionary(scope => scope, scope => new ClaudeScope(scope));
 ```
 
-**The invariant**: cache array entries MUST appear in `ConfigScope` numeric
-order, because `For(scope)` indexes by `(int)scope`. Reorder one → reorder
-both. There is no runtime check; mismatch produces the wrong wrapper silently.
+`ToLibraryPriority` likewise derives from `ConfigScope.All.Count - 1` rather than the
+literal `3`, so extending the ladder no longer pushes every priority off by one.
 
-**Failure signature**: `For(ConfigScope.User)` returns the wrapper for, say,
-`Project` because the Project entry sits at index 3. Callers think they're
-asking about User-scope but get Project-scope priority and read-only flag.
-Permission checks pass against the wrong scope.
-
-If you reorder `ConfigScope` (or insert a new value) you MUST insert the
-matching cache entry at the matching index. The `Priority` value is computed
-by `ToLibraryPriority(scope) = 3 - (int)scope`, which also assumes a
-contiguous 0..3 enum range — extending the enum past 3 requires updating that
-formula too (`ClaudeScope.ToLibraryPriority`).
+Nothing here needs to stay in step with anything else by hand. Kept as a section only
+because the invariant was load-bearing for long enough that its absence is worth stating
+— if you remember the rule, it is gone.
 
 ---
 

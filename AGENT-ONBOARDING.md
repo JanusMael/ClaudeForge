@@ -22,8 +22,9 @@ read.** Concrete recurring examples in this project:
 1. The `IsModified` force-fire pattern (every compound editor must implement
    the same dance; bare `IsModified = true` is silently broken when the flag
    was already true at load time).
-2. `ConfigScope` enum value order is structurally coupled to
-   `ClaudeScope._cache` array order — swap one, you must swap the other.
+2. `ConfigScope` is a struct, not an enum: `default(ConfigScope)` must stay
+   `Managed` and `ToString()` is consumed as data, and neither failure is
+   visible to the compiler or to all but one test.
 3. `_suppressStateSave` latch must be set before `Shutdown()` so
    `OnClosed → SaveWindowState` doesn't recreate the file Clear-App-Data
    just deleted.
@@ -48,7 +49,7 @@ agent might Read. The `AGENTS.md` set surfaces those contracts up front.
 | [`AGENTS.md`](./AGENTS.md) (repo root) | LLM-shaped index: hard-invariants table, cross-cutting checklists, test-seam quick reference, anti-patterns, verify-before-shipping checklist, pointer index. |
 | [`src/ClaudeForge/ViewModels/AGENTS.md`](./src/ClaudeForge/ViewModels/AGENTS.md) | ViewModel layer: MainWindowViewModel integration hub, navigation tree structure, `SearchViewModel` contract, JsonPath→NavNode mapping, test seams. |
 | [`src/ClaudeForge/ViewModels/Editors/AGENTS.md`](./src/ClaudeForge/ViewModels/Editors/AGENTS.md) | Compound-editor contract: the force-fire `MarkModified` pattern, the `_isLoading` guard, `OnResetToInherited` semantics, child-subscription bookkeeping, the parity table, test-pattern templates. |
-| [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) | Workspace / scope / dirty-tracking semantics: `ConfigScope` ↔ `ClaudeScope._cache` coupling, `IsDirty` vs `HasActualChanges()`, merge semantics, `_selfWriting` guard. |
+| [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) | Workspace / scope / dirty-tracking semantics: `ConfigScope`'s struct rules, `IsDirty` vs `HasActualChanges()`, merge semantics, `_selfWriting` guard. |
 | [`src/AgentForge.Sdk/AGENTS.md`](./src/AgentForge.Sdk/AGENTS.md) | Product-neutral SDK architecture: `IAgentConfigClient` surface, `_suppressForwarder` + `_selfWriting` dual guard, `_cachedSchemaNodes`, `Changed` threading model, and the Claude-shaped residue still awaiting its phase. |
 | [`src/ClaudeForge.Sdk.Claude/AGENTS.md`](./src/ClaudeForge.Sdk.Claude/AGENTS.md) | The Claude-only SDK half: why each of the five accessors resisted generalization, the three types that keep the dependency one-directional, permission rule-order semantics, the schema-driven hook vocabulary and its non-obvious second source, opaque-JSON preservation. |
 

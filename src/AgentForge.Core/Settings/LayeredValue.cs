@@ -12,7 +12,7 @@ public sealed class LayeredValue
     public LayeredValue(string jsonPath, IEnumerable<ScopeEntry> entries)
     {
         JsonPath = jsonPath;
-        _entries = entries.OrderBy(e => (int)e.Scope).ToList(); // lowest number = highest priority first
+        _entries = entries.OrderBy(e => e.Scope.Ordinal).ToList(); // lowest number = highest priority first
     }
 
     /// <summary>The dot-separated JSON path, e.g. "permissions.defaultMode".</summary>
@@ -33,8 +33,18 @@ public sealed class LayeredValue
     /// <summary>True when more than one scope defines this property.</summary>
     public bool IsOverridden => _entries.Count > 1;
 
-    /// <summary>True when the Managed scope defines this property.</summary>
-    public bool IsManagedLocked => _entries.Any(e => e.Scope == ConfigScope.Managed);
+    /// <summary>
+    /// True when a policy-controlled (read-only) scope defines this property, so the user
+    /// cannot change the effective value.
+    /// </summary>
+    /// <remarks>
+    /// Asks the scope whether it is read-only rather than comparing against
+    /// <see cref="ConfigScope.Managed"/>. This type is product-neutral, and a ladder may
+    /// have more than one policy rung — OpenCode has both a managed scope and a macOS MDM
+    /// one. The name is kept because it is bound from AXAML and read across the editors;
+    /// only the test for it changed.
+    /// </remarks>
+    public bool IsManagedLocked => _entries.Any(e => e.Scope.IsReadOnly);
 
     /// <summary>Returns the value defined at the given scope, or null if not defined there.</summary>
     public JsonNode? GetValueAt(ConfigScope scope)

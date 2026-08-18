@@ -46,6 +46,15 @@ public readonly record struct ConfigScope
     private static readonly string[] _names = ["Managed", "Local", "Project", "User"];
 
     /// <summary>
+    /// Whether each scope is policy-controlled, indexed by ordinal. Declared as data
+    /// beside the names because it is an attribute <i>of a scope</i>, not a fact about
+    /// Claude: when a product supplies its own ladder, its read-only scopes come with it.
+    /// OpenCode has two (managed and macOS MDM), which is exactly why product-neutral code
+    /// must ask the scope rather than compare against <see cref="Managed"/>.
+    /// </summary>
+    private static readonly bool[] _readOnly = [true, false, false, false];
+
+    /// <summary>
     /// The ordinal. Named to mirror the former enum's underlying value: lower wins.
     /// Private so the set stays closed — only the four statics below can exist, which is
     /// what makes record equality (over this one field) equivalent to identity.
@@ -96,6 +105,19 @@ public readonly record struct ConfigScope
     /// The ordinal, exposed so ordering code need not cast. Lower wins, as before.
     /// </summary>
     public int Ordinal => _value;
+
+    /// <summary>
+    /// <see langword="true"/> when this scope is set by policy and cannot be edited —
+    /// <see cref="Managed"/>, for Claude.
+    /// </summary>
+    /// <remarks>
+    /// Exists so product-neutral code can express "locked by policy" without naming a
+    /// specific scope. <c>LayeredValue.IsManagedLocked</c> and
+    /// <c>AgentConfigClientCore.EditableScopes</c> both used to compare against
+    /// <see cref="Managed"/> directly, which silently assumed a ladder with exactly one
+    /// read-only rung at the top.
+    /// </remarks>
+    public bool IsReadOnly => (uint)_value < (uint)_readOnly.Length && _readOnly[_value];
 
     /// <summary>
     /// Preserves <c>(int)scope</c> at the handful of sites that sort by scope
