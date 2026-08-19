@@ -1,7 +1,7 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 
 namespace Bennewitz.Ninja.ClaudeForge.Views;
 

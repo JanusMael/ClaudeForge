@@ -1,4 +1,4 @@
-global using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿global using Microsoft.VisualStudio.TestTools.UnitTesting;
 global using Bennewitz.Ninja.AgentForge.Core.Settings;
 global using Bennewitz.Ninja.AgentForge.Core.Schema;
 // ClaudeMergePolicy: every workspace these tests build is a Claude workspace, so the
@@ -15,3 +15,5 @@ global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 // Phase 5 slice 3 moved the search machinery to the neutral shell. Global because the
 // result row type reaches nav tests and headless tests, not only the search tests.
 global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+// Phase 5 slice 5 moved the save-confirmation dialog's model + builder to the shell.
+global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;

@@ -1,9 +1,8 @@
-using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Localization;
+﻿using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 
 /// <summary>Controls the terminology shown in the save/restore confirmation dialog.</summary>
 public enum SaveDialogMode
@@ -28,33 +27,32 @@ public sealed class SaveChangesDialogViewModel : ISaveChangesPrompt
     /// </summary>
     public SaveDialogMode Mode { get; init; } = SaveDialogMode.Save;
 
+    /// <summary>
+    /// The host's wording. <c>required</c> on purpose — a dialog with no words is not
+    /// a sensible default, and inheriting another product's would be worse.
+    /// </summary>
+    public required SaveDialogText Text { get; init; }
+
     // ── Computed labels bound in AXAML ──────────────────────────────────────
 
-    /// <summary>Window title — "Save Changes" or "Restore Preview" (localized).</summary>
-    public string WindowTitle =>
-        Mode == SaveDialogMode.Restore
-            ? Strings.DialogTitleRestorePreview
-            : Strings.DialogTitleSaveChanges;
+    /// <summary>Window title — the host's save or restore title.</summary>
+    public string WindowTitle => Text.TitleFor(Mode);
 
-    /// <summary>Primary confirm button label — "Save" or "Restore" (localized).</summary>
-    public string ConfirmButtonLabel =>
-        Mode == SaveDialogMode.Restore
-            ? Strings.ButtonRestore
-            : Strings.ButtonSaveDialog;
+    /// <summary>Primary confirm button label.</summary>
+    public string ConfirmButtonLabel => Text.ConfirmButtonFor(Mode);
 
     /// <summary>
-    /// Cancel button label — "Cancel" in both Save and Restore contexts.
+    /// Dismiss button label — the same in both Save and Restore contexts.
     /// <para>
-    /// was "Discard Changes" in Save mode (with the intent that
-    /// pressing it discarded the in-memory edits via ReloadAsync), but user
-    /// feedback ("I wasn't expecting a reload to occur when pressing it and
-    /// I wouldn't expect my changes to disappear") established that the
-    /// natural user expectation is "Cancel returns me to my edits".  The
-    /// save-flow path now matches: pressing Cancel here just dismisses the
-    /// dialog without touching the in-memory workspace state.
+    /// This was "Discard Changes" in Save mode (with the intent that pressing it
+    /// discarded the in-memory edits via a reload), but user feedback ("I wasn't
+    /// expecting a reload to occur when pressing it and I wouldn't expect my changes
+    /// to disappear") established that the natural expectation is "Cancel returns me
+    /// to my edits". The save flow now matches: pressing Cancel dismisses the dialog
+    /// without touching the in-memory workspace state.
     /// </para>
     /// </summary>
-    public string CancelButtonLabel => Strings.ButtonCancel;
+    public string CancelButtonLabel => Text.CancelButton;
 
     /// <summary>
     /// Whether to show this dialog the next time the user saves.
@@ -64,13 +62,9 @@ public sealed class SaveChangesDialogViewModel : ISaveChangesPrompt
     public bool ShowDialogAgain { get; set; } = true;
 
     /// <summary>
-    /// One-line summary at the top of the dialog telling the user how many
-    /// individual changes are about to be applied and how many distinct files
-    /// will be touched. Phrasing varies by <see cref="Mode"/>:
-    /// <list type="bullet">
-    ///   <item><c>Save</c>:    "Saving N change(s) across M file(s):"</item>
-    ///   <item><c>Restore</c>: "Restoring N change(s) across M file(s):"</item>
-    /// </list>
+    /// One-line summary at the top of the dialog telling the user how many individual
+    /// changes are about to be applied and how many distinct files will be touched.
+    /// The phrasing (and whether the two modes differ at all) is the host's.
     /// </summary>
     public string SummaryLine
     {
@@ -78,24 +72,16 @@ public sealed class SaveChangesDialogViewModel : ISaveChangesPrompt
         {
             int changeCount = Sections.Sum(s => s.Entries.Count);
             int fileCount = Sections.Count;
-            string? template = Mode == SaveDialogMode.Restore
-                ? Strings.TextRestoreSummary
-                : Strings.TextSaveSummary;
-            return string.Format(template, changeCount, fileCount);
+            return string.Format(Text.SummaryFormatFor(Mode), changeCount, fileCount);
         }
     }
 
     /// <summary>
-    /// Verb phrase shown above each section's destination path. Localized via
-    /// <see cref="Strings.LabelWillBeWrittenTo"/> /
-    /// <see cref="Strings.LabelWillBeRestoredTo"/>. Sections read this from
-    /// their <see cref="SaveChangeSectionViewModel.ActionVerb"/> property,
-    /// which is wired to its parent dialog's <c>Mode</c> at construction time.
+    /// Verb phrase shown above each section's destination path. Sections read this
+    /// from their own <see cref="SaveChangeSectionViewModel.ActionVerb"/>, which the
+    /// builder wires from this dialog's <see cref="Mode"/>.
     /// </summary>
-    public string ActionVerb =>
-        Mode == SaveDialogMode.Restore
-            ? Strings.LabelWillBeRestoredTo
-            : Strings.LabelWillBeWrittenTo;
+    public string ActionVerb => Text.ActionVerbFor(Mode);
 
     /// <summary>
     /// Plain-text representation of all changes — one line per entry, no descriptions.
@@ -116,21 +102,23 @@ public sealed class SaveChangeSectionViewModel
     public IReadOnlyList<SaveChangeEntryViewModel> Entries { get; init; } = [];
 
     /// <summary>
-    /// Absolute (or <c>~</c>-prefixed display) path of the file that this
-    /// section's changes will be written to in Save mode, or restored to in
-    /// Restore mode. Populated by <c>MainWindowViewModel</c> from each dirty
-    /// <see cref="SettingsDocument.FilePath"/>; empty string if the path was
-    /// not provided. Bound directly into the section header in AXAML.
+    /// Absolute (or <c>~</c>-prefixed display) path of the file that this section's
+    /// changes will be written to in Save mode, or restored to in Restore mode.
+    /// Empty string when the path was not provided. Bound directly into the section
+    /// header in AXAML.
     /// </summary>
     public string FilePath { get; init; } = string.Empty;
 
     /// <summary>
-    /// Verb phrase shown above the destination path (e.g. "Will be written to:"
-    /// in Save mode, "Will be restored to:" in Restore mode). Set by the
-    /// builder so the section can render the path label without needing a
-    /// reference back to its parent <see cref="SaveChangesDialogViewModel"/>.
+    /// Verb phrase shown above the destination path, so the section can render the
+    /// path label without a reference back to its parent dialog.
+    /// <para>
+    /// <c>required</c> rather than defaulted to the save wording: a section that
+    /// silently claims "will be written to" inside a <em>restore</em> preview is
+    /// exactly the mistake a default invites, and the builder always knows the mode.
+    /// </para>
     /// </summary>
-    public string ActionVerb { get; init; } = Strings.LabelWillBeWrittenTo;
+    public required string ActionVerb { get; init; }
 }
 
 /// <summary>One changed property within a section.</summary>
@@ -154,6 +142,17 @@ public sealed class SaveChangeEntryViewModel
     /// <c>null</c> when the value is being removed by the change.
     /// </summary>
     public string? FullNewValue { get; init; }
+
+    /// <summary>
+    /// Tooltip + screen-reader label for the kind pill, from
+    /// <see cref="SaveDialogText.AccessibleNameFor"/>.
+    /// <para>
+    /// <c>required</c> because the alternative failure is silent: the pill renders a
+    /// bare glyph, and an empty automation name reads to a screen reader as nothing
+    /// at all. A compile error is the only thing that reliably prevents that.
+    /// </para>
+    /// </summary>
+    public required string KindAccessibleName { get; init; }
 
     /// <summary>Human-readable one-liner shown in the bordered textbox.</summary>
     public string FormattedText => Kind switch
@@ -195,19 +194,5 @@ public sealed class SaveChangeEntryViewModel
         // confuse with the #C62828 "removed" pill.  #F57C00 keeps the
         // Material palette + has a clearly more orange hue.
         var _ => "#F57C00",
-    };
-
-    /// <summary>
-    /// Tooltip + screen-reader label for the kind pill.  The pill's visible
-    /// content is a single +/-/~ glyph in a coloured square — meaningless to a
-    /// blind user without context, and even sighted users may not know that
-    /// '~' means "modified".  ToolTip.Tip + AutomationProperties.Name both
-    /// bind to this so hover-discoverable AND screen-reader accessible.
-    /// </summary>
-    public string KindAccessibleName => Kind switch
-    {
-        ChangeKind.Added => Strings.SaveDialogKindAdded,
-        ChangeKind.Removed => Strings.SaveDialogKindRemoved,
-        var _ => Strings.SaveDialogKindModified,
     };
 }

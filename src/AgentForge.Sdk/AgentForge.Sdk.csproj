@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Sdk</RootNamespace>
@@ -60,6 +60,18 @@
              `FromExistingWorkspace` overload so they can wrap an in-memory
              workspace without doing real disk I/O. Same expiration as the
              ClaudeForge grant — remove once 4.3.7 fully retires the wrap path. -->
+        <!-- The neutral shell, for the save-confirmation dialog only. Its builder
+             reads SnapshotDirtyDocuments() / DirtyDocumentSnapshot, which are internal
+             for the same reason as the accessors above: they traffic in JsonNode, which
+             the public SDK surface deliberately keeps out. This grant is the smaller
+             move; promoting a JsonNode-bearing snapshot to the public surface to serve
+             one dialog would be the worse trade, and it is the same call already made
+             for ClaudeForge.Sdk.Claude.
+
+             NOTE: an assembly attribute, not a reference. AgentForge.Sdk still cannot
+             see anything in the shell, and AssemblyLayeringTests still holds. -->
+        <InternalsVisibleTo Include="AgentForge.Avalonia.Shell"/>
+
         <InternalsVisibleTo Include="ClaudeForge.Tests"/>
     </ItemGroup>
 </Project>

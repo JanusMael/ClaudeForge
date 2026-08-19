@@ -34,6 +34,12 @@
              transitively) is what a settings-group page exposes. Both are neutral
              AgentForge.* types describing a config schema, not a product. -->
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
+
+        <!-- ISaveChangesPrompt: the dialog-service seam the save view-model implements.
+             LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*, so the layering
+             rule permits it, and that project references only AgentForge.Abstractions
+             so there is no cycle back into the shell. -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>
