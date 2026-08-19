@@ -17,6 +17,7 @@
         <Project Path="src/AgentForge.Jsonc/AgentForge.Jsonc.csproj"/>
         <Project Path="src/AgentForge.Sdk/AgentForge.Sdk.csproj"/>
         <Project Path="src/ClaudeForge.Sdk.Claude/ClaudeForge.Sdk.Claude.csproj"/>
+        <Project Path="src/OpenCode.Sdk/OpenCode.Sdk.csproj"/>
         <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
         <Project Path="src/LayeredEditors.ViewModels/LayeredEditors.ViewModels.csproj"/>
         <Project Path="src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj"/>
@@ -34,6 +35,7 @@
         <Project Path="tests/AgentForge.Jsonc.Tests/AgentForge.Jsonc.Tests.csproj"/>
         <Project Path="tests/AgentForge.Sdk.Tests/AgentForge.Sdk.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Sdk.Claude.Tests/ClaudeForge.Sdk.Claude.Tests.csproj"/>
+        <Project Path="tests/OpenCode.Sdk.Tests/OpenCode.Sdk.Tests.csproj"/>
         <Project Path="tests/LayeredEditors.Avalonia.Tests/LayeredEditors.Avalonia.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Avalonia.Tests/ClaudeForge.Avalonia.Tests.csproj"/>
         <Project

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCode.Sdk.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- AgentForge.Sdk and AgentForge.Core arrive transitively, so tests here reach the
+             neutral client machinery (ScopeLadder, SettingsWorkspace, SchemaRegistry) they
+             assert OpenCode's implementations against. Mirrors ClaudeForge.Sdk.Claude.Tests. -->
+        <ProjectReference Include="..\..\src\OpenCode.Sdk\OpenCode.Sdk.csproj"/>
+    </ItemGroup>
+</Project>
