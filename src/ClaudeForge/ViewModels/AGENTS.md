@@ -271,6 +271,48 @@ Rules worth knowing before editing the tables:
   `SchemaPageLayoutTests.ClaudeLayout_EveryMappedPageIsAlsoOrdered` is the guard.
 - Property order within a page is the schema's, not alphabetical.
 
+## §4d Save / restore confirmation dialog — `SaveDialogText`
+
+The dialog's model and its builder live in `src/AgentForge.Avalonia.Shell/Save/`.
+Nothing in them is product-specific: which documents are dirty, how the diffs are
+computed, how paths are shortened to `~/…`, how values are truncated, how the summary
+counts read — all identical for any layered-config product.
+
+The one piece that is ours is the **wording**, handed over as a `SaveDialogText`:
+
+```csharp
+SaveChangesDialogViewModel? vm =
+    SaveDialogBuilder.Build(DirtySources(), ClaudeSaveDialogText.Create(), isRestoreContext);
+```
+
+`ClaudeSaveDialogText.Create()` is called **per invocation**, not cached — `Strings` is
+not culture-aware until `ApplyCulture` runs in `Program.Main`, so a static table would
+pin the startup culture.
+
+⚠⚠ **Why the keys did NOT move into a resource set beside the dialog** — and why yours
+should not either. `LocalizationParityTests` finds its resx files by walking to
+`src/ClaudeForge/Localization` **by hardcoded path**. A resource set anywhere else is
+checked by nothing: not the every-key-in-every-locale contract, not the `TODO`
+-placeholder rejection, not the copy-of-English detection. `ClaudeForge.Avalonia`
+already demonstrates the consequence — 93 strings, zero locale siblings, no failing
+test. Moving these twelve translated keys out of the guarded directory would have
+silently un-translated them in eight locales while looking like tidier architecture.
+**Neutral code takes its words as data; it does not get its own resx.**
+
+Three members are `required` on purpose:
+
+- `SaveChangesDialogViewModel.Text` — a dialog inheriting another product's wording is
+  worse than one that fails to compile.
+- `SaveChangeSectionViewModel.ActionVerb` — it used to default to the *save* label,
+  which is precisely the wrong answer inside a restore preview.
+- `SaveChangeEntryViewModel.KindAccessibleName` — the change pill renders a bare
+  `+`/`-`/`~` glyph, so an empty automation name reads to a screen reader as nothing at
+  all. A compile error is the only thing that reliably prevents that.
+
+**The view stays here** (`src/ClaudeForge/Views/SaveChangesDialog.axaml`). Moving it
+would drag three converters that five to nine other AXAML files also use — a converter
+migration that is really a `LayeredEditors.Avalonia` question, not a shell one.
+
 ## §5 JsonPath → NavigationNodeViewModel mapping
 
 The SDK's `SearchSchema` returns `SchemaSearchResult` with `JsonPath` but no nav target.
@@ -373,6 +415,7 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 |--------------------------------------------|------------------------------------------------------------------------------|
 | `MainWindowViewModel.cs`                   | Integration hub; SDK lifecycle, nav tree build, search VM construction       |
 | `ClaudeSyntheticSearch.cs`                 | This app's pinned search rows: trigger phrases, nav targets, card titles     |
+| `ClaudeSaveDialogText.cs`                  | This app's wording for the save / restore dialog (12 keys); model is in the shell |
 | `../Services/NavigationTreeBuilder.cs`     | This app's schema→page tables; arrangement is `SchemaPageLayout` (see §4c)   |
 | ⚠ `SearchViewModel.cs` / `SearchResultViewModel.cs` | **moved** — `src/AgentForge.Avalonia.Shell/Search/` (see §3) |
 | `SettingsGroupEditorViewModel.cs`          | Generic property group editor; exposes `SchemaNodes`, `Editors`, `GroupName` |

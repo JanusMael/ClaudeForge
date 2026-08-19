@@ -2714,7 +2714,7 @@ not one move.
 | **deep-link** | ✅ **taken 2nd, not 3rd** — `NavDeepPath` + `IDeepNavigable` moved; see the reorder note |
 | **search** | ✅ — `SearchViewModel` + `SearchResultViewModel` moved; 5 seams became **2 interfaces + 1 entry list**; see below |
 | **nav** | 🔶 **PARTIAL** — two clean seams taken (`INavigablePage`, `SchemaPageLayout`). **Tree assembly + `ProductSection` enrichment: DEFERRED, not rejected** — measured and costed below, available to pick up whenever the topology question is revisited |
-| save | ⬜ |
+| **save** | ✅ — model + builder moved; the host supplies a `SaveDialogText`. **Problem 8's resx split turned out to be the wrong move here — see below** |
 
 ### What slice 3 (search) actually cost, and the two things the measurement missed
 
@@ -2933,6 +2933,75 @@ Order` first used page titles whose declared order happened to equal their alpha
 order, so ignoring `PageOrder` entirely left it green. Rewritten with titles where the
 declared answer differs from *both* alphabetical and schema order. **A canary that fails
 fewer tests than expected is telling you something about the tests, not the canary.**
+
+### Slice 5 (save) — the cleanest ratio of the phase, and a correction to Problem 8
+
+`SaveChangesDialogViewModel` (212 lines) and `SaveDialogBuilder` (170) moved to
+`AgentForge.Avalonia.Shell/Save/`. **All 382 lines of logic are neutral** — which
+documents are dirty, how their diffs are computed, how paths are shortened to `~/…`,
+how values are truncated, how the summary counts read. Unlike nav, **no product
+composition stays behind**: the only Claude knowledge in the whole surface was twenty
+`Strings.*` lookups.
+
+⚠⚠ **THE PLAN SAID TO SPLIT `Strings.resx` (Problem 8) IN THIS PHASE. DOING SO WOULD
+HAVE SILENTLY UN-TRANSLATED THE STRINGS IT MOVED.** `LocalizationParityTests` locates
+its resx files by walking to `src/ClaudeForge/Localization` **by hardcoded path**
+(`FindLocalizationDirectory`), so a resource set anywhere else is checked by *none* of
+its four contracts — not every-key-in-every-locale, not the `TODO`-placeholder
+rejection, not the copy-of-English detection.
+
+That is not a hypothetical. **`src/ClaudeForge.Avalonia/Localization/Strings.resx`
+already holds 93 user-facing strings with no locale siblings at all**, and nothing in
+the suite reports it. Moving fourteen currently-nine-locale keys into a new shell
+resource set would have joined them, invisibly.
+
+**So the seam is data, not resources:** the host hands over a `SaveDialogText` with
+twelve strings, and the keys stay in the guarded directory with their translations and
+their parity guard. This is the same shape as `IMergePolicy`, `ScopeLadder`,
+`SyntheticSearchEntry` and `SchemaPageLayout` — the product states, the shell applies —
+and it is *better* than a resx split anyway: what a save means, and what the user must
+do afterwards for it to take effect, genuinely differs per product. OpenCode needs a
+"restart OpenCode" affordance that Claude does not (Phase 0, S-findings).
+
+**Problem 8 is therefore not "split the resx". It is "stop neutral code from needing
+one", plus — separately — extend `LocalizationParityTests` to every resx in the repo
+rather than one hardcoded directory.** The second half is worth doing on its own
+merits: it would immediately surface the 93 unguarded strings.
+
+**Three members are `required` rather than defaulted**, each closing a silent failure:
+`SaveChangesDialogViewModel.Text` (a dialog must not inherit another product's words),
+`SaveChangeSectionViewModel.ActionVerb` (it used to default to the *save* label, which
+is the wrong answer inside a restore preview), and
+`SaveChangeEntryViewModel.KindAccessibleName` (the pill renders a bare `+`/`-`/`~`, so
+an empty automation name reads as nothing to a screen reader — a compile error is the
+only reliable guard).
+
+**The view stays in `src/ClaudeForge/Views/`.** Moving it drags three converters that
+five to nine other AXAML files also use; that migration is really a
+`LayeredEditors.Avalonia` question. Only its `xmlns` and `x:DataType` changed —
+and renaming a bound member still fails the build with `AVLN2000` naming the *shell*
+namespace, so the compiled-binding guard followed the type across the assembly.
+
+**One SDK concession, stated not hidden.** The builder reads `SnapshotDirtyDocuments()`
+/ `DirtyDocumentSnapshot`, which are `internal` because they traffic in `JsonNode` that
+the public SDK surface deliberately excludes. `AgentForge.Sdk` now grants
+`InternalsVisibleTo("AgentForge.Avalonia.Shell")` — the same call already made for
+`ClaudeForge.Sdk.Claude`, and smaller than promoting a `JsonNode`-bearing snapshot to
+the public surface to serve one dialog.
+
+**Coverage.** The builder had exactly one test before this (one env change, one
+product). Now 24 across three fixtures, including the multi-source case, the restore
+wording, path shortening, truncation-with-full-value-retained, and per-entry accessible
+names. Ten canaries, all red.
+
+⚠ **A canary caught a self-consistent test of mine — the fourth instance of this trap
+in the refactor.** `Build_GivesEveryEntryAnAccessibleName` asserted
+`e.KindAccessibleName == Text.AccessibleNameFor(e.Kind)`, so breaking the kind mapping
+left it green: both sides were computed by the thing under test. Rewritten to assert
+against the raw `KindAdded` / `KindModified` properties, with a fixture that produces
+both an added and a modified change. **A fixture derived from what it checks cannot
+detect that thing moving** — same family as 4d-2's `ArchiveFolder`, 4c's single-document
+workspaces, and 4f's `ClaudeScope._cache`.
 
 ### Phase 6 — Shared permission *vocabulary* (Problem 5) — **much smaller than drafts 10–11**
 
