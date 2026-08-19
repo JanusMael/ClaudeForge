@@ -495,12 +495,53 @@ public static partial class SchemaTreeBuilder
     private readonly record struct StringUnionEnum(IReadOnlyList<string> Values, bool AllowsFreeForm);
 
     private static IReadOnlyList<PropertySubschema> GetPropertySubschemas(JsonSchemaNode node)
+        => GetPropertySubschemas(node, refDepth: 0);
+
+    /// <summary>
+    /// The named properties of <paramref name="node"/>, following a root <c>$ref</c> when —
+    /// and only when — the node declares no <c>properties</c> of its own.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why the fallback exists.</b> A schema may put its entire object behind a root
+    /// <c>$ref</c>: <c>{ "$schema": …, "$ref": "#/$defs/Config", "$defs": { … } }</c> with no
+    /// <c>properties</c> keyword at all. OpenCode's <c>config.json</c> is exactly this shape.
+    /// Without the fallback the walk finds no properties and the editor renders an empty
+    /// tree — not an error, just a page with nothing on it.
+    /// </para>
+    /// <para>
+    /// <b>Why only in the absence of <c>properties</c>.</b> Following <c>$ref</c>
+    /// unconditionally would change the meaning of every schema that has both: in JSON
+    /// Schema 2020-12 a <c>$ref</c> alongside sibling keywords is an <i>additional</i>
+    /// constraint, not a replacement, so merging the target's properties in would invent
+    /// fields the author did not declare at that level. Restricting it to the no-properties
+    /// case makes it a display fallback rather than a change of semantics.
+    /// </para>
+    /// <para>
+    /// <paramref name="refDepth"/> bounds the walk. A <c>$ref</c> cycle among schemas that
+    /// each declare no <c>properties</c> would otherwise recurse until the stack ran out —
+    /// a malformed or merely self-referential schema should render nothing, not crash.
+    /// </para>
+    /// </remarks>
+    private static IReadOnlyList<PropertySubschema> GetPropertySubschemas(JsonSchemaNode node, int refDepth)
     {
         List<PropertySubschema> result = new();
         KeywordData? propsKw = FindKeyword(node, "properties");
         if (propsKw?.Subschemas == null)
         {
-            return result;
+            const int maxRefDepth = 8;
+            if (refDepth >= maxRefDepth)
+            {
+                return result;
+            }
+
+            // The resolved target is already sitting in the keyword's Subschemas — nothing
+            // is re-resolved here. A $ref keyword resolves to exactly one schema, so more
+            // (or fewer) than one means this is not the shape being handled.
+            KeywordData? refKw = FindKeyword(node, "$ref");
+            return refKw?.Subschemas is { Length: 1 } target
+                ? GetPropertySubschemas(target[0], refDepth + 1)
+                : result;
         }
 
         foreach (JsonSchemaNode sub in propsKw.Subschemas)
