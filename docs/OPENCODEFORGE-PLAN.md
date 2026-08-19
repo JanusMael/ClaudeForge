@@ -26,11 +26,16 @@
 > **Deferred re-checkpoint** section: 11 items must be re-validated against a used install
 > before Phases 10 and 14 ship.
 >
-> ### Implementation status — 2026-08-17
+> ### Implementation status — 2026-08-19
 >
-> Branch **`feat/agentforge-opencodeforge`**, 22 commits, **not yet pushed** (`origin/main`
-> still `930eb41`). Suite green throughout: **2,801 passed · 11 skipped · 0 failed ·
-> 0 warnings**.
+> Branch **`feat/agentforge-opencodeforge`** @ **`b0989c6`**, **58 commits, pushed, and
+> fully CI-green** (`origin/main` still `930eb41`). Suite: **2,942 passed · 11 skipped ·
+> 0 failed · 0 warnings**.
+>
+> ⚠ **Pushing is a two-party operation.** The development machine's stored GitHub
+> credential has **READ but not WRITE** on this repo and will not be changed, so commits
+> reach `origin` via `git bundle` handed to a machine that can push. CI results *are*
+> readable from the development side, so the split is: they push, the session analyses.
 >
 > | Phase | Status |
 > |---|---|
@@ -47,16 +52,17 @@
 > to lose a config.** The plan predicted the OpenCode consequence but recorded "nothing is at
 > risk today" — that was wrong for any Claude user who had ever hand-added a comment.
 >
-> ⚠ **Untested against a real install.** Every guarantee is covered by unit and end-to-end
-> tests, all canaried, but nothing has exercised the new save path through the GUI against a
-> real `~/.claude/settings.json`. **Do that before this branch goes near `main`.**
+> ✅ **Since resolved:** Phase 2 *was* smoke-tested against a real install (2026-08-18) —
+> both a headless harness over the maintainer's real 20 KB `settings.json` and a real GUI
+> save through a throwaway profile. See the Phase 2 section.
 >
-> ### ⚠⚠ Verification status — and what still REQUIRES a remote CI run
+> ### Verification status — every gate has now run
 >
-> The branch is deliberately **local and unpushed** (maintainer's decision, 2026-08-18), so
-> **CI has never executed on any commit of Phases 1–4.** CI's gates were therefore reproduced
-> locally. **One of them failed on its first-ever run**, which is the reason this section
-> exists rather than being an abundance of caution:
+> For fifty-six commits the branch was deliberately local, so **CI had never executed on any
+> of it** and CI's gates were reproduced locally instead. **Two separate first-ever runs each
+> failed**, which is why this section exists rather than being an abundance of caution.
+>
+> **First: a local reproduction of the trim gate caught a Release-only break.**
 >
 > > `JsoncEditor.Quote` used the reflection-based `JsonSerializer.Serialize` overload, so the
 > > Release publish failed with `IL2026` → `NETSDK1144`. It shipped in **Phase 2** and
@@ -69,11 +75,23 @@
 > | **Trim check** — `dotnet publish src/ClaudeForge -c Release -r linux-x64 --self-contained true` | ✅ **after `807087c`**; zero `IL2xxx` |
 > | Release build + full suite (Windows) | ✅ 2,884 · 0 · 11 — identical to Debug |
 > | `scripts/validate-model-catalog.ps1` + its 30 tests | ✅ |
-> | **CI OS matrix — `ubuntu-latest`, `macos-latest`** | ❌ **NEVER RUN** |
-> | **CodeQL** | ❌ **NEVER RUN** |
+> | **CI OS matrix — `windows`, `ubuntu`, `macos`** | ✅ **green @ `b0989c6`** (2026-08-19) |
+> | **CodeQL** | ✅ **green @ `b0989c6`** — clean on first run |
 >
-> **The two unrun gates are not reproducible locally and must run remotely before this branch
-> merges.** What they would cover that nothing else does:
+> **Second: the first real CI run (@`8144fd4`) failed `Build & Test` on all three operating
+> systems**, and both causes were real:
+>
+> 1. A doc cited `src/LayeredEditors.Avalonia/ViewModels` (the *namespace* shape) for a
+>    directory that is `src/LayeredEditors.ViewModels`. **This branch introduced it in
+>    `8834039`**, and an **empty untracked directory on the dev machine masked it for 56
+>    commits** — git does not track empty directories, so the local guard is structurally
+>    weaker than the identical guard in CI.
+> 2. Avalonia's headless session was started **lazily by whichever test ran first**, which on
+>    macOS threw a dispatcher-affinity error during platform start-up — reported against an
+>    unrelated status-bar assertion. Now started once from `[AssemblyInitialize]`.
+>    ⚠ **That fault was a race, so one green macOS run is evidence, not proof.**
+>
+> Both fixed in `29fd697`. What the remote gates cover that nothing local does:
 >
 > - **The suite actually executing on Linux and macOS.** Only Windows has run it. Phases 1–4
 >   touched serialization, archive layout, and per-product config paths — the three areas
