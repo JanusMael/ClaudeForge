@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -24,8 +25,11 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// Editor for the "hooks" object.
 /// Groups hooks by event type; within each group lists matcher+command entries.
 /// </summary>
-public partial class HooksEditorViewModel : PropertyEditorViewModel
+public partial class HooksEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
 {
+    /// <inheritdoc />
+    public string OwnedJsonPathPrefix => "hooks";
+
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces / McpServers

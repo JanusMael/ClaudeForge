@@ -37,6 +37,7 @@ using Json.Schema;
 using Serilog;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
@@ -321,9 +322,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// English (parallels the other NavTitle* constants) so both the node's
     /// display label and the programmatic <c>n.Title</c> lookups stay
     /// culture-invariant.  The localized <c>Strings.NavTitleEssentials</c>
-    /// is consumed separately by <c>SearchViewModel</c> as the search-results
-    /// group label; full nav-tree localization is still pending (see the
-    /// NavDesc* note below).
+    /// is consumed separately by <c>ClaudeSyntheticSearch</c> as the
+    /// search-results group label; full nav-tree localization is still pending
+    /// (see the NavDesc* note below).
     /// </summary>
     private const string NavTitleEssentials = "Essentials";
 
@@ -435,7 +436,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Search = new SearchViewModel(
             getNavigationTree: () => NavigationTree,
             isLoadingProbe: () => IsLoading,
-            claudeCodeNavTitle: NavTitleClaudeCode,
+            getSyntheticEntries: () => ClaudeSyntheticSearch.Build(NavTitleClaudeCode),
             getSchemaSearchProviders: BuildSchemaSearchProviders);
 
         // Restore persisted state — single hydrate per session. Subsequent saves

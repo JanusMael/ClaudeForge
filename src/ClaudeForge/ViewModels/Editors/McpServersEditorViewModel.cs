@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -23,8 +24,11 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// Editor for the "mcpServers" object.
 /// Shows a list of server entries; each can be added, edited, or removed.
 /// </summary>
-public partial class McpServersEditorViewModel : PropertyEditorViewModel
+public partial class McpServersEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
 {
+    /// <inheritdoc />
+    public string OwnedJsonPathPrefix => "mcpServers";
+
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces migrations.

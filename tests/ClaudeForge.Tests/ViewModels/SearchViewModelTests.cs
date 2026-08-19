@@ -20,6 +20,18 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 [TestClass]
 public class SearchViewModelTests
 {
+    /// <summary>
+    /// This app's synthetic-row table, wired explicitly.
+    /// <para>
+    /// Phase 5 slice 3 moved the search machinery to the neutral shell, which pins
+    /// no rows of its own — so a fixture that omits this sees no synthetic hits at
+    /// all. Stating it here is the point: the rows these tests assert on are
+    /// Claude's statement about Claude, not something search knows.
+    /// </para>
+    /// </summary>
+    private static readonly Func<IReadOnlyList<SyntheticSearchEntry>> ClaudeEntries =
+        () => ClaudeSyntheticSearch.Build("Claude Code");
+
     // ── BuildSnippet ─────────────────────────────────────────────────────
 
     [TestMethod]
@@ -161,7 +173,7 @@ public class SearchViewModelTests
         SearchViewModel vm = new(
             getNavigationTree: () => tree,
             isLoadingProbe: () => false,
-            claudeCodeNavTitle: "Claude Code");
+            getSyntheticEntries: ClaudeEntries);
 
         vm.ExecuteSearch("danger");
 
@@ -184,7 +196,7 @@ public class SearchViewModelTests
         SearchViewModel vm = new(
             getNavigationTree: () => tree,
             isLoadingProbe: () => false,
-            claudeCodeNavTitle: "Claude Code");
+            getSyntheticEntries: ClaudeEntries);
 
         vm.ExecuteSearch("danger");
 
@@ -202,7 +214,7 @@ public class SearchViewModelTests
         ccHeader.Children.Add(permNode);
         ObservableCollection<NavigationNodeViewModel> tree = [ccHeader];
 
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("da");
 
@@ -221,7 +233,7 @@ public class SearchViewModelTests
         ccHeader.Children.Add(permNode);
         ObservableCollection<NavigationNodeViewModel> tree = [ccHeader];
 
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("zzz");
 
@@ -240,7 +252,7 @@ public class SearchViewModelTests
         ccHeader.Children.Add(permNode);
         ObservableCollection<NavigationNodeViewModel> tree = [ccHeader];
 
-        SearchViewModel vm = new(() => tree, isLoadingProbe: () => true, "Claude Code");
+        SearchViewModel vm = new(() => tree, isLoadingProbe: () => true, ClaudeEntries);
 
         vm.ExecuteSearch("danger");
 
@@ -281,7 +293,7 @@ public class SearchViewModelTests
         NavigationNodeViewModel header = new("Claude Code");
         header.Children.Add(permNode);
         ObservableCollection<NavigationNodeViewModel> tree = [header];
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         // ── partial title match ──
         vm.ExecuteSearch("perm");
@@ -322,7 +334,7 @@ public class SearchViewModelTests
         SearchViewModel vm = new(
             getNavigationTree: () => tree,
             isLoadingProbe: () => false,
-            claudeCodeNavTitle: "Claude Code",
+            getSyntheticEntries: ClaudeEntries,
             getSchemaSearchProviders: () =>
                 [new SchemaSearchProvider("Claude Code", FakeSearch)]);
 
@@ -371,7 +383,7 @@ public class SearchViewModelTests
         ObservableCollection<NavigationNodeViewModel> tree = [header];
 
         // No getSchemaSearchProviders supplied.
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("perm");
         Assert.IsTrue(vm.SearchResults.Any(r => r.Node == permNode),
@@ -446,7 +458,7 @@ public class SearchViewModelTests
         SearchViewModel vm = new(
             getNavigationTree: () => tree,
             isLoadingProbe: () => false,
-            claudeCodeNavTitle: "Claude Code",
+            getSyntheticEntries: ClaudeEntries,
             getSchemaSearchProviders: () =>
                 [new SchemaSearchProvider("Claude Code", FakeSearch)]);
 
@@ -507,7 +519,7 @@ public class SearchViewModelTests
         header.Children.Add(child);
         ObservableCollection<NavigationNodeViewModel> tree = [header];
 
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         // Query by full dotted path — must find the "allow" node.
         vm.ExecuteSearch("permissions.allow");
@@ -545,7 +557,7 @@ public class SearchViewModelTests
         header.Children.Add(child);
         ObservableCollection<NavigationNodeViewModel> tree = [header];
 
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("permissions");
 
@@ -593,7 +605,7 @@ public class SearchViewModelTests
         EssentialsViewModel vm = new(client, new FakeEnvironmentProvider());
 
         HashSet<string> ids = vm.Cards.Select(c => c.Id).ToHashSet();
-        foreach (string triggerKey in SearchViewModel.EssentialsTriggers.Keys)
+        foreach (string triggerKey in ClaudeSyntheticSearch.EssentialsTriggers.Keys)
         {
             CollectionAssert.Contains(ids.ToList(), triggerKey,
                 $"Trigger key '{triggerKey}' must reference a real card id.");
@@ -601,7 +613,7 @@ public class SearchViewModelTests
 
         foreach (string id in ids)
         {
-            Assert.IsTrue(SearchViewModel.EssentialsTriggers.ContainsKey(id),
+            Assert.IsTrue(ClaudeSyntheticSearch.EssentialsTriggers.ContainsKey(id),
                 $"Card '{id}' must have at least one trigger phrase to be searchable.");
         }
     }
@@ -610,7 +622,7 @@ public class SearchViewModelTests
     public void ExecuteSearch_EssentialsTriggers_ProduceSyntheticHit_Thinking()
     {
         (ObservableCollection<NavigationNodeViewModel> tree, NavigationNodeViewModel essentialsNode, EssentialsViewModel _) = BuildEssentialsOnlyTree();
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("thinking");
 
@@ -627,7 +639,7 @@ public class SearchViewModelTests
         // The trigger contains rule means typing the start of a phrase
         // ("san") still surfaces the sandbox cards before the user finishes.
         (ObservableCollection<NavigationNodeViewModel> tree, NavigationNodeViewModel essentialsNode, EssentialsViewModel _) = BuildEssentialsOnlyTree();
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("san");
 
@@ -643,7 +655,7 @@ public class SearchViewModelTests
     public void ExecuteSearch_EssentialsTriggers_QueryTooShort_NoHits()
     {
         (ObservableCollection<NavigationNodeViewModel> tree, NavigationNodeViewModel _, EssentialsViewModel _) = BuildEssentialsOnlyTree();
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("t");
 
@@ -658,7 +670,7 @@ public class SearchViewModelTests
         NavigationNodeViewModel ccHeader = new("Claude Code");
         ObservableCollection<NavigationNodeViewModel> tree = [ccHeader];
 
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
         vm.ExecuteSearch("thinking tokens");
 
         Assert.IsFalse(vm.SearchResults.Any(r => r.IsSynthetic),
@@ -670,7 +682,7 @@ public class SearchViewModelTests
     [TestMethod]
     public void Dispose_IsIdempotent()
     {
-        SearchViewModel vm = new(() => [], () => false, "Claude Code");
+        SearchViewModel vm = new(() => [], () => false, ClaudeEntries);
         vm.Dispose();
         vm.Dispose(); // second call must not throw
     }
