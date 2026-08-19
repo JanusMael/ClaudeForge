@@ -45,6 +45,15 @@
              AssemblyLayeringTests still holds. -->
         <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude"/>
 
+        <!-- The OpenCode-domain half, and the same grant for a narrower reason: every
+             concrete client has to return an IBackupClient from CreateBackupClient, and the
+             only implementation — BackupClient — is internal. Making it public to serve the
+             second product would widen the SDK's surface permanently to save one line here.
+
+             NOTE: an assembly attribute, not a reference. AgentForge.Sdk still cannot see
+             anything in OpenCode.Sdk, and AssemblyLayeringTests still holds. -->
+        <InternalsVisibleTo Include="OpenCode.Sdk"/>
+
         <!-- ClaudeForge (the GUI) is granted internals visibility for the duration
              of the SDK migration. The GUI uses the
              internal `FromExistingWorkspace` constructor to wrap a pre-loaded
