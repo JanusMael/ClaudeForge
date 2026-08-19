@@ -1,4 +1,4 @@
-# ClaudeForge ViewModels — Agent Operational Guide
+﻿# ClaudeForge ViewModels — Agent Operational Guide
 
 Cross-file invariants for the ViewModel layer.
 Read alongside the root [`AGENTS.md`](../../../AGENTS.md) and
@@ -17,7 +17,7 @@ Read alongside the root [`AGENTS.md`](../../../AGENTS.md) and
 | Claude Desktop SDK client | `ClaudeDesktopSdk : ClaudeConfigClientBase?` — **facade** over `_sections` |
 | Shared schema registry    | `_schemaRegistry : SchemaRegistry`                               |
 | Navigation tree           | `NavigationTree : ObservableCollection<NavigationNodeViewModel>` |
-| Search VM                 | `SearchVm : SearchViewModel`                                     |
+| Search VM                 | `Search : SearchViewModel` (neutral shell; fed this app's synthetic table) |
 | Snapshot service          | `_snapshotService`                                               |
 | Dirty-flag                | `HasUnsavedChanges` (recomputed from SDK `HasActualChanges()`)   |
 
@@ -88,23 +88,36 @@ dividers carry none; settings-group children use `NavDeepPath.Slug(group.Title)`
 
 **Two editor types:**
 
-| Editor type                                                                                                                                                         | Schema access                                     | Search treatment                                           |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|------------------------------------------------------------|
-| `SettingsGroupEditorViewModel`                                                                                                                                      | Exposes `SchemaNodes : IReadOnlyList<SchemaNode>` | Walk schema nodes; match by name / title / desc / JsonPath |
-| Specialized VMs (`PermissionsEditorViewModel`, `HooksEditorViewModel`, `McpServersEditorViewModel`, `MarketplacesEditorViewModel`, `EnabledPluginsEditorViewModel`) | No schema node list                               | Match by page title only                                   |
+| Editor type | Declares | Search treatment |
+|---|---|---|
+| `SettingsGroupEditorViewModel` | **`ISchemaGroupEditor`** (`GroupName` + `SchemaNodes`) | Walk schema nodes; match by name / title / desc / JsonPath |
+| `PermissionsEditorViewModel`, `HooksEditorViewModel`, `McpServersEditorViewModel` | **`IJsonPathScopedEditor`** (`OwnedJsonPathPrefix`) | Ask the SDK's `SearchSchema`, keep the hits inside the owned subtree; page-title match only as a fallback |
+| `MarketplacesEditorViewModel`, `EnabledPluginsEditorViewModel` | neither | Match by page title only |
+
+⚠ **Search dispatches on those two interfaces, never on the concrete type.** It used
+to pattern-match `editor is SettingsGroupEditorViewModel` and carry a hardcoded
+type→JsonPath map, which was defensible only while the walk and the editors shared an
+assembly. The walk is neutral now, so a new specialised page becomes searchable by
+declaring `IJsonPathScopedEditor` — there is no central list to update.
 
 A node with `Editor == null` is a header (section divider); never add a result that navigates to a header node.
 
 ## §3 `SearchViewModel` contract
 
-`SearchViewModel` (`SearchViewModel.cs`) is intentionally **decoupled from the SDK**.
-It receives delegates, not `IAgentConfigClient` references:
+⚠ **`SearchViewModel` lives in `src/AgentForge.Avalonia.Shell/Search/`, not here.**
+Phase 5 slice 3 moved the whole search machinery — the debounce, the tree walk, the
+schema flattening, the snippet, the result cap — to the neutral shell. This app
+supplies the parts that are Claude's.
+
+It is decoupled from the SDK by construction: it receives delegates, not
+`IAgentConfigClient` references.
 
 ```csharp
 new SearchViewModel(
-    getNavigationTree:  () => NavigationTree,
-    isLoadingProbe:     () => _isLoadingWorkspaces,
-    claudeCodeNavTitle: "Claude Code")
+    getNavigationTree:        () => NavigationTree,
+    isLoadingProbe:           () => IsLoading,
+    getSyntheticEntries:      () => ClaudeSyntheticSearch.Build(NavTitleClaudeCode),
+    getSchemaSearchProviders: BuildSchemaSearchProviders)
 ```
 
 **Why delegates, not SDK refs?**
@@ -112,29 +125,73 @@ new SearchViewModel(
 - Keeps `SearchViewModel` unit-testable without Avalonia or SDK dependencies.
 - Nav tree is already in-memory; schema nodes inside `SettingsGroupEditorViewModel`
   are the same objects built from `SchemaTreeBuilder.BuildTopLevel` — no double-fetch needed.
+- Every delegate is re-invoked **per search pass**, so a workspace reload (which
+  rebuilds the tree and swaps the SDK clients) needs no re-wiring. `getSyntheticEntries`
+  is re-invoked for a second reason: its rows carry localized text, and `Strings` is not
+  culture-aware until `ApplyCulture` runs in `Program.Main`. **A cached entry list would
+  pin the startup culture into every row.**
 
-**If you need SDK-backed search** (e.g. to add ranking, to expose search to non-GUI
-consumers), use `IAgentConfigClient.SearchSchema(query)` from the SDK layer and
-map results back to nav nodes via the path-to-node lookup described in §5 below.
-See `src/AgentForge.Sdk/AGENTS.md §2` for the SDK / navigation boundary contract.
+### §3.1 Synthetic rows are this app's statement — `ClaudeSyntheticSearch.cs`
 
-**Synthetic results (deep-links with no backing schema property):** `ExecuteSearch`
-adds pinned `IsSynthetic` rows for common gotchas — `--dangerouslySkipPermissions`
-(prefix `danger…`, empty `PropertyKey`) and `bypassPermissions` (query contains
-`bypass`, excludes `disable`, `PropertyKey="permissions.defaultMode"`), plus the
-Essentials-card triggers. `MainWindowViewModel.SelectSearchResult` branches on
-`PropertyKey`: the bypass row lands on the Permissions Overview tab and calls
-`permEditor.ActivateBypassHint()`; the danger row calls `ActivateDangerHint()` +
-expands Advanced. When adding a synthetic, keep the trigger distinct from
-existing ones and add a `SearchViewModelTests` / `SearchViewModelBypassTests` case
-(present-vs-absent node, distinctness).
+Pinned rows for queries no schema property matches: `--dangerouslySkipPermissions`
+(a CLI flag with a config equivalent), the `bypassPermissions` deep link, and the
+Essentials-card triggers. All three used to be hardcoded inside the search VM; they
+are now `SyntheticSearchEntry` records the product hands over.
 
-**Internal test surface:**
+| Piece | Owner |
+|---|---|
+| Which phrases exist, what a row says, where it lands | **this app** — `ClaudeSyntheticSearch.Build(sectionTitle)` |
+| When a phrase matches a query | **the shell** — `SearchTrigger` |
+| Ordering, suppression, node resolution, row construction | **the shell** — `SearchViewModel.AddSyntheticHits` |
+
+`SearchTrigger` has three positive rule kinds and they are **not** interchangeable:
+
+- `Phrases` — bidirectional. Query contains the phrase **or** the phrase contains the
+  query. The second direction is what makes partial typing land early (`san` → sandbox).
+- `PrefixOf` — query must be a **prefix** of the term. Narrower; use it for one long
+  identifier typed from the front, so `skip` does not reach `--dangerouslySkipPermissions`.
+- `Mentions` — query must **contain** the term. One-directional, so `pass` does not
+  reach a `bypass` row. **Swapping this for `Phrases` silently widens the row.**
+
+Plus `Excluding` (veto — how `disable bypass` avoids the enable row) and
+`MinQueryLength`. A trigger with no rules matches **nothing**, deliberately.
+
+The query is lower-cased **and trimmed** once before any rule sees it, so all rule
+kinds normalise identically. (They did not before the slice: a leading space defeated
+the prefix rules while a contains rule on the same row still fired.)
+
+`Suppresses` names entry ids this row displaces when it fires — resolved after the
+whole list is walked, so it works regardless of declaration order, and an entry whose
+target page is absent suppresses nothing.
+
+`MainWindowViewModel.SelectSearchResult` is where a clicked row is *acted on*, and it
+stays here: the bypass row lands on the Permissions Overview tab and calls
+`permEditor.ActivateBypassHint()`; the danger row calls `ActivateDangerHint()` and
+expands Advanced; an Essentials row activates the card's amber callout.
+
+When adding a synthetic, keep the trigger distinct from existing ones and add a
+`SearchViewModelTests` / `SearchViewModelBypassTests` case (present-vs-absent node,
+distinctness).
+
+**If you need SDK-backed search** beyond this (ranking, non-GUI consumers), use
+`IAgentConfigClient.SearchSchema(query)` and map results back to nav nodes via the
+path-to-node lookup in §5. See `src/AgentForge.Sdk/AGENTS.md §2` for the SDK /
+navigation boundary contract.
+
+**Internal test surface** (visible via `InternalsVisibleTo("ClaudeForge.Tests")` on
+the shell):
 
 - `SearchViewModel.ExecuteSearch(string query)` — `internal`; drives matching directly,
   no debounce, no dispatcher. Safe to call from unit tests.
+- `SearchViewModel.AddSyntheticHits(query)` — `internal`; drives the pinned-row walk alone.
 - `SearchViewModel.FlattenSchemaNodes(nodes)` — `internal static`; depth-first schema walk.
 - `SearchViewModel.BuildSnippet(text, query, maxLen)` — `internal static`; excerpt helper.
+- `SearchViewModel.StripPhraseQuotes(query)` — `internal static`; phrase-quote stripping.
+
+⚠ `SearchTrigger` and the entry walk are covered by `SearchTriggerTests` and
+`SearchViewModelSeamTests`, which drive a **fabricated** product — no Claude table, no
+Claude editor types. That is the point: the Claude-fixture tests cannot tell you
+whether a second product can reach the same behaviour.
 
 ## §4 Specialized editors — search implications
 
@@ -143,10 +200,10 @@ When adding a new specialized editor page:
 1. Create the editor VM (e.g. `FooEditorViewModel`).
 2. Register in `NavigationTreeBuilder` so a `NavigationNodeViewModel` is created with
    `Editor = new FooEditorViewModel(...)`.
-3. **Update `SearchViewModel.ExecuteSearch`** — the `else if (child.Editor is not null)`
-   branch handles all non-`SettingsGroupEditorViewModel` editors by title match. No code
-   change needed IF the page title alone is sufficient for discovery. If the page needs
-   richer search (e.g. matching individual entries), add a new branch.
+3. **Nothing to update in search** — the walk handles any editor by page title. If the
+   page is rooted at one JSON path and should surface property-level hits, declare
+   `IJsonPathScopedEditor` on the VM and return that path; if it renders a flat schema
+   list, declare `ISchemaGroupEditor`. There is no central type map to edit.
 4. Add a `SearchViewModelTests` test case for the new page (see
    `ExecuteSearch_SpecializedEditor_MatchedByPageTitle` as a template).
 
@@ -171,7 +228,7 @@ foreach (var navNode in NavigationTree)
 {
     foreach (var child in navNode.Children)
     {
-        if (child.Editor is not SettingsGroupEditorViewModel groupEditor) continue;
+        if (child.Editor is not ISchemaGroupEditor groupEditor) continue;
         foreach (var schema in SearchViewModel.FlattenSchemaNodes(groupEditor.SchemaNodes))
         {
             if (!string.IsNullOrEmpty(schema.JsonPath))
@@ -258,12 +315,12 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 | File                                       | Role                                                                         |
 |--------------------------------------------|------------------------------------------------------------------------------|
 | `MainWindowViewModel.cs`                   | Integration hub; SDK lifecycle, nav tree build, search VM construction       |
-| `SearchViewModel.cs`                       | Debounced search; schema walk + specialized editor title match               |
-| `SearchResultViewModel.cs`                 | Immutable row in search results; carries `Node`, `PropertyKey`, `Snippet`    |
+| `ClaudeSyntheticSearch.cs`                 | This app's pinned search rows: trigger phrases, nav targets, card titles     |
+| ⚠ `SearchViewModel.cs` / `SearchResultViewModel.cs` | **moved** — `src/AgentForge.Avalonia.Shell/Search/` (see §3) |
 | `SettingsGroupEditorViewModel.cs`          | Generic property group editor; exposes `SchemaNodes`, `Editors`, `GroupName` |
-| `Editors/PermissionsEditorViewModel.cs`    | Specialized editor; no schema node list                                      |
-| `Editors/HooksEditorViewModel.cs`          | Specialized editor                                                           |
-| `Editors/McpServersEditorViewModel.cs`     | Specialized editor                                                           |
+| `Editors/PermissionsEditorViewModel.cs`    | Specialized editor; `IJsonPathScopedEditor` ⇒ `"permissions"`                |
+| `Editors/HooksEditorViewModel.cs`          | Specialized editor; `IJsonPathScopedEditor` ⇒ `"hooks"`                      |
+| `Editors/McpServersEditorViewModel.cs`     | Specialized editor; `IJsonPathScopedEditor` ⇒ `"mcpServers"`                 |
 | `Editors/MarketplacesEditorViewModel.cs`   | Specialized editor                                                           |
 | `Editors/EnabledPluginsEditorViewModel.cs` | Specialized editor                                                           |
 
@@ -272,6 +329,6 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 | Seam                                    | File                             | Usage                                                           |
 |-----------------------------------------|----------------------------------|-----------------------------------------------------------------|
 | `GetClaudeCodeSdkClientForTesting()`    | `MainWindowViewModel.cs`         | Access live SDK client for mutation-based integration tests     |
-| `SearchViewModel` delegate constructor  | `SearchViewModel.cs`             | Pass fake `getNavigationTree` + `isLoadingProbe` for unit tests |
+| `SearchViewModel` delegate constructor  | `AgentForge.Avalonia.Shell/Search/SearchViewModel.cs` | Pass fake `getNavigationTree` + `isLoadingProbe`; omit `getSyntheticEntries` for a product-free fixture |
 | `PlatformPaths.TestUserProfileOverride` | `Core/Platform/PlatformPaths.cs` | Redirect `~/.claude/` to sandbox                                |
 | `DebugFlags.ResetForTesting()`          | `Services/DebugFlags.cs`         | Reset flags + `PlatformInfo.Current` in `[TestCleanup]`         |
