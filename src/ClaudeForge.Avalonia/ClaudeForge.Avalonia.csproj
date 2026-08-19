@@ -26,6 +26,9 @@
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
         <ProjectReference Include="..\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj" />
+        <!-- Neutral host-service interfaces (IPermissionPathPicker lives here: it is a file
+             picker, not a permissions type). -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
     </ItemGroup>
 
     <ItemGroup>
