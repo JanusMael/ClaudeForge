@@ -498,6 +498,16 @@ dotnet test --no-build
 # Expected: 0 failed. The total / skip counts drift per release; the green
 # baseline is whatever the most recent successful run on main reported.
 
+# 2b. A LOCAL green is weaker than CI's, and predictably so.
+#     BuildFilePathIntegrityTests checks that hardcoded paths still resolve.
+#     Git does not track EMPTY directories, so a doc path naming a directory
+#     that exists only as an empty leftover on your machine passes here and
+#     fails in a fresh checkout. This has now bitten twice.
+find src tests -type d -empty        # any output = a path guard you cannot trust
+git status --porcelain --ignored=no  # untracked files a fresh clone will not have
+# Expected: no empty directories under src/ or tests/. Delete them, then re-run
+# step 2 before believing it.
+
 # 3. Trim-safe publish — required after touching anything reflection-y, JSON
 #    serialization, AXAML DataTemplate/UserControl, or third-party deps.
 pwsh src/publish/publish.ps1 -All -Rids win-x64
