@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
@@ -13,25 +14,6 @@ public enum PermissionBucket
 
     /// <summary>The <c>permissions.deny</c> array.</summary>
     Deny,
-}
-
-/// <summary>The resolved decision for a candidate.</summary>
-public enum PermissionOutcome
-{
-    /// <summary>An allow rule matched — the tool runs without prompting.</summary>
-    Allow,
-
-    /// <summary>An ask rule matched — Claude Code prompts the user.</summary>
-    Ask,
-
-    /// <summary>A deny rule matched — the tool call is blocked.</summary>
-    Deny,
-
-    /// <summary>
-    /// No rule matched — the outcome falls through to
-    /// <see cref="PermissionDecision.DefaultMode"/>.
-    /// </summary>
-    Default,
 }
 
 /// <summary>
