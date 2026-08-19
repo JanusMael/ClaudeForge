@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
@@ -337,7 +338,7 @@ public sealed class BackupEngine
             // Manifest + schemas are added via AddTextEntry (string content)
             // so they bypass the FileTransformer + precompute pipeline
             // naturally — neither needs redaction.
-            BundleSchemas(writer);
+            BundleSchemas(writer, request.Products);
             writer.AddTextEntry("manifest.json",
                 JsonSerializer.Serialize(manifest, BackupJsonContext.Default.BackupManifest));
 
@@ -1004,12 +1005,42 @@ public sealed class BackupEngine
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Copies every embedded schema resource into the archive under <c>Schemas/</c>.
-    /// Called during <see cref="CreateAsync"/> so that the archive carries the
-    /// exact schema version that was current when the backup was made.
+    /// Copies the embedded schema resources <b>this archive's products can be validated
+    /// against</b> into the archive under <c>Schemas/</c>. Called during
+    /// <see cref="CreateAsync"/> so that the archive carries the exact schema version that
+    /// was current when the backup was made.
     /// </summary>
-    private static void BundleSchemas(ZipArchiveWriter writer)
+    /// <remarks>
+    /// <para>
+    /// <b>Why this filters by product rather than bundling everything.</b> It used to copy
+    /// every <c>.json</c> under <c>Assets/Schemas/</c>, which was harmless while every
+    /// bundled schema belonged to a hosted Claude product. It stops being harmless the
+    /// moment a second agent's schemas ship in the same folder: OpenCode's TUI schema alone
+    /// is ~1.1 MB, so every ClaudeForge backup would grow by more than a megabyte of rules
+    /// it can never be checked against, and every restore would parse them.
+    /// </para>
+    /// <para>
+    /// <see cref="RestoreEngine"/> would still be <i>correct</i> — it routes each config
+    /// file to the schema its own product names, so an irrelevant schema is loaded and then
+    /// never matched. This is about size and parse cost, not correctness, which is why it
+    /// would never have surfaced as a failure.
+    /// </para>
+    /// <para>
+    /// Each product contributes its <see cref="ProductDescriptor.SchemaFileName"/> and that
+    /// schema's overlay sibling. An unknown resource under <c>Assets/Schemas/</c> belonging
+    /// to no requested product is skipped, which is also the behaviour that keeps a future
+    /// product's schemas out of this product's archives.
+    /// </para>
+    /// </remarks>
+    private static void BundleSchemas(ZipArchiveWriter writer, IReadOnlyList<ProductDescriptor> products)
     {
+        HashSet<string> wanted = new(StringComparer.OrdinalIgnoreCase);
+        foreach (ProductDescriptor product in products)
+        {
+            wanted.Add(product.SchemaFileName);
+            wanted.Add(SchemaRegistry.OverlayFileNameFor(product.SchemaFileName));
+        }
+
         Assembly assembly = typeof(SchemaRegistry).Assembly;
         foreach (string resourceName in assembly.GetManifestResourceNames())
         {
@@ -1026,6 +1057,11 @@ public sealed class BackupEngine
 
             string fileName = resourceName[prefix.Length..];
             if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!wanted.Contains(fileName))
             {
                 continue;
             }
