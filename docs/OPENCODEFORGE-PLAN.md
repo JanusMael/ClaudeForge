@@ -3003,6 +3003,52 @@ both an added and a modified change. **A fixture derived from what it checks can
 detect that thing moving** — same family as 4d-2's `ArchiveFolder`, 4c's single-document
 workspaces, and 4f's `ClaudeScope._cache`.
 
+### First CI run on this branch — what fifty-six unpushed commits were hiding
+
+The branch reached CI for the first time at `8144fd4`, after fifty-six commits verified
+only on Windows. **CodeQL passed clean and the Trim Check passed**; `Build & Test` failed
+on **all three** operating systems, which immediately ruled out a platform bug and
+pointed at something the local runs could not see.
+
+**Failure 1 — `EveryHardcodedRepoPathInBuildFilesExists`, all three OSes.**
+`src/ClaudeForge/ViewModels/Editors/AGENTS.md` cited
+`src/LayeredEditors.Avalonia/ViewModels` for the generic leaf editors, which live in
+`src/LayeredEditors.ViewModels`. The doc used the **namespace** shape
+(`Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels`) as a **directory path**, and for
+that project the two genuinely differ. **This branch introduced it**, in `8834039` during
+the Phase 1 renames — precisely the rot the guard exists to catch.
+
+⚠⚠ **WHY THE GUARD DID NOT CATCH IT LOCALLY, AND WHY THAT GENERALISES.** An **empty,
+untracked** `src/LayeredEditors.Avalonia/ViewModels` directory existed on the development
+machine. **Git does not track empty directories**, so the path resolved locally and was
+absent in a fresh checkout. **For any path naming a DIRECTORY rather than a file, the
+local guard is systematically weaker than the same guard in CI.** Phase 5 slice 1 hit the
+same class of thing (five empty untracked directories reading as a half-finished
+extraction), so this is the **second** time empty directories have misled this work.
+Added to the root `AGENTS.md` verify-before-shipping checklist as a `find -type d -empty`
+step. Reproduced before fixing: deleting the directory reproduced the CI message exactly.
+
+**Failure 2 — `StatusControllerTests.Set_SuccessKind_AutoClearsAfterDelay`, macOS only.**
+Avalonia platform start-up threw `InvalidOperationException: The calling thread cannot
+access this object because a different thread owns it`, from `Compositor..ctor` →
+`DefaultRenderLoop.Add` → `Dispatcher.VerifyAccess`. `HeadlessUnitTestSession.GetOrStartForAssembly`
+starts the session **lazily**, so whichever test is scheduled first owns starting the
+Avalonia platform — and that ordering differs per run and per OS. **The consequence was
+worse than the fault**: a platform start-up failure was reported against a status-bar
+auto-clear assertion with no connection to compositor construction.
+
+`HeadlessSessionBootstrap` now starts the session once from `[AssemblyInitialize]`.
+⚠ **That is justified on diagnosability grounds; whether it FIXES macOS is unverified** —
+there is no macOS machine on the development side and CI cannot be re-run from there, so
+CI is the only oracle. If it recurs, the next step is the platform-init path, not the
+status-bar tests.
+
+⚠ **Access split worth knowing:** the development machine's stored GitHub credential has
+**READ** on the repo but not write, so CI results can be fetched and analysed from there
+while pushing has to happen elsewhere — currently via `git bundle`. That is workable but
+it makes every CI round-trip a two-party operation; **budget for it rather than assuming
+a fast fix-and-repush loop.**
+
 ### Phase 6 — Shared permission *vocabulary* (Problem 5) — **much smaller than drafts 10–11**
 
 Not an extraction. Define `PermissionOutcome` and a generic
