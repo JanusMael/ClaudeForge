@@ -43,6 +43,7 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
 | `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
 | `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
+| `src/AgentForge.Avalonia.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
 | `tests/AgentForge.Core.Tests` | Domain logic |
@@ -52,7 +53,7 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
-When in doubt about which project a file belongs in: if it has Avalonia / Semi.Avalonia references it's `ClaudeForge`; if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`.
+When in doubt about which project a file belongs in: if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`. If it has Avalonia references, ask whether it names a product: shell chrome that does not is `AgentForge.Avalonia.Shell`, and anything Claude-shaped stays in `ClaudeForge`. `AgentForge.*` may never reference `ClaudeForge.*` — `AssemblyLayeringTests` fails the build on both the project graph and compiled references, so guessing wrong is caught rather than merged.
 
 **`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** The shared
 foundation only stays shared if it cannot see either product, and a
