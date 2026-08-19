@@ -1,4 +1,4 @@
-# Essentials Page — Pinned High-Importance Settings
+﻿# Essentials Page — Pinned High-Importance Settings
 
 > **Status:** Shipped. Cards are hand-curated; promoting / demoting a card means editing `EssentialsViewModel.BuildCards` directly.
 
@@ -82,7 +82,9 @@ A reload calls `RefreshAsync(newClient)`, which re-binds every card's read deleg
 
 ### Layer 3 — synthetic search + contextual amber callout
 
-`SearchViewModel.EssentialsTriggers` is a static dictionary mapping each card id (the `EssentialsCardViewModel.Id`, which doubles as the search-deep-link key) to a list of trigger phrases. When the search query contains (or is contained by, for partial typing) any trigger phrase, a synthetic search hit is added pointing at the Essentials node with the card id in `PropertyKey`.
+`ClaudeSyntheticSearch.EssentialsTriggers` (in `src/ClaudeForge/ViewModels/`) is a static dictionary mapping each card id (the `EssentialsCardViewModel.Id`, which doubles as the search-deep-link key) to a list of trigger phrases. `ClaudeSyntheticSearch.Build` turns each entry into a `SyntheticSearchEntry` whose `SearchTrigger.Phrases` rule matches bidirectionally — the query contains a phrase, or a phrase contains the query (so partial typing lands early). The neutral `SearchViewModel` walks that list and adds a hit pointing at the Essentials node with the card id in `PropertyKey`.
+
+> ⚠ Phase 5 slice 3 moved the search machinery to `src/AgentForge.Avalonia.Shell/Search/`; only the trigger **data** is Claude's. Matching, ordering and suppression are the shell's.
 
 `MainWindowViewModel.SelectSearchResult` picks up `IsSynthetic` + `PropertyKey` for results whose `Node.Editor` is the Essentials VM and calls `ActivateAmberCalloutFor(cardId)` — same flow as the existing `PermissionsEditorViewModel.ActivateDangerHint()` for the `--dangerouslySkipPermissions` synthetic.
 
@@ -106,7 +108,7 @@ All new user-visible strings (page header + card titles + bodies + danger banner
 1. Add the `Strings.resx` entries (Title / Body / optionally DangerBanner). Mirror in `Strings.zh-CN.resx` with a **real** translation — `LocalizationParityTests` Contract #2 rejects `TODO` placeholders and Contract #1 requires the key in every locale.
 2. Append the `Designer.cs` accessor properties.
 3. In `EssentialsViewModel.BuildCards`, append a new `list.Add(new EssentialsCardViewModel(...))` block.
-4. Add the card id to `SearchViewModel.EssentialsTriggers` with at least one trigger phrase.
+4. Add the card id to `ClaudeSyntheticSearch.EssentialsTriggers` with at least one trigger phrase, and its localized title to `ClaudeSyntheticSearch.EssentialsCardTitle`.
 5. Update `EssentialsViewModelTests.Cards_PinnedSet_HasElevenCards` to the new count.
 6. Update this doc's "What's pinned" table.
 

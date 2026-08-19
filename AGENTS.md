@@ -1,4 +1,4 @@
-# AGENTS.md — operational rules for LLM contributors
+﻿# AGENTS.md — operational rules for LLM contributors
 
 > Audience: an agent (Claude or otherwise) returning to ClaudeForge cold.
 > Purpose: surface cross-file contracts that aren't visible from a single-file
@@ -532,8 +532,9 @@ pwsh src/publish/publish.ps1 -All -Rids win-x64
 | Compound-editor contract: force-fire, `_isLoading`, child subs, parity table | [`src/ClaudeForge/ViewModels/Editors/AGENTS.md`](./src/ClaudeForge/ViewModels/Editors/AGENTS.md) |
 | Workspace / scope semantics: `ConfigScope` order, `IsDirty` vs `HasActualChanges`, merge rules | [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) |
 | SDK architecture: what the SDK has/doesn't have, `_suppressForwarder`, `_cachedSchemaNodes`, `Changed` threading, `SearchSchema`, test seams | [`src/AgentForge.Sdk/AGENTS.md`](./src/AgentForge.Sdk/AGENTS.md) |
-| ViewModel layer: MWVM integration hub, nav tree structure, `SearchViewModel` contract, specialized editors, JsonPath→NavNode mapping, deep-path capture/restore | [`src/ClaudeForge/ViewModels/AGENTS.md`](./src/ClaudeForge/ViewModels/AGENTS.md) |
+| ViewModel layer: MWVM integration hub, nav tree structure, the search seam (`ClaudeSyntheticSearch` here, machinery in the shell), specialized editors, JsonPath→NavNode mapping, deep-path capture/restore | [`src/ClaudeForge/ViewModels/AGENTS.md`](./src/ClaudeForge/ViewModels/AGENTS.md) |
 | Deep linking: `NodeId` identity, path grammar, `--deep-link`, reload restore, `Locate` vs `Full` | `src/AgentForge.Avalonia.Shell/Navigation/NavDeepPath.cs`, `IDeepNavigable.cs`; wiring in `MainWindowViewModel` (`CaptureDeepPath`, `TryQueueDeepRestore`, `ApplyPendingDeepRestore`); §2 checklist above |
+| Global search: trigger rules, pinned synthetic rows, the two editor interfaces search dispatches on | `src/AgentForge.Avalonia.Shell/Search/` (`SearchViewModel.cs`, `SearchTrigger.cs`, `SyntheticSearchEntry.cs`, `SearchableEditors.cs`); this app's table in `src/ClaudeForge/ViewModels/ClaudeSyntheticSearch.cs`; §3 of the ViewModels guide |
 | Share-sheet service (cross-platform share of text / files) | `src/LayeredEditors.Avalonia.Services/IShareService.cs`, `DefaultShareService.cs`; view-model integrations in `BackupRestoreViewModel`, `EffectiveSettingsViewModel`, `AboutEditorViewModel` |
 
 When in doubt, follow the pointer instead of duplicating content here.

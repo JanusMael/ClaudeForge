@@ -1,4 +1,4 @@
-# Contributing to ClaudeForge
+﻿# Contributing to ClaudeForge
 
 Thanks for your interest. This doc walks you through the dev environment, the rules of the road, and what kinds of contributions we welcome.
 
@@ -43,7 +43,7 @@ The app uses `~/.claude/` (and any open project's `.claude/`) for its real worki
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
 | `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
 | `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
-| `src/AgentForge.Avalonia.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
+| `src/AgentForge.Avalonia.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits: the status bar, deep-path navigation, and global search. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
 | `tests/AgentForge.Core.Tests` | Domain logic |

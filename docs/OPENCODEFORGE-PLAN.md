@@ -1,4 +1,4 @@
-# Plan — OpenCodeForge: a sibling app on a shared AgentForge foundation
+﻿# Plan — OpenCodeForge: a sibling app on a shared AgentForge foundation
 
 > **APPROVED 2026-08-17.** Thirteen adversarial review passes applied. Fact-shaped per the
 > repo's `AGENTS.md`: every claim cites a file, type, or member — never a line number.
@@ -1534,8 +1534,8 @@ out explicitly because they are cross-cutting and easy to miss in a phase-by-pha
 | Surface | Current state | What changes |
 |---|---|---|
 | **Schema search providers** | `MainWindowViewModel.BuildSchemaSearchProviders` builds one `SchemaSearchProvider` per product, hardcoding Claude Code and Claude Desktop | Becomes a loop over `ProductSection`. Result rows already carry the provider's display name, so multi-product grouping in the results list works unchanged. |
-| **Synthetic search hits** | `SearchViewModel.EssentialsTriggers` — a hardcoded trigger table with Claude phrasing (`--dangerouslySkipPermissions`, `bypassPermissions`) plus `TryAddEssentialsSyntheticHits` | Trigger tables become **per-product**, supplied by the app. OpenCode's set should include `share`/`auto-share`, `snapshot`, `permission allow`, `plugin`, `subagent depth`, and — importantly — the *gotcha* phrasings (`OPENCODE_CONFIG_DIR`, `AGENTS.md not loading`) so users searching a symptom land on the explanation. |
-| **`SearchViewModel`'s header-title const** | Holds the Claude Code header node title for synthetic nav targeting | Becomes a per-product id, resolved through the section list. |
+| **Synthetic search hits** ✅ *(slice 3)* | ~~`SearchViewModel.EssentialsTriggers`~~ → `ClaudeSyntheticSearch.Build()` returns a `SyntheticSearchEntry` list; the shell owns matching (`SearchTrigger`), ordering and suppression | Done for Claude; OpenCode supplies its own list. OpenCode's set should include `share`/`auto-share`, `snapshot`, `permission allow`, `plugin`, `subagent depth`, and — importantly — the *gotcha* phrasings (`OPENCODE_CONFIG_DIR`, `AGENTS.md not loading`) so users searching a symptom land on the explanation. |
+| **`SearchViewModel`'s header-title const** ✅ *(slice 3)* | **Gone, not parameterised.** It did two jobs — locate the Permissions node and label each synthetic row's section — and once entries carry both, the parameter disappeared. The neutral constructor names no product at all. | Nothing left to do. |
 | **Nav node ids** | `NavIdClaudeCode` / `NavIdClaudeDesktop` / … consts on `MainWindowViewModel`; uniqueness is **per-parent, not tree-wide**; guarded by `NavigationNodeIdTests` | Each app owns its own id set. **`NavigationNodeIdTests` must run against both apps' trees** — extend the test's tree source rather than copying the test. |
 | **`NavDeepPath`** | Grammar `<page>/<tab>/<item>`; `Slug()`; `FormatItemKey(name, source)` splitting on the LAST `@`; item keys must never contain `/` | Grammar is product-agnostic and moves to the shell unchanged. **The constraint bites harder for OpenCode**: skills are directory-named and `references{}` keys are user-chosen, so both need `Slug()`/`FormatItemKey` discipline and a test asserting no separator leaks in. |
 | **`IDeepNavigable`** | Implemented only by `AgentsSkillsEditorViewModel` | Every new OpenCode page that has tabs/items should implement it — Settings groups, Agents/Commands/Skills/**Rules**, Permissions (deep-link to a tool row), Essentials (deep-link to a card). Follow the `AGENTS.md` checklist, especially: select the tab **first**, await an in-flight load via the `LastRefresh` seam rather than starting a competing one, honour `DeepRestoreMode.Locate`, and return `false` instead of throwing. |
@@ -2653,8 +2653,9 @@ cleanup in `App.axaml.cs`, extended to cover the second window.
 **Parameterize while moving — don't just relocate.** `WindowStateService.StatePath` becomes
 per-app (keeping the `=>` property form; the `static readonly` version bypasses the test
 sandbox). `AppUpdateService` takes `{ Owner, Repo, AssetPattern, CurrentVersion }`.
-`SearchViewModel`'s synthetic-trigger table and header-title const become per-product
-inputs. Add-to-PATH takes the binary name. `NavigationNodeIdTests` is **extended** to scan
+~~`SearchViewModel`'s synthetic-trigger table and header-title const become per-product
+inputs~~ — **done in slice 3**; the table became a supplied entry list and the const
+disappeared entirely. Add-to-PATH takes the binary name. `NavigationNodeIdTests` is **extended** to scan
 both apps' trees, not copied.
 
 Claude residue stays in `src/ClaudeForge`: `EssentialsViewModel.BuildCards`,
@@ -2711,9 +2712,78 @@ not one move.
 |---|---|
 | **status** | ✅ `5fa6f54` — `AgentForge.Avalonia.Shell` created; `StatusController` + `StatusKind` moved |
 | **deep-link** | ✅ **taken 2nd, not 3rd** — `NavDeepPath` + `IDeepNavigable` moved; see the reorder note |
-| search | ⬜ — **the hardest of the "easy" slices; 5 seams, measured below** |
+| **search** | ✅ — `SearchViewModel` + `SearchResultViewModel` moved; 5 seams became **2 interfaces + 1 entry list**; see below |
 | nav | ⬜ — the hard one; see the two-page-compositions note below |
 | save | ⬜ |
+
+### What slice 3 (search) actually cost, and the two things the measurement missed
+
+The five seams collapsed into **three types**, because two of them were the same question
+and two more were a question the editors should answer themselves:
+
+| Measured seam | Became |
+|---|---|
+| synthetic-trigger table (`EssentialsTriggers`) | `SyntheticSearchEntry` list, supplied per pass |
+| card titles (`Strings.EssentialsCard*`) | …the same list — entries carry their own text |
+| editor→schema-key map (`PermissionsEditorViewModel => "permissions"`) | **`IJsonPathScopedEditor`** on the editor |
+| `child.Editor is SettingsGroupEditorViewModel` | **`ISchemaGroupEditor`** on the editor |
+| `n.Editor is EssentialsViewModel` + the `"Permissions"` child title | `SyntheticSearchEntry.FindTarget`, a product-supplied tree lookup |
+
+⭐ **The type map's own comment documented the precondition the move falsified.** It said
+the hardcoded `editor switch` was fine "because the specialized editors are a small, closed
+set defined in this assembly" — true right up until the walk left the assembly. Dependency
+inversion is the only shape that survives a second product: the editor declares its own
+prefix, and there is no central list to forget to update.
+
+**Two things the 5-seam measurement missed — both would have put Claude in the shell.**
+
+1. **The two hand-written permission rows.** `--dangerouslySkipPermissions` and the
+   `bypassPermissions` deep link were never counted as seams (they are string literals, not
+   type couplings) but they are as Claude-specific as anything in the file — a Claude CLI
+   flag and a Claude permission mode, with English prose bodies. **Count string literals as
+   couplings, not just types.**
+2. **`claudeCodeNavTitle` was a constructor parameter.** The seam list treated it as data
+   the host passes, which it is — but it was doing two jobs (locating the Permissions node
+   *and* labelling every synthetic row's section), and once the entries carry both, the
+   parameter disappears. **The neutral constructor no longer names a product at all.**
+
+**The matcher is the part worth having.** Three trigger flavours existed implicitly and
+differed in ways that are easy to get wrong by hand: `Phrases` is bidirectional (query ⊇
+phrase *or* phrase ⊇ query — this is what makes partial typing land early), `Mentions` is
+one-directional, and `PrefixOf` is narrower than both. They are now declared, not coded:
+`SearchTrigger` with `Phrases` / `PrefixOf` / `Mentions` / `Excluding` / `MinQueryLength`.
+An empty trigger matches **nothing**, deliberately — an unreachable row is a visible bug, a
+universally-reachable one pins itself to every search.
+
+⚠ **One deliberate behaviour change, stated not smuggled.** The three matchers disagreed
+about whitespace: Essentials trimmed the query, the two permission rows did not — so
+`"  danger"` failed the prefix rule while `"  bypass"` still matched via its contains rule.
+Unifying them required picking one normalisation. The query is now lower-cased **and
+trimmed** once, before any rule sees it. Pinned by
+`Query_IsTrimmedAndLowered_BeforeTriggersSeeIt`.
+
+**Suppression became order-independent.** The old code added the bypass row and then
+removed the opposite-intent Essentials card, which only worked because the card was added
+first. `Suppresses` is now resolved after the whole list is walked — and an entry whose
+target page is absent suppresses nothing, so a page one install lacks can no longer hide a
+page it has.
+
+⚠⚠ **`BuildFilePathIntegrityTests` did NOT fire on this slice, and that is a gap, not
+good news.** Three stale references survived a fully green suite: a full path inside a
+`.cs` doc comment (`AgentConfigClientCore` cites `SearchViewModel.cs`; the guard scans root
+`*.md` + `AGENTS.md` sidecars only), and two **bare filenames** in an `AGENTS.md` table
+cell, which are not path-shaped and so are not matched. **The phase note above says to
+expect this guard to catch prose rot on every slice — it catches path rot, and only in the
+files it scans.** Bare filenames and `.cs` comments still need a manual grep.
+
+**Coverage the slice added, and why the existing tests could not provide it.** All 51
+pre-existing search tests are Claude fixtures: they construct Claude editor VMs and assert
+on Claude's rows, so they cannot distinguish "the walk works" from "the walk works for
+Claude". Nineteen new tests drive a **fabricated** product — `FakeGroupEditor`,
+`FakeScopedEditor`, a `Widget Forge` entry table — and cover the two-product case in both
+the pinned-row path and the schema walk. **All 12 canaries went red, and the six
+single-failure canaries each killed exactly the test named after the behaviour they broke.**
+
 
 **What slice 1 established, and two things it corrected.**
 
