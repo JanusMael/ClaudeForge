@@ -1,4 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -20,7 +21,7 @@ public enum AboutProduct
     ClaudeDesktop
 }
 
-public partial class AboutEditorViewModel : ObservableObject
+public partial class AboutEditorViewModel : ObservableObject, INavigablePage
 {
     private readonly IShellLauncher _shellLauncher;
     private readonly IDialogService? _dialogService;
@@ -673,5 +674,16 @@ public partial class AboutEditorViewModel : ObservableObject
             ClaudeCodeVersion ??= $"(probe error: {ex.Message})";
             ClaudeDesktopVersion ??= null;
         }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Cheap re-probe of the config-file actions only (see
+    /// <see cref="RefreshConfigAvailability"/>): a settings.json written after launch
+    /// otherwise leaves "Open Config" disabled for the rest of the session.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        RefreshConfigAvailability();
     }
 }

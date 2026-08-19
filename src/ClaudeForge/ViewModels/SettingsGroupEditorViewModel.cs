@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -33,7 +34,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// concrete type.
 /// </para>
 /// </summary>
-public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposable, ISchemaGroupEditor
+public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposable, ISchemaGroupEditor, INavigablePage
 {
     private bool _disposed;
 
@@ -610,10 +611,28 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         }
     }
 
+    /// <inheritdoc />
+    public void OnNavigatedTo()
+    {
+        Activate();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Deactivates unconditionally, including when the incoming editor is this same
+    /// instance. A group editor is rebuilt with the navigation tree, so that case does
+    /// not arise here — and deferring rebuilds is cheap to re-arm even if it did.
+    /// </remarks>
+    public void OnNavigatedFrom(bool replaced)
+    {
+        Deactivate();
+    }
+
     /// <summary>
-    /// Called by <see cref="MainWindowViewModel"/> when this VM's page becomes the
-    /// active editor.  Flushes any deferred scope rebuild so the content is
-    /// immediately up-to-date without blocking during navigation.
+    /// Called when this VM's page becomes the active editor — through
+    /// <see cref="INavigablePage.OnNavigatedTo"/> in the app, and directly from tests.
+    /// Flushes any deferred scope rebuild so the content is immediately up-to-date
+    /// without blocking during navigation.
     /// </summary>
     public void Activate()
     {
@@ -632,10 +651,11 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     }
 
     /// <summary>
-    /// Called by <see cref="MainWindowViewModel"/> when this VM's page is navigated
-    /// away from.  Subsequent shared-scope changes will be queued rather than
-    /// executed immediately. Any active filter is cleared so the next visit starts
-    /// with the full unfiltered list.
+    /// Called when this VM's page is navigated away from — through
+    /// <see cref="INavigablePage.OnNavigatedFrom"/> in the app, and directly from
+    /// tests.  Subsequent shared-scope changes will be queued rather than executed
+    /// immediately. Any active filter is cleared so the next visit starts with the
+    /// full unfiltered list.
     /// </summary>
     public void Deactivate()
     {

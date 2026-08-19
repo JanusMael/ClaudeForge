@@ -1,6 +1,7 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Profile;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -24,7 +25,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// callbacks wired up by <see cref="MainWindowViewModel"/> when the nav node is built.
 /// </para>
 /// </summary>
-public partial class ProfilesViewModel : ObservableObject
+public partial class ProfilesViewModel : ObservableObject, INavigablePage
 {
     private readonly IDialogService _dialogService;
 
@@ -841,6 +842,16 @@ public partial class ProfilesViewModel : ObservableObject
 
         error = string.Empty;
         return true;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Profiles are directories on disk; one created outside the app (or by another
+    /// ClaudeForge window) would otherwise not appear until restart.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
     }
 }
 

@@ -1,4 +1,5 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -31,7 +32,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// Progress is reported through <see cref="ProgressPercent"/> and <see cref="ProgressMessage"/>
 /// so the view can bind to them directly.
 /// </remarks>
-public partial class BackupRestoreViewModel : ObservableObject, IDisposable
+public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INavigablePage
 {
     private bool _vmDisposed;
     private readonly IDialogService _dialogService;
@@ -1250,6 +1251,16 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable
         // Nulling it out severs the link so callbacks from stale VMs are silently dropped
         // rather than firing on the already-replaced host handler.
         PersistentStateChanged = null;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The archive list is a directory listing — re-read it so backups created or
+    /// deleted outside the app are reflected.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
     }
 }
 

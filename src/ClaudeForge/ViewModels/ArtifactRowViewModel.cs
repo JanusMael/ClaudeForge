@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+﻿using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -79,8 +79,8 @@ public sealed partial class ArtifactRowViewModel(EditableMemoryEntry entry) : Ob
     /// </para>
     /// <para>
     /// <b>Known limitation:</b> this does NOT survive a refresh.
-    /// <c>MainWindowViewModel.OnSelectedNodeChanged</c> calls
-    /// <c>AgentsSkillsEditorViewModel.Refresh()</c> on every visit to the page,
+    /// <c>AgentsSkillsEditorViewModel.OnNavigatedTo()</c> calls <c>Refresh()</c> on
+    /// every visit to the page,
     /// which re-walks the filesystem and constructs brand-new rows — so a
     /// selection is lost on navigate-away-and-back.  Filtering preserves it
     /// (<c>ApplyFilter</c> projects the same instances), but durable selection
