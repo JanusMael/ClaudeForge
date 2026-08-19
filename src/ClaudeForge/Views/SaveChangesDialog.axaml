@@ -1,6 +1,6 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+        xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save"
         xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
         xmlns:app="using:Bennewitz.Ninja.ClaudeForge"
         xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"

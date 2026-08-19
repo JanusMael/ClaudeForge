@@ -37,6 +37,7 @@ using Json.Schema;
 using Serilog;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 
 // SDK clients live alongside the legacy SettingsWorkspace
@@ -1862,7 +1863,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // If there are no content differences (e.g., Save is pressed twice), or the user
             // previously unchecked "Show this dialog on save", skip the dialog.
             SaveChangesDialogViewModel? summaryVm =
-                SaveDialogBuilder.Build(DirtySources(), isRestoreContext);
+                SaveDialogBuilder.Build(DirtySources(), ClaudeSaveDialogText.Create(), isRestoreContext);
             // diagnostic logging for the "silent save" bug report.
             // The user reported clicking Save (button enabled => HasUnsavedChanges
             // is true => structural diff is non-empty) but no dialog appearing.
@@ -2149,8 +2150,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     // Save-confirmation dialog construction (BuildChangeSummaryViewModel +
     // AppendSdkSections + AppendSection + DiffJsonObjects + TruncateJson +
-    // ToDisplayPath) moved to ClaudeForge.Services.SaveDialogBuilder in
-    // cleanup. Call sites use SaveDialogBuilder.Build directly.
+    // ToDisplayPath) moved out of this class; Phase 5 slice 5 then moved the
+    // builder itself to AgentForge.Avalonia.Shell.Save. Call sites use
+    // SaveDialogBuilder.Build directly, passing this app's wording.
 
     /// <summary>
     /// Confirms with the user, deletes the persisted UI-state file, and

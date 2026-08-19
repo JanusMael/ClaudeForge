@@ -462,7 +462,8 @@ public sealed class EssentialsViewModelTests
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxOutputTokens)!;
         card.IntValue = 60000;
 
-        SaveChangesDialogViewModel? summary = SaveDialogBuilder.Build([(client, "Claude Code")]);
+        SaveChangesDialogViewModel? summary = SaveDialogBuilder.Build(
+            [(client, "Claude Code")], ClaudeSaveDialogText.Create());
         Assert.IsNotNull(summary,
             "SaveDialogBuilder returned null even though HasUnsavedChanges should be true — " +
             "this means JsonDiff didn't pick up the env change.");
