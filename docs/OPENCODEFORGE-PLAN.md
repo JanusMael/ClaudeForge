@@ -51,6 +51,7 @@
 > | 4 — Product model | ✅ **complete (4a–4f)** — both `IsClaudeCode` booleans replaced, merge rules and the scope ladder are the product's own statements, the shell hosts a list of product sections, and an export names its products in a list at schema v2. One deferral stated explicitly: `ConfigFileDiscoverer` still knows only Claude's file layouts |
 > | 5 — Extract the shell | ✅ **complete, 5 slices** — `AgentForge.Avalonia.Shell` holds `Status/`, `Navigation/`, `Search/`, `Save/`. **This was the plan's abandonment point and its trigger never fired**; all five slices reported in green. One piece **deferred, not rejected**: nav's tree assembly + `ProductSection` enrichment, measured at ~60 neutral lines for a rewrite of the 493-line `BuildNavigationTreeAsync`. Problem 8 was **restated, not solved** — see slice 5 |
 > | 6 — Permission vocabulary | ✅ **complete (`a453063`)** — `PermissionOutcome` is neutral, `Default` is its zero value. **Three of the five drafted deliverables were rejected on measurement**, including `Decision<TRule>`, which does not describe any type that exists |
+> | 7 — `OpenCode.Sdk` | ✅ **complete (7a–7g)** — schemas bundled and product-filtered out of archives, root-`$ref` fixed, and OpenCode's own SDK: products, five-rung ladder, per-key merge policy, two clients with scope discovery, and the permission model. **Seven corrections to this plan, all measured** — see the phase section. Two ladder rungs (Inline, Managed) deliberately undiscovered rather than guessed |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -3158,7 +3159,83 @@ Phase 6 means the extraction was unfaithful; a behavioural diff at Phase 3 means
 generalization was. Keeping those two attributions separate is the whole reason the phases
 are ordered this way — do not merge them.
 
-### Phase 7 — `OpenCode.Sdk`
+### Phase 7 — `OpenCode.Sdk` — ✅ **COMPLETE (7a–7g)**
+
+| Slice | Commit | |
+|---|---|---|
+| 7a | `9bf2c9a` | `BundleSchemas` filters by product — taken **before** the schemas landed, so the hazard never existed in the tree |
+| 7b | `1492adf` | Both schemas bundled; four `models.dev` `$ref`s stripped |
+| 7c | `388b4ab` | Root-`$ref` fallback — **36** top-level nodes for `config.json`, **13** for `tui.json`, exactly S4's numbers |
+| 7d | `e35a167` | `src/OpenCode.Sdk` + tests, both in `ClaudeForge.slnx`; products and the five-rung ladder |
+| 7e | `c8e16bc` | `OpenCodeMergePolicy` — S1's per-key table |
+| 7f | `5fac8ae` | `OpenCodeClient` + `OpenCodeTuiClient` + scope discovery |
+| 7g | `d4f0280` | `OpenCodePermissionModel` + glob matcher |
+
+**Corrections this phase made to the plan, all from measurement:**
+
+1. ⚠ **There are FIVE action-only permission tools, not four.** This document lists
+   `todowrite` / `question` / `webfetch` / `websearch`; the schema also types **`doom_loop`**
+   as action-only. Read the schema, not the prose.
+2. ⚠ **The scope ladder's sixth rung is unresolved and deliberately unimplemented.** Two
+   places here say `… → managed → macOS MDM` (six rungs); Phase 7's own task list says five.
+   Neither is measured. **Five are implemented.** The open question is whether MDM is a
+   distinct layer or merely how `managed` is delivered on macOS, as it is for Claude.
+   Resolving it needs an MDM-managed macOS install.
+3. ⚠ **Confidence across the rungs is not uniform.** S1 measured only
+   `custom < project < inline`. **`Global` and `Managed` are asserted and never exercised**,
+   and the code says so per rung rather than flattening it.
+4. ⛔ **Two rungs are not discovered at all, by decision.** **Inline**
+   (`$OPENCODE_CONFIG_CONTENT`) is a config with *no file behind it* and `DiscoveredFile` is a
+   path — supporting it needs the **shared** loader to accept content that never came from
+   disk. **Managed** has no measured location; a guessed path yields a scope that silently
+   never populates, indistinguishable from a working one. A test asserts both are absent.
+5. ⚠ **`ConfigFileType` gained two members** — the "product members in a neutral enum"
+   deferral surfacing. Measured before extending: **nothing in `src/` branches on
+   `DiscoveredFile.FileType`**; it is a descriptive label. Mislabelling OpenCode's files as
+   Claude's would have been worse. The generalization should take the whole enum.
+6. ⚠ **`GetEffective<T>` does not deserialize collections** — `GetEffective<string[]>` returns
+   `null`. A deliberate limit, not a gap: the obvious fix is reflection-based
+   `JsonSerializer.Deserialize`, which is what produced the `IL2026` warning that broke the
+   Release publish for three phases. **Read arrays as `JsonArray`.**
+7. ⚠ **The glob's `*` crosses directory separators** (`~/.ssh/*` matches `~/.ssh/nested/key`).
+   An interpretation, not a measurement — it fails *safe* for a deny rule and *unsafe* for an
+   allow rule. Worth measuring before anyone leans on `allow` patterns containing separators.
+
+⭐ **`BundleSchemas` was product-blind and would have added ~1.14 MB to every ClaudeForge
+backup.** Correctness was already safe (4b left `RestoreEngine` routing by
+`ProductDescriptor.SchemaFileName`, so a foreign schema is parsed and never matched) — the
+cost was size and parse time, which is exactly why nothing failed. Emptying the bundle failed
+**3** tests, so "schemas reach the archive" was guarded; **nothing asserted *which***, so the
+product filter passed the whole suite unchanged.
+
+⭐ **Size, measured so it is not re-litigated from the raw figure:** `AgentForge.Core.dll`
+goes 721 KB → 1,916 KB, but `tui.json` is 184 near-identical keybind blocks and **gzips to
+1.0%** — ~17.5 KB of real download. **Do not split resources across assemblies over this.**
+
+⚠⚠ **A canary that DIDN'T fire, and a weak fixture — both my own tests.** Replacing the
+client's ladder with `ScopeLadder.Default` failed **zero** tests: every test opened against
+real files, and `EditableScopes` then derives from *discovered documents*, whose scopes
+discovery takes from OpenCode's ladder directly. `Scopes` is read in exactly one place — the
+`DefaultEditableScope` fallback *before* a workspace exists. Separately,
+`KeyOrder_IsPreservedExactly` first used a fixture already in alphabetical order, so an
+alphabetical re-sort left it green — **the same trap slice 4 hit.** *A canary failing fewer
+tests than expected is telling you about the tests.*
+
+⚠ **The schemas are NOT upstream-identical and every refresh must re-strip the four
+`models.dev` `$ref`s.** Guarded rather than documented: `BundledConfigSchema_HasNoExternalRef`
+fails the build. ⛔ An **overlay** was considered and rejected — `BundleSchemas` copies *raw*
+resources into archives and `RestoreEngine` parses each alone, so the restore path would still
+meet an unresolvable external `$ref`, and its evaluate guard catches only `JsonException` /
+`InvalidOperationException` / `ArgumentException`.
+
+⭐ **CI restores, builds AND tests `ClaudeForge.slnx`** — so a project missing from it never
+builds in CI at all, and **a local build cannot catch that.** That `.slnx` entry is the CI
+surface. `AssemblyLayeringTests` needed **no** registration (it scans `src/`+`tests/` from disk
+and `"OpenCode"` was already a product prefix) — canaried by pointing `AgentForge.Sdk.Tests` at
+`OpenCode.Sdk`, which fails and names the edge. ⚠ Any `AgentForge.* → OpenCode.Sdk` edge is a
+**build cycle**, so the shared-*test*-project form is the only canary that compiles.
+
+**The original plan text follows.**
 
 - Bundle both schemas under `AgentForge.Core/Assets/Schemas/` (+ an overlay each) and
   register the live URLs. The refresh tooling and in-app update path land in Phase 13 —
