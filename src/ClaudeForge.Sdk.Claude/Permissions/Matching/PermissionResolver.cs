@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;

@@ -1,4 +1,5 @@
 using Bennewitz.Ninja.ClaudeForge.Avalonia.Localization;
+using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 using CommunityToolkit.Mvvm.ComponentModel;
