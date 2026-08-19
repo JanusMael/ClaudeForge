@@ -3094,9 +3094,26 @@ not:
 |---|---|
 | `PermissionOutcome` → `AgentForge.Abstractions` | ✅ **Done.** Genuinely shared — Claude sorts rules into `permissions.allow`/`ask`/`deny` arrays, OpenCode maps a tool or glob straight to the strings `"allow"`/`"ask"`/`"deny"`. Abstractions is reachable transitively from all four consumers, so **no new project references**. |
 | generic `Decision<TRule>(…, Explanation)` | ⛔ **That shape does not exist.** Real `PermissionDecision` takes **six** params, three of them Claude-only (`PermissionBucket`, `PermissionDefaultMode?`, `DecidingSubcommand`), and there is **no `Explanation`** — the tester computes it in `Explain()`. One producer (`PermissionResolver`), one consumer (`PermissionTesterViewModel`), both Claude and both staying. Genericizing drags **two more Claude enums** into the neutral assembly — precisely the manufactured abstraction this phase forbids. |
-| `IPermissionPathPicker` → `LayeredEditors.Avalonia.Services` | ⛔ **Target namespace does not exist** — `LayeredEditors.Avalonia` has no `Services` directory. The type is genuinely neutral (22 lines, a file picker), but its only consumer is `GuidedRuleBuilderViewModel`, which stays. **Speculative until Phase 9 gives OpenCode a builder; move it then, with a consumer.** |
+| `IPermissionPathPicker` → `LayeredEditors.Avalonia.Services` | ✅ **Done** — but only after a **wrong rejection was caught and reversed**, which is the part worth keeping. See the correction note below. |
 | tester/builder AXAML templates → the shell | ⛔ **Both carry `x:DataType` pointing at the Claude view-models** pass 11 concluded must stay (`PermissionTesterViewModel`, `GuidedRuleBuilderViewModel`). Sharing them means either dragging those VMs into the neutral shell, or dropping `x:DataType` — and that attribute is the strongest AXAML guard in this repo (established 4d-3, re-proved in slices 3 and 5). **Neither trade is worth a 125-line and a 300-line template.** |
 | "five-minute fix": the `Services` → `Sdk` layering violation | ✅ **Already fixed in Phase 1**, by `693da36` "add AgentForge.Abstractions and break the Services -> Sdk violation". `LayeredEditors.Avalonia` now references only `LayeredEditors.*`. **The note was stale, not wrong-at-the-time.** |
+
+⚠⚠ **A REJECTION THAT WAS WRONG, AND HOW IT WAS CAUGHT — read this before trusting any
+"that target does not exist" claim in this document.** `IPermissionPathPicker` was first
+rejected on the grounds that `LayeredEditors.Avalonia.Services` did not exist, because the
+check was `git ls-files src/LayeredEditors.Avalonia | grep -i service` — which looks for a
+**directory inside** that project and finds nothing. **`LayeredEditors.Avalonia.Services` is
+a sibling PROJECT**, and it is exactly the right home: it already holds `IDialogService`,
+`IShareService`, `IShellLauncher`, `IEnvironmentProvider` and `ISaveChangesPrompt`, and
+references nothing but `AgentForge.Abstractions`. The error surfaced one commit later, from
+an unrelated `.slnx` listing during Phase 7 measurement. **When checking whether an assembly
+exists, read `ClaudeForge.slnx`, not the directory tree of a similarly-named project.**
+
+The move cost one `ProjectReference` (`ClaudeForge.Avalonia` → `LayeredEditors.Avalonia.Services`),
+which is a downward reference to neutral UI services and exactly the layering that project
+exists to provide. ⚠ Noted in passing, out of scope: **nothing in `src` implements this
+interface** — `GuidedRuleBuilderViewModel` defaults it to `null`, so the real app has never
+supplied a picker. Only `FakePathPicker` in tests implements it.
 
 ⭐ **ONE DELIBERATE BEHAVIOUR CHANGE, stated not smuggled: `Default` is now the enum's zero
 value.** The members were ordered `Allow`-first, so `default(PermissionOutcome)` was an
