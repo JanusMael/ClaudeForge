@@ -28,9 +28,14 @@
 >
 > ### Implementation status — 2026-08-19
 >
-> Branch **`feat/agentforge-opencodeforge`** @ **`b0989c6`**, **58 commits, pushed, and
-> fully CI-green** (`origin/main` still `930eb41`). Suite: **2,942 passed · 11 skipped ·
-> 0 failed · 0 warnings**.
+> Branch **`feat/agentforge-opencodeforge`**, **61 commits** (`origin/main` still
+> `930eb41`). Suite: **2,944 passed · 11 skipped · 0 failed · 0 warnings**; the trim gate
+> publishes clean.
+>
+> ⚠ **Pushed and CI-green through `b0989c6` (58 commits) — the last three are local only:**
+> `e77939a` (docs), `a453063` (Phase 6), and this one. Nothing in them is expected to move
+> CI — two are docs-only and the third is a BCL enum plus two tests — but that is a
+> prediction, not a result. **Do not report the branch as CI-green at HEAD until a run says so.**
 >
 > ⚠ **Pushing is a two-party operation.** The development machine's stored GitHub
 > credential has **READ but not WRITE** on this repo and will not be changed, so commits
@@ -44,6 +49,8 @@
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. 4f then made the *ladder* the product's (`ScopeLadder`) and **kept the statics** — measured as 2 real edit sites, not 1,150 |
 > | 4 — Product model | ✅ **complete (4a–4f)** — both `IsClaudeCode` booleans replaced, merge rules and the scope ladder are the product's own statements, the shell hosts a list of product sections, and an export names its products in a list at schema v2. One deferral stated explicitly: `ConfigFileDiscoverer` still knows only Claude's file layouts |
+> | 5 — Extract the shell | ✅ **complete, 5 slices** — `AgentForge.Avalonia.Shell` holds `Status/`, `Navigation/`, `Search/`, `Save/`. **This was the plan's abandonment point and its trigger never fired**; all five slices reported in green. One piece **deferred, not rejected**: nav's tree assembly + `ProductSection` enrichment, measured at ~60 neutral lines for a rewrite of the 493-line `BuildNavigationTreeAsync`. Problem 8 was **restated, not solved** — see slice 5 |
+> | 6 — Permission vocabulary | ✅ **complete (`a453063`)** — `PermissionOutcome` is neutral, `Default` is its zero value. **Three of the five drafted deliverables were rejected on measurement**, including `Decision<TRule>`, which does not describe any type that exists |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -806,9 +813,13 @@ types themselves, not layered on top:
 
 **What is actually shared is a vocabulary and a pattern, not ~530 lines of code:**
 
-- `PermissionOutcome` — `Allow` / `Ask` / `Deny` / `Default`. Identical concept, ~10 lines.
-- A **generic decision shape** — `Decision<TRule>(Outcome, MatchedRule, MatchedScope, Explanation)`.
-  Genuinely reusable once parameterized on the rule type.
+- `PermissionOutcome` — `Default` / `Allow` / `Ask` / `Deny`. Identical concept, ~10 lines.
+  ✅ **Shipped in `a453063`**; `Default` leads so an uninitialised value is not a grant.
+- ~~A **generic decision shape** — `Decision<TRule>(Outcome, MatchedRule, MatchedScope, Explanation)`.
+  Genuinely reusable once parameterized on the rule type.~~ ⛔ **REJECTED ON MEASUREMENT
+  (Phase 6).** The real `PermissionDecision` has six params — three Claude-only — and no
+  `Explanation` at all; that field is computed in the tester. Reusable *in principle* is not
+  the same claim as reusable *as written*, and this one was never read before being drafted.
 - The **UI pattern** — a tester panel (tool selector → input → explained verdict) and a
   rule editor. The *view templates* can be shared; the view-models cannot.
 
@@ -3067,22 +3078,59 @@ while pushing has to happen elsewhere — currently via `git bundle`. That is wo
 it makes every CI round-trip a two-party operation; **budget for it rather than assuming
 a fast fix-and-repush loop.**
 
-### Phase 6 — Shared permission *vocabulary* (Problem 5) — **much smaller than drafts 10–11**
+### Phase 6 — Shared permission *vocabulary* (Problem 5) — ✅ **DONE (`a453063`)**
 
-Not an extraction. Define `PermissionOutcome` and a generic
+Not an extraction. ~~Define `PermissionOutcome` and a generic
 `Decision<TRule>(Outcome, MatchedRule, MatchedScope, Explanation)` in
 `AgentForge.Abstractions`, move the three narrow UI interfaces, and share the tester/builder
-**view templates**. Everything else stays Claude-side; OpenCode gets its own implementation
+**view templates**.~~ Everything else stays Claude-side; OpenCode gets its own implementation
 in Phase 9.
 
-**Both permission assemblies are cut** — pass 11 confirmed even the three "narrow
-interfaces" are Claude-shaped (`AddAllow`/`AddDeny`/`AddAsk` over `PermissionRule`). What
-survives: the outcome vocabulary → `AgentForge.Abstractions`; `IPermissionPathPicker` →
-`LayeredEditors.Avalonia.Services` (it's a file picker, not a permissions type); the AXAML
-templates → the shell. Everything else stays in `ClaudeForge.Avalonia` / `ClaudeForge.Sdk.Claude`.
+**⚠⚠ THREE OF THE FIVE DELIVERABLES DID NOT SURVIVE MEASUREMENT.** The phase shrank again,
+from "hours" to **one enum plus two tests**. What was actually built, and why the rest was
+not:
 
-This phase is now **hours, not days** — which is the right outcome. Do not manufacture an
-abstraction to justify the phase.
+| Deliverable as written | Measured |
+|---|---|
+| `PermissionOutcome` → `AgentForge.Abstractions` | ✅ **Done.** Genuinely shared — Claude sorts rules into `permissions.allow`/`ask`/`deny` arrays, OpenCode maps a tool or glob straight to the strings `"allow"`/`"ask"`/`"deny"`. Abstractions is reachable transitively from all four consumers, so **no new project references**. |
+| generic `Decision<TRule>(…, Explanation)` | ⛔ **That shape does not exist.** Real `PermissionDecision` takes **six** params, three of them Claude-only (`PermissionBucket`, `PermissionDefaultMode?`, `DecidingSubcommand`), and there is **no `Explanation`** — the tester computes it in `Explain()`. One producer (`PermissionResolver`), one consumer (`PermissionTesterViewModel`), both Claude and both staying. Genericizing drags **two more Claude enums** into the neutral assembly — precisely the manufactured abstraction this phase forbids. |
+| `IPermissionPathPicker` → `LayeredEditors.Avalonia.Services` | ⛔ **Target namespace does not exist** — `LayeredEditors.Avalonia` has no `Services` directory. The type is genuinely neutral (22 lines, a file picker), but its only consumer is `GuidedRuleBuilderViewModel`, which stays. **Speculative until Phase 9 gives OpenCode a builder; move it then, with a consumer.** |
+| tester/builder AXAML templates → the shell | ⛔ **Both carry `x:DataType` pointing at the Claude view-models** pass 11 concluded must stay (`PermissionTesterViewModel`, `GuidedRuleBuilderViewModel`). Sharing them means either dragging those VMs into the neutral shell, or dropping `x:DataType` — and that attribute is the strongest AXAML guard in this repo (established 4d-3, re-proved in slices 3 and 5). **Neither trade is worth a 125-line and a 300-line template.** |
+| "five-minute fix": the `Services` → `Sdk` layering violation | ✅ **Already fixed in Phase 1**, by `693da36` "add AgentForge.Abstractions and break the Services -> Sdk violation". `LayeredEditors.Avalonia` now references only `LayeredEditors.*`. **The note was stale, not wrong-at-the-time.** |
+
+⭐ **ONE DELIBERATE BEHAVIOUR CHANGE, stated not smuggled: `Default` is now the enum's zero
+value.** The members were ordered `Allow`-first, so `default(PermissionOutcome)` was an
+**affirmative grant** — the one verdict that must never arrive by accident. Nothing observes
+it today because the tester's field is gated behind `HasResult`; but the type is shared now
+and the next product to hold one is not bound by that gate. **Ordinals were measured before
+reordering, not assumed:** shifting every ordinal by one changed **no test**, so nothing
+persists or compares them. Same reasoning as Phase 3's `default(ConfigScope) == Managed`.
+
+⚠⚠ **THE CANARY IS THE FINDING — restoring `Allow`-first failed exactly ONE test (the new
+guard) while the other 2,943 stayed green.** The hazard was completely unguarded. That is
+the **seventh** instance of the pattern first recorded under 4d ("*every other test in the
+suite exercises one product at a time*"), and it generalizes past products and scopes: **a
+value that is only ever written before it is read is invisible to a suite that only reads it
+after it is written.** Nothing here constructs an unresolved verdict, because the product
+never has one.
+
+⚠ **`MSTEST0032` bit again** (same family as 4e). `Assert.AreEqual(PermissionOutcome.Default,
+default(PermissionOutcome))` is two compile-time constants folded to a tautology and **fails
+the build**. Route through a runtime read — here an uninitialised auto-property on a private
+`UnresolvedVerdict` holder, which models the real hazard better anyway. ⚠ A bare *field*
+does not work either: never-assigned is `CS0649`, and warnings are errors, so the compiler
+objects to the very thing under test. **Use an auto-property.**
+
+**One item the plan never listed, deliberately left for Phase 9:**
+`PermissionOutcomeToBrushConverter` (41 lines) is **completely neutral** — pure outcome →
+brush — and becomes movable now that the enum is shared. It was **not** moved: ⚠
+`ClaudeForge.Avalonia` does **not** reference `AgentForge.Avalonia.Shell` (only the app
+does), so relocating it adds a new layering edge for a single consumer. **Take it when
+OpenCode's tester becomes the second consumer.**
+
+~~This phase is now **hours, not days**~~ — it was **one commit**. Do not manufacture an
+abstraction to justify the phase. That instruction did the work it was written to do: three
+of the five items were rejected by applying it.
 
 **Precision on the "tests pass unchanged" proof** — draft 9 overstated it.
 `PermissionDecision` (`MatchedScope`) and `PermissionResolver` both reference
@@ -4024,7 +4072,7 @@ intermittent cross-test failures.
 | Area | Must-have tests | Notes |
 |---|---|---|
 | **`AgentForge.Jsonc`** — highest risk in the plan | **Byte-stability**: load → save with no edit → assert every byte identical **outside the `"//"` stamp line** (the stamp embeds `DateTime.Now` — see Problem 4; assert the whole file only if option 2 or 3 is chosen). Corpus of real config files: commented, tab-indented, CRLF, BOM, trailing commas, deeply nested. **Single-edit minimality**: change one scalar → assert only that span and the stamp differ. **Comment survival** at every position (leading, trailing, between keys, inside arrays). **Insert/remove at path** with correct indent inference. **Malformed input** → no throw, no data loss. Property-based round-trip over generated documents. | This code sits on the save path for **both** products. Target the densest coverage in the repo. Include a fixture corpus under `tests/AgentForge.Jsonc.Tests/Fixtures/`. |
-| **Shared permission vocabulary** | `PermissionOutcome` and `Decision<TRule>` compile against both products' rule types. Claude's ~200 existing permission tests stay **exactly where they are and unchanged** — there is no extraction to prove faithful, because there is no extraction. | Draft 11 specified an extraction-parity suite here; with Phase 6 reduced to a vocabulary, that suite has nothing to test. |
+| **Shared permission vocabulary** ✅ *(done, `a453063`)* | ~~`PermissionOutcome` and `Decision<TRule>` compile against both products' rule types.~~ **`Decision<TRule>` was rejected on measurement — see Phase 6.** What is asserted instead: `default(PermissionOutcome)` is `Default`, never `Allow`, read through an uninitialised property rather than a folded constant; and the vocabulary is exactly the three shared answers plus fall-through, so a fifth outcome has to be added deliberately. Claude's ~200 existing permission tests stayed **exactly where they are and unchanged**, as predicted — there is no extraction to prove faithful, because there is no extraction. | Draft 11 specified an extraction-parity suite here; with Phase 6 reduced to a vocabulary, that suite has nothing to test. |
 | **`OpenCodePermissionModel`** | Parse/format for: bare-string form · `"*"` wildcard · per-tool action · per-tool `{pattern: action}` · arbitrary (MCP) tool keys · the four action-only tools (`todowrite` `question` `webfetch` `websearch`) rejecting the object form. Glob matching: `*`, `?`, `~`/`$HOME` expansion, `git *` vs `git commit *` specificity. Per-agent override precedence. Deny-wins ordering. | Mirror `tests/ClaudeForge.Sdk.Tests/Permissions/` structure. |
 | **`AgentForge.Artifacts`** | Claude's **existing** Memory / Agents-&-Skills tests pass unchanged. Plus: resolver returns winner **+ full shadowed chain**; same-name across all five source kinds (built-in / global-JSON / global-md / project-JSON / project-md) resolves per S7; three global roots per S8; upward traversal stops at the git worktree root; `skills.paths[]` glob expansion; remote sources listed-not-fetched. | The shadowing tests are the ones that catch real bugs — seed conflicts deliberately. |
 | **`OpenCode.Sdk`** | `DiscoverFiles` for every scope-ladder permutation (no project · project · `OPENCODE_CONFIG` set · `OPENCODE_CONFIG_CONTENT` set · `OPENCODE_CONFIG_DIR` relocated · managed present). Read-only scopes reject writes. `OpenCodeMergePolicy` per S1. JSONC load. Save round-trip through `AgentForge.Jsonc`. Schema validation surfaces real errors. Every test sandboxed via `PlatformPaths.TestUserProfileOverride`. | Mirror `ClaudeCodeClientLifecycleTests` / `ClaudeConfigClientAsyncTests` / `…CoreReentrancyTests` — the thread-safety and reentrancy contracts on `AgentConfigClientCore` apply to `OpenCodeClient` too and must be re-asserted, not assumed. |
