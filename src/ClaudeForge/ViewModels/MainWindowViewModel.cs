@@ -156,10 +156,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // and scheduling a new one with a short delay.
     private CancellationTokenSource? _backupStateSaveCts;
 
-    // Reload guard: prevents concurrent calls to LoadAllWorkspacesAsync.
-    // If a reload arrives while one is already running, _reloadPending is set
-    // and a new reload starts automatically when the in-flight one finishes.
+    // Reload coalescing for ReloadCoreAsync ONLY. If a reload arrives while one is already
+    // running, _reloadPending is set and a new reload starts when the in-flight one finishes.
+    //
+    // ⚠ This comment used to claim it "prevents concurrent calls to LoadAllWorkspacesAsync".
+    // It does not, and never did: it guards ReloadCoreAsync, which is one of three callers.
+    // OpenProjectAsync and InitializeAsync set IsLoading without checking it. That false
+    // statement is why a use-after-dispose race survived unnoticed — the concurrency test
+    // written to cover it named this field while exercising a method it does not protect.
+    // Serialisation now lives in LoadAllWorkspacesAsync itself; see its remarks.
     private bool _reloadPending;
+
+    // Serialises overlapping LoadAllWorkspacesAsync calls. Each call chains onto the previous
+    // one rather than taking a lock, so re-entrancy queues instead of deadlocking.
+    private Task _loadChain = Task.CompletedTask;
 
     // reload-loop guard (companion to _reloadPending).
     //
@@ -3771,7 +3781,67 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// transactional-reload tests can drive it directly without spinning
     /// up the full app event loop.
     /// </summary>
-    internal async Task LoadAllWorkspacesAsync()
+    /// <remarks>
+    /// <para>
+    /// <b>Overlapping calls are serialised here, and that is load-bearing.</b> The body
+    /// disposes the previous SDK clients and then rebuilds the navigation tree against the
+    /// new ones. Two overlapping calls interleave at their <c>await</c> points on the UI
+    /// dispatcher, so one could reach <c>ClaudeCodeSdk?.Dispose()</c> while the other was
+    /// still inside <see cref="BuildNavigationTreeAsync"/> — the tree build then threw
+    /// <see cref="ObjectDisposedException"/> from <c>PermissionsAccessor.GetDefaultModeAt</c>.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>_reloadPending</c> did not cover this, despite a comment that said it did.</b>
+    /// That guard lives in <see cref="ReloadCoreAsync"/>. <see cref="OpenProjectAsync"/> sets
+    /// <c>IsLoading</c> but never checks it, and awaits a folder dialog first — so a
+    /// file-watcher reload could begin while that dialog was open and Open Project would
+    /// proceed regardless. Guarding the callers is what failed; the invariant belongs to the
+    /// method doing the destructive swap.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Serialised, deliberately NOT coalesced.</b> Returning one shared task to
+    /// overlapping callers is the obvious version and it is wrong here:
+    /// <see cref="OpenProjectAsync"/> mutates <see cref="ProjectRoot"/> <i>before</i> calling,
+    /// so a caller that joined an in-flight load would silently never open the newly chosen
+    /// project. Every caller gets a full load, in call order.
+    /// </para>
+    /// </remarks>
+    internal Task LoadAllWorkspacesAsync()
+    {
+        // Chain onto whatever is already running rather than taking a lock. A non-reentrant
+        // lock would deadlock if the load path ever re-entered this method, and the load path
+        // does raise property-change notifications that can drive profile selection — the
+        // reason _suppressProfileChangeReload exists. Chaining cannot deadlock: a re-entrant
+        // caller is simply queued behind the load it came from.
+        //
+        // Safe to read-modify-write without interlocking because every caller is on the
+        // Avalonia UI thread; the assignment happens before the first await inside Chained.
+        Task prior = _loadChain;
+        _loadChain = Chained(prior);
+        return _loadChain;
+
+        async Task Chained(Task previous)
+        {
+            try
+            {
+                await previous.ConfigureAwait(true);
+            }
+            catch
+            {
+                // A prior load's failure is that caller's to report — it must not prevent
+                // this one from running. LoadAllWorkspacesCoreAsync surfaces its own status.
+            }
+
+            await LoadAllWorkspacesCoreAsync().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// The reload itself. Never call directly — go through
+    /// <see cref="LoadAllWorkspacesAsync"/>, which serialises overlapping calls. Its remarks
+    /// explain why that matters.
+    /// </summary>
+    private async Task LoadAllWorkspacesCoreAsync()
     {
         // Transactional reload.
         //
