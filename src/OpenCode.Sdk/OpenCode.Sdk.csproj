@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCode.Sdk</RootNamespace>
+        <AssemblyName>OpenCode.Sdk</AssemblyName>
+        <Description>
+            OpenCode-domain half of the SDK: the config surfaces that exist only because
+            OpenCode defines them — its five-rung scope ladder, its per-key merge rules, its
+            nested tool-to-glob permission map — plus the concrete clients (OpenCodeClient,
+            OpenCodeTuiClient).
+
+            The sibling of ClaudeForge.Sdk.Claude, and deliberately shaped the same way: it
+            references AgentForge.Sdk and never the reverse. AssemblyLayeringTests enforces
+            that from the assembly-name prefix alone, so this project needed no registration
+            there — "OpenCode" was already one of the product prefixes shared code may not
+            reference.
+
+            Nothing Claude-specific may appear here and nothing here may appear in
+            AgentForge.*. Where the two products genuinely agree, the vocabulary lives in
+            AgentForge.Abstractions instead (see PermissionOutcome).
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="OpenCode.Sdk.Tests"/>
+    </ItemGroup>
+</Project>
