@@ -49,7 +49,8 @@ public sealed class SearchResultViewModel
     public bool IsSynthetic { get; init; }
 
     /// <summary>
-    /// Breadcrumb path shown as the secondary line of the tooltip (e.g. "Claude Code › General").
+    /// Breadcrumb path shown as the secondary line of the tooltip — the hosted
+    /// product's section, then the page within it (e.g. "Widget Forge › General").
     /// </summary>
     public string NavigationContext => $"{SectionTitle} › {GroupTitle}";
 
