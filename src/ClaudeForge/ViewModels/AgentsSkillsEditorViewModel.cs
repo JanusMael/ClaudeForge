@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

@@ -201,7 +201,7 @@ The factory has typed-fallback dispatch helpers that concentrate per-property kn
 ### X = Making a page deep-navigable (implementing `IDeepNavigable`)
 
 A page becomes addressable by `--deep-link` and restorable across a reload by
-implementing `src/ClaudeForge/ViewModels/IDeepNavigable.cs`. Grammar and nav-tree
+implementing `src/AgentForge.Avalonia.Shell/Navigation/IDeepNavigable.cs`. Grammar and nav-tree
 resolution are already done — see `ViewModels/NavDeepPath.cs`. Reference
 implementation: `AgentsSkillsEditorViewModel`.
 
@@ -533,7 +533,7 @@ pwsh src/publish/publish.ps1 -All -Rids win-x64
 | Workspace / scope semantics: `ConfigScope` order, `IsDirty` vs `HasActualChanges`, merge rules | [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) |
 | SDK architecture: what the SDK has/doesn't have, `_suppressForwarder`, `_cachedSchemaNodes`, `Changed` threading, `SearchSchema`, test seams | [`src/AgentForge.Sdk/AGENTS.md`](./src/AgentForge.Sdk/AGENTS.md) |
 | ViewModel layer: MWVM integration hub, nav tree structure, `SearchViewModel` contract, specialized editors, JsonPath→NavNode mapping, deep-path capture/restore | [`src/ClaudeForge/ViewModels/AGENTS.md`](./src/ClaudeForge/ViewModels/AGENTS.md) |
-| Deep linking: `NodeId` identity, path grammar, `--deep-link`, reload restore, `Locate` vs `Full` | `src/ClaudeForge/ViewModels/NavDeepPath.cs`, `IDeepNavigable.cs`; wiring in `MainWindowViewModel` (`CaptureDeepPath`, `TryQueueDeepRestore`, `ApplyPendingDeepRestore`); §2 checklist above |
+| Deep linking: `NodeId` identity, path grammar, `--deep-link`, reload restore, `Locate` vs `Full` | `src/AgentForge.Avalonia.Shell/Navigation/NavDeepPath.cs`, `IDeepNavigable.cs`; wiring in `MainWindowViewModel` (`CaptureDeepPath`, `TryQueueDeepRestore`, `ApplyPendingDeepRestore`); §2 checklist above |
 | Share-sheet service (cross-platform share of text / files) | `src/LayeredEditors.Avalonia.Services/IShareService.cs`, `DefaultShareService.cs`; view-model integrations in `BackupRestoreViewModel`, `EffectiveSettingsViewModel`, `AboutEditorViewModel` |
 
 When in doubt, follow the pointer instead of duplicating content here.
