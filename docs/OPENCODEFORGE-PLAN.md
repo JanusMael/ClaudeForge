@@ -2705,6 +2705,44 @@ canaried with a deliberate `Assert.Fail`.
 **Most dangerous phase.** Extract in slices (status → search → deep-link → nav → save),
 not one move.
 
+**Slice progress.**
+
+| Slice | Status |
+|---|---|
+| **status** | ✅ `5fa6f54` — `AgentForge.Avalonia.Shell` created; `StatusController` + `StatusKind` moved |
+| search | ⬜ |
+| deep-link | ⬜ |
+| nav | ⬜ — the hard one; see the two-page-compositions note below |
+| save | ⬜ |
+
+**What slice 1 established, and two things it corrected.**
+
+Status went first because it is the cleanest slice available, which was confirmed rather
+than assumed: `StatusController` imports only `Avalonia.Threading` and
+`CommunityToolkit.Mvvm` and has **zero `Strings.` references**, so it carries none of the
+`Strings.resx` split Problem 8 still owes. `MainWindow.axaml` mentions the types only in
+comments — no markup type references at all.
+
+`AssemblyLayeringTests` covers the new assembly **automatically**: it works from the
+`AgentForge` / `ClaudeForge` name prefixes and checks both the ProjectReference graph and
+compiled assembly references, so no registration is needed for the slices that follow.
+Canaried — pointing the shell at `ClaudeForge.Sdk.Claude` fails
+`SharedProjectsNeverDeclareAProductReference`.
+
+> ⚠ **Five empty directories under `src/` read as an extraction already half-done.**
+> `ClaudeForge.Adapters`, `ClaudeForge.Localization`, `ClaudeForge.Avalonia.Localization`,
+> `ClaudeForge.Avalonia.ViewModels` and `ClaudeForge.Editors.ViewModels` held no files and
+> were untracked — git does not track empty directories, so they survived the
+> MainWindow-extract discarded un-merged on 2026-08-06. Removed in `5fa6f54`. **Anything
+> resembling partial progress in this phase should be checked against `git ls-files` before
+> being believed.**
+>
+> ⚠ **Expect `BuildFilePathIntegrityTests` to fail on most slices, and treat that as the
+> guard working.** Slice 1 turned the suite red because root `AGENTS.md` cited
+> `src/ClaudeForge/ViewModels/Status/StatusController.cs`. Prose falsified by a move is the
+> failure mode this phase produces repeatedly, and the compiler cannot see it — that test is
+> the only thing that can.
+
 ### Phase 6 — Shared permission *vocabulary* (Problem 5) — **much smaller than drafts 10–11**
 
 Not an extraction. Define `PermissionOutcome` and a generic
