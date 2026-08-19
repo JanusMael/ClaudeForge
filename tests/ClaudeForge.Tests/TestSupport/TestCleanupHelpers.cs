@@ -58,6 +58,62 @@ public static class TestCleanupHelpers
     /// </remarks>
     /// <param name="path">Absolute directory path to delete.  No-op if the directory does not exist.</param>
     /// <param name="maxAttempts">Maximum number of delete attempts before re-throwing.  Default 5.</param>
+    /// <summary>
+    /// Delete a single file that a <b>live</b> view-model is watching, tolerating the
+    /// background re-read its <c>ConfigFileWatcher</c> may be part-way through.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the mid-test sibling of <see cref="DeleteDirectoryWithRetry"/>, and the
+    /// difference matters. That one runs in <c>[TestCleanup]</c>, where the view-model is
+    /// finished with and forcing a finaliser pass is the whole point. Here the view-model is
+    /// deliberately still alive — the test is about how it reacts to the file vanishing — so
+    /// a <see cref="GC.Collect()"/> would be both useless and wrong. All that is needed is to
+    /// wait out a read that is already in flight.
+    /// </para>
+    /// <para>
+    /// <b>The race.</b> <c>ConfigFileWatcher</c> debounces for 400 ms. A test that writes a
+    /// config file, reloads, asserts, and then deletes that file does all of it inside the
+    /// debounce window, so the watcher's own reload can be opening the file at the moment the
+    /// test deletes it. Windows refuses to delete a file with an open handle; Unix does not,
+    /// which is why this shows up on <c>windows-latest</c> and passes on ubuntu and macOS in
+    /// the same run.
+    /// </para>
+    /// <para>
+    /// Found by CI, not locally: it failed once, went unreproduced across five later runs
+    /// with even the test name lost to output aggregation, and only recurred here. Timing
+    /// races on a loaded shared runner do not reproduce on a developer machine on demand.
+    /// </para>
+    /// </remarks>
+    /// <param name="path">Absolute file path to delete. No-op if the file does not exist.</param>
+    /// <param name="maxAttempts">Maximum number of delete attempts before re-throwing. Default 5.</param>
+    public static void DeleteFileWithRetry(string path, int maxAttempts = 5)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                File.Delete(path);
+                return;
+            }
+            catch (Exception ex) when (
+                (ex is IOException || ex is UnauthorizedAccessException)
+                && attempt < maxAttempts)
+            {
+                // 50, 100, 200, 400 ms — cumulative 750 ms, which covers the watcher's
+                // 400 ms debounce plus the read it then performs.
+                Thread.Sleep(50 * (1 << (attempt - 1)));
+            }
+        }
+    }
+
     public static void DeleteDirectoryWithRetry(string path, int maxAttempts = 5)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
