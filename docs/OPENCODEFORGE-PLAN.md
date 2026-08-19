@@ -2661,14 +2661,46 @@ Claude residue stays in `src/ClaudeForge`: `EssentialsViewModel.BuildCards`,
 `AgentsSkills*`, `Memory*`, `Profiles*`, `Environment*`, `Editors/*`, `Adapters/*`,
 `NavigationTreeBuilder`, `ModelSuggestion*`, `Catalog/*`.
 
-**Un-inert the 19 headless tests here [decision 9].** `NavigationTreeWelcomeNodeTests` (9),
-`ReloadHardeningTests` (7), and `TransactionalReloadTests` (3) all use
-`return Session.Dispatch(async …)` and therefore **cannot fail**. They cover reload
-hardening and transactional reload — precisely what this extraction puts at risk, so going
-through this phase trusting them is worse than having no tests at all. Rewrite each as a
-plain `async Task` constructing the view-model directly, canary with a temporary
-`Assert.Fail`, and **do it before the extraction starts** so the baseline is honest.
-Expect real failures to surface; fix them as found rather than folding them into the move.
+**Un-inert the 19 headless tests here [decision 9].** ✅ **DONE, ahead of the extraction —
+`a0895f2` (un-inert) · `d8389e6` + `cf49c6c` (the two defects it exposed) · `5f53c4f` (a
+misattribution it corrected).** `NavigationTreeWelcomeNodeTests` (9), `ReloadHardeningTests`
+(7), and `TransactionalReloadTests` (3) all used `return Session.Dispatch(async …)`, which
+binds `Dispatch<T>(Func<T>)` with `T = Task` and yields `Task<Task>`; MSTest awaited only the
+outer task, so no assertion could fail. All 19 now return a value from the lambda and were
+canaried with a deliberate `Assert.Fail`.
+
+> **The population was exactly 19 — the count was right.** `SampleHeadlessTests` also calls
+> `Session.Dispatch` twice but with a **non-async** lambda, which binds `Dispatch(Action, ct)`
+> and is correctly awaited. The trap is specific to `async` lambdas returning `Task`.
+>
+> **15 passed. The 4 that failed were two pre-existing defects, neither a Phase 1–4
+> regression** — both predate Phase 1, because these tests were inert from the day they were
+> written and so never verified anything.
+>
+> | Defect | Root cause | Fix |
+> |---|---|---|
+> | Transactional reload never held (3 tests) | `ConfigFileLoader.LoadAsync` catches `JsonException` and returns an empty `JsonObject`, so PHASE 1's try/catch never fires and the "no throw points past here" swap installs a placeholder. The next save writes that emptiness over the user's real settings — **the loader's own comment predicted exactly this.** | `SettingsDocument.LoadFailure` + `SettingsWorkspace.FailedDocuments`, consulted before PHASE 2 (`d8389e6`) |
+> | Use-after-dispose on concurrent reload (1 test) | One reload reaches `ClaudeCodeSdk?.Dispose()` while another is inside `BuildNavigationTreeAsync`. Reachable in the app: `OpenProjectAsync` sets `IsLoading` but never **checks** it, and awaits a folder dialog first. | Serialise overlapping calls inside `LoadAllWorkspacesAsync` (`cf49c6c`) |
+>
+> ⚠⚠ **A pinned contract contradicted the one these tests asserted, and only one side was
+> enforceable.** `ConfigFileLoaderTests:95` pins the opposite guarantee — a corrupt file must
+> degrade to an empty-root document rather than crash. The conflict turned out to be **only
+> about throwing**, so neither side had to lose: the loader still never throws, and the flag
+> makes the failure visible to the one caller that must be transactional.
+>
+> ⚠⚠ **Two comments asserted guarantees that did not exist**, and both are why these defects
+> survived. `_reloadPending`'s comment said it "prevents concurrent calls to
+> `LoadAllWorkspacesAsync`" — it guards `ReloadCoreAsync`, one of three callers. And the
+> concurrency test named that field while calling a method it does not protect. **A test that
+> cannot fail plus a comment that overstates its guard is how a race lives for years.**
+>
+> **Both fixes are canaried.** Bypassing the serialisation restores `ObjectDisposedException`
+> in 2 tests; disabling the parse-failure bail turns 3 red. Two rejected alternatives are
+> recorded in `LoadAllWorkspacesAsync`'s remarks, because both are the tidier-looking choice:
+> **coalescing** overlapping loads into one shared `Task` would mean `OpenProjectAsync` (which
+> mutates `ProjectRoot` first) silently never opens the new project, and a **non-reentrant
+> lock** would deadlock if the load path re-enters — which it can, via the notifications
+> `_suppressProfileChangeReload` exists to suppress.
 
 **Most dangerous phase.** Extract in slices (status → search → deep-link → nav → save),
 not one move.
