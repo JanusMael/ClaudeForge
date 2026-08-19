@@ -24,12 +24,13 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 /// its own and never navigates anything itself.
 /// </para>
 /// <para>
-/// Product knowledge enters through exactly two seams and no other: the
+/// Product knowledge reaches this class only as data it is handed: the
 /// <see cref="SyntheticSearchEntry"/> list (which hand-written rows exist, and
-/// what they mean) and the two editor interfaces in
-/// <c>SearchableEditors.cs</c> (what shape a page is). Everything below —
-/// debounce, quote stripping, the tree walk, the flattening, the snippet, the
-/// result cap — is the same for any product.
+/// what they mean), the <see cref="SchemaSearchProvider"/> delegates (one per
+/// open product), and the two editor interfaces in <c>SearchableEditors.cs</c>
+/// (what shape a page is). Nothing below names a product: debounce, quote
+/// stripping, the tree walk, the flattening, the snippet and the result cap are
+/// the same whichever product is being edited.
 /// </para>
 /// <para>
 /// Threading: <see cref="OnSearchQueryChanged(string)"/> runs on the UI thread and
