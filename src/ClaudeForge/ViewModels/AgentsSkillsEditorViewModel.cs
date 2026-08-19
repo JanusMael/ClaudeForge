@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -28,7 +28,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// body (post-front-matter) renders below.
 /// </para>
 /// </summary>
-public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable, IDeepNavigable
+public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable, IDeepNavigable, INavigablePage
 {
     // ── Segment ids ──────────────────────────────────────────────────────
     //
@@ -139,8 +139,8 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// navigated to.  Idempotent: subsequent calls after the first load
     /// are no-ops (explicit <see cref="Refresh"/> or the UI Refresh button
     /// still work normally after the initial load completes).
-    /// Called by <c>MainWindowViewModel.OnSelectedNodeChanged</c> when this
-    /// editor becomes active.
+    /// Reached through <see cref="INavigablePage.OnNavigatedTo"/> when this editor
+    /// becomes active.
     /// </summary>
     public void EnsureLoaded()
     {
@@ -617,7 +617,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
     /// <summary>
     /// Synchronous shortcut for the ctor and for
-    /// <c>MainWindowViewModel.OnSelectedNodeChanged</c> — fire-and-forget refresh.
+    /// <see cref="INavigablePage.OnNavigatedTo"/> — fire-and-forget refresh.
     /// The task is retained in <see cref="LastRefresh"/> so a deep-path restore
     /// can await THIS walk instead of starting a competing one.
     /// </summary>
@@ -633,7 +633,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// Without this seam a deep-path restore would call
     /// <see cref="RefreshAsync"/> itself; because that serialises on
     /// <c>_refreshLock</c>, the restore would queue a SECOND full filesystem walk
-    /// behind the one <c>OnSelectedNodeChanged</c> already started, and that
+    /// behind the one the navigation hook already started, and that
     /// second walk would rebuild every row underneath the restore that was busy
     /// resolving one. Same rationale as <see cref="LastDescriptionFill"/>.
     /// </para>
@@ -1690,5 +1690,32 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         CardTools = null;
         CardShowName = false;
         CardShowToolsAndModel = false;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Deferred first-load (the VM is constructed without an eager disk scan, so a
+    /// profile switch does not pay the filesystem cost when the user never visits this
+    /// page) — but re-scan on every later visit too. <c>EnsureLoaded</c> is one-shot by
+    /// design, which meant an agent / skill / command created after the first visit
+    /// stayed invisible for the rest of the session.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Same convention as the Environment page: a user-typed filter is cleared on the
+    /// way out so the next visit starts with the full list. A deep restore applies its
+    /// own navigation filter afterwards, so this does not fight the restore path.
+    /// </remarks>
+    public void OnNavigatedFrom(bool replaced)
+    {
+        if (replaced)
+        {
+            ApplyNavigationFilter(null);
+        }
     }
 }

@@ -1,4 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Security;
 using System.Text.Json.Nodes;
@@ -43,7 +44,7 @@ public sealed record EnvScopeInfo(EnvEditScope Value, string DisplayName, string
 /// Merges System.Environment (Machine → User → Process) with the Claude <c>env</c> dict
 /// into a single read/write view.
 /// </summary>
-public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
+public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable, INavigablePage
 {
     private bool _disposed;
 
@@ -795,4 +796,24 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable
         @"^(ANTHROPIC_|CLAUDE_|DISABLE_AUTOUPDATER|DISABLE_ERROR_REPORTING|DISABLE_FEEDBACK|DISABLE_TELEMETRY|ENABLE_CLAUDEAI_|NODE_|NPM_|npm_|MAX_THINKING_TOKENS|API_TIMEOUT_MS|BASH_|HTTP_PROXY|HTTPS_PROXY|NO_PROXY|GOOGLE_|GCLOUD_|AWS_|CLAUDECODE).*",
         RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
     private static partial Regex MyRegex();
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Environment rebuilds on <c>_client.Changed</c> for SETTINGS edits, but a pure OS
+    /// environment-variable change (a User / Machine var set outside the app, with no
+    /// settings change) has no such signal. Re-read on nav so it is caught.
+    /// <c>Reload</c> preserves the current selection and is a cheap registry / env read.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Reload();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>A user-typed filter is cleared on the way out so the next visit starts
+    /// with the full list.</remarks>
+    public void OnNavigatedFrom(bool replaced)
+    {
+        FilterText = string.Empty;
+    }
 }

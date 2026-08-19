@@ -1,4 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
@@ -38,7 +39,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// the values.
 /// </para>
 /// </summary>
-public class EssentialsViewModel : ObservableObject, IDisposable
+public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
 {
     /// <summary>Group title used for the "View in <c>Permissions</c>" deep-link.</summary>
     internal const string GroupTitlePermissions = "Permissions";
@@ -1129,5 +1130,26 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // and fault the unobserved task — breaking the documented "safe after disposal"
         // contract. A SemaphoreSlim whose AvailableWaitHandle is never accessed owns no
         // unmanaged handle, so leaving it for GC is the correct, race-free choice.
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Essentials is a persistent VM (it survives workspace reloads) that refreshed only
+    /// at creation and subscribes to no change event — unlike its siblings Effective
+    /// Settings and Environment, which subscribe to <c>_client.Changed</c>. So its cards
+    /// (model / effort / token limits / update channel) went stale after an external
+    /// settings edit, or after an edit made on another page such as Model &amp; Effort.
+    /// Re-read on nav. Safe from self-write loops: Essentials live-writes each edit
+    /// immediately, so there are no pending in-page edits for a re-read to clobber, and
+    /// this fires only on navigation TO the page.
+    /// <para>
+    /// The argument-less overload keeps the client already bound, which the host set on
+    /// this same instance during the nav-tree build — passing it again would be the same
+    /// object.
+    /// </para>
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        _ = RefreshAsync();
     }
 }

@@ -1,3 +1,4 @@
+﻿using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -10,7 +11,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Services;
 
 /// <summary>
 /// Builds the categorized navigation groups from a flat list of schema nodes.
-/// Maps schema property names to the navigation groups defined in the app design.
+///
+/// <para>
+/// This app's half of the page-layout seam. The three tables below are Claude
+/// knowledge — which setting belongs on which page, what order the pages appear in,
+/// and what each page is for — and the arrangement that applies them is the neutral
+/// <see cref="SchemaPageLayout"/>. Every layered-config product needs the same split
+/// of a flat schema into themed pages; only the words differ, and the words are what
+/// lives here.
+/// </para>
 /// </summary>
 public static class NavigationTreeBuilder
 {
@@ -127,6 +136,20 @@ public static class NavigationTreeBuilder
         };
 
     /// <summary>
+    /// Claude's page layout, handed to the neutral arranger. <c>"Advanced"</c> is the
+    /// catch-all for a property no table above claims — and it is also listed in
+    /// <see cref="SchemaPageLayout.PageOrder"/>, so it keeps its declared position
+    /// instead of being appended after the ordered pages.
+    /// </summary>
+    internal static readonly SchemaPageLayout Layout = new()
+    {
+        PropertyToPage = PropertyToGroup,
+        PageOrder = GroupOrder,
+        PageDescriptions = GroupDescriptions,
+        FallbackPage = "Advanced",
+    };
+
+    /// <summary>
     /// Build ordered navigation groups with pre-wired <see cref="SettingsGroupEditorViewModel"/>s.
     /// Returns a list of (groupTitle, editorVM) pairs in display order.
     /// </summary>
@@ -162,57 +185,22 @@ public static class NavigationTreeBuilder
         // notice. Editors are built eagerly in each SettingsGroupEditorViewModel
         // ctor, so the sink is fully populated by the time BuildGroups returns.
         factory.UnsupportedShapeSink = unsupportedShapeSink;
-        // Bucket nodes by group
-        Dictionary<string, List<SchemaNode>> buckets = new(StringComparer.Ordinal);
-
-        foreach (SchemaNode node in allNodes)
+        // Bucketing and ordering are the shell's; the tables above are ours.
+        List<NavigationGroup> result = [];
+        foreach (SchemaPage page in Layout.Arrange(allNodes))
         {
-            string group = PropertyToGroup.TryGetValue(node.Name, out string? g) ? g : "Advanced";
-            if (!buckets.TryGetValue(group, out List<SchemaNode>? list))
-            {
-                list = [];
-                buckets[group] = list;
-            }
-
-            list.Add(node);
-        }
-
-        // Build result in defined order, then any remaining buckets alphabetically
-        List<NavigationGroup> result = new();
-        HashSet<string> seen = new(StringComparer.Ordinal);
-
-        foreach (string groupTitle in GroupOrder)
-        {
-            if (!buckets.TryGetValue(groupTitle, out List<SchemaNode>? nodes))
-            {
-                continue;
-            }
-
-            seen.Add(groupTitle);
-            result.Add(BuildGroup(groupTitle, nodes, workspace, sharedScope, browseDialog, factory, sdkClient));
-        }
-
-        foreach ((string groupTitle, List<SchemaNode> nodes) in buckets.OrderBy(kv => kv.Key))
-        {
-            if (seen.Contains(groupTitle))
-            {
-                continue;
-            }
-
-            result.Add(BuildGroup(groupTitle, nodes, workspace, sharedScope, browseDialog, factory, sdkClient));
+            result.Add(BuildGroup(page, workspace, sharedScope, browseDialog, factory, sdkClient));
         }
 
         return result;
     }
 
     /// <summary>
-    /// Build a single navigation group's view-model with description wired in
-    /// from <see cref="GroupDescriptions"/>. Extracted from the inline loop
-    /// bodies so the description-lookup logic lives in one place.
+    /// Build one arranged page's view-model. Extracted from the inline loop body so
+    /// the wiring lives in one place.
     /// </summary>
     private static NavigationGroup BuildGroup(
-        string groupTitle,
-        IReadOnlyList<SchemaNode> nodes,
+        SchemaPage page,
         SettingsWorkspace workspace,
         SharedScopeContext? sharedScope,
         Func<Task<string?>>? browseDialog,
@@ -220,18 +208,17 @@ public static class NavigationTreeBuilder
         ClaudeConfigClientBase? sdkClient)
     {
         SharedScopeContext context = sharedScope ?? new SharedScopeContext();
-        string description = GroupDescriptions.TryGetValue(groupTitle, out string? d) ? d : string.Empty;
         SettingsGroupEditorViewModel vm = new(
-            groupTitle,
-            nodes,
+            page.Title,
+            page.Nodes,
             workspace,
             context,
             browseDialog,
             factory,
-            groupDescription: description,
+            groupDescription: page.Description,
             sdkClient: sdkClient,
             tabCustomizer: ClaudeGroupTabCustomizer.Instance);
-        return new NavigationGroup(groupTitle, vm);
+        return new NavigationGroup(page.Title, vm);
     }
 }
 
