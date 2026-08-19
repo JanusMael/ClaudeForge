@@ -228,7 +228,11 @@ public sealed class HasUnsavedChangesRecheckTests
 
             // ── leg 2: remove Code settings again — banner should re-show
             //    (only assertable if Desktop is also not installed on this machine) ──
-            File.Delete(settingsPath);
+            // Not a bare File.Delete: the write above started ConfigFileWatcher's 400 ms
+            // debounce, so its background re-read can still have this file open here. On
+            // Windows that makes the delete throw; on Unix it does not, which is why this
+            // failed only on windows-latest while ubuntu and macOS passed in the same run.
+            TestCleanupHelpers.DeleteFileWithRetry(settingsPath);
             await vm.ReloadCommand.ExecuteAsync(null);
 
             if (!PlatformPaths.IsDesktopInstalled)
