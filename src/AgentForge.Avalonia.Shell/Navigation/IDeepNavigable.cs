@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 /// <summary>How faithfully a deep path should be re-applied.</summary>
 public enum DeepRestoreMode
@@ -30,8 +30,8 @@ public enum DeepRestoreMode
 /// <list type="bullet">
 ///   <item>
 ///     <b>Reload Window</b> is an in-process rebuild
-///     (<c>MainWindowViewModel.ReloadCoreAsync</c> tears down and recreates every
-///     editor VM), so it restores with <see cref="DeepRestoreMode.Full"/> and
+///     (the host's reload tears down and recreates every editor VM), so it
+///     restores with <see cref="DeepRestoreMode.Full"/> and
 ///     carries <see cref="CaptureTransientState"/> across in memory.
 ///   </item>
 ///   <item>
@@ -47,7 +47,7 @@ public enum DeepRestoreMode
 /// writing anything sensitive to disk. The path is a short, culture-invariant,
 /// safely-persistable address. The transient state is an opaque in-memory
 /// snapshot that may contain an unsaved edit buffer — which is precisely why it
-/// must never reach <c>ClaudeForge-gui-state.json</c>. Editors like Agents &amp;
+/// must never reach the host's persisted GUI-state file. Editors like Agents &amp;
 /// Skills write files directly, so their edit buffer is not part of
 /// <c>HasUnsavedChanges</c> and a reload would otherwise discard typed text with
 /// no warning; carrying it in memory means the editing experience returns with

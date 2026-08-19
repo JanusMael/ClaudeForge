@@ -2710,8 +2710,8 @@ not one move.
 | Slice | Status |
 |---|---|
 | **status** | ✅ `5fa6f54` — `AgentForge.Avalonia.Shell` created; `StatusController` + `StatusKind` moved |
-| search | ⬜ |
-| deep-link | ⬜ |
+| **deep-link** | ✅ **taken 2nd, not 3rd** — `NavDeepPath` + `IDeepNavigable` moved; see the reorder note |
+| search | ⬜ — **the hardest of the "easy" slices; 5 seams, measured below** |
 | nav | ⬜ — the hard one; see the two-page-compositions note below |
 | save | ⬜ |
 
@@ -2737,6 +2737,32 @@ Canaried — pointing the shell at `ClaudeForge.Sdk.Claude` fails
 > resembling partial progress in this phase should be checked against `git ls-files` before
 > being believed.**
 >
+**Slice order changed: deep-link before search.** Nothing forces the plan's original order —
+`SearchViewModel` has **zero** references to `NavDeepPath` / `IDeepNavigable`, so the two are
+independent. The measurement is what decided it:
+
+| | `Strings.` uses | Product-typed couplings | Work to move |
+|---|---:|---|---|
+| `NavDeepPath` (287) + `IDeepNavigable` (118) | **0** | none | namespace + 8 consumer `using`s |
+| `SearchViewModel` (693) | 5 | `EssentialsViewModel`, `SettingsGroupEditorViewModel`, `PermissionsEditorViewModel` | **5 seams** |
+
+Deep-link needed no parameterisation at all. Search needs five: the synthetic-trigger table
+and its card titles (both Claude data — trigger phrases include `"opus"`, `"haiku"`,
+`"claude_code_max_output_tokens"`), the editor→schema-key map
+(`PermissionsEditorViewModel => "permissions"`), the "is this the Essentials node" test
+(`n.Editor is EssentialsViewModel`), the schema-node reach-through
+(`child.Editor is SettingsGroupEditorViewModel`), and the hardcoded `"Permissions"` child
+title. The *algorithm* in `TryAddEssentialsSyntheticHits` is genuinely neutral — walk a
+table, match the query — so the seam shape is the same one 4c and 4f already established:
+**the product supplies the data, the shell owns the walk.**
+
+> ⭐ **One plan item was already done.** `NavigationNodeViewModel` is listed as something to
+> move, but it already lives in `LayeredEditors.ViewModels`; the file in `src/ClaudeForge` is
+> a `global using` alias. That is also why the shell may reference
+> `LayeredEditors.ViewModels` — the layering rule forbids `AgentForge.* -> ClaudeForge.*` /
+> `OpenCode.*`, and `LayeredEditors.*` is neither. **The rest of the Phase 5 item list was
+> checked and is accurate.**
+
 > ⚠ **Expect `BuildFilePathIntegrityTests` to fail on most slices, and treat that as the
 > guard working.** Slice 1 turned the suite red because root `AGENTS.md` cited
 > `src/ClaudeForge/ViewModels/Status/StatusController.cs`. Prose falsified by a move is the

@@ -1,6 +1,8 @@
 using System.Text;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 /// <summary>
 /// Parsing, formatting, and nav-tree resolution for <em>deep paths</em> — the
@@ -104,7 +106,7 @@ public static class NavDeepPath
     /// Shape-only by design: whether the path actually points at a live node is
     /// decided later by <see cref="Resolve"/> against the built tree, because a
     /// path can be perfectly well-formed and still name a page that this install
-    /// does not have (Claude Desktop absent, Welcome node hidden).
+    /// does not have (a hosted product absent, the Welcome node hidden).
     /// </summary>
     /// <returns>
     /// <see langword="true"/> when <paramref name="raw"/> is well-formed;

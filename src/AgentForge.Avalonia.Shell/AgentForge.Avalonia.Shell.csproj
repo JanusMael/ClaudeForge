@@ -23,6 +23,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- NavigationNodeViewModel already lives on the neutral LayeredEditors side, so
+             deep-path resolution can reference it directly. Permitted by
+             AssemblyLayeringTests: its rule forbids AgentForge.* -> ClaudeForge.* /
+             OpenCode.*, and LayeredEditors.* is neither. -->
+        <ProjectReference Include="..\LayeredEditors.ViewModels\LayeredEditors.ViewModels.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- Mirrors the InternalsVisibleTo pattern used by Core / Sdk /
              LayeredEditors.Avalonia. ClaudeForge.Tests is where the shell's
              existing coverage lives; a slice's tests move only if keeping them

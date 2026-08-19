@@ -36,6 +36,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Json.Schema;
 using Serilog;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
