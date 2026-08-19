@@ -214,6 +214,63 @@ individual skills / agents / commands. Now that artifacts have stable item keys
 could reuse the same restore machinery to deep-link straight to one. Deliberately
 not done yet — it is a scope decision, not an oversight.
 
+## §4b Page navigation lifecycle — `INavigablePage`
+
+A page that must re-read something on arrival, or drop transient state on the way
+out, says so itself:
+
+```csharp
+public sealed partial class FooEditorViewModel : ObservableObject, INavigablePage
+{
+    public void OnNavigatedTo() => Refresh();
+    public void OnNavigatedFrom(bool replaced) { if (replaced) ApplyNavigationFilter(null); }
+}
+```
+
+Both members have default no-op bodies — implement only the half you need.
+`MainWindowViewModel.OnSelectedNodeChanged` calls them through the interface and
+knows nothing about any page type.
+
+⚠ **`replaced` is load-bearing, and it is the half that is easy to get wrong.** It is
+`false` when the incoming editor is *this same instance*, which happens because
+several pages deliberately survive a workspace reload and are re-attached to a
+freshly built node. A page that discards a typed filter unconditionally would throw
+it away on every reload — the user never navigated away.
+
+**Why this replaced a type switch.** `OnSelectedNodeChanged` used to be a 128-line
+chain of `editor is SomeConcreteViewModel`, one arm per page, each calling that
+page's differently-named refresh method (`Refresh`, `Reload`, `Activate`,
+`RefreshConfigAvailability`, `RefreshAsync`). Two costs: the host had to name every
+page type in the app, and **a newly added page was simply never refreshed until
+someone remembered to extend the chain** — no compiler signal, and no symptom beyond
+content that is quietly stale.
+
+⚠⚠ **This entire surface was uncovered.** Deleting the leave dispatch failed **zero**
+of 2,910 tests, and forcing the `replaced` flag to a constant in *either* direction
+also failed zero. `tests/ClaudeForge.Tests/Headless/NavigationPageLifecycleTests.cs`
+now pins it, including with a page type this app does not own — which is the only way
+to prove dispatch goes through the interface rather than a list of known types.
+
+Pages implementing it today: settings groups (`Activate` / `Deactivate`), Agents &
+Skills, Profiles, Backup / Restore, About, Memory, Essentials, Environment.
+
+## §4c Splitting the schema into pages — `SchemaPageLayout`
+
+`NavigationTreeBuilder` holds three tables — property→page, page order, page
+descriptions — and hands them to the neutral
+`SchemaPageLayout.Arrange(nodes)`, which does the bucketing and ordering. The tables
+are Claude knowledge; the arrangement is not.
+
+Rules worth knowing before editing the tables:
+
+- A property absent from the map lands on `FallbackPage` (`"Advanced"`).
+- Pages come out in `PageOrder`; a listed page with no properties is skipped.
+- A page named in the map but **missing from `PageOrder` still renders** — appended
+  after the ordered pages, sorted by title. So a typo in either table quietly moves a
+  whole page to the bottom of the tree and changes nothing else.
+  `SchemaPageLayoutTests.ClaudeLayout_EveryMappedPageIsAlsoOrdered` is the guard.
+- Property order within a page is the schema's, not alphabetical.
+
 ## §5 JsonPath → NavigationNodeViewModel mapping
 
 The SDK's `SearchSchema` returns `SchemaSearchResult` with `JsonPath` but no nav target.
@@ -316,6 +373,7 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 |--------------------------------------------|------------------------------------------------------------------------------|
 | `MainWindowViewModel.cs`                   | Integration hub; SDK lifecycle, nav tree build, search VM construction       |
 | `ClaudeSyntheticSearch.cs`                 | This app's pinned search rows: trigger phrases, nav targets, card titles     |
+| `../Services/NavigationTreeBuilder.cs`     | This app's schema→page tables; arrangement is `SchemaPageLayout` (see §4c)   |
 | ⚠ `SearchViewModel.cs` / `SearchResultViewModel.cs` | **moved** — `src/AgentForge.Avalonia.Shell/Search/` (see §3) |
 | `SettingsGroupEditorViewModel.cs`          | Generic property group editor; exposes `SchemaNodes`, `Editors`, `GroupName` |
 | `Editors/PermissionsEditorViewModel.cs`    | Specialized editor; `IJsonPathScopedEditor` ⇒ `"permissions"`                |

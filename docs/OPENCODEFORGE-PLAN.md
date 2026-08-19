@@ -2713,7 +2713,7 @@ not one move.
 | **status** | ✅ `5fa6f54` — `AgentForge.Avalonia.Shell` created; `StatusController` + `StatusKind` moved |
 | **deep-link** | ✅ **taken 2nd, not 3rd** — `NavDeepPath` + `IDeepNavigable` moved; see the reorder note |
 | **search** | ✅ — `SearchViewModel` + `SearchResultViewModel` moved; 5 seams became **2 interfaces + 1 entry list**; see below |
-| nav | ⬜ — the hard one; see the two-page-compositions note below |
+| **nav** | 🔶 **PARTIAL BY DECISION** — the two clean seams taken (`INavigablePage`, `SchemaPageLayout`); tree assembly deliberately NOT extracted. Measurement + reasoning below |
 | save | ⬜ |
 
 ### What slice 3 (search) actually cost, and the two things the measurement missed
@@ -2838,6 +2838,91 @@ table, match the query — so the seam shape is the same one 4c and 4f already e
 > `src/ClaudeForge/ViewModels/Status/StatusController.cs`. Prose falsified by a move is the
 > failure mode this phase produces repeatedly, and the compiler cannot see it — that test is
 > the only thing that can.
+
+### Slice 4 (nav) — measured, then deliberately taken only halfway
+
+This is the abandonment point, so the slice was measured before anything moved and the
+result put to the maintainer rather than absorbed. **The nav surface is ~1,058 lines:**
+
+| Piece | Lines | Genuinely neutral |
+|---|---:|---|
+| `MainWindowViewModel.BuildNavigationTreeAsync` | **493** | ~60 (clear / dispose / dividers / restore); **~430 is this app's page composition** |
+| `OnSelectedNodeChanged` | 128 | shape yes — but a switch over **8 concrete ClaudeForge view-model types** |
+| `RestoreSelectedNode` | 104 | mostly; 3 product page titles pick the defaults |
+| `NavigationTreeBuilder` | 238 | ~40 algorithm; **~110 is a hardcoded Claude property→group map** |
+| 4 small helpers | 95 | yes |
+
+⭐⭐ **THE TWO-COMPOSITIONS PREDICTION WAS WRONG, IN A USEFUL DIRECTION.** The plan
+expected the blocker to be that "Claude Code has pages Desktop has none of", i.e. two
+asymmetric per-product compositions. It is not. **The per-product section is symmetric** —
+header + schema groups + About, identical for both. The asymmetry lives in **eight
+top-level pages** (Essentials, Effective Settings, Environment, Memory, Agents & Skills,
+Profiles, Backup, Welcome) that sit *outside* both product sections, six of which take
+`ClaudeCodeSdk` directly. **Re-derive the obstacle before trusting a prediction about it.**
+
+**What made this the stopping point is the ratio, not the asymmetry.** Slices 1–3 each
+moved a whole unit (status; deep-path; the 753-line search machinery). Slice 4 would move
+**~200 of 1,058 lines**, need two new seams *and* an enrichment of `ProductSection` to
+carry scope contexts and schema nodes — while a 493-line composition stays behind by
+design. That composition is correct where it is: `ProfilesViewModel`'s four callbacks and
+the `_suppressProfileChangeReload` (I14) guard, the H-2 persistent-VM pattern, the
+off-UI-thread editor build, the Backup `Initial*` re-sync that fixed a real
+reload-clobbers-session-edits bug. None of it is neutral and none of it should be.
+
+**Maintainer's decision (2026-08-19): take the two clean seams, leave the tree assembly.**
+The rejected piece was ~60 neutral lines bought with a rewrite of the most
+workaround-dense method in the file.
+
+#### Seam 1 — `INavigablePage` (the page-lifecycle protocol)
+
+`OnSelectedNodeChanged` was a 128-line chain of `editor is SomeConcreteViewModel`, one arm
+per page, each calling that page's differently-named refresh method (`Refresh`, `Reload`,
+`Activate`, `RefreshConfigAvailability`, `RefreshAsync`). Now 61 lines and **zero page
+types named**. Both members carry default no-op bodies so a page implements only the half
+it needs.
+
+⚠ **`OnNavigatedFrom(bool replaced)` carries a flag because the old code had a guard that
+had to be preserved exactly.** `replaced` is `false` when the incoming editor is the same
+instance — which happens because several pages deliberately survive a workspace reload and
+are re-attached to a freshly built node. Without it, a reload throws away a filter the user
+never navigated away from.
+
+⚠⚠ **THE COVERAGE FINDING — the whole surface was untested, and the suite said nothing.**
+Replacing 128 lines of behaviour failed **0 of 2,910**. Canaries then measured it exactly:
+
+| Canary | Failures before the new tests | After |
+|---|---:|---:|
+| `OnNavigatedTo` never dispatched | 11 | 12 |
+| `OnNavigatedFrom` never dispatched | **0** | **5** |
+| `replaced` forced to `true` | **0** | **2** |
+| `replaced` forced to `false` | **0** | **2** |
+
+So the leave hook and *both directions* of the guard were protected by nothing.
+`NavigationPageLifecycleTests` (7) closes it, and two of those drive the dispatch with a
+page type this app does not own — the only way to tell "the host dispatches on the
+interface" apart from "the host happens to name the right types".
+
+#### Seam 2 — `SchemaPageLayout` (flat schema → ordered pages)
+
+`NavigationTreeBuilder` keeps its three tables (property→page, page order, page
+descriptions) as declared data and hands them to the shell's `Arrange`. Rules now stated
+and tested rather than implied:
+
+- unmapped property → `FallbackPage`; the fallback is ordinary once it is in `PageOrder`,
+  so it keeps its declared position instead of being appended;
+- a listed page with no properties is skipped;
+- **a page named in the map but missing from `PageOrder` still renders**, appended sorted
+  by title — so a typo silently relocates a whole page to the bottom of the tree and
+  changes nothing else. `ClaudeLayout_EveryMappedPageIsAlsoOrdered` is the guard, and
+  typo'ing `"Permissions"` in the map is what proves it fires.
+
+10 tests, 7 canaries, all red.
+
+⚠ **One of those canaries caught a weak test of mine.** `Arrange_EmitsPagesInTheDeclared-
+Order` first used page titles whose declared order happened to equal their alphabetical
+order, so ignoring `PageOrder` entirely left it green. Rewritten with titles where the
+declared answer differs from *both* alphabetical and schema order. **A canary that fails
+fewer tests than expected is telling you something about the tests, not the canary.**
 
 ### Phase 6 — Shared permission *vocabulary* (Problem 5) — **much smaller than drafts 10–11**
 
