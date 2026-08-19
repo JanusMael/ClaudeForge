@@ -5,7 +5,7 @@
 > nested combination) — currently MCP servers, Hooks, Permissions, Enabled
 > Plugins, Marketplaces, plus `JsonRaw`, `StringMap`, `McpServerList`,
 > `MarketplaceList`. Generic leaf editors (Boolean, Number, String, Path,
-> Enum, StringArray) live in `src/LayeredEditors.Avalonia/ViewModels/` and
+> Enum, StringArray) live in `src/LayeredEditors.ViewModels/` and
 > are NOT subject to this contract — they migrated to the library base. The
 > App-bridge `PropertyEditorViewModel` is the base for compound and
 > Claude-specific shape editors only.
