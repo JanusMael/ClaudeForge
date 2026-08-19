@@ -2713,7 +2713,7 @@ not one move.
 | **status** | ✅ `5fa6f54` — `AgentForge.Avalonia.Shell` created; `StatusController` + `StatusKind` moved |
 | **deep-link** | ✅ **taken 2nd, not 3rd** — `NavDeepPath` + `IDeepNavigable` moved; see the reorder note |
 | **search** | ✅ — `SearchViewModel` + `SearchResultViewModel` moved; 5 seams became **2 interfaces + 1 entry list**; see below |
-| **nav** | 🔶 **PARTIAL BY DECISION** — the two clean seams taken (`INavigablePage`, `SchemaPageLayout`); tree assembly deliberately NOT extracted. Measurement + reasoning below |
+| **nav** | 🔶 **PARTIAL** — two clean seams taken (`INavigablePage`, `SchemaPageLayout`). **Tree assembly + `ProductSection` enrichment: DEFERRED, not rejected** — measured and costed below, available to pick up whenever the topology question is revisited |
 | save | ⬜ |
 
 ### What slice 3 (search) actually cost, and the two things the measurement missed
@@ -2839,7 +2839,7 @@ table, match the query — so the seam shape is the same one 4c and 4f already e
 > failure mode this phase produces repeatedly, and the compiler cannot see it — that test is
 > the only thing that can.
 
-### Slice 4 (nav) — measured, then deliberately taken only halfway
+### Slice 4 (nav) — measured, then taken partway with the rest deferred
 
 This is the abandonment point, so the slice was measured before anything moved and the
 result put to the maintainer rather than absorbed. **The nav surface is ~1,058 lines:**
@@ -2869,9 +2869,19 @@ the `_suppressProfileChangeReload` (I14) guard, the H-2 persistent-VM pattern, t
 off-UI-thread editor build, the Backup `Initial*` re-sync that fixed a real
 reload-clobbers-session-edits bug. None of it is neutral and none of it should be.
 
-**Maintainer's decision (2026-08-19): take the two clean seams, leave the tree assembly.**
-The rejected piece was ~60 neutral lines bought with a rewrite of the most
-workaround-dense method in the file.
+**Maintainer's decision (2026-08-19): take the two clean seams, leave the tree assembly
+for now.** This is a deferral, not a verdict — Phase 5 is the abandonment point, so the
+whole topology is still open, and nothing here forecloses doing the third piece later.
+
+**What the deferred piece is, so it can be picked up without re-measuring.** Move the ~60
+lines of assembly scaffolding (clear, dispose editors, insert dividers, restore header
+expansion, restore selection) behind a nav-entry descriptor the shell assembles from, and
+enrich `ProductSection` to carry the `SharedScopeContext` and the schema nodes so the
+per-product section — which **is** symmetric — becomes a loop. Cost: a rewrite of the
+493-line `BuildNavigationTreeAsync`, the most workaround-dense method in the file (I14
+`_suppressProfileChangeReload`, the H-2 persistent-VM pattern, the off-UI-thread editor
+build, the Backup `Initial*` re-sync). ~430 lines of page composition stay behind either
+way, correctly.
 
 #### Seam 1 — `INavigablePage` (the page-lifecycle protocol)
 
