@@ -1010,6 +1010,104 @@ public sealed class BackupEngineTests
     //  Helpers
     // ───────────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// The <c>Schemas/</c> entries of an archive, without the folder prefix, sorted.
+    /// </summary>
+    private static List<string> ListBundledSchemas(string zipPath)
+        => ListEntries(zipPath)
+            .Where(e => e.StartsWith("Schemas/", StringComparison.Ordinal))
+            .Select(e => e["Schemas/".Length..])
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>
+    /// An archive carries the schemas its own products are validated against, and no
+    /// others. Before this was enforced, <c>BundleSchemas</c> copied every resource under
+    /// <c>Assets/Schemas/</c> regardless of product — harmless while every bundled schema
+    /// belonged to a Claude product, and a silent ~1.1 MB per-archive cost the moment a
+    /// second agent's schemas ship in the same folder.
+    /// <para>
+    /// Claude Desktop's schema is the stand-in for "a schema that exists in the assembly
+    /// but belongs to a product this archive does not contain" — the same shape a future
+    /// OpenCode schema has, and the reason this test is not tautological.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public async Task CreateAsync_BundlesOnlyTheRequestedProductsSchemas()
+    {
+        string dest = Path.Combine(_fakeHome, "one-product.zip");
+        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
+        });
+
+        Assert.IsTrue(result.Succeeded, result.Message);
+
+        List<string> schemas = ListBundledSchemas(dest);
+
+        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProduct.SchemaFileName,
+            "A backup must carry the schema its own config is validated against.");
+        CollectionAssert.DoesNotContain(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
+            "A Claude Code-only archive must not carry another product's schema. That file "
+            + "can never match anything RestoreEngine routes, so it is pure weight — and the "
+            + "same rule is what keeps a second agent's schemas out of this app's backups.");
+    }
+
+    /// <summary>
+    /// The overlay travels with its base. <c>SchemaRegistry</c> merges
+    /// <c>foo.overlay.json</c> onto <c>foo.json</c> at load time, so an archive carrying
+    /// the base without the overlay would validate on restore against rules the running app
+    /// never uses — and nothing would report a difference.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateAsync_BundlesEachSchemasOverlayAlongsideIt()
+    {
+        string dest = Path.Combine(_fakeHome, "overlay.zip");
+        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeCodeProduct],
+        });
+
+        Assert.IsTrue(result.Succeeded, result.Message);
+
+        // Claude Code is the product that actually has an overlay resource; asserting the
+        // pairing on a product without one would prove nothing.
+        string overlay = SchemaRegistry.OverlayFileNameFor(
+            SchemaRegistry.ClaudeCodeProduct.SchemaFileName);
+        CollectionAssert.Contains(ListBundledSchemas(dest), overlay,
+            $"'{overlay}' is merged onto the base schema at load time, so it has to be in "
+            + "the archive too or restore validates against rules the app does not use.");
+    }
+
+    /// <summary>
+    /// Two products requested, both products' schemas present. The suite overwhelmingly
+    /// exercises one product at a time, which is how a filter that silently keeps only the
+    /// first would survive — so this constructs two deliberately.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateAsync_BundlesEveryRequestedProductsSchema_NotJustTheFirst()
+    {
+        string dest = Path.Combine(_fakeHome, "two-products.zip");
+        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+        });
+
+        Assert.IsTrue(result.Succeeded, result.Message);
+
+        List<string> schemas = ListBundledSchemas(dest);
+        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProduct.SchemaFileName);
+        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
+            "The second requested product's schema is missing — a loop that stops after the "
+            + "first product looks identical to a correct one in every single-product test.");
+    }
+
     private static List<string> ListEntries(string zipPath)
     {
         using FileStream fs = File.OpenRead(zipPath);

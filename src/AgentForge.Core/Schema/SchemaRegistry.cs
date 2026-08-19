@@ -508,6 +508,22 @@ public sealed class SchemaRegistry : IDisposable
         => BundledResource.TryRead("Schemas", cacheFileName);
 
     /// <summary>
+    /// The overlay sibling for a bundled schema file name: for <c>foo.json</c> it is
+    /// <c>foo.overlay.json</c> (inject <c>.overlay</c> before the extension).
+    /// </summary>
+    /// <remarks>
+    /// Extracted so the loader and <c>BackupEngine.BundleSchemas</c> derive the name the
+    /// same way. They are a reader and a writer of the same convention: if only one of them
+    /// changed, an archive would carry a base schema whose overlay had silently stopped
+    /// being included, and the restore-time validation would quietly use un-overlaid rules.
+    /// Nothing would fail loudly.
+    /// </remarks>
+    internal static string OverlayFileNameFor(string schemaFileName)
+        => Path.GetFileNameWithoutExtension(schemaFileName)
+           + ".overlay"
+           + Path.GetExtension(schemaFileName);
+
+    /// <summary>
     /// Read the bundled base schema and apply its sibling <c>.overlay.json</c>
     /// (if present) via RFC 7396 JSON Merge Patch.  Returns the merged bytes,
     /// or <c>null</c> if no base resource exists.
@@ -528,10 +544,7 @@ public sealed class SchemaRegistry : IDisposable
             return null;
         }
 
-        string overlayFileName = Path.GetFileNameWithoutExtension(cacheFileName)
-                                 + ".overlay"
-                                 + Path.GetExtension(cacheFileName);
-        byte[]? overlayBytes = TryReadBundledBytes(overlayFileName);
+        byte[]? overlayBytes = TryReadBundledBytes(OverlayFileNameFor(cacheFileName));
         if (overlayBytes == null)
         {
             return baseBytes; // no overlay, return base unchanged
@@ -552,7 +565,7 @@ public sealed class SchemaRegistry : IDisposable
         {
             Log.Warning(ex,
                 "[Schema] Overlay {Overlay} could not be applied to {Base}; using base unchanged",
-                overlayFileName, cacheFileName);
+                OverlayFileNameFor(cacheFileName), cacheFileName);
             return baseBytes;
         }
     }
