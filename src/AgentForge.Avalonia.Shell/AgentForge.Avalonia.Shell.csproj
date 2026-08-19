@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Avalonia.Shell</RootNamespace>
+        <AssemblyName>AgentForge.Avalonia.Shell</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Description>
+            The product-neutral half of the desktop shell: chrome and services a
+            configuration editor needs regardless of which agent product it edits.
+            Phase 5 of the OpenCodeForge plan moves pieces here in slices, each
+            parameterised on the way through rather than merely relocated.
+
+            Nothing here may name a product. The rule is enforced, not merely
+            documented: AssemblyLayeringTests fails the build if any AgentForge.*
+            project gains a reference to ClaudeForge.* or OpenCode.*, checking both
+            the ProjectReference graph and the compiled assembly references.
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Mirrors the InternalsVisibleTo pattern used by Core / Sdk /
+             LayeredEditors.Avalonia. ClaudeForge.Tests is where the shell's
+             existing coverage lives; a slice's tests move only if keeping them
+             put would leave them unable to see what they assert. -->
+        <InternalsVisibleTo Include="ClaudeForge.Tests" />
+    </ItemGroup>
+</Project>

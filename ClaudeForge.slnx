@@ -20,6 +20,7 @@
         <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
         <Project Path="src/LayeredEditors.ViewModels/LayeredEditors.ViewModels.csproj"/>
         <Project Path="src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj"/>
+        <Project Path="src/AgentForge.Avalonia.Shell/AgentForge.Avalonia.Shell.csproj"/>
         <Project Path="src/ClaudeForge.Avalonia/ClaudeForge.Avalonia.csproj"/>
         <Project Path="src/LayeredEditors.Avalonia.Services/LayeredEditors.Avalonia.Services.csproj"/>
         <Project Path="src/LayeredEditors.Avalonia.Diagnostics/LayeredEditors.Avalonia.Diagnostics.csproj"/>

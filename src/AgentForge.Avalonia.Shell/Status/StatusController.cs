@@ -1,7 +1,7 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 
 /// <summary>
 /// Owns the centre-status-bar's text + lifecycle.  Replaces the prior
@@ -11,7 +11,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
 /// <para>
 /// The controller is an <see cref="ObservableObject"/> so the View can bind
 /// directly to its <see cref="Text"/> / <see cref="Kind"/> / <see cref="IsDismissible"/>
-/// surface; <see cref="MainWindowViewModel"/> hangs one of these off itself
+/// surface; the host window's view-model hangs one of these off itself
 /// (<c>Status</c> property) and routes every status update through
 /// <see cref="Set"/>.
 /// </para>
@@ -162,7 +162,7 @@ public sealed partial class StatusController : ObservableObject, IDisposable
     /// <summary>
     /// Clear the status text + reset the kind to <see cref="StatusKind.None"/>.
     /// Invoked from the View's close-(×) button (bound to
-    /// <c>MainWindowViewModel.DismissStatusCommand</c>) and from
+    /// the host's dismiss command) and from
     /// <see cref="Set"/>'s "empty text" branch.
     /// </summary>
     public void Dismiss()
@@ -265,7 +265,7 @@ public sealed partial class StatusController : ObservableObject, IDisposable
     /// Cancel any pending auto-clear, dispose the owned
     /// <see cref="CancellationTokenSource"/>, and clear the text + kind.
     /// Idempotent — safe to call multiple times.  Called from
-    /// <c>MainWindowViewModel.Dispose()</c> as part of the regular
+    /// the host view-model's <c>Dispose()</c> as part of the regular
     /// window-close teardown chain.
     /// </summary>
     public void Dispose()

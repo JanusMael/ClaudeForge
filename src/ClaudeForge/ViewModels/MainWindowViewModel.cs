@@ -25,7 +25,7 @@ using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
-using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -42,9 +42,10 @@ using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 // Core and Sdk (ConfigScope, SchemaValidationError). Code in MWVM continues to
 // use the Core types by default; the SDK-typed names are reached via Sdk.* .
 // the public Status property below shadows the
-// ClaudeForge.ViewModels.Status namespace; this alias gives unambiguous
+// AgentForge.Avalonia.Shell.Status namespace; this alias gives unambiguous
 // access to the namespace's types (StatusKind, StatusController) inside
-// MainWindowViewModel.
+// MainWindowViewModel. Phase 5 slice 1 moved those two types to the neutral
+// shell — the shadowing hazard is unchanged, only the namespace moved.
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -517,7 +518,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Centre status-bar text + lifecycle.  Replaces the prior bare
     /// <c>string? StatusMessage</c> that never auto-cleared — see
-    /// <see cref="Bennewitz.Ninja.ClaudeForge.ViewModels.Status.StatusController"/> and
+    /// <see cref="Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusController"/> and
     /// <c>CLAUDE.md</c> "Status bar" for the full lifecycle rules.
     /// </summary>
     /// <remarks>
