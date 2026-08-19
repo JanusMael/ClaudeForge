@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 
 /// <summary>
 /// Categorises a centre-status-bar message by lifecycle + severity so the
@@ -45,7 +45,7 @@ public enum StatusKind
     /// Terminal negative outcome the user MUST see (Save failed, Reload
     /// failed, Schema validation blocked the save).  Does NOT auto-clear —
     /// the View shows a close (×) button that calls
-    /// <c>MainWindowViewModel.DismissStatusCommand</c>.  Rendered in red
+    /// the host's dismiss command.  Rendered in red
     /// with a ✗ icon.
     /// </summary>
     Failure = 4,

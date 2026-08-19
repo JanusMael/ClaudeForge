@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Reflection;
 using Avalonia.Headless;
-using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
 
