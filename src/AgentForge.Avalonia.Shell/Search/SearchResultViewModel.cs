@@ -1,4 +1,6 @@
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+﻿using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 
 /// <summary>One search hit for the global property search.</summary>
 public sealed class SearchResultViewModel
@@ -23,7 +25,7 @@ public sealed class SearchResultViewModel
 
     public NavigationNodeViewModel Node { get; }
 
-    /// <summary>Top-level nav section (e.g. "Claude Code" or "Claude Desktop").</summary>
+    /// <summary>Top-level nav section — one hosted product's header node.</summary>
     public string SectionTitle { get; }
 
     public string GroupTitle { get; }
@@ -39,9 +41,10 @@ public sealed class SearchResultViewModel
     public string FullDescription { get; }
 
     /// <summary>
-    /// <c>true</c> for hand-crafted results that are not derived from the schema — e.g. the
-    /// synthetic <c>--dangerouslySkipPermissions</c> entry that maps a CLI flag to a config
-    /// property.  Consumers can use this flag to activate additional contextual UI.
+    /// <c>true</c> for hand-crafted rows that are not derived from the schema — the
+    /// product's <see cref="SyntheticSearchEntry"/> list, which maps things like a CLI
+    /// flag or a page card onto a config property. Consumers use this flag to activate
+    /// additional contextual UI once the row is clicked.
     /// </summary>
     public bool IsSynthetic { get; init; }
 

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -24,8 +25,15 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// Hosts property editors for a named settings group.
 /// Manages the active editing scope and pushes values to the workspace on demand.
 /// Saving/reloading is coordinated by <see cref="MainWindowViewModel"/>.
+/// <para>
+/// Implements <see cref="ISchemaGroupEditor"/> so the neutral search machinery can
+/// match this page property-by-property instead of only by title. Both members it
+/// requires — <see cref="GroupName"/> and <see cref="SchemaNodes"/> — already
+/// existed; the interface only states publicly what search used to infer from the
+/// concrete type.
+/// </para>
 /// </summary>
-public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposable
+public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposable, ISchemaGroupEditor
 {
     private bool _disposed;
 

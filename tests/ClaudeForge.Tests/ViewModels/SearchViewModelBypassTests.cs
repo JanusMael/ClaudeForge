@@ -16,6 +16,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 [TestClass]
 public sealed class SearchViewModelBypassTests
 {
+    /// <summary>This app's synthetic-row table — see <see cref="SearchViewModelTests"/>.</summary>
+    private static readonly Func<IReadOnlyList<SyntheticSearchEntry>> ClaudeEntries =
+        () => ClaudeSyntheticSearch.Build("Claude Code");
+
     private static SearchViewModel WithPermissionsTree()
     {
         NavigationNodeViewModel permNode = new("Permissions");
@@ -25,7 +29,7 @@ public sealed class SearchViewModelBypassTests
         return new SearchViewModel(
             getNavigationTree: () => tree,
             isLoadingProbe: () => false,
-            claudeCodeNavTitle: "Claude Code");
+            getSyntheticEntries: ClaudeEntries);
     }
 
     // A tree with BOTH a Permissions node (Claude Code child) and a top-level
@@ -47,7 +51,7 @@ public sealed class SearchViewModelBypassTests
         NavigationNodeViewModel ccHeader = new("Claude Code");
         ccHeader.Children.Add(permNode);
         ObservableCollection<NavigationNodeViewModel> tree = [essNode, ccHeader];
-        return new SearchViewModel(() => tree, () => false, "Claude Code");
+        return new SearchViewModel(() => tree, () => false, ClaudeEntries);
     }
 
     private static SearchResultViewModel? BypassRow(SearchViewModel vm)
@@ -75,7 +79,7 @@ public sealed class SearchViewModelBypassTests
     {
         NavigationNodeViewModel ccHeader = new("Claude Code");
         ObservableCollection<NavigationNodeViewModel> tree = [ccHeader];
-        SearchViewModel vm = new(() => tree, () => false, "Claude Code");
+        SearchViewModel vm = new(() => tree, () => false, ClaudeEntries);
 
         vm.ExecuteSearch("bypass");
 

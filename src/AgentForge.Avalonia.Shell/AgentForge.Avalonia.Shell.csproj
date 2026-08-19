@@ -28,6 +28,12 @@
              AssemblyLayeringTests: its rule forbids AgentForge.* -> ClaudeForge.* /
              OpenCode.*, and LayeredEditors.* is neither. -->
         <ProjectReference Include="..\LayeredEditors.ViewModels\LayeredEditors.ViewModels.csproj" />
+
+        <!-- Search matches against schema shapes: SchemaSearchResult (Sdk) is what a
+             product's client hands back for a query, and SchemaNode (Core, pulled in
+             transitively) is what a settings-group page exposes. Both are neutral
+             AgentForge.* types describing a config schema, not a product. -->
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
     </ItemGroup>
 
     <ItemGroup>

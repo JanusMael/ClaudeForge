@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -155,8 +156,17 @@ public sealed partial class ToolActionGroup : ObservableObject
 /// Rules are wrapped in <see cref="PermissionRuleViewModel"/> so each row is
 /// editable inline (two-way binding to a string element is not supported in Avalonia).
 /// </summary>
-public partial class PermissionsEditorViewModel : PropertyEditorViewModel
+public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
 {
+    /// <inheritdoc />
+    /// <remarks>
+    /// Search asks the editor rather than mapping its type, so a new specialised
+    /// page becomes searchable by declaring its own subtree. Note the prefix is a
+    /// path, not a title: it matches <c>permissions.allow</c> but never
+    /// <c>hooks.permissions</c>.
+    /// </remarks>
+    public string OwnedJsonPathPrefix => "permissions";
+
     // Stored so OnResetToInherited can restore the on-disk state (same pattern as
     // McpServersEditorViewModel and HooksEditorViewModel).
     private LayeredValue? _lastLayered;
