@@ -44,7 +44,7 @@ public sealed class FakeEditorValue : IEditorValue
     }
 
     /// <summary>
-    /// mirror of <c>ClaudeValueAdapter.EnumerateDefinedScopes()</c>
+    /// mirror of <c>LayeredValueAdapter.EnumerateDefinedScopes()</c>
     /// for the fake test double.  Returns every scope that has an explicit
     /// entry; deduplication isn't needed because <c>With</c> overwrites
     /// existing entries at the same scope.

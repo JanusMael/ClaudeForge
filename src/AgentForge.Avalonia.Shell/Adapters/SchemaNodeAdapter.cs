@@ -3,14 +3,14 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
-namespace Bennewitz.Ninja.ClaudeForge.Adapters;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 
 /// <summary>
 /// Wraps a <see cref="SchemaNode"/> as an <see cref="IEditorSchema"/>, mapping
 /// <see cref="SchemaValueType"/> to <see cref="EditorValueType"/> and parsing the
 /// <see cref="SchemaNode.DefaultValue"/> JSON string once at construction time.
 /// </summary>
-public sealed class ClaudeSchemaAdapter : IEditorSchema
+public sealed class SchemaNodeAdapter : IEditorSchema
 {
     private readonly SchemaNode _inner;
 
@@ -18,7 +18,7 @@ public sealed class ClaudeSchemaAdapter : IEditorSchema
     // computation surfaced as a UI-freeze hot path on profile switch.
     //
     // Profile switch fires ReloadAsync → BuildNavigationTree → constructs
-    // many editors → each editor builds a ClaudeSchemaAdapter from its
+    // many editors → each editor builds a SchemaNodeAdapter from its
     // SchemaNode. Pre-fix, the constructor:
     //   • recursed through ALL Properties to build child adapters
     //   • parsed every DefaultValue JSON string at construction time
@@ -38,15 +38,15 @@ public sealed class ClaudeSchemaAdapter : IEditorSchema
     private readonly Lazy<IEditorSchema?> _itemsSchema;
     private readonly Lazy<object?> _defaultValue;
 
-    public ClaudeSchemaAdapter(SchemaNode inner)
+    public SchemaNodeAdapter(SchemaNode inner)
     {
         _inner = inner;
 
         ValueType = MapValueType(inner.ValueType);
         _properties = new Lazy<IReadOnlyList<IEditorSchema>>(() =>
-            inner.Properties.Select(p => (IEditorSchema)new ClaudeSchemaAdapter(p)).ToList());
+            inner.Properties.Select(p => (IEditorSchema)new SchemaNodeAdapter(p)).ToList());
         _itemsSchema =
-            new Lazy<IEditorSchema?>(() => inner.ItemsSchema is { } items ? new ClaudeSchemaAdapter(items) : null);
+            new Lazy<IEditorSchema?>(() => inner.ItemsSchema is { } items ? new SchemaNodeAdapter(items) : null);
         _defaultValue = new Lazy<object?>(() => ParseDefault(inner.DefaultValue));
         Metadata = BuildMetadata(inner);
     }
@@ -101,7 +101,7 @@ public sealed class ClaudeSchemaAdapter : IEditorSchema
         try
         {
             JsonNode? node = JsonNode.Parse(json);
-            return ClaudeValueAdapter.Normalise(node);
+            return LayeredValueAdapter.Normalise(node);
         }
         catch (JsonException)
         {

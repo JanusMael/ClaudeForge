@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -22,7 +23,7 @@ public abstract class PropertyEditorViewModel
     : LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel
 {
     protected PropertyEditorViewModel(SchemaNode schema, ConfigScope editingScope)
-        : base(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope))
+        : base(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope))
     {
         Schema = schema;
     }
@@ -32,7 +33,7 @@ public abstract class PropertyEditorViewModel
     //  OtherScopesWithData was previously declared here as
     // IReadOnlyList<ConfigScope>.  It moved up to the library typed as
     // IReadOnlyList<IEditorScope>, populated by SetScopeState below via
-    // ClaudeScope.For(...).  AXAML bindings continue to render scope chiclets
+    // ConfigScopeAdapter.For(...).  AXAML bindings continue to render scope chiclets
     // because the App-side scope converters (ScopeToBrush, ScopeToTooltip,
     // ScopeToDisplayName) all accept either IEditorScope or ConfigScope.
 
@@ -109,7 +110,7 @@ public abstract class PropertyEditorViewModel
     /// <summary>
     /// Load editor state from the layered settings at the given scope.
     /// Default implementation wraps <paramref name="layered"/> in a
-    /// <see cref="ClaudeValueAdapter"/> and calls the library's
+    /// <see cref="LayeredValueAdapter"/> and calls the library's
     /// <c>LoadFromValue(IEditorValue, IEditorScope)</c>.
     /// </summary>
     /// <remarks>
@@ -131,7 +132,7 @@ public abstract class PropertyEditorViewModel
         _loadFromLayeredDepth++;
         try
         {
-            LoadFromValue(new ClaudeValueAdapter(layered), ClaudeScope.For(editingScope));
+            LoadFromValue(new LayeredValueAdapter(layered), ConfigScopeAdapter.For(editingScope));
         }
         finally
         {
@@ -202,14 +203,14 @@ public abstract class PropertyEditorViewModel
     /// <inheritdoc/>
     public override object? ToValue()
     {
-        return ClaudeValueAdapter.Normalise(ToJsonValue());
+        return JsonCurrency.FromJsonNode(ToJsonValue());
     }
 
     /// <inheritdoc/>
     public override void LoadFromValue(IEditorValue value, IEditorScope editingScope)
     {
-        ConfigScope configScope = ClaudeScope.ToConfigScope(editingScope);
-        LayeredValue layered = value is ClaudeValueAdapter adapter
+        ConfigScope configScope = ConfigScopeAdapter.ToConfigScope(editingScope);
+        LayeredValue layered = value is LayeredValueAdapter adapter
             ? adapter.Inner
             : BuildFallbackLayeredValue(value, configScope);
         LoadFromLayered(layered, configScope);
@@ -226,9 +227,9 @@ public abstract class PropertyEditorViewModel
     /// </summary>
     protected void SetScopeState(LayeredValue layered, ConfigScope editingScope)
     {
-        EditingScope = ClaudeScope.For(editingScope);
+        EditingScope = ConfigScopeAdapter.For(editingScope);
         EffectiveScope = layered.EffectiveScope.HasValue
-            ? ClaudeScope.For(layered.EffectiveScope.Value)
+            ? ConfigScopeAdapter.For(layered.EffectiveScope.Value)
             : null;
         IsOverridden = layered.IsOverridden;
 
@@ -241,19 +242,19 @@ public abstract class PropertyEditorViewModel
         // "Defined in scopes" row of every property header.
         //
         // Step 3a: the library's OtherScopesWithData is IReadOnlyList<IEditorScope>;
-        // map each ConfigScope through ClaudeScope.For so the AXAML scope converters
+        // map each ConfigScope through ConfigScopeAdapter.For so the AXAML scope converters
         // (which accept either IEditorScope or ConfigScope) keep rendering correctly.
         OtherScopesWithData = layered.Entries
                                      .Where(e => e.Scope != editingScope && e.Value != null)
                                      .Select(e => e.Scope)
                                      .Distinct()
-                                     .Select(scope => (IEditorScope)ClaudeScope.For(scope))
+                                     .Select(scope => (IEditorScope)ConfigScopeAdapter.For(scope))
                                      .ToList();
     }
 
     /// <summary>
     /// Build a minimal <see cref="LayeredValue"/> from an <see cref="IEditorValue"/> that
-    /// is NOT a <see cref="ClaudeValueAdapter"/> (e.g. a test fake).
+    /// is NOT a <see cref="LayeredValueAdapter"/> (e.g. a test fake).
     /// Only the defined entries are included.
     /// </summary>
     private static LayeredValue BuildFallbackLayeredValue(IEditorValue value, ConfigScope editingScope)
@@ -263,17 +264,17 @@ public abstract class PropertyEditorViewModel
         List<ScopeEntry> entries = new();
         foreach (ConfigScope scope in allScopes)
         {
-            ClaudeScope libScope = ClaudeScope.For(scope);
+            ConfigScopeAdapter libScope = ConfigScopeAdapter.For(scope);
             if (value.IsDefinedAt(libScope))
             {
-                JsonNode? raw = ClaudeValueAdapter.Coerce(value.GetValueAt(libScope));
+                JsonNode? raw = JsonCurrency.ToJsonNode(value.GetValueAt(libScope));
                 entries.Add(new ScopeEntry(scope, raw, "/fake"));
             }
         }
 
         // Determine effective scope
         ConfigScope? effectiveScope = value.EffectiveScope is { } es
-            ? ClaudeScope.ToConfigScope(es)
+            ? ConfigScopeAdapter.ToConfigScope(es)
             : null;
         ScopeEntry? effectiveEntry = effectiveScope.HasValue
             ? entries.FirstOrDefault(e => e.Scope == effectiveScope.Value)

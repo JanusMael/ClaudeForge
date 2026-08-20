@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -973,11 +974,11 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             }
 
             LayeredValue layered = _workspace.GetLayeredValue(node.JsonPath);
-            // use the library API (LoadFromValue + ClaudeValueAdapter
-            // + ClaudeScope.For) so the App-bridge subclasses and the migrated library
+            // use the library API (LoadFromValue + LayeredValueAdapter
+            // + ConfigScopeAdapter.For) so the App-bridge subclasses and the migrated library
             // leaves are handled uniformly. App-bridge LoadFromValue routes through the
             // legacy LoadFromLayered override.
-            editor.LoadFromValue(new ClaudeValueAdapter(layered), ClaudeScope.For(EditingScope));
+            editor.LoadFromValue(new LayeredValueAdapter(layered), ConfigScopeAdapter.For(EditingScope));
             editor.PropertyChanged += OnEditorPropertyChanged;
             editors.Add(editor);
         }

@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
-namespace Bennewitz.Ninja.ClaudeForge.Adapters;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 
 /// <summary>
 /// Wraps a <see cref="LayeredValue"/> as an <see cref="IEditorValue"/>, normalising
@@ -10,20 +10,26 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// <c>null | bool | string | long | double | IReadOnlyList&lt;object?&gt; |
 /// IReadOnlyDictionary&lt;string,object?&gt;</c>.
 /// </summary>
-public sealed class ClaudeValueAdapter : IEditorValue
+public sealed class LayeredValueAdapter : IEditorValue
 {
-    public ClaudeValueAdapter(LayeredValue inner)
+    public LayeredValueAdapter(LayeredValue inner)
     {
         Inner = inner;
     }
 
     /// <summary>The underlying <see cref="LayeredValue"/> — used by the App bridge class.</summary>
-    internal LayeredValue Inner { get; }
+    /// <summary>The wrapped value.</summary>
+    /// <remarks>
+    /// Public because a host's editor legitimately unwraps this to reach the layered value it
+    /// came from. It was internal while this adapter lived in the app assembly; the move made
+    /// that an accident of location rather than a decision.
+    /// </remarks>
+    public LayeredValue Inner { get; }
 
     public string Path => Inner.JsonPath;
 
     public IEditorScope? EffectiveScope =>
-        Inner.EffectiveScope.HasValue ? ClaudeScope.For(Inner.EffectiveScope.Value) : null;
+        Inner.EffectiveScope.HasValue ? ConfigScopeAdapter.For(Inner.EffectiveScope.Value) : null;
 
     public object? EffectiveValue => Normalise(Inner.EffectiveValue);
 
@@ -31,13 +37,13 @@ public sealed class ClaudeValueAdapter : IEditorValue
 
     public object? GetValueAt(IEditorScope scope)
     {
-        ConfigScope configScope = ClaudeScope.ToConfigScope(scope);
+        ConfigScope configScope = ConfigScopeAdapter.ToConfigScope(scope);
         return Normalise(Inner.GetValueAt(configScope));
     }
 
     public bool IsDefinedAt(IEditorScope scope)
     {
-        ConfigScope configScope = ClaudeScope.ToConfigScope(scope);
+        ConfigScope configScope = ConfigScopeAdapter.ToConfigScope(scope);
         return Inner.IsDefinedAt(configScope);
     }
 
@@ -57,15 +63,16 @@ public sealed class ClaudeValueAdapter : IEditorValue
         return Inner.Entries
                     .Select(e => e.Scope)
                     .Distinct()
-                    .Select(scope => (IEditorScope)ClaudeScope.For(scope));
+                    .Select(scope => (IEditorScope)ConfigScopeAdapter.For(scope));
     }
 
     // ── JsonNode ↔ currency bridge ─────────────────────────────────────────────
     //
     // The actual conversions live in JsonCurrency (Phase 2.1 step 1 split-out)
     // so consumers that don't wrap a LayeredValue can reach them too. The two
-    // names below are kept as internal aliases because existing call sites
-    // through this class read more naturally than direct JsonCurrency calls.
+    // names below are internal aliases for in-assembly readability. Callers in OTHER
+    // assemblies use JsonCurrency directly — an internal alias that reads more naturally is
+    // not worth widening this type's public surface for.
 
     /// <summary>
     /// Converts a <see cref="JsonNode"/> into the value-currency object graph.
@@ -79,7 +86,7 @@ public sealed class ClaudeValueAdapter : IEditorValue
     /// <summary>
     /// Converts a currency-contract value back to a <see cref="JsonNode"/>.
     /// Delegates to <see cref="JsonCurrency.ToJsonNode"/>.  Used by
-    /// <see cref="ClaudeWorkspaceAdapter.SetValue"/> and by the App-bridge
+    /// <see cref="SettingsWorkspaceAdapter.SetValue"/> and by the App-bridge
     /// editor's <c>LoadFromValue</c> fallback.
     /// </summary>
     internal static JsonNode? Coerce(object? value)

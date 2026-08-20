@@ -30,7 +30,7 @@ that the compiler will not always warn you about:
   richer shape compiles, passes 2,791 of 2,792 tests, and silently changes what
   those fields mean.
 - **`ToString()` is consumed as data.** Three AXAML converters resolve brushes, tooltips
-  and labels through the name, and `ClaudeScope` takes `Id` from `ConfigScope.Id` and
+  and labels through the name, and `ConfigScopeAdapter` takes `Id` from `ConfigScope.Id` and
   upper-cases `DisplayName` for the chiclets. It must keep returning `"Managed"` /
   `"Local"` / `"Project"` / `"User"`. Breaking the lower-casing of `Id` fails **15** tests.
 - **You cannot use it as a default parameter value or a `case` label** — neither is a
@@ -76,7 +76,7 @@ fails **26** tests).
   constructor builds its scope list, and at that moment the `Default` property is still
   `null` — so the reference test is false during exactly the one construction that needs it
   true, and `ConfigScope.All`'s scopes end up unequal to `ConfigScope.Managed`. Two
-  `ConfigScopeTests` catch the broken form; ⚠ `ClaudeScopeTests` does **not**, because its
+  `ConfigScopeTests` catch the broken form; ⚠ `ConfigScopeAdapterTests` does **not**, because its
   cache is built from `ConfigScope.All` and stays self-consistent while being wrong.
 
 Scope questions in product-neutral code go to the ladder (`Scopes.DefaultEditableScope`),
@@ -89,9 +89,9 @@ scope change.
 
 ---
 
-## 2. `ClaudeScope` — the ordering invariant is GONE (Phase 3)
+## 2. `ConfigScopeAdapter` — the ordering invariant is GONE (Phase 3)
 
-Source: `src/ClaudeForge/Adapters/ClaudeScope.cs`.
+Source: `src/AgentForge.Avalonia.Shell/Adapters/ConfigScopeAdapter.cs`.
 
 This section used to document a hard invariant: `_cache` was an array indexed by
 `(int)scope`, so its entries had to appear in `ConfigScope` numeric order, and getting
@@ -103,8 +103,8 @@ the ladder is wrapped automatically instead of falling off the end of a hand-mai
 array:
 
 ```csharp
-private static readonly Dictionary<ConfigScope, ClaudeScope> _cache =
-    ConfigScope.All.ToDictionary(scope => scope, scope => new ClaudeScope(scope));
+private static readonly Dictionary<ConfigScope, ConfigScopeAdapter> _cache =
+    ConfigScope.All.ToDictionary(scope => scope, scope => new ConfigScopeAdapter(scope));
 ```
 
 `ToLibraryPriority` likewise derives from `ConfigScope.All.Count - 1` rather than the
@@ -294,7 +294,7 @@ The only writes happen in the constructor, `MarkClean()`, and `UpdateRoot()`.
 | Concern                                  | File                                                                                                                                                                                                                                                                                                                                               |
 |------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Disk I/O (`LoadAsync` / `SaveAsync`)     | `src/AgentForge.Core/FileIO/ConfigFileLoader.cs` (search for `LoadAsync`)                                                                                                                                                                                                                                                         |
-| Workspace adapter for the editor library | `src/ClaudeForge/Adapters/ClaudeWorkspaceAdapter.cs`, `ClaudeValueAdapter.cs`                                                                                                                                                                                                                                                                      |
+| Workspace adapter for the editor library | `src/AgentForge.Avalonia.Shell/Adapters/SettingsWorkspaceAdapter.cs`, `LayeredValueAdapter.cs`                                                                                                                                                                                                                                                                      |
 | Editor base class                        | `src/LayeredEditors.ViewModels/PropertyEditorViewModel.cs`                                                                                                                                                                                                                                                                                |
 | App-shim editor base                     | `src/ClaudeForge/ViewModels/Editors/PropertyEditorViewModel.cs`                                                                                                                                                                                                                                                                                    |
 | Top-level orchestration                  | `src/ClaudeForge/ViewModels/MainWindowViewModel.cs` (`OnAnyWorkspaceChanged`, `ComputeHasActualChanges`)                                                                                                                                                                                                                                           |

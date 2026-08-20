@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -80,8 +81,8 @@ public class DefaultEditorFactory
             // through the IEditorSchema/IEditorScope adapters and is rendered by the
             // libvm:BooleanPropertyEditorViewModel data template in PropertyEditorWrapper.
             SchemaValueType.Boolean => new LibVm.BooleanPropertyEditorViewModel(
-                new ClaudeSchemaAdapter(schema),
-                ClaudeScope.For(editingScope)),
+                new SchemaNodeAdapter(schema),
+                ConfigScopeAdapter.For(editingScope)),
             // Phase 2.1 step 6 — Enum migrated to the library type.
             SchemaValueType.Enum => NewLibEnum(schema, editingScope),
             // Phase 2.1 step 6b — Path migrated to the library type.
@@ -107,13 +108,13 @@ public class DefaultEditorFactory
     private static LibVm.StringPropertyEditorViewModel NewLibString(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.StringPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.StringPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.NumberPropertyEditorViewModel NewLibNumber(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.NumberPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.NumberPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.EnumPropertyEditorViewModel NewLibEnum(
@@ -125,19 +126,19 @@ public class DefaultEditorFactory
         if (schema.Name == "model")
         {
             return new ModelPropertyEditorViewModel(
-                new ClaudeSchemaAdapter(schema),
-                ClaudeScope.For(editingScope),
+                new SchemaNodeAdapter(schema),
+                ConfigScopeAdapter.For(editingScope),
                 ModelSuggestionCatalog.Build());
         }
 
-        return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.EnumPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.PathPropertyEditorViewModel NewLibPath(
         SchemaNode schema, ConfigScope editingScope,
         Func<Task<string?>>? browseDialog)
     {
-        return new LibVm.PathPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope),
+        return new LibVm.PathPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope),
             browseDialog);
     }
 
@@ -230,8 +231,8 @@ public class DefaultEditorFactory
     private static LibVm.StringArrayPropertyEditorViewModel NewLibStringArray(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.StringArrayPropertyEditorViewModel(new ClaudeSchemaAdapter(schema),
-            ClaudeScope.For(editingScope));
+        return new LibVm.StringArrayPropertyEditorViewModel(new SchemaNodeAdapter(schema),
+            ConfigScopeAdapter.For(editingScope));
     }
 
     /// <summary>
