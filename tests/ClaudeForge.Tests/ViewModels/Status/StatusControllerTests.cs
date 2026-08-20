@@ -109,38 +109,57 @@ public sealed class StatusControllerTests
         Assert.IsTrue(sc.IsDismissible);
     }
 
+    /// <remarks>
+    /// ⚠ The assertions are OUTSIDE the dispatch lambda deliberately. The
+    /// <c>Session.Dispatch(async () =&gt; { … })</c> form returns <c>Task&lt;Task&gt;</c>, so only
+    /// the outer task is awaited and any assertion inside is swallowed — this test was inert
+    /// until 2026-08-20, and an <c>Assert.Fail</c> as its first statement left it green. It
+    /// could still fail for a session-startup reason, which is why it once went red on macOS,
+    /// but it could never fail for the auto-clear behaviour it is named after.
+    /// </remarks>
     [TestMethod]
-    public Task Set_SuccessKind_AutoClearsAfterDelay() => Session.Dispatch(async () =>
+    public async Task Set_SuccessKind_AutoClearsAfterDelay()
     {
-        // Inject a delay function that completes immediately so the
-        // auto-clear path fires without us actually sleeping.
-        StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
+        (string? Text, StatusKind Kind) after = await Session.Dispatch(async () =>
+        {
+            // Inject a delay function that completes immediately so the
+            // auto-clear path fires without us actually sleeping.
+            StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
 
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success);
+            StatusController sc = new();
+            sc.Set("Saved.", StatusKind.Success);
 
-        // Auto-clear marshals ApplyClear onto the UI thread; running inside the
-        // headless session means the dispatcher is pumped, so the clear actually
-        // fires (a plain [TestMethod] has no pumped dispatcher → never clears).
-        await WaitForClearAsync(sc);
+            // Auto-clear marshals ApplyClear onto the UI thread; running inside the
+            // headless session means the dispatcher is pumped, so the clear actually
+            // fires (a plain [TestMethod] has no pumped dispatcher → never clears).
+            await WaitForClearAsync(sc);
 
-        Assert.IsNull(sc.Text, "Success status should auto-clear after the delay.");
-        Assert.AreEqual(StatusKind.None, sc.Kind);
-    }, CancellationToken.None);
+            return (sc.Text, sc.Kind);
+        }, CancellationToken.None);
 
+        Assert.IsNull(after.Text, "Success status should auto-clear after the delay.");
+        Assert.AreEqual(StatusKind.None, after.Kind);
+    }
+
+    /// <remarks>Assertions outside the lambda — see <see cref="Set_SuccessKind_AutoClearsAfterDelay"/>.</remarks>
     [TestMethod]
-    public Task Set_WarningKind_AlsoAutoClears() => Session.Dispatch(async () =>
+    public async Task Set_WarningKind_AlsoAutoClears()
     {
-        StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
+        (string? Text, StatusKind Kind) after = await Session.Dispatch(async () =>
+        {
+            StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
 
-        StatusController sc = new();
-        sc.Set("Nothing to save", StatusKind.Warning);
+            StatusController sc = new();
+            sc.Set("Nothing to save", StatusKind.Warning);
 
-        await WaitForClearAsync(sc);
+            await WaitForClearAsync(sc);
 
-        Assert.IsNull(sc.Text, "Warning status should auto-clear after the delay.");
-        Assert.AreEqual(StatusKind.None, sc.Kind);
-    }, CancellationToken.None);
+            return (sc.Text, sc.Kind);
+        }, CancellationToken.None);
+
+        Assert.IsNull(after.Text, "Warning status should auto-clear after the delay.");
+        Assert.AreEqual(StatusKind.None, after.Kind);
+    }
 
     [TestMethod]
     public async Task Set_FailureKind_DoesNotAutoClear()

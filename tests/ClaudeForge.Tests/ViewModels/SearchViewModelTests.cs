@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
@@ -512,7 +513,7 @@ public class SearchViewModelTests
             [new SettingsDocument(ConfigScope.User, "user.json", new JsonObject(), isReadOnly: false)],
             ClaudeMergePolicy.Instance);
         SettingsGroupEditorViewModel groupVm = new(
-            "Permissions", nodes, workspace);
+            "Permissions", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         NavigationNodeViewModel child = new("Permissions") { Editor = groupVm };
         NavigationNodeViewModel header = new("Claude Code");
@@ -550,7 +551,7 @@ public class SearchViewModelTests
             [new SettingsDocument(ConfigScope.User, "user.json", new JsonObject(), isReadOnly: false)],
             ClaudeMergePolicy.Instance);
         SettingsGroupEditorViewModel groupVm = new(
-            "General", nodes, workspace);
+            "General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         NavigationNodeViewModel child = new("General") { Editor = groupVm };
         NavigationNodeViewModel header = new("Claude Code");

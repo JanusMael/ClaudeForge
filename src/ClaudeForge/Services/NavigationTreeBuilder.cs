@@ -214,8 +214,8 @@ public static class NavigationTreeBuilder
             page.Nodes,
             workspace,
             context,
-            browseDialog,
             factory,
+            browseDialog,
             groupDescription: page.Description,
             sdkClient: sdkClient,
             tabCustomizer: ClaudeGroupTabCustomizer.Instance);
