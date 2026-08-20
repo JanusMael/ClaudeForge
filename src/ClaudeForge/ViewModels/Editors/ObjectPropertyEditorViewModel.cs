@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
@@ -136,7 +137,7 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel
             // Phase 2.1 step 3b — use the library API uniformly. App-bridge
             // LoadFromValue routes through legacy LoadFromLayered overrides;
             // migrated leaves implement LoadFromValue directly.
-            child.LoadFromValue(new ClaudeValueAdapter(childLayered), ClaudeScope.For(editingScope));
+            child.LoadFromValue(new LayeredValueAdapter(childLayered), ConfigScopeAdapter.For(editingScope));
         }
 
         // Derive IsModified from children's actual loaded state rather than from the

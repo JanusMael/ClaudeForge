@@ -47,7 +47,7 @@
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
 > | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
-> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ClaudeScope._cache` invariant retired. 4f then made the *ladder* the product's (`ScopeLadder`) and **kept the statics** — measured as 2 real edit sites, not 1,150 |
+> | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ConfigScopeAdapter._cache` invariant retired. 4f then made the *ladder* the product's (`ScopeLadder`) and **kept the statics** — measured as 2 real edit sites, not 1,150 |
 > | 4 — Product model | ✅ **complete (4a–4f)** — both `IsClaudeCode` booleans replaced, merge rules and the scope ladder are the product's own statements, the shell hosts a list of product sections, and an export names its products in a list at schema v2. One deferral stated explicitly: `ConfigFileDiscoverer` still knows only Claude's file layouts |
 > | 5 — Extract the shell | ✅ **complete, 5 slices** — `AgentForge.Avalonia.Shell` holds `Status/`, `Navigation/`, `Search/`, `Save/`. **This was the plan's abandonment point and its trigger never fired**; all five slices reported in green. One piece **deferred, not rejected**: nav's tree assembly + `ProductSection` enrichment, measured at ~60 neutral lines for a rewrite of the 493-line `BuildNavigationTreeAsync`. Problem 8 was **restated, not solved** — see slice 5 |
 > | 6 — Permission vocabulary | ✅ **complete (`a453063`)** — `PermissionOutcome` is neutral, `Default` is its zero value. **Three of the five drafted deliverables were rejected on measurement**, including `Decision<TRule>`, which does not describe any type that exists |
@@ -598,7 +598,7 @@ matching test project.
 across 69 files**, and used as an ordinal, not just a tag:
 
 - `LayeredValue` sorts with `OrderBy(e => (int)e.Scope)`.
-- `ClaudeScope._cache` is an **array indexed by `(int)scope`** — a documented `AGENTS.md`
+- `ConfigScopeAdapter._cache` is an **array indexed by `(int)scope`** — a documented `AGENTS.md`
   hard invariant.
 - `MergeResult` returns `ConfigScope?`; `LayeredValue.IsManagedLocked` hardcodes
   `== ConfigScope.Managed`.
@@ -612,7 +612,7 @@ OpenCode's ladder is different and longer: global → custom (`OPENCODE_CONFIG`)
 public readonly record struct ConfigScopeId(string Id, int Priority, string DisplayName, bool IsReadOnly);
 ```
 
-Each product declares an ordered `ScopeSet`. `ClaudeScope` collapses to a lookup over that
+Each product declares an ordered `ScopeSet`. `ConfigScopeAdapter` collapses to a lookup over that
 set — the `_cache` array invariant disappears entirely, a net simplification.
 `IEditorScope` already models this exact shape, so the adapter boundary barely moves.
 
@@ -1130,7 +1130,7 @@ should become `AppSeverity{Critical|Caution|Info}Brush` tokens alongside the exi
 > `IEditorSchema.Metadata`, "the interface already has an open extensibility bag for exactly
 > this". Two problems:
 >
-> 1. **`Metadata` is write-only today.** `ClaudeSchemaAdapter.BuildMetadata` populates it,
+> 1. **`Metadata` is write-only today.** `SchemaNodeAdapter.BuildMetadata` populates it,
 >    but grepping `.Metadata[` across `src/` returns **zero** consumers. There is no
 >    existing plumbing to follow — draft 10 implied there was.
 > 2. **More fundamentally, `IEditorSchema` is per-property and scope-independent.** Danger
@@ -1375,7 +1375,7 @@ fact-shaped and current.
 
 | Doc | Lines | Disposition |
 |---|---|---|
-| `AGENTS.md` | 531 | **Split.** The largest doc job. Invariants and "if you're doing X" checklists divide into shared (`AgentForge.*`) and per-app. Several entries die outright (`ClaudeScope._cache` ordering); one splits in two ("adding a debug flag" → shared vs per-app). |
+| `AGENTS.md` | 531 | **Split.** The largest doc job. Invariants and "if you're doing X" checklists divide into shared (`AgentForge.*`) and per-app. Several entries die outright (`ConfigScopeAdapter._cache` ordering); one splits in two ("adding a debug flag" → shared vs per-app). |
 | `PLATFORM.md` | 423 | **Shared as-is.** The `PlatformInfo.Current` vs `OperatingSystem.IsWindows()` decision tree is product-neutral. |
 | `LOCALIZATION.md` | 375 | **Shared, adapt.** Document the split resx sets and the project-aware guards. |
 | `README.md` | 336 | **Duplicate.** One per app. ClaudeForge's notes that the repo also hosts OpenCodeForge (decision 14). |
@@ -2119,7 +2119,7 @@ Full disposition for all 25 existing docs is in **Guides and docs**. Per-phase d
 |---|---|
 | 1 | **Fix the stale `SchemaRegistry` class doc comment** (load order stated backwards — wrong *today*). Fix the `NAV-DEEP-LINKING-PLAN.md` header, still claiming "uncommitted". |
 | 2 | New `docs/JSONC-WRITER.md`. Record the `--writer legacy` removal intent so the hatch doesn't become permanent. |
-| 3 | **Delete the `ClaudeScope._cache` array-ordering invariant** — it stops existing. Rewrite the `Core/Settings` sidecar's scope section. |
+| 3 | **Delete the `ConfigScopeAdapter._cache` array-ordering invariant** — it stops existing. Rewrite the `Core/Settings` sidecar's scope section. |
 | 4 | Replace the two-product wiring notes with the `ProductSection` model. |
 | 5 | **The `AGENTS.md` split** (the big one) + the four sidecars. Nav-page and deep-link checklists for the shell split. Retire the "19 inert tests" note once they're fixed. `LOCALIZATION.md` for the split resx sets. |
 | 6, 9 | Extend the compound-editor sidecar — now shared — for the permission model and the new OpenCode editors. |
@@ -2328,7 +2328,7 @@ that intent in `AGENTS.md` so it doesn't become permanent.
 
 ### Phase 3 — Generalize the scope model (Problem 1) — ✅ **complete**
 
-Two commits, as described. The `ClaudeScope._cache` invariant is gone from `AGENTS.md`,
+Two commits, as described. The `ConfigScopeAdapter._cache` invariant is gone from `AGENTS.md`,
 the root invariant table, `AGENT-ONBOARDING.md`, and the `Core/Settings` sidecar.
 
 > **Four things this section got wrong — worth reading before Phase 4 repeats them.**
@@ -2356,19 +2356,19 @@ the root invariant table, `AGENT-ONBOARDING.md`, and the `Core/Settings` sidecar
 >    entries arriving highest-priority-first. Its Claude-specific *merge rules* are
 >    Problem 2, i.e. Phase 4. The real Claude assumptions were three:
 >    `LayeredValue.IsManagedLocked`, `AgentConfigClientCore.EditableScopes` (both
->    `== ConfigScope.Managed`, now `Scope.IsReadOnly`), and `ClaudeScope` itself.
+>    `== ConfigScope.Managed`, now `Scope.IsReadOnly`), and `ConfigScopeAdapter` itself.
 >
 > **"Delete the statics" was deliberately not done.** `ConfigScope.User` and friends have
 > **58 uses in `src/` but 1,074 in tests**, and nothing supplies a `ScopeSet` until
 > Phase 4. Deleting them now would be a diff dominated by mechanical test churn, against an
 > abstraction that does not exist yet, and Phase 4 would likely churn it again. The statics
 > survive as Claude's canonical set; `ConfigScope.All` **is** the ordered scope set that
-> `ClaudeScope` and the id-resolution fallback now build themselves from. **Phase 4 owns
+> `ConfigScopeAdapter` and the id-resolution fallback now build themselves from. **Phase 4 owns
 > retiring them**, once a product descriptor can supply scopes.
 >
 > **The invariant was replaced by a test, not just deleted.** The old `AGENTS.md` entry
 > said in as many words that a mis-ordered cache "produces the wrong wrapper silently" and
-> that there was **no runtime check**. `ClaudeScopeTests.For_ReturnsTheWrapperForTheScopeItWasAsked`
+> that there was **no runtime check**. `ConfigScopeAdapterTests.For_ReturnsTheWrapperForTheScopeItWasAsked`
 > is now that check, and it fails 33 tests when the mapping is mirrored.
 >
 > **Not covered by any test:** the scope-chiclet `DataTemplate` in
@@ -2499,8 +2499,8 @@ keeps the four statics equal to the scopes a Claude client hands out. Without it
 >    carried a non-null ladder while `ConfigScope.Managed`, built later, carried null, and
 >    they compared **unequal**. Fixed with an explicit `_isDefault` field. **A lazily
 >    initialised static that its own constructor consults is a trap wherever it appears.**
-> 2. ⚠ **`ClaudeScopeTests` stayed green through that whole failure**, because
->    `ClaudeScope._cache` is built from `ConfigScope.All` and was therefore
+> 2. ⚠ **`ConfigScopeAdapterTests` stayed green through that whole failure**, because
+>    `ConfigScopeAdapter._cache` is built from `ConfigScope.All` and was therefore
 >    *self-consistent while wrong*. Third instance of this shape — the other two are
 >    4d-2's `ArchiveFolder` (writer and reader read the same property) and 4c's
 >    single-document workspaces. **A test whose fixture derives from the thing under test
@@ -3031,7 +3031,7 @@ left it green: both sides were computed by the thing under test. Rewritten to as
 against the raw `KindAdded` / `KindModified` properties, with a fixture that produces
 both an added and a modified change. **A fixture derived from what it checks cannot
 detect that thing moving** — same family as 4d-2's `ArchiveFolder`, 4c's single-document
-workspaces, and 4f's `ClaudeScope._cache`.
+workspaces, and 4f's `ConfigScopeAdapter._cache`.
 
 ### First CI run on this branch — what fifty-six unpushed commits were hiding
 

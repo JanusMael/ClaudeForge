@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
@@ -217,7 +218,7 @@ public class PropertyEditorFactoryTests
         CompositeEditorFactory factory = new();
         factory.Register(
             s => s.Name == "special",
-            (s, scope) => new LibVm.StringPropertyEditorViewModel(new ClaudeSchemaAdapter(s), ClaudeScope.For(scope)));
+            (s, scope) => new LibVm.StringPropertyEditorViewModel(new SchemaNodeAdapter(s), ConfigScopeAdapter.For(scope)));
 
         SchemaNode schema = Make("special", SchemaValueType.Boolean);
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);
@@ -231,7 +232,7 @@ public class PropertyEditorFactoryTests
     {
         CompositeEditorFactory factory = new();
         factory.Register(s => s.Name == "special",
-            (s, scope) => new LibVm.StringPropertyEditorViewModel(new ClaudeSchemaAdapter(s), ClaudeScope.For(scope)));
+            (s, scope) => new LibVm.StringPropertyEditorViewModel(new SchemaNodeAdapter(s), ConfigScopeAdapter.For(scope)));
 
         SchemaNode schema = Make("other", SchemaValueType.Boolean);
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);
@@ -245,12 +246,12 @@ public class PropertyEditorFactoryTests
         CompositeEditorFactory factory = new();
         factory.Register(s => s.ValueType == SchemaValueType.Boolean,
             (s, scope) =>
-                new LibVm.StringPropertyEditorViewModel(new ClaudeSchemaAdapter(s),
-                    ClaudeScope.For(scope))); // first registration
+                new LibVm.StringPropertyEditorViewModel(new SchemaNodeAdapter(s),
+                    ConfigScopeAdapter.For(scope))); // first registration
         factory.Register(s => s.Name == "flag",
             (s, scope) =>
-                new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(s),
-                    ClaudeScope.For(scope))); // second registration
+                new LibVm.EnumPropertyEditorViewModel(new SchemaNodeAdapter(s),
+                    ConfigScopeAdapter.For(scope))); // second registration
 
         SchemaNode schema = Make("flag", SchemaValueType.Boolean);
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);

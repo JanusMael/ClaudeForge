@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
@@ -9,7 +10,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// <see cref="IEditorScope"/> wrapper.
 /// <para>
 /// This is the runtime check the old invariant explicitly did not have.
-/// <c>ClaudeScope._cache</c> used to be an array indexed by <c>(int)scope</c>, and the
+/// <c>ConfigScopeAdapter._cache</c> used to be an array indexed by <c>(int)scope</c>, and the
 /// root <c>AGENTS.md</c> said in as many words that a mismatch "produces the wrong
 /// wrapper silently" with no check to catch it — <c>For(ConfigScope.User)</c> would hand
 /// back Project's priority and read-only flag, and permission checks would then pass
@@ -19,7 +20,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// </para>
 /// </summary>
 [TestClass]
-public sealed class ClaudeScopeTests
+public sealed class ConfigScopeAdapterTests
 {
     /// <summary>
     /// The mapping is exercised for <b>every</b> scope rather than a sampled one, because
@@ -30,8 +31,8 @@ public sealed class ClaudeScopeTests
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            Assert.AreEqual(scope, ClaudeScope.For(scope).Source,
-                $"ClaudeScope.For({scope}) returned a wrapper for a different scope.");
+            Assert.AreEqual(scope, ConfigScopeAdapter.For(scope).Source,
+                $"ConfigScopeAdapter.For({scope}) returned a wrapper for a different scope.");
         }
     }
 
@@ -41,7 +42,7 @@ public sealed class ClaudeScopeTests
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            Assert.AreSame(ClaudeScope.For(scope), ClaudeScope.For(scope));
+            Assert.AreSame(ConfigScopeAdapter.For(scope), ConfigScopeAdapter.For(scope));
         }
     }
 
@@ -57,15 +58,15 @@ public sealed class ClaudeScopeTests
         int last = ConfigScope.All.Count;
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            int priority = ClaudeScope.ToLibraryPriority(scope);
+            int priority = ConfigScopeAdapter.ToLibraryPriority(scope);
             Assert.IsTrue(priority < last,
                 "Priority must decrease as the scope's ordinal increases.");
             last = priority;
         }
 
-        Assert.AreEqual(0, ClaudeScope.ToLibraryPriority(ConfigScope.User),
+        Assert.AreEqual(0, ConfigScopeAdapter.ToLibraryPriority(ConfigScope.User),
             "The lowest-priority scope must map to 0.");
-        Assert.AreEqual(ConfigScope.All.Count - 1, ClaudeScope.ToLibraryPriority(ConfigScope.Managed),
+        Assert.AreEqual(ConfigScope.All.Count - 1, ConfigScopeAdapter.ToLibraryPriority(ConfigScope.Managed),
             "The highest-priority scope must map to the top of the range.");
     }
 
@@ -79,13 +80,13 @@ public sealed class ClaudeScopeTests
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            Assert.AreEqual(scope.IsReadOnly, ClaudeScope.For(scope).IsReadOnly, $"scope: {scope}");
+            Assert.AreEqual(scope.IsReadOnly, ConfigScopeAdapter.For(scope).IsReadOnly, $"scope: {scope}");
         }
     }
 
     /// <summary>
     /// The id-based fallback exists for test doubles that implement
-    /// <see cref="IEditorScope"/> without being a <see cref="ClaudeScope"/>. It now
+    /// <see cref="IEditorScope"/> without being a <see cref="ConfigScopeAdapter"/>. It now
     /// resolves against <see cref="ConfigScope.All"/> instead of a hand-written list of
     /// four ids, so it cannot drift out of step with the ladder.
     /// </summary>
@@ -94,15 +95,15 @@ public sealed class ClaudeScopeTests
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            Assert.AreEqual(scope, ClaudeScope.ToConfigScope(ClaudeScope.For(scope)));
-            Assert.AreEqual(scope, ClaudeScope.ToConfigScope(new ForeignScope(scope.ToString().ToLowerInvariant())));
+            Assert.AreEqual(scope, ConfigScopeAdapter.ToConfigScope(ConfigScopeAdapter.For(scope)));
+            Assert.AreEqual(scope, ConfigScopeAdapter.ToConfigScope(new ForeignScope(scope.ToString().ToLowerInvariant())));
         }
 
         Assert.ThrowsExactly<ArgumentException>(
-            () => ClaudeScope.ToConfigScope(new ForeignScope("not-a-scope")));
+            () => ConfigScopeAdapter.ToConfigScope(new ForeignScope("not-a-scope")));
     }
 
-    /// <summary>A non-<see cref="ClaudeScope"/> implementation, as a test fake would supply.</summary>
+    /// <summary>A non-<see cref="ConfigScopeAdapter"/> implementation, as a test fake would supply.</summary>
     private sealed class ForeignScope(string id) : IEditorScope
     {
         public string Id { get; } = id;

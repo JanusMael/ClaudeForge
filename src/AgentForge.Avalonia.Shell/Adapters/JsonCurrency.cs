@@ -1,7 +1,8 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Bennewitz.Ninja.ClaudeForge.Adapters;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 
 /// <summary>
 /// Bridges between <see cref="JsonNode"/> and the value-currency contract
@@ -11,12 +12,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// </summary>
 /// <remarks>
 /// <para>
-/// extracted from <c>ClaudeValueAdapter.Coerce</c> /
-/// <c>ClaudeValueAdapter.Normalise</c> so consumers that aren't building an
+/// extracted from <c>LayeredValueAdapter.Coerce</c> /
+/// <c>LayeredValueAdapter.Normalise</c> so consumers that aren't building an
 /// <see cref="LayeredEditors.Abstractions.IEditorValue"/> wrapper can still
 /// reach the same conversions.  In particular, when steps 2–6 of the
 /// leaf-editor migration delete the App-side bridge editors,
-/// <see cref="Bennewitz.Ninja.ClaudeForge.ViewModels.SettingsGroupEditorViewModel"/>'s
+/// the host's settings-group editor's
 /// live-write loop will go from <c>editor.ToJsonValue()</c> (App-bridge,
 /// returns <c>JsonNode?</c> directly) to
 /// <c>JsonCurrency.ToJsonNode(editor.ToValue())</c> (library, returns
@@ -27,7 +28,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// for the canonical primitive set the editor-library leaf VMs return
 /// from <c>ToValue()</c>.  <see cref="ToJsonNode"/> takes currency and
 /// produces a <see cref="JsonNode"/>; <see cref="FromJsonNode"/> takes a
-/// <see cref="JsonNode"/> and produces currency.  The <c>ClaudeValueAdapter</c>
+/// <see cref="JsonNode"/> and produces currency.  The <c>LayeredValueAdapter</c>
 /// delegates to these for its internal <c>Coerce</c>/<c>Normalise</c>
 /// helpers so behaviour stays identical.
 /// </para>

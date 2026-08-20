@@ -234,7 +234,7 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
             {
                 // Cast across the parallel ConfigScope enums (Core ↔ Sdk):
                 // their numeric values match — see ConfigScope XML doc and
-                // tests/ClaudeForge.Tests/Adapters/ClaudeValueAdapterTests.
+                // tests/ClaudeForge.Tests/Adapters/LayeredValueAdapterTests.
                 ConfigScope sdkScope = editingScope;
                 IReadOnlyList<EnabledPlugin> snapshot = _client.Plugins.GetAt(sdkScope);
                 foreach (EnabledPlugin plugin in snapshot)

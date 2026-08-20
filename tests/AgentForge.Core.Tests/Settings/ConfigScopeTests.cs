@@ -25,7 +25,7 @@ public class ConfigScopeTests
     /// <summary>
     /// The ordinals are the merge precedence: lower wins. <c>LayeredValue</c>,
     /// <c>SettingsWorkspace</c> and <c>PermissionResolver</c> all sort by
-    /// <c>(int)scope</c>, and <c>ClaudeScope.ToLibraryPriority</c> inverts it with
+    /// <c>(int)scope</c>, and <c>ConfigScopeAdapter.ToLibraryPriority</c> inverts it with
     /// <c>3 - (int)scope</c>. Change a number here and settings silently resolve to the
     /// wrong file.
     /// </summary>
@@ -52,7 +52,7 @@ public class ConfigScopeTests
     }
 
     /// <summary>
-    /// <c>ToString</c> is consumed as data, not shown as prose: <c>ClaudeScope</c> builds
+    /// <c>ToString</c> is consumed as data, not shown as prose: <c>ConfigScopeAdapter</c> builds
     /// its <c>Id</c> from <c>ToLowerInvariant()</c> and its <c>DisplayName</c> from
     /// <c>ToUpperInvariant()</c>, and three AXAML converters resolve brushes, tooltips and
     /// labels from it. A record struct's compiler-generated <c>ToString</c> would emit
@@ -149,7 +149,7 @@ public class ConfigScopeTests
 
     /// <summary>
     /// <see cref="ConfigScope.Id"/> is the stable machine key the scope-chiclet brush and
-    /// tooltip converters are keyed by, and <c>ClaudeScope.Id</c> now takes it directly
+    /// tooltip converters are keyed by, and <c>ConfigScopeAdapter.Id</c> now takes it directly
     /// instead of lower-casing <see cref="ConfigScope.ToString"/> itself. Pinned to the
     /// literal strings rather than derived from <see cref="ConfigScope.DisplayName"/>, so a
     /// change to the casing rule cannot pass by agreeing with itself.
@@ -178,7 +178,7 @@ public class ConfigScopeTests
 
         Assert.AreEqual("User", ConfigScope.User.DisplayName,
             "Not \"USER\". The chiclets render in caps, but that upper-casing belongs to "
-            + "ClaudeScope — baking presentation into a Core model is what this separation "
+            + "ConfigScopeAdapter — baking presentation into a Core model is what this separation "
             + "exists to avoid.");
     }
 

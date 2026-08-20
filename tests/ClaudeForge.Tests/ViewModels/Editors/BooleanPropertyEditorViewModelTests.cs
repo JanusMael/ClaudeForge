@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
@@ -20,8 +21,8 @@ public class BooleanPropertyEditorViewModelTests
     private static LibVm.BooleanPropertyEditorViewModel NewVm(
         SchemaNode? schema = null, ConfigScope? scope = null)
     {
-        return new LibVm.BooleanPropertyEditorViewModel(new ClaudeSchemaAdapter(schema ?? BoolSchema()),
-            ClaudeScope.For(scope ?? ConfigScope.User));
+        return new LibVm.BooleanPropertyEditorViewModel(new SchemaNodeAdapter(schema ?? BoolSchema()),
+            ConfigScopeAdapter.For(scope ?? ConfigScope.User));
     }
 
     private static LayeredValue EmptyLayered(string key = "testBool")
@@ -43,7 +44,7 @@ public class BooleanPropertyEditorViewModelTests
         LibVm.BooleanPropertyEditorViewModel vm,
         LayeredValue layered, ConfigScope scope)
     {
-        vm.LoadFromValue(new ClaudeValueAdapter(layered), ClaudeScope.For(scope));
+        vm.LoadFromValue(new LayeredValueAdapter(layered), ConfigScopeAdapter.For(scope));
     }
 
     // -----------------------------------------------------------------------

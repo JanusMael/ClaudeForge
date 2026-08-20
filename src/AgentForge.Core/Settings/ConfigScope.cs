@@ -31,7 +31,7 @@ namespace Bennewitz.Ninja.AgentForge.Core.Settings;
 /// </para>
 /// <para>
 /// <b><see cref="Id"/> and <see cref="ToString"/> are load-bearing, not cosmetic.</b>
-/// <c>ClaudeScope</c> takes its <c>Id</c> and <c>DisplayName</c> from them, and those flow
+/// <c>ConfigScopeAdapter</c> takes its <c>Id</c> and <c>DisplayName</c> from them, and those flow
 /// into AXAML brush and tooltip lookups keyed by name. They must keep returning exactly the
 /// old enum member names for the default ladder.
 /// </para>
@@ -127,7 +127,7 @@ public readonly record struct ConfigScope
     /// </summary>
     /// <remarks>
     /// Deliberately <i>not</i> upper-cased. The scope chiclets render in caps, but that is a
-    /// presentation choice and it stays in the view adapter (<c>ClaudeScope</c>) rather than
+    /// presentation choice and it stays in the view adapter (<c>ConfigScopeAdapter</c>) rather than
     /// being baked into a Core model.
     /// </remarks>
     public string DisplayName => Ladder.RungAt(_value).Name;
@@ -148,7 +148,7 @@ public readonly record struct ConfigScope
     /// <summary>
     /// Preserves <c>(int)scope</c> at the handful of sites that sort by scope
     /// (<c>LayeredValue</c>, <c>SettingsWorkspace</c>, <c>PermissionResolver</c>) and in
-    /// <c>ClaudeScope.ToLibraryPriority</c>'s inversion. Explicit rather than implicit so a
+    /// <c>ConfigScopeAdapter.ToLibraryPriority</c>'s inversion. Explicit rather than implicit so a
     /// scope cannot silently participate in arithmetic.
     /// </summary>
     public static explicit operator int(ConfigScope scope)

@@ -253,7 +253,7 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void SaveEdit_ClaudeScope_WritesToWorkspace()
+    public void SaveEdit_ConfigScopeAdapter_WritesToWorkspace()
     {
         FakeEnvironmentProvider provider = new();
         provider.Process["PATH"] = "/usr/bin"; // so PATH is in AllEntries
@@ -279,7 +279,7 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void RemoveFromScope_ClaudeScope_RemovesFromWorkspace()
+    public void RemoveFromScope_ConfigScopeAdapter_RemovesFromWorkspace()
     {
         FakeEnvironmentProvider provider = new();
         AgentConfigClientCore client = MakeClient("""{"env":{"MY_KEY":"existing-val"}}""");
@@ -302,7 +302,7 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void AddNew_ClaudeScope_AddsEntryAndSelectsIt()
+    public void AddNew_ConfigScopeAdapter_AddsEntryAndSelectsIt()
     {
         FakeEnvironmentProvider provider = new();
         AgentConfigClientCore client = MakeClient();

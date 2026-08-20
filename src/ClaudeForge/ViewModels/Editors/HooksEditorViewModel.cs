@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
@@ -579,7 +580,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel, IJsonPathSc
                                      .Where(e => e.Scope != editingScope && e.Value is JsonObject jo && jo.Count > 0)
                                      .Select(e => e.Scope)
                                      .Distinct()
-                                     .Select(scope => (IEditorScope)ClaudeScope.For(scope))
+                                     .Select(scope => (IEditorScope)ConfigScopeAdapter.For(scope))
                                      .ToList();
     }
 

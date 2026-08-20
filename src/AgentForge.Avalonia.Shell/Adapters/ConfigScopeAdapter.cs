@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
-namespace Bennewitz.Ninja.ClaudeForge.Adapters;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 
 /// <summary>
 /// Wraps <see cref="ConfigScope"/> as an <see cref="IEditorScope"/>, flipping the
@@ -23,17 +23,17 @@ namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 /// longer exists to be violated.
 /// </para>
 /// </remarks>
-public sealed class ClaudeScope : IEditorScope
+public sealed class ConfigScopeAdapter : IEditorScope
 {
     /// <summary>
     /// Keyed by scope rather than indexed by ordinal — see the class remarks. Built from
     /// <see cref="ConfigScope.All"/> so a scope added to the ladder is wrapped
     /// automatically instead of falling off the end of a hand-maintained array.
     /// </summary>
-    private static readonly Dictionary<ConfigScope, ClaudeScope> _cache =
-        ConfigScope.All.ToDictionary(scope => scope, scope => new ClaudeScope(scope));
+    private static readonly Dictionary<ConfigScope, ConfigScopeAdapter> _cache =
+        ConfigScope.All.ToDictionary(scope => scope, scope => new ConfigScopeAdapter(scope));
 
-    private ClaudeScope(ConfigScope source)
+    private ConfigScopeAdapter(ConfigScope source)
     {
         Source = source;
         Priority = ToLibraryPriority(source);
@@ -54,22 +54,22 @@ public sealed class ClaudeScope : IEditorScope
     public string DisplayName { get; }
     public bool IsReadOnly { get; }
 
-    /// <summary>Return the singleton <see cref="ClaudeScope"/> for the given <see cref="ConfigScope"/>.</summary>
-    public static ClaudeScope For(ConfigScope scope)
+    /// <summary>Return the singleton <see cref="ConfigScopeAdapter"/> for the given <see cref="ConfigScope"/>.</summary>
+    public static ConfigScopeAdapter For(ConfigScope scope)
     {
-        return _cache.TryGetValue(scope, out ClaudeScope? wrapper)
+        return _cache.TryGetValue(scope, out ConfigScopeAdapter? wrapper)
             ? wrapper
             : throw new ArgumentOutOfRangeException(
-                nameof(scope), scope, "No ClaudeScope wrapper exists for this scope.");
+                nameof(scope), scope, "No ConfigScopeAdapter wrapper exists for this scope.");
     }
 
     /// <summary>
     /// Resolve an <see cref="IEditorScope"/> back to a <see cref="ConfigScope"/>.
-    /// Throws if <paramref name="scope"/> is not a <see cref="ClaudeScope"/> instance.
+    /// Throws if <paramref name="scope"/> is not a <see cref="ConfigScopeAdapter"/> instance.
     /// </summary>
     public static ConfigScope ToConfigScope(IEditorScope scope)
     {
-        if (scope is ClaudeScope cs)
+        if (scope is ConfigScopeAdapter cs)
         {
             return cs.Source;
         }

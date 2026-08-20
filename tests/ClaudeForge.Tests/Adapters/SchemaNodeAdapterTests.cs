@@ -1,10 +1,11 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 
 [TestClass]
-public class ClaudeSchemaAdapterTests
+public class SchemaNodeAdapterTests
 {
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -23,70 +24,70 @@ public class ClaudeSchemaAdapterTests
     [TestMethod]
     public void MapValueType_Boolean_MapsToBoolean()
     {
-        ClaudeSchemaAdapter adapter = new(Node("b", SchemaValueType.Boolean));
+        SchemaNodeAdapter adapter = new(Node("b", SchemaValueType.Boolean));
         Assert.AreEqual(EditorValueType.Boolean, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_String_MapsToString()
     {
-        ClaudeSchemaAdapter adapter = new(Node("s"));
+        SchemaNodeAdapter adapter = new(Node("s"));
         Assert.AreEqual(EditorValueType.String, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Number_MapsToNumber()
     {
-        ClaudeSchemaAdapter adapter = new(Node("n", SchemaValueType.Number));
+        SchemaNodeAdapter adapter = new(Node("n", SchemaValueType.Number));
         Assert.AreEqual(EditorValueType.Number, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Integer_MapsToInteger()
     {
-        ClaudeSchemaAdapter adapter = new(Node("i", SchemaValueType.Integer));
+        SchemaNodeAdapter adapter = new(Node("i", SchemaValueType.Integer));
         Assert.AreEqual(EditorValueType.Integer, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Path_MapsToPath()
     {
-        ClaudeSchemaAdapter adapter = new(Node("p", SchemaValueType.Path));
+        SchemaNodeAdapter adapter = new(Node("p", SchemaValueType.Path));
         Assert.AreEqual(EditorValueType.Path, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Enum_MapsToEnum()
     {
-        ClaudeSchemaAdapter adapter = new(Node("e", SchemaValueType.Enum));
+        SchemaNodeAdapter adapter = new(Node("e", SchemaValueType.Enum));
         Assert.AreEqual(EditorValueType.Enum, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Array_MapsToStringArray()
     {
-        ClaudeSchemaAdapter adapter = new(Node("a", SchemaValueType.Array));
+        SchemaNodeAdapter adapter = new(Node("a", SchemaValueType.Array));
         Assert.AreEqual(EditorValueType.StringArray, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Object_MapsToObject()
     {
-        ClaudeSchemaAdapter adapter = new(Node("o", SchemaValueType.Object));
+        SchemaNodeAdapter adapter = new(Node("o", SchemaValueType.Object));
         Assert.AreEqual(EditorValueType.Object, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Complex_MapsToComplex()
     {
-        ClaudeSchemaAdapter adapter = new(Node("c", SchemaValueType.Complex));
+        SchemaNodeAdapter adapter = new(Node("c", SchemaValueType.Complex));
         Assert.AreEqual(EditorValueType.Complex, adapter.ValueType);
     }
 
     [TestMethod]
     public void MapValueType_Unknown_MapsToUnknown()
     {
-        ClaudeSchemaAdapter adapter = new(Node("u", SchemaValueType.Unknown));
+        SchemaNodeAdapter adapter = new(Node("u", SchemaValueType.Unknown));
         Assert.AreEqual(EditorValueType.Unknown, adapter.ValueType);
     }
 
@@ -98,7 +99,7 @@ public class ClaudeSchemaAdapterTests
     public void DisplayName_DelegatesToSchemaNode()
     {
         SchemaNode node = new("myProp", "myProp") { Title = "My Property" };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         // IEditorSchema exposes Title and Name; callers compute DisplayName as Title ?? Name.
         Assert.AreEqual("My Property", adapter.Title);
@@ -109,7 +110,7 @@ public class ClaudeSchemaAdapterTests
     public void Description_DelegatesToSchemaNode()
     {
         SchemaNode node = new("x", "x") { Description = "A helpful description" };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.AreEqual("A helpful description", adapter.Description);
     }
@@ -120,9 +121,9 @@ public class ClaudeSchemaAdapterTests
         SchemaNode readonlyNode = new("r", "r") { IsManagedOnly = true };
         SchemaNode writableNode = new("w", "w") { IsManagedOnly = false };
 
-        Assert.IsTrue(new ClaudeSchemaAdapter(readonlyNode).IsReadOnly,
+        Assert.IsTrue(new SchemaNodeAdapter(readonlyNode).IsReadOnly,
             "IsManagedOnly=true must map to IsReadOnly=true");
-        Assert.IsFalse(new ClaudeSchemaAdapter(writableNode).IsReadOnly,
+        Assert.IsFalse(new SchemaNodeAdapter(writableNode).IsReadOnly,
             "IsManagedOnly=false must map to IsReadOnly=false");
     }
 
@@ -132,8 +133,8 @@ public class ClaudeSchemaAdapterTests
         SchemaNode newNode = new("n", "n") { IsNew = true };
         SchemaNode oldNode = new("o", "o") { IsNew = false };
 
-        Assert.IsTrue(new ClaudeSchemaAdapter(newNode).IsNew);
-        Assert.IsFalse(new ClaudeSchemaAdapter(oldNode).IsNew);
+        Assert.IsTrue(new SchemaNodeAdapter(newNode).IsNew);
+        Assert.IsFalse(new SchemaNodeAdapter(oldNode).IsNew);
     }
 
     [TestMethod]
@@ -142,8 +143,8 @@ public class ClaudeSchemaAdapterTests
         SchemaNode deprecatedNode = new("d", "d") { IsDeprecated = true };
         SchemaNode activeNode = new("a", "a") { IsDeprecated = false };
 
-        Assert.IsTrue(new ClaudeSchemaAdapter(deprecatedNode).IsDeprecated);
-        Assert.IsFalse(new ClaudeSchemaAdapter(activeNode).IsDeprecated);
+        Assert.IsTrue(new SchemaNodeAdapter(deprecatedNode).IsDeprecated);
+        Assert.IsFalse(new SchemaNodeAdapter(activeNode).IsDeprecated);
     }
 
     [TestMethod]
@@ -156,7 +157,7 @@ public class ClaudeSchemaAdapterTests
             Properties = [child],
         };
 
-        ClaudeSchemaAdapter adapter = new(parent);
+        SchemaNodeAdapter adapter = new(parent);
 
         Assert.AreEqual(1, adapter.Properties.Count,
             "Adapter must expose the single child property.");
@@ -170,7 +171,7 @@ public class ClaudeSchemaAdapterTests
     public void ItemsSchema_NullWhenSchemaHasNoItemsSchema()
     {
         SchemaNode node = new("arr", "arr") { ValueType = SchemaValueType.Array };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.IsNull(adapter.ItemsSchema,
             "ItemsSchema must be null when SchemaNode.ItemsSchema is null.");
@@ -186,7 +187,7 @@ public class ClaudeSchemaAdapterTests
             ItemsSchema = itemNode,
         };
 
-        ClaudeSchemaAdapter adapter = new(arrNode);
+        SchemaNodeAdapter adapter = new(arrNode);
 
         Assert.IsNotNull(adapter.ItemsSchema,
             "ItemsSchema must be non-null when SchemaNode.ItemsSchema is set.");
@@ -202,7 +203,7 @@ public class ClaudeSchemaAdapterTests
     public void DefaultValue_NullSchemaDefault_ReturnsNull()
     {
         SchemaNode node = new("x", "x") { DefaultValue = null };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.IsNull(adapter.DefaultValue,
             "null SchemaNode.DefaultValue must produce null adapter.DefaultValue.");
@@ -212,9 +213,9 @@ public class ClaudeSchemaAdapterTests
     public void DefaultValue_StringJsonLiteral_ReturnsString()
     {
         // SchemaNode.DefaultValue = "\"hello\"" is a JSON-encoded string literal.
-        // ParseDefault → JsonNode.Parse → ClaudeValueAdapter.Normalise → string "hello".
+        // ParseDefault → JsonNode.Parse → LayeredValueAdapter.Normalise → string "hello".
         SchemaNode node = new("x", "x") { DefaultValue = "\"hello\"" };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.IsInstanceOfType<string>(adapter.DefaultValue);
         Assert.AreEqual("hello", (string)adapter.DefaultValue!);
@@ -226,9 +227,9 @@ public class ClaudeSchemaAdapterTests
         SchemaNode trueNode = new("x", "x") { DefaultValue = "true" };
         SchemaNode falseNode = new("y", "y") { DefaultValue = "false" };
 
-        Assert.IsInstanceOfType<bool>(new ClaudeSchemaAdapter(trueNode).DefaultValue);
-        Assert.IsTrue((bool)new ClaudeSchemaAdapter(trueNode).DefaultValue!);
-        Assert.IsFalse((bool)new ClaudeSchemaAdapter(falseNode).DefaultValue!);
+        Assert.IsInstanceOfType<bool>(new SchemaNodeAdapter(trueNode).DefaultValue);
+        Assert.IsTrue((bool)new SchemaNodeAdapter(trueNode).DefaultValue!);
+        Assert.IsFalse((bool)new SchemaNodeAdapter(falseNode).DefaultValue!);
     }
 
     [TestMethod]
@@ -236,7 +237,7 @@ public class ClaudeSchemaAdapterTests
     {
         // JSON floating-point numbers normalise to double via NormaliseScalar.
         SchemaNode node = new("x", "x") { DefaultValue = "3.14" };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.IsInstanceOfType<double>(adapter.DefaultValue);
         Assert.AreEqual(3.14, (double)adapter.DefaultValue!, delta: 1e-10);
@@ -248,7 +249,7 @@ public class ClaudeSchemaAdapterTests
         // ParseDefault catches JsonException and returns the raw string unchanged.
         const string rawValue = "not-valid-json{{{";
         SchemaNode node = new("x", "x") { DefaultValue = rawValue };
-        ClaudeSchemaAdapter adapter = new(node);
+        SchemaNodeAdapter adapter = new(node);
 
         Assert.IsInstanceOfType<string>(adapter.DefaultValue);
         Assert.AreEqual(rawValue, (string)adapter.DefaultValue!,

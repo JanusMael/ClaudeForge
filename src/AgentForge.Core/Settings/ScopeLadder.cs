@@ -47,7 +47,7 @@ public readonly record struct ScopeRung(string Name, bool IsReadOnly);
 /// <para>
 /// <b>Ordering is load-bearing.</b> Rungs are supplied highest-priority first and their
 /// index becomes <see cref="ConfigScope.Ordinal"/>, which the merge engine sorts by and
-/// <c>ClaudeScope.ToLibraryPriority</c> inverts. A ladder that lists its rungs the other way
+/// <c>ConfigScopeAdapter.ToLibraryPriority</c> inverts. A ladder that lists its rungs the other way
 /// round inverts precedence everywhere with no other symptom.
 /// </para>
 /// </remarks>

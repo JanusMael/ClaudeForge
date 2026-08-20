@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
@@ -1751,7 +1752,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJson
                 EffectiveScope = childEntries.Count > 0 ? childEntries[0].Scope : null,
             };
 
-            child.LoadFromValue(new ClaudeValueAdapter(childLayered), ClaudeScope.For(editingScope));
+            child.LoadFromValue(new LayeredValueAdapter(childLayered), ConfigScopeAdapter.For(editingScope));
         }
     }
 

@@ -54,7 +54,7 @@ public sealed class ScopeLadderTests
         ScopeLadder ladder = SixRungLadder();
 
         // Under the previous shape ordinals 4 and 5 stringified as "4" and "5", which then
-        // became ClaudeScope.Id and fed the AXAML brush and tooltip lookups keyed by name.
+        // became ConfigScopeAdapter.Id and fed the AXAML brush and tooltip lookups keyed by name.
         CollectionAssert.AreEqual(
             new[] { "Mdm", "Managed", "Inline", "Project", "Custom", "Global" },
             ladder.All.Select(s => s.DisplayName).ToArray());
