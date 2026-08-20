@@ -5,15 +5,39 @@ using Serilog;
 namespace Bennewitz.Ninja.AgentForge.Core.Updates;
 
 /// <summary>
-/// Queries GitHub's Releases API for the latest non-prerelease release of
-/// the ClaudeForge repo and compares its tag to the current app version.
+/// Queries GitHub's Releases API for the newest release <i>belonging to this app</i> and
+/// compares its tag to the current app version.
 ///
 /// <para>
-/// <b>Network contract:</b> uses the
-/// <c>/repos/{owner}/{repo}/releases/latest</c> endpoint, which by design
-/// excludes drafts and pre-releases.  So beta tags will not raise the
-/// "update available" banner on the user's machine — only published
-/// stable releases do.
+/// <b>Network contract:</b> uses the <c>/repos/{owner}/{repo}/releases</c> <b>list</b>
+/// endpoint, filtered by a <see cref="ReleaseTagScheme"/>.
+/// </para>
+///
+/// <para>
+/// ⚠⚠ <b>Why not <c>/releases/latest</c>, which this used to call.</b> That endpoint returns
+/// the newest release of the <b>whole repository</b>. One repo hosting two apps therefore made
+/// each app read whichever sibling shipped most recently — so the banner would offer
+/// OpenCodeForge's version to a ClaudeForge user, and the download link would hand them the
+/// wrong app. Scoping by tag is the only way to ask "the newest release of <i>this</i> app".
+/// </para>
+///
+/// <para>
+/// ⚠ <b>Drafts and pre-releases are now excluded explicitly, and that is load-bearing.</b>
+/// <c>/releases/latest</c> filtered them for free; the list endpoint does not, so the fields
+/// are read and honoured here. Dropping that check would silently start pushing beta tags to
+/// every user — a regression with no visible cause at the call site.
+/// </para>
+///
+/// <para>
+/// <b>The newest release is the highest version, not the most recent publication.</b> Ordering
+/// by version is what makes the answer independent of the order two apps happen to ship in.
+/// </para>
+///
+/// <para>
+/// ⚠ <b>One page, by design.</b> The request asks for 100 releases, newest first, and does not
+/// paginate. If one app published more than 100 consecutive releases, a sibling's newest could
+/// fall off the page and its check would report no update. That fails <i>quiet</i> rather than
+/// wrong, which is the right direction, but it is a real ceiling rather than an oversight.
 /// </para>
 ///
 /// <para>
@@ -37,43 +61,61 @@ namespace Bennewitz.Ninja.AgentForge.Core.Updates;
 /// </para>
 ///
 /// <para>
-/// <b>Testability:</b> the <see cref="ReleasesLatestUrl"/> parameter on
-/// the constructor exists so tests can point the checker at a fake
-/// in-memory URL.  In practice every test injects a fake message
-/// handler anyway, so the URL is mostly cosmetic in tests — but having
-/// the override available makes debugging and integration-style tests
-/// (e.g. local-server smoke) tractable without monkey-patching.
+/// <b>Testability:</b> the <c>releasesUrl</c> parameter on the constructor exists so tests can
+/// point the checker at a fake in-memory URL.  In practice every test injects a fake message
+/// handler anyway, so the URL is mostly cosmetic in tests — but having the override available
+/// makes debugging and integration-style tests (e.g. local-server smoke) tractable without
+/// monkey-patching.
 /// </para>
 /// </summary>
 public sealed class GithubReleaseChecker
 {
     /// <summary>
-    /// GitHub Releases API endpoint for the canonical ClaudeForge repo.
-    /// Hard-coded by design — the check is scoped to ONE repository
-    /// (the upstream JanusMael fork that publishes signed releases),
-    /// not a configurable "which fork do I track" setting.
+    /// The repository that hosts every app in this solution, as <c>owner/name</c>.
     /// </summary>
-    public const string DefaultReleasesLatestUrl =
-        "https://api.github.com/repos/JanusMael/ClaudeForge/releases/latest";
+    /// <remarks>
+    /// Hard-coded by design — the check is scoped to ONE repository (the upstream fork that
+    /// publishes signed releases), not a configurable "which fork do I track" setting. This
+    /// names the <i>repository</i>, which several apps share; which releases within it belong
+    /// to the running app is <see cref="ReleaseTagScheme"/>'s question, not this constant's.
+    /// </remarks>
+    public const string DefaultRepository = "JanusMael/ClaudeForge";
 
     private readonly HttpClient _http;
-    private readonly string _releasesLatestUrl;
+    private readonly string _releasesUrl;
+    private readonly ReleaseTagScheme _tags;
 
     /// <summary>
-    /// Construct a checker against a specific endpoint URL.  Pass an
-    /// <see cref="HttpClient"/> whose <see cref="HttpMessageHandler"/>
-    /// is either a real network stack (production) or a fake that
-    /// returns canned JSON (unit tests).  GitHub requires a
-    /// <c>User-Agent</c> header — the caller is responsible for
-    /// setting it on the supplied <see cref="HttpClient"/> (see
-    /// <see cref="CreateDefaultProductionHttpClient"/> for the
-    /// canonical production setup).
+    /// Construct a checker for one app's releases.  Pass an <see cref="HttpClient"/> whose
+    /// <see cref="HttpMessageHandler"/> is either a real network stack (production) or a fake
+    /// that returns canned JSON (unit tests).  GitHub requires a <c>User-Agent</c> header — the
+    /// caller is responsible for setting it on the supplied <see cref="HttpClient"/> (see
+    /// <see cref="CreateDefaultProductionHttpClient"/> for the canonical production setup).
     /// </summary>
-    public GithubReleaseChecker(HttpClient http, string? releasesLatestUrl = null)
+    /// <param name="tags">
+    /// Which releases in the repository belong to the running app.
+    /// <para>
+    /// ⚠ <b>Required, with no default on purpose.</b> A defaulted scheme is exactly how a new
+    /// app silently adopts another's tags and starts offering its users the wrong download.
+    /// Two call sites is a cheap price for that not being possible.
+    /// </para>
+    /// </param>
+    public GithubReleaseChecker(HttpClient http, ReleaseTagScheme tags, string? releasesUrl = null)
     {
         ArgumentNullException.ThrowIfNull(http);
+        ArgumentNullException.ThrowIfNull(tags);
         _http = http;
-        _releasesLatestUrl = releasesLatestUrl ?? DefaultReleasesLatestUrl;
+        _tags = tags;
+        _releasesUrl = releasesUrl ?? ReleasesUrlFor(DefaultRepository);
+    }
+
+    /// <summary>
+    /// The releases-list endpoint for a repository, newest first, capped at one page of 100.
+    /// </summary>
+    public static string ReleasesUrlFor(string repository)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(repository);
+        return $"https://api.github.com/repos/{repository}/releases?per_page=100";
     }
 
     /// <summary>
@@ -85,17 +127,25 @@ public sealed class GithubReleaseChecker
     /// User-Agent with a 403; the rejection is silent to the user (we
     /// catch it like any other failure) but worth avoiding.
     /// </summary>
+    /// <param name="appName">
+    /// The running app's name, e.g. <c>ClaudeForge</c>. Part of the User-Agent, so it must be
+    /// the app doing the asking rather than a hardcoded name — otherwise every app in the
+    /// repository identifies itself as whichever one was written first.
+    /// </param>
+    /// <param name="appVersion">The running app's version.</param>
     /// <remarks>
     /// Returned client is intended to be held as a process-wide static
     /// singleton.  Construct once, share across every check call.
     /// </remarks>
-    public static HttpClient CreateDefaultProductionHttpClient(string appVersion)
+    public static HttpClient CreateDefaultProductionHttpClient(string appName, string appVersion)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(appName);
+
         HttpClient client = new()
         {
             Timeout = TimeSpan.FromSeconds(10),
         };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"ClaudeForge/{appVersion}");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"{appName}/{appVersion}");
         return client;
     }
 
@@ -127,13 +177,13 @@ public sealed class GithubReleaseChecker
         try
         {
             using HttpResponseMessage response =
-                await _http.GetAsync(_releasesLatestUrl, ct).ConfigureAwait(false);
+                await _http.GetAsync(_releasesUrl, ct).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
                 Log.Information(
                     "[UpdateCheck] GitHub returned {Status} for {Url} — treating as no-update.",
-                    (int)response.StatusCode, _releasesLatestUrl);
+                    (int)response.StatusCode, _releasesUrl);
                 return UpdateCheckResult.NoUpdate();
             }
 
@@ -142,40 +192,66 @@ public sealed class GithubReleaseChecker
 
             using JsonDocument doc = JsonDocument.Parse(json);
 
-            if (!doc.RootElement.TryGetProperty("tag_name", out JsonElement tagElement))
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
             {
                 Log.Information(
-                    "[UpdateCheck] Response had no tag_name field; treating as no-update.");
+                    "[UpdateCheck] Expected a release array; got {Kind}. Treating as no-update.",
+                    doc.RootElement.ValueKind);
                 return UpdateCheckResult.NoUpdate();
             }
 
-            string? tag = tagElement.GetString();
-            if (string.IsNullOrWhiteSpace(tag))
+            string? bestTag = null;
+            string? bestUrl = null;
+            Version? best = null;
+            int mine = 0;
+
+            foreach (JsonElement release in doc.RootElement.EnumerateArray())
+            {
+                // The list endpoint includes both, unlike /releases/latest. Skipping them here
+                // is what keeps beta tags out of the user's update banner.
+                if (IsTrue(release, "draft") || IsTrue(release, "prerelease"))
+                {
+                    continue;
+                }
+
+                string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement)
+                    ? tagElement.GetString()
+                    : null;
+
+                if (!_tags.TryParseVersion(tag, out Version? parsed) || parsed is null)
+                {
+                    continue;
+                }
+
+                mine++;
+                if (best is not null && parsed <= best)
+                {
+                    continue;
+                }
+
+                best = parsed;
+                bestTag = tag;
+                bestUrl = release.TryGetProperty("html_url", out JsonElement urlElement)
+                    ? urlElement.GetString()
+                    : null;
+            }
+
+            if (best is null || bestTag is null)
             {
                 Log.Information(
-                    "[UpdateCheck] tag_name was empty; treating as no-update.");
+                    "[UpdateCheck] No release matched tag prefix '{Prefix}' among {Count} "
+                    + "release(s); treating as no-update.",
+                    _tags.PublishPrefix, doc.RootElement.GetArrayLength());
                 return UpdateCheckResult.NoUpdate();
             }
 
-            string? releaseUrl = doc.RootElement.TryGetProperty("html_url", out JsonElement urlElement)
-                ? urlElement.GetString()
-                : null;
-
-            if (!TryParseTag(tag, out Version? parsed) || parsed is null)
+            if (best > currentVersion)
             {
                 Log.Information(
-                    "[UpdateCheck] tag_name '{Tag}' did not parse to a Version; treating as no-update.",
-                    tag);
-                return UpdateCheckResult.NoUpdate();
-            }
-
-            Version latest = parsed;
-            if (latest > currentVersion)
-            {
-                Log.Information(
-                    "[UpdateCheck] Newer release found: {Tag} (current={Current}, latest={Latest}).",
-                    tag, currentVersion, latest);
-                return UpdateCheckResult.UpdateAvailable(tag, latest, releaseUrl);
+                    "[UpdateCheck] Newer release found: {Tag} (current={Current}, latest={Latest}, "
+                    + "matched {Mine} of {Total} releases).",
+                    bestTag, currentVersion, best, mine, doc.RootElement.GetArrayLength());
+                return UpdateCheckResult.UpdateAvailable(bestTag, best, bestUrl);
             }
 
             return UpdateCheckResult.NoUpdate();
@@ -188,10 +264,21 @@ public sealed class GithubReleaseChecker
             Log.Information(
                 ex,
                 "[UpdateCheck] failed for {Url}: {Message} — treating as no-update.",
-                _releasesLatestUrl, ex.Message);
+                _releasesUrl, ex.Message);
             return UpdateCheckResult.NoUpdate();
         }
     }
+
+    /// <summary>
+    /// Read a boolean field, treating a missing or non-boolean field as <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// Absence means false for <c>draft</c> and <c>prerelease</c>: a response that omits them is
+    /// describing an ordinary release, and defaulting the other way would hide every release.
+    /// </remarks>
+    private static bool IsTrue(JsonElement release, string field)
+        => release.TryGetProperty(field, out JsonElement value)
+           && value.ValueKind == JsonValueKind.True;
 
     /// <summary>
     /// Strip a leading <c>v</c> / <c>V</c> from a release tag and parse

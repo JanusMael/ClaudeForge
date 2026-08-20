@@ -51,7 +51,19 @@ internal static class AppUpdateService
     /// don't pay the network-stack init cost.
     /// </summary>
     private static readonly Lazy<HttpClient> Http = new(() =>
-        GithubReleaseChecker.CreateDefaultProductionHttpClient(GetCurrentVersionString()));
+        GithubReleaseChecker.CreateDefaultProductionHttpClient("ClaudeForge", GetCurrentVersionString()));
+
+    /// <summary>
+    /// ClaudeForge's releases are tagged <c>v2026.3.810</c> — no app-name prefix.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>This cannot change.</b> Thirteen releases are already published in that shape
+    /// and every installed copy looks for exactly it. Prefixing ClaudeForge's future tags
+    /// would not fix old installs — it would blind them, because their check would stop
+    /// recognising any tag as its own. A later app in this repository takes a prefix instead;
+    /// see <see cref="ReleaseTagScheme.Unprefixed"/>.
+    /// </remarks>
+    private static readonly ReleaseTagScheme Tags = ReleaseTagScheme.Unprefixed;
 
     /// <summary>
     /// Explicit / manual update check, invoked by the user clicking the
@@ -82,7 +94,7 @@ internal static class AppUpdateService
         }
 
         Log.Information("[UpdateCheck] Manual check triggered (current={Current}).", current);
-        GithubReleaseChecker checker = new(Http.Value);
+        GithubReleaseChecker checker = new(Http.Value, Tags);
         return await checker.CheckAsync(current, ct).ConfigureAwait(false);
     }
 
@@ -165,7 +177,7 @@ internal static class AppUpdateService
         }
 
         // Live path: real GitHub call.
-        GithubReleaseChecker checker = new(Http.Value);
+        GithubReleaseChecker checker = new(Http.Value, Tags);
         return await checker.CheckAsync(current, ct).ConfigureAwait(false);
     }
 
