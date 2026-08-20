@@ -42,7 +42,7 @@
         <Grid Grid.Row="1" Margin="8" ColumnDefinitions="*,Auto">
             <TextBox Grid.Column="0"
                      Text="{Binding Search.SearchQuery, Mode=TwoWay}"
-                     Watermark="Search settings"
+                     PlaceholderText="Search settings"
                      AutomationProperties.Name="Search settings" />
             <TextBlock Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Opacity="0.7"
                        Text="{Binding Search.SearchResults.Count, StringFormat='{}{0} results'}"

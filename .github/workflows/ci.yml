@@ -108,9 +108,20 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Publish (Release, linux-x64)
+      # ⚠ EVERY shipping app needs its own publish. A trim break is invisible to the Debug
+      # suite — one IL2026 in a JSON helper broke the Release publish for three phases while
+      # thousands of Debug tests passed over it — and this job only ever covered the first app,
+      # so the second could have shipped the same class of break with CI green.
+      - name: Publish ClaudeForge (Release, linux-x64)
         run: >
           dotnet publish src/ClaudeForge
           -c Release -r linux-x64
           --self-contained true
-          -o /tmp/trim-check
+          -o /tmp/trim-check-claudeforge
+
+      - name: Publish OpenCodeForge (Release, linux-x64)
+        run: >
+          dotnet publish src/OpenCodeForge
+          -c Release -r linux-x64
+          --self-contained true
+          -o /tmp/trim-check-opencodeforge
