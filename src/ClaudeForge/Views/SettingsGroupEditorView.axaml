@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
@@ -220,7 +221,7 @@
         <TabControl ItemsSource="{Binding Tabs}"
                     SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
             <TabControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:GroupTab">
+                <DataTemplate x:DataType="shell:GroupTab">
                     <TextBlock Text="{Binding Header}"
                                AutomationProperties.Name="{Binding AutomationName}" />
                 </DataTemplate>

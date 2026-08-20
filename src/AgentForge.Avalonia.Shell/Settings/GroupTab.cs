@@ -1,20 +1,19 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 
 /// <summary>
-/// One tab in a <see cref="SettingsGroupEditorViewModel"/>'s top-level tab strip.
-/// The strip is data-driven (<see cref="SettingsGroupEditorViewModel.Tabs"/>) so
+/// One tab in a settings group editor's top-level tab strip.
+/// The strip is data-driven so
 /// groups can contribute extra tabs at any index and hide the built-ins — see
 /// <see cref="IGroupTabCustomizer"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The view (<c>SettingsGroupEditorView</c>) renders the tab body by matching
+/// The host's group view renders the tab body by matching
 /// <see cref="Id"/> in <c>GroupTabBodyTemplate</c>, then binds the body control's
 /// <c>DataContext</c> to <see cref="Content"/>. Built-in tabs use the group VM as
-/// their content; contributed tabs (e.g. the Permissions sub-tabs) use the
-/// compound editor VM.
+/// their content; contributed tabs use a compound editor VM.
 /// </para>
 /// <para>
 /// <see cref="Header"/> is observable because the JSON tab's header is dynamic

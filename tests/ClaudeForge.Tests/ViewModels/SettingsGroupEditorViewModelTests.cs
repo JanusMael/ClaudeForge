@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
