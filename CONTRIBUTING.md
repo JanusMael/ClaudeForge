@@ -32,6 +32,20 @@ dotnet run --project src/ClaudeForge
 
 The app uses `~/.claude/` (and any open project's `.claude/`) for its real working data. If you'd like an isolated sandbox for development, the `PlatformPaths.TestUserProfileOverride` static is the seam most tests use — but for manual smoke runs, point at a throwaway `~/.claude/` setup or back yours up first.
 
+### Which solution to open
+
+The repo hosts two apps over a shared core, so there are three entry points:
+
+| File | Scope | Use it when |
+|---|---|---|
+| `ClaudeForge.slnx` | **Everything.** | You are changing shared code, or you want what CI builds. |
+| `ClaudeForge.Only.slnf` | Shared + ClaudeForge | Working on ClaudeForge alone. |
+| `OpenCodeForge.Only.slnf` | Shared + OpenCode | Working on OpenCodeForge alone. |
+
+The `.slnf` files are [solution filters](https://learn.microsoft.com/visualstudio/ide/filtered-solutions) over `ClaudeForge.slnx` — a view, not a copy. Both include the whole shared layer and its tests, since a change there affects the product you are in.
+
+⚠ **`ClaudeForge.slnx` is the one CI builds and tests**, so a project missing from it never builds in CI at all — and no local build will tell you. Add new projects there first. A filter cannot paper over the omission: naming a project that is absent from the parent solution is a hard `MSB4025` error. The reverse drift — added to the solution, forgotten in the filters — is caught by `SolutionFilterTests` instead, because MSBuild has no opinion about it.
+
 ---
 
 ## Project structure

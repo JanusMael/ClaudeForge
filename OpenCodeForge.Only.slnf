@@ -1,0 +1,24 @@
+{
+  "solution": {
+    "path": "ClaudeForge.slnx",
+    "projects": [
+      "src/AgentForge.Abstractions/AgentForge.Abstractions.csproj",
+      "src/AgentForge.Avalonia.Shell/AgentForge.Avalonia.Shell.csproj",
+      "src/AgentForge.Core/AgentForge.Core.csproj",
+      "src/AgentForge.Jsonc/AgentForge.Jsonc.csproj",
+      "src/AgentForge.Sdk/AgentForge.Sdk.csproj",
+      "src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj",
+      "src/LayeredEditors.Avalonia.Diagnostics/LayeredEditors.Avalonia.Diagnostics.csproj",
+      "src/LayeredEditors.Avalonia.Services/LayeredEditors.Avalonia.Services.csproj",
+      "src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj",
+      "src/LayeredEditors.ViewModels/LayeredEditors.ViewModels.csproj",
+      "src/OpenCode.Sdk/OpenCode.Sdk.csproj",
+      "tests/AgentForge.Core.Tests/AgentForge.Core.Tests.csproj",
+      "tests/AgentForge.Jsonc.Tests/AgentForge.Jsonc.Tests.csproj",
+      "tests/AgentForge.Sdk.Tests/AgentForge.Sdk.Tests.csproj",
+      "tests/LayeredEditors.Avalonia.Diagnostics.Tests/LayeredEditors.Avalonia.Diagnostics.Tests.csproj",
+      "tests/LayeredEditors.Avalonia.Tests/LayeredEditors.Avalonia.Tests.csproj",
+      "tests/OpenCode.Sdk.Tests/OpenCode.Sdk.Tests.csproj"
+    ]
+  }
+}
