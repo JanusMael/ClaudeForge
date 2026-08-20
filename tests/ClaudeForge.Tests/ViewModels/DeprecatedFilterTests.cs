@@ -1,4 +1,5 @@
 ﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -37,7 +38,7 @@ public sealed class DeprecatedFilterTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
         Assert.AreEqual(1, filtered.Count,
@@ -60,7 +61,7 @@ public sealed class DeprecatedFilterTests
         SettingsWorkspace workspace = MakeWorkspace(
             (ConfigScope.User, """{"includeCoAuthoredBy":true}"""));
 
-        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
         Assert.AreEqual(1, filtered.Count,
@@ -77,7 +78,7 @@ public sealed class DeprecatedFilterTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Models", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Models", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(1, vm.FilteredEditors.Count());
     }

@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -17,7 +18,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// for Object child editors go through <see cref="Create"/> so that subclasses
 /// (e.g. <see cref="CompositeEditorFactory"/>) can intercept them.
 /// </remarks>
-public class DefaultEditorFactory
+public class DefaultEditorFactory : ISchemaEditorFactory
 {
     /// <summary>
     /// Optional sink notified whenever this factory falls back to the raw-JSON

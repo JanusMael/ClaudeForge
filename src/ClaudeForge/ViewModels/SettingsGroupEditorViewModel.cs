@@ -50,7 +50,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     // that construct the VM via the workspace-only convenience ctor.
     private readonly AgentConfigClientCore? _sdkClient;
     private readonly Func<Task<string?>>? _browseDialog;
-    private readonly DefaultEditorFactory _factory;
+    private readonly ISchemaEditorFactory _factory;
     private readonly SharedScopeContext _sharedScope;
 
     // Per-group tab-strip exception hook (insert/hide tabs). Null ⇒ built-ins only.
@@ -116,8 +116,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         IReadOnlyList<SchemaNode> schemaNodes,
         SettingsWorkspace workspace,
         SharedScopeContext sharedScope,
+        ISchemaEditorFactory factory,
         Func<Task<string?>>? browseDialog = null,
-        DefaultEditorFactory? factory = null,
         string groupDescription = "",
         AgentConfigClientCore? sdkClient = null,
         IGroupTabCustomizer? tabCustomizer = null)
@@ -128,7 +128,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         _workspace = workspace;
         _sdkClient = sdkClient;
         _browseDialog = browseDialog;
-        _factory = factory ?? ClaudeEditorFactoryConfig.CreateDefault();
+        ArgumentNullException.ThrowIfNull(factory);
+        _factory = factory;
         _sharedScope = sharedScope;
         _tabCustomizer = tabCustomizer;
         _editingScope = sharedScope.EditingScope; // initialise from shared state
@@ -151,12 +152,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         string groupName,
         IReadOnlyList<SchemaNode> schemaNodes,
         SettingsWorkspace workspace,
+        ISchemaEditorFactory factory,
         ConfigScope? initialScope = null,
-        Func<Task<string?>>? browseDialog = null,
-        DefaultEditorFactory? factory = null)
+        Func<Task<string?>>? browseDialog = null)
         : this(groupName, schemaNodes, workspace,
             new SharedScopeContext(initialScope ?? ConfigScope.User),
-            browseDialog, factory)
+            factory, browseDialog)
     {
     }
 

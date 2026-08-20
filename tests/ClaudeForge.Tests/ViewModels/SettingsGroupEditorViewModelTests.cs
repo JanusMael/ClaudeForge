@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
@@ -40,7 +41,7 @@ public partial class SettingsGroupEditorViewModelTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(3, vm.Editors.Count);
     }
@@ -49,7 +50,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void SelectedTab_DefaultsToFirstTab()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.IsNotNull(vm.SelectedTab);
         Assert.AreEqual(GroupTab.PropertiesId, vm.SelectedTab.Id);
@@ -59,7 +60,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void SelectTab_SelectsById()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.SelectTab(GroupTab.JsonId);
 
@@ -70,7 +71,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void SelectedTab_PreservedAcrossRebuild()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
         vm.Activate(); // so EditingScope changes rebuild immediately
 
         vm.SelectTab(GroupTab.JsonId);
@@ -90,7 +91,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("maxTokens", "maxTokens", SchemaValueType.Integer),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "";
 
@@ -107,7 +108,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("verbose", "verbose", SchemaValueType.Boolean),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "mod";
 
@@ -126,7 +127,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("model", "model"),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "permissions";
 
@@ -143,7 +144,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("verbose", "verbose", SchemaValueType.Boolean),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "zzznomatch";
 
@@ -173,7 +174,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("verbose", "verbose", SchemaValueType.Boolean),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "model.notARealSubProperty";
 
@@ -196,7 +197,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("verbose", "verbose", SchemaValueType.Boolean),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.FilterText = "model.something";
 
@@ -218,7 +219,7 @@ public partial class SettingsGroupEditorViewModelTests
         // (to defend against Avalonia binding artefacts during DataContext switches).
         SharedScopeContext ctx = new();
         ctx.AvailableScopes = [ConfigScope.User, ConfigScope.Project];
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual("sonnet", ((StringPropertyEditorViewModel)vm.Editors[0]).Value);
 
@@ -232,7 +233,7 @@ public partial class SettingsGroupEditorViewModelTests
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         ((StringPropertyEditorViewModel)vm.Editors[0]).Value = "opus";
         vm.ApplyToWorkspace();
@@ -277,7 +278,7 @@ public partial class SettingsGroupEditorViewModelTests
         // Construct the group editor — this loads the env editor, which
         // (per the compound-editor convention) sets IsModified=true
         // because the User scope has data.
-        SettingsGroupEditorViewModel vm = new("Environment", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Environment", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Sanity: the editor loaded the existing env value.
         Assert.AreEqual(1, vm.Editors.Count);
@@ -329,7 +330,7 @@ public partial class SettingsGroupEditorViewModelTests
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);
-        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, sdkClient: sdk);
+        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, ClaudeEditorFactoryConfig.CreateDefault(), sdkClient: sdk);
 
         StringPropertyEditorViewModel editor = (StringPropertyEditorViewModel)vm.Editors[0];
         Assert.AreEqual(string.Empty, editor.Value ?? string.Empty,
@@ -357,7 +358,7 @@ public partial class SettingsGroupEditorViewModelTests
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);
-        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, sdkClient: sdk);
+        SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, ClaudeEditorFactoryConfig.CreateDefault(), sdkClient: sdk);
 
         StringPropertyEditorViewModel editor = (StringPropertyEditorViewModel)vm.Editors[0];
         editor.Value = "opus"; // user picks a model...
@@ -379,8 +380,8 @@ public partial class SettingsGroupEditorViewModelTests
             (ConfigScope.Project, """{"model":"p"}"""));
 
         SharedScopeContext ctx = new();
-        SettingsGroupEditorViewModel vm1 = new("G1", nodes, workspace, ctx);
-        SettingsGroupEditorViewModel vm2 = new("G2", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm1 = new("G1", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
+        SettingsGroupEditorViewModel vm2 = new("G2", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Both start at User scope
         Assert.AreEqual(ConfigScope.User, vm1.EditingScope);
@@ -406,8 +407,8 @@ public partial class SettingsGroupEditorViewModelTests
         // user can select it (set by UpdateScopeContextScopes when a project is open).
         ctx.AvailableScopes = [ConfigScope.User, ConfigScope.Local];
 
-        SettingsGroupEditorViewModel vm1 = new("G1", nodes, workspace, ctx);
-        SettingsGroupEditorViewModel vm2 = new("G2", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm1 = new("G1", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
+        SettingsGroupEditorViewModel vm2 = new("G2", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Changing scope on vm1 should sync vm2 and the shared context
         vm1.EditingScope = ConfigScope.Local;
@@ -423,7 +424,7 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.Project, """{"model":"p"}"""));
 
         SharedScopeContext ctx = new(ConfigScope.Project);
-        SettingsGroupEditorViewModel vm = new("G1", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm = new("G1", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(ConfigScope.Project, vm.EditingScope);
     }
@@ -450,7 +451,7 @@ public partial class SettingsGroupEditorViewModelTests
         SharedScopeContext ctx = new();
         ctx.AvailableScopes = [ConfigScope.User]; // Desktop: single scope
 
-        SettingsGroupEditorViewModel vm = new("MCP Servers", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm = new("MCP Servers", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Simulate Avalonia binding pushing a stale "Local" from the previous
         // CC page into this Desktop VM during the DataContext switch.
@@ -477,7 +478,7 @@ public partial class SettingsGroupEditorViewModelTests
         SharedScopeContext ctx = new();
         ctx.AvailableScopes = [ConfigScope.User, ConfigScope.Local];
 
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault());
         vm.EditingScope = ConfigScope.Local;
 
         Assert.AreEqual(ConfigScope.Local, vm.EditingScope);
@@ -500,7 +501,7 @@ public partial class SettingsGroupEditorViewModelTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, """{"model":"sonnet"}"""));
 
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(1, vm.EffectiveRows.Count,
             "Only properties with at least one scope-set value should appear.");
@@ -519,7 +520,7 @@ public partial class SettingsGroupEditorViewModelTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(0, vm.EffectiveRows.Count,
             "When nothing is set, the Effective grid should be empty.");
@@ -533,7 +534,7 @@ public partial class SettingsGroupEditorViewModelTests
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         Assert.AreEqual(string.Empty, vm.GroupDescription,
             "Default constructor must leave description empty so the description TextBlock collapses.");
@@ -547,8 +548,8 @@ public partial class SettingsGroupEditorViewModelTests
         SharedScopeContext ctx = new();
 
         SettingsGroupEditorViewModel vm = new(
-            "General", nodes, workspace, ctx,
-            browseDialog: null, factory: null,
+            "General", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault(),
+            browseDialog: null,
             groupDescription: "Top-level toggles for the section.");
 
         Assert.AreEqual("Top-level toggles for the section.", vm.GroupDescription);
@@ -575,7 +576,7 @@ public partial class SettingsGroupEditorViewModelTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Plugins", nodes, workspace)
+        SettingsGroupEditorViewModel vm = new("Plugins", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault())
         {
             ShowJsonPlaceholders = true,
         };
@@ -598,7 +599,7 @@ public partial class SettingsGroupEditorViewModelTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Permissions", nodes, workspace)
+        SettingsGroupEditorViewModel vm = new("Permissions", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault())
         {
             ShowJsonPlaceholders = true,
         };
@@ -623,7 +624,7 @@ public partial class SettingsGroupEditorViewModelTests
         };
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Parent", [parent], workspace)
+        SettingsGroupEditorViewModel vm = new("Parent", [parent], workspace, ClaudeEditorFactoryConfig.CreateDefault())
         {
             ShowJsonPlaceholders = true,
         };
@@ -657,7 +658,7 @@ public partial class SettingsGroupEditorViewModelTests
             MakeNode("verbose", "verbose", SchemaValueType.Boolean),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Capture references to the editor instances after the first load.
         PropertyEditorViewModel firstModelEditor = vm.Editors.First(e => e.Path == "model");
@@ -687,7 +688,7 @@ public partial class SettingsGroupEditorViewModelTests
         // The instance must survive.
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         PropertyEditorViewModel firstEditor = vm.Editors[0];
 
@@ -781,7 +782,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void ApplyNavigationFilter_SetsFilterAndNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.ApplyNavigationFilter("model");
 
@@ -793,7 +794,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void UserEditingFilter_DropsNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
         vm.ApplyNavigationFilter("model");
         Assert.IsTrue(vm.FilterFromNavigation);
 
@@ -806,7 +807,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void ClearingFilter_DropsNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
         vm.ApplyNavigationFilter("model");
 
         vm.ClearFilterCommand.Execute(null);
@@ -819,7 +820,7 @@ public partial class SettingsGroupEditorViewModelTests
     public void ApplyNavigationFilter_NullOrEmpty_DoesNotFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace);
+        SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         vm.ApplyNavigationFilter(null);
 

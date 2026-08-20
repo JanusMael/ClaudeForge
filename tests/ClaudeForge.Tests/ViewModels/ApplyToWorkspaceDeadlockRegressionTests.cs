@@ -1,4 +1,5 @@
 ﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
 // the App-bridge StringPropertyEditorViewModel was deleted;
 // reference the library leaf via alias.
@@ -65,7 +66,7 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
         // with a fresh instance.
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         // Capture the editor instance BEFORE the write.
         PropertyEditorViewModel editorBefore = vm.Editors[0];
@@ -101,7 +102,7 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
             MakeNode("c", "c"),
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
-        SettingsGroupEditorViewModel vm = new("General", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ClaudeEditorFactoryConfig.CreateDefault());
 
         foreach (StringEditor? editor in vm.Editors.Cast<StringEditor>())
         {
