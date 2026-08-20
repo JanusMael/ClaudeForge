@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -62,6 +63,45 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Status line — also where a load failure surfaces.</summary>
     [ObservableProperty] private string _status = string.Empty;
 
+    /// <summary>True while <see cref="InitializeAsync"/> is running.</summary>
+    /// <remarks>
+    /// Search consults this so a query typed during startup does not report "no results" against
+    /// a tree that is still empty — the shell shows a loading state instead.
+    /// </remarks>
+    // Starts true: the window is shown before InitializeAsync finishes, and a query typed in
+    // that window would otherwise be answered "no results" against an empty tree.
+    [ObservableProperty] private bool _isLoading = true;
+
+    /// <summary>
+    /// The chosen search result. Setting it navigates to that page and closes the search.
+    /// </summary>
+    /// <remarks>
+    /// Clearing the query afterwards is deliberate: leaving the result list up after navigating
+    /// hides the page the user just asked for. The property resets itself to null so selecting
+    /// the same result twice in a row navigates both times.
+    /// </remarks>
+    [ObservableProperty] private SearchResultViewModel? _selectedSearchResult;
+
+    partial void OnSelectedSearchResultChanged(SearchResultViewModel? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        SelectedNode = value.Node;
+        Search.SearchQuery = string.Empty;
+        SelectedSearchResult = null;
+    }
+
+    /// <summary>Global search over the navigation tree, the schema, and the synthetic table.</summary>
+    /// <remarks>
+    /// Every piece of matching, ordering and suppression is the shell's. What this app supplies is
+    /// three callbacks: the tree, the synthetic entries, and one schema-search provider per
+    /// section. That is the whole cost of search for a second app.
+    /// </remarks>
+    public SearchViewModel Search { get; }
+
     /// <summary>Construct with this app's two products.</summary>
     public MainWindowViewModel()
         : this(
@@ -86,6 +126,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         Sections = [.. sections];
+
+        Search = new SearchViewModel(
+            getNavigationTree: () => Navigation,
+            isLoadingProbe: () => IsLoading,
+            getSyntheticEntries: () => OpenCodeSyntheticSearch.Build(Strings.SectionOpenCode),
+            getSchemaSearchProviders: BuildSchemaSearchProviders);
+    }
+
+    /// <summary>One schema-search provider per loaded section.</summary>
+    /// <remarks>
+    /// The client is captured in a local per iteration rather than read from the section inside
+    /// the lambda: a reload swaps the client, and a lambda that re-read it would search a
+    /// half-replaced one.
+    /// </remarks>
+    internal IReadOnlyList<SchemaSearchProvider> BuildSchemaSearchProviders()
+    {
+        List<SchemaSearchProvider> providers = new(Sections.Count);
+        foreach (HostedSection section in Sections)
+        {
+            AgentConfigClientCore client = section.Client;
+            providers.Add(new SchemaSearchProvider(section.HeaderText(), q => client.SearchSchema(q)));
+        }
+
+        return providers;
     }
 
     /// <summary>
@@ -100,6 +164,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         SchemaRegistry registry = new();
         List<string> failures = [];
+        IsLoading = true;
 
         foreach (HostedSection section in Sections)
         {
@@ -124,6 +189,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
         }
 
+        IsLoading = false;
         SelectedNode = Navigation.FirstOrDefault()?.Children.FirstOrDefault();
         Status = failures.Count == 0
             ? string.Empty

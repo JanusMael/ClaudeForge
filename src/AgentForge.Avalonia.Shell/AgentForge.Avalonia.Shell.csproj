@@ -48,5 +48,11 @@
              existing coverage lives; a slice's tests move only if keeping them
              put would leave them unable to see what they assert. -->
         <InternalsVisibleTo Include="ClaudeForge.Tests" />
+
+        <!-- The second app's tests need the same view, for the same reason: SearchViewModel's
+             synchronous ExecuteSearch is internal because the public surface is the debounced
+             SearchQuery property, and a unit test cannot drive a 200 ms debounce that pivots
+             through the UI dispatcher. Both apps' tests assert the same seam. -->
+        <InternalsVisibleTo Include="OpenCodeForge.Tests" />
     </ItemGroup>
 </Project>
