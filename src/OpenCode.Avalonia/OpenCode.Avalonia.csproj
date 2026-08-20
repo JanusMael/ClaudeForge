@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCode.Avalonia</RootNamespace>
+        <AssemblyName>OpenCode.Avalonia</AssemblyName>
+        <Description>
+            OpenCode's own compound editors and their views: the shapes the generic
+            schema-to-editor dispatch cannot render usefully because their meaning is not in
+            their JSON type. The permission map is the clearest case — it is an object of
+            strings to the schema, and an ORDERED, last-match-wins rule list to OpenCode.
+
+            The sibling of ClaudeForge.Avalonia. It references OpenCode.Sdk and the shared
+            editor library, and never a Claude assembly; AssemblyLayeringTests enforces that
+            from the "OpenCode" name prefix alone, so this project needs no registration there.
+
+            Views live beside their view-models rather than in the app, because the app is a
+            thin host and these editors are the product's own vocabulary.
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="CommunityToolkit.Mvvm"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\OpenCode.Sdk\OpenCode.Sdk.csproj"/>
+        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>
+        <ProjectReference Include="..\AgentForge.Avalonia.Shell\AgentForge.Avalonia.Shell.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="OpenCode.Avalonia.Tests"/>
+    </ItemGroup>
+</Project>
