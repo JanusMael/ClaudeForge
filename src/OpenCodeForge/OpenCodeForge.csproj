@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCodeForge</RootNamespace>
+        <AssemblyName>OpenCodeForge</AssemblyName>
+        <AssemblyProduct>OpenCodeForge</AssemblyProduct>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Version>1.0.0</Version>
+        <!-- Windows TFM for the same reason ClaudeForge carries it: it picks up the
+             net10.0-windows build of LayeredEditors.Avalonia.Services. -->
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- SatelliteResourceLanguages deliberately unset, matching the other app: setting it
+             turns into a strict allow-list and silently drops any culture not spelled exactly
+             as its satellite folder. -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>OpenCodeForge.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageReference Include="Serilog" Version="4.4.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The neutral stack, and this product's SDK. Deliberately NO reference to any
+             ClaudeForge.* project — AssemblyLayeringTests enforces that, and the whole point
+             of Phases 5 and 8b was making this list sufficient. -->
+        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj" />
+        <ProjectReference Include="..\AgentForge.Core\AgentForge.Core.csproj" />
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
+        <ProjectReference Include="..\AgentForge.Avalonia.Shell\AgentForge.Avalonia.Shell.csproj" />
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj" />
+        <ProjectReference Include="..\LayeredEditors.ViewModels\LayeredEditors.ViewModels.csproj" />
+        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Diagnostics\LayeredEditors.Avalonia.Diagnostics.csproj" />
+        <ProjectReference Include="..\OpenCode.Sdk\OpenCode.Sdk.csproj" />
+    </ItemGroup>
+
+    <!-- No <Generator> on the resx: Localization/Strings.cs is hand-written, so there is no
+         designer file to keep in sync. The default globbing embeds the resx already. -->
+</Project>

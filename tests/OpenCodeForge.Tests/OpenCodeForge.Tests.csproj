@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCodeForge.Tests</RootNamespace>
+        <!-- The app multi-targets for the Windows-only share service; tests take the
+             platform-neutral TFM so they run on every CI host. -->
+        <TargetFramework>net10.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\OpenCodeForge\OpenCodeForge.csproj"/>
+    </ItemGroup>
+</Project>

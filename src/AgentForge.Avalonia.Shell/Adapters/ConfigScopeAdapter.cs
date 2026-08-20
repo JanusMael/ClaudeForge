@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
@@ -26,12 +27,21 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 public sealed class ConfigScopeAdapter : IEditorScope
 {
     /// <summary>
-    /// Keyed by scope rather than indexed by ordinal — see the class remarks. Built from
-    /// <see cref="ConfigScope.All"/> so a scope added to the ladder is wrapped
-    /// automatically instead of falling off the end of a hand-maintained array.
+    /// Wrappers, created on demand and kept forever.
     /// </summary>
-    private static readonly Dictionary<ConfigScope, ConfigScopeAdapter> _cache =
-        ConfigScope.All.ToDictionary(scope => scope, scope => new ConfigScopeAdapter(scope));
+    /// <remarks>
+    /// ⚠⚠ <b>This used to be pre-built from <see cref="ConfigScope.All"/>, which is the DEFAULT
+    /// ladder — i.e. one product's four scopes.</b> Any scope from another product's ladder threw
+    /// <see cref="ArgumentOutOfRangeException"/> from <see cref="For"/>, so the second app could
+    /// not render a single settings page. Populating on demand is what makes this type actually
+    /// neutral rather than merely neutrally named.
+    /// <para>
+    /// Concurrent because editors are built off the UI thread during startup, and
+    /// <c>GetOrAdd</c> keeps the singleton guarantee the library's <c>AreSame</c> relies on:
+    /// two calls for the same scope must return the same instance.
+    /// </para>
+    /// </remarks>
+    private static readonly ConcurrentDictionary<ConfigScope, ConfigScopeAdapter> _cache = new();
 
     private ConfigScopeAdapter(ConfigScope source)
     {
@@ -55,13 +65,12 @@ public sealed class ConfigScopeAdapter : IEditorScope
     public bool IsReadOnly { get; }
 
     /// <summary>Return the singleton <see cref="ConfigScopeAdapter"/> for the given <see cref="ConfigScope"/>.</summary>
-    public static ConfigScopeAdapter For(ConfigScope scope)
-    {
-        return _cache.TryGetValue(scope, out ConfigScopeAdapter? wrapper)
-            ? wrapper
-            : throw new ArgumentOutOfRangeException(
-                nameof(scope), scope, "No ConfigScopeAdapter wrapper exists for this scope.");
-    }
+    /// <remarks>
+    /// Never throws for an unknown scope. Any scope on any ladder is wrappable — the wrapper is
+    /// derived entirely from what the scope itself reports.
+    /// </remarks>
+    public static ConfigScopeAdapter For(ConfigScope scope) =>
+        _cache.GetOrAdd(scope, static s => new ConfigScopeAdapter(s));
 
     /// <summary>
     /// Resolve an <see cref="IEditorScope"/> back to a <see cref="ConfigScope"/>.
@@ -74,12 +83,14 @@ public sealed class ConfigScopeAdapter : IEditorScope
             return cs.Source;
         }
 
-        // Fall back to ID-based resolution for fakes / test doubles. Resolved against
-        // ConfigScope.All rather than a hand-written list of the four ids, so the mapping
-        // cannot drift out of step with the ladder.
-        foreach (ConfigScope candidate in ConfigScope.All)
+        // Fall back to ID-based resolution for fakes / test doubles. Searches every scope this
+        // process has actually wrapped BEFORE the default ladder, so a second product's scope
+        // resolves too — checking only ConfigScope.All would silently answer with the default
+        // ladder's scope of the same name, or throw for one it has no name for.
+        IEnumerable<ConfigScope> candidates = _cache.Keys.Concat(ConfigScope.All);
+        foreach (ConfigScope candidate in candidates)
         {
-            if (string.Equals(candidate.ToString(), scope.Id, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(candidate.Id, scope.Id, StringComparison.OrdinalIgnoreCase))
             {
                 return candidate;
             }
@@ -95,7 +106,10 @@ public sealed class ConfigScopeAdapter : IEditorScope
     /// </remarks>
     public static int ToLibraryPriority(ConfigScope scope)
     {
-        return ConfigScope.All.Count - 1 - scope.Ordinal;
+        // ⚠ Counts the rungs on THIS SCOPE'S OWN ladder, not ConfigScope.All — which is the
+        // default ladder's four. A five-rung ladder's lowest scope produced -1 under the old
+        // expression, inverting precedence for the whole product with no error anywhere.
+        return scope.Ladder.All.Count - 1 - scope.Ordinal;
     }
 
     public override string ToString()
