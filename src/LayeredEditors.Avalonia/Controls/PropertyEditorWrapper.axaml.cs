@@ -64,7 +64,7 @@ public partial class PropertyEditorWrapper : UserControl
         // Show the FULL list when the chevron is clicked, not
         // the substring-filtered subset.  Pre-fix behaviour: AutoCompleteBox
         // uses its current Text as the filter, so after the user picked a
-        // value (e.g. "claude-3-5-sonnet"), clicking the chevron showed only
+        // value (e.g. a long model id), clicking the chevron showed only
         // entries containing that string — usually just the one already
         // selected.  Surprising to a user who isn't typing.
         //
