@@ -10,6 +10,7 @@ using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
+using Bennewitz.Ninja.OpenCodeForge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
 
@@ -59,6 +60,43 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>The page whose editor is showing.</summary>
     [ObservableProperty] private NavigationNodeViewModel? _selectedNode;
+
+    /// <summary>
+    /// Install state of the agent this app configures.
+    /// </summary>
+    /// <remarks>
+    /// Shown as a banner rather than blocking anything. Editing a config for a not-yet-installed
+    /// agent is legitimate — provisioning a machine, or fixing a config that broke the install —
+    /// so detection informs and never prevents.
+    /// </remarks>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowInstallBanner))]
+    [NotifyPropertyChangedFor(nameof(InstallBannerText))]
+    private OpenCodeInstallStatus _installStatus = OpenCodeInstallStatus.NotFound;
+
+    /// <summary>
+    /// True once detection has run AND found nothing.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Gated on <see cref="HasProbedForInstall"/> so the banner does not flash during startup.
+    /// InstallStatus begins as NotFound, which is indistinguishable from a completed negative
+    /// probe — without the gate every launch would show "not detected" for a moment.
+    /// </remarks>
+    public bool ShowInstallBanner => HasProbedForInstall && !InstallStatus.IsInstalled;
+
+    /// <summary>Whether detection has completed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowInstallBanner))]
+    private bool _hasProbedForInstall;
+
+    /// <summary>Banner text: what was not found, and that editing still works.</summary>
+    public string InstallBannerText =>
+        "OpenCode was not detected on this machine. You can still edit its configuration — "
+        + "the settings below are saved to disk either way.";
+
+    /// <summary>Ways to install it, for the platform in use.</summary>
+    public IReadOnlyList<InstallOption> InstallOptions { get; } =
+        OpenCodeInstallCommands.ForCurrentPlatform();
 
     /// <summary>Status line — also where a load failure surfaces.</summary>
     [ObservableProperty] private string _status = string.Empty;
@@ -188,6 +226,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 failures.Add(section.Product.DisplayName);
             }
         }
+
+        // Detection last: it runs a child process, and a slow or hung binary must not delay the
+        // settings pages the user came for.
+        InstallStatus = await OpenCodeInstallProbe.DetectAsync(ct).ConfigureAwait(false);
+        HasProbedForInstall = true;
 
         IsLoading = false;
         SelectedNode = Navigation.FirstOrDefault()?.Children.FirstOrDefault();

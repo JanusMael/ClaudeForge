@@ -4,14 +4,42 @@
         xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
         xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
+        xmlns:services="using:Bennewitz.Ninja.OpenCodeForge.Services"
         x:Class="Bennewitz.Ninja.OpenCodeForge.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
         Width="1280" Height="860">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Install banner. Informational only: editing a config for a not-yet-installed agent
+             is legitimate, so this never blocks. -->
+        <Border Grid.Row="0" Padding="12,8" Background="#FF37474F"
+                IsVisible="{Binding ShowInstallBanner}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{Binding InstallBannerText}" Foreground="White" TextWrapping="Wrap"
+                           AutomationProperties.Name="Install status" />
+                <ItemsControl ItemsSource="{Binding InstallOptions}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="services:InstallOption">
+                            <StackPanel Margin="0,2">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Label}" Foreground="#FFB0BEC5"
+                                               FontWeight="SemiBold" MinWidth="130" />
+                                    <SelectableTextBlock Text="{Binding Command}" Foreground="White"
+                                                         FontFamily="Consolas,Menlo,monospace" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding Note}" Foreground="#FFB0BEC5" FontSize="11"
+                                           TextWrapping="Wrap" Margin="138,0,0,0"
+                                           IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
         <!-- Search. Results replace the page area while a query is present. -->
-        <Grid Grid.Row="0" Margin="8" ColumnDefinitions="*,Auto">
+        <Grid Grid.Row="1" Margin="8" ColumnDefinitions="*,Auto">
             <TextBox Grid.Column="0"
                      Text="{Binding Search.SearchQuery, Mode=TwoWay}"
                      Watermark="Search settings"
@@ -21,7 +49,7 @@
                        IsVisible="{Binding Search.SearchQuery, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="280,*">
+        <Grid Grid.Row="2" ColumnDefinitions="280,*">
             <!-- Navigation: one header per hosted product, one child per settings page. -->
             <TreeView Grid.Column="0"
                       ItemsSource="{Binding Navigation}"
@@ -65,7 +93,7 @@
         </Grid>
 
         <!-- Only visible when something failed to load; an empty status must not reserve space. -->
-        <Border Grid.Row="2" Padding="10,6" Background="#FFB71C1C"
+        <Border Grid.Row="3" Padding="10,6" Background="#FFB71C1C"
                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
             <TextBlock Text="{Binding Status}" Foreground="White" TextWrapping="Wrap"
                        AutomationProperties.Name="Load status" />
