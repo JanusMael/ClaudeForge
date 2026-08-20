@@ -1,15 +1,22 @@
 // Default English strings for the library-side PropertyEditorWrapper chrome.
 //
 // The library wrapper is consumed as a fallback by external users of
-// LayeredEditors.Avalonia who don't supply their own; ClaudeForge supplies
-// its own fully-localised wrapper at src/ClaudeForge/Controls/PropertyEditorWrapper.axaml
-// so this default surface rarely renders in the host app — but the strings
+// LayeredEditors.Avalonia who don't supply their own; a host app can supply
+// its own fully-localised wrapper control instead, so this default surface
+// rarely renders in a complete app — but the strings
 // still need to be overridable so the library is genuinely reusable.
 //
 // Pattern: a static `Resolver` Func returns the localised text for a key.
 // The default resolver returns the English literal.  Consumers wire a
 // host-specific resolver at app-startup (BEFORE any wrapper XAML loads) to
-// pull from their own resx — see ClaudeForge.Program.WireWrapperLocalization.
+// pull from their own resx — each host app wires this during startup, before it
+// builds the Avalonia app.
+//
+// ⚠ NO DEFAULT HERE MAY NAME A PRODUCT. These literals are the fallback every host
+// inherits until it wires a resolver, and a host that forgets ships another product's
+// brand in its own tooltips — invisible until someone hovers. TipUndocumented read
+// "not in official Claude documentation" until 2026-08-20; it is now product-neutral,
+// and WrapperStringsNeutralityTests holds that.
 //
 // Why a Func rather than a resx-on-the-library:
 //   - Adding a satellite-assembly resx to a library is non-trivial and
@@ -48,7 +55,7 @@ public static class WrapperStrings
         {
             nameof(TipResetToInherited) => "Remove this setting at the current scope (inherit from lower scope)",
             nameof(TipReadOnly) => "Read only",
-            nameof(TipUndocumented) => "Undocumented setting — not in official Claude documentation",
+            nameof(TipUndocumented) => "Undocumented setting — not in the official documentation",
             nameof(TipShowSuggestions) => "Show suggestions",
             nameof(TipNewSetting) => "New setting — added since your last session",
             nameof(LabelOverridden) => "(overridden)",
@@ -63,7 +70,7 @@ public static class WrapperStrings
     /// <summary>Tooltip for the 🔒 read-only / managed-scope lock icon.</summary>
     public static string TipReadOnly => Resolver(nameof(TipReadOnly));
 
-    /// <summary>Tooltip for the 🕵 "not in official Claude docs" indicator.</summary>
+    /// <summary>Tooltip for the 🕵 "not in the official docs" indicator.</summary>
     public static string TipUndocumented => Resolver(nameof(TipUndocumented));
 
     /// <summary>Tooltip for the free-form enum's "▾ show suggestions" chevron.</summary>

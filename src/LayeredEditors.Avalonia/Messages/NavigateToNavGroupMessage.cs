@@ -6,7 +6,7 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 /// Essentials page (or any future surface that wants to deep-link into a
 /// schema-driven nav group).
 /// <para>
-/// The receiver (typically `Bennewitz.Ninja.ClaudeForge.ViewModels.MainWindowViewModel`)
+/// The receiver (typically the host's main view-model)
 /// looks up the matching child node by title and selects it, optionally
 /// applying a property filter so the matched property is highlighted on
 /// arrival.

@@ -36,7 +36,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <!-- 2026-05-16 — Property-name pill (background + foreground both
                          theme-aware via App-side tokens).  Tokens are defined in the
-                         CONSUMER App.axaml (ClaudeForge/App.axaml) rather than this
+                         CONSUMER App.axaml (the host app's) rather than this
                          library because the library has no theme-dictionaries
                          infrastructure of its own.  When the brushes are absent
                          (consumer didn't define them), the Border/TextBlock fall
