@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Bennewitz.Ninja.OpenCodeForge.ViewModels"
+        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+        xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
+        x:Class="Bennewitz.Ninja.OpenCodeForge.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Width="1280" Height="860">
+
+    <Grid RowDefinitions="*,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="280,*">
+            <!-- Navigation: one header per hosted product, one child per settings page. -->
+            <TreeView Grid.Column="0"
+                      ItemsSource="{Binding Navigation}"
+                      SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
+                      AutomationProperties.Name="Settings navigation">
+                <TreeView.ItemTemplate>
+                    <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="libvm:NavigationNodeViewModel">
+                        <TextBlock Text="{Binding Title}" Margin="2,4" />
+                    </TreeDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <!-- The selected page's editor. The template lives in its own control so the window
+                 markup stays about layout. -->
+            <views:SettingsPageHost Grid.Column="1"
+                                    DataContext="{Binding SelectedNode.Editor}" />
+        </Grid>
+
+        <!-- Only visible when something failed to load; an empty status must not reserve space. -->
+        <Border Grid.Row="1" Padding="10,6" Background="#FFB71C1C"
+                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding Status}" Foreground="White" TextWrapping="Wrap"
+                       AutomationProperties.Name="Load status" />
+        </Border>
+    </Grid>
+</Window>

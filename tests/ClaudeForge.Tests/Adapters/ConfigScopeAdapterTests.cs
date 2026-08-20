@@ -114,4 +114,76 @@ public sealed class ConfigScopeAdapterTests
 
         public bool IsReadOnly => false;
     }
+
+    // ── any ladder, not just the default one ─────────────────────────────────
+    //
+    // ⚠⚠ These exist because the second app could not render a single settings page.
+    // ConfigScopeAdapter was renamed from ClaudeScope in Phase 8b-1 and moved into the neutral
+    // shell — but its cache was pre-built from ConfigScope.All, which IS the default ladder, and
+    // its priority formula counted ConfigScope.All.Count. Renaming a type does not neutralise it.
+    // The whole suite stayed green because every test used the default ladder.
+
+    /// <summary>A five-rung ladder, deliberately unlike the default four.</summary>
+    private static ScopeLadder OtherProductLadder() => new(
+        "other-product",
+        new ScopeRung("Managed", IsReadOnly: true),
+        new ScopeRung("Inline", IsReadOnly: true),
+        new ScopeRung("Project", IsReadOnly: false),
+        new ScopeRung("Custom", IsReadOnly: false),
+        new ScopeRung("Global", IsReadOnly: false));
+
+    [TestMethod]
+    public void For_WrapsAScopeFromANonDefaultLadder()
+    {
+        ScopeLadder ladder = OtherProductLadder();
+
+        foreach (ConfigScope scope in ladder.All)
+        {
+            ConfigScopeAdapter wrapper = ConfigScopeAdapter.For(scope);
+            Assert.AreEqual(scope, wrapper.Source,
+                $"'{scope.DisplayName}' from a non-default ladder must be wrappable. Throwing "
+                + "here means no product but the first can render a settings page at all.");
+        }
+    }
+
+    [TestMethod]
+    public void Priority_InvertsWithinTheScopesOwnLadder()
+    {
+        ScopeLadder ladder = OtherProductLadder();
+
+        // Five rungs: highest-priority (ordinal 0) becomes 4, lowest (ordinal 4) becomes 0.
+        Assert.AreEqual(4, ConfigScopeAdapter.ToLibraryPriority(ladder.ScopeAt(0)));
+        Assert.AreEqual(0, ConfigScopeAdapter.ToLibraryPriority(ladder.ScopeAt(4)),
+            "Counting the DEFAULT ladder's rungs instead of this scope's own gives -1 here, "
+            + "which inverts precedence for the whole product with no error anywhere.");
+
+        // And the default ladder is unaffected — this fix must not move Claude's values.
+        Assert.AreEqual(3, ConfigScopeAdapter.ToLibraryPriority(ConfigScope.Managed));
+        Assert.AreEqual(0, ConfigScopeAdapter.ToLibraryPriority(ConfigScope.User));
+    }
+
+    [TestMethod]
+    public void For_ReturnsTheSameInstanceForTheSameScope_OnAnyLadder()
+    {
+        ConfigScope other = OtherProductLadder().ScopeAt(2);
+
+        Assert.AreSame(ConfigScopeAdapter.For(other), ConfigScopeAdapter.For(other),
+            "The library compares scopes by reference through AreSame, so a second call must "
+            + "return the same wrapper or scope comparisons silently start failing.");
+        Assert.AreSame(ConfigScopeAdapter.For(ConfigScope.User), ConfigScopeAdapter.For(ConfigScope.User));
+    }
+
+    [TestMethod]
+    public void TwoLaddersWithTheSameRungName_DoNotCollide()
+    {
+        ConfigScope otherProject = OtherProductLadder().ScopeAt(2);   // "Project", ordinal 2
+
+        Assert.AreNotEqual(ConfigScope.Project, otherProject,
+            "Precondition: same name and ordinal, different ladder — these must not be equal.");
+        Assert.AreNotSame(
+            ConfigScopeAdapter.For(ConfigScope.Project),
+            ConfigScopeAdapter.For(otherProject),
+            "Two products' scopes that share a rung name must get distinct wrappers, or editing "
+            + "one product's Project scope would resolve to the other's.");
+    }
 }

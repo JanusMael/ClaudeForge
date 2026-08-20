@@ -54,6 +54,13 @@
              anything in OpenCode.Sdk, and AssemblyLayeringTests still holds. -->
         <InternalsVisibleTo Include="OpenCode.Sdk"/>
 
+        <!-- OpenCodeForge (the second GUI) reaches WorkspaceForGui to hand the loaded
+             workspace to the shell's settings page, exactly as the first GUI does. Same
+             grant, same reason, and it retires on the same day: WorkspaceForGui is internal
+             because it exposes a mutable SettingsWorkspace, and the public surface that
+             replaces it has not been designed yet. -->
+        <InternalsVisibleTo Include="OpenCodeForge"/>
+
         <!-- ClaudeForge (the GUI) is granted internals visibility for the duration
              of the SDK migration. The GUI uses the
              internal `FromExistingWorkspace` constructor to wrap a pre-loaded
