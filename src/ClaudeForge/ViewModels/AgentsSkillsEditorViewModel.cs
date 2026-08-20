@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
