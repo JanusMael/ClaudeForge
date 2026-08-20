@@ -1,11 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupPropertiesView"
-             x:DataType="vm:SettingsGroupEditorViewModel">
+             x:DataType="shell:SettingsGroupEditorViewModel">
 
     <!-- Built-in "Properties" tab body: filter bar + the virtualized property
          editor list. Extracted verbatim from SettingsGroupEditorView so the tab

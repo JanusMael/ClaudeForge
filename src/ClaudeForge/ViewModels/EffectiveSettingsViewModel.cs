@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
@@ -196,18 +197,4 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
             Dispatcher.UIThread.Post(Refresh);
         }
     }
-}
-
-public sealed record EffectivePropertyRow(
-    string Property,
-    string DisplayValue,
-    ConfigScope? Scope,
-    bool IsOverridden,
-    string? Description = null)
-{
-    /// <summary>
-    /// Tooltip for the property-name cell: the schema description when known, else the
-    /// raw path (so the cell always has a meaningful hover, matching the old behaviour).
-    /// </summary>
-    public string PropertyTooltip => string.IsNullOrWhiteSpace(Description) ? Property : Description!;
 }

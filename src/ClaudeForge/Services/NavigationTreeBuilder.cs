@@ -215,10 +215,10 @@ public static class NavigationTreeBuilder
             workspace,
             context,
             factory,
+            ClaudeSettingsGroupText.Create(),
             browseDialog,
             groupDescription: page.Description,
-            sdkClient: sdkClient,
-            tabCustomizer: ClaudeGroupTabCustomizer.Instance);
+            sdkClient: sdkClient,            tabCustomizer: ClaudeGroupTabCustomizer.Instance);
         return new NavigationGroup(page.Title, vm);
     }
 }

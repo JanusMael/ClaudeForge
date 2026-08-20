@@ -168,7 +168,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     // because those accessors also acquire _stateLock.
     //
     // The single-editor live-write path was protected by `_selfWriting` in
-    // SettingsGroupEditorViewModel; the bulk-save path was not — that bug
+    // the settings group editor; the bulk-save path was not — that bug
     // was patched, but any FUTURE workspace.Changed subscriber that reads
     // via SDK accessors would re-introduce the deadlock unless it knew to
     // mirror the same guard.
@@ -281,12 +281,12 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     //
     // dual-guard contract.
     // This flag pairs with `_selfWriting` in
-    // `ClaudeForge.ViewModels.SettingsGroupEditorViewModel` to prevent the
+    // the settings group editor to prevent the
     // SDK Changed → editor reload → SDK SetValue → SDK Changed infinite
     // loop. See the comment block on `_selfWriting` for the full contract.
     // If you change either flag's lifecycle, also review the other side
     // and re-run the regression tests in
-    // `tests/ClaudeForge.Tests/ViewModels/SettingsGroupEditorViewModelTests`.
+    // the group-editor view-model tests.
     private bool _suppressForwarder;
 
     /// <inheritdoc/>
@@ -1184,13 +1184,13 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// Direct access to the underlying <see cref="SettingsWorkspace"/>.
     /// Returns <see langword="null"/> until <see cref="OpenAsync"/> populates
     /// it. Internal-only; the GUI uses this so its
-    /// <c>SettingsGroupEditorViewModel</c> + factory chain can keep their
+    /// the settings group editor + factory chain can keep their
     /// <c>workspace.GetLayeredValue</c> read paths during the partial
     /// migration without MWVM holding a duplicate <c>_workspace</c> field.
     /// </summary>
     /// <remarks>
     /// Acquires the state lock briefly to publish the reference safely.
-    /// Once the SettingsGroupEditorViewModel + Object/leaf editor read
+    /// Once the the settings group editor + Object/leaf editor read
     /// paths fully migrate to <see cref="GetLayeredValueSnapshot"/> this
     /// accessor can be removed.
     /// </remarks>

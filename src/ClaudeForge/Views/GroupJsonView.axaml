@@ -1,10 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupJsonView"
-             x:DataType="vm:SettingsGroupEditorViewModel">
+             x:DataType="shell:SettingsGroupEditorViewModel">
 
     <!-- Built-in "JSON" tab body: toggle bar + syntax-highlighted preview.
          Extracted from SettingsGroupEditorView. DataContext = the group VM.

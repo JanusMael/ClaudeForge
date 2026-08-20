@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -10,24 +9,21 @@ using System.Text.Json.Nodes;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
-using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
-using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 
 /// <summary>
 /// Hosts property editors for a named settings group.
 /// Manages the active editing scope and pushes values to the workspace on demand.
-/// Saving/reloading is coordinated by <see cref="MainWindowViewModel"/>.
+/// Saving/reloading is coordinated by the host view-model.
 /// <para>
 /// Implements <see cref="ISchemaGroupEditor"/> so the neutral search machinery can
 /// match this page property-by-property instead of only by title. Both members it
@@ -52,6 +48,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     private readonly Func<Task<string?>>? _browseDialog;
     private readonly ISchemaEditorFactory _factory;
     private readonly SharedScopeContext _sharedScope;
+    private readonly SettingsGroupText _text;
 
     // Per-group tab-strip exception hook (insert/hide tabs). Null ⇒ built-ins only.
     private readonly IGroupTabCustomizer? _tabCustomizer;
@@ -83,7 +80,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     //
     // If you change either flag's lifecycle, also review the other side and
     // re-run the canonical regression tests in
-    // `tests/ClaudeForge.Tests/ViewModels/SettingsGroupEditorViewModelTests`.
+    // the group-editor view-model tests.
     private bool _selfWriting;
 
     /// <summary>
@@ -117,6 +114,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         SettingsWorkspace workspace,
         SharedScopeContext sharedScope,
         ISchemaEditorFactory factory,
+        SettingsGroupText text,
         Func<Task<string?>>? browseDialog = null,
         string groupDescription = "",
         AgentConfigClientCore? sdkClient = null,
@@ -129,7 +127,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         _sdkClient = sdkClient;
         _browseDialog = browseDialog;
         ArgumentNullException.ThrowIfNull(factory);
+        ArgumentNullException.ThrowIfNull(text);
         _factory = factory;
+        _text = text;
         _sharedScope = sharedScope;
         _tabCustomizer = tabCustomizer;
         _editingScope = sharedScope.EditingScope; // initialise from shared state
@@ -153,11 +153,12 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         IReadOnlyList<SchemaNode> schemaNodes,
         SettingsWorkspace workspace,
         ISchemaEditorFactory factory,
+        SettingsGroupText text,
         ConfigScope? initialScope = null,
         Func<Task<string?>>? browseDialog = null)
         : this(groupName, schemaNodes, workspace,
             new SharedScopeContext(initialScope ?? ConfigScope.User),
-            factory, browseDialog)
+            factory, text, browseDialog)
     {
     }
 
@@ -209,7 +210,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// <summary>
     /// One-line page description shown in the editor header next to
     /// <see cref="GroupName"/>. Sourced from the <c>GroupDescriptions</c>
-    /// table in <see cref="Services.NavigationTreeBuilder"/>; empty string
+    /// table in the host's page-layout data; empty string
     /// for groups not in that table (the bound TextBlock is hidden when
     /// the description is empty so the heading collapses cleanly).
     /// </summary>
@@ -275,7 +276,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// <summary>
     /// Clears contextual hint banners on compound editors when the filter is removed,
     /// matching the user expectation that clearing the filter returns the page to its
-    /// default state.  Currently dismisses <see cref="PermissionsEditorViewModel.ShowDangerCliHint"/>.
+    /// default state.  Any editor implementing <see cref="ITransientHintHost"/> is asked to dismiss its hints.
     /// </summary>
     partial void OnFilterTextChanged(string value)
     {
@@ -291,9 +292,9 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             return;
         }
 
-        foreach (PermissionsEditorViewModel editor in Editors.OfType<PermissionsEditorViewModel>())
+        foreach (ITransientHintHost editor in Editors.OfType<ITransientHintHost>())
         {
-            editor.ShowDangerCliHint = false;
+            editor.DismissTransientHints();
         }
     }
 
@@ -326,7 +327,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
     /// <summary>
     /// Yields only editors whose name, path, or description matches <paramref name="filter"/>.
-    /// For <see cref="ObjectPropertyEditorViewModel"/> entries that do NOT directly match,
+    /// For entries that contain child editors and do NOT directly match,
     /// recursively descends into their children and yields any descendants that do match —
     /// so typing a nested property name (e.g. "allowUnsandboxedCommands") shows only that
     /// child property rather than the entire parent object with all siblings.
@@ -355,7 +356,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
                 // that's fine when the object's own name/description is what matched).
                 yield return editor;
             }
-            else if (editor is ObjectPropertyEditorViewModel obj)
+            else if (editor is LibVm.IChildEditorHost obj)
             {
                 // Object didn't match directly — descend into children and yield
                 // only matching descendants so the user sees just the target property,
@@ -378,7 +379,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             else if (IsSubPathOf(filter, editor.Path))
             {
                 // Specialized editor (Permissions / Hooks / MCP / etc.) — not an
-                // ObjectPropertyEditorViewModel, so no recursion possible.  When the
+                // child-editor host, so no recursion possible.  When the
                 // filter targets a sub-property of this editor, the editor itself is
                 // the only place the property can be edited, so yield it whole.
                 yield return editor;
@@ -461,7 +462,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         }
     }
 
-    public string JsonTabHeader => ShowJsonPlaceholders ? "JSON (all)" : "JSON (active)";
+    public string JsonTabHeader => ShowJsonPlaceholders ? _text.TabJsonAll : _text.TabJsonActive;
 
     [RelayCommand]
     private void CopyJson()
@@ -482,7 +483,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
         // Defensive guard: Avalonia's ComboBox TwoWay binding can push a stale
         // or default scope during a DataContext switch (e.g. when navigating from
-        // a Claude Code page with "Local" selected to a Claude Desktop page whose
+        // one product's page with "Local" selected to another product's page whose
         // AvailableScopes is [User] only).  The ItemsSource and SelectedItem
         // bindings are not updated atomically, so the old SelectedItem value can
         // momentarily flow back to the new VM before the binding is refreshed.
@@ -717,11 +718,11 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
                 // gate flush on actual user mutation, not on the
                 // editor's IsModified flag.  The flag is set true at load time
                 // for every compound editor whose scope has data (see
-                // src/ClaudeForge/ViewModels/Editors/AGENTS.md), so an
+                // the editors AGENTS.md), so an
                 // IsModified-only gate would flush every loaded editor's
                 // in-memory snapshot back to the SDK on every save —
                 // clobbering any out-of-band SDK writes (e.g. the Essentials
-                // page writing `env.CLAUDE_CODE_MAX_OUTPUT_TOKENS` while the
+                // page writing a nested env key while the
                 // Environment group editor's in-memory env snapshot doesn't
                 // include that key).  _userEditedPaths is populated only by
                 // OnEditorPropertyChanged (which fires only on post-load user
@@ -775,7 +776,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         // not a literal empty value — normalize it to null so it takes the remove path
         // (which, guarded below, is a true no-op when the key is already unset) and
         // never pins a ghost like model="" from opening a dropdown and leaving it blank.
-        // No Claude Code setting treats "" as distinct from absent.
+        // No known setting treats "" as distinct from absent.
         if (value is JsonValue strValue && strValue.TryGetValue(out string? s) && string.IsNullOrWhiteSpace(s))
         {
             value = null;
@@ -841,7 +842,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     ///     redaction marker.  Catches the common case of the Environment
     ///     group editor whose <c>editor.Path</c> is <c>"env"</c> and whose
     ///     value is the WHOLE env map (potentially containing
-    ///     <c>ANTHROPIC_API_KEY</c>).</item>
+    ///     an API-key variable).</item>
     ///   <item>Value is a <see cref="JsonObject"/> or <see cref="JsonArray"/> —
     ///     return a structural summary (shape + serialized length) but NOT
     ///     the JSON contents.  Compound editors (mcpServers, hooks, etc.)
@@ -859,7 +860,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// User report 2026-05-13 + code-review audit: the previous unconditional
     /// <c>value?.ToJsonString()</c> in both audit-log sites would emit the
     /// full <c>env</c> JSON object (including API keys) into the rolling log
-    /// file at <c>~/.claude/cache/logs/</c>.  The log file travels with bug
+    /// file in the host's log directory.  The log file travels with bug
     /// reports, so any leaked secret rides along.  Pinned by
     /// <c>FormatValueForAuditLog_RedactsEnvPath</c> in the test suite.
     /// </remarks>
@@ -916,8 +917,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
         //
         // Every RebuildEditors call (workspace.Changed → OnWorkspaceChanged
         // when not _selfWriting; EditingScope change; reload) created brand-
-        // new editor instances. Compound editors (HooksEditorViewModel,
-        // McpServersEditorViewModel) lose internal UI state — selected
+        // new editor instances. Compound editors lose internal UI state — selected
         // event group, expanded panes, scroll position, in-progress new-row
         // text — across every reload, even though those editors had per-
         // instance "preserve selection across LoadFromLayered" logic
@@ -1018,8 +1018,8 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
         List<GroupTab> seed =
         [
-            new() { Id = GroupTab.PropertiesId, Header = Strings.HeaderTabProperties, Content = this },
-            new() { Id = GroupTab.EffectiveId, Header = Strings.HeaderTabEffective, Content = this },
+            new() { Id = GroupTab.PropertiesId, Header = _text.TabProperties, Content = this },
+            new() { Id = GroupTab.EffectiveId, Header = _text.TabEffective, Content = this },
             new() { Id = GroupTab.JsonId, Header = JsonTabHeader, Content = this },
         ];
 
@@ -1153,7 +1153,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
 
     private void RebuildEffectiveRows()
     {
-        // The Effective tab answers the question "what value does Claude
+        // The Effective tab answers the question "what value does the agent
         // actually see at runtime for each setting in this group?". A
         // property that no scope has ever set has no answer worth showing
         // — the row would just say "(not set)" with no scope chiclet, which
@@ -1268,7 +1268,7 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
             SchemaValueType.Path => JsonValue.Create(node.DefaultValue ?? string.Empty),
             SchemaValueType.Array => new JsonArray(),
             // Object: recurse into the schema's child properties so nested settings
-            // appear as their own placeholder keys, matching the runtime shape Claude
+            // appear as their own placeholder keys, matching the runtime shape the agent
             // would actually read. Falls back to an empty {} when the schema does not
             // declare children (e.g. an open-ended dict like a name → config map).
             SchemaValueType.Object => BuildObjectPlaceholder(node),

@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Diagnostics;
 using System.Linq;
 using Avalonia.Controls;

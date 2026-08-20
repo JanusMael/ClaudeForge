@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
@@ -118,7 +119,7 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- Tooltip shows the schema description (falls back to the
                                              path) so hovering a property name explains what it does. -->
                                         <controls:TipCell Tip="{Binding PropertyTooltip}">
@@ -140,7 +141,7 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- SelectableTextBlock + ContextFlyout matches the
                                              SaveChangesDialog cell pattern: drag-select + Ctrl+C
                                              copies the visible (ellipsis-trimmed) text natively;
@@ -174,7 +175,7 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- Outer TipCell makes the entire cell area hoverable
                                              (not just the colored badge), so users can read the
                                              scope description by pointing anywhere in the cell. -->
@@ -209,7 +210,7 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveOverridden}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <controls:TipCell
                                             Tip="{Binding IsOverridden,
                                                 Converter={StaticResource OverriddenTooltip}}">

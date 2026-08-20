@@ -1,11 +1,12 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupEffectiveView"
-             x:DataType="vm:SettingsGroupEditorViewModel">
+             x:DataType="shell:SettingsGroupEditorViewModel">
 
     <!-- Built-in "Effective" tab body: subtitle + merged-value grid (read-only).
          Extracted from SettingsGroupEditorView. DataContext = the group VM.
@@ -47,7 +48,7 @@
                                    ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                        <DataTemplate x:DataType="shell:EffectivePropertyRow">
                             <!-- Tooltip shows the schema description (falls back to the name). -->
                             <controls:TipCell Tip="{Binding PropertyTooltip}">
                                 <TextBlock Text="{Binding Property}"
@@ -64,7 +65,7 @@
                                    ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                        <DataTemplate x:DataType="shell:EffectivePropertyRow">
                             <!-- Cell trims to width; hover pretty-prints the full JSON value. -->
                             <controls:TipCell Tip="{Binding DisplayValue, Converter={StaticResource LongValueTooltip}}">
                                 <SelectableTextBlock Text="{Binding DisplayValue}"
@@ -83,7 +84,7 @@
                                    ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                        <DataTemplate x:DataType="shell:EffectivePropertyRow">
                             <Border Background="{Binding Scope, Converter={StaticResource ScopeToBrush}}"
                                     TextElement.Foreground="White"
                                     CornerRadius="3" Padding="6,2" Margin="4,2"

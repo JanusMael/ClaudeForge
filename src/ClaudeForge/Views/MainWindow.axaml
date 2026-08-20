@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+        xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
         xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
@@ -854,7 +855,7 @@
                     <!-- Editor area: DataTemplates map VM types to Views -->
                     <ContentControl Content="{Binding ActiveEditor}">
                         <ContentControl.DataTemplates>
-                            <DataTemplate DataType="vm:SettingsGroupEditorViewModel">
+                            <DataTemplate DataType="shell:SettingsGroupEditorViewModel">
                                 <views:SettingsGroupEditorView />
                             </DataTemplate>
                             <DataTemplate DataType="vm:EffectiveSettingsViewModel">

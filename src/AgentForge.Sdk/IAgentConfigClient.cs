@@ -265,7 +265,7 @@ public interface IAgentConfigClient : IDisposable
     /// UI navigation node. Applications that need to deep-link into an editor
     /// page must maintain their own mapping from JsonPath to navigation context
     /// (e.g. a dictionary built from the navigation tree's
-    /// <c>SettingsGroupEditorViewModel.SchemaNodes</c>).
+    /// the settings group editor's schema nodes).
     /// </remarks>
     IReadOnlyList<SchemaSearchResult> SearchSchema(string query, int maxResults = 50);
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -157,8 +158,16 @@ public sealed partial class ToolActionGroup : ObservableObject
 /// Rules are wrapped in <see cref="PermissionRuleViewModel"/> so each row is
 /// editable inline (two-way binding to a string element is not supported in Avalonia).
 /// </summary>
-public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
+public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor, ITransientHintHost
 {
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The CLI danger hint is raised when a filter or deep link surfaces the
+    /// bypass-permissions row, so it must not outlive the filter that caused it.
+    /// </remarks>
+    public void DismissTransientHints() => ShowDangerCliHint = false;
+
     /// <inheritdoc />
     /// <remarks>
     /// Search asks the editor rather than mapping its type, so a new specialised

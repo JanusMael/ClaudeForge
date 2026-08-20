@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;

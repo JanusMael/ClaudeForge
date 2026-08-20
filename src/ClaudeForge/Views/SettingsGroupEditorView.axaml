@@ -11,7 +11,7 @@
              xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.SettingsGroupEditorView"
-             x:DataType="vm:SettingsGroupEditorViewModel">
+             x:DataType="shell:SettingsGroupEditorViewModel">
 
     <UserControl.Resources>
         <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />

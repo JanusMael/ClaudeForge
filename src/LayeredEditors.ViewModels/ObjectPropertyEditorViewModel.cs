@@ -21,7 +21,7 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 /// and the group editor would never write the updated value to the workspace.
 /// </para>
 /// </remarks>
-public partial class ObjectPropertyEditorViewModel : PropertyEditorViewModel
+public partial class ObjectPropertyEditorViewModel : PropertyEditorViewModel, IChildEditorHost
 {
     private readonly IEditorWorkspace? _workspace;
 
