@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
@@ -27,7 +28,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// and the group editor would never write the updated value to the workspace.
 /// </para>
 /// </remarks>
-public class ObjectPropertyEditorViewModel : PropertyEditorViewModel
+public class ObjectPropertyEditorViewModel : PropertyEditorViewModel, LibVm.IChildEditorHost
 {
     /// <summary>
     /// Only objects with MORE than this many children render as collapsible, name-prefix

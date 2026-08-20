@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Collections.ObjectModel;
 using Avalonia.Media;
 using Bennewitz.Ninja.ClaudeForge.Localization;

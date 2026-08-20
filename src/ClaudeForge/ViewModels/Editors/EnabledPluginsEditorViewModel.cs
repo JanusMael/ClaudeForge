@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;

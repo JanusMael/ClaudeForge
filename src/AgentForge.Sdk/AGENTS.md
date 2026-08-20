@@ -88,7 +88,7 @@ intended (e.g. `ReloadAsync` internally does this correctly).
 ## §5 `_suppressForwarder` + `_selfWriting` dual guard
 
 `_suppressForwarder` (in `AgentConfigClientCore.cs`) pairs with `_selfWriting`
-(in `src/ClaudeForge/ViewModels/SettingsGroupEditorViewModel.cs`) to prevent
+(in `src/AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs`) to prevent
 the feedback loop:
 
 ```

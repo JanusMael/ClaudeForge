@@ -229,7 +229,7 @@ If you add a new editor that also computes `OtherScopesWithData` from
 
 ## 6. `_selfWriting` guard
 
-Source: `src/ClaudeForge/ViewModels/SettingsGroupEditorViewModel.cs` —
+Source: `src/AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs` —
 the `_selfWriting` field, the `OnWorkspaceChanged` early-out, and the
 live-write try/finally block in `ApplyToWorkspace`.
 
