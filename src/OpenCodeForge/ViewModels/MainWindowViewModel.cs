@@ -212,7 +212,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 IReadOnlyList<NavigationNodeViewModel> pages =
                     await BuildPagesAsync(registry, section, ct).ConfigureAwait(false);
 
-                NavigationNodeViewModel header = new(section.HeaderText());
+                // Expanded on arrival: a collapsed header hides every page behind a click, and
+                // one of those pages is already selected — the user would see an empty-looking
+                // tree beside a populated editor.
+                NavigationNodeViewModel header = new(section.HeaderText()) { IsExpanded = true };
                 foreach (NavigationNodeViewModel page in pages)
                 {
                     header.Children.Add(page);

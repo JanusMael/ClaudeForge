@@ -272,8 +272,14 @@
                         nested checkboxes previously appeared unlabeled.
                     -->
                     <DataTemplate x:DataType="vm:ObjectPropertyEditorViewModel">
+                        <!-- ⚠ The header must NOT bind DisplayName: row 1 of this wrapper already
+                             renders the property name, so repeating it here printed every nested
+                             object's name twice ("watcher" above a "watcher" expander). The child
+                             count is useful instead of merely duplicative. The app-side wrapper
+                             avoids this by rendering small objects inline and labelling
+                             collapsible ones by CATEGORY, never by property name. -->
                         <Expander IsExpanded="{Binding IsExpanded}"
-                                  Header="{Binding DisplayName}">
+                                  Header="{Binding Children.Count, StringFormat='{}{0} settings'}">
                             <ItemsControl ItemsSource="{Binding Children}">
                                 <ItemsControl.ItemTemplate>
                                     <!-- x:DataType enables compiled bindings inside the recursive
