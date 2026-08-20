@@ -1,6 +1,17 @@
 name: Release
 
 # Triggered by a version tag: v1.2.3 or v1.2.3-rc.1 (pre-release)
+#
+# ⚠ This pattern is ClaudeForge's, and it is deliberately narrow. The repository hosts more
+# than one app, and each one's releases are told apart by tag prefix — see ReleaseTagScheme.
+# ClaudeForge publishes BARE tags (v2026.3.810) because thirteen releases already exist in that
+# shape and every installed copy looks for exactly it; later apps take a prefix instead
+# (opencodeforge-v…), which this pattern correctly does not match.
+#
+# ⛔ Do NOT widen this to catch another app's tags. This job builds and publishes ClaudeForge,
+# so an 'opencodeforge-v*' tag reaching it would attach ClaudeForge binaries to what users see
+# as an OpenCodeForge release. A second app needs its own release workflow, not another
+# trigger on this one.
 on:
   push:
     tags:

@@ -44,6 +44,8 @@ public sealed class GithubReleaseCheckerTests
             Task.FromResult(_respond(request));
     }
 
+    private const string FakeUrl = "https://fake-host/releases";
+
     private static GithubReleaseChecker MakeChecker(string json) =>
         MakeChecker(HttpStatusCode.OK, json);
 
@@ -58,13 +60,20 @@ public sealed class GithubReleaseCheckerTests
             }
             return resp;
         }));
-        return new GithubReleaseChecker(http, "https://fake-host/releases/latest");
+        return new GithubReleaseChecker(http, ReleaseTagScheme.Unprefixed, FakeUrl);
     }
+
+    /// <summary>
+    /// A checker whose canned response is a one-element release list. The endpoint returns an
+    /// array, so a fixture describing a single release still has to be one.
+    /// </summary>
+    private static GithubReleaseChecker MakeCheckerOne(string releaseJson) =>
+        MakeChecker($"[{releaseJson}]");
 
     private static GithubReleaseChecker MakeThrowingChecker(Exception toThrow)
     {
         HttpClient http = new(new FakeHandler(_ => throw toThrow));
-        return new GithubReleaseChecker(http, "https://fake-host/releases/latest");
+        return new GithubReleaseChecker(http, ReleaseTagScheme.Unprefixed, FakeUrl);
     }
 
     // ── Version-comparison contracts ────────────────────────────────────
@@ -73,7 +82,7 @@ public sealed class GithubReleaseCheckerTests
     public async Task CheckAsync_NewerReleaseAvailable_ReturnsUpdateAvailable()
     {
         // Current 1.0.0; remote latest v2.0.0 → banner should fire.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0","html_url":"https://github.com/foo/bar/releases/tag/v2.0.0"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
@@ -90,7 +99,7 @@ public sealed class GithubReleaseCheckerTests
     public async Task CheckAsync_SameVersion_ReturnsNoUpdate()
     {
         // Running the exact version GitHub says is latest → no banner.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v1.0.0","html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
@@ -103,7 +112,7 @@ public sealed class GithubReleaseCheckerTests
     public async Task CheckAsync_OlderRemoteVersion_ReturnsNoUpdate()
     {
         // Local dev build that's somehow ahead of the public release — no banner.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v1.0.0","html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(2, 0, 0));
@@ -119,7 +128,7 @@ public sealed class GithubReleaseCheckerTests
         // System.Version comparison is lexicographic on the 4 parts; this
         // pins the contract for 4-part build-number-style tags (which is
         // the shape the source generator produces).
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2026.5.524.0","html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(2026, 5, 523, 0));
@@ -265,7 +274,7 @@ public sealed class GithubReleaseCheckerTests
     public async Task CheckAsync_MalformedJson_ReturnsNoUpdate()
     {
         // Truncated response body — JsonDocument.Parse throws JsonException.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0"""); // deliberately truncated
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
@@ -279,7 +288,7 @@ public sealed class GithubReleaseCheckerTests
     public async Task CheckAsync_MissingTagNameField_ReturnsNoUpdate()
     {
         // Response with no tag_name at all — odd, but graceful.
-        GithubReleaseChecker checker = MakeChecker("""{"html_url":"x"}""");
+        GithubReleaseChecker checker = MakeCheckerOne("""{"html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
@@ -289,7 +298,7 @@ public sealed class GithubReleaseCheckerTests
     [TestMethod]
     public async Task CheckAsync_EmptyTagName_ReturnsNoUpdate()
     {
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"","html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
@@ -302,7 +311,7 @@ public sealed class GithubReleaseCheckerTests
     {
         // No html_url is unusual but shouldn't block surfacing the update.
         // Banner will show with a null URL — Open-release button can disable.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
@@ -317,7 +326,7 @@ public sealed class GithubReleaseCheckerTests
     {
         // Tag like "alpha-1" doesn't fit System.Version — collapses to
         // no-update so we never show a banner we can't compare against.
-        GithubReleaseChecker checker = MakeChecker(
+        GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"alpha-1","html_url":"x"}""");
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
