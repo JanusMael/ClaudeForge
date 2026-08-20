@@ -172,14 +172,20 @@ public static class JsonCurrency
         return ja.Select(n => FromJsonNode(n)).ToList();
     }
 
+    /// <remarks>
+    /// ⚠ Returns an <see cref="OrderedPropertyMap"/> rather than a
+    /// <see cref="Dictionary{TKey,TValue}"/>, whose enumeration order the BCL leaves
+    /// unspecified. For a map whose key order carries meaning — OpenCode resolves permission
+    /// rules by LAST match — an unspecified order is a policy that can change without an edit.
+    /// </remarks>
     private static IReadOnlyDictionary<string, object?> FromObject(JsonObject jo)
     {
-        Dictionary<string, object?> dict = new(StringComparer.Ordinal);
+        OrderedPropertyMap map = new();
         foreach ((string key, JsonNode? value) in jo)
         {
-            dict[key] = FromJsonNode(value);
+            map.Set(key, FromJsonNode(value));
         }
 
-        return dict;
+        return map;
     }
 }
