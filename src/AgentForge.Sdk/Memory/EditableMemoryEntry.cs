@@ -2,7 +2,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
 /// One discovered agent / skill / slash-command file, scope-tagged for the
-/// editing surface.  Produced by <see cref="EditableMemoryService.Snapshot"/>.
+/// editing surface.  Produced by <see cref="EditableMemoryService.Snapshot(string)"/>.
 ///
 /// <para>
 /// Enumeration is <b>stat-only</b> — no file contents are read during

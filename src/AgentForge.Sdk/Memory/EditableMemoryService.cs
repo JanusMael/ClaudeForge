@@ -1,5 +1,5 @@
 using System.Security;
-using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Artifacts;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
@@ -10,7 +10,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// <c>docs/SKILLS-AGENTS-COMMANDS-PLAN.md</c>, group #2).
 ///
 /// <para>
-/// <b>Stat-only enumeration:</b> <see cref="Snapshot"/> reads no file
+/// <b>Stat-only enumeration:</b> <see cref="Snapshot(string)"/> reads no file
 /// contents — it only walks directories and stats files — so it returns fast
 /// even with many plugins.  The front-matter <c>description</c> subtitle is
 /// loaded lazily by the UI via <see cref="LoadDescription"/> once a row is
@@ -30,40 +30,76 @@ public static class EditableMemoryService
     // always sits at the very top of the file, so 8 KiB is generous.
     private const int DescriptionScanBytes = 8192;
 
-    // Plugin trees can be arbitrarily deep (they're git repos), but the
-    // artifact dirs (skills/agents/commands) sit near the top.  Cap recursion
-    // so we never crawl a plugin's dependency tree.
-    private const int MaxPluginDepth = 6;
-
-    // Directory names never worth descending into during the plugin walk.
-    private static readonly HashSet<string> SkipDirNames =
-        new(StringComparer.OrdinalIgnoreCase) { "node_modules", ".git", ".hg", ".svn", "bin", "obj", "dist", "build" };
-
-    private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
-
     /// <summary>
     /// Enumerate every editable artifact across all applicable scopes.
     /// Stat-only; descriptions are loaded later via <see cref="LoadDescription"/>.
     /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Every entry in a chain, not just the winner.</b> A user <c>reviewer.md</c> and a
+    /// plugin's <c>reviewer.md</c> resolve as one artifact with two declarations, and this page
+    /// lists both — it is an editor over files on disk, and hiding one because another outranks it
+    /// would leave the user unable to edit a file they can see in their own home directory.
+    /// Which one Claude actually runs is a separate question the resolver deliberately does not
+    /// answer; see <see cref="ClaudeScopes"/>.
+    /// </remarks>
     public static IReadOnlyList<EditableMemoryEntry> Snapshot(string? projectRoot = null)
     {
-        string home = PlatformPaths.ClaudeHome;
+        return Snapshot(ClaudeArtifactPaths.Default, projectRoot);
+    }
+
+    /// <summary>
+    /// Enumerate every editable artifact for an explicitly supplied set of paths.
+    /// </summary>
+    /// <param name="paths">Where this profile's Claude files live.</param>
+    /// <param name="projectRoot">
+    /// The open project's root, or <see langword="null"/> when none is open.
+    /// </param>
+    /// <remarks>
+    /// ⭐ The real entry point; the single-argument overload is a thin wrapper over
+    /// <see cref="ClaudeArtifactPaths.Default"/>. See <see cref="UserMemoryService.SnapshotFiles(ClaudeArtifactPaths, string)"/>
+    /// for why the static wrapper stays.
+    /// </remarks>
+    public static IReadOnlyList<EditableMemoryEntry> Snapshot(
+        ClaudeArtifactPaths paths, string? projectRoot)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+
+        IReadOnlyList<ScopedArtifactSource> sources =
+            ClaudeEditableArtifactSources.ForEditor(paths, projectRoot);
+
+        Dictionary<string, EditableMemoryScope> scopes =
+            sources.ToDictionary(s => s.Source.Id, s => s.Scope, StringComparer.Ordinal);
+
         List<EditableMemoryEntry> results = [];
-
-        // User scope — ~/.claude/{agents,commands,skills}/  (writable)
-        WalkClaudeDir(results, home, EditableMemoryScope.User, isWritable: true, source: "User");
-
-        // Project scope — <project>/.claude/{agents,commands,skills}/  (writable)
-        if (!string.IsNullOrWhiteSpace(projectRoot))
+        foreach (ResolvedArtifact artifact in ArtifactResolver.Resolve(sources.Select(s => s.Source)))
         {
-            WalkClaudeDir(results, Path.Combine(projectRoot, ".claude"),
-                EditableMemoryScope.Project, isWritable: true, source: "Project");
+            foreach (ArtifactRef entry in artifact.Entries)
+            {
+                AddEntry(results, entry, scopes[entry.SourceId]);
+            }
         }
 
-        // Plugin scope — ~/.claude/plugins/…  (read-only, depth-bounded)
-        WalkPlugins(results, Path.Combine(home, "plugins"));
-
         return results;
+    }
+
+    /// <summary>
+    /// Map an artifact kind onto the inventory category the editor pages group by.
+    /// </summary>
+    /// <remarks>
+    /// Total over the three kinds these sources produce. Anything else is a wiring mistake —
+    /// throwing names it at the point it happens rather than letting an agent quietly render as a
+    /// slash command.
+    /// </remarks>
+    private static UserMemoryCategory CategoryFor(ArtifactKind kind)
+    {
+        return kind switch
+        {
+            ArtifactKind.Agent => UserMemoryCategory.Subagent,
+            ArtifactKind.Command => UserMemoryCategory.SlashCommand,
+            ArtifactKind.Skill => UserMemoryCategory.Skill,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(kind), kind, "The editable surface is agents, commands and skills only."),
+        };
     }
 
     /// <summary>
@@ -122,149 +158,23 @@ public static class EditableMemoryService
         }
     }
 
-    // ── Scope walks ──────────────────────────────────────────────────────
-
-    private static void WalkClaudeDir(
-        List<EditableMemoryEntry> results, string claudeDir,
-        EditableMemoryScope scope, bool isWritable, string source)
-    {
-        AddMarkdownFiles(results, Path.Combine(claudeDir, "agents"),
-            UserMemoryCategory.Subagent, scope, isWritable, source);
-        AddMarkdownFiles(results, Path.Combine(claudeDir, "commands"),
-            UserMemoryCategory.SlashCommand, scope, isWritable, source);
-        AddSkills(results, Path.Combine(claudeDir, "skills"), scope, isWritable, source);
-    }
+    // ── Entry shaping ────────────────────────────────────────────────────
 
     /// <summary>
-    /// Depth-bounded walk of the installed-plugins tree.  At each directory we
-    /// pick up <c>SKILL.md</c> (a skill), and <c>*.md</c> inside <c>agents/</c>
-    /// or <c>commands/</c> dirs, then recurse into child dirs — skipping
-    /// dependency / VCS folders and stopping at <see cref="MaxPluginDepth"/>.
+    /// Stat one declared location into a row.
     /// </summary>
-    private static void WalkPlugins(List<EditableMemoryEntry> results, string pluginsDir)
-    {
-        if (!Directory.Exists(pluginsDir))
-        {
-            return;
-        }
-
-        WalkPluginDir(results, pluginsDir, pluginsDir, depth: 0);
-    }
-
-    private static void WalkPluginDir(
-        List<EditableMemoryEntry> results, string pluginsRoot, string dir, int depth)
-    {
-        string dirName = Path.GetFileName(dir.TrimEnd(PathSeparators));
-
-        // Pick up artifacts at this level.
-        if (dirName.Equals("agents", StringComparison.OrdinalIgnoreCase))
-        {
-            foreach (string md in EnumerateFilesSafe(dir, "*.md"))
-            {
-                AddEntry(results, md, UserMemoryCategory.Subagent, EditableMemoryScope.Plugin,
-                    isWritable: false, source: PluginSource(pluginsRoot, md));
-            }
-        }
-        else if (dirName.Equals("commands", StringComparison.OrdinalIgnoreCase))
-        {
-            foreach (string md in EnumerateFilesSafe(dir, "*.md"))
-            {
-                AddEntry(results, md, UserMemoryCategory.SlashCommand, EditableMemoryScope.Plugin,
-                    isWritable: false, source: PluginSource(pluginsRoot, md));
-            }
-        }
-
-        string skillMd = Path.Combine(dir, "SKILL.md");
-        if (File.Exists(skillMd))
-        {
-            AddEntry(results, skillMd, UserMemoryCategory.Skill, EditableMemoryScope.Plugin,
-                isWritable: false, source: PluginSource(pluginsRoot, skillMd));
-        }
-
-        if (depth >= MaxPluginDepth)
-        {
-            return;
-        }
-
-        foreach (string child in EnumerateDirsSafe(dir))
-        {
-            string childName = Path.GetFileName(child.TrimEnd(PathSeparators));
-            if (SkipDirNames.Contains(childName) || childName.StartsWith('.'))
-            {
-                continue;
-            }
-
-            WalkPluginDir(results, pluginsRoot, child, depth + 1);
-        }
-    }
-
-    /// <summary>
-    /// Derive a plugin source label from a file path: the path segments under
-    /// <c>plugins/</c> up to (not including) the <c>skills</c>/<c>agents</c>/
-    /// <c>commands</c> dir — e.g. <c>everything-claude-code</c> or
-    /// <c>everything-claude-code/some-plugin</c>.  Falls back to <c>"Plugin"</c>.
-    /// </summary>
-    private static string PluginSource(string pluginsRoot, string filePath)
-    {
-        string rel = Path.GetRelativePath(pluginsRoot, filePath);
-        var prefix = new List<string>();
-        foreach (string part in rel.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (part.Equals("skills", StringComparison.OrdinalIgnoreCase)
-                || part.Equals("agents", StringComparison.OrdinalIgnoreCase)
-                || part.Equals("commands", StringComparison.OrdinalIgnoreCase))
-            {
-                break;
-            }
-
-            // Skip the "marketplaces" directory level — it's a Claude Code
-            // installation-layout detail, not meaningful as a display name.
-            // Real path: plugins/marketplaces/<mkt>/<plugin>/agents/…
-            // Displayed as: <mkt>/<plugin>  (not marketplaces/<mkt>/<plugin>)
-            if (part.Equals("marketplaces", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            prefix.Add(part);
-        }
-
-        return prefix.Count > 0 ? string.Join('/', prefix) : "Plugin";
-    }
-
-    // ── Directory helpers ────────────────────────────────────────────────
-
-    private static void AddMarkdownFiles(
-        List<EditableMemoryEntry> results, string dir,
-        UserMemoryCategory category, EditableMemoryScope scope, bool isWritable, string source)
-    {
-        foreach (string file in EnumerateFilesSafe(dir, "*.md"))
-        {
-            AddEntry(results, file, category, scope, isWritable, source);
-        }
-    }
-
-    private static void AddSkills(
-        List<EditableMemoryEntry> results, string skillsDir,
-        EditableMemoryScope scope, bool isWritable, string source)
-    {
-        foreach (string dir in EnumerateDirsSafe(skillsDir))
-        {
-            string skillMd = Path.Combine(dir, "SKILL.md");
-            if (File.Exists(skillMd))
-            {
-                AddEntry(results, skillMd, UserMemoryCategory.Skill, scope, isWritable, source);
-            }
-        }
-    }
-
+    /// <remarks>
+    /// ⚠ <b>The source label is the scope's display name</b>, which is <c>"User"</c> /
+    /// <c>"Project"</c> for the writable scopes and the plugin's path-derived name otherwise —
+    /// so two same-named artifacts from different plugins stay distinguishable at a glance.
+    /// </remarks>
     private static void AddEntry(
-        List<EditableMemoryEntry> results, string path,
-        UserMemoryCategory category, EditableMemoryScope scope, bool isWritable, string source)
+        List<EditableMemoryEntry> results, ArtifactRef entry, EditableMemoryScope scope)
     {
+        UserMemoryCategory category = CategoryFor(entry.Kind);
         try
         {
-            var fi = new FileInfo(path);
+            var fi = new FileInfo(entry.Location);
             if (!fi.Exists)
             {
                 return;
@@ -275,8 +185,8 @@ public static class EditableMemoryService
                 Category: category,
                 Scope: scope,
                 DisplayName: DisplayNameFor(fi, category),
-                Source: source,
-                IsWritable: isWritable,
+                Source: entry.Scope.DisplayName,
+                IsWritable: scope != EditableMemoryScope.Plugin,
                 SizeBytes: fi.Length,
                 LastWriteUtc: fi.LastWriteTimeUtc));
         }
@@ -304,37 +214,4 @@ public static class EditableMemoryService
         return Path.GetFileNameWithoutExtension(fi.Name);
     }
 
-    private static IEnumerable<string> EnumerateFilesSafe(string dir, string pattern)
-    {
-        if (!Directory.Exists(dir))
-        {
-            return [];
-        }
-
-        try
-        {
-            return Directory.EnumerateFiles(dir, pattern, SearchOption.TopDirectoryOnly);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
-
-    private static IEnumerable<string> EnumerateDirsSafe(string dir)
-    {
-        if (!Directory.Exists(dir))
-        {
-            return [];
-        }
-
-        try
-        {
-            return Directory.EnumerateDirectories(dir);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
 }
