@@ -138,6 +138,162 @@ public sealed class OpenCodePermissionModel
     }
 
     /// <summary>
+    /// Build a model from a value obeying the editor library's value-currency contract:
+    /// <c>null</c>, a <see cref="string"/> action, or an
+    /// <c>IReadOnlyDictionary&lt;string, object?&gt;</c> keyed by tool whose values are a
+    /// <see cref="string"/> action or a nested map of pattern → action.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The inverse direction of <see cref="Parse(JsonNode?)"/>, for the editor rather than the
+    /// config loader. Both funnel through the same <c>allow</c>/<c>ask</c>/<c>deny</c>
+    /// vocabulary and the same <see cref="ActionOnlyTools"/> rejection, so only the traversal
+    /// differs — and <c>ParsePathsAgree*</c> in the SDK tests drives a shared corpus through
+    /// both and asserts identical models, because two readers of one format are exactly the
+    /// pair that drifts.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Order comes from the map you pass, and this type cannot check that.</b> Key order
+    /// is the policy here, and <see cref="Dictionary{TKey,TValue}"/> does not promise an
+    /// enumeration order. The caller must supply a map that enumerates in file order — the
+    /// shell's currency conversion returns an insertion-ordered map precisely so this holds.
+    /// No signature can enforce it without dragging a UI assembly into this SDK.
+    /// </para>
+    /// <para>
+    /// Deliberately no <c>JsonNode</c> anywhere in the signature: a value handed back to the
+    /// editor library as a <see cref="JsonNode"/> is stringified by the currency conversion,
+    /// which turns a permission map into one long string in the user's config.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="FormatException">
+    /// Same shapes <see cref="Parse(JsonNode?)"/> rejects, for the same reason.
+    /// </exception>
+    public static OpenCodePermissionModel FromValue(object? value)
+    {
+        if (value is null)
+        {
+            return Empty;
+        }
+
+        if (value is string text)
+        {
+            return new OpenCodePermissionModel(ParseActionText(text, "permission"), []);
+        }
+
+        if (value is not IReadOnlyDictionary<string, object?> map)
+        {
+            throw new FormatException(
+                "'permission' must be an action string or an object keyed by tool.");
+        }
+
+        List<KeyValuePair<string, OpenCodeToolPermission>> tools = [];
+        foreach ((string tool, object? toolValue) in map)
+        {
+            tools.Add(new KeyValuePair<string, OpenCodeToolPermission>(
+                tool,
+                ToolFromValue(tool, toolValue)));
+        }
+
+        return new OpenCodePermissionModel(null, tools);
+    }
+
+    /// <summary>
+    /// Build a model directly from tool entries, without going through a serialised form.
+    /// </summary>
+    /// <param name="globalAction">
+    /// The one action applying to every tool, or <see langword="null"/> when
+    /// <paramref name="tools"/> carries the configuration.
+    /// </param>
+    /// <param name="tools">Per-tool settings, in the order they should resolve.</param>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This exists because an editor holds rows, and rows can say things JSON cannot.</b>
+    /// Two rows may carry the same pattern — a state the user reaches easily and that a JSON object
+    /// cannot represent, since the second key would overwrite the first. An editor that had to
+    /// serialise before it could reason would therefore be blind to exactly the duplicate it needs
+    /// to warn about: it disappears in the conversion, and the resulting model shows one rule and
+    /// no conflict.
+    /// </para>
+    /// <para>
+    /// So resolution and shadow detection over live editor state go through here, and the
+    /// serialised form is built separately for writing.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// A rule or single action is <see cref="PermissionOutcome.Default"/> (a resolution result, not
+    /// something a rule can say), or a tool in <see cref="ActionOnlyTools"/> carries pattern rules.
+    /// </exception>
+    public static OpenCodePermissionModel ForTools(
+        PermissionOutcome? globalAction,
+        IReadOnlyList<KeyValuePair<string, OpenCodeToolPermission>> tools)
+    {
+        ArgumentNullException.ThrowIfNull(tools);
+
+        if (globalAction == PermissionOutcome.Default)
+        {
+            throw new ArgumentException(
+                "A permission value cannot be Default — that means no rule matched.",
+                nameof(globalAction));
+        }
+
+        foreach ((string tool, OpenCodeToolPermission permission) in tools)
+        {
+            if (permission.SingleAction == PermissionOutcome.Default)
+            {
+                throw new ArgumentException(
+                    $"'{tool}' cannot be set to Default — that means no rule matched.",
+                    nameof(tools));
+            }
+
+            if (permission.Rules.Count > 0 && ActionOnlyTools.Contains(tool))
+            {
+                throw new ArgumentException(
+                    $"'{tool}' takes an action string only — it accepts no pattern rules.",
+                    nameof(tools));
+            }
+
+            foreach (OpenCodePermissionRule rule in permission.Rules)
+            {
+                if (rule.Action == PermissionOutcome.Default)
+                {
+                    throw new ArgumentException(
+                        $"'{tool}.{rule.Pattern}' cannot be Default — that means no rule matched.",
+                        nameof(tools));
+                }
+            }
+        }
+
+        return new OpenCodePermissionModel(globalAction, [.. tools]);
+    }
+
+    /// <summary>
+    /// The string OpenCode writes for <paramref name="action"/>.
+    /// </summary>
+    /// <remarks>
+    /// The single source for the written vocabulary, so an editor assembling a permission map
+    /// cannot spell it differently from the parser that reads it back.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="action"/> is <see cref="PermissionOutcome.Default"/>. That value means
+    /// "no rule decided this", which is a resolution result — there is no rule text for it, and
+    /// writing one would invent a policy the user never asked for.
+    /// </exception>
+    public static string ToWireString(PermissionOutcome action)
+    {
+        return action switch
+        {
+            PermissionOutcome.Allow => "allow",
+            PermissionOutcome.Ask => "ask",
+            PermissionOutcome.Deny => "deny",
+            var _ => throw new ArgumentOutOfRangeException(
+                nameof(action),
+                action,
+                "Only allow, ask and deny can be written to a permission map. Default means no "
+                + "rule matched, which is a resolution result rather than something a rule says."),
+        };
+    }
+
+    /// <summary>
     /// What OpenCode would decide for <paramref name="input"/> on <paramref name="tool"/>.
     /// </summary>
     /// <param name="tool">Tool name, e.g. <c>bash</c>.</param>
@@ -213,7 +369,8 @@ public sealed class OpenCodePermissionModel
                     // a sound approximation: "*" matches "npm *", so "*" shadows it.
                     if (OpenCodeGlob.IsMatch(rules[later].Pattern, rules[i].Pattern))
                     {
-                        shadowed.Add(new OpenCodeShadowedRule(entry.Key, rules[i], rules[later]));
+                        shadowed.Add(new OpenCodeShadowedRule(
+                            entry.Key, rules[i], rules[later], i, later));
                         break;
                     }
                 }
@@ -252,10 +409,51 @@ public sealed class OpenCodePermissionModel
         return OpenCodeToolPermission.Patterns(rules);
     }
 
+    private static OpenCodeToolPermission ToolFromValue(string tool, object? value)
+    {
+        if (value is string text)
+        {
+            return OpenCodeToolPermission.Single(ParseActionText(text, tool));
+        }
+
+        if (value is not IReadOnlyDictionary<string, object?> map)
+        {
+            throw new FormatException(
+                $"'permission.{tool}' must be an action string or an object of pattern rules.");
+        }
+
+        if (ActionOnlyTools.Contains(tool))
+        {
+            throw new FormatException(
+                $"'permission.{tool}' takes an action string only — it accepts no pattern "
+                + "rules, because it has no argument worth matching.");
+        }
+
+        List<OpenCodePermissionRule> rules = [];
+        foreach ((string pattern, object? action) in map)
+        {
+            rules.Add(new OpenCodePermissionRule(
+                pattern,
+                ParseActionText(action as string, $"{tool}.{pattern}")));
+        }
+
+        return OpenCodeToolPermission.Patterns(rules);
+    }
+
     private static PermissionOutcome ParseAction(JsonNode? node, string where)
     {
         string? text = node is JsonValue value && value.TryGetValue(out string? s) ? s : null;
 
+        return ParseActionText(text, where);
+    }
+
+    /// <remarks>
+    /// The action vocabulary lives here once, so <see cref="Parse(JsonNode?)"/> and
+    /// <see cref="FromValue"/> cannot disagree about what <c>"allow"</c> means or about which
+    /// strings are rejected.
+    /// </remarks>
+    private static PermissionOutcome ParseActionText(string? text, string where)
+    {
         return text switch
         {
             "allow" => PermissionOutcome.Allow,
@@ -281,7 +479,22 @@ public sealed record OpenCodePermissionDecision(
 /// <param name="Tool">The tool whose rule set contains both.</param>
 /// <param name="Rule">The unreachable rule.</param>
 /// <param name="ShadowedBy">The later, broader rule that always wins first.</param>
+/// <param name="RuleIndex">
+/// Position of <paramref name="Rule"/> within the tool's rule list.
+/// </param>
+/// <param name="ShadowedByIndex">
+/// Position of <paramref name="ShadowedBy"/> within the same list.
+/// </param>
+/// <remarks>
+/// The indices are here because the rules alone do not identify a position: nothing stops a
+/// permission object from carrying the same pattern twice, and a caller mapping this back onto
+/// its own rows — an editor marking which row is inert — would attach the warning to whichever
+/// duplicate it found first. Position is also what the fix is expressed in, since reordering is
+/// how a shadowed rule is rescued.
+/// </remarks>
 public sealed record OpenCodeShadowedRule(
     string Tool,
     OpenCodePermissionRule Rule,
-    OpenCodePermissionRule ShadowedBy);
+    OpenCodePermissionRule ShadowedBy,
+    int RuleIndex,
+    int ShadowedByIndex);

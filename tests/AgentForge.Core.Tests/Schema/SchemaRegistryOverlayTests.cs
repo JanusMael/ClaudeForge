@@ -140,6 +140,89 @@ public sealed class SchemaRegistryOverlayTests
         CollectionAssert.Contains(values, "haiku");
     }
 
+    /// <summary>
+    /// The OpenCode TUI overlay's only job: give <c>theme</c> the <c>examples</c> and
+    /// <c>description</c> its upstream declaration lacks.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Upstream declares <c>theme</c> as the bare <c>{"type":"string"}</c> — no description, no
+    /// examples — so without the overlay the field renders as an unlabelled text box and the user
+    /// has no way to learn what a valid theme name is. Asserted against the MERGED loader, because
+    /// the base file deliberately still carries neither key.
+    /// </remarks>
+    [TestMethod]
+    public void TryReadBundledBytesMerged_AppliesOpenCodeTuiOverlay()
+    {
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
+        Assert.IsNotNull(bytes);
+
+        JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
+        JsonObject? theme = node?["properties"]?["theme"] as JsonObject;
+        Assert.IsNotNull(theme, "the theme property must survive the merge.");
+
+        Assert.IsFalse(
+            string.IsNullOrWhiteSpace(theme!["description"]?.GetValue<string>()),
+            "the overlay's description must surface — upstream has none.");
+
+        JsonArray? examples = theme["examples"] as JsonArray;
+        Assert.IsNotNull(examples, "the overlay's examples must surface.");
+        CollectionAssert.AreEqual(
+            new[] { "opencode" },
+            examples!.Select(e => e?.GetValue<string>()).ToArray(),
+            "only the built-in theme is asserted here; the rest are discovered at runtime.");
+
+        // The merge must not have cost the schema its other properties.
+        Assert.IsNotNull(node?["properties"]?["keybinds"], "keybinds must survive the merge.");
+    }
+
+    /// <summary>
+    /// ⭐⭐ The end-to-end consequence, and the only assertion that proves the overlay is worth
+    /// having: with it, <c>theme</c> reaches the editor factory as an <b>Enum with examples</b> —
+    /// which is what the generic dispatch turns into a picker that still accepts typed values.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Built from the MERGED bytes on purpose. The sibling tree tests read
+    /// <c>BundledResource.TryRead</c>, i.e. the raw base file, so none of them can see an overlay —
+    /// which is exactly why adding this overlay broke no existing test and why this assertion had to
+    /// be written rather than assumed.
+    /// </remarks>
+    [TestMethod]
+    public void OpenCodeTuiTheme_IsPromotedToAFreeFormEnum_ByTheOverlay()
+    {
+        // An isolated Json.Schema registry per parse, the same way the sibling tree tests do, so
+        // one parse's $defs anchors cannot collide with another's in the global registry.
+        static SchemaNode ThemeFrom(byte[] bytes)
+        {
+            Json.Schema.BuildOptions opts = new() { SchemaRegistry = new Json.Schema.SchemaRegistry() };
+            Json.Schema.JsonSchemaNode root =
+                Json.Schema.JsonSchema.FromText(Encoding.UTF8.GetString(bytes), opts).Root!;
+            return SchemaTreeBuilder.BuildTopLevel(root).Single(n => n.Name == "theme");
+        }
+
+        byte[]? baseBytes = BundledResource.TryRead("Schemas", "opencode-tui.json");
+        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
+        Assert.IsNotNull(baseBytes);
+        Assert.IsNotNull(merged);
+
+        SchemaNode withoutOverlay = ThemeFrom(baseBytes!);
+        SchemaNode withOverlay = ThemeFrom(merged!);
+
+        Assert.AreEqual(
+            SchemaValueType.String,
+            withoutOverlay.ValueType,
+            "the bare upstream declaration is a plain string — a text box with no suggestions.");
+
+        Assert.AreEqual(
+            SchemaValueType.Enum,
+            withOverlay.ValueType,
+            "with the overlay it must classify as an enum, which is what renders the picker.");
+        Assert.AreNotEqual(
+            0,
+            withOverlay.Examples.Count,
+            "a non-empty Examples is what keeps the picker free-form rather than closed — "
+                + "without it the editor would refuse every theme this build has not heard of.");
+    }
+
     [TestMethod]
     public void TryReadBundledBytesMerged_NoOverlay_ReturnsBaseUnchanged()
     {
