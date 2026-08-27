@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions"
              xmlns:conv="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Converters"
+             xmlns:shared="clr-namespace:Bennewitz.Ninja.Layer.Avalonia.Services.Converters;assembly=LayeredEditors.Avalonia.Services"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Avalonia.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions.PermissionTesterView"
              x:DataType="vm:PermissionTesterViewModel">
@@ -89,7 +90,7 @@
                                AutomationProperties.HeadingLevel="3" />
                     <TextBlock Text="{Binding OutcomeLabel}"
                                FontWeight="Bold" FontSize="16"
-                               Foreground="{Binding Outcome, Converter={x:Static conv:PermissionOutcomeToBrushConverter.Instance}}"
+                               Foreground="{Binding Outcome, Converter={x:Static shared:PermissionOutcomeToBrushConverter.Instance}}"
                                AutomationProperties.Name="{Binding OutcomeLabel}" />
                 </StackPanel>
                 <!-- Dedicated Scope callout — always shown, rendered with the same

@@ -6,8 +6,9 @@
         <Description>
             Platform-agnostic and Avalonia-backed service implementations that are not specific
             to any Claude configuration concern: shell launching, file-manager integration,
-            environment-variable access, and the Avalonia dialog service (file/folder pickers,
-            alerts, confirmations, save-changes prompts).
+            environment-variable access, the Avalonia dialog service (file/folder pickers,
+            alerts, confirmations, save-changes prompts), and value converters over the
+            product-neutral vocabulary in AgentForge.Abstractions.
         </Description>
         <!-- Add the Windows platform TFM so DefaultShareService can compile with MAUI
              Essentials on Windows builds. Directory.Build.props sets the singular
