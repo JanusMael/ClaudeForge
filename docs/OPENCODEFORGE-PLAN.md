@@ -29,14 +29,17 @@
 > ### Implementation status — 2026-08-26
 >
 > Branch **`feat/agentforge-opencodeforge`** @ **`2508878`**, **85 commits ahead of
-> `origin/main`** (`origin/main` still `930eb41`, 0 behind). Suite: **3,672 passed · 11 skipped ·
+> `origin/main`** (`origin/main` still `930eb41`, 0 behind). Suite: **3,689 passed · 11 skipped ·
 > 0 failed · 0 warnings** across 12 test projects; the trim gate publishes clean for **both** apps.
 >
-> ⛔ **The working tree is DIRTY — and ALL of Phase 9a-2…9a-11 plus ALL of Phase 10 lives there UNCOMMITTED.**
-> Ten specialised editors, their SDK codecs, their tests and the solution wiring are on disk and
-> green, but not in a commit: commits wait for the maintainer's explicit OK. **Do not read the phase
-> table below as describing committed work.** A per-slice commit-split proposal is held in the
-> session's resume anchor.
+> ✅ **THE TREE IS COMMITTED.** Branch `feat/agentforge-opencodeforge` @ **`eaa9c3d`**, working tree
+> clean, **98 commits ahead of `origin/main`**. Sessions 6–12's backlog landed as **13
+> dependency-ordered commits, every one of which builds** — verified by checking each into a
+> throwaway `git worktree` and building it.
+>
+> ⛔ **15 commits are LOCAL ONLY and no PR has ever been opened.** Pushing is two-party (the dev
+> machine's credential is read-only on this repo), so **CI has seen none of this** — do not report
+> the branch as CI-green at HEAD until a run says so.
 >
 > ✅ **Phase 9a is COMPLETE as of 9a-10 (`keybinds`)** — the largest editor in the plan. Spike S6 is
 > answered by measurement rather than estimate: the view realizes **5 of 184 rows** (11 after
@@ -4181,6 +4184,64 @@ comparison is case-insensitive. ⚠ Two canaries also had to be re-aimed because
   events it subscribes to, from a shallow static scan. Deferred to 11c with the view that shows it.
 - **Only the effective declaration is read for diagnosis.** Reading every copy would multiply file
   reads by chain length to answer a question about the artifact actually in force.
+
+### Phase 11c — DONE (committed `eaa9c3d`). The page, and the first non-schema section
+
+**Suite 3,689 / 0 / 11** (+17). Both apps trim-clean. **14 canaries; all 14 page tests proven
+non-vacuous.**
+
+Shipped: `OpenCodeArtifactsPageViewModel` + `OpenCodeArtifactRowViewModel` + the AXAML in
+`src/OpenCode.Avalonia/Artifacts/`, 30 resx keys, `App.axaml` page templates, the `MainWindow.axaml`
+`Content` binding, the navigation node, and `OpenCodePageTemplateTests`.
+
+#### ⚠⚠ NOT VERIFIED VISUALLY — the first job of the next session
+
+**The page has never been seen running.** No screenshot, no UIA pass. That is the standing rule for
+every UI slice in this plan, and it has earned its keep every time — 9a-8's screenshot found that
+**all seven** existing editors clipped instead of scrolling, a defect three slices old. Treat this
+page as unproven until someone looks at it.
+
+#### ⭐ A NON-SCHEMA PAGE WAS ALWAYS POSSIBLE; ONE LINE OF AXAML BLOCKED IT
+
+`NavigationNodeViewModel.Editor` is typed `object?` and always was, so the navigation tree never
+cared what kind of page a node owned. The blocker was `MainWindow.axaml` naming `SettingsPageHost`
+directly. It now binds `Content` and `App.axaml` selects the view by view-model type — the same
+mechanism the specialised editors already used.
+
+⚠ That trades a compile-time guarantee for a runtime lookup, so it comes with a guard:
+`OpenCodePageTemplateTests` walks the **real** navigation tree and requires a `DataTemplate` for
+every page view-model it finds, which covers a third page kind the day it is added.
+
+#### ⚠ THE PROJECT FOLDER IS ASKED FOR, NEVER GUESSED
+
+Most of what this page explains is project-scope, and `Environment.CurrentDirectory` — the obvious
+shortcut — is wrong for a GUI launched from a shortcut: it would confidently describe a project the
+user is not in. With no folder set, the page names the sources that are therefore missing rather
+than letting an empty list imply none exist.
+
+#### ⛔ THREE OF THIS SLICE'S OWN TESTS WERE VACUOUS, AND CANARIES FOUND ALL THREE
+
+1. The filter test seeded one agent and one skill and filtered for the skill — which passes whether
+   or not the **unselected** tab was filtered, because the surviving row was the one searched for.
+2. The reload test assigned the working directory the page **already had**, and the generated
+   setter no-ops on an equal value, so no reload ever ran.
+3. The empty-message test asserted only that two sentences **differ**, which a swap preserves while
+   making both of them wrong.
+
+⛔⛔ **Two mutation shapes are unusable here.** `if (false)` trips `CS0162` under
+`TreatWarningsAsErrors`; deleting the only reference to a resx key trips the dead-string guard,
+which emits **`error :`** rather than `error CS`, so a harness watching for the latter reports a
+bogus "no summary" instead of a build failure. Where a canary would orphan a string, **swap the two
+arms** — both stay referenced and the behaviour still inverts.
+
+#### Deliberately NOT done
+
+- **Read-only.** No create, edit or delete; a front-matter and markdown-body editor is a later slice.
+- **No plugin hook-name scan** (the plan wants each plugin listed with the events it subscribes to).
+- **No `skills.paths[]` / `skills.urls[]` / `instructions[]` / `references{}`**, and no inline
+  `Config.agent{}` / `command{}` sources — `ForPage` takes an environment and a directory, not a
+  parsed config document.
+- **No deep-link or search routing** to the new page, though it carries a stable `NodeId`.
 
 ### Phase 11.5 — Danger indication, systematised
 
