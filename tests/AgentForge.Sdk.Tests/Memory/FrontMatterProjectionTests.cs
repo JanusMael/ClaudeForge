@@ -146,4 +146,70 @@ public sealed class FrontMatterProjectionTests
 
         Assert.IsNull(cmd.Description);
     }
+
+    // ── Block-scalar descriptions, across all three projections ──────────
+
+    /// <summary>
+    /// ⛔ All three projections read <c>description</c> through the one
+    /// <see cref="FrontMatter.FindScalar"/>, so the block-scalar defect surfaced in all three at
+    /// once — skills on OpenCodeForge's artifacts page, and agents and slash commands in
+    /// ClaudeForge's editor.  Each is asserted separately because each is a separate call site
+    /// that could regress on its own.
+    /// </summary>
+    [TestMethod]
+    public void AllThreeProjections_ReadAFoldedDescription_NotTheMarker()
+    {
+        const string Folded =
+            "description: >-\n" +
+            "  Fetch, vet, and act on review feedback\n" +
+            "  left on a pull request.\n";
+        const string Expected = "Fetch, vet, and act on review feedback left on a pull request.";
+
+        SkillFrontMatter skill = SkillFrontMatter.From(
+            YamlFrontMatter.Parse($"---\nname: s\n{Folded}---\n\nBody.\n"));
+        AgentFrontMatter agent = AgentFrontMatter.From(
+            YamlFrontMatter.Parse($"---\nname: a\n{Folded}model: sonnet\n---\n\nBody.\n"));
+        SlashCommandFrontMatter command = SlashCommandFrontMatter.From(
+            YamlFrontMatter.Parse($"---\n{Folded}---\n\nBody.\n"));
+
+        Assert.AreEqual(Expected, skill.Description, "SkillFrontMatter reads the folded text.");
+        Assert.AreEqual(Expected, agent.Description, "AgentFrontMatter reads the folded text.");
+        Assert.AreEqual(Expected, command.Description, "SlashCommandFrontMatter reads the folded text.");
+    }
+
+    /// <summary>
+    /// The block scalar must not swallow the keys under it — an agent that lost its
+    /// <c>model</c> / <c>tools</c> would be a worse bug than the one being fixed.
+    /// </summary>
+    [TestMethod]
+    public void Agent_FoldedDescription_DoesNotSwallowTheKeysBelowIt()
+    {
+        AgentFrontMatter agent = AgentFrontMatter.From(YamlFrontMatter.Parse(
+            "---\n" +
+            "name: code-reviewer\n" +
+            "description: >-\n" +
+            "  Reviews code.\n" +
+            "model: sonnet\n" +
+            "tools: Read, Grep\n" +
+            "---\n\nBody.\n"));
+
+        Assert.AreEqual("code-reviewer", agent.Name);
+        Assert.AreEqual("Reviews code.", agent.Description);
+        Assert.AreEqual("sonnet", agent.Model);
+        CollectionAssert.AreEqual(new[] { "Read", "Grep" }, agent.Tools.ToArray());
+    }
+
+    /// <summary>
+    /// ⚠ <c>tools</c> is read as a comma-separated scalar, so a folded one has to split the same
+    /// way — otherwise the whole allow-list arrives as a single bogus tool name.
+    /// </summary>
+    [TestMethod]
+    public void Agent_FoldedToolsScalar_StillSplitsOnCommas()
+    {
+        AgentFrontMatter agent = AgentFrontMatter.From(YamlFrontMatter.Parse(
+            "---\ntools: >-\n  Read, Grep,\n  Bash\n---\n\nBody.\n"));
+
+        CollectionAssert.AreEqual(new[] { "Read", "Grep", "Bash" }, agent.Tools.ToArray(),
+            "Folding happens first, then the comma split — a wrapped tools list is one value.");
+    }
 }

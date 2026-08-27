@@ -21,6 +21,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 ///   <item>Top-level block list —
 ///         <c>tools:\n  - Read\n  - Grep</c></item>
 ///   <item>Quoted strings (single or double) — <c>name: "with: colon"</c></item>
+///   <item>Folded and literal block scalars — <c>description: &gt;-</c> /
+///         <c>|</c>, with chomping (<c>-</c> / <c>+</c>) and an explicit
+///         indentation indicator (<c>|2-</c>)</item>
 ///   <item>Comments on their own line — <c># preserved verbatim</c></item>
 ///   <item>Empty front-matter (<c>---\n---</c>) — valid, no fields</item>
 ///   <item>No front-matter at all — returns <see cref="FrontMatter.Present"/>
@@ -31,9 +34,21 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// <para><b>Deliberately unsupported</b> (such keys round-trip verbatim via
 /// the field's preserved <see cref="FrontMatterField.RawText"/> but can't be
 /// edited through the typed surface): nested objects, anchors/aliases,
-/// multi-document streams, custom tags, folded/literal block scalars
-/// (<c>|</c> / <c>&gt;</c>), and YAML implicit type coercion
+/// multi-document streams, custom tags, and YAML implicit type coercion
 /// (<c>yes</c>/<c>true</c>/numbers stay strings).</para>
+///
+/// <para>
+/// ⛔⛔ <b>Block scalars used to be unsupported, and the way they failed is
+/// the reason they no longer are.</b>  A <c>description: &gt;-</c> header
+/// parsed as the plain two-character scalar <c>"&gt;-"</c>, and its
+/// continuation lines were re-read as top-level entries — a line containing a
+/// colon became a phantom field whose key was a sentence.  Because
+/// <c>"&gt;-"</c> is non-empty, every downstream "does this declare a
+/// description?" check passed, so a skill whose description was unreadable
+/// was reported as healthy.  Measured 2026-08-27: 14 of the skills under
+/// <c>~/.claude/skills</c> are written this way.  Silence, not breakage, is
+/// what made it worth supporting rather than rejecting.
+/// </para>
 ///
 /// <para><b>Round-trip contract:</b> a field parsed from disk keeps its
 /// original <see cref="FrontMatterField.RawText"/>.  <see cref="Compose"/>
@@ -157,6 +172,49 @@ public static class YamlFrontMatter
                 continue;
             }
 
+            if (TryReadBlockScalarHeader(valuePart, out bool literal, out char chomping, out int explicitIndent))
+            {
+                // The header owns every following line that is blank or
+                // indented deeper than the key itself.  Consuming them here is
+                // what stops a continuation line from being re-read as a field
+                // — and what lets the whole block share one RawText, so the
+                // round-trip contract survives.
+                int keyIndent = CountIndent(raw);
+                var blockLines = new List<string>();
+                int blockEnd = i;
+                for (int j = i + 1; j < rawLines.Length; j++)
+                {
+                    string peek = rawLines[j].TrimEnd('\r');
+                    if (peek.Trim().Length != 0 && CountIndent(peek) <= keyIndent)
+                    {
+                        break;
+                    }
+
+                    blockLines.Add(peek);
+                    blockEnd = j;
+                }
+
+                // Trailing blank lines only carry meaning under "keep" (+).
+                // Leaving them outside the block otherwise keeps them as their
+                // own nodes, so editing the field doesn't also delete the blank
+                // line that separated it from the next one.
+                if (chomping != '+')
+                {
+                    while (blockLines.Count > 0 && blockLines[^1].Trim().Length == 0)
+                    {
+                        blockLines.RemoveAt(blockLines.Count - 1);
+                        blockEnd--;
+                    }
+                }
+
+                string folded = ReadBlockScalar(blockLines, literal, chomping, keyIndent, explicitIndent);
+                string rawBlock = string.Join('\n',
+                    rawLines[i..(blockEnd + 1)].Select(l => l.TrimEnd('\r')));
+                nodes.Add(new FrontMatterField(key, FrontMatterValue.OfScalar(folded), rawBlock));
+                i = blockEnd;
+                continue;
+            }
+
             if (valuePart.Length >= 2 && valuePart[0] == '[' && valuePart[^1] == ']')
             {
                 // Inline list.  Empty "[]" → zero items.
@@ -219,7 +277,11 @@ public static class YamlFrontMatter
                     sb.Append(comment.RawText).Append(nl);
                     break;
                 case FrontMatterField field:
-                    sb.Append(field.RawText ?? RenderField(field, nl)).Append(nl);
+                    // A multi-line field (block list, block scalar) holds its
+                    // interior breaks as '\n' regardless of the file's ending,
+                    // so re-apply the file's own here — otherwise a CRLF file
+                    // silently loses its CRLF everywhere but the first line.
+                    sb.Append(WithLineEndings(field.RawText ?? RenderField(field), nl)).Append(nl);
                     break;
             }
         }
@@ -231,7 +293,12 @@ public static class YamlFrontMatter
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    private static string RenderField(FrontMatterField field, string nl)
+    /// <summary>
+    /// Render one field canonically, always with <c>'\n'</c> breaks —
+    /// <see cref="WithLineEndings"/> converts them to the file's ending once,
+    /// so no renderer has to know what that ending is.
+    /// </summary>
+    private static string RenderField(FrontMatterField field)
     {
         if (field.Value.IsList)
         {
@@ -239,13 +306,278 @@ public static class YamlFrontMatter
             sb.Append(field.Key).Append(':');
             foreach (string item in field.Value.List!)
             {
-                sb.Append(nl).Append("  - ").Append(QuoteIfNeeded(item));
+                sb.Append('\n').Append("  - ").Append(QuoteIfNeeded(item));
             }
 
             return sb.ToString();
         }
 
-        return $"{field.Key}: {QuoteIfNeeded(field.Value.Scalar ?? string.Empty)}";
+        string scalar = field.Value.Scalar ?? string.Empty;
+
+        // ⛔ Reading block scalars made a multi-line scalar reachable for the
+        // first time, and the editor rewrites `description` on every save.
+        // Emitting one as a plain `key: value` line would put a raw newline
+        // mid-scalar and corrupt the file, so it goes back as a block.
+        return ContainsLineBreak(scalar)
+            ? RenderBlockScalar(field.Key, scalar)
+            : $"{field.Key}: {QuoteIfNeeded(scalar)}";
+    }
+
+    private static bool ContainsLineBreak(string value)
+    {
+        return value.Contains('\n', StringComparison.Ordinal)
+               || value.Contains('\r', StringComparison.Ordinal);
+    }
+
+    private static string WithLineEndings(string text, string nl)
+    {
+        return nl == "\n" ? text : text.Replace("\n", nl, StringComparison.Ordinal);
+    }
+
+    // ── Block scalars ────────────────────────────────────────────────────
+
+    /// <summary>How many spaces a canonically re-rendered block scalar indents by.</summary>
+    private const int BlockIndent = 2;
+
+    /// <summary>
+    /// Recognise a block-scalar header: an indicator (<c>|</c> literal /
+    /// <c>&gt;</c> folded), then — in either order — an optional indentation
+    /// digit and an optional chomping indicator (<c>-</c> strip / <c>+</c>
+    /// keep), then nothing but an optional comment.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Anything that isn't a well-formed header returns <see langword="false"/>
+    /// and keeps its previous plain-scalar reading.  A plain YAML scalar can't
+    /// legally begin with <c>|</c> or <c>&gt;</c> anyway, so the only values
+    /// that reach here are headers and malformed ones — and guessing at the
+    /// malformed ones would trade a visible oddity for a silent one.
+    /// </remarks>
+    private static bool TryReadBlockScalarHeader(
+        string valuePart, out bool literal, out char chomping, out int explicitIndent)
+    {
+        literal = false;
+        chomping = '\0';
+        explicitIndent = 0;
+
+        if (valuePart.Length == 0 || (valuePart[0] != '|' && valuePart[0] != '>'))
+        {
+            return false;
+        }
+
+        literal = valuePart[0] == '|';
+
+        int p = 1;
+        while (p < valuePart.Length)
+        {
+            char c = valuePart[p];
+            if (c is '+' or '-' && chomping == '\0')
+            {
+                chomping = c;
+            }
+            else if (c is >= '1' and <= '9' && explicitIndent == 0)
+            {
+                explicitIndent = c - '0';
+            }
+            else
+            {
+                break;
+            }
+
+            p++;
+        }
+
+        string rest = valuePart[p..];
+        return rest.Length == 0
+               || (char.IsWhiteSpace(rest[0]) && rest.TrimStart().StartsWith('#'));
+    }
+
+    /// <summary>
+    /// Turn a block scalar's continuation lines into its value: folded
+    /// (<c>&gt;</c>) joins lines with spaces, literal (<c>|</c>) keeps every
+    /// break, and chomping decides how many trailing newlines survive.
+    /// </summary>
+    private static string ReadBlockScalar(
+        IReadOnlyList<string> blockLines, bool literal, char chomping, int keyIndent, int explicitIndent)
+    {
+        if (blockLines.Count == 0)
+        {
+            // `description: >-` with nothing under it declares the empty
+            // string — which is what keeps "has no description" detectable.
+            return string.Empty;
+        }
+
+        // YAML auto-detects the content indent from the first non-empty line
+        // unless the header states it.
+        int contentIndent = explicitIndent > 0
+            ? keyIndent + explicitIndent
+            : blockLines.Where(l => l.Trim().Length != 0)
+                        .Select(CountIndent)
+                        .DefaultIfEmpty(keyIndent + BlockIndent)
+                        .First();
+
+        var lines = blockLines.Select(l => StripIndent(l, contentIndent)).ToList();
+
+        // A folded scalar's trailing whitespace is absorbed by the fold; a
+        // literal one's is content.
+        int lastContent = literal
+            ? lines.FindLastIndex(l => l.Length != 0)
+            : lines.FindLastIndex(l => l.TrimEnd().Length != 0);
+
+        string body = lastContent < 0
+            ? string.Empty
+            : literal
+                ? string.Join('\n', lines.Take(lastContent + 1))
+                : Fold(lines.Take(lastContent + 1));
+
+        int trailing = chomping switch
+        {
+            '-' => 0,
+            '+' => lastContent < 0 ? lines.Count : lines.Count - lastContent,
+            _ => lastContent < 0 ? 0 : 1,
+        };
+
+        return trailing == 0 ? body : body + new string('\n', trailing);
+    }
+
+    /// <summary>
+    /// Fold content lines the way YAML does: a single break between two
+    /// ordinary lines becomes one space, <c>n</c> breaks become <c>n-1</c>
+    /// newlines, and a line indented deeper than the block keeps its breaks
+    /// verbatim — so an indented example inside a description isn't silently
+    /// reflowed onto one line.
+    /// </summary>
+    private static string Fold(IEnumerable<string> lines)
+    {
+        var sb = new StringBuilder();
+        int pending = 0;
+        bool started = false;
+        bool previousWasMoreIndented = false;
+        bool first = true;
+
+        foreach (string source in lines)
+        {
+            if (!first)
+            {
+                pending++;
+            }
+
+            first = false;
+
+            string line = source.TrimEnd();
+            if (line.Length == 0)
+            {
+                continue;
+            }
+
+            bool moreIndented = line[0] is ' ' or '\t';
+
+            if (started)
+            {
+                if (moreIndented || previousWasMoreIndented)
+                {
+                    sb.Append('\n', pending);
+                }
+                else if (pending <= 1)
+                {
+                    sb.Append(' ');
+                }
+                else
+                {
+                    sb.Append('\n', pending - 1);
+                }
+            }
+
+            sb.Append(line);
+            started = true;
+            previousWasMoreIndented = moreIndented;
+            pending = 0;
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Render a multi-line scalar as a literal block, choosing the chomping
+    /// indicator that reproduces its trailing newlines exactly so
+    /// <see cref="Parse"/> reads back what was written.
+    /// </summary>
+    private static string RenderBlockScalar(string key, string value)
+    {
+        // The reader only ever yields '\n', so normalising here keeps
+        // write-then-read exact for a value that arrived from elsewhere.
+        string text = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+
+        int trailing = 0;
+        while (trailing < text.Length && text[^(trailing + 1)] == '\n')
+        {
+            trailing++;
+        }
+
+        string content = text[..(text.Length - trailing)];
+        List<string> lines = content.Length == 0 ? [] : [.. content.Split('\n')];
+
+        // Under "keep", each newline past the content needs its own line; with
+        // no content at all every one of them does.
+        for (int k = content.Length == 0 ? 0 : 1; k < trailing; k++)
+        {
+            lines.Add(string.Empty);
+        }
+
+        char chomping = content.Length == 0
+            ? (trailing == 0 ? '-' : '+')
+            : trailing switch { 0 => '-', 1 => '\0', _ => '+' };
+
+        // Auto-detection would read a leading space as part of the block's own
+        // indentation, so state the indent when the first line has one.
+        string? firstContent = lines.Find(l => l.Length != 0);
+        bool needsExplicitIndent = firstContent is not null && firstContent[0] == ' ';
+
+        var sb = new StringBuilder();
+        sb.Append(key).Append(": |");
+        if (needsExplicitIndent)
+        {
+            sb.Append(BlockIndent);
+        }
+
+        if (chomping != '\0')
+        {
+            sb.Append(chomping);
+        }
+
+        foreach (string line in lines)
+        {
+            sb.Append('\n');
+            if (line.Length != 0)
+            {
+                sb.Append(' ', BlockIndent).Append(line);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>Leading spaces / tabs, counted as indentation depth.</summary>
+    private static int CountIndent(string line)
+    {
+        int n = 0;
+        while (n < line.Length && line[n] is ' ' or '\t')
+        {
+            n++;
+        }
+
+        return n;
+    }
+
+    /// <summary>Drop up to <paramref name="count"/> leading whitespace characters.</summary>
+    private static string StripIndent(string line, int count)
+    {
+        int n = 0;
+        while (n < count && n < line.Length && line[n] is ' ' or '\t')
+        {
+            n++;
+        }
+
+        return line[n..];
     }
 
     /// <summary>

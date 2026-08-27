@@ -129,6 +129,14 @@ public static class EditableMemoryService
     /// fan it out across a background pass.  Returns <see langword="null"/> on
     /// read failure, absent key, or front-matter whose closing delimiter falls
     /// outside the scanned head.
+    ///
+    /// <para>
+    /// ⚠ The value is trimmed because this is a <i>subtitle</i>, not the field.
+    /// A clip-chomped block scalar (<c>description: &gt;</c> — the majority
+    /// form in the measured skill corpus) legitimately ends in a newline, and
+    /// a one-line subtitle should not inherit it.  Whitespace-only reads as
+    /// absent for the same reason.
+    /// </para>
     /// </summary>
     public static string? LoadDescription(string absolutePath)
     {
@@ -150,7 +158,8 @@ public static class EditableMemoryService
             }
 
             FrontMatter fm = YamlFrontMatter.Parse(new string(buffer, 0, read));
-            return fm.FindScalar("description");
+            string? description = fm.FindScalar("description");
+            return string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
