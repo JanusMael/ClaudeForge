@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
@@ -76,13 +77,19 @@ public sealed class FirstRunnableBuildTests
 
         Assert.AreEqual(string.Empty, vm.Status,
             $"Both sections should have loaded cleanly. Status was: {vm.Status}");
-        Assert.AreEqual(2, vm.Navigation.Count, "One navigation header per hosted section.");
+        // ⚠ Section HEADERS, not top-level nodes. The artifacts page is a top-level leaf beside
+        // them and owns no children, so counting vm.Navigation would now conflate two different
+        // things — and would keep doing so every time a non-schema page is added.
+        List<NavigationNodeViewModel> sectionHeaders =
+            [.. vm.Navigation.Where(n => n.Children.Count > 0)];
 
-        foreach (var header in vm.Navigation)
+        Assert.AreEqual(2, sectionHeaders.Count,
+            "One navigation header per hosted section, each carrying at least one page. A count "
+            + "below two means a section's schema did not load or bucketed into nothing. Nodes "
+            + "present: " + string.Join(", ", vm.Navigation.Select(n => $"{n.Title}({n.Children.Count})")));
+
+        foreach (NavigationNodeViewModel header in sectionHeaders)
         {
-            Assert.IsTrue(header.Children.Count > 0,
-                $"Section '{header.Title}' produced no settings pages, so the schema either did "
-                + "not load or bucketed into nothing.");
             Assert.IsTrue(
                 header.Children.All(c => c.Editor is SettingsGroupEditorViewModel),
                 $"Every page under '{header.Title}' must be the shell's neutral group editor.");

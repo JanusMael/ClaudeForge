@@ -7,6 +7,7 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.OpenCode.Avalonia.Artifacts;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
@@ -47,6 +48,16 @@ public sealed record HostedSection(
 /// </remarks>
 public sealed partial class MainWindowViewModel : ObservableObject
 {
+    /// <summary>
+    /// Deep-link and persisted-state key for the artifacts page.
+    /// </summary>
+    /// <remarks>
+    /// A constant rather than the display title, because <see cref="NavigationNodeViewModel.Title"/>
+    /// is a display label and this one is localized — matching on it would break the moment a
+    /// translation lands.
+    /// </remarks>
+    public const string ArtifactsNodeId = "artifacts";
+
     private readonly OpenCodeEditorFactory _editorFactory = new();
 
     /// <summary>Sections in navigation order.</summary>
@@ -229,6 +240,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 failures.Add(section.Product.DisplayName);
             }
         }
+
+        // The artifacts page, after the settings sections and outside the loop: it is not a
+        // schema section and has no client to open, and it must appear even when every section
+        // above failed — a user whose config is too broken to load is exactly the user who needs
+        // to see which files OpenCode is reading.
+        Navigation.Add(new NavigationNodeViewModel(Strings.SectionArtifacts)
+        {
+            NodeId = ArtifactsNodeId,
+            IsTopLevel = true,
+            Editor = new OpenCodeArtifactsPageViewModel(OpenCodeEnvironment.FromProcess(), null),
+        });
 
         // Detection last: it runs a child process, and a slow or hung binary must not delay the
         // settings pages the user came for.

@@ -1,0 +1,175 @@
+<!--
+    The artifacts page: every agent, command, skill, rule and plugin OpenCode reads, and which copy
+    wins. Same rules as every other view in this library:
+      * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
+      * No ancestor bindings — they resolve by reflection and trip IL2026, a build error here.
+      * Only LE.* theme tokens; no literal colours.
+      * PlaceholderText, never the obsolete Watermark (AVLN5001) — which only the Release trim
+        publish catches.
+      * All text from Strings.resx, including every AutomationProperties.Name.
+
+    ⛔⛔ The per-row chain sentence comes from the view-model, NOT from a count formatted here.
+    "Merged from 3 declarations" and "highest of 3, the rest never load" are opposite claims about
+    the same number, and which one is true depends on the artifact's KIND. Formatting a count in
+    AXAML would silently pick one of them for every kind.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:art="using:Bennewitz.Ninja.OpenCode.Avalonia.Artifacts"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Artifacts.OpenCodeArtifactsPageView"
+             x:DataType="art:OpenCodeArtifactsPageViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="16">
+
+        <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+            <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Subtitle}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolDisabled}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="6" Margin="0,0,0,12">
+            <TextBlock Text="{Binding WorkingDirectoryLabel}" FontSize="12" />
+            <TextBox Text="{Binding WorkingDirectory, Mode=TwoWay}"
+                     PlaceholderText="{Binding WorkingDirectoryPlaceholder}"
+                     AutomationProperties.Name="{x:Static loc:Strings.ArtifactsWorkingDirectory}" />
+
+            <!-- Says which sources are missing, rather than letting an empty page imply none exist. -->
+            <TextBlock Text="{Binding NoProjectMessage}"
+                       IsVisible="{Binding HasNoProject}"
+                       TextWrapping="Wrap" FontSize="11"
+                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+            <TextBox Text="{Binding FilterText, Mode=TwoWay}"
+                     PlaceholderText="{Binding FilterPlaceholder}"
+                     AutomationProperties.Name="{x:Static loc:Strings.ArtifactsFilterAutoName}" />
+        </StackPanel>
+
+        <!--
+            ⚠ The tab body scrolls. A skills tab routinely holds a hundred-plus rows on a machine
+            that also runs Claude Code, and a page that cannot reach its last row is the defect
+            this library already shipped once.
+        -->
+        <TabControl Grid.Row="2"
+                    ItemsSource="{Binding Tabs}"
+                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.ArtifactsTabsAutoName}">
+            <TabControl.ItemTemplate>
+                <DataTemplate x:DataType="art:OpenCodeArtifactTabViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{Binding Title}" />
+                        <TextBlock Text="{Binding CountLabel}" FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+
+            <TabControl.ContentTemplate>
+                <DataTemplate x:DataType="art:OpenCodeArtifactTabViewModel">
+                    <Grid>
+                        <TextBlock Text="{Binding EmptyMessage}"
+                                   IsVisible="{Binding IsEmpty}"
+                                   Margin="4,12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      IsVisible="{Binding !IsEmpty}">
+                            <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="art:OpenCodeArtifactRowViewModel">
+                                        <Border BorderThickness="0,0,0,1"
+                                                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                                                Padding="4,8">
+                                            <StackPanel Spacing="4">
+
+                                                <!-- Identity line: name, form, winning scope. -->
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding EffectiveFormLabel}"
+                                                               FontSize="11" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                    <TextBlock Text="{Binding EffectiveScopeName}"
+                                                               FontSize="11" VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                    <Border IsVisible="{Binding IsCrossTool}"
+                                                            BorderThickness="1" CornerRadius="3"
+                                                            Padding="4,0"
+                                                            BorderBrush="{DynamicResource LE.BoolEnabled}"
+                                                            ToolTip.Tip="{Binding CrossToolTooltip}">
+                                                        <TextBlock Text="{Binding CrossToolLabel}"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource LE.BoolEnabled}" />
+                                                    </Border>
+                                                    <Border IsVisible="{Binding IsInert}"
+                                                            BorderThickness="1" CornerRadius="3"
+                                                            Padding="4,0"
+                                                            BorderBrush="{DynamicResource LE.BoolUnset}">
+                                                        <TextBlock Text="{Binding InertLabel}"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource LE.BoolUnset}" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <TextBlock Text="{Binding Description}"
+                                                           IsVisible="{Binding HasDescription}"
+                                                           TextWrapping="Wrap" FontSize="12" />
+
+                                                <TextBlock Text="{Binding EffectiveLocation}"
+                                                           FontSize="11" TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource LE.BoolDisabled}" />
+
+                                                <!-- Problems, each as a full sentence carrying its own evidence level. -->
+                                                <ItemsControl ItemsSource="{Binding IssueMessages}"
+                                                              IsVisible="{Binding HasIssues}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <TextBlock Text="{Binding}" TextWrapping="Wrap"
+                                                                       FontSize="11" Margin="0,2"
+                                                                       Foreground="{DynamicResource LE.BoolUnset}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <!-- The chain, only when there is one. -->
+                                                <Expander IsVisible="{Binding HasChain}"
+                                                          IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                                          Header="{Binding ChainSummary}"
+                                                          AutomationProperties.Name="{x:Static loc:Strings.ArtifactsShowChain}">
+                                                    <ItemsControl ItemsSource="{Binding Declarations}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="art:OpenCodeArtifactDeclarationViewModel">
+                                                                <StackPanel Margin="0,2" Spacing="2">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                        <TextBlock Text="{Binding ScopeName}"
+                                                                                   FontSize="11" FontWeight="SemiBold" />
+                                                                        <TextBlock Text="{Binding FormLabel}"
+                                                                                   FontSize="11"
+                                                                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                                        <TextBlock Text="{Binding CrossToolTooltip}"
+                                                                                   IsVisible="{Binding IsCrossTool}"
+                                                                                   FontSize="11" TextWrapping="Wrap"
+                                                                                   Foreground="{DynamicResource LE.BoolEnabled}" />
+                                                                    </StackPanel>
+                                                                    <TextBlock Text="{Binding Location}"
+                                                                               FontSize="11" TextWrapping="Wrap"
+                                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
+
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
+    </Grid>
+</UserControl>

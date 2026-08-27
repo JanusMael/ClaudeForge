@@ -8,6 +8,9 @@
              xmlns:tool="using:Bennewitz.Ninja.OpenCode.Avalonia.Tooling"
              xmlns:upd="using:Bennewitz.Ninja.OpenCode.Avalonia.Updates"
              xmlns:kb="using:Bennewitz.Ninja.OpenCode.Avalonia.Keybinds"
+             xmlns:art="using:Bennewitz.Ninja.OpenCode.Avalonia.Artifacts"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
+             xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
              x:Class="Bennewitz.Ninja.OpenCodeForge.App"
              RequestedThemeVariant="Default">
 
@@ -29,6 +32,21 @@
         rather than as a missing template.
     -->
     <Application.DataTemplates>
+
+        <!--
+            PAGE templates, not editor templates. MainWindow binds the selected navigation node's
+            Editor straight into a ContentControl, so these decide which whole page appears.
+            NavigationNodeViewModel.Editor is `object?`, which is what makes a non-schema page
+            possible at all — before this the window named SettingsPageHost directly, so every page
+            had to be a schema settings group.
+        -->
+        <DataTemplate DataType="shell:SettingsGroupEditorViewModel">
+            <views:SettingsPageHost />
+        </DataTemplate>
+
+        <DataTemplate DataType="art:OpenCodeArtifactsPageViewModel">
+            <art:OpenCodeArtifactsPageView />
+        </DataTemplate>
 
         <!-- MaxHeight rather than Height so a config with two rules does not leave a tall empty
              panel below them; the view's own ScrollViewer handles a long grid.

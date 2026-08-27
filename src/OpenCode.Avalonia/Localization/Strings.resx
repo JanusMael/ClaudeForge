@@ -1303,4 +1303,94 @@
   <data name="ThemeDiscoveredTooltip" xml:space="preserve">
     <value>Found in this machine&apos;s OpenCode config directory, under themes/.</value>
   </data>
+  <data name="ArtifactsPageTitle" xml:space="preserve">
+    <value>Agents, commands, skills, rules and plugins</value>
+  </data>
+  <data name="ArtifactsPageSubtitle" xml:space="preserve">
+    <value>Everything OpenCode reads for this project, and which copy wins when there is more than one.</value>
+  </data>
+  <data name="ArtifactsFilterPlaceholder" xml:space="preserve">
+    <value>Filter by name, description, scope or path</value>
+  </data>
+  <data name="ArtifactsFilterAutoName" xml:space="preserve">
+    <value>Filter artifacts</value>
+  </data>
+  <data name="ArtifactsTabsAutoName" xml:space="preserve">
+    <value>Artifact kind</value>
+  </data>
+  <data name="ArtifactsCountFmt" xml:space="preserve">
+    <value>{0} total</value>
+  </data>
+  <data name="ArtifactsCountFilteredFmt" xml:space="preserve">
+    <value>{0} of {1} shown</value>
+  </data>
+  <data name="ArtifactsEmptyNone" xml:space="preserve">
+    <value>OpenCode reads none of these for this project.</value>
+  </data>
+  <data name="ArtifactsEmptyFiltered" xml:space="preserve">
+    <value>Nothing here matches the filter.</value>
+  </data>
+  <data name="ArtifactsTabAgents" xml:space="preserve">
+    <value>Agents</value>
+  </data>
+  <data name="ArtifactsTabCommands" xml:space="preserve">
+    <value>Commands</value>
+  </data>
+  <data name="ArtifactsTabSkills" xml:space="preserve">
+    <value>Skills</value>
+  </data>
+  <data name="ArtifactsTabRules" xml:space="preserve">
+    <value>Rules</value>
+  </data>
+  <data name="ArtifactsTabPlugins" xml:space="preserve">
+    <value>Plugins</value>
+  </data>
+  <data name="ArtifactsChainMergedFmt" xml:space="preserve">
+    <value>Merged from {0} declarations. The lower ones are still live — they supply any field the top one leaves unset.</value>
+  </data>
+  <data name="ArtifactsChainOverriddenFmt" xml:space="preserve">
+    <value>Highest of {0} declarations. The rest are overridden and never load.</value>
+  </data>
+  <data name="ArtifactsShowChain" xml:space="preserve">
+    <value>Show every declaration</value>
+  </data>
+  <data name="ArtifactsCrossTool" xml:space="preserve">
+    <value>Shared with another tool</value>
+  </data>
+  <data name="ArtifactsCrossToolTip" xml:space="preserve">
+    <value>This lives in another tool's directory, which OpenCode also reads. Editing or deleting it changes that tool too.</value>
+  </data>
+  <data name="ArtifactsInert" xml:space="preserve">
+    <value>Not loaded</value>
+  </data>
+  <data name="ArtifactsIssueNoName" xml:space="preserve">
+    <value>No 'name' in the front matter. Measured against OpenCode 1.17.9: it does not load this skill at all.</value>
+  </data>
+  <data name="ArtifactsIssueNameDiffers" xml:space="preserve">
+    <value>The declared name does not match the folder. Measured: the front matter wins, so it loads under a name the directory does not suggest.</value>
+  </data>
+  <data name="ArtifactsIssueNoDescription" xml:space="preserve">
+    <value>No 'description' in the front matter. OpenCode's own documentation says such a skill is never offered to the model — not verified by this tool, which can only see that it is still discovered.</value>
+  </data>
+  <data name="ArtifactsFormBuiltIn" xml:space="preserve">
+    <value>Built in</value>
+  </data>
+  <data name="ArtifactsFormFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="ArtifactsFormInline" xml:space="preserve">
+    <value>Inline</value>
+  </data>
+  <data name="ArtifactsFormRemote" xml:space="preserve">
+    <value>Remote</value>
+  </data>
+  <data name="ArtifactsWorkingDirectory" xml:space="preserve">
+    <value>Project folder</value>
+  </data>
+  <data name="ArtifactsWorkingDirectoryPlaceholder" xml:space="preserve">
+    <value>Path to the project OpenCode runs in</value>
+  </data>
+  <data name="ArtifactsNoProject" xml:space="preserve">
+    <value>No project folder set, so only the global and cross-tool sources are listed. Enter one above to see the agents, commands, skills and rules a project contributes.</value>
+  </data>
 </root>
