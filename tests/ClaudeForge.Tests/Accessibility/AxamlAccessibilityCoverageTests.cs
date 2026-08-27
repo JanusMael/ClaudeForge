@@ -4,18 +4,41 @@ using System.Xml.Linq;
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 
 /// <summary>
-/// Enforces invariant <b>I20</b> — every interactive control in
-/// <c>src/ClaudeForge/Views/*.axaml</c> MUST have
-/// <c>AutomationProperties.Name</c> so screen readers (Windows Narrator /
-/// NVDA / JAWS, macOS VoiceOver, Linux Orca) can announce the control to
-/// blind and low-vision users.
+/// Enforces invariant <b>I20</b> — every interactive control in EVERY
+/// <c>src/**/*.axaml</c> file MUST have <c>AutomationProperties.Name</c> so
+/// screen readers (Windows Narrator / NVDA / JAWS, macOS VoiceOver, Linux
+/// Orca) can announce the control to blind and low-vision users.
+///
+/// <para>
+/// <b>Scope is the whole repo, deliberately.</b> This test used to locate its
+/// scan root via a private <c>FindViewsDirectory()</c> that appended
+/// <c>src/ClaudeForge/Views</c> — a hardcoded single-app path from when this
+/// repo held one app.  Every AXAML file outside that one folder was invisible
+/// to the guard: <c>src/OpenCodeForge/Views/</c>,
+/// <c>src/OpenCode.Avalonia/Permissions/</c>,
+/// <c>src/ClaudeForge.Avalonia/</c>, <c>src/ClaudeForge/Controls/</c> and
+/// <c>src/LayeredEditors.Avalonia/</c> could ship an unnamed control and the
+/// suite stayed green.  The scan is now repo-wide, and
+/// <see cref="AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory"/>
+/// fails if a future refactor narrows it again.
+/// </para>
+///
+/// <para>
+/// This is the same class of blind spot as
+/// <c>LocalizationParityTests.FindLocalizationDirectory()</c>, which hardcodes
+/// <c>src/ClaudeForge/Localization</c> and is why
+/// <c>src/ClaudeForge.Avalonia/Localization/Strings.resx</c> has user-facing
+/// strings, no locale siblings, and no failing test.  That one is tracked
+/// separately as "Problem 8" in <c>docs/OPENCODEFORGE-PLAN.md</c>; widening it
+/// is NOT part of this change.
+/// </para>
 ///
 /// <para>
 /// <b>Operating principle: incremental backfill via baseline.</b> Adding
-/// <c>AutomationProperties.Name</c> to ~140 existing controls is a
-/// substantial mechanical change.  Rather than block all other work
-/// behind that backfill, this test asserts the per-file unnamed-control
-/// count is at or BELOW a snapshot baseline taken 2026-05-15.  PRs that:
+/// <c>AutomationProperties.Name</c> to every pre-existing control is a
+/// substantial mechanical change.  Rather than block all other work behind
+/// that backfill, this test asserts the per-file unnamed-control count is at
+/// or BELOW a snapshot baseline.  PRs that:
 /// </para>
 /// <list type="bullet">
 ///   <item>Add a NEW unnamed control to a file → test fails (count grew).</item>
@@ -72,15 +95,42 @@ public sealed class AxamlAccessibilityCoverageTests
     };
 
     /// <summary>
-    /// Snapshot baseline taken 2026-05-15 when invariant I20 landed.  Each
-    /// entry is the count of interactive controls in that file that did NOT
-    /// have <c>AutomationProperties.Name</c> at that moment.  Backfill PRs
-    /// MUST decrement these toward zero; new unnamed controls FAIL the
-    /// test.
+    /// Top-level project directories under <c>src/</c> that hold AXAML and
+    /// must therefore be represented in the scan.  This list is the tripwire
+    /// against the scan silently narrowing back to one hardcoded folder: if a
+    /// refactor drops a project from coverage,
+    /// <see cref="AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory"/>
+    /// names it.  Genuinely removing or renaming a UI project means updating
+    /// this list in the same commit — deliberately, not by accident.
+    /// </summary>
+    private static readonly string[] ProjectsThatMustContributeAxaml =
+    {
+        "ClaudeForge",
+        "ClaudeForge.Avalonia",
+        "LayeredEditors.Avalonia",
+        "OpenCode.Avalonia",
+        "OpenCodeForge",
+    };
+
+    /// <summary>
+    /// Per-file count of interactive controls that did NOT have
+    /// <c>AutomationProperties.Name</c> when the baseline was snapshotted.
+    /// Backfill PRs MUST decrement these toward zero; new unnamed controls
+    /// FAIL the test.
     ///
     /// <para>
-    /// A missing entry means "the file should be at zero" — so a NEW
-    /// AXAML file added to <c>Views/</c> automatically gets the strict
+    /// Keys are repo-relative paths with <c>/</c> separators, NOT bare file
+    /// names.  Bare names cannot work repo-wide: <c>MainWindow.axaml</c>
+    /// exists in both <c>src/ClaudeForge/Views/</c> and
+    /// <c>src/OpenCodeForge/Views/</c>, and <c>PropertyEditorWrapper.axaml</c>
+    /// in both <c>src/ClaudeForge/Controls/</c> and
+    /// <c>src/LayeredEditors.Avalonia/Controls/</c>.  Keying by bare name
+    /// would silently let one file's debt authorise the other's.
+    /// </para>
+    ///
+    /// <para>
+    /// A missing entry means "the file should be at zero" — so a NEW AXAML
+    /// file added anywhere under <c>src/</c> automatically gets the strict
     /// rule (no unnamed controls allowed).  This is the desired ratchet
     /// behaviour.
     /// </para>
@@ -88,50 +138,70 @@ public sealed class AxamlAccessibilityCoverageTests
     private static readonly IReadOnlyDictionary<string, int> Baseline =
         new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            // Snapshot taken via XDocument scan 2026-05-15.  Sorted alphabetically.
-            // Decrement each entry as backfill PRs land.  Set to 0 when a file is
-            // fully named; entries at 0 can stay in the baseline for self-
-            // documentation or be removed (missing entry → strict 0 default).
-            ["AboutDialog.axaml"] = 0, 
-            ["AboutEditorView.axaml"] = 0, 
-            ["BackupRestoreView.axaml"] = 0,
-            ["EffectiveSettingsView.axaml"] = 0,
-            ["EnabledPluginsEditorView.axaml"] = 0, 
-            ["EnvironmentEditorView.axaml"] = 0,
-            ["EssentialsView.axaml"] = 0, 
-            ["HooksEditorView.axaml"] = 0,
-            ["MainWindow.axaml"] = 0, 
-            ["MarketplacesEditorView.axaml"] = 0,
-            ["McpServersEditorView.axaml"] = 0,
-            ["MemoryEditorView.axaml"] = 0,
-            ["PermissionsEditorView.axaml"] = 0,
-            ["ProfilesView.axaml"] = 0,
-            ["SaveChangesDialog.axaml"] = 0, 
-            ["SettingsGroupEditorView.axaml"] = 0, 
-            // WelcomeView.axaml has no interactive controls, so no entry needed.
+            // ── src/ClaudeForge/Views ────────────────────────────────────────
+            // Original snapshot 2026-05-15, since backfilled to zero.  Kept at
+            // 0 for self-documentation; a missing entry means the same thing.
+            ["src/ClaudeForge/Views/AboutDialog.axaml"] = 0,
+            ["src/ClaudeForge/Views/AboutEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/BackupRestoreView.axaml"] = 0,
+            ["src/ClaudeForge/Views/EffectiveSettingsView.axaml"] = 0,
+            ["src/ClaudeForge/Views/EnabledPluginsEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/EnvironmentEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/EssentialsView.axaml"] = 0,
+            ["src/ClaudeForge/Views/HooksEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/MainWindow.axaml"] = 0,
+            ["src/ClaudeForge/Views/MarketplacesEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/McpServersEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/MemoryEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/PermissionsEditorView.axaml"] = 0,
+            ["src/ClaudeForge/Views/ProfilesView.axaml"] = 0,
+            ["src/ClaudeForge/Views/SaveChangesDialog.axaml"] = 0,
+            ["src/ClaudeForge/Views/SettingsGroupEditorView.axaml"] = 0,
+
+            // ── Newly visible when the scan widened ──────────────────────────
+            // MEASURED, not assumed: snapshot 2026-08-20, the commit that
+            // replaced the hardcoded src/ClaudeForge/Views root with a
+            // repo-wide src/**/*.axaml scan.  These are pre-existing debt the
+            // old root simply never looked at.  Decrement as backfill lands;
+            // do NOT raise them.
+            //
+            // All three are genuine debt, not ControlTemplate-part noise: the
+            // PropertyEditorWrapper counts are real user-facing controls inside
+            // the per-type editor DataTemplates (the boolean toggle, the string
+            // TextBox, the enum ComboBox, the list add/remove Buttons), and the
+            // ModelPicker one is a glyph-only "▾" dropdown Button that a screen
+            // reader would otherwise announce as the bare character.
+            ["src/ClaudeForge/Controls/ModelPicker.axaml"] = 1,
+            ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 48,
+            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 6,
+
+            // Everything else the widened scan newly reached already scores 0
+            // and so needs no entry — including all of src/OpenCodeForge/,
+            // src/OpenCode.Avalonia/Permissions/OpenCodePermissionEditorView.axaml
+            // (verified 0, not assumed), src/ClaudeForge.Avalonia/Permissions/,
+            // the remaining src/ClaudeForge/Controls|Resources|Views files, and
+            // src/LayeredEditors.Avalonia/Themes/.  They are held at the strict
+            // zero default by the missing-entry rule.
         };
 
     [TestMethod]
     public void EveryViewsAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount()
     {
-        string viewsDir = FindViewsDirectory();
-        string[] axamlFiles = Directory.GetFiles(viewsDir, "*.axaml");
+        string repoRoot = FindRepoRoot();
+        IReadOnlyList<string> axamlFiles = ScanAxamlFiles(repoRoot);
 
-        Assert.IsTrue(axamlFiles.Length >= 10,
-            $"Expected to find at least 10 AXAML files under {viewsDir}, got {axamlFiles.Length}. " +
-            "FindViewsDirectory likely resolved the wrong path.");
+        AssertScanIsNonVacuous(repoRoot, axamlFiles);
 
         Dictionary<string, int> actual = new(StringComparer.Ordinal);
         foreach (string path in axamlFiles)
         {
-            string fileName = Path.GetFileName(path);
-            actual[fileName] = CountUnnamedInteractiveControls(path);
+            actual[RepoRelative(repoRoot, path)] = CountUnnamedInteractiveControls(path);
         }
 
         List<string> failures = new();
 
         // (1) Existing files: count must be ≤ baseline.
-        foreach ((string file, int count) in actual)
+        foreach ((string file, int count) in actual.OrderBy(kv => kv.Key, StringComparer.Ordinal))
         {
             int expected = Baseline.TryGetValue(file, out int b) ? b : 0;
             if (count > expected)
@@ -145,7 +215,7 @@ public sealed class AxamlAccessibilityCoverageTests
 
         // (2) Baseline entries that no longer exist on disk: author renamed
         // or deleted the file and forgot to update the dictionary.
-        foreach (string file in Baseline.Keys)
+        foreach (string file in Baseline.Keys.OrderBy(k => k, StringComparer.Ordinal))
         {
             if (!actual.ContainsKey(file))
             {
@@ -163,10 +233,53 @@ public sealed class AxamlAccessibilityCoverageTests
                 "\n\nFix:\n" +
                 "  1. Add AutomationProperties.Name=\"{x:Static loc:Strings.AutoNameXxx}\" to the " +
                 "control, with a matching resx key in Strings.resx + Strings.zh-CN.resx + Designer.cs.\n" +
+                "     Every UI project this scan covers now has a resx of its own, so there is no " +
+                "literal-text exemption to fall back on — see docs/OPENCODEFORGE-PLAN.md.\n" +
                 "  2. Reuse an existing button-label key when the visible label is itself a good " +
                 "screen-reader announcement.\n" +
                 "  3. See CLAUDE.md \"Accessibility — screen-reader names\" and AGENTS.md invariant I20.\n");
         }
+    }
+
+    /// <summary>
+    /// Guards the SCAN itself, not the AXAML.  A guard that silently stops
+    /// looking is worse than no guard: the suite stays green and the coverage
+    /// gap is invisible.  This asserts the scan spans many directories across
+    /// every UI project — so re-hardcoding a single folder fails here loudly
+    /// instead of quietly shrinking what
+    /// <see cref="EveryViewsAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount"/>
+    /// inspects.
+    /// </summary>
+    [TestMethod]
+    public void AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory()
+    {
+        string repoRoot = FindRepoRoot();
+        IReadOnlyList<string> axamlFiles = ScanAxamlFiles(repoRoot);
+
+        AssertScanIsNonVacuous(repoRoot, axamlFiles);
+
+        HashSet<string> projects = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in axamlFiles)
+        {
+            // "src/<Project>/..." → "<Project>"
+            string[] segments = RepoRelative(repoRoot, path).Split('/');
+            if (segments.Length >= 2)
+            {
+                projects.Add(segments[1]);
+            }
+        }
+
+        List<string> missing = ProjectsThatMustContributeAxaml
+            .Where(p => !projects.Contains(p))
+            .ToList();
+
+        Assert.IsTrue(
+            missing.Count == 0,
+            $"The AXAML scan found no files under these src/ projects: {string.Join(", ", missing)}. " +
+            $"It reached only: {string.Join(", ", projects.OrderBy(p => p, StringComparer.Ordinal))}. " +
+            "Either the scan narrowed (regression — it must cover src/**/*.axaml, not one hardcoded " +
+            "folder), or a UI project was legitimately renamed/removed, in which case update " +
+            "ProjectsThatMustContributeAxaml in the same commit.");
     }
 
     [TestMethod]
@@ -178,12 +291,13 @@ public sealed class AxamlAccessibilityCoverageTests
         // one test-run away.  When the total reaches zero, delete this test
         // and the Baseline dictionary; the per-file zero default in the
         // companion test becomes the strict rule everywhere.
-        string viewsDir = FindViewsDirectory();
+        string repoRoot = FindRepoRoot();
         int total = 0;
-        foreach (string path in Directory.GetFiles(viewsDir, "*.axaml").OrderBy(p => p))
+        foreach (string path in ScanAxamlFiles(repoRoot))
         {
             int count = CountUnnamedInteractiveControls(path);
-            Console.WriteLine($"[AxamlAccessibilityCoverage]   {Path.GetFileName(path),-40} {count,4} unnamed");
+            Console.WriteLine(
+                $"[AxamlAccessibilityCoverage] {count,4} unnamed  {RepoRelative(repoRoot, path)}");
             total += count;
         }
 
@@ -194,6 +308,74 @@ public sealed class AxamlAccessibilityCoverageTests
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Every <c>*.axaml</c> under <c>src/</c>, recursively, excluding build
+    /// output.  Ordered so failure text and the tracker read the same way run
+    /// to run.
+    /// </summary>
+    private static IReadOnlyList<string> ScanAxamlFiles(string repoRoot)
+    {
+        string srcDir = Path.Combine(repoRoot, "src");
+        if (!Directory.Exists(srcDir))
+        {
+            throw new InvalidOperationException(
+                $"Expected a src/ directory at '{srcDir}' (repo root resolved from " +
+                $"AppContext.BaseDirectory = '{AppContext.BaseDirectory}').");
+        }
+
+        return Directory.GetFiles(srcDir, "*.axaml", SearchOption.AllDirectories)
+                        .Where(p => !IsUnderBuildOutput(repoRoot, p))
+                        .OrderBy(p => RepoRelative(repoRoot, p), StringComparer.Ordinal)
+                        .ToList();
+    }
+
+    /// <summary>
+    /// True when any path segment below the repo root is <c>bin</c> or
+    /// <c>obj</c>.  Checked segment-wise rather than by substring so a real
+    /// source folder that merely contains those letters is not skipped.
+    /// </summary>
+    private static bool IsUnderBuildOutput(string repoRoot, string absolutePath)
+    {
+        string[] segments = Path.GetRelativePath(repoRoot, absolutePath)
+                                .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        return segments.Any(s => s.Equals("bin", StringComparison.OrdinalIgnoreCase)
+                              || s.Equals("obj", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Repo-relative path with <c>/</c> separators, so Baseline keys and
+    /// failure messages read identically on Windows and on Linux CI.
+    /// </summary>
+    private static string RepoRelative(string repoRoot, string absolutePath) =>
+        Path.GetRelativePath(repoRoot, absolutePath).Replace('\\', '/');
+
+    /// <summary>
+    /// Shared floor for both guards: the scan must reach many files across
+    /// many directories.  Deliberately well below the real counts so ordinary
+    /// churn does not trip it, while a collapse back to one folder does.
+    /// </summary>
+    private static void AssertScanIsNonVacuous(string repoRoot, IReadOnlyList<string> axamlFiles)
+    {
+        Assert.IsTrue(axamlFiles.Count >= 30,
+            $"Expected at least 30 AXAML files under {Path.Combine(repoRoot, "src")}, got " +
+            $"{axamlFiles.Count}. The scan likely resolved the wrong path or narrowed its glob.");
+
+        int directories = axamlFiles
+            .Select(p => Path.GetDirectoryName(RepoRelative(repoRoot, p)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        Assert.IsTrue(directories > 1,
+            $"The AXAML scan found files in only {directories} directory. This test exists because " +
+            "the scan root was once hardcoded to src/ClaudeForge/Views; a single-directory result " +
+            "means that regression is back.");
+
+        Assert.IsTrue(directories >= 8,
+            $"Expected AXAML across at least 8 directories under src/, found {directories}. " +
+            "The scan has narrowed — it must cover src/**/*.axaml.");
+    }
 
     /// <summary>
     /// Counts interactive controls in <paramref name="axamlPath"/> that do
@@ -241,27 +423,26 @@ public sealed class AxamlAccessibilityCoverageTests
     }
 
     /// <summary>
-    /// Walks up from the test's runtime base directory to the repo root,
-    /// then down to <c>src/ClaudeForge/Views</c>.  Necessary because the
-    /// AXAML sources aren't bundled in the test assembly and are accessed
-    /// via filesystem path during test execution.
+    /// Walks up from the test's runtime base directory to the repo root
+    /// (identified by sibling <c>src/</c> and <c>tests/</c> directories).
+    /// Necessary because the AXAML sources aren't bundled in the test
+    /// assembly and are accessed via filesystem path during test execution.
+    /// Matches <c>BuildFilePathIntegrityTests.FindRepoRoot()</c>.
     /// </summary>
-    private static string FindViewsDirectory()
+    private static string FindRepoRoot()
     {
         string? dir = AppContext.BaseDirectory;
         for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
         {
-            string candidate = Path.Combine(dir, "src", "ClaudeForge", "Views");
-            if (Directory.Exists(candidate))
+            if (Directory.Exists(Path.Combine(dir, "src")) && Directory.Exists(Path.Combine(dir, "tests")))
             {
-                return candidate;
+                return dir;
             }
 
             dir = Path.GetDirectoryName(dir);
         }
 
         throw new InvalidOperationException(
-            "Could not locate src/ClaudeForge/Views/ by walking up from " +
-            $"AppContext.BaseDirectory = '{AppContext.BaseDirectory}'.");
+            $"Could not locate the repo root by walking up from '{AppContext.BaseDirectory}'.");
     }
 }
