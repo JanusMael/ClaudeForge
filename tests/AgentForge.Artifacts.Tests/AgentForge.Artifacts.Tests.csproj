@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Artifacts.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Only the library under test. AgentForge.Artifacts is framework-only and knows no
+             product's paths, so a fake source is all these tests need — which is the point:
+             resolution order is the thing that decides which agent actually runs, and it
+             should be provable without a filesystem. -->
+        <ProjectReference Include="..\..\src\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
+    </ItemGroup>
+</Project>
