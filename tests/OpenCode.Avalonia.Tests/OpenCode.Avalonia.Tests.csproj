@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.OpenCode.Avalonia.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- OpenCode.Sdk and the shell's currency types arrive transitively, which is what lets
+             these tests assert the editor's value against OrderedPropertyMap and drive the same
+             OpenCodePermissionModel the config loader uses.
+
+             No Avalonia.Headless: nothing here constructs a view. The view-models are plain
+             ObservableObjects, and headless sessions are serial-only across the whole suite —
+             paying that cost for tests that never touch a control would be a poor trade. See
+             tests/ClaudeForge.Tests/Headless/ for the cases that genuinely need it. -->
+        <ProjectReference Include="..\..\src\OpenCode.Avalonia\OpenCode.Avalonia.csproj"/>
+    </ItemGroup>
+</Project>

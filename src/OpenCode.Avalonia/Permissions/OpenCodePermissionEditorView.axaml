@@ -1,0 +1,238 @@
+<!--
+    The permission grid. Everything here carries x:DataType, which makes the bindings COMPILED:
+    renaming a bound member becomes an AVLN2000 build error instead of a silently empty control,
+    and keeps the whole view trim-safe. Keep it that way on every template added below.
+
+    Two deliberate absences:
+      * No per-row command reached through {Binding $parent[ItemsControl].DataContext.…}. Ancestor
+        bindings resolve by reflection and trip IL2026, which is a build error under this repo's
+        warnings-as-errors. Row commands live on the row view-model instead.
+      * No literal colours. Only the LE.* tokens the editor library publishes, which are defined
+        once and work on both Semi Light and Dark. SystemControl* tokens are unreliable across
+        theme variants and have already produced a black-on-black label in the sibling app.
+
+    Strings are literal English rather than resource lookups, matching the sibling
+    ClaudeForge.Avalonia library. Localising them needs the resx parity test widened past its
+    hardcoded src/ClaudeForge/Localization path first, or the translations would be unguarded.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:perm="using:Bennewitz.Ninja.OpenCode.Avalonia.Permissions"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             xmlns:shared="clr-namespace:Bennewitz.Ninja.Layer.Avalonia.Services.Converters;assembly=LayeredEditors.Avalonia.Services"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Permissions.OpenCodePermissionEditorView"
+             x:DataType="perm:OpenCodePermissionEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <!-- Unparseable value. The editor is read-through in this state and writes the original
+             back untouched, so the message has to say that rather than just report an error. -->
+        <Border IsVisible="{Binding HasLoadError}"
+                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.PermLoadErrorTitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource LE.BoolDisabled}" />
+                <TextBlock Text="{Binding LoadError}" TextWrapping="Wrap" />
+                <TextBlock TextWrapping="Wrap"
+                           Text="{x:Static loc:Strings.PermLoadErrorHint}" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel IsVisible="{Binding !HasLoadError}" Spacing="8">
+
+            <!-- Mode toggle. Flipping it keeps the other arm in memory, so this is safe to click
+                 just to see what the simple form looks like. -->
+            <CheckBox IsChecked="{Binding IsGlobalMode}"
+                      Content="{x:Static loc:Strings.PermGlobalMode}"
+                      ToolTip.Tip="{x:Static loc:Strings.PermGlobalModeTip}"
+                      AutomationProperties.Name="{x:Static loc:Strings.PermGlobalModeAutoName}" />
+
+            <StackPanel IsVisible="{Binding IsGlobalMode}" Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.PermEveryTool}" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{x:Static perm:OpenCodePermissionEditorViewModel.Actions}"
+                          SelectedItem="{Binding GlobalAction}"
+                          MinWidth="110"
+                          AutomationProperties.Name="{x:Static loc:Strings.PermEveryToolAutoName}" />
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding IsPerToolMode}" Spacing="8">
+
+                <!-- Shadowed rules. The usual cause is a merge, not a typo: a narrow deny from a
+                     lower-priority file lands before a broad rule from a higher one and stops
+                     applying, with no edit to either file. -->
+                <Border IsVisible="{Binding HasShadowedRules}"
+                        BorderBrush="{DynamicResource LE.BoolUnset}"
+                        BorderThickness="1"
+                        CornerRadius="3"
+                        Padding="8">
+                    <TextBlock TextWrapping="Wrap">
+                        <Run Text="{Binding ShadowedRuleCount}" FontWeight="SemiBold" />
+                        <Run Text="{x:Static loc:Strings.PermShadowBanner}" />
+                    </TextBlock>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBox Text="{Binding NewToolName}"
+                             PlaceholderText="{x:Static loc:Strings.PermNewToolPlaceholder}"
+                             Width="220"
+                             AutomationProperties.Name="{x:Static loc:Strings.PermNewToolAutoName}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding AddToolCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Content="{x:Static loc:Strings.PermAddTool}"
+                            Command="{Binding AddToolCommand}"
+                            AutomationProperties.Name="{x:Static loc:Strings.PermAddTool}" />
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{Binding Tools}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="perm:OpenCodePermissionToolViewModel">
+                            <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                                    BorderThickness="1"
+                                    CornerRadius="3"
+                                    Padding="8"
+                                    Margin="0,0,0,6">
+                                <StackPanel Spacing="6">
+
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBox Text="{Binding Tool}"
+                                                 Width="180"
+                                                 PlaceholderText="{x:Static loc:Strings.PermToolNamePlaceholder}"
+                                                 AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermToolNameAutoNameFmt}}" />
+                                        <CheckBox IsChecked="{Binding UsesPatterns}"
+                                                  IsEnabled="{Binding AcceptsPatterns}"
+                                                  Content="{x:Static loc:Strings.PermMatchPatterns}"
+                                                  VerticalAlignment="Center"
+                                                  ToolTip.Tip="{x:Static loc:Strings.PermMatchPatternsTip}"
+                                                  AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermMatchPatternsAutoNameFmt}}" />
+                                        <ComboBox IsVisible="{Binding !UsesPatterns}"
+                                                  ItemsSource="{x:Static perm:OpenCodePermissionToolViewModel.Actions}"
+                                                  SelectedItem="{Binding SingleAction}"
+                                                  MinWidth="110"
+                                                  AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermSingleActionAutoNameFmt}}" />
+                                        <Button Content="{x:Static loc:Strings.PermRemove}"
+                                                Command="{Binding RemoveCommand}"
+                                                AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermRemoveToolAutoNameFmt}}" />
+                                    </StackPanel>
+
+                                    <TextBlock IsVisible="{Binding HasModeNotice}"
+                                               Text="{Binding ModeNotice}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+
+                                    <StackPanel IsVisible="{Binding UsesPatterns}" Spacing="4">
+
+                                        <TextBlock Text="{x:Static loc:Strings.PermLastMatchHint}"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource LE.BoolUnset}" />
+
+                                        <ItemsControl ItemsSource="{Binding Rules}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="perm:OpenCodePermissionRowViewModel">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                        <TextBlock Text="⚠"
+                                                                   IsVisible="{Binding IsShadowed}"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource LE.BoolDisabled}"
+                                                                   ToolTip.Tip="{Binding ShadowReason}"
+                                                                   AutomationProperties.Name="{Binding ShadowReason}" />
+                                                        <TextBox Text="{Binding Pattern}"
+                                                                 Width="300"
+                                                                 PlaceholderText="{x:Static loc:Strings.PermRulePatternPlaceholder}"
+                                                                 AutomationProperties.Name="{Binding Pattern, StringFormat={x:Static loc:Strings.PermRulePatternAutoNameFmt}}" />
+                                                        <TextBlock Text="●"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{Binding Action, Converter={x:Static shared:PermissionOutcomeToBrushConverter.Instance}}"
+                                                                   IsHitTestVisible="False"
+                                                                   AutomationProperties.Name="{Binding Action, StringFormat={x:Static loc:Strings.PermOutcomeAutoNameFmt}}" />
+                                                        <ComboBox ItemsSource="{x:Static perm:OpenCodePermissionRowViewModel.Actions}"
+                                                                  SelectedItem="{Binding Action}"
+                                                                  MinWidth="110"
+                                                                  AutomationProperties.Name="{Binding Pattern, StringFormat={x:Static loc:Strings.PermRuleActionAutoNameFmt}}" />
+                                                        <Button Content="↑"
+                                                                Command="{Binding MoveUpCommand}"
+                                                                ToolTip.Tip="{x:Static loc:Strings.PermWeakenTip}"
+                                                                AutomationProperties.Name="{Binding Pattern, StringFormat={x:Static loc:Strings.PermWeakenAutoNameFmt}}" />
+                                                        <Button Content="↓"
+                                                                Command="{Binding MoveDownCommand}"
+                                                                ToolTip.Tip="{x:Static loc:Strings.PermStrengthenTip}"
+                                                                AutomationProperties.Name="{Binding Pattern, StringFormat={x:Static loc:Strings.PermStrengthenAutoNameFmt}}" />
+                                                        <Button Content="✕"
+                                                                Command="{Binding RemoveCommand}"
+                                                                AutomationProperties.Name="{Binding Pattern, StringFormat={x:Static loc:Strings.PermRemoveRuleAutoNameFmt}}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBox Text="{Binding NewRulePattern}"
+                                                     PlaceholderText="{x:Static loc:Strings.PermNewRulePlaceholder}"
+                                                     Width="300"
+                                                     AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermNewRuleAutoNameFmt}}">
+                                                <TextBox.KeyBindings>
+                                                    <KeyBinding Gesture="Enter" Command="{Binding AddRuleCommand}" />
+                                                </TextBox.KeyBindings>
+                                            </TextBox>
+                                            <Button Content="{x:Static loc:Strings.PermAddRule}"
+                                                    Command="{Binding AddRuleCommand}"
+                                                    AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.PermAddRuleAutoNameFmt}}" />
+                                        </StackPanel>
+
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Tester. Resolves against the LIVE editor state, not what is on disk: the question
+                 worth answering is whether the edit about to be saved does what the user thinks. -->
+            <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Static loc:Strings.PermTesterTitle}" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBox Text="{Binding TestTool}"
+                                 PlaceholderText="{x:Static loc:Strings.PermTestToolPlaceholder}"
+                                 Width="150"
+                                 AutomationProperties.Name="{x:Static loc:Strings.PermTestToolAutoName}" />
+                        <TextBox Text="{Binding TestInput}"
+                                 PlaceholderText="{x:Static loc:Strings.PermTestInputPlaceholder}"
+                                 Width="320"
+                                 AutomationProperties.Name="{x:Static loc:Strings.PermTestInputAutoName}">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding RunTestCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Content="{x:Static loc:Strings.PermTest}"
+                                Command="{Binding RunTestCommand}"
+                                AutomationProperties.Name="{x:Static loc:Strings.PermTestAutoName}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding TestResult}"
+                               TextWrapping="Wrap"
+                               Foreground="{Binding TestOutcome, Converter={x:Static shared:PermissionOutcomeToBrushConverter.Instance}}"
+                               AutomationProperties.Name="{Binding TestResult}" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -357,6 +357,185 @@ public sealed class LocalizationParityTests
             : fileName;
     }
 
+    // ── The ledger: which resx are translated, and which are declared English-only ──────────
+
+    /// <summary>
+    /// Every project that owns a neutral <c>Localization/Strings.resx</c>, and whether it is
+    /// translated or deliberately English-only.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>This exists because the four parity contracts above all resolve ONE hardcoded path,
+    /// <c>src/ClaudeForge/Localization</c>.</b> Every other resx in the repo was therefore
+    /// unguarded — not failing, not skipped, simply never looked at. That is Problem 8 in
+    /// <c>docs/OPENCODEFORGE-PLAN.md</c>, and the damaging half is not the missing translations but
+    /// that a resx could be added with no locale siblings and <b>no test would say anything</b>.
+    /// </para>
+    /// <para>
+    /// The ledger makes the gap declared rather than invisible. A new resx fails the build until
+    /// someone writes down which of the two it is, and a resx that gains its first translation
+    /// fails until someone wires it into the contracts above. Neither can happen silently.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>English-only is a real state here, not a TODO to be papered over.</b> The two library
+    /// resx hold strings for editors whose translations do not exist yet; inventing them would be
+    /// worse than declaring the gap. What must not happen is a <i>third</i> arriving unnoticed.
+    /// </para>
+    /// </remarks>
+    private static readonly (string Project, bool Localized, string Why)[] ResxLedger =
+    [
+        ("ClaudeForge", true,
+            "The app. Nine cultures; the four contracts above run against this one."),
+        ("ClaudeForge.Avalonia", false,
+            "Editor-library strings for Claude's permission controls. English-only; no "
+            + "translations have been written for them."),
+        ("OpenCodeForge", false,
+            "The second app's shell strings. English-only; the app itself is newer than any "
+            + "translation pass."),
+        ("OpenCode.Avalonia", false,
+            "Editor-library strings for OpenCode's permission grid and MCP editor. English-only, "
+            + "and deliberately so: the alternative was leaving them as literals in the AXAML, "
+            + "which is strictly worse — a literal cannot even be found by a translator."),
+    ];
+
+    private static string FindRepoRoot()
+    {
+        string? dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
+        {
+            if (Directory.Exists(Path.Combine(dir, "src")) && Directory.Exists(Path.Combine(dir, "tests")))
+            {
+                return dir;
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new InvalidOperationException(
+            $"Could not locate the repo root by walking up from '{AppContext.BaseDirectory}'.");
+    }
+
+    /// <summary>Projects under <c>src/</c> that own a neutral <c>Localization/Strings.resx</c>.</summary>
+    private static IReadOnlyList<string> ProjectsWithResx()
+    {
+        string src = Path.Combine(FindRepoRoot(), "src");
+        return
+        [
+            .. Directory
+                .GetFiles(src, "Strings.resx", SearchOption.AllDirectories)
+                .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}",
+                               StringComparison.Ordinal)
+                            && !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}",
+                                StringComparison.Ordinal))
+                // …/src/<Project>/Localization/Strings.resx
+                .Select(p => Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(p))!))
+                .Order(StringComparer.Ordinal),
+        ];
+    }
+
+    /// <summary>
+    /// Contract #5 — every resx on disk is declared in the ledger, and vice versa.
+    /// </summary>
+    [TestMethod]
+    public void EveryResxUnderSrc_IsDeclaredInTheLedger()
+    {
+        IReadOnlyList<string> onDisk = ProjectsWithResx();
+
+        Assert.IsTrue(
+            onDisk.Count > 0,
+            "Found no Localization/Strings.resx under src/. This test would pass without checking "
+            + "anything.");
+
+        HashSet<string> declared = ResxLedger.Select(e => e.Project).ToHashSet(StringComparer.Ordinal);
+
+        List<string> undeclared = [.. onDisk.Where(p => !declared.Contains(p))];
+        List<string> stale = [.. declared.Where(p => !onDisk.Contains(p)).Order(StringComparer.Ordinal)];
+
+        Assert.IsTrue(
+            undeclared.Count == 0,
+            $"{undeclared.Count} project(s) own a Strings.resx that the ledger does not mention, so "
+            + "nothing checks whether their strings are translated or deliberately English-only:\n  "
+            + string.Join("\n  ", undeclared)
+            + "\n\nAdd an entry to ResxLedger saying which it is, and why.");
+
+        Assert.IsTrue(
+            stale.Count == 0,
+            $"{stale.Count} ledger entr(ies) name a project with no Strings.resx. Remove them, or "
+            + $"the ledger is describing a repo that no longer exists:\n  {string.Join("\n  ", stale)}");
+    }
+
+    /// <summary>
+    /// Contract #6 — a ledger claim matches what is on disk, and a first translation forces the
+    /// parity contracts to be widened.
+    /// </summary>
+    /// <remarks>
+    /// The asymmetry is deliberate. Declaring a project English-only while locale files sit beside
+    /// it means those files are unchecked by contracts #1–#4, which is exactly the silent state the
+    /// ledger exists to prevent — so it fails, and the fix is to widen those contracts past their
+    /// single hardcoded directory rather than to edit this ledger.
+    /// </remarks>
+    [TestMethod]
+    public void LedgerClaims_MatchTheLocaleFilesOnDisk()
+    {
+        string src = Path.Combine(FindRepoRoot(), "src");
+        List<string> failures = [];
+
+        foreach ((string project, bool localized, string why) in ResxLedger)
+        {
+            string dir = Path.Combine(src, project, "Localization");
+            if (!Directory.Exists(dir))
+            {
+                continue; // Contract #5 reports this.
+            }
+
+            int locales = Directory.GetFiles(dir, "Strings.*.resx").Length;
+
+            if (localized && locales == 0)
+            {
+                failures.Add(
+                    $"'{project}' is declared localized but has no Strings.<culture>.resx sibling. "
+                    + $"Ledger reason given: {why}");
+            }
+            else if (!localized && locales > 0)
+            {
+                failures.Add(
+                    $"'{project}' is declared English-only but has {locales} locale file(s). Those "
+                    + "files are NOT covered by contracts #1–#4, which resolve only "
+                    + "src/ClaudeForge/Localization. Widen those contracts to run over every "
+                    + "localized directory, then flip this ledger entry — do not flip the entry "
+                    + "alone, or the new translations go unchecked.");
+            }
+        }
+
+        Assert.IsTrue(failures.Count == 0, string.Join("\n\n", failures));
+    }
+
+    /// <summary>
+    /// Contract #7 — the directory contracts #1–#4 actually run against is the one the ledger says
+    /// is localized.
+    /// </summary>
+    /// <remarks>
+    /// Without this, generalising <see cref="FindLocalizationDirectory"/> or adding a second
+    /// localized project would leave the four contracts quietly covering a subset. The failure
+    /// message is the instruction.
+    /// </remarks>
+    [TestMethod]
+    public void TheParityContracts_CoverEveryLocalizedProject()
+    {
+        List<string> localized =
+            [.. ResxLedger.Where(e => e.Localized).Select(e => e.Project).Order(StringComparer.Ordinal)];
+
+        string covered = Path.GetFileName(Path.GetDirectoryName(FindLocalizationDirectory())!);
+
+        CollectionAssert.AreEqual(
+            new[] { covered },
+            localized.ToArray(),
+            $"Contracts #1–#4 run against '{covered}' only, but the ledger declares these projects "
+            + $"localized: {string.Join(", ", localized)}. Every localized project must be covered. "
+            + "Replace FindLocalizationDirectory with an enumeration of localized directories and "
+            + "loop the four contracts over it.");
+    }
+
     /// <summary>
     /// Walks up from the test's runtime base directory to the repo root, then
     /// down to <c>src/ClaudeForge/Localization</c>.  The resx sources aren't

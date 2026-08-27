@@ -1,0 +1,65 @@
+<!--
+    The TUI's plugin_enabled map. Separate from the plugin list on purpose: this toggles plugins
+    something else declares, so a name here need not appear in any plugin array this editor sees.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:plug="using:Bennewitz.Ninja.OpenCode.Avalonia.Plugins"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Plugins.OpenCodePluginEnabledEditorView"
+             x:DataType="plug:OpenCodePluginEnabledEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="6">
+
+        <TextBlock Text="{x:Static loc:Strings.PluginEnabledHint}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource LE.BoolUnset}" />
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBox Text="{Binding Toggles.NewName}"
+                     PlaceholderText="{x:Static loc:Strings.PluginEnabledNewNamePlaceholder}"
+                     Width="260"
+                     AutomationProperties.Name="{x:Static loc:Strings.PluginEnabledNewNameAutoName}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding Toggles.AddCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Content="{x:Static loc:Strings.PluginEnabledAdd}"
+                    Command="{Binding Toggles.AddCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.PluginEnabledAdd}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Toggles.Rows}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="plug:OpenCodePluginToggleViewModel">
+                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                        <TextBox Text="{Binding Name}"
+                                 Width="260"
+                                 AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginEnabledNameAutoNameFmt}}" />
+                        <CheckBox IsChecked="{Binding Enabled}"
+                                  IsEnabled="{Binding IsEditable}"
+                                  VerticalAlignment="Center"
+                                  AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginEnabledToggleAutoNameFmt}}" />
+                        <TextBlock Text="⚠"
+                                   IsVisible="{Binding IsOpaqueEntry}"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource LE.BoolUnset}"
+                                   ToolTip.Tip="{x:Static loc:Strings.PluginEnabledOpaqueTip}"
+                                   AutomationProperties.Name="{x:Static loc:Strings.PluginEnabledOpaqueTip}" />
+                        <Button Content="✕" Command="{Binding RemoveCommand}"
+                                AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginEnabledRemoveAutoNameFmt}}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

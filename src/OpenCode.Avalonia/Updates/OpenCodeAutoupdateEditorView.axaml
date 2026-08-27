@@ -1,0 +1,80 @@
+<!--
+    The autoupdate picker. Same rules as the other editors in this library: compiled bindings via
+    x:DataType, no ancestor bindings (IL2026), LE.* tokens only, PlaceholderText not the obsolete
+    Watermark (AVLN5001 — Release-publish-only), all text from Strings.resx.
+
+    ⚠ A ScrollViewer even though this editor is three lines tall. App.axaml hosts these views under
+    a MaxHeight, and a MaxHeight with nothing scrollable inside it CLIPS rather than scrolls — the
+    defect 9a-8 found by screenshot in all seven editors that existed then. Cheap here, and it stops
+    this view being the eighth if its help text ever grows.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:upd="using:Bennewitz.Ninja.OpenCode.Avalonia.Updates"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Updates.OpenCodeAutoupdateEditorView"
+             x:DataType="upd:OpenCodeAutoupdateEditorViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <TextBlock Text="{x:Static loc:Strings.AutoupdateHint}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource LE.BoolUnset}" />
+
+        <!-- Value this build cannot classify: show it, do not interpret it, and make replacing it
+             an explicit act. The banner names case-sensitivity because "Notify" is the near-miss
+             a user is most likely to have typed. -->
+        <Border IsVisible="{Binding IsUnrecognised}"
+                BorderBrush="{DynamicResource LE.BoolUnset}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.AutoupdateUnrecognisedBanner}"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{x:Static loc:Strings.AutoupdateHeldValueLabel}"
+                           FontWeight="SemiBold" />
+                <TextBox Text="{Binding UnrecognisedText}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas,Menlo,monospace"
+                         MinHeight="34"
+                         MaxHeight="120"
+                         AutomationProperties.Name="{x:Static loc:Strings.AutoupdateHeldValueAutoName}" />
+                <Button Content="{x:Static loc:Strings.AutoupdateReplaceValue}"
+                        Command="{Binding ReplaceUnrecognisedCommand}"
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="{x:Static loc:Strings.AutoupdateReplaceValueTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoupdateReplaceValue}" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel IsVisible="{Binding !IsUnrecognised}" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.AutoupdateLabel}"
+                           VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{x:Static upd:OpenCodeAutoupdateEditorViewModel.Options}"
+                          SelectedItem="{Binding SelectedOption}"
+                          MinWidth="200"
+                          AutomationProperties.Name="{x:Static loc:Strings.AutoupdateAutoName}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="upd:OpenCodeAutoupdateOption">
+                            <TextBlock Text="{Binding Label}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- The help text says what the FILE will contain, not what the feature does. That is
+                 the whole reason this control exists: three of these four states have overlapping
+                 behaviour and no two of them are the same text. -->
+            <TextBlock Text="{Binding ModeHelp}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolUnset}" />
+        </StackPanel>
+
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

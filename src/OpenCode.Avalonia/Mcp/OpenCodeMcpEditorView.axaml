@@ -1,0 +1,282 @@
+<!--
+    The MCP server list. Same rules as the permission grid, for the same reasons:
+
+      * x:DataType everywhere, so bindings are COMPILED — a renamed member becomes an AVLN2000
+        build error rather than a silently empty control, and the view stays trim-safe.
+      * No {Binding $parent[ItemsControl].DataContext.…}. Ancestor bindings resolve by reflection
+        and trip IL2026, which is a build error here. Row commands live on the row view-models.
+      * Only LE.* theme tokens. SystemControl* tokens are unreliable across theme variants and
+        have already produced a black-on-black label in the sibling app.
+
+    All text comes from Strings.resx (9a-4), which the repo's dead-key guard and localization
+    ledger both cover.
+
+    The argv and key/value rows are the shared Editing.* list view-models, not MCP-local types:
+    formatter and lsp reuse them.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mcp="using:Bennewitz.Ninja.OpenCode.Avalonia.Mcp"
+             xmlns:edit="using:Bennewitz.Ninja.OpenCode.Avalonia.Editing"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Mcp.OpenCodeMcpEditorView"
+             x:DataType="mcp:OpenCodeMcpEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <Border IsVisible="{Binding HasOpaqueServers}"
+                BorderBrush="{DynamicResource LE.BoolUnset}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding OpaqueServerCount}" FontWeight="SemiBold" />
+                <Run Text="{x:Static loc:Strings.McpOpaqueBanner}" />
+            </TextBlock>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBox Text="{Binding NewServerName}"
+                     PlaceholderText="{x:Static loc:Strings.McpNewServerPlaceholder}"
+                     Width="240"
+                     AutomationProperties.Name="{x:Static loc:Strings.McpNewServerAutoName}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding AddServerCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Content="{x:Static loc:Strings.McpAddServer}"
+                    Command="{Binding AddServerCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.McpAddServerAutoName}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Servers}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="mcp:OpenCodeMcpServerViewModel">
+                    <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="8"
+                            Margin="0,0,0,6">
+                        <StackPanel Spacing="6">
+
+                            <!-- Header: name, kind, enabled tri-state, remove -->
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding Name}"
+                                         Width="180"
+                                         PlaceholderText="{x:Static loc:Strings.McpServerNamePlaceholder}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.McpServerNameAutoNameFmt}}" />
+                                <ComboBox ItemsSource="{x:Static mcp:OpenCodeMcpEditorViewModel.SelectableKinds}"
+                                          SelectedItem="{Binding Kind}"
+                                          IsEnabled="{Binding IsEditable}"
+                                          MinWidth="150"
+                                          ToolTip.Tip="{x:Static loc:Strings.McpKindTip}"
+                                          AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.McpKindAutoNameFmt}}" />
+                                <ComboBox ItemsSource="{x:Static mcp:OpenCodeMcpServerViewModel.EnabledStates}"
+                                          SelectedItem="{Binding EnabledState}"
+                                          IsEnabled="{Binding IsEditable}"
+                                          MinWidth="110"
+                                          ToolTip.Tip="{x:Static loc:Strings.McpEnabledTip}"
+                                          AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.McpEnabledAutoNameFmt}}" />
+                                <Button Content="{x:Static loc:Strings.McpRemove}"
+                                        Command="{Binding RemoveCommand}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.McpRemoveServerAutoNameFmt}}" />
+                            </StackPanel>
+
+                            <!-- Unrecognised shape: say so, offer nothing to edit -->
+                            <TextBlock IsVisible="{Binding IsOpaque}"
+                                       Text="{Binding OpaqueNotice}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+                            <!-- Local arm -->
+                            <StackPanel IsVisible="{Binding IsLocal}" Spacing="4">
+                                <TextBlock Text="{x:Static loc:Strings.McpCommandTitle}"
+                                           FontWeight="SemiBold" />
+                                <ItemsControl ItemsSource="{Binding Command.Rows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="edit:OpenCodeStringRowViewModel">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                <TextBox Text="{Binding Value}"
+                                                         Width="320"
+                                                         AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.McpArgumentAutoNameFmt}}" />
+                                                <Button Content="↑" Command="{Binding MoveUpCommand}"
+                                                        ToolTip.Tip="{x:Static loc:Strings.McpMoveEarlierTip}"
+                                                        AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.McpMoveEarlierAutoNameFmt}}" />
+                                                <Button Content="↓" Command="{Binding MoveDownCommand}"
+                                                        ToolTip.Tip="{x:Static loc:Strings.McpMoveLaterTip}"
+                                                        AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.McpMoveLaterAutoNameFmt}}" />
+                                                <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                        AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.McpRemoveArgumentAutoNameFmt}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding Command.NewValue}"
+                                             PlaceholderText="{x:Static loc:Strings.McpNewArgumentPlaceholder}"
+                                             Width="320"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpNewArgumentAutoName}">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Gesture="Enter" Command="{Binding Command.AddCommand}" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
+                                    <Button Content="{x:Static loc:Strings.McpAddArgument}"
+                                            Command="{Binding Command.AddCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.McpAddArgumentAutoName}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.McpWorkingDirectory}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding WorkingDirectory}"
+                                             Width="320"
+                                             PlaceholderText="{x:Static loc:Strings.McpWorkingDirectoryPlaceholder}"
+                                             ToolTip.Tip="{x:Static loc:Strings.McpWorkingDirectoryTip}"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpWorkingDirectory}" />
+                                </StackPanel>
+
+                                <TextBlock Text="{x:Static loc:Strings.McpEnvironmentTitle}" FontWeight="SemiBold" />
+                                <ItemsControl ItemsSource="{Binding Environment.Rows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="edit:OpenCodePairRowViewModel">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                <TextBox Text="{Binding Key}" Width="180"
+                                                         AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpEnvNameAutoNameFmt}}" />
+                                                <TextBox Text="{Binding Value}" Width="260"
+                                                         AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpEnvValueAutoNameFmt}}" />
+                                                <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                        AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpRemoveEnvAutoNameFmt}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding Environment.NewKey}"
+                                             PlaceholderText="{x:Static loc:Strings.McpEnvNamePlaceholder}" Width="180"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpNewEnvNameAutoName}" />
+                                    <TextBox Text="{Binding Environment.NewValue}"
+                                             PlaceholderText="{x:Static loc:Strings.McpEnvValuePlaceholder}" Width="260"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpNewEnvValueAutoName}" />
+                                    <Button Content="{x:Static loc:Strings.McpAdd}"
+                                            Command="{Binding Environment.AddCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.McpAddEnvAutoName}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Remote arm -->
+                            <StackPanel IsVisible="{Binding IsRemote}" Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.McpUrl}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Url}"
+                                             Width="380"
+                                             PlaceholderText="{x:Static loc:Strings.McpUrlPlaceholder}"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpUrlAutoName}" />
+                                </StackPanel>
+
+                                <TextBlock Text="{x:Static loc:Strings.McpHeadersTitle}" FontWeight="SemiBold" />
+                                <ItemsControl ItemsSource="{Binding Headers.Rows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="edit:OpenCodePairRowViewModel">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                <TextBox Text="{Binding Key}" Width="180"
+                                                         AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpHeaderNameAutoNameFmt}}" />
+                                                <TextBox Text="{Binding Value}" Width="260"
+                                                         AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpHeaderValueAutoNameFmt}}" />
+                                                <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                        AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.McpRemoveHeaderAutoNameFmt}}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding Headers.NewKey}"
+                                             PlaceholderText="{x:Static loc:Strings.McpHeaderPlaceholder}" Width="180"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpNewHeaderNameAutoName}" />
+                                    <TextBox Text="{Binding Headers.NewValue}"
+                                             PlaceholderText="{x:Static loc:Strings.McpEnvValuePlaceholder}" Width="260"
+                                             AutomationProperties.Name="{x:Static loc:Strings.McpNewHeaderValueAutoName}" />
+                                    <Button Content="{x:Static loc:Strings.McpAdd}"
+                                            Command="{Binding Headers.AddCommand}"
+                                            AutomationProperties.Name="{x:Static loc:Strings.McpAddHeaderAutoName}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.McpOAuth}" VerticalAlignment="Center" />
+                                    <ComboBox ItemsSource="{x:Static mcp:OpenCodeMcpServerViewModel.OAuthModes}"
+                                              SelectedItem="{Binding OauthMode}"
+                                              MinWidth="140"
+                                              ToolTip.Tip="{x:Static loc:Strings.McpOAuthTip}"
+                                              AutomationProperties.Name="{x:Static loc:Strings.McpOAuthModeAutoName}" />
+                                </StackPanel>
+
+                                <StackPanel IsVisible="{Binding ShowOAuthFields}" Spacing="4" Margin="16,0,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.McpClientId}" Width="100" VerticalAlignment="Center" />
+                                        <TextBox Text="{Binding OauthClientId}" Width="300"
+                                                 PlaceholderText="{x:Static loc:Strings.McpClientIdPlaceholder}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.McpClientIdAutoName}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.McpClientSecret}" Width="100" VerticalAlignment="Center" />
+                                        <!-- Masked by default. The value lives in a plain-text config
+                                             either way — that is OpenCode's design — but it should not
+                                             be readable over a shoulder or in a screenshot. -->
+                                        <TextBox Text="{Binding OauthClientSecret}" Width="300"
+                                                 PasswordChar="•"
+                                                 RevealPassword="{Binding IsChecked, ElementName=RevealSecret}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.McpClientSecretAutoName}" />
+                                        <CheckBox Name="RevealSecret" Content="{x:Static loc:Strings.McpShow}"
+                                                  AutomationProperties.Name="{x:Static loc:Strings.McpRevealSecretAutoName}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.McpScope}" Width="100" VerticalAlignment="Center" />
+                                        <TextBox Text="{Binding OauthScope}" Width="300"
+                                                 PlaceholderText="{x:Static loc:Strings.McpScopePlaceholder}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.McpScopeAutoName}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.McpCallbackPort}" Width="100" VerticalAlignment="Center" />
+                                        <NumericUpDown Value="{Binding OauthCallbackPort}"
+                                                       Minimum="1" Maximum="65535"
+                                                       FormatString="0"
+                                                       Width="140"
+                                                       AutomationProperties.Name="{x:Static loc:Strings.McpCallbackPortAutoName}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.McpRedirectUri}" Width="100" VerticalAlignment="Center" />
+                                        <TextBox Text="{Binding OauthRedirectUri}" Width="300"
+                                                 PlaceholderText="{x:Static loc:Strings.McpRedirectUriPlaceholder}"
+                                                 ToolTip.Tip="{x:Static loc:Strings.McpRedirectUriTip}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.McpRedirectUriAutoName}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Shared by both arms -->
+                            <StackPanel IsVisible="{Binding IsEditable}"
+                                        Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{x:Static loc:Strings.McpTimeout}" VerticalAlignment="Center" />
+                                <NumericUpDown Value="{Binding TimeoutMs}"
+                                               Minimum="1"
+                                               Increment="1000"
+                                               FormatString="0"
+                                               Width="160"
+                                               ToolTip.Tip="{x:Static loc:Strings.McpTimeoutTip}"
+                                               AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.McpTimeoutAutoNameFmt}}" />
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

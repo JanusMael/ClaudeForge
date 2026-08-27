@@ -1,0 +1,123 @@
+<!--
+    The plugin list. Same rules as the other editors in this library: compiled bindings via
+    x:DataType, no ancestor bindings (IL2026), LE.* tokens only, PlaceholderText not the obsolete
+    Watermark (AVLN5001 — Release-publish-only), all text from Strings.resx.
+
+    One editor serves BOTH products: Config.plugin and the TUI's plugin declare the identical anyOf.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:plug="using:Bennewitz.Ninja.OpenCode.Avalonia.Plugins"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Plugins.OpenCodePluginEditorView"
+             x:DataType="plug:OpenCodePluginEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <Border IsVisible="{Binding HasOpaqueEntries}"
+                BorderBrush="{DynamicResource LE.BoolUnset}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding OpaqueEntryCount}" FontWeight="SemiBold" />
+                <Run Text="{x:Static loc:Strings.PluginOpaqueBanner}" />
+            </TextBlock>
+        </Border>
+
+        <Border IsVisible="{Binding HasOptionErrors}"
+                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding OptionErrorCount}" FontWeight="SemiBold" />
+                <Run Text="{x:Static loc:Strings.PluginOptionErrorBanner}" />
+            </TextBlock>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBox Text="{Binding Plugins.NewName}"
+                     PlaceholderText="{x:Static loc:Strings.PluginNewNamePlaceholder}"
+                     Width="300"
+                     AutomationProperties.Name="{x:Static loc:Strings.PluginNewNameAutoName}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding Plugins.AddCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Content="{x:Static loc:Strings.PluginAdd}"
+                    Command="{Binding Plugins.AddCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.PluginAdd}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Plugins.Rows}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="plug:OpenCodePluginRowViewModel">
+                    <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="8"
+                            Margin="0,0,0,6">
+                        <StackPanel Spacing="4">
+
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding Name}"
+                                         Width="300"
+                                         IsEnabled="{Binding IsEditable}"
+                                         PlaceholderText="{x:Static loc:Strings.PluginNamePlaceholder}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginNameAutoNameFmt}}" />
+                                <CheckBox IsChecked="{Binding HasOptions}"
+                                          IsEnabled="{Binding IsEditable}"
+                                          Content="{x:Static loc:Strings.PluginHasOptions}"
+                                          VerticalAlignment="Center"
+                                          ToolTip.Tip="{x:Static loc:Strings.PluginHasOptionsTip}"
+                                          AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginHasOptionsAutoNameFmt}}" />
+                                <Button Content="↑" Command="{Binding MoveUpCommand}"
+                                        ToolTip.Tip="{x:Static loc:Strings.PluginMoveEarlierTip}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginMoveEarlierAutoNameFmt}}" />
+                                <Button Content="↓" Command="{Binding MoveDownCommand}"
+                                        ToolTip.Tip="{x:Static loc:Strings.PluginMoveLaterTip}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginMoveLaterAutoNameFmt}}" />
+                                <Button Content="✕" Command="{Binding RemoveCommand}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginRemoveAutoNameFmt}}" />
+                            </StackPanel>
+
+                            <TextBlock IsVisible="{Binding IsOpaqueEntry}"
+                                       Text="{x:Static loc:Strings.PluginOpaqueNotice}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+                            <StackPanel IsVisible="{Binding ShowOptions}" Spacing="4">
+                                <TextBlock Text="{x:Static loc:Strings.PluginOptionsLabel}"
+                                           Foreground="{DynamicResource LE.BoolUnset}" />
+                                <TextBox Text="{Binding OptionsText}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Consolas,Menlo,monospace"
+                                         MinHeight="70"
+                                         MaxHeight="200"
+                                         ToolTip.Tip="{x:Static loc:Strings.PluginOptionsTip}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.PluginOptionsAutoNameFmt}}" />
+                                <TextBlock IsVisible="{Binding HasOptionsError}"
+                                           Text="{x:Static loc:Strings.PluginOptionsError}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolDisabled}"
+                                           AutomationProperties.Name="{x:Static loc:Strings.PluginOptionsError}" />
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>
