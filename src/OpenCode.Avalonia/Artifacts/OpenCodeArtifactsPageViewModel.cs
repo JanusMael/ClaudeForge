@@ -50,6 +50,35 @@ public sealed partial class OpenCodeArtifactTabViewModel : ObservableObject
     public bool IsEmpty => Rows.Count == 0;
 
     /// <summary>
+    /// What assistive technology announces for this tab.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>A <c>TabControl</c> bound to <c>ItemsSource</c> names its generated
+    /// <c>TabItem</c>s from the ITEM, not from the <c>ItemTemplate</c>.</b> The template here
+    /// renders two <c>TextBlock</c>s inside a <c>StackPanel</c>, so no single text is the header
+    /// and Avalonia's automation peer falls back to <c>ToString()</c> — which, before this
+    /// override, meant all five tabs announced
+    /// <c>Bennewitz.Ninja.OpenCode.Avalonia.Artifacts.OpenCodeArtifactTabViewModel</c>. Measured
+    /// through UI Automation, not assumed.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>AxamlAccessibilityCoverageTests</c> cannot catch this class of defect.</b> That scan
+    /// requires an <c>AutomationProperties.Name</c> on interactive controls declared in a view, and
+    /// this name comes from a bound view-model rather than from any control in the AXAML — so the
+    /// page passed the accessibility guard while announcing a .NET type name five times.
+    /// </para>
+    /// <para>
+    /// The count rides along because "Skills" and "Skills, 7 of 130 shown" answer different
+    /// questions, and a screen-reader user cannot see the count rendered beside the label.
+    /// </para>
+    /// </remarks>
+    public string AccessibleName => $"{Title}, {CountLabel}";
+
+    /// <inheritdoc cref="AccessibleName"/>
+    public override string ToString() => AccessibleName;
+
+    /// <summary>
     /// What to say when the list is empty — and it matters which emptiness this is.
     /// </summary>
     /// <remarks>
@@ -75,6 +104,11 @@ public sealed partial class OpenCodeArtifactTabViewModel : ObservableObject
         OnPropertyChanged(nameof(CountLabel));
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(EmptyMessage));
+
+        // AccessibleName carries the count, so it goes stale on exactly the same events. Omitting
+        // it would leave a screen reader announcing the pre-filter count indefinitely — the one
+        // reader who cannot see the corrected number rendered on screen.
+        OnPropertyChanged(nameof(AccessibleName));
     }
 
     /// <summary>
