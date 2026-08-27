@@ -214,6 +214,82 @@ public sealed class OpenCodeArtifactInventoryTests
     }
 
     /// <summary>
+    /// ⛔⛔ <b>The row that lied.</b>  A <c>description:</c> written as a folded block scalar —
+    /// measured 2026-08-27 as the shape of 14 of the skills under <c>~/.claude/skills</c> — read
+    /// as the literal marker <c>"&gt;-"</c>.  The page printed <c>&gt;-</c> where the description
+    /// belonged, which is merely ugly; the damage was that <c>"&gt;-"</c> is non-empty, so
+    /// <see cref="OpenCodeArtifactIssue.SkillHasNoDescription"/> never fired and the skill was
+    /// reported as healthy.
+    /// </summary>
+    [TestMethod]
+    public void ASkillWhoseDescriptionIsAFoldedBlockScalar_ShowsTheTextAndNoIssue()
+    {
+        Seed(Path.Combine(_worktree, ".opencode", "skills", "address-pr-feedback", "SKILL.md"),
+            "---\n"
+            + "name: address-pr-feedback\n"
+            + "description: >-\n"
+            + "  Fetch, vet, and act on review feedback left on a pull request\n"
+            + "  - from AI reviewers or humans.\n"
+            + "---\n\nbody\n");
+
+        OpenCodeArtifactItem item = Require(ArtifactKind.Skill, "address-pr-feedback");
+
+        Assert.AreEqual(
+            "Fetch, vet, and act on review feedback left on a pull request - from AI reviewers or humans.",
+            item.Description,
+            "The page must show the description, not the block-scalar marker.");
+        Assert.AreEqual(0, item.Issues.Count, "issues: " + string.Join(", ", item.Issues));
+    }
+
+    /// <summary>
+    /// ⛔⛔ The silent-wrong-answer itself: a block scalar with no body declares nothing, and the
+    /// warning has to fire.  Before the fix the non-empty marker suppressed it.
+    /// </summary>
+    [TestMethod]
+    public void ASkillWhoseBlockScalarDescriptionIsEmpty_IsStillWarned()
+    {
+        Seed(Path.Combine(_worktree, ".opencode", "skills", "hollow", "SKILL.md"),
+            "---\nname: hollow\ndescription: >-\n---\n\nbody\n");
+
+        OpenCodeArtifactItem item = Require(ArtifactKind.Skill, "hollow");
+
+        CollectionAssert.Contains(item.Issues.ToArray(), OpenCodeArtifactIssue.SkillHasNoDescription,
+            "An unreadable description reported as healthy is worse than one reported as missing.");
+        Assert.IsNull(item.Description);
+    }
+
+    /// <summary>
+    /// ⛔⛔ <b>The phantom field, caught where it changes a different answer.</b>  A continuation
+    /// line was split on its first colon into a top-level field, and the key was taken
+    /// <i>trimmed</i> — so a description line reading <c>name: my-agent</c> produced a real
+    /// <c>name</c> field.  It sat above the genuine one, and lookup takes the first match, so the
+    /// page read the skill's name out of its own prose: it reported
+    /// <see cref="OpenCodeArtifactIssue.SkillNameDiffersFromFolder"/> against a skill whose
+    /// <c>name:</c> is perfectly correct, and named the wrong winner confidently.
+    /// </summary>
+    [TestMethod]
+    public void ASkillWhoseDescriptionMentionsAKey_DoesNotHaveThatKeyReadOutOfItsProse()
+    {
+        Seed(Path.Combine(_worktree, ".opencode", "skills", "ordered", "SKILL.md"),
+            "---\n"
+            + "description: >-\n"
+            + "  Sets the identity fields, for example\n"
+            + "  name: my-agent\n"
+            + "  and nothing else.\n"
+            + "name: ordered\n"
+            + "---\n\nbody\n");
+
+        OpenCodeArtifactItem item = Require(ArtifactKind.Skill, "ordered");
+
+        Assert.AreEqual(0, item.Issues.Count,
+            "The declared name is 'ordered', which matches the folder. issues: "
+            + string.Join(", ", item.Issues));
+        Assert.AreEqual("Sets the identity fields, for example name: my-agent and nothing else.",
+            item.Description,
+            "And the sentence stays in the description it was written in.");
+    }
+
+    /// <summary>
     /// ⭐ Editing one of these edits Claude Code's installation, so the row has to say so.
     /// </summary>
     [TestMethod]

@@ -211,6 +211,46 @@ public sealed class EditableMemoryServiceTests
         Assert.IsNull(EditableMemoryService.LoadDescription(Path.Combine(Home, "agents", "ghost.md")));
     }
 
+    /// <summary>
+    /// ⛔ Before block scalars were read, this returned the literal <c>"&gt;-"</c> as the row's
+    /// subtitle — the shape 14 of the measured skills use.
+    /// </summary>
+    [TestMethod]
+    public void LoadDescription_FoldedBlockScalar_ReturnsTheFoldedText()
+    {
+        string path = Path.Combine(Home, "agents", "folded.md");
+        WriteFile(path,
+            "---\nname: folded\ndescription: >-\n  Reviews code and\n  reports findings.\n---\n\nBody.\n");
+
+        Assert.AreEqual("Reviews code and reports findings.",
+            EditableMemoryService.LoadDescription(path));
+    }
+
+    /// <summary>
+    /// ⚠ Clip chomping (a bare <c>&gt;</c>) legitimately ends the value in a newline. This is a
+    /// one-line subtitle, so it is trimmed rather than inheriting it.
+    /// </summary>
+    [TestMethod]
+    public void LoadDescription_ClipChompedBlockScalar_HasNoTrailingNewline()
+    {
+        string path = Path.Combine(Home, "agents", "clipped.md");
+        WriteFile(path, "---\nname: clipped\ndescription: >\n  Reviews code.\n---\n\nBody.\n");
+
+        Assert.AreEqual("Reviews code.", EditableMemoryService.LoadDescription(path),
+            "A subtitle must not carry the block scalar's trailing newline.");
+    }
+
+    [TestMethod]
+    public void LoadDescription_EmptyBlockScalar_ReturnsNull()
+    {
+        string path = Path.Combine(Home, "agents", "empty-block.md");
+        WriteFile(path, "---\nname: empty-block\ndescription: >-\n---\n\nBody.\n");
+
+        Assert.IsNull(EditableMemoryService.LoadDescription(path),
+            "A block scalar with no body declares nothing — the row must show '(no description)', "
+            + "not the marker.");
+    }
+
     [TestMethod]
     public void Snapshot_IsStatOnly_DoesNotPopulateDescriptionEagerly()
     {
