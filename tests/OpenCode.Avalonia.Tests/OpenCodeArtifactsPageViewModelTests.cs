@@ -97,6 +97,72 @@ public sealed class OpenCodeArtifactsPageViewModelTests
     }
 
     /// <summary>
+    /// ⛔⛔ A <c>TabControl</c> names its generated tabs from the ITEM, not from the ItemTemplate.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Measured through UI Automation on the running app: all five tabs announced
+    /// <c>Bennewitz.Ninja.OpenCode.Avalonia.Artifacts.OpenCodeArtifactTabViewModel</c>. The page's
+    /// ItemTemplate renders two <c>TextBlock</c>s in a <c>StackPanel</c>, so no single text is the
+    /// header and Avalonia's automation peer falls back to <c>ToString()</c>.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>AxamlAccessibilityCoverageTests</c> is structurally unable to catch this.</b> It
+    /// requires <c>AutomationProperties.Name</c> on interactive controls declared in a view; this
+    /// name comes from a bound view-model, so the page satisfied the accessibility guard while
+    /// announcing a .NET type name five times. Asserting on <c>ToString()</c> here is therefore the
+    /// only mechanical check — and it asserts the TYPE NAME IS ABSENT rather than merely that the
+    /// title is present, because a <c>ToString()</c> that appended the title to the default would
+    /// pass the weaker assertion.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void EveryTabAnnouncesItsOwnNameAndCount_NotItsViewModelTypeName()
+    {
+        OpenCodeArtifactsPageViewModel page = Page();
+
+        foreach (OpenCodeArtifactTabViewModel tab in page.Tabs)
+        {
+            Assert.AreEqual(tab.AccessibleName, tab.ToString(),
+                "the automation peer falls back to ToString(), so the two must not diverge");
+
+            StringAssert.Contains(tab.AccessibleName, tab.Title,
+                $"a screen reader must hear which tab this is; got '{tab.AccessibleName}'");
+            StringAssert.Contains(tab.AccessibleName, tab.CountLabel,
+                "the count is rendered beside the label for sighted users, so it belongs in the "
+                + $"announced name too; got '{tab.AccessibleName}'");
+
+            Assert.IsFalse(
+                tab.AccessibleName.Contains(nameof(OpenCodeArtifactTabViewModel), StringComparison.Ordinal),
+                $"'{tab.AccessibleName}' still leaks the view-model type name");
+            Assert.IsFalse(
+                tab.AccessibleName.Contains("Bennewitz.Ninja", StringComparison.Ordinal),
+                $"'{tab.AccessibleName}' still leaks a namespace");
+        }
+    }
+
+    /// <summary>
+    /// The announced count must follow the filter, since its reader cannot see the corrected
+    /// number on screen.
+    /// </summary>
+    [TestMethod]
+    public void ATabsAnnouncedNameFollowsTheFilter()
+    {
+        Seed(Path.Combine(_worktree, ".opencode", "skill", "alpha", "SKILL.md"), Skill("alpha"));
+        Seed(Path.Combine(_worktree, ".opencode", "skill", "beta", "SKILL.md"), Skill("beta"));
+
+        OpenCodeArtifactsPageViewModel page = Page();
+        OpenCodeArtifactTabViewModel skills = Tab(page, ArtifactKind.Skill);
+        string before = skills.AccessibleName;
+
+        page.FilterText = "alpha";
+
+        Assert.AreNotEqual(before, skills.AccessibleName,
+            "filtering changed which rows are shown, so the announced count is now stale");
+        StringAssert.Contains(skills.AccessibleName, skills.CountLabel);
+    }
+
+    /// <summary>
     /// ⛔⛔ An agent's lower declarations are LIVE. The sentence must not call them overridden.
     /// </summary>
     [TestMethod]

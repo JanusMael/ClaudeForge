@@ -4,6 +4,14 @@
       * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
       * No ancestor bindings — they resolve by reflection and trip IL2026, a build error here.
       * Only LE.* theme tokens; no literal colours.
+      * ⛔⛔ Secondary text is Opacity, NOT a colour token. LE.BoolDisabled is #C62828 — RED, and
+        its own comment says "false / disabled" — so using it as a muted-grey stand-in painted the
+        subtitle, every count, every scope name, every path and every row separator RED, while the
+        rows' actual PROBLEMS used LE.BoolUnset and came out grey. The whole page read as an error
+        report and the real errors were the quietest thing on it. Opacity="0.8" over the inherited
+        foreground is the pattern ClaudeForge.Avalonia already uses in seven places: it needs no
+        token and it stays correct in both Semi Light and Semi Dark. Problems now use
+        LE.DangerText, so the loudest thing on the page is the thing that is wrong.
       * PlaceholderText, never the obsolete Watermark (AVLN5001) — which only the Release trim
         publish catches.
       * All text from Strings.resx, including every AutomationProperties.Name.
@@ -24,8 +32,7 @@
 
         <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
             <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding Subtitle}" TextWrapping="Wrap"
-                       Foreground="{DynamicResource LE.BoolDisabled}" />
+            <TextBlock Text="{Binding Subtitle}" TextWrapping="Wrap" Opacity="0.8" />
         </StackPanel>
 
         <StackPanel Grid.Row="1" Spacing="6" Margin="0,0,0,12">
@@ -37,8 +44,7 @@
             <!-- Says which sources are missing, rather than letting an empty page imply none exist. -->
             <TextBlock Text="{Binding NoProjectMessage}"
                        IsVisible="{Binding HasNoProject}"
-                       TextWrapping="Wrap" FontSize="11"
-                       Foreground="{DynamicResource LE.BoolUnset}" />
+                       TextWrapping="Wrap" FontSize="11" Opacity="0.8" />
 
             <TextBox Text="{Binding FilterText, Mode=TwoWay}"
                      PlaceholderText="{Binding FilterPlaceholder}"
@@ -59,8 +65,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="{Binding Title}" />
                         <TextBlock Text="{Binding CountLabel}" FontSize="11"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+                                   VerticalAlignment="Center" Opacity="0.8" />
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
@@ -70,8 +75,7 @@
                     <Grid>
                         <TextBlock Text="{Binding EmptyMessage}"
                                    IsVisible="{Binding IsEmpty}"
-                                   Margin="4,12" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+                                   Margin="4,12" TextWrapping="Wrap" Opacity="0.8" />
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled"
@@ -79,8 +83,14 @@
                             <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="art:OpenCodeArtifactRowViewModel">
+                                        <!--
+                                            A neutral hairline between rows. LE.BoolUnset is the
+                                            grey every sibling view in this library already uses
+                                            for chrome; the red it replaced drew a warning line
+                                            under every healthy row.
+                                        -->
                                         <Border BorderThickness="0,0,0,1"
-                                                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                                                BorderBrush="{DynamicResource LE.BoolUnset}"
                                                 Padding="4,8">
                                             <StackPanel Spacing="4">
 
@@ -89,10 +99,10 @@
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                                     <TextBlock Text="{Binding EffectiveFormLabel}"
                                                                FontSize="11" VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                               Opacity="0.8" />
                                                     <TextBlock Text="{Binding EffectiveScopeName}"
                                                                FontSize="11" VerticalAlignment="Center"
-                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                               Opacity="0.8" />
                                                     <Border IsVisible="{Binding IsCrossTool}"
                                                             BorderThickness="1" CornerRadius="3"
                                                             Padding="4,0"
@@ -105,10 +115,10 @@
                                                     <Border IsVisible="{Binding IsInert}"
                                                             BorderThickness="1" CornerRadius="3"
                                                             Padding="4,0"
-                                                            BorderBrush="{DynamicResource LE.BoolUnset}">
+                                                            BorderBrush="{DynamicResource LE.DangerBorder}">
                                                         <TextBlock Text="{Binding InertLabel}"
                                                                    FontSize="11"
-                                                                   Foreground="{DynamicResource LE.BoolUnset}" />
+                                                                   Foreground="{DynamicResource LE.DangerText}" />
                                                     </Border>
                                                 </StackPanel>
 
@@ -118,7 +128,7 @@
 
                                                 <TextBlock Text="{Binding EffectiveLocation}"
                                                            FontSize="11" TextWrapping="Wrap"
-                                                           Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                           Opacity="0.8" />
 
                                                 <!-- Problems, each as a full sentence carrying its own evidence level. -->
                                                 <ItemsControl ItemsSource="{Binding IssueMessages}"
@@ -127,7 +137,7 @@
                                                         <DataTemplate x:DataType="x:String">
                                                             <TextBlock Text="{Binding}" TextWrapping="Wrap"
                                                                        FontSize="11" Margin="0,2"
-                                                                       Foreground="{DynamicResource LE.BoolUnset}" />
+                                                                       Foreground="{DynamicResource LE.DangerText}" />
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
@@ -146,7 +156,7 @@
                                                                                    FontSize="11" FontWeight="SemiBold" />
                                                                         <TextBlock Text="{Binding FormLabel}"
                                                                                    FontSize="11"
-                                                                                   Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                                                   Opacity="0.8" />
                                                                         <TextBlock Text="{Binding CrossToolTooltip}"
                                                                                    IsVisible="{Binding IsCrossTool}"
                                                                                    FontSize="11" TextWrapping="Wrap"
@@ -154,7 +164,7 @@
                                                                     </StackPanel>
                                                                     <TextBlock Text="{Binding Location}"
                                                                                FontSize="11" TextWrapping="Wrap"
-                                                                               Foreground="{DynamicResource LE.BoolDisabled}" />
+                                                                               Opacity="0.8" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
