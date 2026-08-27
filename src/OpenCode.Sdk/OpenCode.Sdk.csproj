@@ -25,6 +25,13 @@
 
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+
+        <!--
+            Declared even though AgentForge.Sdk already brings it in transitively: the artifact
+            types are used directly here, and a reference that arrives only as a side effect of
+            another project's dependencies disappears the moment that project stops needing it.
+        -->
+        <ProjectReference Include="..\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

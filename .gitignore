@@ -84,7 +84,14 @@ packages/
 !**/packages/build/
 project.lock.json
 project.fragment.lock.json
-artifacts/
+
+# ⚠ ANCHORED TO THE REPO ROOT ON PURPOSE. This is the .NET SDK's ArtifactsPath output folder,
+# which only ever exists at the root — but unanchored it matches EVERY directory called
+# "Artifacts" anywhere in the tree, and `core.ignorecase=true` on Windows makes the capital
+# spelling match too. It silently swallowed all of src/OpenCode.Sdk/Artifacts/ and
+# tests/OpenCode.Sdk.Tests/Artifacts/: six source files that built and tested green locally and
+# would simply not have existed in CI. Do not un-anchor it.
+/artifacts/
 
 # ---------------------------------------------------------------------------
 # Paket (if ever adopted)
