@@ -1,7 +1,7 @@
 <!--
     Library-level color resources for LayeredEditors.Avalonia.
 
-    All six values are theme-neutral (work on both Semi Light and Dark backgrounds).
+    All eight values are theme-neutral (work on both Semi Light and Dark backgrounds).
     Host applications can override any key in their own Application.Resources before
     the first render — no library fork required.
 
@@ -43,6 +43,27 @@
         <SolidColorBrush x:Key="LE.BoolEnabled" Color="#2E7D32" />  <!-- green: true / enabled -->
         <SolidColorBrush x:Key="LE.BoolDisabled" Color="#C62828" />  <!-- red: false / disabled -->
         <SolidColorBrush x:Key="LE.BoolUnset" Color="#9E9E9E" />  <!-- grey: null / unset -->
+
+        <!--
+            Warnings and problems — text and the border of a banner carrying it.
+
+            ⛔⛔ BOTH KEYS WERE REFERENCED BEFORE THEY EXISTED, AND NOTHING SAID SO.
+            OpenCodeKeybindEditorView.axaml has named LE.DangerText (7 times) and LE.DangerBorder
+            (twice) since the keybinds editor landed, while this file defined neither. An
+            unresolvable DynamicResource does not warn and does not fail the build: Avalonia simply
+            leaves the property at its default, so every conflict / incomplete / held / capturing
+            warning in that editor rendered as ORDINARY TEXT inside an INVISIBLE border. A live UIA
+            and screenshot pass over that page missed it too, because it never seeded a conflicting
+            keybind and so never displayed one of the nine elements.
+
+            The value is the same red as LE.BoolDisabled deliberately — that shade is already
+            declared theme-neutral at the top of this file, so reusing it introduces no new
+            unverified colour. The keys stay separate because "this boolean is false" and "this is a
+            problem" are different statements that may want to diverge later; sharing a value today
+            is not the same as being the same token.
+        -->
+        <SolidColorBrush x:Key="LE.DangerText" Color="#C62828" />  <!-- red: warning / problem text -->
+        <SolidColorBrush x:Key="LE.DangerBorder" Color="#C62828" />  <!-- red: warning banner border -->
     </Styles.Resources>
 
 </Styles>
