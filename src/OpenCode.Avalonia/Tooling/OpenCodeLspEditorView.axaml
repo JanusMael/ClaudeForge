@@ -1,0 +1,318 @@
+<!--
+    The lsp server map. Same rules as the sibling formatter view.
+
+    ⚠ The one thing this view must do that the formatter view need not: report the entries that
+    match NEITHER schema arm. An lsp entry is valid only as `{ "disabled": true }` exactly, or as an
+    object with a command — so unticking the disabled box on a disable-only server, or adding just
+    an extension, produces a file OpenCode rejects. A generic object editor renders all of those
+    identically and says nothing.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tool="using:Bennewitz.Ninja.OpenCode.Avalonia.Tooling"
+             xmlns:edit="using:Bennewitz.Ninja.OpenCode.Avalonia.Editing"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Tooling.OpenCodeLspEditorView"
+             x:DataType="tool:OpenCodeLspEditorViewModel">
+
+    <!--
+        ⚠⚠ The ScrollViewer is REQUIRED, not decoration. App.axaml hosts this view under a
+        MaxHeight, and a MaxHeight with nothing scrollable inside it CLIPS: found by screenshot,
+        with a four-server config whose last two entries laid out at y=1262 and y=1565 against a
+        window bottom edge of y=1100, while the page's only scroller was already at 100%. Those two
+        were exactly the entries the red "matches neither form" banner was pointing at, so the
+        editor named a problem the user could not scroll to.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <TextBlock Text="{x:Static loc:Strings.LspHint}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource LE.BoolUnset}" />
+
+        <Border IsVisible="{Binding IsUnrecognised}"
+                BorderBrush="{DynamicResource LE.BoolUnset}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.ToolingUnrecognisedBanner}"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{x:Static loc:Strings.ToolingHeldValueLabel}"
+                           FontWeight="SemiBold" />
+                <TextBox Text="{Binding UnrecognisedText}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas,Menlo,monospace"
+                         MinHeight="60"
+                         MaxHeight="200"
+                         AutomationProperties.Name="{x:Static loc:Strings.ToolingHeldValueAutoName}" />
+                <Button Content="{x:Static loc:Strings.ToolingReplaceValue}"
+                        Command="{Binding ReplaceUnrecognisedCommand}"
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="{x:Static loc:Strings.ToolingReplaceValueTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ToolingReplaceValue}" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel IsVisible="{Binding !IsUnrecognised}" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.ToolingModeLabel}"
+                           VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{x:Static tool:OpenCodeToolingEditorViewModel.ModeOptions}"
+                          SelectedItem="{Binding SelectedMode}"
+                          MinWidth="170"
+                          AutomationProperties.Name="{x:Static loc:Strings.ToolingModeAutoName}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="tool:OpenCodeToolingModeOption">
+                            <TextBlock Text="{Binding Label}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <TextBlock Text="{Binding ModeHelp}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolUnset}" />
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsConfigured}" Spacing="8">
+
+            <Border IsVisible="{Binding HasIncompleteEntries}"
+                    BorderBrush="{DynamicResource LE.BoolDisabled}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="8">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="{Binding IncompleteEntryCount}" FontWeight="SemiBold" />
+                    <Run Text="{x:Static loc:Strings.LspIncompleteBanner}" />
+                </TextBlock>
+            </Border>
+
+            <Border IsVisible="{Binding HasInitializationErrors}"
+                    BorderBrush="{DynamicResource LE.BoolDisabled}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="8">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="{Binding InitializationErrorCount}" FontWeight="SemiBold" />
+                    <Run Text="{x:Static loc:Strings.LspInitializationErrorBanner}" />
+                </TextBlock>
+            </Border>
+
+            <Border IsVisible="{Binding HasOpaqueEntries}"
+                    BorderBrush="{DynamicResource LE.BoolUnset}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="8">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="{Binding OpaqueEntryCount}" FontWeight="SemiBold" />
+                    <Run Text="{x:Static loc:Strings.LspOpaqueBanner}" />
+                </TextBlock>
+            </Border>
+
+            <Border IsVisible="{Binding HasEntriesWithExtras}"
+                    BorderBrush="{DynamicResource LE.BoolUnset}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="8">
+                <TextBlock TextWrapping="Wrap">
+                    <Run Text="{Binding EntriesWithExtrasCount}" FontWeight="SemiBold" />
+                    <Run Text="{x:Static loc:Strings.LspExtrasBanner}" />
+                </TextBlock>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBox Text="{Binding NewEntryName}"
+                         PlaceholderText="{x:Static loc:Strings.LspNewNamePlaceholder}"
+                         Width="300"
+                         AutomationProperties.Name="{x:Static loc:Strings.LspNewNameAutoName}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding AddEntryCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button Content="{x:Static loc:Strings.LspAdd}"
+                        Command="{Binding AddEntryCommand}"
+                        AutomationProperties.Name="{x:Static loc:Strings.LspAdd}" />
+            </StackPanel>
+
+            <TextBlock IsVisible="{Binding !HasEntries}"
+                       Text="{x:Static loc:Strings.LspNoEntries}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+            <ItemsControl ItemsSource="{Binding Entries}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="tool:OpenCodeLspRowViewModel">
+                        <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="8"
+                                Margin="0,0,0,6">
+                            <StackPanel Spacing="6">
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBox Text="{Binding Name}"
+                                             Width="240"
+                                             IsEnabled="{Binding IsEditable}"
+                                             PlaceholderText="{x:Static loc:Strings.LspNamePlaceholder}"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.LspNameAutoNameFmt}}" />
+                                    <CheckBox IsChecked="{Binding Disabled}"
+                                              IsThreeState="True"
+                                              IsEnabled="{Binding IsEditable}"
+                                              Content="{x:Static loc:Strings.LspDisabled}"
+                                              VerticalAlignment="Center"
+                                              ToolTip.Tip="{x:Static loc:Strings.LspDisabledTip}"
+                                              AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.LspDisabledAutoNameFmt}}" />
+                                    <Button Content="✕"
+                                            Command="{Binding RemoveCommand}"
+                                            AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.LspRemoveAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <TextBlock IsVisible="{Binding NeedsCommand}"
+                                           Text="{x:Static loc:Strings.LspIncompleteNotice}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolDisabled}" />
+
+                                <TextBlock IsVisible="{Binding IsOpaqueEntry}"
+                                           Text="{x:Static loc:Strings.LspOpaqueNotice}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolUnset}" />
+
+                                <TextBlock IsVisible="{Binding HasExtras}"
+                                           Text="{Binding ExtraCount, StringFormat={x:Static loc:Strings.LspExtrasNoticeFmt}}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolUnset}" />
+
+                                <StackPanel IsVisible="{Binding IsEditable}" Spacing="6">
+
+                                    <TextBlock Text="{x:Static loc:Strings.LspCommandLabel}"
+                                               FontWeight="SemiBold"
+                                               ToolTip.Tip="{x:Static loc:Strings.LspCommandTip}" />
+                                    <ItemsControl ItemsSource="{Binding Command.Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="edit:OpenCodeStringRowViewModel">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                    <TextBox Text="{Binding Value}"
+                                                             Width="300"
+                                                             AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingArgAutoNameFmt}}" />
+                                                    <Button Content="↑" Command="{Binding MoveUpCommand}"
+                                                            ToolTip.Tip="{x:Static loc:Strings.ToolingMoveEarlierTip}"
+                                                            AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingMoveEarlierAutoNameFmt}}" />
+                                                    <Button Content="↓" Command="{Binding MoveDownCommand}"
+                                                            ToolTip.Tip="{x:Static loc:Strings.ToolingMoveLaterTip}"
+                                                            AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingMoveLaterAutoNameFmt}}" />
+                                                    <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                            AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingRemoveItemAutoNameFmt}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBox Text="{Binding Command.NewValue}"
+                                                 PlaceholderText="{x:Static loc:Strings.ToolingNewArgPlaceholder}"
+                                                 Width="300"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.ToolingNewArgAutoName}">
+                                            <TextBox.KeyBindings>
+                                                <KeyBinding Gesture="Enter" Command="{Binding Command.AddCommand}" />
+                                            </TextBox.KeyBindings>
+                                        </TextBox>
+                                        <Button Content="{x:Static loc:Strings.ToolingAdd}"
+                                                Command="{Binding Command.AddCommand}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.ToolingAddArgAutoName}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{x:Static loc:Strings.LspExtensionsLabel}"
+                                               FontWeight="SemiBold"
+                                               ToolTip.Tip="{x:Static loc:Strings.LspExtensionsTip}" />
+                                    <ItemsControl ItemsSource="{Binding Extensions.Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="edit:OpenCodeStringRowViewModel">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                    <TextBox Text="{Binding Value}"
+                                                             Width="180"
+                                                             AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingExtensionAutoNameFmt}}" />
+                                                    <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                            AutomationProperties.Name="{Binding Value, StringFormat={x:Static loc:Strings.ToolingRemoveItemAutoNameFmt}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBox Text="{Binding Extensions.NewValue}"
+                                                 PlaceholderText="{x:Static loc:Strings.ToolingNewExtensionPlaceholder}"
+                                                 Width="240"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.ToolingNewExtensionAutoName}">
+                                            <TextBox.KeyBindings>
+                                                <KeyBinding Gesture="Enter" Command="{Binding Extensions.AddCommand}" />
+                                            </TextBox.KeyBindings>
+                                        </TextBox>
+                                        <Button Content="{x:Static loc:Strings.ToolingAdd}"
+                                                Command="{Binding Extensions.AddCommand}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.ToolingAddExtensionAutoName}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{x:Static loc:Strings.LspEnvLabel}"
+                                               FontWeight="SemiBold"
+                                               ToolTip.Tip="{x:Static loc:Strings.LspEnvTip}" />
+                                    <ItemsControl ItemsSource="{Binding Env.Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="edit:OpenCodePairRowViewModel">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                    <TextBox Text="{Binding Key}" Width="180"
+                                                             AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.ToolingEnvNameAutoNameFmt}}" />
+                                                    <TextBox Text="{Binding Value}" Width="240"
+                                                             AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.ToolingEnvValueAutoNameFmt}}" />
+                                                    <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                            AutomationProperties.Name="{Binding Key, StringFormat={x:Static loc:Strings.ToolingRemoveEnvAutoNameFmt}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBox Text="{Binding Env.NewKey}"
+                                                 PlaceholderText="{x:Static loc:Strings.ToolingEnvNamePlaceholder}"
+                                                 Width="180"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.ToolingNewEnvNameAutoName}" />
+                                        <TextBox Text="{Binding Env.NewValue}"
+                                                 PlaceholderText="{x:Static loc:Strings.ToolingEnvValuePlaceholder}"
+                                                 Width="240"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.ToolingNewEnvValueAutoName}" />
+                                        <Button Content="{x:Static loc:Strings.ToolingAdd}"
+                                                Command="{Binding Env.AddCommand}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.ToolingAddEnvAutoName}" />
+                                    </StackPanel>
+
+                                    <CheckBox IsChecked="{Binding HasInitialization}"
+                                              Content="{x:Static loc:Strings.LspHasInitialization}"
+                                              ToolTip.Tip="{x:Static loc:Strings.LspHasInitializationTip}"
+                                              AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.LspHasInitializationAutoNameFmt}}" />
+
+                                    <StackPanel IsVisible="{Binding ShowInitialization}" Spacing="4">
+                                        <TextBlock Text="{x:Static loc:Strings.LspInitializationLabel}"
+                                                   Foreground="{DynamicResource LE.BoolUnset}" />
+                                        <TextBox Text="{Binding InitializationText}"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="NoWrap"
+                                                 FontFamily="Consolas,Menlo,monospace"
+                                                 MinHeight="70"
+                                                 MaxHeight="200"
+                                                 ToolTip.Tip="{x:Static loc:Strings.LspInitializationTip}"
+                                                 AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.LspInitializationAutoNameFmt}}" />
+                                        <TextBlock IsVisible="{Binding HasInitializationError}"
+                                                   Text="{x:Static loc:Strings.LspInitializationError}"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource LE.BoolDisabled}"
+                                                   AutomationProperties.Name="{x:Static loc:Strings.LspInitializationError}" />
+                                    </StackPanel>
+
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

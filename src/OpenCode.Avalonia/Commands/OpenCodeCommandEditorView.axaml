@@ -1,0 +1,154 @@
+<!--
+    The command map. Same rules as the other editors in this library:
+      * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
+      * No ancestor bindings — they resolve by reflection and trip IL2026, a build error here.
+      * Only LE.* theme tokens; no literal colours.
+      * PlaceholderText, never the obsolete Watermark (AVLN5001) — which the Release trim publish
+        catches and the Debug build does not.
+      * All text from Strings.resx.
+
+    Two banners rather than one, because they answer different questions: which entries are invalid,
+    and which ones execute a shell command when used.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cmd="using:Bennewitz.Ninja.OpenCode.Avalonia.Commands"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Commands.OpenCodeCommandEditorView"
+             x:DataType="cmd:OpenCodeCommandEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <Border IsVisible="{Binding HasInvalidCommands}"
+                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding InvalidCommandCount}" FontWeight="SemiBold" />
+                <Run Text="{x:Static loc:Strings.CommandInvalidBanner}" />
+            </TextBlock>
+        </Border>
+
+        <Border IsVisible="{Binding HasShellCommands}"
+                BorderBrush="{DynamicResource LE.BoolDisabled}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="{Binding ShellCommandCount}" FontWeight="SemiBold" />
+                <Run Text="{x:Static loc:Strings.CommandShellBanner}" />
+            </TextBlock>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBox Text="{Binding NewCommandName}"
+                     PlaceholderText="{x:Static loc:Strings.CommandNewNamePlaceholder}"
+                     Width="240"
+                     AutomationProperties.Name="{x:Static loc:Strings.CommandNewNameAutoName}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Gesture="Enter" Command="{Binding AddCommandEntryCommand}" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button Content="{x:Static loc:Strings.CommandAdd}"
+                    Command="{Binding AddCommandEntryCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.CommandAdd}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Commands}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="cmd:OpenCodeCommandViewModel">
+                    <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="8"
+                            Margin="0,0,0,6">
+                        <StackPanel Spacing="6">
+
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding Name}"
+                                         Width="200"
+                                         PlaceholderText="{x:Static loc:Strings.CommandNamePlaceholder}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandNameAutoNameFmt}}" />
+                                <Button Content="{x:Static loc:Strings.CommandRemove}"
+                                        Command="{Binding RemoveCommand}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandRemoveAutoNameFmt}}" />
+                            </StackPanel>
+
+                            <TextBlock IsVisible="{Binding IsOpaqueEntry}"
+                                       Text="{x:Static loc:Strings.CommandOpaqueNotice}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+                            <StackPanel IsVisible="{Binding IsEditable}" Spacing="6">
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.CommandTemplate}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Static loc:Strings.CommandTemplateRequired}"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource LE.BoolUnset}" />
+                                </StackPanel>
+
+                                <TextBox Text="{Binding Template}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="70"
+                                         MaxHeight="200"
+                                         ToolTip.Tip="{x:Static loc:Strings.CommandTemplateTip}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandTemplateAutoNameFmt}}" />
+
+                                <TextBlock IsVisible="{Binding IsTemplateMissing}"
+                                           Text="{x:Static loc:Strings.CommandTemplateMissing}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolDisabled}"
+                                           AutomationProperties.Name="{x:Static loc:Strings.CommandTemplateMissing}" />
+
+                                <TextBlock IsVisible="{Binding UsesShellInterpolation}"
+                                           Text="{x:Static loc:Strings.CommandShellWarning}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolDisabled}"
+                                           AutomationProperties.Name="{x:Static loc:Strings.CommandShellWarning}" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.CommandDescription}" Width="80" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Description}" Width="420"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandDescriptionAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.CommandAgent}" Width="80" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Agent}" Width="160"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandAgentAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.CommandModel}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Model}" Width="180"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandModelAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.CommandVariant}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Variant}" Width="120"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandVariantAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <CheckBox IsChecked="{Binding Subtask}"
+                                          IsThreeState="True"
+                                          Content="{x:Static loc:Strings.CommandSubtask}"
+                                          ToolTip.Tip="{x:Static loc:Strings.CommandSubtaskTip}"
+                                          AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.CommandSubtaskAutoNameFmt}}" />
+
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

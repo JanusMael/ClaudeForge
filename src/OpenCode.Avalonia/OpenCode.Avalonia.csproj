@@ -3,6 +3,7 @@
         <OutputType>Library</OutputType>
         <RootNamespace>Bennewitz.Ninja.OpenCode.Avalonia</RootNamespace>
         <AssemblyName>OpenCode.Avalonia</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Description>
             OpenCode's own compound editors and their views: the shapes the generic
             schema-to-editor dispatch cannot render usefully because their meaning is not in
@@ -21,14 +22,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia"/>
-        <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="Avalonia" Version="12.1.0"/>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\OpenCode.Sdk\OpenCode.Sdk.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>
         <ProjectReference Include="..\AgentForge.Avalonia.Shell\AgentForge.Avalonia.Shell.csproj"/>
+        <!-- For the shared PermissionOutcome brush converter. Lightweight: Avalonia plus
+             AgentForge.Abstractions, both of which already flow in here. -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,0 +1,1306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PermToolActionOnlyHeldFmt" xml:space="preserve">
+    <value>"{0}" takes an action only, so its {1} pattern rule(s) are held but will not be saved. Rename the tool to keep them.</value>
+  </data>
+  <data name="PermShadowReasonFmt" xml:space="preserve">
+    <value>Never fires: "{0}" at position {1} matches everything this rule does, and the last match wins. Move this rule below it to make it apply.</value>
+  </data>
+  <data name="PermTestInvalidFmt" xml:space="preserve">
+    <value>Cannot test — the current rules are not valid: {0}</value>
+  </data>
+  <data name="PermTestNoMatch" xml:space="preserve">
+    <value>No rule matched. OpenCode falls back to its own default for this tool — which says nothing about whether it is permitted.</value>
+  </data>
+  <data name="PermTestMatchedRuleFmt" xml:space="preserve">
+    <value>{0} — matched "{1}" on {2}.</value>
+  </data>
+  <data name="PermTestMatchedToolFmt" xml:space="preserve">
+    <value>{0} — {1} is set to that action for every invocation.</value>
+  </data>
+  <data name="PermTestGlobalFmt" xml:space="preserve">
+    <value>{0} — applies to every tool.</value>
+  </data>
+  <data name="McpOpaqueNotice" xml:space="preserve">
+    <value>This entry uses a shape this version does not recognise — most likely a newer OpenCode. It is kept exactly as written and saved unchanged. Edit it in the file.</value>
+  </data>
+  <data name="PermLoadErrorTitle" xml:space="preserve">
+    <value>This permission value could not be read</value>
+  </data>
+  <data name="PermLoadErrorHint" xml:space="preserve">
+    <value>It is kept exactly as written and will be saved unchanged. Fix it in the file and reopen this page.</value>
+  </data>
+  <data name="PermGlobalMode" xml:space="preserve">
+    <value>Apply one action to every tool</value>
+  </data>
+  <data name="PermGlobalModeTip" xml:space="preserve">
+    <value>Writes permission as a bare action string. Your per-tool rules are kept while this is on and come back when you turn it off.</value>
+  </data>
+  <data name="PermGlobalModeAutoName" xml:space="preserve">
+    <value>Apply one permission action to every tool</value>
+  </data>
+  <data name="PermEveryTool" xml:space="preserve">
+    <value>Every tool:</value>
+  </data>
+  <data name="PermEveryToolAutoName" xml:space="preserve">
+    <value>Action applied to every tool</value>
+  </data>
+  <data name="PermShadowBanner" xml:space="preserve">
+    <value>rule(s) below can never fire — a later rule already matches everything they do. The last match wins, so move a rule down to make it apply.</value>
+  </data>
+  <data name="PermNewToolPlaceholder" xml:space="preserve">
+    <value>Tool name, e.g. bash</value>
+  </data>
+  <data name="PermNewToolAutoName" xml:space="preserve">
+    <value>New tool name</value>
+  </data>
+  <data name="PermAddTool" xml:space="preserve">
+    <value>Add tool</value>
+  </data>
+  <data name="PermToolNamePlaceholder" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="PermToolNameAutoNameFmt" xml:space="preserve">
+    <value>Tool name: {0}</value>
+  </data>
+  <data name="PermMatchPatterns" xml:space="preserve">
+    <value>Match patterns</value>
+  </data>
+  <data name="PermMatchPatternsTip" xml:space="preserve">
+    <value>Off writes one action for every invocation. Disabled for the five tools the schema types as action-only, which reject pattern rules.</value>
+  </data>
+  <data name="PermMatchPatternsAutoNameFmt" xml:space="preserve">
+    <value>Use pattern rules for {0}</value>
+  </data>
+  <data name="PermSingleActionAutoNameFmt" xml:space="preserve">
+    <value>Action for every {0} call</value>
+  </data>
+  <data name="PermRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="PermRemoveToolAutoNameFmt" xml:space="preserve">
+    <value>Remove tool {0}</value>
+  </data>
+  <data name="PermLastMatchHint" xml:space="preserve">
+    <value>Rules run last-match-wins: put broad rules first and narrow rules last.</value>
+  </data>
+  <data name="PermOutcomeAutoNameFmt" xml:space="preserve">
+    <value>Outcome: {0}</value>
+  </data>
+  <data name="PermRulePatternPlaceholder" xml:space="preserve">
+    <value>Glob, e.g. git *</value>
+  </data>
+  <data name="PermRulePatternAutoNameFmt" xml:space="preserve">
+    <value>Rule pattern: {0}</value>
+  </data>
+  <data name="PermRuleActionAutoNameFmt" xml:space="preserve">
+    <value>Action for {0}</value>
+  </data>
+  <data name="PermWeakenTip" xml:space="preserve">
+    <value>Weaken: earlier rules lose to later ones</value>
+  </data>
+  <data name="PermWeakenAutoNameFmt" xml:space="preserve">
+    <value>Weaken rule {0} by moving it earlier</value>
+  </data>
+  <data name="PermStrengthenTip" xml:space="preserve">
+    <value>Strengthen: the last match wins</value>
+  </data>
+  <data name="PermStrengthenAutoNameFmt" xml:space="preserve">
+    <value>Strengthen rule {0} by moving it later</value>
+  </data>
+  <data name="PermRemoveRuleAutoNameFmt" xml:space="preserve">
+    <value>Remove rule {0}</value>
+  </data>
+  <data name="PermNewRulePlaceholder" xml:space="preserve">
+    <value>New pattern, e.g. npm install *</value>
+  </data>
+  <data name="PermNewRuleAutoNameFmt" xml:space="preserve">
+    <value>New rule pattern for {0}</value>
+  </data>
+  <data name="PermAddRule" xml:space="preserve">
+    <value>Add rule</value>
+  </data>
+  <data name="PermAddRuleAutoNameFmt" xml:space="preserve">
+    <value>Add rule to {0}</value>
+  </data>
+  <data name="PermTesterTitle" xml:space="preserve">
+    <value>Try a command against these rules</value>
+  </data>
+  <data name="PermTestToolPlaceholder" xml:space="preserve">
+    <value>Tool, e.g. bash</value>
+  </data>
+  <data name="PermTestToolAutoName" xml:space="preserve">
+    <value>Tool to test</value>
+  </data>
+  <data name="PermTestInputPlaceholder" xml:space="preserve">
+    <value>Command or path, e.g. npm install left-pad</value>
+  </data>
+  <data name="PermTestInputAutoName" xml:space="preserve">
+    <value>Command or path to test</value>
+  </data>
+  <data name="PermTest" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="PermTestAutoName" xml:space="preserve">
+    <value>Test this command against the rules</value>
+  </data>
+  <data name="McpOpaqueBanner" xml:space="preserve">
+    <value>server(s) below use a shape this version does not recognise. They are kept exactly as written and saved unchanged — most likely they came from a newer OpenCode.</value>
+  </data>
+  <data name="McpNewServerPlaceholder" xml:space="preserve">
+    <value>Server name, e.g. filesystem</value>
+  </data>
+  <data name="McpNewServerAutoName" xml:space="preserve">
+    <value>New MCP server name</value>
+  </data>
+  <data name="McpAddServer" xml:space="preserve">
+    <value>Add server</value>
+  </data>
+  <data name="McpAddServerAutoName" xml:space="preserve">
+    <value>Add MCP server</value>
+  </data>
+  <data name="McpServerNamePlaceholder" xml:space="preserve">
+    <value>Server name</value>
+  </data>
+  <data name="McpServerNameAutoNameFmt" xml:space="preserve">
+    <value>Server name: {0}</value>
+  </data>
+  <data name="McpKindTip" xml:space="preserve">
+    <value>Local runs a process. Remote calls a URL. EnabledOverride only toggles a server another scope declares.</value>
+  </data>
+  <data name="McpKindAutoNameFmt" xml:space="preserve">
+    <value>Connection kind for {0}</value>
+  </data>
+  <data name="McpEnabledTip" xml:space="preserve">
+    <value>Unset leaves the key out, so OpenCode's own default applies — which is not the same as false.</value>
+  </data>
+  <data name="McpEnabledAutoNameFmt" xml:space="preserve">
+    <value>Enabled state for {0}</value>
+  </data>
+  <data name="McpRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="McpRemoveServerAutoNameFmt" xml:space="preserve">
+    <value>Remove server {0}</value>
+  </data>
+  <data name="McpCommandTitle" xml:space="preserve">
+    <value>Command and arguments (order matters — this is argv)</value>
+  </data>
+  <data name="McpArgumentAutoNameFmt" xml:space="preserve">
+    <value>Argument: {0}</value>
+  </data>
+  <data name="McpMoveEarlierTip" xml:space="preserve">
+    <value>Move earlier</value>
+  </data>
+  <data name="McpMoveEarlierAutoNameFmt" xml:space="preserve">
+    <value>Move argument {0} earlier</value>
+  </data>
+  <data name="McpMoveLaterTip" xml:space="preserve">
+    <value>Move later</value>
+  </data>
+  <data name="McpMoveLaterAutoNameFmt" xml:space="preserve">
+    <value>Move argument {0} later</value>
+  </data>
+  <data name="McpRemoveArgumentAutoNameFmt" xml:space="preserve">
+    <value>Remove argument {0}</value>
+  </data>
+  <data name="McpNewArgumentPlaceholder" xml:space="preserve">
+    <value>New argument, e.g. --root</value>
+  </data>
+  <data name="McpNewArgumentAutoName" xml:space="preserve">
+    <value>New command argument</value>
+  </data>
+  <data name="McpAddArgument" xml:space="preserve">
+    <value>Add argument</value>
+  </data>
+  <data name="McpAddArgumentAutoName" xml:space="preserve">
+    <value>Add command argument</value>
+  </data>
+  <data name="McpWorkingDirectory" xml:space="preserve">
+    <value>Working directory</value>
+  </data>
+  <data name="McpWorkingDirectoryPlaceholder" xml:space="preserve">
+    <value>(workspace directory)</value>
+  </data>
+  <data name="McpWorkingDirectoryTip" xml:space="preserve">
+    <value>Relative paths resolve from the workspace directory.</value>
+  </data>
+  <data name="McpEnvironmentTitle" xml:space="preserve">
+    <value>Environment variables</value>
+  </data>
+  <data name="McpEnvNameAutoNameFmt" xml:space="preserve">
+    <value>Environment variable name: {0}</value>
+  </data>
+  <data name="McpEnvValueAutoNameFmt" xml:space="preserve">
+    <value>Value of {0}</value>
+  </data>
+  <data name="McpRemoveEnvAutoNameFmt" xml:space="preserve">
+    <value>Remove environment variable {0}</value>
+  </data>
+  <data name="McpEnvNamePlaceholder" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="McpEnvValuePlaceholder" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="McpNewEnvNameAutoName" xml:space="preserve">
+    <value>New environment variable name</value>
+  </data>
+  <data name="McpNewEnvValueAutoName" xml:space="preserve">
+    <value>New environment variable value</value>
+  </data>
+  <data name="McpAdd" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="McpAddEnvAutoName" xml:space="preserve">
+    <value>Add environment variable</value>
+  </data>
+  <data name="McpUrl" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="McpUrlPlaceholder" xml:space="preserve">
+    <value>https://mcp.example.com/sse</value>
+  </data>
+  <data name="McpUrlAutoName" xml:space="preserve">
+    <value>Remote server URL</value>
+  </data>
+  <data name="McpHeadersTitle" xml:space="preserve">
+    <value>Headers</value>
+  </data>
+  <data name="McpHeaderNameAutoNameFmt" xml:space="preserve">
+    <value>Header name: {0}</value>
+  </data>
+  <data name="McpHeaderValueAutoNameFmt" xml:space="preserve">
+    <value>Value of header {0}</value>
+  </data>
+  <data name="McpRemoveHeaderAutoNameFmt" xml:space="preserve">
+    <value>Remove header {0}</value>
+  </data>
+  <data name="McpHeaderPlaceholder" xml:space="preserve">
+    <value>Header</value>
+  </data>
+  <data name="McpNewHeaderNameAutoName" xml:space="preserve">
+    <value>New header name</value>
+  </data>
+  <data name="McpNewHeaderValueAutoName" xml:space="preserve">
+    <value>New header value</value>
+  </data>
+  <data name="McpAddHeaderAutoName" xml:space="preserve">
+    <value>Add header</value>
+  </data>
+  <data name="McpOAuth" xml:space="preserve">
+    <value>OAuth</value>
+  </data>
+  <data name="McpOAuthTip" xml:space="preserve">
+    <value>AutoDetect leaves the key out. Disabled writes false, turning auto-detection off. Configured writes an object.</value>
+  </data>
+  <data name="McpOAuthModeAutoName" xml:space="preserve">
+    <value>OAuth mode</value>
+  </data>
+  <data name="McpClientId" xml:space="preserve">
+    <value>Client ID</value>
+  </data>
+  <data name="McpClientIdPlaceholder" xml:space="preserve">
+    <value>(dynamic registration)</value>
+  </data>
+  <data name="McpClientIdAutoName" xml:space="preserve">
+    <value>OAuth client ID</value>
+  </data>
+  <data name="McpClientSecret" xml:space="preserve">
+    <value>Client secret</value>
+  </data>
+  <data name="McpClientSecretAutoName" xml:space="preserve">
+    <value>OAuth client secret</value>
+  </data>
+  <data name="McpShow" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="McpRevealSecretAutoName" xml:space="preserve">
+    <value>Reveal OAuth client secret</value>
+  </data>
+  <data name="McpScope" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="McpScopePlaceholder" xml:space="preserve">
+    <value>e.g. read write</value>
+  </data>
+  <data name="McpScopeAutoName" xml:space="preserve">
+    <value>OAuth scope</value>
+  </data>
+  <data name="McpCallbackPort" xml:space="preserve">
+    <value>Callback port</value>
+  </data>
+  <data name="McpCallbackPortAutoName" xml:space="preserve">
+    <value>OAuth callback port</value>
+  </data>
+  <data name="McpRedirectUri" xml:space="preserve">
+    <value>Redirect URI</value>
+  </data>
+  <data name="McpRedirectUriPlaceholder" xml:space="preserve">
+    <value>http://127.0.0.1:19876/mcp/oauth/callback</value>
+  </data>
+  <data name="McpRedirectUriTip" xml:space="preserve">
+    <value>Takes precedence over the callback port.</value>
+  </data>
+  <data name="McpRedirectUriAutoName" xml:space="preserve">
+    <value>OAuth redirect URI</value>
+  </data>
+  <data name="McpTimeout" xml:space="preserve">
+    <value>Timeout (ms)</value>
+  </data>
+  <data name="McpTimeoutTip" xml:space="preserve">
+    <value>Empty leaves the key out; OpenCode defaults to 5000.</value>
+  </data>
+  <data name="McpTimeoutAutoNameFmt" xml:space="preserve">
+    <value>Request timeout for {0} in milliseconds</value>
+  </data>
+  <data name="AgentNewNamePlaceholder" xml:space="preserve">
+    <value>Agent name, e.g. build or my-agent</value>
+  </data>
+  <data name="AgentNewNameAutoName" xml:space="preserve">
+    <value>New agent name</value>
+  </data>
+  <data name="AgentAdd" xml:space="preserve">
+    <value>Add agent</value>
+  </data>
+  <data name="AgentNamePlaceholder" xml:space="preserve">
+    <value>Agent name</value>
+  </data>
+  <data name="AgentNameAutoNameFmt" xml:space="preserve">
+    <value>Agent name: {0}</value>
+  </data>
+  <data name="AgentBuiltInBadge" xml:space="preserve">
+    <value>built-in override</value>
+  </data>
+  <data name="AgentBuiltInTip" xml:space="preserve">
+    <value>This is one of OpenCode's seven built-in agents, so this entry changes shipped behaviour rather than adding a new agent.</value>
+  </data>
+  <data name="AgentRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="AgentRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove agent {0}</value>
+  </data>
+  <data name="AgentOpaqueNotice" xml:space="preserve">
+    <value>This entry is not an object, so there is nothing to edit here. It is kept exactly as written and saved unchanged.</value>
+  </data>
+  <data name="AgentNumberError" xml:space="preserve">
+    <value>One of the numbers below is not valid. The last good value is kept until it is, so nothing is lost while you type.</value>
+  </data>
+  <data name="AgentModel" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="AgentModelAutoNameFmt" xml:space="preserve">
+    <value>Model for {0}</value>
+  </data>
+  <data name="AgentVariant" xml:space="preserve">
+    <value>Variant</value>
+  </data>
+  <data name="AgentVariantAutoNameFmt" xml:space="preserve">
+    <value>Variant for {0}</value>
+  </data>
+  <data name="AgentDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="AgentDescriptionAutoNameFmt" xml:space="preserve">
+    <value>Description for {0}</value>
+  </data>
+  <data name="AgentPrompt" xml:space="preserve">
+    <value>Prompt</value>
+  </data>
+  <data name="AgentPromptAutoNameFmt" xml:space="preserve">
+    <value>System prompt for {0}</value>
+  </data>
+  <data name="AgentMode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="AgentModeTip" xml:space="preserve">
+    <value>Unset leaves the key out, so OpenCode's own default applies. The other three decide where the agent can be selected.</value>
+  </data>
+  <data name="AgentModeAutoNameFmt" xml:space="preserve">
+    <value>Invocation mode for {0}</value>
+  </data>
+  <data name="AgentColor" xml:space="preserve">
+    <value>Colour</value>
+  </data>
+  <data name="AgentColorTip" xml:space="preserve">
+    <value>A theme role name, or any other string such as a hex value — the schema accepts both, so this list is a suggestion rather than a limit.</value>
+  </data>
+  <data name="AgentColorAutoNameFmt" xml:space="preserve">
+    <value>Colour for {0}</value>
+  </data>
+  <data name="AgentEmptyMeansUnsetTip" xml:space="preserve">
+    <value>Empty leaves the key out, so whatever this agent would otherwise inherit still applies. Zero is a real setting, not empty.</value>
+  </data>
+  <data name="AgentTemperature" xml:space="preserve">
+    <value>Temperature</value>
+  </data>
+  <data name="AgentTemperatureAutoNameFmt" xml:space="preserve">
+    <value>Temperature for {0}</value>
+  </data>
+  <data name="AgentTopP" xml:space="preserve">
+    <value>Top P</value>
+  </data>
+  <data name="AgentTopPAutoNameFmt" xml:space="preserve">
+    <value>Top P for {0}</value>
+  </data>
+  <data name="AgentSteps" xml:space="preserve">
+    <value>Steps</value>
+  </data>
+  <data name="AgentStepsAutoNameFmt" xml:space="preserve">
+    <value>Step budget for {0}</value>
+  </data>
+  <data name="AgentMaxSteps" xml:space="preserve">
+    <value>Max steps</value>
+  </data>
+  <data name="AgentMaxStepsAutoNameFmt" xml:space="preserve">
+    <value>Maximum steps for {0}</value>
+  </data>
+  <data name="AgentDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="AgentDisabledAutoNameFmt" xml:space="preserve">
+    <value>Disable {0}</value>
+  </data>
+  <data name="AgentHidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="AgentHiddenAutoNameFmt" xml:space="preserve">
+    <value>Hide {0}</value>
+  </data>
+  <data name="AgentTriStateTip" xml:space="preserve">
+    <value>Three states. Indeterminate leaves the key out, so OpenCode's own default applies — which is not the same as off.</value>
+  </data>
+  <data name="AgentDeprecatedToolsTitle" xml:space="preserve">
+    <value>Tools (deprecated)</value>
+  </data>
+  <data name="AgentDeprecatedToolsNotice" xml:space="preserve">
+    <value>The schema marks this field deprecated — use the permission override instead. It stays editable because removing it would change how this agent behaves.</value>
+  </data>
+  <data name="AgentToolNameAutoNameFmt" xml:space="preserve">
+    <value>Tool name: {0}</value>
+  </data>
+  <data name="AgentToolEnabledAutoNameFmt" xml:space="preserve">
+    <value>Enable {0}</value>
+  </data>
+  <data name="AgentRemoveToolAutoNameFmt" xml:space="preserve">
+    <value>Remove tool flag {0}</value>
+  </data>
+  <data name="AgentNewToolPlaceholder" xml:space="preserve">
+    <value>Tool name</value>
+  </data>
+  <data name="AgentNewToolAutoName" xml:space="preserve">
+    <value>New tool flag name</value>
+  </data>
+  <data name="AgentAddTool" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AgentAddToolAutoName" xml:space="preserve">
+    <value>Add tool flag</value>
+  </data>
+  <data name="AgentPermissionTitle" xml:space="preserve">
+    <value>Permission override</value>
+  </data>
+  <data name="AgentAddPermission" xml:space="preserve">
+    <value>Add permission override</value>
+  </data>
+  <data name="AgentAddPermissionTip" xml:space="preserve">
+    <value>Adds rules that apply on top of the global permission, for this agent only.</value>
+  </data>
+  <data name="AgentRemovePermission" xml:space="preserve">
+    <value>Remove override</value>
+  </data>
+  <data name="AgentRemovePermissionTip" xml:space="preserve">
+    <value>Removes the key entirely so this agent inherits the global rules. Different from leaving the override empty, which overrides with nothing.</value>
+  </data>
+  <data name="CommandNewNamePlaceholder" xml:space="preserve">
+    <value>Command name, e.g. review</value>
+  </data>
+  <data name="CommandNewNameAutoName" xml:space="preserve">
+    <value>New command name</value>
+  </data>
+  <data name="CommandAdd" xml:space="preserve">
+    <value>Add command</value>
+  </data>
+  <data name="CommandNamePlaceholder" xml:space="preserve">
+    <value>Command name</value>
+  </data>
+  <data name="CommandNameAutoNameFmt" xml:space="preserve">
+    <value>Command name: {0}</value>
+  </data>
+  <data name="CommandRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="CommandRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove command {0}</value>
+  </data>
+  <data name="CommandOpaqueNotice" xml:space="preserve">
+    <value>This entry is not an object, so there is nothing to edit here. It is kept exactly as written and saved unchanged.</value>
+  </data>
+  <data name="CommandInvalidBanner" xml:space="preserve">
+    <value>command(s) below have no template. The schema requires one, so those entries are invalid — nothing is invented for them.</value>
+  </data>
+  <data name="CommandShellBanner" xml:space="preserve">
+    <value>command(s) below run a shell command through the !`...` form. That executes with your privileges every time the command is used, so read them before trusting a config you did not write.</value>
+  </data>
+  <data name="CommandTemplate" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="CommandTemplateRequired" xml:space="preserve">
+    <value>required</value>
+  </data>
+  <data name="CommandTemplateTip" xml:space="preserve">
+    <value>The command body. Supports $ARGUMENTS, positional $1...$n, @file references, and !`cmd` shell interpolation.</value>
+  </data>
+  <data name="CommandTemplateAutoNameFmt" xml:space="preserve">
+    <value>Template for {0}</value>
+  </data>
+  <data name="CommandTemplateMissing" xml:space="preserve">
+    <value>This command has no template. The schema requires one.</value>
+  </data>
+  <data name="CommandShellWarning" xml:space="preserve">
+    <value>This template runs a shell command through !`...`. It executes with your privileges whenever the command is invoked.</value>
+  </data>
+  <data name="CommandDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="CommandDescriptionAutoNameFmt" xml:space="preserve">
+    <value>Description for {0}</value>
+  </data>
+  <data name="CommandAgent" xml:space="preserve">
+    <value>Agent</value>
+  </data>
+  <data name="CommandAgentAutoNameFmt" xml:space="preserve">
+    <value>Agent for {0}</value>
+  </data>
+  <data name="CommandModel" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="CommandModelAutoNameFmt" xml:space="preserve">
+    <value>Model for {0}</value>
+  </data>
+  <data name="CommandVariant" xml:space="preserve">
+    <value>Variant</value>
+  </data>
+  <data name="CommandVariantAutoNameFmt" xml:space="preserve">
+    <value>Variant for {0}</value>
+  </data>
+  <data name="CommandSubtask" xml:space="preserve">
+    <value>Run as subtask</value>
+  </data>
+  <data name="CommandSubtaskAutoNameFmt" xml:space="preserve">
+    <value>Run {0} as a subtask</value>
+  </data>
+  <data name="CommandSubtaskTip" xml:space="preserve">
+    <value>Three states. Indeterminate leaves the key out, so OpenCode's own default applies — which is not the same as off.</value>
+  </data>
+  <data name="PluginOpaqueBanner" xml:space="preserve">
+    <value>entry(ies) below match neither form the schema allows. They are kept exactly as written and saved unchanged.</value>
+  </data>
+  <data name="PluginOptionErrorBanner" xml:space="preserve">
+    <value>entry(ies) below have options that are not valid JSON for an object. The last valid options are kept until they are, so nothing is lost while you type.</value>
+  </data>
+  <data name="PluginNewNamePlaceholder" xml:space="preserve">
+    <value>Plugin, e.g. my-plugin@1.0.0</value>
+  </data>
+  <data name="PluginNewNameAutoName" xml:space="preserve">
+    <value>New plugin specifier</value>
+  </data>
+  <data name="PluginAdd" xml:space="preserve">
+    <value>Add plugin</value>
+  </data>
+  <data name="PluginNamePlaceholder" xml:space="preserve">
+    <value>Plugin specifier</value>
+  </data>
+  <data name="PluginNameAutoNameFmt" xml:space="preserve">
+    <value>Plugin specifier: {0}</value>
+  </data>
+  <data name="PluginOpaqueNotice" xml:space="preserve">
+    <value>This entry matches neither a bare specifier nor a [name, options] pair, so there is nothing to edit. It is saved unchanged.</value>
+  </data>
+  <data name="PluginHasOptions" xml:space="preserve">
+    <value>Has options</value>
+  </data>
+  <data name="PluginHasOptionsTip" xml:space="preserve">
+    <value>Off writes just the specifier. On writes the two-element [name, options] form — which is a different value even when the options are empty. Your options text is kept either way.</value>
+  </data>
+  <data name="PluginHasOptionsAutoNameFmt" xml:space="preserve">
+    <value>Give {0} an options object</value>
+  </data>
+  <data name="PluginOptionsLabel" xml:space="preserve">
+    <value>Options (JSON object)</value>
+  </data>
+  <data name="PluginOptionsTip" xml:space="preserve">
+    <value>The schema types this as an object with no declared fields, so it is edited as JSON. Blank counts as an empty object.</value>
+  </data>
+  <data name="PluginOptionsAutoNameFmt" xml:space="preserve">
+    <value>Options JSON for {0}</value>
+  </data>
+  <data name="PluginOptionsError" xml:space="preserve">
+    <value>Not valid JSON for an object. The last valid options are kept meanwhile.</value>
+  </data>
+  <data name="PluginMoveEarlierTip" xml:space="preserve">
+    <value>Move earlier in the list</value>
+  </data>
+  <data name="PluginMoveEarlierAutoNameFmt" xml:space="preserve">
+    <value>Move plugin {0} earlier</value>
+  </data>
+  <data name="PluginMoveLaterTip" xml:space="preserve">
+    <value>Move later in the list</value>
+  </data>
+  <data name="PluginMoveLaterAutoNameFmt" xml:space="preserve">
+    <value>Move plugin {0} later</value>
+  </data>
+  <data name="PluginRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove plugin {0}</value>
+  </data>
+  <data name="PluginEnabledNewNamePlaceholder" xml:space="preserve">
+    <value>Plugin name</value>
+  </data>
+  <data name="PluginEnabledNewNameAutoName" xml:space="preserve">
+    <value>New plugin toggle name</value>
+  </data>
+  <data name="PluginEnabledAdd" xml:space="preserve">
+    <value>Add toggle</value>
+  </data>
+  <data name="PluginEnabledNameAutoNameFmt" xml:space="preserve">
+    <value>Plugin name: {0}</value>
+  </data>
+  <data name="PluginEnabledToggleAutoNameFmt" xml:space="preserve">
+    <value>Enable {0}</value>
+  </data>
+  <data name="PluginEnabledRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove toggle for {0}</value>
+  </data>
+  <data name="PluginEnabledOpaqueTip" xml:space="preserve">
+    <value>This value is not a boolean, so it cannot be toggled here. It is kept exactly as written.</value>
+  </data>
+  <data name="PluginEnabledHint" xml:space="preserve">
+    <value>Toggles plugins that something else declares, so a name here need not appear in the plugin list.</value>
+  </data>
+  <data name="ToolingModeLabel" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="ToolingModeAutoName" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="ToolingModeNotSet" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="ToolingModeNotSetHelp" xml:space="preserve">
+    <value>Writes nothing: the key stays out of this file, so a lower-priority scope decides.</value>
+  </data>
+  <data name="ToolingModeDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="ToolingModeDisabledHelp" xml:space="preserve">
+    <value>Writes false. Same effect as leaving the key out, but stated here so a lower-priority scope cannot switch it back on.</value>
+  </data>
+  <data name="ToolingModeBuiltIns" xml:space="preserve">
+    <value>Built-ins only</value>
+  </data>
+  <data name="ToolingModeBuiltInsHelp" xml:space="preserve">
+    <value>Writes true. Built-ins are on, with no per-language overrides.</value>
+  </data>
+  <data name="ToolingModeConfigured" xml:space="preserve">
+    <value>Configured</value>
+  </data>
+  <data name="ToolingModeConfiguredHelp" xml:space="preserve">
+    <value>Writes an object: built-ins are on, plus the overrides below. An empty object is valid and is not the same value as true.</value>
+  </data>
+  <data name="ToolingUnrecognisedBanner" xml:space="preserve">
+    <value>This value is neither true, false, nor an object, so it is held exactly as written rather than interpreted. Saving changes nothing here until you replace it.</value>
+  </data>
+  <data name="ToolingHeldValueLabel" xml:space="preserve">
+    <value>Held value</value>
+  </data>
+  <data name="ToolingHeldValueAutoName" xml:space="preserve">
+    <value>Value held exactly as written</value>
+  </data>
+  <data name="ToolingReplaceValue" xml:space="preserve">
+    <value>Replace value</value>
+  </data>
+  <data name="ToolingReplaceValueTip" xml:space="preserve">
+    <value>Discard the held value and start from an editable configuration. The held value cannot be recovered afterwards.</value>
+  </data>
+  <data name="ToolingAdd" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="ToolingArgAutoNameFmt" xml:space="preserve">
+    <value>Command word {0}</value>
+  </data>
+  <data name="ToolingMoveEarlierTip" xml:space="preserve">
+    <value>Move earlier. This is argv, so the order is the meaning.</value>
+  </data>
+  <data name="ToolingMoveEarlierAutoNameFmt" xml:space="preserve">
+    <value>Move {0} earlier</value>
+  </data>
+  <data name="ToolingMoveLaterTip" xml:space="preserve">
+    <value>Move later. This is argv, so the order is the meaning.</value>
+  </data>
+  <data name="ToolingMoveLaterAutoNameFmt" xml:space="preserve">
+    <value>Move {0} later</value>
+  </data>
+  <data name="ToolingRemoveItemAutoNameFmt" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="ToolingNewArgPlaceholder" xml:space="preserve">
+    <value>Command word</value>
+  </data>
+  <data name="ToolingNewArgAutoName" xml:space="preserve">
+    <value>New command word</value>
+  </data>
+  <data name="ToolingAddArgAutoName" xml:space="preserve">
+    <value>Add command word</value>
+  </data>
+  <data name="ToolingExtensionAutoNameFmt" xml:space="preserve">
+    <value>Extension {0}</value>
+  </data>
+  <data name="ToolingNewExtensionPlaceholder" xml:space="preserve">
+    <value>Extension, for example .ts</value>
+  </data>
+  <data name="ToolingNewExtensionAutoName" xml:space="preserve">
+    <value>New extension</value>
+  </data>
+  <data name="ToolingAddExtensionAutoName" xml:space="preserve">
+    <value>Add extension</value>
+  </data>
+  <data name="ToolingEnvNameAutoNameFmt" xml:space="preserve">
+    <value>Environment variable name {0}</value>
+  </data>
+  <data name="ToolingEnvValueAutoNameFmt" xml:space="preserve">
+    <value>Environment variable value for {0}</value>
+  </data>
+  <data name="ToolingRemoveEnvAutoNameFmt" xml:space="preserve">
+    <value>Remove environment variable {0}</value>
+  </data>
+  <data name="ToolingEnvNamePlaceholder" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ToolingEnvValuePlaceholder" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="ToolingNewEnvNameAutoName" xml:space="preserve">
+    <value>New environment variable name</value>
+  </data>
+  <data name="ToolingNewEnvValueAutoName" xml:space="preserve">
+    <value>New environment variable value</value>
+  </data>
+  <data name="ToolingAddEnvAutoName" xml:space="preserve">
+    <value>Add environment variable</value>
+  </data>
+  <data name="FormatterHint" xml:space="preserve">
+    <value>Overrides the built-in formatters. Anything not listed keeps its built-in behaviour.</value>
+  </data>
+  <data name="FormatterNewNamePlaceholder" xml:space="preserve">
+    <value>Formatter name, for example prettier</value>
+  </data>
+  <data name="FormatterNewNameAutoName" xml:space="preserve">
+    <value>New formatter name</value>
+  </data>
+  <data name="FormatterAdd" xml:space="preserve">
+    <value>Add formatter</value>
+  </data>
+  <data name="FormatterNamePlaceholder" xml:space="preserve">
+    <value>Formatter name</value>
+  </data>
+  <data name="FormatterNameAutoNameFmt" xml:space="preserve">
+    <value>Name of formatter {0}</value>
+  </data>
+  <data name="FormatterRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove formatter {0}</value>
+  </data>
+  <data name="FormatterNoEntries" xml:space="preserve">
+    <value>No per-formatter overrides yet. Built-in formatters still apply.</value>
+  </data>
+  <data name="FormatterOpaqueBanner" xml:space="preserve">
+    <value>entry(ies) below are not objects. They are held exactly as written and saved unchanged.</value>
+  </data>
+  <data name="FormatterOpaqueNotice" xml:space="preserve">
+    <value>This entry is not an object, so it is held exactly as written.</value>
+  </data>
+  <data name="FormatterExtrasBanner" xml:space="preserve">
+    <value>entry(ies) below carry fields this editor does not show. They are preserved, not dropped.</value>
+  </data>
+  <data name="FormatterExtrasNoticeFmt" xml:space="preserve">
+    <value>{0} field(s) not shown here are preserved exactly as written.</value>
+  </data>
+  <data name="FormatterDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="FormatterDisabledTip" xml:space="preserve">
+    <value>Three states. Checked writes disabled: true, unchecked writes disabled: false, and indeterminate leaves the key out. The last two behave alike but are different text, so this box does not fold them together.</value>
+  </data>
+  <data name="FormatterDisabledAutoNameFmt" xml:space="preserve">
+    <value>Disabled state for {0}</value>
+  </data>
+  <data name="FormatterCommandLabel" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="FormatterCommandTip" xml:space="preserve">
+    <value>The command and its arguments, one per row. This is argv, so the order is the meaning.</value>
+  </data>
+  <data name="FormatterEnvironmentLabel" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="FormatterEnvironmentTip" xml:space="preserve">
+    <value>Written under environment. An lsp entry uses env instead; the two keys are not interchangeable.</value>
+  </data>
+  <data name="FormatterExtensionsLabel" xml:space="preserve">
+    <value>Extensions</value>
+  </data>
+  <data name="FormatterExtensionsTip" xml:space="preserve">
+    <value>File extensions this formatter claims. Order carries no meaning.</value>
+  </data>
+  <data name="LspHint" xml:space="preserve">
+    <value>Overrides the built-in language servers. Anything not listed keeps its built-in behaviour.</value>
+  </data>
+  <data name="LspNewNamePlaceholder" xml:space="preserve">
+    <value>Server name, for example gopls</value>
+  </data>
+  <data name="LspNewNameAutoName" xml:space="preserve">
+    <value>New language server name</value>
+  </data>
+  <data name="LspAdd" xml:space="preserve">
+    <value>Add server</value>
+  </data>
+  <data name="LspNamePlaceholder" xml:space="preserve">
+    <value>Server name</value>
+  </data>
+  <data name="LspNameAutoNameFmt" xml:space="preserve">
+    <value>Name of language server {0}</value>
+  </data>
+  <data name="LspRemoveAutoNameFmt" xml:space="preserve">
+    <value>Remove language server {0}</value>
+  </data>
+  <data name="LspNoEntries" xml:space="preserve">
+    <value>No per-server overrides yet. Built-in language servers still apply.</value>
+  </data>
+  <data name="LspOpaqueBanner" xml:space="preserve">
+    <value>entry(ies) below are not objects. They are held exactly as written and saved unchanged.</value>
+  </data>
+  <data name="LspOpaqueNotice" xml:space="preserve">
+    <value>This entry is not an object, so it is held exactly as written.</value>
+  </data>
+  <data name="LspExtrasBanner" xml:space="preserve">
+    <value>entry(ies) below carry fields this editor does not show. They are preserved, not dropped.</value>
+  </data>
+  <data name="LspExtrasNoticeFmt" xml:space="preserve">
+    <value>{0} field(s) not shown here are preserved exactly as written.</value>
+  </data>
+  <data name="LspIncompleteBanner" xml:space="preserve">
+    <value>entry(ies) below match neither form the schema allows. An entry needs either a command, or nothing at all but disabled set to true. OpenCode rejects the file until they do.</value>
+  </data>
+  <data name="LspIncompleteNotice" xml:space="preserve">
+    <value>This entry matches neither form the schema allows. Add a command, or clear every other field and leave only disabled set to true.</value>
+  </data>
+  <data name="LspDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="LspDisabledTip" xml:space="preserve">
+    <value>Three states. Checked writes disabled: true, unchecked writes disabled: false, and indeterminate leaves the key out. On an entry with no command, only the checked state is valid on its own.</value>
+  </data>
+  <data name="LspDisabledAutoNameFmt" xml:space="preserve">
+    <value>Disabled state for {0}</value>
+  </data>
+  <data name="LspCommandLabel" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="LspCommandTip" xml:space="preserve">
+    <value>Required unless the entry says nothing but disabled: true. This is argv, so the order is the meaning.</value>
+  </data>
+  <data name="LspExtensionsLabel" xml:space="preserve">
+    <value>Extensions</value>
+  </data>
+  <data name="LspExtensionsTip" xml:space="preserve">
+    <value>File extensions this server claims. Order carries no meaning.</value>
+  </data>
+  <data name="LspEnvLabel" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="LspEnvTip" xml:space="preserve">
+    <value>Written under env. A formatter entry uses environment instead; the two keys are not interchangeable.</value>
+  </data>
+  <data name="LspHasInitialization" xml:space="preserve">
+    <value>Send initialization</value>
+  </data>
+  <data name="LspHasInitializationTip" xml:space="preserve">
+    <value>Send an initialization object to the server when it starts.</value>
+  </data>
+  <data name="LspHasInitializationAutoNameFmt" xml:space="preserve">
+    <value>Send initialization for {0}</value>
+  </data>
+  <data name="LspInitializationLabel" xml:space="preserve">
+    <value>Initialization (JSON object)</value>
+  </data>
+  <data name="LspInitializationTip" xml:space="preserve">
+    <value>The schema declares no fields here, so this is raw JSON. While the text is not a valid object the last valid value is kept, so nothing is lost as you type.</value>
+  </data>
+  <data name="LspInitializationAutoNameFmt" xml:space="preserve">
+    <value>Initialization JSON for {0}</value>
+  </data>
+  <data name="LspInitializationError" xml:space="preserve">
+    <value>Not valid JSON for an object. The last valid value is being kept.</value>
+  </data>
+  <data name="LspInitializationErrorBanner" xml:space="preserve">
+    <value>entry(ies) below have initialization JSON that is not a valid object. The last valid value is kept until it is, so nothing is lost while you type.</value>
+  </data>
+  <data name="AutoupdateLabel" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="AutoupdateAutoName" xml:space="preserve">
+    <value>Automatic update behaviour</value>
+  </data>
+  <data name="AutoupdateHint" xml:space="preserve">
+    <value>How OpenCode handles new releases. Three values, and leaving the key out is a fourth state — a lower-priority scope decides that one.</value>
+  </data>
+  <data name="AutoupdateNotSet" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="AutoupdateNotSetHelp" xml:space="preserve">
+    <value>Writes nothing: the key stays out of this file, so a lower-priority scope decides.</value>
+  </data>
+  <data name="AutoupdateDisabled" xml:space="preserve">
+    <value>Never update</value>
+  </data>
+  <data name="AutoupdateDisabledHelp" xml:space="preserve">
+    <value>Writes false. Same effect as leaving the key out, but stated here so a lower-priority scope cannot switch it back on.</value>
+  </data>
+  <data name="AutoupdateNotify" xml:space="preserve">
+    <value>Notify only</value>
+  </data>
+  <data name="AutoupdateNotifyHelp" xml:space="preserve">
+    <value>Writes the string "notify". OpenCode tells you a release exists and installs nothing.</value>
+  </data>
+  <data name="AutoupdateAutomatic" xml:space="preserve">
+    <value>Update automatically</value>
+  </data>
+  <data name="AutoupdateAutomaticHelp" xml:space="preserve">
+    <value>Writes true. OpenCode installs new releases without asking.</value>
+  </data>
+  <data name="AutoupdateUnrecognisedBanner" xml:space="preserve">
+    <value>This value is neither true, false, nor the string "notify", so it is held exactly as written rather than interpreted. Note that "notify" is case-sensitive.</value>
+  </data>
+  <data name="AutoupdateHeldValueLabel" xml:space="preserve">
+    <value>Held value</value>
+  </data>
+  <data name="AutoupdateHeldValueAutoName" xml:space="preserve">
+    <value>Value held exactly as written</value>
+  </data>
+  <data name="AutoupdateReplaceValue" xml:space="preserve">
+    <value>Replace value</value>
+  </data>
+  <data name="AutoupdateReplaceValueTip" xml:space="preserve">
+    <value>Discard the held value and choose one of the three the schema allows. The held value cannot be recovered afterwards.</value>
+  </data>
+  <data name="KeybindHint" xml:space="preserve">
+    <value>Each action may be unset, disabled, explicitly unbound, bound to one key, or bound to a list of keys. An action you have not touched writes nothing to this file.</value>
+  </data>
+  <data name="KeybindListAutoName" xml:space="preserve">
+    <value>Keybind actions</value>
+  </data>
+  <data name="KeybindAllGroups" xml:space="preserve">
+    <value>All groups</value>
+  </data>
+  <data name="KeybindFilterPlaceholder" xml:space="preserve">
+    <value>Search actions and keys</value>
+  </data>
+  <data name="KeybindFilterAutoName" xml:space="preserve">
+    <value>Search keybinds</value>
+  </data>
+  <data name="KeybindGroupAutoName" xml:space="preserve">
+    <value>Keybind group</value>
+  </data>
+  <data name="KeybindOnlySet" xml:space="preserve">
+    <value>Only show what is set</value>
+  </data>
+  <data name="KeybindClearFilter" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="KeybindHiddenFmt" xml:space="preserve">
+    <value>{0} action(s) hidden by the current filter.</value>
+  </data>
+  <data name="KeybindHiddenAutoName" xml:space="preserve">
+    <value>Hidden action count</value>
+  </data>
+  <data name="KeybindSetCountFmt" xml:space="preserve">
+    <value>{0} action(s) set in this scope.</value>
+  </data>
+  <data name="KeybindSetCountAutoName" xml:space="preserve">
+    <value>Set action count</value>
+  </data>
+  <data name="KeybindConflictBannerFmt" xml:space="preserve">
+    <value>⚠ {0} action(s) name a key another action also names. OpenCode does not state which one wins.</value>
+  </data>
+  <data name="KeybindConflictAutoName" xml:space="preserve">
+    <value>Key clash count</value>
+  </data>
+  <data name="KeybindConflictRowFmt" xml:space="preserve">
+    <value>⚠ Same key as: {0}</value>
+  </data>
+  <data name="KeybindConflictRowAutoNameFmt" xml:space="preserve">
+    <value>{0} key clash</value>
+  </data>
+  <data name="KeybindIncompleteBannerFmt" xml:space="preserve">
+    <value>⚠ {0} action(s) name no key, which OpenCode rejects. Nothing is invented for them — the value is written as typed.</value>
+  </data>
+  <data name="KeybindIncompleteAutoName" xml:space="preserve">
+    <value>Incomplete action count</value>
+  </data>
+  <data name="KeybindUnknownBannerFmt" xml:space="preserve">
+    <value>{0} action(s) here are not in this build's schema. They are kept exactly as written.</value>
+  </data>
+  <data name="KeybindUnknownAutoName" xml:space="preserve">
+    <value>Unknown action count</value>
+  </data>
+  <data name="KeybindUnknownMarker" xml:space="preserve">
+    <value>(not in schema)</value>
+  </data>
+  <data name="KeybindUnknownTip" xml:space="preserve">
+    <value>This build's schema does not declare this action. It may come from a newer OpenCode; it is preserved unchanged.</value>
+  </data>
+  <data name="KeybindUnknownAction" xml:space="preserve">
+    <value>Not declared by this build's schema.</value>
+  </data>
+  <data name="KeybindUnrecognisedBanner" xml:space="preserve">
+    <value>⚠ This scope's keybinds value is not an object, so it cannot be edited here. It is held exactly as written and saved unchanged.</value>
+  </data>
+  <data name="KeybindHeldValueAutoName" xml:space="preserve">
+    <value>Held keybinds value</value>
+  </data>
+  <data name="KeybindActionHeldBanner" xml:space="preserve">
+    <value>⚠ This action's value matches no known form. It is held exactly as written.</value>
+  </data>
+  <data name="KeybindActionHeldAutoNameFmt" xml:space="preserve">
+    <value>{0} held value</value>
+  </data>
+  <data name="KeybindBindingHeldBanner" xml:space="preserve">
+    <value>⚠ This binding matches no known form. It is held exactly as written; the others stay editable.</value>
+  </data>
+  <data name="KeybindBindingHeldAutoName" xml:space="preserve">
+    <value>Held binding value</value>
+  </data>
+  <data name="KeybindHeldValue" xml:space="preserve">
+    <value>(held as written)</value>
+  </data>
+  <data name="KeybindReplaceValue" xml:space="preserve">
+    <value>Replace value</value>
+  </data>
+  <data name="KeybindReplaceValueTip" xml:space="preserve">
+    <value>Discard the held value and start from an editable one. What is written now is lost.</value>
+  </data>
+  <data name="KeybindModeNotSet" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="KeybindModeNotSetHelp" xml:space="preserve">
+    <value>Writes nothing: the action stays out of this file, so a lower-priority scope decides.</value>
+  </data>
+  <data name="KeybindModeDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="KeybindModeDisabledHelp" xml:space="preserve">
+    <value>Writes false. The schema admits only false here — there is no true.</value>
+  </data>
+  <data name="KeybindModeNone" xml:space="preserve">
+    <value>Unbound</value>
+  </data>
+  <data name="KeybindModeNoneHelp" xml:space="preserve">
+    <value>Writes the string "none". Same effect as false, and a different file — neither is rewritten into the other.</value>
+  </data>
+  <data name="KeybindModeBound" xml:space="preserve">
+    <value>One key</value>
+  </data>
+  <data name="KeybindModeBoundHelp" xml:space="preserve">
+    <value>Writes the binding on its own. Not the same file as a one-item list.</value>
+  </data>
+  <data name="KeybindModeSequence" xml:space="preserve">
+    <value>List of keys</value>
+  </data>
+  <data name="KeybindModeSequenceHelp" xml:space="preserve">
+    <value>Writes an array, even when it holds one binding. Not the same file as a bare binding.</value>
+  </data>
+  <data name="KeybindModeAutoNameFmt" xml:space="preserve">
+    <value>{0} mode</value>
+  </data>
+  <data name="KeybindFormChord" xml:space="preserve">
+    <value>Typed key</value>
+  </data>
+  <data name="KeybindFormChordHelp" xml:space="preserve">
+    <value>Writes the text exactly as typed. OpenCode parses it; this editor does not, because the schema states no grammar for it.</value>
+  </data>
+  <data name="KeybindFormKey" xml:space="preserve">
+    <value>Key and modifiers</value>
+  </data>
+  <data name="KeybindFormKeyHelp" xml:space="preserve">
+    <value>Writes { "name": … } with only the modifiers you set. This is the form the schema specifies exactly, so it is what capture produces.</value>
+  </data>
+  <data name="KeybindFormEvent" xml:space="preserve">
+    <value>Key with options</value>
+  </data>
+  <data name="KeybindFormEventHelp" xml:space="preserve">
+    <value>Writes { "key": … } plus event, preventDefault and fallthrough. The key inside may itself be typed text or a structured key.</value>
+  </data>
+  <data name="KeybindFormAutoName" xml:space="preserve">
+    <value>Binding form</value>
+  </data>
+  <data name="KeybindCapture" xml:space="preserve">
+    <value>Capture…</value>
+  </data>
+  <data name="KeybindCaptureCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="KeybindCapturing" xml:space="preserve">
+    <value>Press a key… (Escape cancels)</value>
+  </data>
+  <data name="KeybindCaptureTip" xml:space="preserve">
+    <value>Press a key and this records it as name plus modifiers. The name is a best-effort spelling — the schema constrains it in no way, so correct it if OpenCode wants another.</value>
+  </data>
+  <data name="KeybindChordPlaceholder" xml:space="preserve">
+    <value>e.g. ctrl+q or &lt;leader&gt;e</value>
+  </data>
+  <data name="KeybindChordAutoName" xml:space="preserve">
+    <value>Typed key</value>
+  </data>
+  <data name="KeybindKeyName" xml:space="preserve">
+    <value>Key name</value>
+  </data>
+  <data name="KeybindKeyNamePlaceholder" xml:space="preserve">
+    <value>e.g. q, f1, enter</value>
+  </data>
+  <data name="KeybindKeyNameTip" xml:space="preserve">
+    <value>The schema types this as any string, so no spelling can be validated here. Capture fills in a conventional lowercase name.</value>
+  </data>
+  <data name="KeybindKeyNameAutoName" xml:space="preserve">
+    <value>Key name</value>
+  </data>
+  <data name="KeybindNoKey" xml:space="preserve">
+    <value>(no key)</value>
+  </data>
+  <data name="KeybindCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="KeybindShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="KeybindMeta" xml:space="preserve">
+    <value>Meta</value>
+  </data>
+  <data name="KeybindMetaTip" xml:space="preserve">
+    <value>The schema's meta. Capture fills this from Alt.</value>
+  </data>
+  <data name="KeybindSuper" xml:space="preserve">
+    <value>Super</value>
+  </data>
+  <data name="KeybindSuperTip" xml:space="preserve">
+    <value>The schema's super. Capture fills this from the Windows or Command key.</value>
+  </data>
+  <data name="KeybindHyper" xml:space="preserve">
+    <value>Hyper</value>
+  </data>
+  <data name="KeybindHyperTip" xml:space="preserve">
+    <value>No desktop platform reports Hyper, so capture never sets it. Set it by hand if your terminal sends it.</value>
+  </data>
+  <data name="KeybindEvent" xml:space="preserve">
+    <value>Event</value>
+  </data>
+  <data name="KeybindEventAutoName" xml:space="preserve">
+    <value>Key event</value>
+  </data>
+  <data name="KeybindPreventDefault" xml:space="preserve">
+    <value>preventDefault</value>
+  </data>
+  <data name="KeybindFallthrough" xml:space="preserve">
+    <value>fallthrough</value>
+  </data>
+  <data name="KeybindStructuredKey" xml:space="preserve">
+    <value>Structured key</value>
+  </data>
+  <data name="KeybindStructuredKeyTip" xml:space="preserve">
+    <value>Untick to state this binding's key as typed text instead of as name plus modifiers. Both are legal here.</value>
+  </data>
+  <data name="KeybindAddBinding" xml:space="preserve">
+    <value>Add key</value>
+  </data>
+  <data name="KeybindRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="KeybindMoveUp" xml:space="preserve">
+    <value>↑</value>
+  </data>
+  <data name="KeybindMoveDown" xml:space="preserve">
+    <value>↓</value>
+  </data>
+  <data name="KeybindBindingIncomplete" xml:space="preserve">
+    <value>⚠ This binding names no key, which OpenCode rejects. It is still written as typed.</value>
+  </data>
+  <data name="KeybindSummarySeparator" xml:space="preserve">
+    <value>+</value>
+  </data>
+  <data name="KeybindSequenceSeparator" xml:space="preserve">
+    <value>, then </value>
+  </data>
+  <data name="ThemeBuiltInTooltip" xml:space="preserve">
+    <value>Built in to OpenCode — available without installing anything.</value>
+  </data>
+  <data name="ThemeDiscoveredTooltip" xml:space="preserve">
+    <value>Found in this machine&apos;s OpenCode config directory, under themes/.</value>
+  </data>
+</root>

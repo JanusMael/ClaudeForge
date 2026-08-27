@@ -1,0 +1,226 @@
+<!--
+    The agent map. Same rules as the other two editors in this library:
+      * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
+      * No ancestor bindings ({Binding $parent[...]}) — they resolve by reflection and trip IL2026,
+        which is a build error here. Row commands live on the row view-models.
+      * Only LE.* theme tokens; no literal colours.
+      * All text from Strings.resx, which the repo's dead-key guard checks per project.
+
+    ⭐ The permission override is hosted as a ContentControl over the REAL permission editor
+    view-model, so App.axaml's DataTemplate resolves the same view the top-level permission key
+    uses. That is what makes shadow detection, last-match-wins reordering and the live tester work
+    inside an agent without a second implementation of any of it.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:agents="using:Bennewitz.Ninja.OpenCode.Avalonia.Agents"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Agents.OpenCodeAgentEditorView"
+             x:DataType="agents:OpenCodeAgentEditorViewModel">
+
+    <!--
+        ⚠⚠ REQUIRED, not decoration. App.axaml hosts this view under a MaxHeight, and a MaxHeight
+        with nothing scrollable inside it CLIPS rather than scrolls: measured in 9a-8 by screenshot
+        and by the UIA tree, where a four-entry config laid rows out below the window's bottom edge
+        while the page's only scroller was already at 100%. App.axaml's own comment claimed "the
+        view's own scrolling handles a long grid" — no view in this library had a ScrollViewer.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="8" Spacing="8">
+
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <AutoCompleteBox Text="{Binding NewAgentName}"
+                             ItemsSource="{x:Static agents:OpenCodeAgentEditorViewModel.BuiltInNames}"
+                             PlaceholderText="{x:Static loc:Strings.AgentNewNamePlaceholder}"
+                             Width="280"
+                             AutomationProperties.Name="{x:Static loc:Strings.AgentNewNameAutoName}" />
+            <Button Content="{x:Static loc:Strings.AgentAdd}"
+                    Command="{Binding AddAgentCommand}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AgentAdd}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Agents}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="agents:OpenCodeAgentViewModel">
+                    <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="8"
+                            Margin="0,0,0,6">
+                        <StackPanel Spacing="6">
+
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding Name}"
+                                         Width="200"
+                                         PlaceholderText="{x:Static loc:Strings.AgentNamePlaceholder}"
+                                         AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentNameAutoNameFmt}}" />
+                                <TextBlock Text="{x:Static loc:Strings.AgentBuiltInBadge}"
+                                           IsVisible="{Binding IsBuiltIn}"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource LE.EnvVarBrush}"
+                                           ToolTip.Tip="{x:Static loc:Strings.AgentBuiltInTip}"
+                                           AutomationProperties.Name="{x:Static loc:Strings.AgentBuiltInTip}" />
+                                <Button Content="{x:Static loc:Strings.AgentRemove}"
+                                        Command="{Binding RemoveCommand}"
+                                        AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentRemoveAutoNameFmt}}" />
+                            </StackPanel>
+
+                            <TextBlock IsVisible="{Binding IsOpaqueEntry}"
+                                       Text="{x:Static loc:Strings.AgentOpaqueNotice}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+                            <StackPanel IsVisible="{Binding IsEditable}" Spacing="6">
+
+                                <!-- Identity -->
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentModel}" Width="90" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Model}" Width="260"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentModelAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentVariant}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Variant}" Width="140"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentVariantAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentDescription}" Width="90" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding Description}" Width="420"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentDescriptionAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentPrompt}" Width="90" VerticalAlignment="Top" />
+                                    <TextBox Text="{Binding Prompt}"
+                                             Width="420"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             MinHeight="60"
+                                             MaxHeight="160"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentPromptAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <!-- Behaviour -->
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentMode}" Width="90" VerticalAlignment="Center" />
+                                    <ComboBox ItemsSource="{x:Static agents:OpenCodeAgentViewModel.Modes}"
+                                              SelectedItem="{Binding Mode}"
+                                              MinWidth="130"
+                                              ToolTip.Tip="{x:Static loc:Strings.AgentModeTip}"
+                                              AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentModeAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentColor}" VerticalAlignment="Center" />
+                                    <AutoCompleteBox Text="{Binding Color}"
+                                                     ItemsSource="{x:Static agents:OpenCodeAgentViewModel.ColorSuggestions}"
+                                                     Width="160"
+                                                     ToolTip.Tip="{x:Static loc:Strings.AgentColorTip}"
+                                                     AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentColorAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <TextBlock IsVisible="{Binding HasNumberError}"
+                                           Text="{x:Static loc:Strings.AgentNumberError}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource LE.BoolDisabled}" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentTemperature}" Width="90" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding TemperatureText}" Width="80"
+                                             ToolTip.Tip="{x:Static loc:Strings.AgentEmptyMeansUnsetTip}"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentTemperatureAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentTopP}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding TopPText}" Width="80"
+                                             ToolTip.Tip="{x:Static loc:Strings.AgentEmptyMeansUnsetTip}"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentTopPAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentSteps}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding StepsText}" Width="80"
+                                             ToolTip.Tip="{x:Static loc:Strings.AgentEmptyMeansUnsetTip}"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentStepsAutoNameFmt}}" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentMaxSteps}" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding MaxStepsText}" Width="80"
+                                             ToolTip.Tip="{x:Static loc:Strings.AgentEmptyMeansUnsetTip}"
+                                             AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentMaxStepsAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <CheckBox IsChecked="{Binding Disable}"
+                                              IsThreeState="True"
+                                              Content="{x:Static loc:Strings.AgentDisabled}"
+                                              ToolTip.Tip="{x:Static loc:Strings.AgentTriStateTip}"
+                                              AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentDisabledAutoNameFmt}}" />
+                                    <CheckBox IsChecked="{Binding Hidden}"
+                                              IsThreeState="True"
+                                              Content="{x:Static loc:Strings.AgentHidden}"
+                                              ToolTip.Tip="{x:Static loc:Strings.AgentTriStateTip}"
+                                              AutomationProperties.Name="{Binding Name, StringFormat={x:Static loc:Strings.AgentHiddenAutoNameFmt}}" />
+                                </StackPanel>
+
+                                <!-- Deprecated tools map: shown only when the user already has one -->
+                                <StackPanel IsVisible="{Binding HasDeprecatedTools}" Spacing="4">
+                                    <TextBlock Text="{x:Static loc:Strings.AgentDeprecatedToolsTitle}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{x:Static loc:Strings.AgentDeprecatedToolsNotice}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource LE.BoolUnset}" />
+                                    <ItemsControl ItemsSource="{Binding Tools.Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="agents:OpenCodeAgentToolViewModel">
+                                                <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
+                                                    <TextBox Text="{Binding Tool}" Width="200"
+                                                             AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.AgentToolNameAutoNameFmt}}" />
+                                                    <CheckBox IsChecked="{Binding Enabled}"
+                                                              VerticalAlignment="Center"
+                                                              AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.AgentToolEnabledAutoNameFmt}}" />
+                                                    <Button Content="✕" Command="{Binding RemoveCommand}"
+                                                            AutomationProperties.Name="{Binding Tool, StringFormat={x:Static loc:Strings.AgentRemoveToolAutoNameFmt}}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBox Text="{Binding Tools.NewTool}"
+                                                 PlaceholderText="{x:Static loc:Strings.AgentNewToolPlaceholder}"
+                                                 Width="200"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.AgentNewToolAutoName}" />
+                                        <Button Content="{x:Static loc:Strings.AgentAddTool}"
+                                                Command="{Binding Tools.AddCommand}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.AgentAddToolAutoName}" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Permission override -->
+                                <StackPanel Spacing="4">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Static loc:Strings.AgentPermissionTitle}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                        <Button Content="{x:Static loc:Strings.AgentAddPermission}"
+                                                IsVisible="{Binding HasNoPermissionOverride}"
+                                                Command="{Binding AddPermissionOverrideCommand}"
+                                                ToolTip.Tip="{x:Static loc:Strings.AgentAddPermissionTip}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.AgentAddPermission}" />
+                                        <Button Content="{x:Static loc:Strings.AgentRemovePermission}"
+                                                IsVisible="{Binding HasPermissionOverride}"
+                                                Command="{Binding RemovePermissionOverrideCommand}"
+                                                ToolTip.Tip="{x:Static loc:Strings.AgentRemovePermissionTip}"
+                                                AutomationProperties.Name="{x:Static loc:Strings.AgentRemovePermission}" />
+                                    </StackPanel>
+
+                                    <TextBlock IsVisible="{Binding HasGlobalPermissionContext}"
+                                               Text="{Binding GlobalPermissionSummary}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource LE.BoolUnset}"
+                                               AutomationProperties.Name="{Binding GlobalPermissionSummary}" />
+
+                                    <!-- Resolved by App.axaml's DataTemplate for the permission
+                                         editor view-model — the same view the global key uses. -->
+                                    <ContentControl Content="{Binding Permission}"
+                                                    IsVisible="{Binding HasPermissionOverride}" />
+                                </StackPanel>
+
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+    </ScrollViewer>
+</UserControl>

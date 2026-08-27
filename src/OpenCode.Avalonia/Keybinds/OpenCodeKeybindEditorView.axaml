@@ -1,0 +1,393 @@
+<!--
+    The TUI keybinds editor: 184 actions, each a four-arm union nested three deep.
+
+    Spike S6 measured what the generic dispatch does with this key: all 184 children classify as
+    Complex with no children and no enum, so every one lands on the raw-JSON fallback — 184 JSON
+    text boxes, which is 86% of the TUI schema's node tree and 99.1% of the file. This view exists
+    so that page is usable at all.
+
+    ⚠⚠ THIS IS THE ONE VIEW IN THE PRODUCT WITH NO OUTER ScrollViewer, AND THAT IS DELIBERATE.
+    9a-8 added a ScrollViewer to all eight sibling views because App.axaml hosts them under a
+    MaxHeight and a MaxHeight with nothing scrollable inside it CLIPS. The requirement that fix
+    served — nothing on the page may be unreachable — is met here by the ListBox, which owns its own
+    bounded scroll region. Wrapping it in a ScrollViewer would hand it infinite height, which
+    DEFEATS ITS VIRTUALIZATION and realizes all 184 rows: the exact cost this editor exists to
+    avoid. So the rule is "nothing is unreachable", not "every view has a ScrollViewer", and the
+    ListBox's MaxHeight below is what discharges it.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:kb="using:Bennewitz.Ninja.OpenCode.Avalonia.Keybinds"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Keybinds.OpenCodeKeybindEditorView"
+             x:DataType="kb:OpenCodeKeybindEditorViewModel">
+
+    <Grid Margin="8" RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- ── The held-value arm: the whole key was present and unreadable ── -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding IsUnrecognised}"
+                BorderBrush="{DynamicResource LE.BoolUnset}"
+                BorderThickness="1"
+                CornerRadius="3"
+                Padding="8"
+                Margin="0,0,0,8">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Static loc:Strings.KeybindUnrecognisedBanner}"
+                           TextWrapping="Wrap" />
+                <TextBox Text="{Binding UnrecognisedText}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas,Menlo,monospace"
+                         MinHeight="60"
+                         MaxHeight="200"
+                         AutomationProperties.Name="{x:Static loc:Strings.KeybindHeldValueAutoName}" />
+                <Button Content="{x:Static loc:Strings.KeybindReplaceValue}"
+                        Command="{Binding ReplaceUnrecognisedCommand}"
+                        HorizontalAlignment="Left"
+                        ToolTip.Tip="{x:Static loc:Strings.KeybindReplaceValueTip}"
+                        AutomationProperties.Name="{x:Static loc:Strings.KeybindReplaceValue}" />
+            </StackPanel>
+        </Border>
+
+        <!-- ── Search, group, and the only-set filter ── -->
+        <StackPanel Grid.Row="1"
+                    IsVisible="{Binding !IsUnrecognised}"
+                    Spacing="6"
+                    Margin="0,0,0,6">
+
+            <TextBlock Text="{x:Static loc:Strings.KeybindHint}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+            <!--
+                Search is the primary control, not a convenience: nobody scrolls 184 rows. It matches
+                the action name, the schema's description AND the current binding's summary — the last
+                is what answers "what is ctrl+k already bound to?".
+            -->
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBox Text="{Binding FilterText}"
+                         Width="240"
+                         PlaceholderText="{x:Static loc:Strings.KeybindFilterPlaceholder}"
+                         AutomationProperties.Name="{x:Static loc:Strings.KeybindFilterAutoName}" />
+                <ComboBox ItemsSource="{Binding Groups}"
+                          SelectedItem="{Binding SelectedGroup}"
+                          MinWidth="150"
+                          AutomationProperties.Name="{x:Static loc:Strings.KeybindGroupAutoName}" />
+                <CheckBox IsChecked="{Binding OnlyShowSet}"
+                          Content="{x:Static loc:Strings.KeybindOnlySet}"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="{x:Static loc:Strings.KeybindOnlySet}" />
+                <Button Content="{x:Static loc:Strings.KeybindClearFilter}"
+                        Command="{Binding ClearFilterCommand}"
+                        AutomationProperties.Name="{x:Static loc:Strings.KeybindClearFilter}" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ── Banners: what is set, what the schema rejects, what clashes ── -->
+        <StackPanel Grid.Row="2" IsVisible="{Binding !IsUnrecognised}" Spacing="4" Margin="0,0,0,6">
+
+            <TextBlock Text="{Binding SetCount, StringFormat={x:Static loc:Strings.KeybindSetCountFmt}}"
+                       IsVisible="{Binding HasSet}"
+                       AutomationProperties.Name="{x:Static loc:Strings.KeybindSetCountAutoName}" />
+
+            <!--
+                ⚠ A clash means two actions name the same key. It says nothing about which one wins:
+                the schema states no precedence, and inventing one would be the same overreach as
+                claiming plugin array order is load order.
+            -->
+            <Border IsVisible="{Binding HasConflicts}"
+                    BorderBrush="{DynamicResource LE.DangerBorder}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="6">
+                <TextBlock Text="{Binding ConflictCount, StringFormat={x:Static loc:Strings.KeybindConflictBannerFmt}}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource LE.DangerText}"
+                           AutomationProperties.Name="{x:Static loc:Strings.KeybindConflictAutoName}" />
+            </Border>
+
+            <Border IsVisible="{Binding HasIncomplete}"
+                    BorderBrush="{DynamicResource LE.DangerBorder}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="6">
+                <TextBlock Text="{Binding IncompleteCount, StringFormat={x:Static loc:Strings.KeybindIncompleteBannerFmt}}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource LE.DangerText}"
+                           AutomationProperties.Name="{x:Static loc:Strings.KeybindIncompleteAutoName}" />
+            </Border>
+
+            <TextBlock Text="{Binding UnknownCount, StringFormat={x:Static loc:Strings.KeybindUnknownBannerFmt}}"
+                       IsVisible="{Binding HasUnknown}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource LE.BoolUnset}"
+                       AutomationProperties.Name="{x:Static loc:Strings.KeybindUnknownAutoName}" />
+
+            <TextBlock Text="{Binding HiddenCount, StringFormat={x:Static loc:Strings.KeybindHiddenFmt}}"
+                       IsVisible="{Binding HasHidden}"
+                       Foreground="{DynamicResource LE.BoolUnset}"
+                       AutomationProperties.Name="{x:Static loc:Strings.KeybindHiddenAutoName}" />
+        </StackPanel>
+
+        <!--
+            ⚠⚠ A ListBox, not an ItemsControl, and with a MaxHeight — both load-bearing. A ListBox
+            virtualizes by default; an ItemsControl does not, and 184 realized rows is what Spike S6
+            warned about. The MaxHeight is what gives the virtualizing panel a viewport to measure
+            against: without a bound it sizes to content, realizes everything, and the virtualization
+            is decorative. Selection is off because a row is a form, not a choice.
+        -->
+        <ListBox Grid.Row="3"
+                 IsVisible="{Binding !IsUnrecognised}"
+                 ItemsSource="{Binding FilteredActions}"
+                 SelectionMode="Single"
+                 MaxHeight="520"
+                 AutomationProperties.Name="{x:Static loc:Strings.KeybindListAutoName}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="kb:OpenCodeKeybindActionViewModel">
+                    <StackPanel Spacing="4" Margin="0,2">
+
+                        <!-- The collapsed line: what this action is, and what it is bound to. -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Action}"
+                                       FontFamily="Consolas,Menlo,monospace"
+                                       FontWeight="SemiBold"
+                                       Width="230"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding Label}"
+                                       VerticalAlignment="Center" />
+
+                            <ComboBox ItemsSource="{x:Static kb:OpenCodeKeybindActionViewModel.ModeOptions}"
+                                      SelectedItem="{Binding SelectedMode}"
+                                      MinWidth="140"
+                                      IsEnabled="{Binding !IsUnrecognised}"
+                                      AutomationProperties.Name="{Binding Action, StringFormat={x:Static loc:Strings.KeybindModeAutoNameFmt}}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="kb:OpenCodeKeybindModeOption">
+                                        <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Description}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <TextBlock Text="{Binding Summary}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="260"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+
+                            <TextBlock Text="{x:Static loc:Strings.KeybindUnknownMarker}"
+                                       IsVisible="{Binding !IsKnown}"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="{x:Static loc:Strings.KeybindUnknownTip}"
+                                       Foreground="{DynamicResource LE.BoolUnset}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding Label}"
+                                   IsVisible="{Binding IsSet}"
+                                   TextWrapping="Wrap"
+                                   Margin="8,0,0,0"
+                                   Foreground="{DynamicResource LE.BoolUnset}" />
+
+                        <!-- The clash notice, per row, naming the other actions. -->
+                        <TextBlock Text="{Binding ConflictWith, StringFormat={x:Static loc:Strings.KeybindConflictRowFmt}}"
+                                   IsVisible="{Binding HasConflict}"
+                                   TextWrapping="Wrap"
+                                   Margin="8,0,0,0"
+                                   Foreground="{DynamicResource LE.DangerText}"
+                                   AutomationProperties.Name="{Binding Action, StringFormat={x:Static loc:Strings.KeybindConflictRowAutoNameFmt}}" />
+
+                        <!-- The held-value arm for one action. -->
+                        <StackPanel IsVisible="{Binding IsUnrecognised}"
+                                    Margin="8,0,0,0"
+                                    Spacing="4">
+                            <TextBlock Text="{x:Static loc:Strings.KeybindActionHeldBanner}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource LE.DangerText}" />
+                            <TextBox Text="{Binding UnrecognisedText}"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     FontFamily="Consolas,Menlo,monospace"
+                                     MaxHeight="120"
+                                     AutomationProperties.Name="{Binding Action, StringFormat={x:Static loc:Strings.KeybindActionHeldAutoNameFmt}}" />
+                            <Button Content="{x:Static loc:Strings.KeybindReplaceValue}"
+                                    Command="{Binding ReplaceUnrecognisedCommand}"
+                                    HorizontalAlignment="Left"
+                                    AutomationProperties.Name="{x:Static loc:Strings.KeybindReplaceValue}" />
+                        </StackPanel>
+
+                        <!-- ── The bindings, when a bound mode applies ── -->
+                        <StackPanel IsVisible="{Binding ShowsBindings}" Margin="8,0,0,0" Spacing="4">
+
+                            <ItemsControl ItemsSource="{Binding Bindings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="kb:OpenCodeKeyBindingViewModel">
+                                        <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                                                BorderThickness="0,0,0,1"
+                                                Padding="0,3">
+                                            <StackPanel Spacing="3">
+
+                                                <!-- The held arm for one binding of a sequence. -->
+                                                <StackPanel IsVisible="{Binding IsOpaque}" Spacing="3">
+                                                    <TextBlock Text="{x:Static loc:Strings.KeybindBindingHeldBanner}"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource LE.DangerText}" />
+                                                    <TextBox Text="{Binding RawText}"
+                                                             IsReadOnly="True"
+                                                             AcceptsReturn="True"
+                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             MaxHeight="100"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.KeybindBindingHeldAutoName}" />
+                                                    <Button Content="{x:Static loc:Strings.KeybindReplaceValue}"
+                                                            Command="{Binding ReplaceOpaqueCommand}"
+                                                            HorizontalAlignment="Left"
+                                                            AutomationProperties.Name="{x:Static loc:Strings.KeybindReplaceValue}" />
+                                                </StackPanel>
+
+                                                <StackPanel IsVisible="{Binding IsEditable}" Spacing="3">
+
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <ComboBox ItemsSource="{x:Static kb:OpenCodeKeyBindingViewModel.FormOptions}"
+                                                                  SelectedItem="{Binding SelectedForm}"
+                                                                  MinWidth="130"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.KeybindFormAutoName}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate x:DataType="kb:OpenCodeBindingFormOption">
+                                                                    <TextBlock Text="{Binding Label}"
+                                                                               ToolTip.Tip="{Binding Description}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+
+                                                        <!--
+                                                            Capture writes the OBJECT form, because the
+                                                            chord arm declares no pattern and this
+                                                            editor will not invent a grammar.
+                                                        -->
+                                                        <Button Content="{x:Static loc:Strings.KeybindCapture}"
+                                                                Command="{Binding StartCaptureCommand}"
+                                                                IsVisible="{Binding !IsCapturing}"
+                                                                ToolTip.Tip="{x:Static loc:Strings.KeybindCaptureTip}"
+                                                                AutomationProperties.Name="{x:Static loc:Strings.KeybindCapture}" />
+                                                        <Button Content="{x:Static loc:Strings.KeybindCaptureCancel}"
+                                                                Command="{Binding CancelCaptureCommand}"
+                                                                IsVisible="{Binding IsCapturing}"
+                                                                AutomationProperties.Name="{x:Static loc:Strings.KeybindCaptureCancel}" />
+                                                        <TextBlock Text="{x:Static loc:Strings.KeybindCapturing}"
+                                                                   IsVisible="{Binding IsCapturing}"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource LE.DangerText}" />
+
+                                                        <Button Content="{x:Static loc:Strings.KeybindMoveUp}"
+                                                                Command="{Binding MoveUpCommand}"
+                                                                IsVisible="{Binding IsInSequence}"
+                                                                AutomationProperties.Name="{x:Static loc:Strings.KeybindMoveUp}" />
+                                                        <Button Content="{x:Static loc:Strings.KeybindMoveDown}"
+                                                                Command="{Binding MoveDownCommand}"
+                                                                IsVisible="{Binding IsInSequence}"
+                                                                AutomationProperties.Name="{x:Static loc:Strings.KeybindMoveDown}" />
+                                                        <Button Content="{x:Static loc:Strings.KeybindRemove}"
+                                                                Command="{Binding RemoveCommand}"
+                                                                IsVisible="{Binding IsInSequence}"
+                                                                AutomationProperties.Name="{x:Static loc:Strings.KeybindRemove}" />
+                                                    </StackPanel>
+
+                                                    <!-- The string key: held verbatim, never parsed. -->
+                                                    <TextBox Text="{Binding Chord}"
+                                                             IsVisible="{Binding ShowsChordField}"
+                                                             Width="260"
+                                                             PlaceholderText="{x:Static loc:Strings.KeybindChordPlaceholder}"
+                                                             AutomationProperties.Name="{x:Static loc:Strings.KeybindChordAutoName}" />
+
+                                                    <!-- The structured key: name plus five three-state modifiers. -->
+                                                    <StackPanel IsVisible="{Binding ShowsKeyFields}" Spacing="3">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <TextBlock Text="{x:Static loc:Strings.KeybindKeyName}"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBox Text="{Binding KeyName}"
+                                                                     Width="150"
+                                                                     PlaceholderText="{x:Static loc:Strings.KeybindKeyNamePlaceholder}"
+                                                                     ToolTip.Tip="{x:Static loc:Strings.KeybindKeyNameTip}"
+                                                                     AutomationProperties.Name="{x:Static loc:Strings.KeybindKeyNameAutoName}" />
+                                                        </StackPanel>
+                                                        <!--
+                                                            ⚠ Three-state, all five. A modifier stated
+                                                            as false and one left out are different
+                                                            files, so a two-state box would delete an
+                                                            explicit "ctrl": false on the first save.
+                                                        -->
+                                                        <WrapPanel>
+                                                            <CheckBox IsChecked="{Binding Ctrl}" IsThreeState="True"
+                                                                      Content="{x:Static loc:Strings.KeybindCtrl}"
+                                                                      Margin="0,0,10,0"
+                                                                      AutomationProperties.Name="{x:Static loc:Strings.KeybindCtrl}" />
+                                                            <CheckBox IsChecked="{Binding Shift}" IsThreeState="True"
+                                                                      Content="{x:Static loc:Strings.KeybindShift}"
+                                                                      Margin="0,0,10,0"
+                                                                      AutomationProperties.Name="{x:Static loc:Strings.KeybindShift}" />
+                                                            <CheckBox IsChecked="{Binding Meta}" IsThreeState="True"
+                                                                      Content="{x:Static loc:Strings.KeybindMeta}"
+                                                                      Margin="0,0,10,0"
+                                                                      ToolTip.Tip="{x:Static loc:Strings.KeybindMetaTip}"
+                                                                      AutomationProperties.Name="{x:Static loc:Strings.KeybindMeta}" />
+                                                            <CheckBox IsChecked="{Binding Super}" IsThreeState="True"
+                                                                      Content="{x:Static loc:Strings.KeybindSuper}"
+                                                                      Margin="0,0,10,0"
+                                                                      ToolTip.Tip="{x:Static loc:Strings.KeybindSuperTip}"
+                                                                      AutomationProperties.Name="{x:Static loc:Strings.KeybindSuper}" />
+                                                            <CheckBox IsChecked="{Binding Hyper}" IsThreeState="True"
+                                                                      Content="{x:Static loc:Strings.KeybindHyper}"
+                                                                      ToolTip.Tip="{x:Static loc:Strings.KeybindHyperTip}"
+                                                                      AutomationProperties.Name="{x:Static loc:Strings.KeybindHyper}" />
+                                                        </WrapPanel>
+                                                    </StackPanel>
+
+                                                    <!-- The event wrapper's own three fields. -->
+                                                    <StackPanel IsVisible="{Binding ShowsEventFields}"
+                                                                Orientation="Horizontal"
+                                                                Spacing="8">
+                                                        <TextBlock Text="{x:Static loc:Strings.KeybindEvent}"
+                                                                   VerticalAlignment="Center" />
+                                                        <ComboBox ItemsSource="{x:Static kb:OpenCodeKeyBindingViewModel.EventOptions}"
+                                                                  SelectedItem="{Binding SelectedEvent}"
+                                                                  MinWidth="110"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.KeybindEventAutoName}" />
+                                                        <CheckBox IsChecked="{Binding PreventDefault}" IsThreeState="True"
+                                                                  Content="{x:Static loc:Strings.KeybindPreventDefault}"
+                                                                  VerticalAlignment="Center"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.KeybindPreventDefault}" />
+                                                        <CheckBox IsChecked="{Binding Fallthrough}" IsThreeState="True"
+                                                                  Content="{x:Static loc:Strings.KeybindFallthrough}"
+                                                                  VerticalAlignment="Center"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.KeybindFallthrough}" />
+                                                        <CheckBox IsChecked="{Binding UsesStructuredKey}"
+                                                                  Content="{x:Static loc:Strings.KeybindStructuredKey}"
+                                                                  VerticalAlignment="Center"
+                                                                  ToolTip.Tip="{x:Static loc:Strings.KeybindStructuredKeyTip}"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.KeybindStructuredKey}" />
+                                                    </StackPanel>
+
+                                                    <TextBlock Text="{x:Static loc:Strings.KeybindBindingIncomplete}"
+                                                               IsVisible="{Binding IsIncomplete}"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource LE.DangerText}"
+                                                               AutomationProperties.Name="{x:Static loc:Strings.KeybindBindingIncomplete}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Button Content="{x:Static loc:Strings.KeybindAddBinding}"
+                                    Command="{Binding AddBindingCommand}"
+                                    IsVisible="{Binding IsSequence}"
+                                    HorizontalAlignment="Left"
+                                    AutomationProperties.Name="{x:Static loc:Strings.KeybindAddBinding}" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>
