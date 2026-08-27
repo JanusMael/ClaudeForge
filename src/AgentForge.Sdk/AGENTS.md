@@ -26,6 +26,8 @@ thread-safe interface. It has:
 | Schema content tree (`SchemaNode` objects)      | cached in `_cachedSchemaNodes` after `OpenAsync`; exposed to subclasses as `protected CachedSchemaNodes` |
 | Text search over schema content                 | `SearchSchema` in `AgentConfigClientCore.cs`                        |
 | Typed accessors that generalize (MCP, env)      | `McpServers/`, `Env/`                                                |
+| Artifact discovery (memory, agents, skills, commands, hooks, rules, plans, config files) | `src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs` and `src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs` compose sources from `AgentForge.Artifacts`; `UserMemoryService` / `EditableMemoryService` resolve them and stat what comes back. ⚠ **Add a location by adding a SOURCE, never by adding a walk** — a second walk is how the two pages come to disagree about where a file lives |
+| Where those files are (the injected root) | `src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs`, rooted at a **user profile** — `~/.claude.json` and the cross-tool probes are siblings of `.claude/`, not children. ⛔ **Never read `PlatformPaths` from a service here**: `InjectedPathSeamTests` allows exactly four (the provider's own `UserProfile`, plus the three project-scope functions, which take their root as an argument). A reintroduced static read compiles, passes every test, and silently ignores the paths it was handed. ⛔ **`ClaudeArtifactPaths.Default` is a property, not a cached field** — the profile is `AsyncLocal`-backed and this test project runs method-level parallel, so caching it leaks one test's sandbox into every other and reads as flakiness |
 | `Changed` event                                 | fires after every mutation / save / reload                           |
 | Backup / restore                                | `Backup/BackupClient.cs` + Core `BackupEngine`                       |
 
@@ -41,7 +43,7 @@ phase rather than left undocumented:
 
 | Residue | Why it is still here |
 |---|---|
-| `Memory/` — `UserMemoryCategory`, `FootprintCategory` | Closed enums naming Claude's artifact kinds and footprint dirs. Phase 10 converts them. |
+| `Memory/` — `UserMemoryCategory`, `EditableMemoryScope`, `FootprintCategory` | Closed enums naming Claude's artifact kinds, editing scopes and footprint dirs. ⚠ **Phase 10b did NOT convert the first two, deliberately** — it moved *discovery* behind `IArtifactSource` instead, and the enums survive as this product's row-shape tags. `UserMemoryCategory` conflates kind and scope (`PrimaryMemory` / `ProjectMemory` / `CrossToolMemory` are all `ArtifactKind.Memory`), so it cannot be recovered from an entry and is carried on the source that produces it; `EditableMemoryScope` survives because a plugin's identity now rides on `ArtifactScope.DisplayName` rather than needing an enum value per plugin. Converting them would rewrite tests that are the faithfulness proof. `FootprintCategory` is untouched. ⭐ **Phase 10c did inject the ROOT**, so all three services now read an injected `ClaudeArtifactPaths` rather than a process-global static — the enums are row-shape tags, not baked-in locations. |
 | `Env/EnvVarKey` | Convenience properties for `CLAUDE_CODE_*` keys. The generic dictionary surface around them is neutral. |
 
 ## §2 What the SDK does NOT have

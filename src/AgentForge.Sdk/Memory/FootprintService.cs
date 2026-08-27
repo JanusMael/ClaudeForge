@@ -1,6 +1,5 @@
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
-using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
@@ -27,11 +26,32 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 public sealed class FootprintService
 {
     private readonly IBackupFileSystem _fs;
+    private readonly ClaudeArtifactPaths? _paths;
 
-    public FootprintService(IBackupFileSystem? fs = null)
+    /// <param name="fs">File-system seam; defaults to the real one.</param>
+    /// <param name="paths">
+    /// Where this profile's Claude files live. Defaults to
+    /// <see cref="ClaudeArtifactPaths.Default"/>, resolved per use rather than captured here.
+    /// </param>
+    public FootprintService(IBackupFileSystem? fs = null, ClaudeArtifactPaths? paths = null)
     {
         _fs = fs ?? RealBackupFileSystem.Instance;
+        _paths = paths;
     }
+
+    /// <summary>
+    /// The paths this instance reads, resolving the default lazily.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Resolved per use, never captured in the constructor.</b>
+    /// <see cref="ClaudeArtifactPaths.Default"/> reads
+    /// <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override — and
+    /// this service is cached for the lifetime of an <c>AgentConfigClientCore</c>. Capturing the
+    /// default at construction would freeze whichever sandbox was current when the client first
+    /// touched it, so a test that sets its override after the client exists would silently read
+    /// another test's directory. That reads as flakiness, not as a stale cache.
+    /// </remarks>
+    private ClaudeArtifactPaths Paths => _paths ?? ClaudeArtifactPaths.Default;
 
     /// <summary>
     /// Compute stats for every <see cref="FootprintCategory"/> in one pass.
@@ -99,7 +119,7 @@ public sealed class FootprintService
         return await Task.Run(() =>
         {
             List<ProjectTranscriptStats> rows = new();
-            string dir = Path.Combine(PlatformPaths.ClaudeHome, "projects");
+            string dir = Path.Combine(Paths.ClaudeHome, "projects");
             if (!_fs.DirectoryExists(dir))
             {
                 return rows;
@@ -222,7 +242,7 @@ public sealed class FootprintService
                 nameof(mangledName));
         }
 
-        string projectDir = Path.Combine(PlatformPaths.ClaudeHome, "projects", mangledName);
+        string projectDir = Path.Combine(Paths.ClaudeHome, "projects", mangledName);
         if (!_fs.DirectoryExists(projectDir))
         {
             return;
@@ -291,7 +311,7 @@ public sealed class FootprintService
 
     private FootprintCategoryStats ComputeStatsFor(FootprintCategory category, CancellationToken ct)
     {
-        string path = ResolveCategoryPath(category);
+        string path = ResolveCategoryPath(Paths, category);
         int fileCount = 0;
         long totalBytes = 0;
 
@@ -329,7 +349,7 @@ public sealed class FootprintService
     /// </summary>
     private IEnumerable<string> EnumerateCategoryFiles(FootprintCategory category)
     {
-        string home = PlatformPaths.ClaudeHome;
+        string home = Paths.ClaudeHome;
 
         switch (category)
         {
@@ -407,7 +427,23 @@ public sealed class FootprintService
     /// </summary>
     public static string ResolveCategoryPath(FootprintCategory category)
     {
-        string home = PlatformPaths.ClaudeHome;
+        return ResolveCategoryPath(ClaudeArtifactPaths.Default, category);
+    }
+
+    /// <summary>
+    /// The same resolution against an explicitly supplied set of paths.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The category sub-paths (<c>projects</c>, <c>todos</c>, <c>history.jsonl</c>, …) stay here
+    /// rather than moving onto <see cref="ClaudeArtifactPaths"/>: they are what a
+    /// <see cref="FootprintCategory"/> MEANS, and a path provider that enumerated them would have
+    /// to be widened every time a category is added.
+    /// </remarks>
+    public static string ResolveCategoryPath(ClaudeArtifactPaths paths, FootprintCategory category)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+
+        string home = paths.ClaudeHome;
         return category switch
         {
             FootprintCategory.SessionTranscripts => Path.Combine(home, "projects"),

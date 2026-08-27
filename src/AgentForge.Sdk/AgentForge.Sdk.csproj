@@ -21,6 +21,11 @@
              libraries need them without taking a dependency on a Claude-specific SDK.
              SdkDialogs — the Claude-flavoured dialog factories — stays here. -->
         <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
+        <!-- Artifact resolution: where agents, commands, skills, rules and memory files come from.
+             The memory inventory's directory walks live there now as IArtifactSource
+             implementations, so the walk that serves Claude is the same one a second product
+             composes differently. Framework-only and product-free — the edge points the safe way. -->
+        <ProjectReference Include="..\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

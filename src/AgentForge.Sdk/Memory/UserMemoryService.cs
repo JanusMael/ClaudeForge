@@ -1,14 +1,13 @@
 using System.Security;
-using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Artifacts;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
-/// Tier 1 user-memory file inventory. Walks the per-category directories
-/// under <see cref="PlatformPaths.ClaudeHome"/> (and the optional project
-/// root) and produces an unsorted list of <see cref="UserMemoryFile"/>
-/// entries. Tolerant of missing directories, unreadable files, and broken
-/// symlinks — never throws on enumeration.
+/// Tier 1 user-memory file inventory. Resolves <see cref="ClaudeArtifactSources"/> — Claude's fixed
+/// locations, expressed as an ordered <see cref="IArtifactSource"/> list — and stats what they
+/// declare into an unsorted list of <see cref="UserMemoryFile"/> entries. Tolerant of missing
+/// directories, unreadable files, and broken symlinks — never throws on enumeration.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,6 +16,14 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// — its memory lives in IndexedDB). The <c>ClaudeDesktopClient</c>
 /// implementation of <see cref="IAgentConfigClient.SnapshotUserMemoryFiles"/>
 /// returns an empty list.
+/// </para>
+/// <para>
+/// ⭐ <b>Discovery moved out; stat-and-shape stayed.</b> <see cref="ArtifactRef"/> carries a
+/// location and nothing else — no size, no timestamp, no subtitle — because enumeration has to stay
+/// cheap enough for a profile with hundreds of skill files. So this service still owns everything
+/// below: it stats each declared location and reads a bounded head for the subtitle. That division
+/// is what lets the same source list serve a second product without dragging Claude's row shape
+/// along with it.
 /// </para>
 /// <para>
 /// File reads are lazy: <see cref="ReadAsync"/> opens a single file on
@@ -35,106 +42,76 @@ public static class UserMemoryService
     /// </summary>
     public static IReadOnlyList<UserMemoryFile> SnapshotFiles(string? projectRoot = null)
     {
-        string home = PlatformPaths.ClaudeHome;
+        return SnapshotFiles(ClaudeArtifactPaths.Default, projectRoot);
+    }
+
+    /// <summary>
+    /// Enumerate every Tier 1 file for an explicitly supplied set of paths.
+    /// </summary>
+    /// <param name="paths">Where this profile's Claude files live.</param>
+    /// <param name="projectRoot">
+    /// The open project's root, or <see langword="null"/> when none is open.
+    /// </param>
+    /// <remarks>
+    /// ⭐ <b>This is the real entry point; the parameterless overload is a thin wrapper over
+    /// <see cref="ClaudeArtifactPaths.Default"/>.</b> Keeping the static wrapper is deliberate:
+    /// converting the whole surface to instances would rewrite the 25 existing tests that are this
+    /// extraction's faithfulness proof, and a proof you had to edit proves nothing. Same call the
+    /// scope model made in Phase 3.
+    /// </remarks>
+    public static IReadOnlyList<UserMemoryFile> SnapshotFiles(
+        ClaudeArtifactPaths paths, string? projectRoot)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+
+        IReadOnlyList<CategorisedArtifactSource> sources =
+            ClaudeArtifactSources.ForInventory(paths, projectRoot);
+
+        // SourceId → category, built from the same list that is about to be resolved, so the two
+        // cannot drift. An ArtifactRef carries no category by design — see the remarks on
+        // CategorisedArtifactSource for why it cannot be recovered from the entry alone.
+        Dictionary<string, UserMemoryCategory> categories =
+            sources.ToDictionary(s => s.Source.Id, s => s.Category, StringComparer.Ordinal);
+
         List<UserMemoryFile> results = [];
-
-        // PrimaryMemory — CLAUDE.md or AGENTS.md (or both, if both exist).
-        AddIfExists(results, Path.Combine(home, "CLAUDE.md"), UserMemoryCategory.PrimaryMemory);
-        AddIfExists(results, Path.Combine(home, "AGENTS.md"), UserMemoryCategory.PrimaryMemory);
-
-        // ProjectMemory — same pair, scoped to the project root.
-        if (!string.IsNullOrWhiteSpace(projectRoot))
+        foreach (ResolvedArtifact artifact in ArtifactResolver.Resolve(sources.Select(s => s.Source)))
         {
-            AddIfExists(results, Path.Combine(projectRoot, "CLAUDE.md"), UserMemoryCategory.ProjectMemory);
-            AddIfExists(results, Path.Combine(projectRoot, "AGENTS.md"), UserMemoryCategory.ProjectMemory);
+            // ⚠ EVERY entry, not just the winner. Resolution groups two declarations of one name
+            // into a chain — the user's CLAUDE.md and the project's, the user's settings.json and
+            // the project's — and this inventory lists both, because it is a browsable list of
+            // files on disk rather than a statement about which one wins.
+            foreach (ArtifactRef entry in artifact.Entries)
+            {
+                UserMemoryCategory category = categories[entry.SourceId];
+                UserMemoryFile? file = TryBuildEntry(entry.Location, category);
+                if (file is null)
+                {
+                    continue;
+                }
+
+                results.Add(category == UserMemoryCategory.Configuration
+                    ? file with { DisplayName = ConfigurationDisplayName(entry) }
+                    : file);
+            }
         }
-
-        // Per-category directory walks. Each helper handles the missing-
-        // directory case so we never throw during enumeration.
-        EnumerateDirectory(results, Path.Combine(home, "agents"), "*.md", UserMemoryCategory.Subagent,
-            recursive: false);
-        EnumerateDirectory(results, Path.Combine(home, "commands"), "*.md", UserMemoryCategory.SlashCommand,
-            recursive: false);
-        EnumerateDirectory(results, Path.Combine(home, "hooks"), "*", UserMemoryCategory.Hook, recursive: false);
-        EnumerateDirectory(results, Path.Combine(home, "plans"), "*.md", UserMemoryCategory.Plan, recursive: false);
-        EnumerateDirectory(results, Path.Combine(home, "rules"), "*.md", UserMemoryCategory.Rule, recursive: true);
-
-        // Skills — one SKILL.md per subdirectory.
-        EnumerateSkills(results, Path.Combine(home, "skills"));
-
-        // Cross-tool sibling memory files. We probe a small known set rather
-        // than walking siblings open-endedly.
-        AddCrossToolMemory(results, home);
-
-        // The JSON config files themselves, so every file Claude reads is
-        // discoverable (and openable) from one inventory.
-        AddConfiguration(results, home, projectRoot);
 
         return results;
     }
 
     /// <summary>
-    /// Probe the known JSON configuration files — user scope, then project scope.
-    /// Display names keep their extension (<c>settings.json</c>, not <c>settings</c>) and
-    /// project-scope entries are suffixed, so the two <c>settings.json</c> files are
+    /// Name a configuration row: the file name as declared (extension intact, unlike
+    /// <see cref="ResolveDisplayName"/>, which would render every entry here as a bare
+    /// "settings" / "mcp"), suffixed at project scope so the two <c>settings.json</c> files are
     /// distinguishable inside one group.
-    /// <para>
-    /// <see cref="PlatformPaths.CredentialsPath"/> is deliberately NOT probed — it holds live
-    /// auth tokens, and a one-click "open" for it in a browsable list is a needless disclosure
-    /// risk (the backup pipeline gates it behind an explicit opt-in for the same reason).
-    /// </para>
     /// </summary>
-    private static void AddConfiguration(List<UserMemoryFile> results, string home, string? projectRoot)
+    /// <remarks>
+    /// ⭐ The suffix is now DERIVED from the entry's scope rather than hand-written at each of the
+    /// three project call sites, which is what makes it impossible for a fourth project-scope
+    /// config file to be added without it.
+    /// </remarks>
+    private static string ConfigurationDisplayName(ArtifactRef entry)
     {
-        // User scope.
-        AddConfigIfExists(results, PlatformPaths.UserSettingsPath, "settings.json");
-        AddConfigIfExists(results, PlatformPaths.UserMcpPath, "mcp.json");
-        AddConfigIfExists(results, PlatformPaths.ManagedSettingsPath, "managed-settings.json");
-        AddConfigIfExists(results, PlatformPaths.ClaudeJsonPath, ".claude.json");
-
-        // Managed-settings drop-ins: an admin-populated directory of *.json fragments.
-        string dropIn = PlatformPaths.ManagedSettingsDropInDir;
-        if (Directory.Exists(dropIn))
-        {
-            IEnumerable<string> fragments;
-            try
-            {
-                fragments = Directory.EnumerateFiles(dropIn, "*.json", SearchOption.TopDirectoryOnly);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                fragments = [];
-            }
-
-            foreach (string fragment in fragments)
-            {
-                AddConfigIfExists(results, fragment, $"managed-settings.d/{Path.GetFileName(fragment)}");
-            }
-        }
-
-        // Project scope — suffixed so they don't read as duplicates of the user-scope pair.
-        if (string.IsNullOrWhiteSpace(projectRoot))
-        {
-            return;
-        }
-
-        AddConfigIfExists(results, PlatformPaths.ProjectSettingsPath(projectRoot), "settings.json (project)");
-        AddConfigIfExists(results, PlatformPaths.LocalSettingsPath(projectRoot), "settings.local.json (project)");
-        AddConfigIfExists(results, PlatformPaths.ProjectMcpPath(projectRoot), "mcp.json (project)");
-    }
-
-    /// <summary>
-    /// Add one configuration file under an explicit <paramref name="displayName"/>, bypassing
-    /// <see cref="ResolveDisplayName"/>'s extension-stripping (which would render every entry
-    /// here as a bare "settings" / "mcp").
-    /// </summary>
-    private static void AddConfigIfExists(List<UserMemoryFile> results, string path, string displayName)
-    {
-        UserMemoryFile? entry = TryBuildEntry(path, UserMemoryCategory.Configuration);
-        if (entry is not null)
-        {
-            results.Add(entry with { DisplayName = displayName });
-        }
+        return entry.Scope == ClaudeScopes.Project ? $"{entry.Name} (project)" : entry.Name;
     }
 
     /// <summary>
@@ -161,129 +138,6 @@ public static class UserMemoryService
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
-
-    private static void AddIfExists(List<UserMemoryFile> results, string path, UserMemoryCategory category)
-    {
-        if (!File.Exists(path))
-        {
-            return;
-        }
-
-        UserMemoryFile? entry = TryBuildEntry(path, category);
-        if (entry is not null)
-        {
-            results.Add(entry);
-        }
-    }
-
-    private static void EnumerateDirectory(
-        List<UserMemoryFile> results,
-        string dir,
-        string searchPattern,
-        UserMemoryCategory category,
-        bool recursive)
-    {
-        if (!Directory.Exists(dir))
-        {
-            return;
-        }
-
-        IEnumerable<string> files;
-        try
-        {
-            files = Directory.EnumerateFiles(
-                dir,
-                searchPattern,
-                recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (string file in files)
-        {
-            // Skip *.bak sidecars left behind by RestoreEngine or by
-            // user-side editors (vim, `sed -i.bak`).  These are not
-            // user-authored memory entries — surfacing them on the
-            // Memory page would create one phantom Tier 1 row per past
-            // restore × memory file, exactly the same compounding noise
-            // the backup pipeline already excludes (see
-            // `ZipArchiveWriter.EnumerateRecursive` and
-            // `BackupEngine.ShouldSkipHomeFile`).
-            if (file.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            UserMemoryFile? entry = TryBuildEntry(file, category);
-            if (entry is not null)
-            {
-                results.Add(entry);
-            }
-        }
-    }
-
-    private static void EnumerateSkills(List<UserMemoryFile> results, string skillsDir)
-    {
-        if (!Directory.Exists(skillsDir))
-        {
-            return;
-        }
-
-        IEnumerable<string> dirs;
-        try
-        {
-            dirs = Directory.EnumerateDirectories(skillsDir);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return;
-        }
-
-        foreach (string dir in dirs)
-        {
-            string skillMd = Path.Combine(dir, "SKILL.md");
-            if (File.Exists(skillMd))
-            {
-                UserMemoryFile? entry = TryBuildEntry(skillMd, UserMemoryCategory.Skill);
-                if (entry is not null)
-                {
-                    results.Add(entry);
-                }
-            }
-        }
-    }
-
-    private static void AddCrossToolMemory(List<UserMemoryFile> results, string home)
-    {
-        // Probe known sibling agents' memory files. We look INSIDE the user
-        // profile root (not inside ~/.claude/) because the sibling tools'
-        // homes live there.
-        string? profile = Directory.GetParent(home)?.FullName;
-        if (profile is null)
-        {
-            return;
-        }
-
-        string[] probes =
-        [
-            Path.Combine(profile, ".codex", "AGENTS.md"),
-            Path.Combine(profile, ".gemini", "GEMINI.md"),
-        ];
-        foreach (string probe in probes)
-        {
-            AddIfExists(results, probe, UserMemoryCategory.CrossToolMemory);
-        }
-
-        // .opencode tends to be a directory of markdown files; walk it.
-        EnumerateDirectory(
-            results,
-            Path.Combine(profile, ".opencode"),
-            "*.md",
-            UserMemoryCategory.CrossToolMemory,
-            recursive: false);
-    }
 
     private static UserMemoryFile? TryBuildEntry(string path, UserMemoryCategory category)
     {
