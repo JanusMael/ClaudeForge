@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Artifacts</RootNamespace>
+        <AssemblyName>AgentForge.Artifacts</AssemblyName>
+        <Description>
+            Artifact resolution: where agents, commands, skills, rules and memory files come
+            from, and which definition of a given name actually applies.
+
+            The model is an ordered list of SOURCES rather than a hardcoded directory walk.
+            That is the whole point: Claude reads a fixed set of locations, while OpenCode
+            traverses upward to the git worktree root, reads three separate skill roots, and
+            accepts the same artifact declared both as a markdown file and as inline JSON. A
+            walk cannot express that; an ordered source list can, and Claude becomes the
+            degenerate case of one.
+
+            Resolution GROUPS AND ORDERS; it does not merge. Per name it returns the whole
+            chain, highest precedence first, mirroring LayeredValue/ScopeEntry so the existing
+            scope-badge UI binds with no new controls. How a chain collapses to one effective
+            artifact is per-kind policy and deliberately lives outside this type — Spike S7
+            measured that OpenCode's inline JSON and markdown DEEP-MERGE with the file winning
+            per field, so a resolver that picked one winner and discarded the rest would be
+            structurally unable to express the truth.
+
+            Framework-only by design: no package references, and no knowledge of any product's
+            paths. A source supplies its own entries; this assembly never touches PlatformPaths.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="AgentForge.Artifacts.Tests"/>
+    </ItemGroup>
+</Project>
