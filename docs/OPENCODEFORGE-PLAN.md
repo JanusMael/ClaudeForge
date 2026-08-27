@@ -26,16 +26,73 @@
 > **Deferred re-checkpoint** section: 11 items must be re-validated against a used install
 > before Phases 10 and 14 ship.
 >
-> ### Implementation status — 2026-08-19
+> ### Implementation status — 2026-08-26
 >
-> Branch **`feat/agentforge-opencodeforge`**, **61 commits** (`origin/main` still
-> `930eb41`). Suite: **2,944 passed · 11 skipped · 0 failed · 0 warnings**; the trim gate
-> publishes clean.
+> Branch **`feat/agentforge-opencodeforge`** @ **`2508878`**, **85 commits ahead of
+> `origin/main`** (`origin/main` still `930eb41`, 0 behind). Suite: **3,672 passed · 11 skipped ·
+> 0 failed · 0 warnings** across 12 test projects; the trim gate publishes clean for **both** apps.
 >
-> ⚠ **Pushed and CI-green through `b0989c6` (58 commits) — the last three are local only:**
-> `e77939a` (docs), `a453063` (Phase 6), and this one. Nothing in them is expected to move
-> CI — two are docs-only and the third is a BCL enum plus two tests — but that is a
-> prediction, not a result. **Do not report the branch as CI-green at HEAD until a run says so.**
+> ⛔ **The working tree is DIRTY — and ALL of Phase 9a-2…9a-11 plus ALL of Phase 10 lives there UNCOMMITTED.**
+> Ten specialised editors, their SDK codecs, their tests and the solution wiring are on disk and
+> green, but not in a commit: commits wait for the maintainer's explicit OK. **Do not read the phase
+> table below as describing committed work.** A per-slice commit-split proposal is held in the
+> session's resume anchor.
+>
+> ✅ **Phase 9a is COMPLETE as of 9a-10 (`keybinds`)** — the largest editor in the plan. Spike S6 is
+> answered by measurement rather than estimate: the view realizes **5 of 184 rows** (11 after
+> scrolling), because a virtualizing `ListBox` with a bounded viewport replaces what would have been
+> 184 raw-JSON text boxes. ⛔ **Its exact-count guard found a real defect that had shipped in this
+> editor**: two notification mechanisms — a direct callback *and* a `PropertyChanged` subscription —
+> ran at both view-model levels, so **one keystroke raised `IsModified` twice and one mode change
+> raised it seven times**, each running a full clash recompute plus a collection reset on the bound
+> list. Fixed to one mechanism; see the `keybinds` row in the Phase 9 table.
+>
+> ✅ **PHASE 10 IS COMPLETE (10a–10c).** 10b landed both Claude surfaces on the artifact engine. The Memory inventory and
+> the Agents & Skills editor resolve an ordered `IArtifactSource` list instead of walking
+> directories, and **their 25 and 15 existing tests pass unmodified** — the faithfulness proof the
+> phase asks for. ⛔ **The second consumer removed two of `IArtifactSource`'s four members**: one
+> walk of the plugin tree yields three kinds from a different plugin scope at every level, so a
+> source cannot be asked for "its" kind or scope. ⭐ Measured along the way: `*.md` never matches
+> `reviewer.md.bak`, so the long-standing `.bak` exclusion only ever protected the `hooks` walk —
+> and the test I first wrote for it was vacuous. **10c injects a path provider** and finds the
+> plan's framing half wrong twice over: the root is the USER PROFILE (`~/.claude.json` and the
+> cross-tool probes sit beside `.claude/`, not inside it), three of the nine members need no
+> injection at all, and this section's own reference counts included **doc comments** — including
+> 10a's claim that an enum file reaches for `CredentialsPath`, which it names only in prose.
+> ⛔ `ClaudeArtifactPaths.Default` must be a property: caching it reddened **40+ tests** because
+> the profile is `AsyncLocal` and the suite runs parallel. See the Phase 10 section.
+>
+> ✅ **Phase 11b is DONE too — the page's read model.** `OpenCodeArtifactSemantics`,
+> `OpenCodeSkillManifest` and `OpenCodeArtifactInventory` turn the source list into grouped, ordered,
+> diagnosed rows. ⛔⛔ **Its central finding: "shadowed" is a per-kind claim.** Skills' losing copies
+> really are never loaded; **agents' and commands' are LIVE and contributing fields**, so a row saying
+> "overridden" there tells the user to delete a file that is in force. See **Phase 11b** below.
+> **11c is the UI.**
+>
+> ✅ **Phase 11a is DONE — the OpenCode artifact source list, the engine's first OpenCode consumer.**
+> `OpenCodeProjectWalk`, `OpenCodeArtifactScopes`, `OpenCodeSkillArtifactSource` and
+> `OpenCodeArtifactSources` in `src/OpenCode.Sdk/Artifacts/`, plus 20 tests, **all 20 canaried**.
+> **No UI yet** and **no change to the shared engine** — see below for why the change I first made
+> there was reverted. ⛔⛔ **Phase 11's source table was measured wrong in five ways, and the
+> precedence error is the dangerous one: for agents and commands the GLOBAL directory outranks the
+> project, the exact opposite of the intuition and of the skills rule.** Everything was re-measured
+> against the installed **v1.17.9** binary — the same version the spikes probed — with
+> `opencode debug config` / `debug skill` against a throwaway worktree. See **Phase 11** below for
+> the corrected table.
+>
+> ✅ **9a-11 (`theme`) closed the phase's editor list with NO new editor at all** — the library's
+> enum editor already is a picker-that-accepts-typing, so the slice is a schema overlay plus a
+> schema wrapper. ⛔ Two plan claims measured wrong: the themes path is only one of three sources
+> (the others are cwd-dependent or plugin-supplied), and the 37-name built-in theme list in the
+> opencode binary belongs to the **web UI**, not the TUI — the TUI has no built-in table, which is
+> why discovery exists. See the `theme` bullet.
+>
+> ⚠ **Pushed and CI-green through `de2525d` — TWO COMMITS ARE LOCAL ONLY:** `bb6218b` (a currency
+> key-order fix) and `2508878` (docs). **CI has seen neither, nor any of the uncommitted work.**
+> **Do not report the branch as CI-green at HEAD until a run says so.**
+>
+> ⚠ **No PR has ever been opened for this branch** — re-verified 2026-08-21 with
+> `gh pr list --state all --head feat/agentforge-opencodeforge`.
 >
 > ⚠ **Pushing is a two-party operation.** The development machine's stored GitHub
 > credential has **READ but not WRITE** on this repo and will not be changed, so commits
@@ -53,7 +110,8 @@
 > | 6 — Permission vocabulary | ✅ **complete (`a453063`)** — `PermissionOutcome` is neutral, `Default` is its zero value. **Three of the five drafted deliverables were rejected on measurement**, including `Decision<TRule>`, which does not describe any type that exists |
 > | 7 — `OpenCode.Sdk` | ✅ **complete (7a–7g)** — schemas bundled and product-filtered out of archives, root-`$ref` fixed, and OpenCode's own SDK: products, five-rung ladder, per-key merge policy, two clients with scope discovery, and the permission model. **Seven corrections to this plan, all measured** — see the phase section. Two ladder rungs (Inline, Managed) deliberately undiscovered rather than guessed |
 > | 8 — `OpenCodeForge` app | ✅ **complete (8a–8g)** — **the second app runs.** Own state path, own icon-less identity, wrapper localization wired, detection banner with per-distro install commands, search with OpenCode's gotcha phrasings, per-app release resolution. **8b was an unplanned ~1,900-line extraction**: the schema settings page lived in the ClaudeForge assembly, so no second app could render settings at all — the plan predicted only two static tables needed lifting. Also found **four headless tests that could not fail** and extended the trim gate, which covered only the first app |
-> | 9 — OpenCode compound editors | 🔶 **barely started (9a-1)** — `OpenCode.Avalonia` created but ⛔ **registered in NO solution, so CI never builds it**; fix that first. `OrderedPropertyMap` landed because object key order was a `Dictionary` implementation detail and for OpenCode's permission map the LAST match wins, so key order is the policy. Remaining: the permission grid (v1 gate), `mcp`, `agent{}`, `command{}`, `plugin[]`, `formatter`/`lsp`, `autoupdate`, keybinds |
+> | 9 — OpenCode compound editors | ✅ **9a complete (9a-1 – 9a-11), ALL UNCOMMITTED** — `OpenCode.Avalonia` is now in `ClaudeForge.slnx`, the app's `.slnf`, and referenced by `src/OpenCodeForge`, so **CI builds it for the first time**; the registration exposed unversioned `PackageReference`s that would have failed restore. **The v1 gate is met: the permission grid ships** — both shapes (bare action / tool × pattern), per-row reorder that makes last-match-wins visible, shadowed-rule detection, action-only-tool enforcement, an unparseable value echoed back untouched, and a live tester over `Resolve`. **9a-3 adds the `mcp` editor** — all **three** union arms (the plan described two), three-state `oauth`, and per-entry verbatim preservation of a shape this build cannot classify. `OrderedPropertyMap` (9a-1) landed because object key order was a `Dictionary` implementation detail and for the permission map the LAST match wins, so key order is the policy; 9a-3 moved it down to `AgentForge.Abstractions` so an SDK codec and a UI adapter share one copy. **Two guards added for silent-failure classes the repo documented but never checked**: every project on disk is in the solution, and every specialised editor has a `DataTemplate` (it caught `mcp` automatically, with no registration). **One plan claim measured false** — see the `mcp` bullet. **9a-5 adds the `agent{}` editor**, which hosts the permission grid as a real child editor (so nested rules get shadow detection, reordering and the tester with no second implementation) and implements `IChildEditorHost` so page filtering can descend into them. **9a-4 clears the two debts these editors were carrying**: `PermissionOutcomeToBrushConverter` moved to `LayeredEditors.Avalonia.Services` (Phase 6 left it; the home it feared was the app shell, but that project already carries both prerequisites and one consumer already references it, so the move costs a single light edge) and now has a second consumer plus its first tests; and `OpenCode.Avalonia` gained its own resx, with **Problem 8's guard half landed** — see Problem 8. **9a-6 adds `command{}`** — the phase's only `required` field (a missing `template` is reported, never invented) and a banner for templates that run a shell command through `` !`…` ``. **9a-7 adds `plugin[]` + the TUI's `plugin_enabled{}`** — one editor covers both products' identical `plugin` shape. **9a-8 adds `formatter` + `lsp`** — a shared **four**-state mode (absent / `false` / `true` / object, none foldable into another) over two *different* per-language shapes: the plan called them one shape and the schema disagrees three ways (an `lsp` entry is a two-arm union whose full arm **requires** `command`, its environment key is `env` not `environment`, and it carries an untyped `initialization`). It counts and names the entries that match neither arm — the state produced by unticking "disabled" on a disable-only server — and never repairs them. `disabled` is a **three**-state checkbox for the same absent-vs-`false` reason the mode picker exists. The `mcp` editor's argv and key/value list view-models moved to `OpenCode.Avalonia/Editing/` and now serve all three editors. ⛔ **A canary found a real defect in this slice**: the load path's explicit row-subscribe loop was decorative, because `CollectionChanged` was still attached during the rebuild and subscribed every row a second time — removing the loop broke nothing. Fixed by detaching the handler for the rebuild; guarded by a new reload-does-not-accumulate-handlers test. **9a-9 adds `autoupdate`** — the only `boolean | scalar` union in either schema (surveyed: 20 unions in the config schema, 924 in the TUI's), so it generalises to nothing; `"notify"` is matched `Ordinal` so the near-miss `"Notify"` is held verbatim rather than silently corrected. **9a-10 adds `keybinds` and COMPLETES 9a** — 184 actions, each a **four**-arm union nested three deep (the plan's `…` hid the two arms that decide the model: an inner three-way union, and an array of it). `"x"` and `["x"]` stay different files; `false` and `"none"` are not folded together; the literal `true` is offered nowhere because the boolean arm is `enum: [false]`. Search is the primary control and matches the action, its description **and its current binding** — the last is what answers "what is Ctrl+C bound to?". Cross-row clash detection names the other action and deliberately says **nothing** about which wins, since the schema states no precedence; a chord and a structured key are **never** reported as the same key, because equating them means inventing the chord parser the schema's pattern-less string arm refuses to define. Capture writes the object form only, with just the modifiers actually held. ⛔ **A real defect, found by the exact-count guard and shipped in this editor until now:** a direct callback *and* a `PropertyChanged` subscription both routed changes to the owner at both VM levels, so one keystroke reported **twice** and one mode change **seven times** — every `[NotifyPropertyChangedFor]` target is itself a `PropertyChanged`. Now one mechanism; an exclusion filter was rejected because it must name every derived property and forgetting one is silent. Two of the eight canaries also proved **my own tests vacuous** (a prefix-only clash canary could never collide; an all-modifiers-held capture case could not see a Ctrl regression) and one exposed a **dead assignment** that read as the mechanism. **Phase 9a: COMPLETE** |
+> | 10 — `AgentForge.Artifacts` | ✅ **COMPLETE (10a–10c), ALL UNCOMMITTED** — the engine resolves an ordered source list into one precedence-ordered chain per artifact, and **both Claude surfaces now go through it**: the Memory inventory and the Agents & Skills editor, with their 25 and 15 existing tests **unmodified** as the faithfulness proof. ⛔ **The second consumer deleted two of `IArtifactSource`'s four members** — one walk of the plugin tree yields three kinds from a different plugin scope at every level, so a source cannot state "its" kind or scope; a plugin is a SCOPE, not a source. ⭐ Entry names are identity, not display: a recursive `rules/` walk names `common/security`, a sibling tool's file is `.codex/AGENTS`, a skill is named by its directory — each coarser alternative would manufacture a shadowing relationship that does not exist. ⭐ Two TRUE relationships became expressible (user vs project `settings.json`; a user agent vs a plugin's) while both pages still list every entry in a chain, because they are browsable file lists rather than statements about who wins. ⚠ Measured: `*.md` never matches `reviewer.md.bak`, so the long-standing `.bak` exclusion only ever protected the `hooks` walk — and it made the first test I wrote for it vacuous. **10c injects a path provider**: rooted at the USER PROFILE (not `ClaudeHome` — `~/.claude.json` and the cross-tool probes are its siblings), with the statics kept as thin wrappers so the 40 existing tests stay unmodified. ⭐ The three project-scope paths need no injection at all — they are pure functions of a root the caller already passes — so the real surface is one root and eight derived paths, and three services now contain ZERO `PlatformPaths` code references. ⛔ `Default` must be a PROPERTY: caching it reddened 40+ tests, because the profile is `AsyncLocal` and the suite runs method-level parallel. A source-text seam guard keeps it from eroding, since a static property read leaves no per-type metadata to reflect over |
 >
 > **Phase 2 fixed a live data-loss bug the plan had only half-identified.**
 > `ConfigFileLoader.LoadAsync` parsed with default `JsonDocumentOptions`, which **throw on a
@@ -402,7 +460,7 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 7 | `OpenCode.Sdk` | nothing user-visible | none | — |
 | 8 | **OpenCodeForge v0** | settings · effective view · install banner · update check — *first runnable* | none | **D** |
 | 9 | Compound editors | mcp · permission · agent · command · plugin · keybinds · references | none | — |
-| 10 | `AgentForge.Artifacts` | nothing user-visible | ⚠ Memory page | — |
+| 10 | `AgentForge.Artifacts` — **10a shipped (engine); 10b/10c remain** | nothing user-visible | ⚠ Memory page | — |
 | 11 | Agents / Commands / Skills / **Rules** / Plugins | the headline feature | none | **E** |
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
@@ -3000,6 +3058,27 @@ one", plus — separately — extend `LocalizationParityTests` to every resx in 
 rather than one hardcoded directory.** The second half is worth doing on its own
 merits: it would immediately surface the 93 unguarded strings.
 
+> ✅ **The second half landed in Phase 9a-4, in the form the problem actually needs.**
+> The damaging part was never the missing translations — it was that a resx could be
+> added with **no locale siblings and no test saying anything**. Three new contracts in
+> `LocalizationParityTests` close that: a **ledger** of every neutral `Strings.resx`
+> under `src/` declaring it translated or deliberately English-only with a reason
+> (#5, discovery both ways); a check that each claim **matches the locale files on disk**
+> (#6); and a check that the four original contracts **cover every project the ledger
+> calls localized** (#7). All three canaried.
+>
+> ⭐ **The asymmetry in #6 is the whole point.** Declaring a project English-only while
+> locale files sit beside it *fails*, and the failure message says to widen contracts
+> #1–#4 rather than edit the ledger — so a first translation cannot land unchecked. The
+> four contracts still resolve one hardcoded directory, which is now **true and
+> guarded** instead of true and invisible; #7 is what forces the generalisation at the
+> moment it starts to matter.
+>
+> The 93 `ClaudeForge.Avalonia` strings are now a **declared** gap, not a hidden one.
+> `OpenCode.Avalonia` gained its own resx in the same slice (118 keys, English-only,
+> declared) — because the alternative it replaced was literals in AXAML, which is
+> strictly worse: a literal cannot even be found by a translator.
+
 **Three members are `required` rather than defaulted**, each closing a silent failure:
 `SaveChangesDialogViewModel.Text` (a dialog must not inherit another product's words),
 `SaveChangeSectionViewModel.ActionVerb` (it used to default to the *save* label, which
@@ -3360,48 +3439,273 @@ small rule to recognize the `@deprecated` convention, or they render as ordinary
 draft 6, but no phase created it. This is its home: the OpenCode-specific editors and views,
 including the keybinds editor.
 
-- **`mcp`** — union on `type`. `McpLocalConfig` (`command[]` · `cwd` · `environment` ·
-  `enabled` · `timeout`) vs `McpRemoteConfig` (`url` · `headers` · `oauth` · `enabled` ·
-  `timeout`), where `oauth` is `McpOAuthConfig | false`. Copy the shape of
-  `MarketplaceListEditorViewModel` (682 lines, 8 source variants), **not**
+- **`mcp`** — ✅ **DONE (Phase 9a-3).** Union on `type`. `McpLocalConfig` (`command[]` ·
+  `cwd` · `environment` · `enabled` · `timeout`) vs `McpRemoteConfig` (`url` · `headers` ·
+  `oauth` · `enabled` · `timeout`), where `oauth` is `McpOAuthConfig | false`. Not
   `McpServersEditorViewModel` — Claude's transport model differs.
 
-  > ✅ **Verified, and two of its behaviours are the reason to copy it rather than start
-  > fresh.** It (a) **preserves per-variant non-discriminator fields across a variant
-  > switch**, so flipping a server local↔remote doesn't silently destroy the fields the
-  > other arm didn't use, and (b) **echoes an unknown variant back unchanged** rather than
-  > dropping it — essential when the upstream schema adds a variant before the editor knows
-  > about it. Both apply directly to `mcp` (local↔remote) and to `plugin[]`
-  > (string↔`[name, options]`). Reproduce both, and test both.
-- **`permission`** — a purpose-built **two-level tool × pattern grid** plus the bare-string
-  ("apply to all tools") mode. The shared **tester** from Phase 6 binds over
-  `OpenCodePermissionModel`; the **guided builder does not** — Claude's is a rule-syntax
-  generator and stays Claude-side (see Problem 5). Budget this as a real editor, not a
-  binding exercise.
-- **`agent{}`** — object keyed by agent name with 7 named built-ins plus arbitrary keys.
-  15 fields, including a **nested `PermissionConfig`** that binds the shared permission
-  editor from Phase 6 as a child, and a `color` field that is a hex-or-theme-name union.
-  The effective view must show *global permission → agent override*.
-- **`command{}`** — object keyed by command name; `template` required, plus `description` ·
-  `agent` · `model` · `variant` · `subtask`.
-- **`plugin[]`** — `string | [string, object]` discriminated union (the schema has the
-  tuple form even though the docs say otherwise). TUI section additionally gets its own
-  `plugin[]` **and** `plugin_enabled{}` name→bool toggle map.
-- **`formatter`** · **`lsp`** — `bool | object-of-configs`. A mode toggle (*off / on /
-  configured*) over a per-language map (`disabled` · `command[]` · `environment` ·
-  `extensions`). **Missed by draft 9**; without this they render as raw JSON.
+  > ⛔ **THE UNION HAS THREE ARMS, not the two described above.** Read from the bundled
+  > schema: alongside the two `$ref`s, `mcp.additionalProperties.anyOf` carries an **inline
+  > `{ "enabled": boolean }`** with `required: ["enabled"]` and
+  > `additionalProperties: false` — a toggle for a server another scope declares, without
+  > restating it. That is the commonest *project-level* MCP entry there is, and an editor
+  > built to the two-arm description classifies every one of them as unparseable. Also
+  > measured: `oauth` is genuinely **three**-state (object / literal `false` / absent), since
+  > the schema's enum permits only `false` — a nullable bool cannot carry it.
+
+  > ⛔ **CORRECTED (Phase 9a-3, measured). Behaviour (a) is real; behaviour (b) is the
+  > opposite of what this template does.** The claim was: it (a) **preserves per-variant
+  > non-discriminator fields across a variant switch**, so flipping a server local↔remote
+  > doesn't destroy the fields the other arm didn't use, and (b) **echoes an unknown variant
+  > back unchanged** rather than dropping it.
+  >
+  > (a) holds — via `MarketplaceListEntryViewModel.ExtraFields`, captured at hydration and
+  > replayed on save. **(b) is false.** `MarketplaceListEditorViewModel.TryHydrateEntry`
+  > returns `null` for an unknown `source` and the caller does `continue`, so the row
+  > **vanishes on load**; `ToVariantObject` returns `null` under the comment
+  > `// unknown source — drop on save`, so it **vanishes again on save**. Its own comments
+  > say so. The *reasoning* in (b) was right — a variant the editor doesn't know must
+  > survive — but the cited evidence was wrong, which is worse than no evidence: it sends
+  > the next implementer to copy the opposite behaviour from the one they were told to
+  > reproduce.
+  >
+  > **What 9a-3 built instead**: (a) reproduced (both arms held simultaneously, never
+  > swapped), and (b) built from the permission grid's proven echo pattern — but at
+  > **per-entry** granularity, so one server written by a newer OpenCode doesn't make the
+  > other twelve read-only. `OpenCodeMcpCodec` holds an unclassifiable entry verbatim and
+  > writes it back byte-for-byte; unsurfaced fields on a *recognised* entry survive too.
+  > **`plugin[]` should follow 9a-3, not the marketplace editor.**
+- **`permission`** — ✅ **DONE (Phase 9a-2) — this was the v1 gate.** A purpose-built
+  **two-level tool × pattern grid** plus the bare-string ("apply to all tools") mode. A
+  tester binds over `OpenCodePermissionModel`; the **guided builder does not** — Claude's is
+  a rule-syntax generator and stays Claude-side (see Problem 5).
+
+  > ⚠ **Phase 6 had already rejected sharing the tester's AXAML** (both templates carry
+  > `x:DataType`, so sharing means dragging Claude view-models into the neutral shell or
+  > dropping compiled bindings). So the tester here is OpenCode's own view over
+  > `Resolve` — which is the only reading of "the shared tester binds over
+  > `OpenCodePermissionModel`" that Phase 6's own measurement permits.
+  >
+  > ⭐ Ships **more than the bullet asked for**, because the shape demanded it: per-row
+  > reorder that makes last-match-wins visible, **shadowed-rule detection** (a narrow `deny`
+  > from a lower-priority file landing before a broad rule and silently ceasing to apply),
+  > action-only-tool enforcement, and an unparseable value echoed back untouched.
+  >
+  > ⛔ **A real inversion was found and fixed here.** Two rows may carry the same pattern;
+  > JSON cannot. Collapsing onto the **first** occurrence's slot turns
+  > `[git *=allow, *=ask, git *=deny]` into `{"git *":"deny","*":"ask"}`, whose last match for
+  > `git status` is the broad `*` — **saving the file inverted the user's own rule.** The
+  > survivor now keeps the last action at the **last position**.
+  >
+  > ⭐ **Reused as a child editor by `agent{}`** (9a-5), because `Config.permission` and
+  > `AgentConfig.permission` are the same `$ref` — so nested overrides get the shadow scan,
+  > the reordering and the tester with no second implementation.
+- **`agent{}`** — ✅ **DONE (Phase 9a-5).** Object keyed by agent name with 7 named
+  built-ins plus arbitrary keys. 15 fields (the count was right), including a **nested
+  `PermissionConfig`** that binds the permission grid as a child, and a `color` field that
+  is a hex-or-theme-name union. The effective view shows *global permission → agent
+  override*.
+
+  > ✅ **`Config.permission` and `AgentConfig.permission` are the SAME `$ref`** —
+  > `#/$defs/PermissionConfig`, byte-identical — which is what makes the grid reusable
+  > rather than merely similar, and retro-justifies matching on `schema.Name` without the
+  > path. `ActionOnlyToolsSchemaDriftTests` now asserts they stay identical, so a schema
+  > refresh that splits them fails loudly instead of quietly editing the wrong shape.
+  >
+  > ⛔ **Two corrections.** `color`'s union is `string | enum(...)` where the first arm has
+  > **no pattern**, so every string validates and the enum is a *suggestion list*, not a
+  > constraint — treating it as closed would reject the hex values the union exists to
+  > permit. And the field list includes **both `steps` and `maxSteps`**, plus a
+  > **`tools` map the schema marks `@deprecated`** ("Use 'permission' field instead"),
+  > neither of which the plan mentioned. `tools` stays editable — existing configs have it
+  > and dropping a user's flags changes agent behaviour — but is surfaced as deprecated and
+  > offered no "add" affordance where absent.
+  >
+  > ⚠ **`AgentConfig` does NOT set `additionalProperties: false`**, unlike the MCP variants.
+  > Unknown fields are legal rather than merely tolerated, so preservation is a correctness
+  > requirement here, not a courtesy.
+- **`command{}`** — ✅ **DONE (Phase 9a-6).** Object keyed by command name; `template`
+  required, plus `description` · `agent` · `model` · `variant` · `subtask`.
+  ✅ **The plan's description was exactly right — the first one this phase that needed no
+  correction.**
+
+  > ⭐ **Two things the generic editor cannot show, and both change what the user does next.**
+  > `template` is the **only `required` field anywhere in Phase 9**, so a missing one is
+  > *reported* rather than invented — writing `"template": ""` would claim the body is empty
+  > rather than absent. And a template containing `` !`…` `` **runs a shell command with the
+  > user's privileges every time the command is invoked**, which is worth a banner: a
+  > template pasted from a shared config is exactly where that goes unnoticed. Detection
+  > only; nothing executes anything.
+  >
+  > ⚠ **`additionalProperties: false` here**, unlike `AgentConfig` — so unknown fields are
+  > violations, which is *why* they are still preserved: a config from a newer OpenCode is
+  > the normal way to meet one, and stripping it on save is worse than round-tripping
+  > something this build cannot use.
+  >
+  > ⚠ **An entirely empty entry is NOT written**, deliberately unlike an empty *agent* entry
+  > (legal, since no agent field is required). Typing a name and clicking Add gives you a row
+  > to fill in, not a command — writing `{}` would put a schema violation in the config, and
+  > on a live-write host that lands the instant you click. Any single field present is enough
+  > to write it, so nothing typed is withheld.
+- **`plugin[]`** — ✅ **DONE (Phase 9a-7).** `string | [string, object]` discriminated union
+  (the schema has the tuple form even though the docs say otherwise). TUI section
+  additionally gets its own `plugin[]` **and** `plugin_enabled{}` name→bool toggle map.
+  ✅ **The plan's description was right.**
+
+  > ⭐ **`Config.plugin` and the TUI's `plugin` are byte-identical**, so ONE editor and one
+  > registration serve both — the same reuse the permission grid gets from the two
+  > `permission` locations being one `$ref`. `OpenCodePluginCodecTests` asserts the two
+  > schema fragments stay equal, and the `DataTemplate` guard reports `plugin` **twice**
+  > (once per product), which is how we know the single registration really covers both.
+  >
+  > ⚠ **`"foo"` and `["foo", {}]` are different values and must stay apart.** The tuple arm
+  > is strict — `prefixItems` with `minItems`/`maxItems` both 2 — so an empty options object
+  > is a deliberate statement. Collapsing it to the bare form looks like tidying and is a
+  > silent move to the other arm of the union.
+  >
+  > ⚠ **Options are edited as raw JSON, and that is the honest control**: the schema types
+  > the second element as `object` with *no declared properties*, so there is no shape to
+  > render fields for. Unparseable text keeps the **last good** options rather than dropping
+  > them — a JSON box is unparseable most of the time it is in use, and a live-write host
+  > would otherwise delete the user's config mid-keystroke.
+  >
+  > ⛔ **`plugin_enabled` first draft silently dropped any non-boolean value** — caught while
+  > writing it, fixed with the same opaque arm every other shape in this phase carries.
+- **`formatter`** · **`lsp`** — ✅ **DONE (Phase 9a-8).** `bool | object-of-configs`, i.e. a
+  **four**-state mode (*absent / `false` / `true` / object*) over a per-language map.
+  **Missed by draft 9**; without this they render as raw JSON.
+  ⛔ **The plan described both keys as the same per-language shape. That is right for
+  `formatter` and wrong for `lsp` three ways.**
+
+  > ⭐ **The mode is genuinely shared and is the only shared part.** Both keys declare
+  > byte-identical `anyOf: [boolean, object]` with the same description, so one abstract base
+  > owns the four states — because folding any two of them is exactly the silent rewrite this
+  > phase keeps finding, and two implementations would eventually disagree about which folds
+  > are safe. ⚠ **`false` and absent behave alike; `{}` and `true` behave alike. Neither pair
+  > is the same file.** Selecting *Configured* from *Not set* writes `{}` and turns the
+  > subsystem ON, so it must never collapse to a key removal.
+  >
+  > ⛔ **Measured against the bundled schema, an `lsp` entry is NOT a formatter entry:**
+  > (a) it is a **two-arm union** — either `{"disabled": true}` exactly (`required`, typed
+  > `enum: [true]`, `additionalProperties: false`) or an object with a **required `command`**;
+  > (b) its environment key is **`env`**, not `environment`, and both entry objects forbid
+  > additional properties, so borrowing either name produces a config OpenCode rejects;
+  > (c) it carries an extra untyped **`initialization`** object the plan never mentions.
+  > A formatter entry, by contrast, is one shape with **nothing required** — so an empty one
+  > is written as `{}` (the agent precedent) while an empty `lsp` entry is skipped (the
+  > command precedent). Six of the eight 9a slices have now found the plan wrong or
+  > incomplete; two confirmed it.
+  >
+  > ⚠⚠ **The consequence is a state one obvious click produces.** Unticking "disabled" on a
+  > disable-only server leaves `{"disabled": false}`, which matches **neither** arm — the
+  > first needs the literal `true`, the second needs a command. Same for an entry carrying
+  > only `extensions`. The editor **counts and names** those entries; it never repairs them,
+  > because inventing a `command` is a claim about the user's machine and deleting their
+  > `extensions` is a claim about their intent. `command` is the **second** `required` field
+  > found in Phase 9, after a command template's, and gets the same report-never-invent
+  > treatment.
+  >
+  > ⚠ **`disabled` is a THREE-state checkbox**, not a two-state one. A plain box would omit
+  > the key when unticked and so delete an explicit `"disabled": false` on the first save —
+  > the same absent-vs-false distinction the mode picker exists to preserve, one level down.
+  >
+  > ⚠ **The name collision the factory has to survive:** `PermissionConfig`'s object arm also
+  > declares a property called **`lsp`** — the permission rule for the `lsp` *tool*. Editors
+  > are registered by property name, path-insensitively, so this is the first time that
+  > choice could have misfired. It cannot, because the permission grid owns its whole subtree
+  > and never dispatches its children back through the factory, and
+  > `OpenCodeToolingCodecTests.PermissionsInnerLsp_IsARuleConfig_NotAServerMap` pins the two
+  > shapes apart so a refresh that made them alike fails loudly.
+  >
+  > ⭐ **The `mcp` editor's argv and key/value list view-models moved to
+  > `OpenCode.Avalonia/Editing/`** and are now shared by all three editors, rather than a
+  > third copy of 230 lines of list machinery. Blast radius was 3 source files and one AXAML,
+  > with the 18 existing MCP tests as the proof the extraction was faithful.
+  >
+  > ⛔⛔ **A screenshot pass found a defect in ALL SEVEN earlier editors.** This file hosts each
+  > specialised editor under a `MaxHeight` in `src/OpenCodeForge/App.axaml`, whose comment
+  > claimed "the view's own scrolling handles a long grid" — but **not one view in
+  > `OpenCode.Avalonia` had a `ScrollViewer`**, so every `MaxHeight` *clipped* instead of
+  > scrolling. Measured, not inferred: the UI-Automation tree put the `lsp` editor's last two
+  > entries at y=1262 and y=1565 against a window bottom edge of y=1100, while the page's only
+  > scrollable pane was already at 100% — and those two were exactly the entries the editor's
+  > own red "matches neither form" banner was pointing at. **The editor named a problem the user
+  > could not scroll to.** Every view now carries a `ScrollViewer`, App.axaml's comment is
+  > corrected, and the permission and command editors were re-screenshotted for regressions.
+  > *A `MaxHeight` over a view with nothing scrollable inside it is a clip, not a cap.*
 - **`autoupdate`** — `true | false | "notify"`. Small, but it is Essentials card #14 and a
   three-state union is not a checkbox. Shares the tri-state control with that card.
-- **`keybinds`** (TUI section) — **in v1, purpose-built** [decision 2]: a searchable action
+  **✅ DONE (9a-9).** Shipped: `OpenCodeAutoupdateCodec` + `OpenCodeAutoupdateEditorViewModel`,
+  registered by name, 7 codec tests + 17 editor tests.
+
+  > ✅ **The plan's description of the shape was RIGHT** — worth stating after six of the previous
+  > eight slices found it wrong. The schema is exactly
+  > `anyOf: [boolean, {"type":"string","enum":["notify"]}]`.
+  >
+  > ⭐ **It is the ONLY `boolean | scalar` union in either bundled schema** — surveyed, not assumed:
+  > 20 unions in the config schema, 924 in the TUI schema, and this is the one whose arms are a
+  > boolean and a string. So there is no family to generalise for, and "shares the tri-state control"
+  > has nothing to share with. (The TUI's 924 also confirm keybinds is the largest remaining slice.)
+  >
+  > ⛔ **"Essentials card #14" does not apply to this app.** Essentials is a ClaudeForge surface;
+  > OpenCodeForge has no such page, and `OpenCodePageLayout` files `autoupdate` under **General**.
+  > Checked rather than inherited from the sibling app's vocabulary.
+  >
+  > ⚠ **Not built on `OpenCodeToolingEditorViewModel`**, despite both being a four-state mode with
+  > an opaque arm: that base carries an entry list (`IsConfigured`, `EntryCount`, `RefreshDerived`)
+  > and a scalar would have to pin all three permanently to "empty", which is a worse lie than a
+  > little repetition. The *idioms* are shared, not the base.
+  >
+  > ⚠⚠ **`"notify"` is matched `Ordinal`, so `"Notify"` is held verbatim rather than corrected.**
+  > The schema's enum is exact, so reading the variant as valid would mean silently rewriting a
+  > user's text into a different string on the next save. Both this and the no-fold rule are
+  > canaried — `OrdinalIgnoreCase` and folding absent→`false` each turn the suite red.
+- **`keybinds`** (TUI section) — ✅ **SHIPPED in 9a-10** [decision 2]: a searchable action
   list over the 184 actions with a key-capture control, lazily realized, **not** 184 generic
   wrappers and **not** the raw-JSON fallback. This is the largest single new editor in the
-  plan and the main reason people edit `tui.json` at all. Each action's value is an `anyOf`
-  over `false | "none" | string | {name,ctrl,shift,meta,super,hyper} | …`, so the capture
-  control writes the object form and the editor renders the others read-through. Gate the
-  realized-row count with the `[PropView.Realized]` trace; Spike S6 measures it first.
-- **`theme`** (TUI section) — schema declares it a bare `string` with no enum, so offer a
-  picker sourced from installed themes on disk (`~/.config/opencode/themes/*.json`) plus
-  free text. Same shape as the existing free-form-with-suggestions `model` field.
+  plan and the main reason people edit `tui.json` at all.
+  > ⛔ **The `…` in this description hid the two arms that decide the model.** Measured: each
+  > action's value is a **four**-arm `anyOf` — `false` (`enum: [false]`, so the literal `true`
+  > is admitted **nowhere**), `"none"`, an **inner three-way union** (bare string / key object /
+  > event object whose `key` is itself string-or-object), and an **array** of that inner union.
+  > `"x"` and `["x"]` are therefore different files, and collapsing a one-element array looks
+  > like tidying while silently moving the value to the other arm — the fourth time this phase
+  > met that trap.
+  > **Realized-row count, measured live via UIA rather than the trace: 5 of 184** on load, 11
+  > after scrolling — a virtualizing `ListBox` with a bounded viewport, deliberately with **no**
+  > outer `ScrollViewer` (which would hand it infinite height and defeat the virtualization that
+  > S6 asked for). Spike S6 is answered.
+  > Search matches the action, its description **and its current binding**; the last is what
+  > answers "what is Ctrl+C bound to?", which 184 action names cannot. Clash detection names the
+  > other action and says **nothing** about which wins, because the schema states no precedence —
+  > and a chord is **never** compared against a structured key, since equating `"ctrl+q"` with
+  > `{"name":"q","ctrl":true}` means inventing the parser the pattern-less string arm refuses to
+  > define. Capture writes the object form with only the modifiers actually held.
+- **`theme`** (TUI section) — ✅ **SHIPPED in 9a-11.** Schema declares it a bare `string` with
+  no enum (confirmed: no description and no examples either), so it offers a picker sourced
+  from installed themes on disk plus free text — the same shape as the free-form
+  `model` field, and in fact **the same code path**.
+  > ⭐ **NO tenth editor was written, and that is the finding.** The library's
+  > `EnumPropertyEditorViewModel` already *is* a picker-that-accepts-typing, and it derives
+  > everything from its schema: options from `EnumValues`, free-form from a non-empty
+  > `Examples`, per-option tooltips from `EnumValueDescriptions`. `SchemaTreeBuilder` already
+  > promotes a string-with-examples to `Enum`. So the slice is a **schema overlay** plus a
+  > **schema wrapper** — no view-model, no view, no `DataTemplate`.
+  > ⛔ **The plan's path was half wrong.** `~/.config/opencode/themes/*.json` is one source, but
+  > measured against the installed opencode v1.17.9 binary, `discover()` also scans
+  > `.opencode/themes/*.json` in the **cwd and every ancestor**, and plugins contribute themes
+  > through an `oc-themes` manifest entry. Only the config directory is scanned here, deliberately:
+  > the `.opencode` walk is **cwd-dependent**, and a GUI editing a global file cannot honestly
+  > claim to enumerate a set that changes with where `opencode` was launched from. The other
+  > locations are named in the overlay's description instead.
+  > ⛔ **A 37-name built-in theme list was found and rejected.** `zU` in that binary maps theme
+  > ids to display names (dracula, nord, tokyonight …) — but it sits with `setColorScheme`,
+  > `previewThemeId` and the `oc-2` default, i.e. it is the **web UI's** theme provider, not the
+  > TUI's. The TUI's theme store has **no built-in table at all**: its source is the disk scan and
+  > its initial value is `opencode`. So `opencode` is the only name asserted statically, and
+  > everything else is discovered — which is why a static suggestion list could never have been
+  > right for anyone. `default` is deliberately not set in the overlay: it would drive an
+  > "(inherits: …)" watermark, and the binary's two candidate defaults disagree across surfaces.
 
 All compound editors must follow `src/ClaudeForge/ViewModels/Editors/AGENTS.md` — force-fire
 `MarkModified()`, `_isLoading` guard, `ToJsonValue()` returning `null` when empty,
@@ -3426,6 +3730,181 @@ new controls.
 > baked-in root is precisely what makes profiles (and `OPENCODE_CONFIG_DIR`) impossible
 > later. Convert them all, or the seam is fiction.
 
+**Slice 10a — the engine — ✅ SHIPPED (uncommitted).** `AgentForge.Artifacts` +
+`AgentForge.Artifacts.Tests` exist, framework-only, with 18 tests. `ArtifactKind` /
+`ArtifactForm` / `ArtifactScope` / `ArtifactRef` / `ResolvedArtifact` / `IArtifactSource`
+and `ArtifactResolver`.
+
+**Slice 10b — Claude's sources through the engine — ✅ SHIPPED (uncommitted).** Both
+Claude surfaces now resolve rather than walk: `UserMemoryService.SnapshotFiles` (the Memory
+inventory) and `EditableMemoryService.Snapshot` (Agents & Skills). **Their 25 and 15
+existing tests pass unmodified**, which is the faithfulness proof the section asks for.
+Suite 3,627 · 0 · 11; both apps trim-clean; 21 canaries, every one reddening the named
+tests. New: `FileSystemArtifactSources.cs` (file-probe / directory / skill-directory
+sources, product-free), `ClaudeScopes`, `ClaudeArtifactSources`,
+`ClaudeEditableArtifactSources`, `ClaudePluginArtifactSource`.
+
+> ⛔ **`IArtifactSource` lost two of its four members, and the second consumer is what
+> proved them unanswerable.** One depth-bounded walk of `~/.claude/plugins` yields agents,
+> commands AND skills, each from a different plugin — a different `ArtifactScope` — none of
+> it known before walking. So a source cannot be asked for "its" kind or "its" scope.
+> Splitting it into one source per kind to keep the properties would walk a plugin tree three
+> times per page load to satisfy something the resolver never reads. The interface is now
+> `Id` + `Enumerate()`; kind and scope are per-ENTRY, stamped by an
+> `ArtifactSourceIdentity` in the ordinary single-kind case. **A plugin is a SCOPE, not a
+> source** — which is also what made the closed `EditableMemoryScope` enum survivable: it
+> stays as the editor's writability tag, while the per-plugin identity rides on
+> `ArtifactScope.DisplayName`.
+
+> ⭐ **The naming rule is the load-bearing part, and it is about identity rather than
+> display.** An entry's `Name` is what resolution groups by, so a name that is too coarse
+> manufactures a shadowing relationship that does not exist — and the UI would then state it
+> confidently. Three cases, all now guarded: a recursive `rules/` walk names entries
+> `common/security`, not `security` (Claude reads both files); a sibling tool's
+> `.codex/AGENTS.md` is `.codex/AGENTS`, not `AGENTS` (Codex's memory does not shadow
+> Claude's); a skill is named by its DIRECTORY, since every skill's file is `SKILL.md`.
+> Display names are computed separately, from the file, exactly as before — which is why the
+> old tests still pass.
+
+> ⭐ **`ArtifactRef` carries a location and nothing else — no size, no timestamp, no
+> subtitle — and that is what let one source list serve two different row shapes.**
+> Discovery moved out; stat-and-shape stayed in each service. `UserMemoryFile` and
+> `EditableMemoryEntry` are still built by the same code that always built them.
+
+> ⭐ **`UserMemoryCategory` conflates kind and scope.** `PrimaryMemory`, `ProjectMemory` and
+> `CrossToolMemory` are all `ArtifactKind.Memory`, separated only by origin — so the category
+> cannot be recovered from an entry and is carried on the source that produces it. New guard:
+> **every `UserMemoryCategory` value has at least one source.** The enum's own remarks said
+> "adding a new category requires extending both the enum AND the service's dispatch" — prose
+> nothing checked, and a category with no source renders as an empty group that reads "you
+> have none of these" rather than "nobody looked".
+
+> ⚠ **Measured, and it made one of my own new tests vacuous: `*.md` does not match
+> `reviewer.md.bak`.** The `.bak` sidecar exclusion the walk has carried for a long time
+> therefore only ever protected the **hooks** walk, the one place the pattern is `*`. A test
+> written against `agents/` passes with or without the rule — a canary reddening one test
+> instead of two is what exposed it. The exclusion is now applied to `*` walks only, and the
+> test that pins it uses `hooks/`.
+
+> ⭐ **Two true shadow relationships became expressible, and both used to be invisible.**
+> The user's and the project's `settings.json` are now one artifact with a two-entry chain
+> (they were two unrelated rows told apart by a hand-written "(project)" suffix — now derived
+> from scope); a user agent and a plugin agent of the same name likewise. ⚠ **Both surfaces
+> still list EVERY entry in a chain, not the winner** — they are browsable file lists, and
+> hiding a file because another outranks it would leave a user unable to edit something
+> sitting in their own home directory. Guarded on both pages; the canary that lists only
+> `Effective` reddens by name.
+
+> ⚠ **Precedence orders a chain for display. It is NOT a measured claim about which
+> definition Claude executes** when two scopes hold the same agent or skill — that has not
+> been measured here, and the resolver deliberately neither merges nor discards. The settings
+> ordering (managed over project over user) IS documented behaviour. Recorded on
+> `ClaudeScopes` so the distinction cannot quietly erode.
+
+> ⭐ **The resolver ORDERS AND GROUPS. It does not merge, and that restraint is forced by
+> S7.** Spike S7 measured that OpenCode's inline JSON and a markdown file of the same name
+> **deep-merge, file winning per field**, so an inline-only `temperature` stays live. The
+> sketch above ("returns the winner plus everything it shadowed") would therefore be
+> structurally unable to express the truth — a UI built on it would say "the file shadows the
+> inline definition", which is false. So `ResolvedArtifact` mirrors `LayeredValue` exactly
+> (`Entries` chain · `Effective` head · `IsShadowed`), the whole chain comes out ordered and
+> complete, and folding it into one artifact is **per-kind policy in the consumer**.
+> `ArtifactForm` travels on each entry precisely so that fold is implementable.
+
+> ⛔ **Three of this section's own claims measured wrong.** Counted, not inferred:
+> - **"each resolving roots internally from `PlatformPaths.ClaudeHome`"** — two of the five
+>   (`MemoryArtifactDeleter`, `MemoryFileWriter`) touch **no** `PlatformPaths` at all; they
+>   already take paths as arguments and need no injection. And the dependency is far wider
+>   than one member: `UserMemoryService` alone names **10 distinct** `PlatformPaths` members
+>   (`UserSettingsPath`, `UserMcpPath`, `ManagedSettingsPath`, `ManagedSettingsDropInDir`,
+>   `ClaudeJsonPath`, `ProjectSettingsPath`, `ProjectMcpPath`, `LocalSettingsPath`,
+>   `CredentialsPath`, `ClaudeHome`), 11 across the folder — and `UserMemoryCategory.cs`, an
+>   *enum* file, reaches for `CredentialsPath`. So 10c injects a **path provider**, not "a
+>   root": several of those are specific Claude *files*, not directories under a root.
+> - **"~10 call sites outside the Memory folder"** — **15 in `src/`, across only 3 files**
+>   (`AgentConfigClientCore`, `AgentsSkillsEditorViewModel`, `MemoryEditorViewModel`). The
+>   file count is the good news; the reference count is 50% over the estimate.
+> - ⛔⛔ **"its existing Memory / Agents-&-Skills tests must pass unchanged" CONTRADICTS
+>   "static→instance conversion".** There are **58 test references** to the five services. A
+>   static→instance conversion rewrites every one of them, so the tests cannot both be
+>   converted and unchanged. **Resolution: keep the statics as thin wrappers delegating to
+>   injected instances**, exactly as Phase 3 did for `ConfigScope.User` (58 src uses vs 1,074
+>   test uses) and left retirement to Phase 4. Unchanged tests then really are the
+>   faithfulness proof, and the seam is real rather than shimmed.
+
+> ⚠ **Adding a shared project needs FOUR registrations, and two guards caught the misses.**
+> `ClaudeForge.slnx`, **both** `.slnf` filters (a shared project belongs to every product
+> filter), and the test project likewise. `FilterIsSharedPlusExactlyOneProduct` failed on both
+> filters until they were updated — and `SharedProjectsNeverDeclareAProductReference` was
+> canaried against the new csproj and named it, so a new `AgentForge.*` project is inside the
+> layering net automatically (it globs `AgentForge.*.csproj` across `src/` and `tests/`).
+
+**Slice 10c — path-provider injection — ✅ SHIPPED (uncommitted). PHASE 10 IS COMPLETE.**
+`ClaudeArtifactPaths` is a sealed class rooted at one user-profile directory;
+`UserMemoryService.SnapshotFiles`, `EditableMemoryService.Snapshot` and
+`FootprintService` all take one, with the existing statics kept as thin wrappers over
+`ClaudeArtifactPaths.Default`. Suite 3,637 · 0 · 11; both apps trim-clean; 7 canaries, all
+matching their written-down predictions. The 40 pre-existing Memory / Agents-&-Skills tests
+are still unmodified.
+
+> ⛔ **This section's own counts included DOC COMMENTS, and one of them was 10a's.** Re-measured
+> as code references after 10b: **14 references across 4 files**, using **9 distinct members** —
+> not "~10 call sites" and not "11 across the folder". In particular, 10a's claim that
+> "`UserMemoryCategory.cs` — an *enum* file — reaches for `CredentialsPath`" is **false**: the
+> file names that path in **prose**, inside a `<summary>` explaining why credentials are excluded.
+> A file that mentions a path in a comment has no dependency on it at all. *Grep counts static
+> members; it does not distinguish code from documentation, and this phase now has two claims
+> that went wrong the same way.*
+
+> ⛔ **"A path provider, not a root" is half right, and the wrong half is load-bearing.** Every
+> one of the nine members is `Path.Combine(<root>, <literal>)`:
+> - **Six are rooted at the USER PROFILE** — and that is the correction. Not `ClaudeHome`:
+>   `~/.claude.json` sits *beside* `.claude/` rather than inside it, and the cross-tool memory
+>   probes (`.codex`, `.gemini`, `.opencode`) are siblings too. A `ClaudeHome`-rooted provider
+>   could express neither, which is why 10b had to recover the profile with
+>   `Directory.GetParent(home)` — a step 10c deletes, along with a null branch that could never
+>   be taken.
+> - **Three need no injection at all.** `ProjectSettingsPath`, `LocalSettingsPath` and
+>   `ProjectMcpPath` are pure functions of a project root the caller already passes as an
+>   argument. Routing them through a profile-rooted provider would imply a relationship that does
+>   not exist — the same reason `MemoryArtifactDeleter` and `MemoryFileWriter` need nothing.
+>
+> **So the injection surface is one root and eight derived paths**, and after the slice
+> `UserMemoryService`, `EditableMemoryService` and `FootprintService` contain **zero** code
+> references to `PlatformPaths`.
+
+> ⭐ **The literals are duplicated on purpose, and a drift guard is the price.**
+> `ClaudeArtifactPaths` restates `.claude`, `settings.json`, `mcp.json`,
+> `managed-settings.json`, `managed-settings.d`, `.claude.json` and `.credentials.json` rather
+> than delegating to `PlatformPaths` — because a provider that delegates can only ever return the
+> **process-global** paths, which is a seam in name only. Re-rooting has to be a constructor
+> argument, not a mutation of a process-wide static, or profiles stay impossible.
+> `EveryPath_AgreesWithPlatformPaths_ForTheSameProfile` pins the two equal member by member and
+> names the one that drifted.
+
+> ⛔⛔ **`Default` is a PROPERTY returning a fresh instance, and caching it breaks forty tests.**
+> The underlying profile is `AsyncLocal`-backed and `AgentForge.Sdk.Tests` runs method-level
+> parallel, so a cached static instance freezes whichever sandbox was current when it was first
+> touched — every later test then reads another test's directory. Canary P2 turned one line into
+> **40+ reds across five unrelated fixtures**, which is the clearest possible statement of why
+> the property is written the way it is. The same trap applies per-instance:
+> `FootprintService` resolves its default **per use**, never in its constructor, because the
+> service is cached for the lifetime of an `AgentConfigClientCore`.
+
+> ⭐ **A source-text guard keeps the seam open**, because a static property read leaves no
+> per-type trace in assembly metadata — there is nothing for a reflection guard to see, and the
+> assembly-level table `AssemblyLayeringTests` uses cannot say which type did the reading.
+> `InjectedPathSeamTests` scans `src/AgentForge.Sdk/Memory/*.cs` with comments stripped and
+> allows exactly four reads: `PlatformPaths.UserProfile` in the provider, and the three project
+> functions. Without it the conversion is a one-time cleanup: a reintroduced static read compiles,
+> passes every test, and silently ignores the paths the caller handed in.
+
+> ⚠ **One of 10c's own new tests was vacuous, and writing the predicted red names down first is
+> what caught it.** The first `FootprintService` lazy-resolve test constructed the service and
+> then asserted through the **static** `ResolveCategoryPath` wrapper — which never touches the
+> instance field, so it passed whether the constructor captured the default or not. Rewritten
+> against `GetProjectTranscriptStatsAsync`, an instance method that actually reads it.
+
 ### Phase 11 — OpenCode Agents / Commands / Skills / Rules / Plugins page
 
 Reuses `AgentsSkillsEditorViewModel` (1,692 lines) heavily — same tabbed shape,
@@ -3448,15 +3927,26 @@ front-matter card, raw-YAML escape hatch, rendered markdown body, filter/deep-li
 (coverage check) — the latter read-only, listing each plugin file with the events it
 subscribes to, from a shallow static scan of exported hook names. No execution.
 
-**Sources per artifact kind**, all resolved through Phase 10's engine:
+**Sources per artifact kind**, all resolved through Phase 10's engine.
 
-| Kind | Convention sources | Config-declared sources | Inline JSON |
-|---|---|---|---|
-| Agents | `~/.config/opencode/agent(s)/*.md` · `.opencode/agent(s)/*.md` | — | `Config.agent{}` — incl. 7 overridable built-ins (`plan` `build` `general` `explore` `title` `summary` `compaction`) |
-| Commands | `~/.config/opencode/command(s)/*.md` · `.opencode/command(s)/*.md` | — | `Config.command{}` (`template` required · `description` · `agent` · `model` · `variant` · `subtask`) |
-| Skills | `~/.config/opencode/skills/<n>/SKILL.md` · `.opencode/skills/<n>/SKILL.md` · **`~/.claude/skills/`** · **`.claude/skills/`** · **`~/.agents/skills/`**; project paths traverse **upward to the git worktree root** | `skills.paths[]` · `skills.urls[]` *(listed, not fetched in v1)* | — |
-| Rules | `AGENTS.md` traversing upward · `~/.config/opencode/AGENTS.md` · `~/.claude/CLAUDE.md` fallback | `instructions[]` — globs + remote URLs | — |
-| **Plugins** | `~/.config/opencode/plugins/*.{ts,js}` · `.opencode/plugins/*.{ts,js}` | — | `Config.plugin[]` (npm specs) · TUI `plugin[]` + `plugin_enabled{}` |
+> ⛔⛔ **CORRECTED 2026-08-26 by measurement against the installed v1.17.9 binary.** The table as
+> originally written was wrong in five ways, listed under **Phase 11a** below. It is reproduced here
+> in corrected form; do not restore the earlier wording.
+
+| Kind | Convention sources | Recursion & naming | Config-declared | Inline JSON |
+|---|---|---|---|---|
+| Agents | `<global>/agent(s)/*.md` · `.opencode/agent(s)/*.md` for **every ancestor** up to the worktree root | **recursive**; name keeps the relative path (`nested/reviewer`) | — | `Config.agent{}` — incl. 7 overridable built-ins (`plan` `build` `general` `explore` `title` `summary` `compaction`) |
+| Commands | `<global>/command(s)/*.md` · `.opencode/command(s)/*.md`, same ancestor walk | **recursive**; same relative-path naming | — | `Config.command{}` (`template` required · `description` · `agent` · `model` · `variant` · `subtask`) |
+| Skills | `.opencode/skill(s)/` and **`.claude/skills/`** per ancestor · `<global>/skill(s)/` · **`~/.claude/skills/`** · **`~/.agents/skills/`** | **recursive `**/SKILL.md`**; name comes from **front-matter `name:`**, flattened — *not* the folder, *not* the path | `skills.paths[]` · `skills.urls[]` *(listed, not fetched in v1)* | — |
+| Rules | `AGENTS.md` **then `CLAUDE.md`** traversing upward · `<global>/AGENTS.md` · `~/.claude/CLAUDE.md` fallback | n/a | `instructions[]` — globs + remote URLs | — |
+| **Plugins** | `.opencode/plugin(s)/*.{ts,js}` per ancestor · **both** `$OPENCODE_CONFIG_DIR/plugin(s)/` **and** `~/.config/opencode/plugin(s)/` | **flat** — the one kind that is not recursive; the extension stays in the name | — | `Config.plugin[]` (npm specs) · TUI `plugin[]` + `plugin_enabled{}` |
+
+**Precedence is per kind, and the two ladders are inverted:**
+
+| Kind | Highest first |
+|---|---|
+| Agents, Commands | **global** > worktree root > … > nearest ancestor — they deep-merge per field with global loaded last |
+| Skills | worktree root > … > nearest ancestor > global > external (`~/.claude`, `~/.agents`) > built-in |
 
 Front-matter per kind:
 - **Agents** — `description` · `mode` (`primary`\|`subagent`\|`all`) · `model` · `variant` ·
@@ -3491,6 +3981,206 @@ to know that before they edit. Only possible because both products live in one c
 **`references{}` gets a small dedicated editor** — named entries that are a bare string,
 a git ref (`repository` + optional `branch`), or a local path, each with `description` and
 `hidden`. Closest in-tree template is `MarketplaceListEditorViewModel`.
+
+### Phase 11a — DONE (uncommitted). The OpenCode source list, and five corrections
+
+**Suite 3,658 / 0 / 11** (+21: 20 in the new `tests/OpenCode.Sdk.Tests/Artifacts/`, 1 new repo guard). Both apps
+trim-clean. **20 canaries; 18 matched their written-down prediction by name, 2 over-reddened and
+the reason is recorded below.** No UI, and — after a reversal — **no change to
+`AgentForge.Artifacts` at all**.
+
+Shipped: `src/OpenCode.Sdk/Artifacts/` — `OpenCodeProjectWalk` (the ancestor chain),
+`OpenCodeArtifactScopes` (the two ladders), `OpenCodeSkillArtifactSource` (front-matter naming),
+`OpenCodeArtifactSources` (the list), plus an explicit `AgentForge.Artifacts` ProjectReference.
+
+#### ⭐ How this was measured, and why it beats reading the docs
+
+**OpenCode ships its own version-matched spec**, and the installed binary here is **exactly
+v1.17.9** — the version the spikes probed. `opencode debug skill` extracts the built-in
+`customize-opencode` skill; `opencode debug config` prints the fully resolved config, which names
+every discovered agent, command and plugin. Seeded a throwaway git worktree plus a sandbox
+`$OPENCODE_CONFIG_DIR` and read the answers off the tool. **The user's real config was never
+written to.**
+
+#### ⛔ Five corrections — and the vendor's own spec is wrong twice
+
+| # | Claim | Plan said | Vendor spec said | Measured |
+|---|---|---|---|---|
+| 1 | Agent discovery | flat `agent(s)/*.md` | flat `<name>.md` | **recursive**, and the name keeps the relative path |
+| 2 | Command discovery | flat | `**/*.md` | ✅ spec right, plan wrong |
+| 3 | Project `.claude/skills/` | listed | **omitted** | ⭐ **plan right, vendor spec incomplete** — it *is* scanned |
+| 4 | Plugin roots | `plugins/` only | project `.opencode/plugin(s)/` only | singular **and** plural, project **and** global |
+| 5 | Precedence | project > global | — | ⛔⛔ **inverted for agents and commands** |
+
+#### ⛔⛔ The precedence inversion is the one that would have shipped a lie
+
+With the same agent name in the project and the global directory, the **global** file supplied the
+winning `description` while a field only the project file set survived beside it — agent and command
+files **deep-merge per field**, loaded nearest-ancestor outward and then global, **last writer
+wins**. The same collision for a **skill** resolved to the **project** copy, as a single entry.
+So the two kinds rank the same two directories in opposite orders. A page built on "project beats
+global" would name the wrong winning agent on every machine that has a global agent directory —
+confidently, with no visible failure. Within the project chain both kinds agree that the **farther**
+ancestor wins, which is also counter-intuitive, and is not alphabetical: the nearer path sorts later
+and still lost.
+
+#### ⛔⛔ Skills are named by front matter, and a nameless skill silently never loads
+
+A manifest in a folder called `dirname-x` declaring `name: frontmatter-y` registers as
+**`frontmatter-y`**. Since the name is the identity the resolver groups by, naming skills after
+their folder would *invent* shadowing between skills that merely share a folder name and *miss* it
+between two that genuinely collide. Separately, a manifest carrying a `description` but **no
+`name`** did not appear among the resolved skills **at all** — so a skill folder can sit on disk,
+look complete, and be inert. It is listed anyway, under its folder name, because hiding it is
+hiding exactly what the user is looking for; diagnosing it is the tab's job at render time.
+
+#### ⭐ The reversal: the shared engine needed no change after all
+
+The first move was to add opt-in recursion to `SkillDirectoryArtifactSource`. Measurement killed
+it: OpenCode's skill naming comes from front matter, which the shared engine deliberately never
+reads (`ArtifactRef` carries no parsed content, so enumeration stays a stat). So OpenCode gets its
+own source in its own SDK — the precedent `ClaudePluginArtifactSource` already set — and the
+edit to `AgentForge.Artifacts` was reverted. **Product-specific policy belongs in the product's
+SDK; the win is that Claude's 40 unmodified tests stay untouched by a second product's discovery
+rules.**
+
+#### ⚠ Two more measured behaviours worth keeping
+
+- **`$OPENCODE_CONFIG_DIR` does not relocate plugin discovery — it adds to it.** With the variable
+  pointed at a sandbox, a plugin there *and* one in the real `~/.config/opencode/plugins/` both
+  loaded, both reported as `scope: global`. Same family as the documented gotcha that a global
+  `AGENTS.md` under that variable is silently ignored: the variable is honoured for some surfaces
+  and not others, so **each surface must be treated on its own evidence.**
+- **`plugin_origins[]` is an undocumented resolved-config key** giving `{spec, source, scope}` per
+  plugin — exactly the provenance the Plugins tab needs, straight from the tool.
+- **Without a git repository the upward walk does not stop.** Removing `.git` made an `.opencode/`
+  above the former root readable. So a stray `.opencode/` in a home directory applies to every
+  non-repository project beneath it — worth showing, not hiding.
+
+#### ⛔⛔ THE DEFECT THIS SLICE ALMOST SHIPPED: `.gitignore` SWALLOWED ALL SIX NEW FILES
+
+Caught at the very end, by reading `git status` rather than trusting it. **`src/OpenCode.Sdk/Artifacts/`
+and `tests/OpenCode.Sdk.Tests/Artifacts/` did not appear in `git status` at all** — not even under
+`--untracked-files=all`. Cause: `.gitignore` carried an **unanchored `artifacts/`** (the .NET SDK's
+root `ArtifactsPath` output folder), and `core.ignorecase=true` on Windows made it match the capital
+spelling too.
+
+**All four source files and both test files were invisible to git.** They built, they tested green,
+they published trim-clean — and they would have reached CI as a compile error in files that did not
+exist, after a handoff note saying the slice was complete. Nothing in the repository could have
+caught it: `EveryProjectOnDiskIsInTheSolution` checks *projects*, and there was no project to add.
+
+Fixed by **anchoring the rule to the repo root** (`/artifacts/`), which is what it always meant —
+nothing else in the tree relied on the unanchored form. And guarded, because prose is not a guard:
+**`BuildFilePathIntegrityTests.NoCompiledSourceFileIsHiddenFromGitByAnIgnoreRule`** feeds every
+non-`bin`/`obj` `.cs` file under `src/` and `tests/` to `git check-ignore` and fails naming any that
+are excluded. Canaried by restoring the unanchored rule: it reddens by name and lists all six files.
+
+⚠ **Its own implementation had the same shape of bug.** Feeding paths with `WriteLine` on Windows
+sends `
+`, git splits on `
+`, and every path it tested carried a trailing `
+`. It still matched
+here because the rule is a directory prefix — but a rule matching an exact file name would have been
+**missed silently and reported all-clear**. Now `--stdin -z` with NUL separators.
+
+⚠ **It fails rather than skips when git is missing**, because a guard that opts out on the machines
+where it cannot run is the decorative-protection problem it exists to catch.
+
+#### ⚠ Canary notes
+
+Two canaries over-reddened, and both were **my prediction being wrong, not the code**: making the
+skill walk `TopDirectoryOnly` finds *nothing* in the ordinary `skills/<name>/SKILL.md` layout
+(5 red, not 1), and truncating the ancestor walk removes every project source because the fixture
+works from `repo/sub/deeper` (15 red, not 4). **The ancestor walk is a shared dependency of almost
+every test in this file, so a canary on it is not isolable** — worth knowing before reading a future
+run of it as a narrow result.
+
+⚠ **Two tests reddened under no canary in the first batch** and had to be aimed at directly, which
+is the whole point of tracking that. One was fine once the boundary itself was removed rather than
+truncated. The other, `ABlankOrUnusableDirectoryYieldsNothingRatherThanThrowing`, cannot have its
+blank-input guard canaried at all: deleting it sends a `string?` into `Path.GetFullPath(string)` and
+the build fails on `CS8604` first. **The compiler enforces that line and no test can**, so the
+remark says so instead of crediting it.
+
+⚠ **The canary harness itself reported a false result first.** All sixteen came back
+"predicted 1 → got 0" while the failure *counts* were exactly right: `dotnet test -v q` prints no
+per-test names, so the name extraction was empty. **A count is not evidence that the named test is
+the one that went red** — the harness now cross-checks the count against the number of names and
+flags a mismatch.
+
+### Phase 11b — DONE (uncommitted). The page's read model, and what a chain MEANS
+
+**Suite 3,672 / 0 / 11** (+14). Both apps trim-clean. **17 canaries, all matching prediction, and
+all 14 new tests proven non-vacuous.** Still **no UI** — that is 11c.
+
+Shipped in `src/OpenCode.Sdk/Artifacts/`: `OpenCodeArtifactSemantics` (what a chain means, per kind),
+`OpenCodeSkillManifest` (the bounded front-matter read), `OpenCodeArtifactInventory` (grouped,
+ordered, diagnosed rows). `OpenCodeSkillArtifactSource` now reads through the shared manifest reader
+instead of its own copy, so the name it **groups** by and the name a consumer **displays** cannot
+drift apart.
+
+#### ⛔⛔ "SHADOWED" IS A STRUCTURAL FACT AND A PER-KIND CLAIM — AND CONFLATING THEM LIES
+
+`ResolvedArtifact.IsShadowed` only says more than one source declared the name. What OpenCode does
+with the losers is **opposite** for its two families, both measured:
+
+| Semantics | Kinds | What the losers are |
+|---|---|---|
+| `SingleWinner` | Skills (and every unmeasured kind, conservatively) | genuinely never loaded — "overridden" is accurate |
+| `DeepMerge` | **Agents, Commands** | **live**, contributing fields the winner does not set |
+
+**A row that prints "2 copies overridden" under a merging agent tells the user to delete a file that
+is supplying settings.** That is not a cosmetic error, and it renders as a perfectly plausible row —
+which is why `OpenCodeChainSemantics` is required reading before a consumer says anything about a
+chain. An unmeasured kind defaults to `SingleWinner` rather than being assumed into the merging
+bucket; the way to move one is to measure it.
+
+#### ⚠⚠ THE CROSS-TOOL BADGE CANNOT BE ANSWERED BY THE SCOPE
+
+Two of the three cross-tool skill roots are their own scopes, but **a project's own
+`.claude/skills/` sits in the *project* scope — the same scope as `.opencode/skills/` beside it**.
+Badging off `scope.Id` catches the two user-level roots and silently misses the copy inside the
+user's own repository, which is the one most likely to be edited. `IsCrossTool` therefore takes the
+whole `ArtifactRef` and reads the source id too, off constants the source list itself exports so a
+restated string cannot drift. Canary I3 (scope-only) reddens exactly that test.
+
+#### ⚠ THE THREE SKILL DIAGNOSES DO NOT SHARE AN EVIDENCE LEVEL, AND THE TYPE SAYS SO
+
+- ✅ **Measured** — no `name:` → **never loads**. Absent from `opencode debug skill` entirely. This
+  is the only one that sets `IsInert`.
+- ✅ **Measured** — `name:` differs from the folder → loads under a name nothing in the tree
+  suggests. A warning, not a failure.
+- ⚠ **Spec-sourced, NOT measured** — no `description:` → per the bundled spec, "filtered out and
+  never surfaced to the model". **Measured that such a skill IS still discovered**, so discovery and
+  model-exposure are different questions and only the first is observable with these probes.
+  Reported as a model-visibility warning, never as "this does not load".
+
+`IsInert` is deliberately narrow for the same reason: a warning sharing a treatment with a hard
+failure trains users to ignore both.
+
+#### ⭐ A VACUOUS TEST, CAUGHT BY A CANARY THAT REDDENED NOTHING
+
+`ItemsAreOrderedByName` seeded three agents into one directory — and removing the sort entirely
+reddened **nothing**, because the resolver preserves source order and a single directory walk
+already returns names alphabetically. **The filesystem was supplying the ordering the test credited
+to the code.** Fixed by splitting the names across the project and global directories so the natural
+order is wrong (`zebra, alpha, Mango`), which only the sort can fix; `Mango` also pins that the
+comparison is case-insensitive. ⚠ Two canaries also had to be re-aimed because `if (false)` trips
+`CS0162` under `TreatWarningsAsErrors` — the same trap this plan has now recorded three times.
+
+#### Deliberately NOT done, stated not hidden
+
+- **No UI.** The page, its tabs and the chain-expansion affordance are 11c. Everything above is
+  headlessly testable precisely so the view can be a dumb projection.
+- **Inline `Config.agent{}` / `command{}` are still not sources** — `ForPage` takes an environment
+  and a directory, not a parsed config document, so `ArtifactForm.Inline` never appears yet. S7's
+  per-field merge is implementable (`Semantics` is the hook) but not implemented.
+- **`skills.paths[]`, `skills.urls[]`, `instructions[]`, `references{}` are not read.**
+- **The plugin hook-name scan is not written** — the plan wants each plugin file listed with the
+  events it subscribes to, from a shallow static scan. Deferred to 11c with the view that shows it.
+- **Only the effective declaration is read for diagnosis.** Reading every copy would multiply file
+  reads by chain length to answer a question about the artifact actually in force.
 
 ### Phase 11.5 — Danger indication, systematised
 
