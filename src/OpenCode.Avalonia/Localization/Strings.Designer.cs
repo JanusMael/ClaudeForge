@@ -2965,5 +2965,95 @@ namespace Bennewitz.Ninja.OpenCode.Avalonia.Localization {
         public static string ThemeDiscoveredTooltip {
             get { return ResourceManager.GetString("ThemeDiscoveredTooltip", resourceCulture); }
         }
+        public static string ArtifactsPageTitle {
+            get { return ResourceManager.GetString("ArtifactsPageTitle", resourceCulture); }
+        }
+        public static string ArtifactsPageSubtitle {
+            get { return ResourceManager.GetString("ArtifactsPageSubtitle", resourceCulture); }
+        }
+        public static string ArtifactsFilterPlaceholder {
+            get { return ResourceManager.GetString("ArtifactsFilterPlaceholder", resourceCulture); }
+        }
+        public static string ArtifactsFilterAutoName {
+            get { return ResourceManager.GetString("ArtifactsFilterAutoName", resourceCulture); }
+        }
+        public static string ArtifactsTabsAutoName {
+            get { return ResourceManager.GetString("ArtifactsTabsAutoName", resourceCulture); }
+        }
+        public static string ArtifactsCountFmt {
+            get { return ResourceManager.GetString("ArtifactsCountFmt", resourceCulture); }
+        }
+        public static string ArtifactsCountFilteredFmt {
+            get { return ResourceManager.GetString("ArtifactsCountFilteredFmt", resourceCulture); }
+        }
+        public static string ArtifactsEmptyNone {
+            get { return ResourceManager.GetString("ArtifactsEmptyNone", resourceCulture); }
+        }
+        public static string ArtifactsEmptyFiltered {
+            get { return ResourceManager.GetString("ArtifactsEmptyFiltered", resourceCulture); }
+        }
+        public static string ArtifactsTabAgents {
+            get { return ResourceManager.GetString("ArtifactsTabAgents", resourceCulture); }
+        }
+        public static string ArtifactsTabCommands {
+            get { return ResourceManager.GetString("ArtifactsTabCommands", resourceCulture); }
+        }
+        public static string ArtifactsTabSkills {
+            get { return ResourceManager.GetString("ArtifactsTabSkills", resourceCulture); }
+        }
+        public static string ArtifactsTabRules {
+            get { return ResourceManager.GetString("ArtifactsTabRules", resourceCulture); }
+        }
+        public static string ArtifactsTabPlugins {
+            get { return ResourceManager.GetString("ArtifactsTabPlugins", resourceCulture); }
+        }
+        public static string ArtifactsChainMergedFmt {
+            get { return ResourceManager.GetString("ArtifactsChainMergedFmt", resourceCulture); }
+        }
+        public static string ArtifactsChainOverriddenFmt {
+            get { return ResourceManager.GetString("ArtifactsChainOverriddenFmt", resourceCulture); }
+        }
+        public static string ArtifactsShowChain {
+            get { return ResourceManager.GetString("ArtifactsShowChain", resourceCulture); }
+        }
+        public static string ArtifactsCrossTool {
+            get { return ResourceManager.GetString("ArtifactsCrossTool", resourceCulture); }
+        }
+        public static string ArtifactsCrossToolTip {
+            get { return ResourceManager.GetString("ArtifactsCrossToolTip", resourceCulture); }
+        }
+        public static string ArtifactsInert {
+            get { return ResourceManager.GetString("ArtifactsInert", resourceCulture); }
+        }
+        public static string ArtifactsIssueNoName {
+            get { return ResourceManager.GetString("ArtifactsIssueNoName", resourceCulture); }
+        }
+        public static string ArtifactsIssueNameDiffers {
+            get { return ResourceManager.GetString("ArtifactsIssueNameDiffers", resourceCulture); }
+        }
+        public static string ArtifactsIssueNoDescription {
+            get { return ResourceManager.GetString("ArtifactsIssueNoDescription", resourceCulture); }
+        }
+        public static string ArtifactsFormBuiltIn {
+            get { return ResourceManager.GetString("ArtifactsFormBuiltIn", resourceCulture); }
+        }
+        public static string ArtifactsFormFile {
+            get { return ResourceManager.GetString("ArtifactsFormFile", resourceCulture); }
+        }
+        public static string ArtifactsFormInline {
+            get { return ResourceManager.GetString("ArtifactsFormInline", resourceCulture); }
+        }
+        public static string ArtifactsFormRemote {
+            get { return ResourceManager.GetString("ArtifactsFormRemote", resourceCulture); }
+        }
+        public static string ArtifactsWorkingDirectory {
+            get { return ResourceManager.GetString("ArtifactsWorkingDirectory", resourceCulture); }
+        }
+        public static string ArtifactsWorkingDirectoryPlaceholder {
+            get { return ResourceManager.GetString("ArtifactsWorkingDirectoryPlaceholder", resourceCulture); }
+        }
+        public static string ArtifactsNoProject {
+            get { return ResourceManager.GetString("ArtifactsNoProject", resourceCulture); }
+        }
 }
 }

@@ -68,9 +68,17 @@
             <Panel Grid.Column="1">
                 <!-- The wrapper keeps the view-model as its DataContext so IsVisible can bind
                      to the query; only the inner control switches to the editor. -->
-                <ContentControl IsVisible="{Binding !Search.SearchQuery.Length}">
-                    <views:SettingsPageHost DataContext="{Binding SelectedNode.Editor}" />
-                </ContentControl>
+                <!--
+                    ⚠ Content, not a hardcoded SettingsPageHost. NavigationNodeViewModel.Editor is
+                    typed `object?` and always was, so the navigation tree never cared what kind of
+                    page a node owned — but naming one host here meant every page had to BE a
+                    schema settings group. The artifacts page is not one, so App.axaml now picks the
+                    view by view-model type, exactly as it already does for the specialised editors.
+                    A missing DataTemplate renders the type name and logs nothing, which is what
+                    OpenCodePageTemplateTests exists to catch.
+                -->
+                <ContentControl IsVisible="{Binding !Search.SearchQuery.Length}"
+                                Content="{Binding SelectedNode.Editor}" />
 
                 <ListBox ItemsSource="{Binding Search.SearchResults}"
                          SelectedItem="{Binding SelectedSearchResult, Mode=TwoWay}"

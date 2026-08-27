@@ -68,4 +68,7 @@ public static class Strings
 
     /// <summary>Navigation header for the terminal-UI configuration section.</summary>
     public static string SectionOpenCodeTui => Get(nameof(SectionOpenCodeTui));
+
+    /// <summary>Navigation header for the artifacts page.</summary>
+    public static string SectionArtifacts => Get(nameof(SectionArtifacts));
 }
