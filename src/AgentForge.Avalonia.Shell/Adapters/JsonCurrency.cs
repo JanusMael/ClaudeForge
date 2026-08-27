@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 

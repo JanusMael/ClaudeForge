@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 
 /// <summary>
 /// A string-keyed map that enumerates in insertion order.
@@ -23,6 +23,14 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 /// <para>
 /// This type makes the order explicit so the guarantee stops depending on luck. It is
 /// deliberately minimal: a list for order, a dictionary for lookup.
+/// </para>
+/// <para>
+/// ⚠ <b>It lives in the abstractions layer, not next to the JSON conversion that first needed
+/// it.</b> Both an SDK assembling a value and a UI adapter converting one need the same
+/// guarantee, and an SDK cannot reference a UI assembly — so leaving it beside
+/// <c>JsonCurrency</c> would have forced a second copy in <c>OpenCode.Sdk</c> for the <c>mcp</c>
+/// codec, splitting a format's read and write halves across two types that could then disagree.
+/// A string-keyed map with a defined order is a neutral primitive; nothing about it is Avalonia's.
 /// </para>
 /// </remarks>
 public sealed class OrderedPropertyMap : IReadOnlyDictionary<string, object?>
