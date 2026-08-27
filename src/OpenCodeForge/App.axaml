@@ -24,6 +24,52 @@
     </Application.Styles>
 
     <!--
+        ⛔⛔ THE TWO BRUSHES BELOW ARE NOT DECORATION — WITHOUT THEM EVERY PROPERTY HEADING ON EVERY
+        SETTINGS PAGE IN THIS APP RENDERED UNSTYLED, AND NOTHING REPORTED IT.
+
+        `PropertyEditorWrapper` lives in the shared editor library and wraps every property editor
+        this app shows (Views/SettingsPageHost.axaml). Its heading chip asks for
+        AppPropertyHeadingBackgroundBrush and AppPropertyHeadingBrush — host-supplied tokens, by the
+        `App*` naming convention — and this file had no Application.Resources block at all, so
+        neither resolved. An unresolvable DynamicResource is not a build error, not a runtime error,
+        and logs nothing: the Border simply kept a null Background. Measured on screen before the
+        fix, the property names rendered as plain bold text, still carrying the chip's 8px padding
+        while the chip itself was invisible — which is why every label sat indented from its own
+        description.
+
+        Same defect family as the LE.DangerText / LE.DangerBorder keys that were referenced nine
+        times and declared nowhere (`c7ea6fe`), and it is now caught mechanically by
+        ThemeResourceIntegrityTests: a token a SHARED library references must be defined by EVERY
+        app that consumes that library.
+
+        The values are deliberately the sibling app's, not new ones. The Application.Styles comment
+        above states the intent ("so both apps present identical editor chrome") and these two
+        tokens are exactly the chrome it was talking about. Their contrast is already measured and
+        documented in ClaudeForge/App.axaml: heading foreground #1E5573 is ~5.7:1 on white (WCAG AA
+        Normal) and #74C2DE is ~8.3:1 on #1A1A1A (WCAG AAA). Inventing a second palette here would
+        mean shipping unverified contrast to make two sibling apps look gratuitously different.
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <!--
+                ThemeDictionaries, not flat entries: a heading BACKGROUND cannot be theme-neutral
+                the way a foreground accent can. One value that reads on Semi Light is either
+                invisible or glaring on Semi Dark.
+            -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#B8DCE2" />
+                    <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#1E5573" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#1B3A45" />
+                    <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#74C2DE" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <!--
         Application-level DataTemplates for this product's specialised editors. The editor library
         does not know these view-model types, so its PropertyEditorWrapper renders them through a
         ContentControl that falls through to here. This is the ONLY thing that connects a
