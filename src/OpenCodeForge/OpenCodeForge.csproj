@@ -43,6 +43,10 @@
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
         <ProjectReference Include="..\LayeredEditors.Avalonia.Diagnostics\LayeredEditors.Avalonia.Diagnostics.csproj" />
         <ProjectReference Include="..\OpenCode.Sdk\OpenCode.Sdk.csproj" />
+        <!-- This product's own compound editors and their views. The app is a thin host, so the
+             editors live beside their view-models rather than here; this reference is what puts
+             them in the build and lets App.axaml's DataTemplates name their views. -->
+        <ProjectReference Include="..\OpenCode.Avalonia\OpenCode.Avalonia.csproj" />
     </ItemGroup>
 
     <!-- No <Generator> on the resx: Localization/Strings.cs is hand-written, so there is no

@@ -1,5 +1,13 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:perm="using:Bennewitz.Ninja.OpenCode.Avalonia.Permissions"
+             xmlns:mcp="using:Bennewitz.Ninja.OpenCode.Avalonia.Mcp"
+             xmlns:agents="using:Bennewitz.Ninja.OpenCode.Avalonia.Agents"
+             xmlns:cmd="using:Bennewitz.Ninja.OpenCode.Avalonia.Commands"
+             xmlns:plug="using:Bennewitz.Ninja.OpenCode.Avalonia.Plugins"
+             xmlns:tool="using:Bennewitz.Ninja.OpenCode.Avalonia.Tooling"
+             xmlns:upd="using:Bennewitz.Ninja.OpenCode.Avalonia.Updates"
+             xmlns:kb="using:Bennewitz.Ninja.OpenCode.Avalonia.Keybinds"
              x:Class="Bennewitz.Ninja.OpenCodeForge.App"
              RequestedThemeVariant="Default">
 
@@ -11,4 +19,74 @@
             <Setter Property="MaxWidth" Value="900" />
         </Style>
     </Application.Styles>
+
+    <!--
+        Application-level DataTemplates for this product's specialised editors. The editor library
+        does not know these view-model types, so its PropertyEditorWrapper renders them through a
+        ContentControl that falls through to here. This is the ONLY thing that connects a
+        specialised editor's view-model to its view — an editor registered in OpenCodeEditorFactory
+        with no entry here renders as the view-model's type name, which reads as a broken page
+        rather than as a missing template.
+    -->
+    <Application.DataTemplates>
+
+        <!-- MaxHeight rather than Height so a config with two rules does not leave a tall empty
+             panel below them; the view's own ScrollViewer handles a long grid.
+
+             ⚠⚠ That second clause was FALSE until 9a-8: not one view in OpenCode.Avalonia had a
+             ScrollViewer, so every MaxHeight here CLIPPED instead of scrolling. Measured by
+             screenshot and by the UIA tree — a four-server `lsp` config laid its last two entries
+             out at y=1262 and y=1565 against a window bottom edge of y=1100, with the page's only
+             scroller already at 100%, and those two were exactly the entries the editor's own red
+             banner was pointing at. Every view now carries a ScrollViewer; a MaxHeight added here
+             for a view without one is a clip, not a cap. -->
+        <DataTemplate DataType="perm:OpenCodePermissionEditorViewModel">
+            <perm:OpenCodePermissionEditorView MaxHeight="600" />
+        </DataTemplate>
+
+        <DataTemplate DataType="mcp:OpenCodeMcpEditorViewModel">
+            <mcp:OpenCodeMcpEditorView MaxHeight="700" />
+        </DataTemplate>
+
+        <DataTemplate DataType="agents:OpenCodeAgentEditorViewModel">
+            <agents:OpenCodeAgentEditorView MaxHeight="800" />
+        </DataTemplate>
+
+        <DataTemplate DataType="cmd:OpenCodeCommandEditorViewModel">
+            <cmd:OpenCodeCommandEditorView MaxHeight="700" />
+        </DataTemplate>
+
+        <DataTemplate DataType="plug:OpenCodePluginEditorViewModel">
+            <plug:OpenCodePluginEditorView MaxHeight="600" />
+        </DataTemplate>
+
+        <DataTemplate DataType="plug:OpenCodePluginEnabledEditorViewModel">
+            <plug:OpenCodePluginEnabledEditorView MaxHeight="400" />
+        </DataTemplate>
+
+        <DataTemplate DataType="tool:OpenCodeFormatterEditorViewModel">
+            <tool:OpenCodeFormatterEditorView MaxHeight="700" />
+        </DataTemplate>
+
+        <DataTemplate DataType="tool:OpenCodeLspEditorViewModel">
+            <tool:OpenCodeLspEditorView MaxHeight="800" />
+        </DataTemplate>
+
+        <!-- No MaxHeight: a picker plus one line of help has nothing to cap, and the number here
+             would be a guess that later reads as deliberate. -->
+        <DataTemplate DataType="upd:OpenCodeAutoupdateEditorViewModel">
+            <upd:OpenCodeAutoupdateEditorView />
+        </DataTemplate>
+
+        <!-- ⚠ No MaxHeight here either, and for the opposite reason to autoupdate's: this view is
+             the one that must NOT be height-capped from outside. Its own ListBox owns a bounded,
+             virtualizing scroll region, and a cap out here would put a second scroller around it —
+             giving the inner panel an unbounded viewport, realizing all 184 rows, and undoing the
+             one thing this editor exists to do. The view's header measures Auto and the list takes
+             the rest, so it sizes itself. -->
+        <DataTemplate DataType="kb:OpenCodeKeybindEditorViewModel">
+            <kb:OpenCodeKeybindEditorView />
+        </DataTemplate>
+
+    </Application.DataTemplates>
 </Application>
