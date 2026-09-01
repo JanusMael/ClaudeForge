@@ -134,6 +134,7 @@ Two specific anti-patterns this file refuses on principle:
 
 The schema refresh (`scripts/refresh-schema.{ps1,sh}`) does **NOT** carry model names — schemastore.org omits them, so expect it to report "already up to date". The pickers come entirely from the catalog + two hand-curated overlays. When the `opus`/`sonnet`/… alias moves to a new snapshot, edit these four and keep the invariant **one non-legacy row per family alias**:
 
+- [ ] **Verify the facts first** — never from recall: <https://platform.claude.com/docs/en/about-claude/models/overview.md> has the exact Claude API IDs, context/effort, and the "Legacy models" line that tells you whom to demote (a family can supersede itself: Fable 5 → Fable 5.1).
 - [ ] `ModelCatalog/model-catalog.json` — add the new row (copy the outgoing build's effort/`supports1m`/`supportsAutoMode` flags unless docs say otherwise), move the `alias` onto it, repoint the `aliases` map, and **demote the previous holder to `legacy: true`, `alias: null`** (keep the row — still a valid pin).
 - [ ] `Schemas/claude-code-settings.overlay.json` — swap the family's pinned snapshot id in `model.examples` (+ the `model.description` e.g.). This is the AutoCompleteBox list; the refresh never touches the overlay.
 - [ ] `Descriptions/claude-code-settings.enumdescriptions.json` — mirror that swap and update the alias tooltip ("today Opus N"). **Every `model.examples` value needs a key here** or `ModelPropertyPromotionTests` fails (each picker item needs a tooltip). Replace in place, don't accumulate stale rows.
