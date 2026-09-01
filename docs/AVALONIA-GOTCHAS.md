@@ -142,6 +142,33 @@ Both traps can be present at once and mask each other — fixing only the scopin
 
 ---
 
+### An unresolvable `DynamicResource` is silent in FOUR places at once
+
+**Symptom:** A control renders unstyled — plain text where a warning colour belongs, or an invisible border — and nothing anywhere reports a problem.
+
+`LE.DangerText` was referenced 7 times and `LE.DangerBorder` twice by `OpenCodeKeybindEditorView.axaml`, while `EditorColors.axaml` declared neither. Every conflict / incomplete / held / capturing banner in that editor rendered as ordinary text inside an invisible border. What made it survive:
+
+1. **Not a build error.** XamlX resolves `StaticResource` at build time but defers `DynamicResource` to runtime — so it compiles, *including under the Release trim publish*, which is otherwise this repo's strictest AXAML gate.
+2. **Not a runtime error.** Avalonia leaves the property at its default value.
+3. **Nothing is logged.** No warning, no trace.
+4. **A screenshot pass can miss it entirely** — all nine elements were conditional on a keybind conflict, and the sandbox config used for a live UIA/screenshot pass had none, so not one was ever on screen.
+
+**Fix:** a static guard, not vigilance. `ThemeResourceIntegrityTests` asserts every `LE.*` key referenced in AXAML is declared, and every declared key is referenced from AXAML **or C#** — six of the eight are resolved from code (`BoolToStatusBrushConverter`, `LinkifiedTextBlock`), so an AXAML-only scan calls them all dead.
+
+---
+
+### A THEMED resource looked up with a null variant resolves to NOTHING
+
+**Symptom:** A brush token you just added produces a plausible colour that is nonetheless the wrong one, and is identical in light and dark.
+
+`BrushHelper.Resolve` calls `TryGetResource(key, null, out …)`. That is correct for the `LE.*` tokens, which are declared **flat** and documented theme-neutral. Every `App*Brush` is declared inside `ResourceDictionary.ThemeDictionaries` with `Light` / `Dark` children — and a themed key looked up with a **null** variant is not found. The caller then falls back to its hardcoded hex, which is one literal for both themes: precisely the problem the token was introduced to remove, now invisible.
+
+**Fix:** `BrushHelper.ResolveThemed`, which passes `Application.Current.ActualThemeVariant`. Kept as a **separate method** rather than an optional parameter, because an optional parameter is a thing somebody forgets and the failure is silent.
+
+⚠ **This is untestable without a headless app.** In ordinary unit tests `Application.Current` is null or resource-less, so the flat and themed lookups both land on the fallback and both look correct. `AppSeverityThemedLookupTests` installs a themed dictionary whose sentinel colours match no fallback, so the flat lookup fails instead of passing. Canary confirmed: swapping `ResolveThemed` → `Resolve` reddens it, and reddens nothing else in the suite.
+
+---
+
 ## Templates / controls
 
 ### `DataTemplate`s match in DECLARATION ORDER — a subclass template must be declared BEFORE the base type's
@@ -178,6 +205,27 @@ box.IsDropDownOpen = true;
 ```
 
 Reference: `ModelPicker.axaml.cs` chevron handler (the fuzzy model picker).
+
+---
+
+### A `TabControl` bound to `ItemsSource` names its `TabItem`s from the ITEM, not the `ItemTemplate`
+
+**Symptom:** A screen reader announces `Namespace.Type.FullName` for every tab, while the AXAML plainly contains an `AutomationProperties.Name`.
+
+Avalonia takes a generated container's automation name from the bound **item**. Putting `AutomationProperties.Name` inside the `ItemTemplate` names the `TextBlock` *inside* the header and leaves the focusable `TabItem` falling back to `ToString()`. When the template renders more than one element there is no single header text to infer from either.
+
+**Both of this repo's `ItemsSource`-bound TabControls had it — a 100% hit rate on the pattern.** Measured through UI Automation on the running apps:
+
+| View | Announced |
+|---|---|
+| `OpenCodeArtifactsPageView` (5 tabs) | `…Artifacts.OpenCodeArtifactTabViewModel` |
+| `SettingsGroupEditorView` (6 tabs) | `…Settings.GroupTab` |
+
+⛔ **`AxamlAccessibilityCoverageTests` cannot catch this and scored both files clean.** It asserts on `AutomationProperties.Name` attributes present in the markup — and in both cases the attribute *was* present, on the wrong element. The name that reaches the user comes from a view-model, which no scan of the markup can evaluate.
+
+**Fix:** override `ToString()` on the item type, returning an explicit automation name and falling back to the visible header. `ItemsSourceBoundTabsTests` resolves each such TabControl's `ItemTemplate` `x:DataType`, finds the file declaring it, and fails without the override.
+
+> The same reasoning applies to any `ItemsSource`-generated container — `TreeViewItem`, `ListBoxItem`. ClaudeForge's nav `TreeViewItem`s come from `NavigationNodeViewModel` and have **not** been audited.
 
 ---
 
