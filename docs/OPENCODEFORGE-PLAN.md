@@ -26,20 +26,67 @@
 > **Deferred re-checkpoint** section: 11 items must be re-validated against a used install
 > before Phases 10 and 14 ship.
 >
-> ### Implementation status — 2026-08-26
+> ### Implementation status — 2026-08-27 (session 13)
 >
-> Branch **`feat/agentforge-opencodeforge`** @ **`2508878`**, **85 commits ahead of
-> `origin/main`** (`origin/main` still `930eb41`, 0 behind). Suite: **3,689 passed · 11 skipped ·
+> Branch **`feat/agentforge-opencodeforge`** @ **`d528997`**, working tree **clean**.
+> **105 commits ahead of `origin/main` and 5 BEHIND it.** Suite: **3,731 passed · 11 skipped ·
 > 0 failed · 0 warnings** across 12 test projects; the trim gate publishes clean for **both** apps.
+> Every commit this session was checked into a throwaway `git worktree` and built in isolation.
 >
-> ✅ **THE TREE IS COMMITTED.** Branch `feat/agentforge-opencodeforge` @ **`eaa9c3d`**, working tree
-> clean, **98 commits ahead of `origin/main`**. Sessions 6–12's backlog landed as **13
-> dependency-ordered commits, every one of which builds** — verified by checking each into a
-> throwaway `git worktree` and building it.
+> ⛔ **22 commits are LOCAL ONLY and NO PR HAS EVER BEEN OPENED for this branch** (confirmed via
+> `gh pr list --head`). Pushing is two-party — the dev machine's credential is read-only on this
+> repo — so **CI has seen none of this**; do not report the branch as CI-green at HEAD until a run
+> says so.
 >
-> ⛔ **15 commits are LOCAL ONLY and no PR has ever been opened.** Pushing is two-party (the dev
-> machine's credential is read-only on this repo), so **CI has seen none of this** — do not report
-> the branch as CI-green at HEAD until a run says so.
+> ⚠ **`origin/main` MOVED to `befedb0` and this branch is 5 behind.** Two dependabot bumps
+> (`Microsoft.Maui.Essentials` 10.0.90→10.0.100, `Bennewitz.Ninja.AutoVersioning`
+> 2026.3.701→2026.3.819) plus **`3c7aaab feat(models): add Claude Fable 5.1, demote Fable 5 to
+> legacy`**. Those touch the model catalog, enum descriptions, the overlay schema and one csproj —
+> **no overlap with this branch**, so no conflict is expected. Not rebased or merged: two-party call.
+>
+> ✅ **Phase 11c HAS NOW BEEN SEEN RUNNING**, and the per-kind inverted precedence sentence is
+> verified on screen in **both** directions — agents and commands merge with their lower copies
+> LIVE and win at *global*; skills override and win at *project*. Also confirmed live: the chain
+> expander, all three skill issue sentences, cross-tool badges, the filter and its counts, both
+> directory spellings, and that a 130-row skills tab scrolls to its last row. **A green,
+> trim-clean page still had four defects** — see "What running the UI keeps finding" below.
+>
+> 🔶 **Phase 11.5 is STARTED, not done — slice 1 of N (`c1dbb4f`).** Landed: the `AppSeverity` enum
+> in `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
+> `AppSeverityToBrushConverter`, and ClaudeForge's Essentials cards migrated off
+> `string severityColor` (`Color.TryParse` and its grey fallback deleted). **Still open in 11.5:**
+> the schema-level danger annotation on `IEditorSchema.Metadata`, the per-product danger TABLES
+> (Claude + OpenCode), the four missing surfaces (settings tree, effective view, search hits,
+> save-preview), the scope-aware predicate, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build
+> tripwire modelled on `GuardUnusedResxKeys`.
+>
+> ### What running the UI keeps finding — read this before trusting a green suite
+>
+> Session 13 ran both apps under UI Automation and found **six** user-facing defects that a
+> 3,689-green, trim-clean tree was hiding. The pattern is consistent enough to plan around:
+> **a guard that inspects markup cannot see a name or colour that arrives from a view-model or a
+> theme dictionary at runtime.**
+>
+> | Defect | Fixed in | Why every existing guard missed it |
+> |---|---|---|
+> | `LE.DangerText` + `LE.DangerBorder` referenced 9×, declared 0× | `c7ea6fe` | Unresolvable `DynamicResource` is not a build error (**even under the trim gate**), not a runtime error, and logs nothing |
+> | The artifacts page painted metadata RED and problems grey | `5435c18` | `LE.BoolDisabled` is `#C62828`; nothing asserts a token's *meaning* matches its use |
+> | 5 artifacts tabs announced `…OpenCodeArtifactTabViewModel` | `5435c18` | `ItemsSource`-generated containers take their name from the ITEM |
+> | Every OpenCodeForge property heading rendered unstyled | `6b8e9c1` | `App*Brush` is declared **per app**; a shared library referenced one ClaudeForge alone defined |
+> | A folded `description: >-` read as the literal `">-"`, **and its continuation lines became phantom FIELDS** | `05fb560` | `">-"` is non-empty, so `SkillHasNoDescription` never fired — an unreadable description reported as healthy |
+> | ClaudeForge's nav tree announced nothing; 6 settings tabs announced `…Settings.GroupTab` | `d528997` | `AxamlAccessibilityCoverageTests` did not scan `TreeView` **at all**, and scored the file a clean 0 |
+>
+> ⭐ **Both `ItemsSource`-bound TabControls in the repo were broken — a 100% hit rate.** New
+> `ItemsSourceBoundTabsTests` fails any third one that forgets `ToString()`.
+> ⭐ New `ThemeResourceIntegrityTests` closes the undeclared-token class in both directions.
+> ⛔ `AxamlAccessibilityCoverageTests`' control list is now widened by six types and satisfied at
+> **zero** everywhere — no baseline entries were added.
+>
+> ⓘ **Not yet audited:** ClaudeForge's nav `TreeViewItem`s are generated from
+> `NavigationNodeViewModel`, so their names come from the item — the same `ToString()` question
+> `GroupTab` just answered. And **the Essentials severity dots have never been seen on screen**:
+> screen capture failed mid-session (`CopyFromScreen` → "The handle is invalid") because the RDP
+> session became unattended. UIA still works unattended; pixels do not.
 >
 > ✅ **Phase 9a is COMPLETE as of 9a-10 (`keybinds`)** — the largest editor in the plan. Spike S6 is
 > answered by measurement rather than estimate: the view realizes **5 of 184 rows** (11 after

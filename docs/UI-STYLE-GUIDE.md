@@ -95,6 +95,43 @@ for ≥7:1 (Primary, WCAG AAA) and ≥4.5:1 (Secondary, AA Normal) against
 their natural backgrounds.  Don't substitute a "looks fine" hex without
 checking — Semi's variant tweaks can drop you below threshold quietly.
 
+### 3a. Severity family (`AppSeverity*Brush`)
+
+How much attention a setting's state deserves. Keyed by the
+`AppSeverity` enum (`LayeredEditors.Abstractions`) through
+`AppSeverityToBrushConverter.KeyFor`, and declared per variant in **both**
+apps' `App.axaml`.
+
+| Token | Light | Dark | Meaning |
+|---|---|---|---|
+| `AppSeverityCriticalBrush` | `#A8071A` | `#F99090` | Weakens a security or safety boundary |
+| `AppSeverityCautionBrush` | `#874400` | `#F0A03A` | Affects cost, quality, or output volume |
+| `AppSeverityInfoBrush` | `#0050B3` | `#6BB1F2` | Behaviour worth knowing about; cannot cost money |
+| `AppSeverityNeutralBrush` | `#666666` | `#AAAAAA` | Unremarkable — the default |
+
+**The values are not new.** Each reuses the already-vetted
+`AppStatus*ForegroundBrush` / `AppSecondaryTextBrush` pair for that role,
+so the severity dot matches the status text beside it and no unreviewed
+colour enters the palette.
+
+⛔ **These replaced four hardcoded hexes** — `#D32F2F` / `#F4B400` /
+`#1976D2` in `EssentialsViewModel.BuildCards`, plus a `#9E9E9E`
+parse-failure fallback. Each was a single literal emitted regardless of
+variant, so the **light**-theme red and amber were what shipped into dark
+mode. Severity travels as an enum now; a colour string could also be
+malformed, which is why the old code needed a fallback branch at all.
+
+⚠ **Never look these up with `BrushHelper.Resolve`.** They live in
+`ThemeDictionaries`, and a themed key looked up with a null variant
+resolves to nothing — the caller silently takes its fallback hex. Use
+`ResolveThemed`. See "A THEMED resource looked up with a null variant
+resolves to NOTHING" in `AVALONIA-GOTCHAS.md`.
+
+Guards: `AppSeverityTokenCoverageTests` (every member declared in both
+variants of both apps, and light ≠ dark) and
+`AppSeverityThemedLookupTests` (the converter resolves the declared token
+rather than its fallback).
+
 ---
 
 ## 4. Surface-specific tokens
@@ -386,6 +423,37 @@ Every interactive control in `Views/*.axaml` MUST have
 `AutomationProperties.Name`.  Guard test
 `AxamlAccessibilityCoverageTests` fails CI when a new control regresses
 coverage.  See the AutomationProperties invariant in `AGENTS.md`.
+
+⛔⛔ **That guard scans a LIST of control types, and the list is not
+"everything".** It omitted `TreeView` until 2026-08-27 — so
+`MainWindow.axaml` scored a clean **0 unnamed controls** while the app's
+primary navigation tree had no name at all, and the zero was quotable as
+evidence. `TabControl`, `TabItem`, `Expander`, `MenuItem` and
+`HyperlinkButton` were missing too. **Before trusting a 0, check the type
+you care about is in `InteractiveControlElements`.**
+
+Deliberately excluded, with counts at the time: `ItemsControl` (67) and
+`ScrollViewer` (31) take no focus and are not announced as controls;
+`SelectableTextBlock` (8) is announced by its content, so a Name would
+duplicate or shadow the text. Naming those is noise, and noise is what
+stops a baseline from being read.
+
+⛔ **A container generated from `ItemsSource` takes its name from the
+ITEM, and no markup scan can see that.** Both of the repo's
+`ItemsSource`-bound TabControls announced their view-model's type name
+while passing this guard, because the `AutomationProperties.Name` really
+was in the AXAML — on the inner `TextBlock`, not the focusable container.
+Override `ToString()` on the item type;
+`ItemsSourceBoundTabsTests` enforces it. The same applies to
+`TreeViewItem` and `ListBoxItem`.
+
+**Reuse the visible label's key.** A control whose `Header`/`Content` is
+already a resx string should point `AutomationProperties.Name` at *that
+key*, not a new one — the label a sighted user reads is the right
+announcement, and a second key is a second string to translate and to
+drift. 20 of the 35 controls backfilled on 2026-08-27 needed no new
+string; 9 more reused a per-row binding (`Tool`, `HumanLabel`,
+`PluginId`) so repeated rows announce distinguishably.
 
 **Sibling principle for non-interactive cues**: anywhere colour or a
 single-glyph cue is the only signal of meaning — the kind pill, scope
