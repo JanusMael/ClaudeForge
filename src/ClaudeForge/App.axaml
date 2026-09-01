@@ -147,6 +147,27 @@
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#005D7F" />
                     <SolidColorBrush x:Key="AppCautionBrush" Color="#D97706" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#FFFBEB" />
+                    <!--
+                        AppSeverity*Brush — how much attention a setting's state deserves, keyed by
+                        the AppSeverity enum via AppSeverityToBrushConverter.KeyFor.
+
+                        ⛔ These REPLACE four hardcoded hexes that used to live in
+                        EssentialsViewModel.BuildCards (#D32F2F / #F4B400 / #1976D2) and a #9E9E9E
+                        parse-failure fallback in EssentialsCardViewModel. Those were single values
+                        emitted regardless of theme, so the light-theme red and amber were what
+                        shipped into dark mode.
+
+                        The values are not new: each is the existing, already-vetted
+                        AppStatus*ForegroundBrush / AppSecondaryTextBrush pair for that role, so no
+                        unreviewed colour enters the palette and the severity dot matches the status
+                        text it sits beside. Declared per variant on purpose — a themed key looked up
+                        with a null variant resolves to NOTHING and the caller takes its fallback
+                        hex, which is invisible and is the exact problem this token removes.
+                    -->
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#A8071A" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#874400" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
                     <!-- Group-header labels inside the Browse suggestions picker.
                          Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
                          in all theme variants, so we own this token explicitly. -->
@@ -238,6 +259,10 @@
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#4DBFE0" />
                     <SolidColorBrush x:Key="AppCautionBrush" Color="#F59E0B" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#292010" />
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#F99090" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#F0A03A" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#6BB1F2" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
                     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />

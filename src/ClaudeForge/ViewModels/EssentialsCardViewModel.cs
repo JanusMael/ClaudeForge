@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Collections.ObjectModel;
-using Avalonia.Media;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -68,20 +68,24 @@ public partial class EssentialsCardViewModel : ObservableObject
     public string Body { get; }
 
     /// <summary>
-    /// Severity dot colour as a hex string (e.g. <c>#D32F2F</c> for red,
-    /// <c>#F4B400</c> for amber, <c>#1976D2</c> for blue).  Red marks
-    /// security-critical settings, amber marks cost / quality knobs, blue
-    /// marks behaviour flags.  Bind <see cref="SeverityBrush"/> from AXAML;
-    /// this property is kept for tests and serialisation parity.
+    /// How much attention this setting's state deserves.  Drives the small coloured circle in
+    /// the card header, via <c>AppSeverityToBrushConverter</c> in the AXAML.
     /// </summary>
-    public string SeverityColor { get; }
-
-    /// <summary>
-    /// AXAML-bindable brush form of <see cref="SeverityColor"/> — drives
-    /// the small coloured circle in the card header.  Frozen at construction
-    /// so the same brush instance is reused across refreshes.
-    /// </summary>
-    public IBrush SeverityBrush { get; }
+    /// <remarks>
+    /// ⛔ <b>Was <c>string SeverityColor</c> plus an <c>IBrush SeverityBrush</c> parsed from it
+    /// at construction.</b> Three things came with that shape and all three are gone rather
+    /// than fixed: a <c>Color.TryParse</c> whose failure branch fell back to grey (an enum
+    /// member cannot be malformed); a brush frozen at construction, so a theme change never
+    /// reached it; and one literal colour serving both theme variants, which meant the
+    /// light-theme red shipped into dark mode.  The view now resolves the brush from
+    /// <c>AppSeverity*Brush</c>, declared per variant in each app's <c>App.axaml</c>.
+    /// <para>
+    /// Keeping the enum here rather than a brush also means the severity is available to
+    /// surfaces that have no business owning colours — the settings tree, the effective view,
+    /// search hits and the save preview.
+    /// </para>
+    /// </remarks>
+    public AppSeverity Severity { get; }
 
     /// <summary>
     /// Discriminator for which inline editor surface to render —
@@ -286,7 +290,7 @@ public partial class EssentialsCardViewModel : ObservableObject
         string id,
         string title,
         string body,
-        string severityColor,
+        AppSeverity severity,
         EssentialsCardKind kind,
         string viewInGroupTitle,
         bool isEnvVarCard,
@@ -301,13 +305,7 @@ public partial class EssentialsCardViewModel : ObservableObject
         Id = id;
         Title = title;
         Body = body;
-        SeverityColor = severityColor;
-        // Parse once at construction; SolidColorBrush is immutable enough for our use.
-        // Falls back to neutral grey if the hex string can't be parsed (e.g. a future
-        // hand-edited palette change accidentally drops a "#" prefix).
-        SeverityBrush = Color.TryParse(severityColor, out Color c)
-            ? new SolidColorBrush(c)
-            : new SolidColorBrush(Color.FromRgb(0x9E, 0x9E, 0x9E));
+        Severity = severity;
         Kind = kind;
         ViewInGroupTitle = viewInGroupTitle;
         ViewInGroupLabel = string.IsNullOrEmpty(viewInGroupTitle)

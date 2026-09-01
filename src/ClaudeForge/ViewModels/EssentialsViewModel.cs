@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -398,7 +399,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdAutoMemoryEnabled,
                     title: Strings.EssentialsCardAutoMemoryEnabledTitle,
                     body: Strings.EssentialsCardAutoMemoryEnabledBody,
-                    severityColor: "#1976D2", // blue — behaviour
+                    severity: AppSeverity.Info, // blue — behaviour
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitleGeneral,
                     isEnvVarCard: false,
@@ -412,7 +413,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdMaxOutputTokens,
                     title: Strings.EssentialsCardMaxOutputTokensTitle,
                     body: Strings.EssentialsCardMaxOutputTokensBody,
-                    severityColor: "#F4B400", // amber — quality
+                    severity: AppSeverity.Caution, // amber — quality
                     kind: EssentialsCardKind.Int,
                     viewInGroupTitle: GroupTitleEnvironment,
                     isEnvVarCard: true,
@@ -426,7 +427,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdMaxThinkingTokens,
                     title: Strings.EssentialsCardMaxThinkingTokensTitle,
                     body: Strings.EssentialsCardMaxThinkingTokensBody,
-                    severityColor: "#F4B400",
+                    severity: AppSeverity.Caution,
                     kind: EssentialsCardKind.Int,
                     viewInGroupTitle: GroupTitleEnvironment,
                     isEnvVarCard: true,
@@ -440,7 +441,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdEffortLevel,
                     title: Strings.EssentialsCardEffortLevelTitle,
                     body: Strings.EssentialsCardEffortLevelBody,
-                    severityColor: "#F4B400",
+                    severity: AppSeverity.Caution,
                     kind: EssentialsCardKind.EnumString,
                     viewInGroupTitle: GroupTitleModelEffort,
                     isEnvVarCard: false,
@@ -455,7 +456,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdFastMode,
                     title: Strings.EssentialsCardFastModeTitle,
                     body: Strings.EssentialsCardFastModeBody,
-                    severityColor: "#F4B400",
+                    severity: AppSeverity.Caution,
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitleModelEffort,
                     isEnvVarCard: false,
@@ -469,7 +470,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdModel,
                     title: Strings.EssentialsCardModelTitle,
                     body: Strings.EssentialsCardModelBody,
-                    severityColor: "#D32F2F", // red — cost
+                    severity: AppSeverity.Critical, // red — cost
                     kind: EssentialsCardKind.EnumString,
                     viewInGroupTitle: GroupTitleModelEffort,
                     isEnvVarCard: false,
@@ -488,7 +489,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdDisableBypass,
                     title: Strings.EssentialsCardDisableBypassTitle,
                     body: Strings.EssentialsCardDisableBypassBody,
-                    severityColor: "#D32F2F",
+                    severity: AppSeverity.Critical,
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitlePermissions,
                     isEnvVarCard: false,
@@ -502,7 +503,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdEnableAllProjectMcp,
                     title: Strings.EssentialsCardEnableAllMcpTitle,
                     body: Strings.EssentialsCardEnableAllMcpBody,
-                    severityColor: "#D32F2F", // red — security
+                    severity: AppSeverity.Critical, // red — security
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitleMcpServers,
                     isEnvVarCard: false,
@@ -518,7 +519,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdSandboxEnabled,
                     title: Strings.EssentialsCardSandboxEnabledTitle,
                     body: Strings.EssentialsCardSandboxEnabledBody,
-                    severityColor: "#D32F2F",
+                    severity: AppSeverity.Critical,
                     kind: EssentialsCardKind.Bool,
                     viewInGroupTitle: GroupTitleSandbox,
                     isEnvVarCard: false,
@@ -534,7 +535,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdSandboxDomains,
                     title: Strings.EssentialsCardSandboxDomainsTitle,
                     body: Strings.EssentialsCardSandboxDomainsBody,
-                    severityColor: "#D32F2F",
+                    severity: AppSeverity.Critical,
                     kind: EssentialsCardKind.StringList,
                     viewInGroupTitle: GroupTitleSandbox,
                     isEnvVarCard: false,
@@ -548,7 +549,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                     id: CardIdAutoUpdatesChannel,
                     title: Strings.EssentialsCardAutoUpdatesChannelTitle,
                     body: Strings.EssentialsCardAutoUpdatesChannelBody,
-                    severityColor: "#1976D2",
+                    severity: AppSeverity.Info,
                     kind: EssentialsCardKind.EnumString,
                     viewInGroupTitle: GroupTitleGeneral,
                     isEnvVarCard: false,
@@ -593,7 +594,7 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                 id: CardIdCheckForUpdates,
                 title: Strings.EssentialsCardCheckForUpdatesTitle,
                 body: Strings.EssentialsCardCheckForUpdatesBody,
-                severityColor: "#1976D2", // blue — behaviour (same as auto-memory / channel)
+                severity: AppSeverity.Info, // blue — behaviour (same as auto-memory / channel)
                 kind: EssentialsCardKind.Bool,
                 viewInGroupTitle: GroupTitleGeneral,
                 isEnvVarCard: false,

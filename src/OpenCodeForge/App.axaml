@@ -60,10 +60,35 @@
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#B8DCE2" />
                     <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#1E5573" />
+                    <!--
+                        AppSeverity*Brush — how much attention a setting's state deserves, keyed by
+                        the AppSeverity enum via AppSeverityToBrushConverter.KeyFor.
+
+                        ⛔ These REPLACE four hardcoded hexes that used to live in
+                        EssentialsViewModel.BuildCards (#D32F2F / #F4B400 / #1976D2) and a #9E9E9E
+                        parse-failure fallback in EssentialsCardViewModel. Those were single values
+                        emitted regardless of theme, so the light-theme red and amber were what
+                        shipped into dark mode.
+
+                        The values are not new: each is the existing, already-vetted
+                        AppStatus*ForegroundBrush / AppSecondaryTextBrush pair for that role, so no
+                        unreviewed colour enters the palette and the severity dot matches the status
+                        text it sits beside. Declared per variant on purpose — a themed key looked up
+                        with a null variant resolves to NOTHING and the caller takes its fallback
+                        hex, which is invisible and is the exact problem this token removes.
+                    -->
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#A8071A" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#874400" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="AppPropertyHeadingBackgroundBrush" Color="#1B3A45" />
                     <SolidColorBrush x:Key="AppPropertyHeadingBrush" Color="#74C2DE" />
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#F99090" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#F0A03A" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#6BB1F2" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#AAAAAA" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>

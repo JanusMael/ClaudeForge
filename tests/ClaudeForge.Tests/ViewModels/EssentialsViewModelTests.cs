@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Services;
@@ -62,14 +63,57 @@ public sealed class EssentialsViewModelTests
         Assert.AreEqual(ids.Count, unique, "Each card Id must be unique — search deep-links use Id as key.");
     }
 
+    /// <summary>
+    /// Every card carries a real severity, and none of them is <see cref="AppSeverity.Neutral"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔⛔ <b>This replaces <c>Cards_AllHaveSeverityBrush</c>, which could not fail.</b> That test
+    /// asserted <c>SeverityBrush</c> was non-null while the constructor assigned it
+    /// unconditionally — parsing a hex string and falling back to grey when the parse failed. So
+    /// it passed for a card whose colour was <c>"not-a-colour"</c> just as happily as for a
+    /// correct one, which is the opposite of what it looked like it was checking.
+    /// <para>
+    /// The severity is an enum now, so "is it present" is answered by the compiler and is not
+    /// worth a test. What is worth asserting is the thing the type cannot enforce: a card is on
+    /// the Essentials page precisely BECAUSE it matters, so <c>Neutral</c> — the zero value, and
+    /// therefore what a forgotten argument would produce — is never right here.
+    /// </para>
+    /// </remarks>
     [TestMethod]
-    public void Cards_AllHaveSeverityBrush()
+    public void EveryCardHasANonNeutralSeverity()
     {
         EssentialsViewModel vm = MakeVm();
+
+        Assert.IsTrue(vm.Cards.Count > 0, "no cards built — the assertion below would be vacuous");
+
         foreach (EssentialsCardViewModel c in vm.Cards)
         {
-            Assert.IsNotNull(c.SeverityBrush, $"Card {c.Id} must have a non-null severity brush.");
+            Assert.IsTrue(Enum.IsDefined(c.Severity),
+                $"card '{c.Id}' has severity {(int)c.Severity}, which is not a declared member");
+            Assert.AreNotEqual(AppSeverity.Neutral, c.Severity,
+                $"card '{c.Id}' is pinned to the Essentials page, so it is not unremarkable — "
+                + "Neutral is the enum's zero value and reads as a forgotten argument");
         }
+    }
+
+    /// <summary>
+    /// The severities actually spread across the scale rather than collapsing to one value.
+    /// </summary>
+    /// <remarks>
+    /// A migration that mapped every card to the same member would satisfy every per-card
+    /// assertion above and quietly destroy the distinction the dot exists to draw. The old hex
+    /// strings were three distinct values; the enum must still be.
+    /// </remarks>
+    [TestMethod]
+    public void TheCardsUseMoreThanOneSeverity()
+    {
+        EssentialsViewModel vm = MakeVm();
+        List<AppSeverity> distinct = vm.Cards.Select(c => c.Severity).Distinct().ToList();
+
+        Assert.IsTrue(distinct.Count >= 3,
+            "expected at least three distinct severities across the cards (the migration replaced "
+            + "#D32F2F / #F4B400 / #1976D2), got: "
+            + string.Join(", ", distinct.OrderBy(d => d)));
     }
 
     /// <summary>
