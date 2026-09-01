@@ -7179,5 +7179,59 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("WorkspaceNameClaudeDesktop", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings navigation.
+        /// </summary>
+        public static string AutoNameNavigationTree {
+            get {
+                return ResourceManager.GetString("AutoNameNavigationTree", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sub-agents, skills and commands.
+        /// </summary>
+        public static string AutoNameAgentsSkillsTabs {
+            get {
+                return ResourceManager.GetString("AutoNameAgentsSkillsTabs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Backup and restore.
+        /// </summary>
+        public static string AutoNameBackupRestoreTabs {
+            get {
+                return ResourceManager.GetString("AutoNameBackupRestoreTabs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Effective settings views.
+        /// </summary>
+        public static string AutoNameEffectiveSettingsTabs {
+            get {
+                return ResourceManager.GetString("AutoNameEffectiveSettingsTabs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Memory tiers.
+        /// </summary>
+        public static string AutoNameMemoryTabs {
+            get {
+                return ResourceManager.GetString("AutoNameMemoryTabs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings views.
+        /// </summary>
+        public static string AutoNameSettingsGroupTabs {
+            get {
+                return ResourceManager.GetString("AutoNameSettingsGroupTabs", resourceCulture);
+            }
+        }
     }
 }

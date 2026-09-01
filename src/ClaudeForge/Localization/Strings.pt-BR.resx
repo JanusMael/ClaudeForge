@@ -2829,4 +2829,22 @@ Alguns caminhos dentro de arquivos de configuração podem precisar de edições
     <value>Não foi possível abrir o link direto '{0}' — página ou item inexistente.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Navegação de configurações</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Subagentes, habilidades e comandos</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Backup e restauração</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Visualizações de configurações efetivas</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Níveis de memória</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Visualizações de configurações</value>
+  </data>
 </root>

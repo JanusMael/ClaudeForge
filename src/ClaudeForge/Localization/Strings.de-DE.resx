@@ -2829,4 +2829,22 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
     <value>Deep-Link „{0}“ konnte nicht geöffnet werden – Seite oder Element existiert nicht.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Einstellungsnavigation</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Subagenten, Fähigkeiten und Befehle</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Backup und Wiederherstellen</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Ansichten der effektiven Einstellungen</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Speicherebenen</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Einstellungsansichten</value>
+  </data>
 </root>

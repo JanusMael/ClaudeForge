@@ -102,10 +102,12 @@
             </DockPanel>
         </Border>
 
-        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameBackupRestoreTabs}">
 
             <!-- =========================== BACKUP TAB =========================== -->
-            <TabItem Header="{x:Static loc:Strings.TabBackup}">
+            <TabItem Header="{x:Static loc:Strings.TabBackup}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabBackup}">
                 <ScrollViewer>
                     <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
 
@@ -279,7 +281,8 @@
             </TabItem>
 
             <!-- =========================== RESTORE TAB =========================== -->
-            <TabItem Header="{x:Static loc:Strings.TabRestore}">
+            <TabItem Header="{x:Static loc:Strings.TabRestore}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
                 <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
                      FileDrop is a reusable attached-property behaviour in
                      LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
@@ -355,7 +358,8 @@
                             <ContextMenu>
                                 <MenuItem Header="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           Command="{Binding OpenFileLocationCommand}"
-                                          CommandParameter="{Binding SelectedBackup}" />
+                                          CommandParameter="{Binding SelectedBackup}" 
+        AutomationProperties.Name="{x:Static loc:Strings.MenuOpenFileLocation}"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <!-- 2026-05-19 — column widths tuned for default ~950 px window.
@@ -516,7 +520,8 @@
 
             <!-- =========================== MSIX FIX TAB (Windows-only, conditional) =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabMsixFix}"
-                     IsVisible="{Binding ShowMsixTab}">
+                     IsVisible="{Binding ShowMsixTab}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabMsixFix}">
                 <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
                     <TextBlock Text="{x:Static loc:Strings.HeadingMsixFix}"
                                FontSize="15" FontWeight="SemiBold" />

@@ -2840,4 +2840,22 @@
     <value>ディープリンク「{0}」を開けませんでした — 該当するページまたは項目がありません。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>設定ナビゲーション</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>サブエージェント、スキル、コマンド</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>バックアップとリストア</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>有効な設定のビュー</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>メモリ階層</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>設定ビュー</value>
+  </data>
 </root>

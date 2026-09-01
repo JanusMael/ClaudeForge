@@ -421,7 +421,8 @@
                                                      truly removes it from the on-disk shape. -->
                                                 <Expander Header="{x:Static loc:Strings.HeaderAdvancedFields}"
                                                           IsVisible="{Binding ShowGitFields}"
-                                                          Margin="0,2,0,0">
+                                                          Margin="0,2,0,0"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderAdvancedFields}">
                                                     <Grid ColumnDefinitions="100,8,*"
                                                           RowDefinitions="Auto,4,Auto"
                                                           Margin="0,4,0,0">
@@ -452,7 +453,8 @@
                                                      the user clearing all rows truly removes it. -->
                                                 <Expander Header="{x:Static loc:Strings.HeaderHttpHeaders}"
                                                           IsVisible="{Binding ShowHeadersField}"
-                                                          Margin="0,2,0,0">
+                                                          Margin="0,2,0,0"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderHttpHeaders}">
                                                     <StackPanel Spacing="4" Margin="0,4,0,0">
                                                         <ItemsControl ItemsSource="{Binding Headers}">
                                                             <ItemsControl.ItemTemplate>
@@ -598,9 +600,13 @@
                             <ItemsControl ItemsSource="{Binding Plugins}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PluginConfigEntryViewModel">
+                                        <!-- Named from the plugin's own id: these expanders repeat
+                                             per plugin, so a static label would announce every
+                                             row identically. -->
                                         <Expander Margin="0,2"
                                                   IsExpanded="True"
-                                                  HorizontalAlignment="Stretch">
+                                                  HorizontalAlignment="Stretch"
+                                                  AutomationProperties.Name="{Binding PluginId}">
                                             <Expander.Header>
                                                 <DockPanel LastChildFill="True">
                                                     <Button DockPanel.Dock="Right"
@@ -623,7 +629,8 @@
                                                         <DataTemplate x:DataType="vm:PluginServerConfigViewModel">
                                                             <Expander Margin="0,2"
                                                                       IsExpanded="True"
-                                                                      HorizontalAlignment="Stretch">
+                                                                      HorizontalAlignment="Stretch"
+                                                                      AutomationProperties.Name="{Binding ServerName}">
                                                                 <Expander.Header>
                                                                     <DockPanel LastChildFill="True">
                                                                         <Button DockPanel.Dock="Right"
@@ -881,7 +888,8 @@
                                     <DataTemplate x:DataType="vm:PropertyCategoryViewModel">
                                         <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                                                   Margin="0,2,0,0"
-                                                  HorizontalAlignment="Stretch">
+                                                  HorizontalAlignment="Stretch"
+                                                  AutomationProperties.Name="{Binding Header}">
                                             <!-- Title in the page-header accent (NavSelectedAccentBrush,
                                                  the same blue as the group heading pill) so the section
                                                  reads as a real header and can't be missed. -->

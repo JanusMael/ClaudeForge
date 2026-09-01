@@ -92,6 +92,37 @@ public sealed class AxamlAccessibilityCoverageTests
         "DatePicker",
         "TimePicker",
         "CalendarDatePicker",
+
+        // ── Added 2026-08-27: navigational containers the list had never covered ──
+        //
+        // ⛔⛔ The omission was not cosmetic. src/ClaudeForge/Views/MainWindow.axaml sat at a
+        // baseline of 0 — "fully named" — while its TreeView, the primary navigation control of
+        // the whole application, had no AutomationProperties.Name at all. Confirmed through UI
+        // Automation on the running app: the nav tree reported an empty Name, so a screen reader
+        // announced nothing for it. A guard reporting zero unnamed controls on a file whose most
+        // important control is unnamed is worse than no guard, because the zero is quoted as
+        // evidence.
+        //
+        // These six are all focusable and all announced as controls in their own right.
+        "TreeView",
+        "TabControl",
+        "TabItem",
+        "Expander",
+        "MenuItem",
+        "HyperlinkButton",
+
+        // ⚠ DELIBERATELY NOT ADDED, measured counts as of this commit:
+        //   ItemsControl (67)        — a bare repeater, not a control. It takes no focus and is
+        //                             not announced; naming all 67 would be pure noise, and the
+        //                             noise is what makes a baseline stop being read.
+        //   ScrollViewer (31)        — same: scrolling is a viewport behaviour, not a control a
+        //                             reader announces by name.
+        //   SelectableTextBlock (8)  — announced by its CONTENT. A Name would either duplicate
+        //                             the text or, worse, shadow it.
+        //   TreeViewItem             — generated from ItemsSource in both apps, so there is no
+        //                             element in the markup to annotate. That case is covered by
+        //                             ItemsSourceBoundTabsTests' sibling reasoning: the container's
+        //                             name comes from the bound item's ToString().
     };
 
     /// <summary>

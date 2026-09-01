@@ -241,8 +241,10 @@
                  (NotifyFilteredListsChanged); the underlying ObservableCollection
                  mutations no longer reach the UI on their own. -->
             <TabControl Margin="16,0,16,16"
-                        SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}">
-                <TabItem Header="{x:Static loc:Strings.TabAgents}">
+                        SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameAgentsSkillsTabs}">
+                <TabItem Header="{x:Static loc:Strings.TabAgents}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabAgents}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredAgentItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
@@ -254,7 +256,8 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="{x:Static loc:Strings.TabSkills}">
+                <TabItem Header="{x:Static loc:Strings.TabSkills}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabSkills}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredSkillItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
@@ -266,7 +269,8 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="{x:Static loc:Strings.TabSlashCommands}">
+                <TabItem Header="{x:Static loc:Strings.TabSlashCommands}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabSlashCommands}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredCommandItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>

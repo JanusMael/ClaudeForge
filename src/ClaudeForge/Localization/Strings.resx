@@ -2875,4 +2875,28 @@ Some paths inside config files may need manual edits afterward. Continue?</value
     <value>Couldn't open the deep link '{0}' — no such page or item.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Settings navigation</value>
+    <comment>Screen-reader name for the main settings navigation tree in MainWindow.</comment>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Sub-agents, skills and commands</value>
+    <comment>Screen-reader name for the tab strip on the sub-agents / skills / commands editor.</comment>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Backup and restore</value>
+    <comment>Screen-reader name for the tab strip on the backup / restore page.</comment>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Effective settings views</value>
+    <comment>Screen-reader name for the tab strip on the effective-settings page.</comment>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Memory tiers</value>
+    <comment>Screen-reader name for the tab strip on the memory editor (user / project tiers).</comment>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Settings views</value>
+    <comment>Screen-reader name for the per-group tab strip (Properties / Effective / JSON).</comment>
+  </data>
 </root>

@@ -77,10 +77,12 @@
         </Border>
 
         <!-- Tab view: flat table + raw JSON -->
-        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveSettingsTabs}">
 
             <!-- Property table -->
-            <TabItem Header="{x:Static loc:Strings.TabProperties}">
+            <TabItem Header="{x:Static loc:Strings.TabProperties}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabProperties}">
                 <DockPanel>
                     <!-- Filter bar -->
                     <Border DockPanel.Dock="Top" Padding="8,6"
@@ -158,7 +160,8 @@
                                                 <SelectableTextBlock.ContextFlyout>
                                                     <MenuFlyout>
                                                         <MenuItem Header="{x:Static loc:Strings.LabelMenuCopy}"
-                                                                  Click="OnCopyEffectiveValue" />
+                                                                  Click="OnCopyEffectiveValue" 
+        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"/>
                                                     </MenuFlyout>
                                                 </SelectableTextBlock.ContextFlyout>
                                             </SelectableTextBlock>
@@ -229,7 +232,8 @@
             </TabItem>
 
             <!-- Raw JSON with syntax highlighting -->
-            <TabItem Header="{x:Static loc:Strings.TabJson}">
+            <TabItem Header="{x:Static loc:Strings.TabJson}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabJson}">
                 <DockPanel>
                     <!-- Copy button -->
                     <Button DockPanel.Dock="Top"

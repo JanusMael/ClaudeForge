@@ -585,7 +585,8 @@
                         <TextBlock Text="{x:Static loc:Strings.ButtonBack}" FontWeight="SemiBold" Foreground="White" />
                     </Button>
                     <TreeView ItemsSource="{Binding NavigationTree}"
-                              SelectedItem="{Binding SelectedNode}">
+                              SelectedItem="{Binding SelectedNode}"
+                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameNavigationTree}">
                         <TreeView.Styles>
                             <!-- Expand all top-level header items (Claude Code, Claude Desktop) on startup.
                                  The user explicitly wants them always-expanded. During the session the
@@ -743,6 +744,7 @@
                                            FontSize="11"
                                            VerticalAlignment="Center" />
                                 <HyperlinkButton Content="{x:Static loc:Strings.LinkClaudeOverview}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.LinkClaudeOverview}"
                                                  NavigateUri="https://claude.com/product/overview"
                                                  FontSize="11" Padding="0"
                                                  Foreground="{DynamicResource InstallBannerLinkBrush}"
@@ -751,6 +753,7 @@
                                            FontSize="11"
                                            VerticalAlignment="Center" />
                                 <HyperlinkButton Content="{x:Static loc:Strings.LinkQuickStart}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.LinkQuickStart}"
                                                  NavigateUri="https://code.claude.com/docs/en/quickstart"
                                                  FontSize="11" Padding="0"
                                                  Foreground="{DynamicResource InstallBannerLinkBrush}"

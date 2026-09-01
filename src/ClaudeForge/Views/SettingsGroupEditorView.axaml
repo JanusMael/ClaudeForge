@@ -219,7 +219,8 @@
              bound so the choice is remembered across rebuilds / navigation; the
              VM seeds it from the remembered tab → customizer default → first. -->
         <TabControl ItemsSource="{Binding Tabs}"
-                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameSettingsGroupTabs}">
             <TabControl.ItemTemplate>
                 <DataTemplate x:DataType="shell:GroupTab">
                     <TextBlock Text="{Binding Header}"

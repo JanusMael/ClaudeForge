@@ -2820,4 +2820,22 @@
     <value>无法打开深层链接“{0}”——没有该页面或项。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>设置导航</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>子代理、技能和命令</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>备份与恢复</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>生效设置视图</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>内存层级</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>设置视图</value>
+  </data>
 </root>

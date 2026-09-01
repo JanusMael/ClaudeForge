@@ -2841,4 +2841,22 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
     <value>Impossible d'ouvrir le lien direct « {0} » — page ou élément introuvable.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Navigation des paramètres</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Sous-agents, compétences et commandes</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Sauvegarde et restauration</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Vues des paramètres effectifs</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Niveaux de mémoire</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Vues des paramètres</value>
+  </data>
 </root>

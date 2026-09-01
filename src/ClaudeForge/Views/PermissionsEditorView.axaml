@@ -169,7 +169,8 @@
              Reuses the extracted PermissionsAdvancedView; DataContext inherits
              this control's PermissionsEditorViewModel. -->
         <Expander Header="{x:Static loc:Strings.TabPermAdvanced}"
-                  IsExpanded="{Binding IsAdvancedExpanded}">
+                  IsExpanded="{Binding IsAdvancedExpanded}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabPermAdvanced}">
             <views:PermissionsAdvancedView Margin="0,4,0,0" />
         </Expander>
     </StackPanel>
