@@ -133,7 +133,8 @@
                              clicking an Allow/Deny/Ask button collapses the accordion. -->
                         <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                                   Margin="0,2,0,0"
-                                  IsVisible="{Binding !IsCatchAll}">
+                                  IsVisible="{Binding !IsCatchAll}"
+                                  AutomationProperties.Name="{Binding Tool}">
                             <Expander.Header>
                                 <TextBlock Text="{Binding Tool}" FontSize="12" FontWeight="SemiBold" />
                             </Expander.Header>

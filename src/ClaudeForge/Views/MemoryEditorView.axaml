@@ -53,10 +53,12 @@
 
             <!-- Code section body — TabControl with two tabs. -->
             <TabControl IsVisible="{Binding HasCodeMemory}"
-                        SelectedIndex="{Binding SelectedMemoryTabIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding SelectedMemoryTabIndex, Mode=TwoWay}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameMemoryTabs}">
 
                 <!-- ── Tier 1 — User Memory (read-only inventory) ────────── -->
-                <TabItem Header="{x:Static loc:Strings.HeaderTabUserMemory}">
+                <TabItem Header="{x:Static loc:Strings.HeaderTabUserMemory}"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderTabUserMemory}">
                     <Grid Margin="0,4,0,0">
                         <!-- Inventory list — visible when no file is selected.
                              Categories start COLLAPSED so the user sees the high-level
@@ -66,7 +68,8 @@
                                       IsVisible="{Binding !IsViewerVisible}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:UserMemoryGroupViewModel">
-                                    <Expander Margin="0,2" IsExpanded="False">
+                                    <Expander Margin="0,2" IsExpanded="False"
+                                  AutomationProperties.Name="{Binding HumanLabel}">
                                         <Expander.Header>
                                             <!-- ToolTip on the header StackPanel (not the Expander
                                                  itself) so the description triggers only on the
@@ -277,7 +280,8 @@
                 </TabItem>
 
                 <!-- ── Tier 2 — Footprint (audit + delete) ────────────────── -->
-                <TabItem Header="{x:Static loc:Strings.HeaderTabFootprint}">
+                <TabItem Header="{x:Static loc:Strings.HeaderTabFootprint}"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderTabFootprint}">
                     <!-- No per-tab toolbar — Refresh moved to the header pill.  The
                          category list flows directly under the tab header so there's
                          no dead vertical space.  Below the category table, a separate

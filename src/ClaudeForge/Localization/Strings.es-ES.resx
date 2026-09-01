@@ -2829,4 +2829,22 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
     <value>No se pudo abrir el enlace directo «{0}»: no existe esa página ni ese elemento.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Navegación de ajustes</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Subagentes, habilidades y comandos</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Copia de seguridad y restauración</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Vistas de ajustes efectivos</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Niveles de memoria</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Vistas de ajustes</value>
+  </data>
 </root>

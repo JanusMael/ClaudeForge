@@ -279,7 +279,8 @@
                              avoids this by rendering small objects inline and labelling
                              collapsible ones by CATEGORY, never by property name. -->
                         <Expander IsExpanded="{Binding IsExpanded}"
-                                  Header="{Binding Children.Count, StringFormat='{}{0} settings'}">
+                                  Header="{Binding Children.Count, StringFormat='{}{0} settings'}"
+                                  AutomationProperties.Name="{Binding Children.Count}">
                             <ItemsControl ItemsSource="{Binding Children}">
                                 <ItemsControl.ItemTemplate>
                                     <!-- x:DataType enables compiled bindings inside the recursive
