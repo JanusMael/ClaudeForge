@@ -51,14 +51,28 @@
 > directory spellings, and that a 130-row skills tab scrolls to its last row. **A green,
 > trim-clean page still had four defects** — see "What running the UI keeps finding" below.
 >
-> 🔶 **Phase 11.5 is STARTED, not done — slice 1 of N (`c1dbb4f`).** Landed: the `AppSeverity` enum
-> in `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
+> 🔶 **Phase 11.5 is STARTED, not done — slices 1 and 2 of N.**
+>
+> **Slice 1 (`c1dbb4f`) — severity became a type.** The `AppSeverity` enum in
+> `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
 > `AppSeverityToBrushConverter`, and ClaudeForge's Essentials cards migrated off
-> `string severityColor` (`Color.TryParse` and its grey fallback deleted). **Still open in 11.5:**
-> the schema-level danger annotation on `IEditorSchema.Metadata`, the per-product danger TABLES
-> (Claude + OpenCode), the four missing surfaces (settings tree, effective view, search hits,
-> save-preview), the scope-aware predicate, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build
-> tripwire modelled on `GuardUnusedResxKeys`.
+> `string severityColor` (`Color.TryParse` and its grey fallback deleted).
+>
+> **Slice 2 — the classifier and OpenCode's table.** `DangerAssessment` +
+> `IDangerClassifier` (abstractions), the neutral `TableDangerClassifier` matcher (shell), and
+> `OpenCodeDangerTable` (app) covering **all 36 `config.json` keys and all 13 `tui.json` keys**
+> plus 30 nested refinements. Scope escalation is live: an `apiKey` is Caution at Global and
+> **Critical at Project**, because a project file is committed to git. 85 tests, 7 canaries.
+> ⛔ **The carrier is NOT `IEditorSchema.Metadata`** — see the correction below; `Metadata` had
+> zero consumers, and neither the scope escalation nor the value predicates can be expressed as a
+> static per-property annotation. `AppSeverity`'s own remark citing `Metadata` is corrected too.
+> ⚠ **No surface consumes the classifier yet** — slice 2 is deliberately the data and the
+> mechanism, so the table could be reviewed as one artifact before four views started rendering it.
+>
+> **Still open in 11.5:** the four surfaces (settings tree, effective view, search hits,
+> save-preview — the last is the cheapest, since `JsonDiff.Compute` already yields the change
+> list), Claude's own danger table, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire
+> modelled on `GuardUnusedResxKeys`.
 >
 > ### What running the UI keeps finding — read this before trusting a green suite
 >

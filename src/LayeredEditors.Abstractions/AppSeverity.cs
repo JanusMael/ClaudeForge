@@ -35,9 +35,15 @@ namespace Bennewitz.Ninja.LayeredEditors.Abstractions;
 /// never at the end for convenience.
 /// </para>
 /// <para>
-/// Lives in the abstractions assembly, not in a UI one, because the danger table that assigns
-/// these is schema metadata (<see cref="IEditorSchema.Metadata"/>) and must be readable without
-/// a rendering stack.
+/// Lives in the abstractions assembly, not in a UI one, because the danger tables that assign
+/// these are product data and must be readable without a rendering stack.
+/// <para>
+/// ⛔ <b>Correction:</b> an earlier version of this remark said the assigning table "is schema
+/// metadata (<c>IEditorSchema.Metadata</c>)". It is not, and it cannot be — severity escalates
+/// with the writing scope and often depends on the current value, neither of which a static
+/// per-property annotation can express, and <c>Metadata</c> had no consumers to extend. The
+/// carrier is <see cref="IDangerClassifier"/>, supplied per product.
+/// </para>
 /// </para>
 /// </remarks>
 public enum AppSeverity
