@@ -55,6 +55,29 @@
                       ItemsSource="{Binding Navigation}"
                       SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
                       AutomationProperties.Name="Settings navigation">
+                <TreeView.Styles>
+                    <!--
+                        ⛔ THIS is what names a nav row for a screen reader. The TextBlock below
+                        names only ITSELF.
+
+                        A TreeViewItem generated from ItemsSource takes no automation name from its
+                        ItemTemplate, and unlike a TabItem it does not fall back to the item's
+                        ToString() either — it falls back to nothing. Measured through UIA on the
+                        running app: all three rows of this tree announced an EMPTY name, even
+                        though the template is a single bound TextBlock.
+
+                        ⚠ A lone TextBlock root does NOT supply the container's name. That belief
+                        cost real time here: an older harness recipe looked the pages up by finding
+                        the Text LEAF and walking UP to its TreeItem ancestor, which made this tree
+                        look correctly labelled when only the TextBlock was.
+
+                        x:DataType keeps the binding compiled; a reflection binding here is an
+                        IL2026 trim error in this repo. See docs/AVALONIA-GOTCHAS.md.
+                    -->
+                    <Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+                    </Style>
+                </TreeView.Styles>
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="libvm:NavigationNodeViewModel">
                         <TextBlock Text="{Binding Title}" Margin="2,4" />

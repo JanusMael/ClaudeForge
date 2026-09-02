@@ -225,7 +225,47 @@ Avalonia takes a generated container's automation name from the bound **item**. 
 
 **Fix:** override `ToString()` on the item type, returning an explicit automation name and falling back to the visible header. `ItemsSourceBoundTabsTests` resolves each such TabControl's `ItemTemplate` `x:DataType`, finds the file declaring it, and fails without the override.
 
-> The same reasoning applies to any `ItemsSource`-generated container — `TreeViewItem`, `ListBoxItem`. ClaudeForge's nav `TreeViewItem`s come from `NavigationNodeViewModel` and have **not** been audited.
+> The "name comes from the item" rule applies to any `ItemsSource`-generated container — but ⛔ **the FALLBACK does not, and neither does the fix.** ClaudeForge's nav `TreeViewItem`s were audited afterwards and were broken too; see the next entry. Do not assume `ToString()` is the answer for a container that is not a `TabItem`.
+
+---
+
+### A `TreeViewItem` generated from `ItemsSource` has NO automation name — not from the template, not from `ToString()`
+
+**Symptom:** A screen reader announces *nothing at all* for every row of a navigation tree, while the AXAML plainly contains `AutomationProperties.Name` and the `TreeView` itself is correctly named.
+
+Same underlying rule as the `TabControl` entry above — the container's name does not come from the `ItemTemplate` — but the fallback is different, and that changes the fix:
+
+| Container | Fallback when the template root is not a lone text element | Fix |
+|---|---|---|
+| `TabItem` | the item's `ToString()` → announces the **type name** | override `ToString()` |
+| `TreeViewItem` | **nothing — an empty name** | `AutomationProperties.Name` on the container, via a `Style` |
+
+⛔⛔ **A `ToString()` override does NOT fix a `TreeViewItem`.** Measured: a probe override returning `"PROBE-" + Title` on `NavigationNodeViewModel` never reached UIA — all 26 rows stayed empty. The empty name is itself the tell, because `ToString()` can never *return* empty.
+
+⛔⛔ **A lone bound `TextBlock` as the template root does NOT supply the name either.** Both of the repo's `ItemsSource`-bound navigation trees were broken, measured via a UIA `ControlViewWalker` census on both running apps:
+
+| View | Template root | Rows before | Rows after |
+|---|---|---|---|
+| `ClaudeForge/Views/MainWindow.axaml` | `Panel` (divider `Border` + icon/title `StackPanel`) | 26 × `[]` | 24 × `[Essentials]`, `[Claude Code]`, `[General]`, … |
+| `OpenCodeForge/Views/MainWindow.axaml` | a single `<TextBlock Text="{Binding Title}" />` | 3 × `[]` | `[OpenCode]`, `[OpenCode TUI]`, `[Artifacts]` |
+
+Each tree's own `Tree` element was already named `Settings navigation` in both apps, which is part of why this survived so long — the container is named, so a spot check looks healthy.
+
+⚠⚠ **Beware the harness recipe that hid this.** The UIA navigation recipe in this repo's notes locates a page by finding the `Text` **leaf** whose name is the page title and walking **up** to its `TreeItem` ancestor. That works, and it made OpenCodeForge's tree look correctly labelled when only the inner `TextBlock` ever was. A first draft of the guard below trusted that and passed any lone-text template — an escape hatch that would have vouched for a tree announcing nothing. **Read the container's own `Name`, not a descendant's.**
+
+**Fix** — a style setter on the generated container:
+
+```xml
+<Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
+    <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+</Style>
+```
+
+⚠ **`x:DataType` on the `Style` is required**, not decorative: without it the setter's binding is a reflection binding, which is an `IL2026` trim error in this repo. It compiles clean with it.
+
+⚠ **Do not name a decorative row.** The two divider nodes carry the vestigial `Title` `"─────────────"` — thirteen box-drawing characters the template has never rendered (it draws a 1px `Border`) — so binding `Name` to `Title` made them announce thirteen glyphs each. `AutomationProperties.AccessibilityView="Raw"` drops an element from the control view; applying it to every row took the census from 26 to 0, confirming the lever. `BoolToAccessibilityViewConverter` applies it to dividers only, so a screen reader walks 24 rows rather than 26.
+
+⛔ **`AxamlAccessibilityCoverageTests` scored both files clean, and a baseline of zero was quoted as evidence.** Guarded instead by `ItemsSourceBoundTreeViewsTests`, which requires every `ItemsSource`-bound `TreeView` to declare a container-naming `Style` — no exceptions, for the reason above. Canaried in both directions and per-file: dropping either app's style reds only that app, dropping both names both, and a *scoped* `TreeView > TreeViewItem` selector is still accepted (the `>` inside the attribute value breaks a naive tag regex — the guard skips quoted strings).
 
 ---
 
