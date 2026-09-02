@@ -7,6 +7,7 @@
         xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
         xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
         xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+        xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
         xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
         x:Class="Bennewitz.Ninja.ClaudeForge.Views.MainWindow"
         x:Name="RootWindow"
@@ -603,6 +604,44 @@
                                 is selected" affordance hard to see. Foreground forced to white so
                                 the row text stays legible on the saturated accent fill.
                             -->
+                            <!--
+                                ⛔⛔ THIS IS WHAT NAMES A NAV ROW FOR A SCREEN READER, and nothing
+                                in the ItemTemplate below can do it.
+
+                                A container generated from ItemsSource takes its automation name
+                                from the ITEM, not from the ItemTemplate's contents — so the three
+                                ToolTip-bearing TextBlocks below name themselves and leave the
+                                focusable TreeViewItem silent. Measured through UIA on the running
+                                app: all 26 rows of the app's primary navigation announced an EMPTY
+                                name, the Tree's own name (added 2026-08-27) notwithstanding.
+
+                                ⛔ A ToString() override on NavigationNodeViewModel does NOT fix
+                                this, unlike the two ItemsSource-bound TabControls whose TabItems
+                                announced their view-model's type name. Measured: a probe returning
+                                "PROBE-" + Title never reached UIA. TabItem falls back to the item's
+                                ToString(); TreeViewItem falls back to nothing at all. Same rule,
+                                two different fallbacks, so two different fixes — do not "unify"
+                                these onto ToString().
+
+                                The working sibling is OpenCodeForge/Views/MainWindow.axaml, whose
+                                TreeDataTemplate root is a single TextBlock: a lone text child does
+                                supply the name. This template's root is a Panel (divider Border +
+                                icon/title StackPanel), which cannot.
+
+                                x:DataType keeps the setter's binding compiled — a reflection
+                                binding here would be an IL2026 trim error in this repo.
+                            -->
+                            <Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+
+                                <!-- Dividers are decorative, and naming them is worse than leaving
+                                     them silent — their Title is thirteen box-drawing characters
+                                     that the template never renders. Raw drops them out of the
+                                     control view so a screen reader walks 24 rows, not 26. -->
+                                <Setter Property="AutomationProperties.AccessibilityView"
+                                        Value="{Binding IsDivider, Converter={x:Static libconv:BoolToAccessibilityViewConverter.Instance}}" />
+                            </Style>
+
                             <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
                                 <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
                             </Style>
