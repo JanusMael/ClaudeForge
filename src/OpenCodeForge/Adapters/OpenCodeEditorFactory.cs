@@ -58,7 +58,6 @@ namespace Bennewitz.Ninja.OpenCodeForge.Adapters;
 public sealed class OpenCodeEditorFactory : ISchemaEditorFactory
 {
     private readonly DefaultPropertyEditorFactory _generic = new();
-    private readonly IDangerClassifier? _danger;
 
     /// <param name="danger">
     /// The danger table for the document this factory serves, or <see langword="null"/> for none.
@@ -72,8 +71,11 @@ public sealed class OpenCodeEditorFactory : ISchemaEditorFactory
     /// </remarks>
     public OpenCodeEditorFactory(IDangerClassifier? danger = null)
     {
-        _danger = danger;
+        Danger = danger;
     }
+
+    /// <inheritdoc />
+    public IDangerClassifier? Danger { get; }
 
     /// <inheritdoc />
     /// <remarks>
@@ -91,7 +93,7 @@ public sealed class OpenCodeEditorFactory : ISchemaEditorFactory
         SettingsWorkspace? workspace = null)
     {
         return CreateCore(schema, editingScope, browseDialog, workspace)
-            .AttachDangerClassifier(_danger);
+            .AttachDangerClassifier(Danger);
     }
 
     private PropertyEditorViewModel CreateCore(

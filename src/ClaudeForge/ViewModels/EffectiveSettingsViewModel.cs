@@ -1,9 +1,11 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -31,17 +33,33 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
     private readonly string? _projectRoot;
     private readonly IShareService? _shareService;
     private readonly IReadOnlyDictionary<string, string> _descriptions;
+    private readonly IDangerClassifier? _danger;
     private bool _disposed;
 
+    /// <param name="danger">
+    /// The danger policy for the product this page reports on, or <see langword="null"/> for a
+    /// caller that declares none (tests, headless) — rows then render with no severity.
+    /// </param>
+    /// <remarks>
+    /// ⛔ <b>Supplied per call rather than defaulted to
+    /// <c>ClaudeDangerTable.Settings</c>.</b> Defaulting is the same hazard that keeps
+    /// <c>ClaudeEditorFactoryConfig.CreateDefault</c> classifier-free: this app hosts BOTH Claude
+    /// Code and Claude Desktop, whose schemas overlap on keys like <c>env</c>, so a default would
+    /// confidently label one product's settings with the other's threat model. This page happens
+    /// to be built only for Claude Code today, and the parameter is what keeps that a decision at
+    /// the call site instead of an accident of construction.
+    /// </remarks>
     public EffectiveSettingsViewModel(
         AgentConfigClientCore client,
         string? projectRoot = null,
         IShareService? shareService = null,
-        IReadOnlyDictionary<string, string>? descriptions = null)
+        IReadOnlyDictionary<string, string>? descriptions = null,
+        IDangerClassifier? danger = null)
     {
         _client = client;
         _projectRoot = projectRoot;
         _shareService = shareService;
+        _danger = danger;
         // Top-level-key → schema description, so the property column can show help text
         // on hover. Empty when not supplied (tests / headless) — tooltip falls back to
         // the path.
@@ -131,13 +149,46 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
                 layered.EffectiveValue?.ToJsonString() ?? "(null)",
                 layered.EffectiveScope,
                 layered.IsOverridden,
-                _descriptions.GetValueOrDefault(key)));
+                _descriptions.GetValueOrDefault(key))
+            {
+                Danger = Assess(key, layered),
+            });
         }
 
         rows.Sort((a, b) => string.Compare(a.Property, b.Property, StringComparison.Ordinal));
         PropertyRows = rows;
         OnPropertyChanged(nameof(PropertyRows));
         OnPropertyChanged(nameof(FilteredRows));
+    }
+
+    /// <summary>
+    /// Classify one row at the scope that won, over the value that won.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>The key is already a settings path.</b> <c>AllDefinedKeys</c> returns the top-level
+    /// keys present in any scope's document, which is exactly the shape
+    /// <see cref="IDangerClassifier"/> matches — so these are EXACT matches and the rules' value
+    /// predicates and scope escalation genuinely run here, rather than the tier-only inherited
+    /// answer a nested path would get.
+    /// </para>
+    /// <para>
+    /// ⛔ The value must cross into the editor value currency first; a predicate handed a raw
+    /// <c>JsonNode</c> matches no pattern it was written for and silently reports safe.
+    /// </para>
+    /// </remarks>
+    private DangerAssessment Assess(string key, LayeredValue layered)
+    {
+        if (_danger is null)
+        {
+            return DangerAssessment.Unremarkable;
+        }
+
+        IEditorScope? scope = layered.EffectiveScope is { } winner
+            ? ConfigScopeAdapter.For(winner)
+            : null;
+
+        return _danger.Classify(key, scope, JsonCurrency.FromJsonNode(layered.EffectiveValue));
     }
 
     [RelayCommand]

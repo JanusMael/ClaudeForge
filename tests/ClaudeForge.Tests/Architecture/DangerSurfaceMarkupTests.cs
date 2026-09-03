@@ -65,6 +65,13 @@ public sealed class DangerSurfaceMarkupTests
             "the settings row (both apps keep their own PropertyEditorWrapper)",
             DelegatesTo: "PropertyEditorWrapper"),
         new("SearchResultViewModel", 2, "a search hit (both apps render results)"),
+        // ⚠ ClaudeForge renders effective values TWICE — the group editor's Effective tab and the
+        // standalone Effective Settings page — from the same row type through two unrelated
+        // producers. OpenCodeForge draws no tab strip and hosts no such page, so both files are
+        // ClaudeForge's; the minimum is 2 because a fix applied to one of them is the exact
+        // failure this discovery-driven scan exists to catch.
+        new("EffectivePropertyRow", 2,
+            "an effective-value row (the group's Effective tab and the standalone page)"),
     ];
 
     /// <summary>
@@ -163,10 +170,10 @@ public sealed class DangerSurfaceMarkupTests
             }
         }
 
-        Assert.IsTrue(checkedFiles >= 4,
-            $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers and two "
-            + "search templates carry it, so the scan has lost its subjects and would pass "
-            + "without checking anything.");
+        Assert.IsTrue(checkedFiles >= 6,
+            $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers, two search "
+            + "templates and two effective-value grids carry it, so the scan has lost its "
+            + "subjects and would pass without checking anything.");
 
         Assert.IsTrue(offenders.Count == 0,
             "AutomationProperties.Name is ignored on a TextBlock (its Text wins), so these "

@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -1209,13 +1209,65 @@ public partial class SettingsGroupEditorViewModel
                                                   display,
                                                   layered.EffectiveScope,
                                                   layered.IsOverridden,
-                                                  node.Description);
+                                                  node.Description)
+                                              {
+                                                  Danger = AssessEffective(node, layered),
+                                              };
                                           })
                                           .Where(r => r is not null)
                                           .Select(r => r!)
                                           .ToList();
         EffectiveRows = rows;
         OnPropertyChanged(nameof(EffectiveRows));
+    }
+
+    /// <summary>
+    /// Classify one effective row at the scope that won, over the value that won.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>The classifier comes off the factory that built this page's editors</b>
+    /// (<see cref="ISchemaEditorFactory.Danger"/>), so the Effective tab and the Properties tab
+    /// of the same page cannot be driven by different tables. Accepting a separately-injected
+    /// classifier here would let one page contradict itself, which is the failure
+    /// <see cref="LayeredEditors.Avalonia.ViewModels.IDangerAnnotatedEditor"/> was introduced to
+    /// rule out on the search surface.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Classifies <see cref="SchemaNode.JsonPath"/>, never <see cref="SchemaNode.Title"/>.</b>
+    /// The row's <c>Property</c> column holds the DISPLAY name — a title like "Default Mode"
+    /// matches no rule, so passing it silently reports every row unremarkable while every other
+    /// test stays green.
+    /// </para>
+    /// <para>
+    /// ⚠ Both conversions are required and neither is cosmetic. The value arrives as a
+    /// <c>JsonNode</c> and rules are written against the editor value currency (<c>long</c>, not
+    /// <c>int</c>; dictionaries, not <c>JsonObject</c>), so a rule handed the raw node never
+    /// fires and reports safe. The scope arrives as a <see cref="ConfigScope"/> and escalation
+    /// predicates compare against <see cref="IEditorScope.Id"/>.
+    /// </para>
+    /// <para>
+    /// A <see langword="null"/> effective scope stays null rather than being defaulted to the
+    /// editing scope: the classifier contract says an unknown scope must never raise severity,
+    /// and substituting a scope the value did not come from could escalate a row on evidence
+    /// that does not exist.
+    /// </para>
+    /// </remarks>
+    private DangerAssessment AssessEffective(SchemaNode node, LayeredValue layered)
+    {
+        if (_factory.Danger is not { } classifier)
+        {
+            return DangerAssessment.Unremarkable;
+        }
+
+        IEditorScope? scope = layered.EffectiveScope is { } winner
+            ? ConfigScopeAdapter.For(winner)
+            : null;
+
+        return classifier.Classify(
+            node.JsonPath,
+            scope,
+            JsonCurrency.FromJsonNode(layered.EffectiveValue));
     }
 
     private void RebuildJsonPreview()
