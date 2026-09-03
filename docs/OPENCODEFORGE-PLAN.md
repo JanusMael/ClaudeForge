@@ -51,8 +51,8 @@
 > directory spellings, and that a 130-row skills tab scrolls to its last row. **A green,
 > trim-clean page still had four defects** — see "What running the UI keeps finding" below.
 >
-> 🔶 **Phase 11.5 is STARTED, not done — slices 1, 2, 3a, 3b, 4a, 4b and 5 are in; the
-> save-preview, `DANGER-TAXONOMY.md` and the no-raw-hex tripwire are not.**
+> 🔶 **Phase 11.5 — ALL FOUR SURFACES ARE IN (slices 1–6). `DANGER-TAXONOMY.md` and the
+> no-raw-hex tripwire are not.**
 >
 > **Slice 1 (`c1dbb4f`) — severity became a type.** The `AppSeverity` enum in
 > `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
@@ -201,8 +201,33 @@
 > (`Title ?? Name`) — a title matches no rule, so passing it reports every row unremarkable while
 > the column still renders and every other test stays green.
 >
-> **Still open in 11.5:** the **save-preview** — now the last missing surface — plus
-> `docs/DANGER-TAXONOMY.md` and the no-raw-hex build tripwire modelled on `GuardUnusedResxKeys`.
+> **Slice 6 (`0f98645`) — the save-preview, DONE and seen running.** Every pending change carries
+> a severity dot, and a headline appears when one writes a value the product calls unsafe.
+> Verified live (dialog cancelled, nothing written): three toggles produced *"Saving 3 change(s)"*
+> **and** *"▲ 1 of these changes set a value that weakens a safety boundary"* — one, not three,
+> because only `respectGitignore=false` is the unsafe value. That gap between the two counts is
+> the design.
+>
+> ⛔⛔ **The value is resolved from the document root, NOT from `PropertyDiff.NewValue`.** For an
+> array change `JsonDiff` emits the ARRAY's path as the key but only the added ELEMENT as the
+> value, so a rule written for `permissions.allow` would be handed one element's string, match no
+> list pattern, and answer "nothing wrong right now" — a silent false negative on exactly the keys
+> this dialog exists to catch. ⚠ The test for it had to be rewritten before it tested anything:
+> the element-wise diff only fires when the key is an array on **both** sides, and a key absent
+> from the baseline yields an `Added` row carrying the whole array.
+>
+> ⛔⛔ **The policy travels PER SOURCE (`DirtySource`), not as one parameter.** This dialog renders
+> every open product at once, so a single classifier would label Claude Desktop's pending writes
+> with Claude Code's threat model.
+>
+> ⭐ **`ProductSection` states the table once** and both consumers read it there — the settings
+> pages via `BuildGroups`, the save dialog via `DirtySources()`. Two literals agreed only by
+> vigilance before.
+>
+> **Still open in 11.5:** `docs/DANGER-TAXONOMY.md` and the no-raw-hex build tripwire modelled on
+> `GuardUnusedResxKeys`. ⚠ A naive scan flags ~30 LEGITIMATE literals (`JsonHighlightBlock` syntax
+> colours, `ConfigScopeToBrushConverter`, `CodeInline`, and every `BrushHelper.Resolve` fallback),
+> so it needs the opt-out property, not a blanket ban.
 >
 > ### ⛔⛔ The surface ordering above is not buildable as written
 >

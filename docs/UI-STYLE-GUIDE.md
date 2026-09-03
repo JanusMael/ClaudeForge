@@ -134,14 +134,15 @@ rather than its fallback).
 
 ### 3b. Where severity is rendered, and what the two codes mean
 
-As of Phase 11.5 the family appears on **five** surfaces: Essentials cards, the
+As of Phase 11.5 the family appears on **six** surfaces: Essentials cards, the
 settings row (`PropertyEditorWrapper` — ⚠ **each app has its own copy**, the
 shared one under `LayeredEditors.Avalonia` and ClaudeForge's under
-`src/ClaudeForge/Controls/`), search hits, the row's danger banner, and the
+`src/ClaudeForge/Controls/`), search hits, the row's danger banner, the
 effective-value **Risk** column (⚠ **two files**, `GroupEffectiveView.axaml` and
-`EffectiveSettingsView.axaml`, fed by two unrelated producers). Both products
-supply a table: `ClaudeDangerTable` (142 top-level keys) and `OpenCodeDangerTable`
-(36 + 13).
+`EffectiveSettingsView.axaml`, fed by two unrelated producers), and the
+**save-confirmation dialog** (a dot per pending change, plus a headline). Both
+products supply a table: `ClaudeDangerTable` (142 top-level keys) and
+`OpenCodeDangerTable` (36 + 13).
 
 ⭐⭐ **A surface either ASKS THE EDITOR or CLASSIFIES, and which one is not a
 style choice — it follows from what the surface holds.** Severity is a function
@@ -160,6 +161,11 @@ The dot is the **tier** — present even when the value sits at its safe default
 which is what lets someone spot a dangerous knob *before* turning it. The banner
 appears only when the value actually held is the unsafe one, so it never becomes
 wallpaper: on a page of safe defaults, no banner renders at all.
+
+⚠ **The same split governs any AGGREGATE.** The save dialog's headline counts
+`IsDangerNow`, never the tier — counting tiers would fire on nearly every real
+save, and a headline that always shows is a headline nobody reads. Measured
+live: three toggled settings, all three dotted, headline says **1**.
 
 ⛔ **Dual-coding is normative, not advisory.** Severity carries a **glyph** as
 well as a colour — `▲` Critical, `◆` Caution, `●` Info, `○` Neutral — because
