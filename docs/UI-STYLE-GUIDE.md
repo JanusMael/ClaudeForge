@@ -134,12 +134,26 @@ rather than its fallback).
 
 ### 3b. Where severity is rendered, and what the two codes mean
 
-As of Phase 11.5 the family appears on **four** surfaces: Essentials cards, the
+As of Phase 11.5 the family appears on **five** surfaces: Essentials cards, the
 settings row (`PropertyEditorWrapper` — ⚠ **each app has its own copy**, the
 shared one under `LayeredEditors.Avalonia` and ClaudeForge's under
-`src/ClaudeForge/Controls/`), search hits, and the row's danger banner. Both
-products now supply a table: `ClaudeDangerTable` (142 top-level keys) and
-`OpenCodeDangerTable` (36 + 13).
+`src/ClaudeForge/Controls/`), search hits, the row's danger banner, and the
+effective-value **Risk** column (⚠ **two files**, `GroupEffectiveView.axaml` and
+`EffectiveSettingsView.axaml`, fed by two unrelated producers). Both products
+supply a table: `ClaudeDangerTable` (142 top-level keys) and `OpenCodeDangerTable`
+(36 + 13).
+
+⭐⭐ **A surface either ASKS THE EDITOR or CLASSIFIES, and which one is not a
+style choice — it follows from what the surface holds.** Severity is a function
+of three inputs (path, scope, value). A **search hit** holds only the path, so it
+asks the editor (`IDangerAnnotatedEditor.AssessDanger`) and renders the row's own
+assessment; classifying there would invent a scope and a value and contradict the
+row it navigates to. An **effective row** holds all three — and they are the
+*winning* scope and value, not the edited ones — so it classifies. ⚠ **The
+resulting dots can legitimately disagree** (a key that escalates in a
+git-committed file is Caution at the User scope you are editing and Critical once
+a project file overrides it), which is why the Risk column's header tooltip
+explains the difference rather than leaving it to look like a bug.
 
 ⭐ **The dot and the banner answer DIFFERENT questions, and both are needed.**
 The dot is the **tier** — present even when the value sits at its safe default,
@@ -171,7 +185,11 @@ automation peer at all.
 
 Guard: `DangerSurfaceMarkupTests` **discovers** the surfaces by their
 `x:DataType` (so a new one is covered without editing a list), requires both the
-dot and the banner, and rejects a glyph annotated with `Name`.
+dot and the banner, and rejects a glyph annotated with `Name`. ⛔ Its
+"hosts the control that draws it" escape hatch **excludes self-delegating
+files** — both wrappers recurse into `<ctrl:PropertyEditorWrapper />` for nested
+children, so without that exclusion the hatch opens for the two files it exists
+to check.
 
 ---
 
