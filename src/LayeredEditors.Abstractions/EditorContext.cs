@@ -13,6 +13,12 @@ namespace Bennewitz.Ninja.LayeredEditors.Abstractions;
 /// <param name="BrowseFile">
 /// Open a file picker and return the chosen path (or <c>null</c> if cancelled).
 /// </param>
+/// <remarks>
+/// ⓘ <b>Danger policy deliberately does NOT ride here.</b> It would have been a natural fit, but
+/// every editor a factory produces needs it, so a factory attaches it once at a single choke point
+/// (<see cref="ViewModels.PropertyEditorViewModel.AttachDangerClassifier"/>) rather than each
+/// editor fishing it out of this bag. Two paths to the same dependency is how the two halves drift.
+/// </remarks>
 public sealed record EditorContext(
     Func<Task<string?>>? BrowsePath = null,
     Func<Task<string?>>? BrowseFile = null)

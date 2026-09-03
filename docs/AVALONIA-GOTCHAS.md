@@ -269,6 +269,29 @@ Each tree's own `Tree` element was already named `Settings navigation` in both a
 
 ---
 
+### `AutomationProperties.Name` is IGNORED on a `TextBlock` — its `Text` always wins
+
+**Symptom:** A screen reader announces a glyph, an icon character, or the visible text, no matter what `AutomationProperties.Name` is bound to. No warning, no binding error.
+
+Avalonia's `TextBlock` peer reports the control's own `Text` as its automation name. An explicit `AutomationProperties.Name` does not override it. Measured through UIA on the running app: a severity dot bound to a full sentence announced `▲`, and a banner bound to `"Critical: …"` announced its visible sentence instead.
+
+⛔ **This makes a whole class of markup a silent no-op.** This repo has **15** `AutomationProperties.Name="{Binding DisplayName}"` attributes on `TextBlock`s; every one is dead. Nobody noticed because in each case the `Text` *already* equals `DisplayName`, so the announced result was accidentally correct.
+
+⚠ **Wrapping the `TextBlock` to carry the name makes it worse, two ways** — both measured:
+
+| Wrapper | Result |
+|---|---|
+| `Border` | **no automation peer at all**, so the element vanishes from the control view |
+| `ContentControl` | same — no peer, element absent |
+
+Combined with `AutomationProperties.AccessibilityView="Raw"` on the inner glyph, the indicator became *invisible* to assistive tech — strictly worse than announcing the glyph.
+
+**Fix:** use `AutomationProperties.HelpText` for the sentence and let `Text` be the name. UIA announces name then help text, so the user hears `"▲, Critical: Filesystem snapshots are your undo."` This is also already the convention in `PropertyEditorWrapper.axaml`, where each property's description rides `HelpText` on its label.
+
+⭐ **A UIA dump reports `Name` by default, so `HelpText` looks absent unless you ask for it** — read `element.Current.HelpText` explicitly before concluding the annotation did not apply.
+
+---
+
 ## Virtualization / perf
 
 ### Virtualization needs a BOUNDED viewport — and it does not reach into a nested items host

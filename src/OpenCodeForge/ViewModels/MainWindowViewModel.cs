@@ -6,6 +6,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Artifacts;
 using Bennewitz.Ninja.OpenCode.Sdk;
@@ -22,11 +23,21 @@ namespace Bennewitz.Ninja.OpenCodeForge.ViewModels;
 /// <param name="Client">The already-constructed client for it.</param>
 /// <param name="Layout">How its schema keys bucket into pages.</param>
 /// <param name="HeaderText">Navigation header, localized.</param>
+/// <param name="Danger">
+/// Which of this document's settings deserve attention, or <see langword="null"/> for none.
+/// <para>
+/// ⚠ <b>Per DOCUMENT, not per product.</b> <c>opencode.json</c> and <c>tui.json</c> carry separate
+/// tables, so this belongs beside <see cref="Layout"/> — the other thing that is already paired
+/// per document — rather than on <see cref="ProductDescriptor"/>, which is a persisted data record
+/// and has no business holding a service.
+/// </para>
+/// </param>
 public sealed record HostedSection(
     ProductDescriptor Product,
     AgentConfigClientCore Client,
     SchemaPageLayout Layout,
-    Func<string> HeaderText);
+    Func<string> HeaderText,
+    IDangerClassifier? Danger = null);
 
 /// <summary>
 /// The window's view-model: opens both OpenCode configurations and builds a settings page per
@@ -57,8 +68,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// translation lands.
     /// </remarks>
     public const string ArtifactsNodeId = "artifacts";
-
-    private readonly OpenCodeEditorFactory _editorFactory = new();
 
     /// <summary>Sections in navigation order.</summary>
     public IReadOnlyList<HostedSection> Sections { get; }
@@ -155,9 +164,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel()
         : this(
             new HostedSection(OpenCodeProducts.Config, new OpenCodeClient(),
-                OpenCodePageLayout.Config, () => Strings.SectionOpenCode),
+                OpenCodePageLayout.Config, () => Strings.SectionOpenCode,
+                OpenCodeDangerTable.Config),
             new HostedSection(OpenCodeProducts.Tui, new OpenCodeTuiClient(),
-                OpenCodePageLayout.Tui, () => Strings.SectionOpenCodeTui))
+                OpenCodePageLayout.Tui, () => Strings.SectionOpenCodeTui,
+                OpenCodeDangerTable.Tui))
     {
     }
 
@@ -284,6 +295,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SharedScopeContext scope = new(section.Client.EditableScopes.FirstOrDefault());
         scope.AvailableScopes = section.Client.EditableScopes;
 
+        // ⚠ One factory PER SECTION, not one shared across both. The factory carries this
+        // document's danger table, and the two documents' tables barely overlap — a shared
+        // instance would label tui.json's rows with opencode.json's policy.
+        OpenCodeEditorFactory editorFactory = new(section.Danger);
+
         List<NavigationNodeViewModel> pages = [];
         foreach (SchemaPage page in section.Layout.Arrange(nodes))
         {
@@ -292,7 +308,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 page.Nodes,
                 workspace,
                 scope,
-                _editorFactory,
+                editorFactory,
                 OpenCodeSettingsGroupText.Create(),
                 groupDescription: page.Description,
                 sdkClient: section.Client);
