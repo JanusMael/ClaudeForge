@@ -4,6 +4,7 @@ using Avalonia.Threading;
 
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -239,7 +240,10 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
                         // Use JsonPath (e.g. "sandbox.allowUnsandboxedCommands") as the PropertyKey
                         // so that the target editor can locate and highlight the correct property.
                         SearchResults.Add(new SearchResultViewModel(child, sectionTitle, groupEditor.GroupName, title,
-                            path, snippet, desc));
+                            path, snippet, desc)
+                        {
+                            Danger = AssessHit(child, path),
+                        });
                         count++;
                     }
                 }
@@ -277,7 +281,10 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
                                 : BuildSnippet(hit.Description, query, 70);
                             SearchResults.Add(new SearchResultViewModel(
                                 child, sectionTitle, pageTitle,
-                                displayTitle, path, snippet, hit.Description));
+                                displayTitle, path, snippet, hit.Description)
+                            {
+                                Danger = AssessHit(child, path),
+                            });
                             count++;
                             addedSpecific = true;
                         }
@@ -370,6 +377,7 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
                 entry.Description)
             {
                 IsSynthetic = true,
+                Danger = AssessHit(target, entry.PropertyKey),
             }));
 
             foreach (string id in entry.Suppresses)
@@ -386,6 +394,32 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
             }
         }
     }
+
+    /// <summary>
+    /// Ask the page a hit lands on how much the knob at <paramref name="jsonPath"/> matters.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>Search must not classify anything itself.</b> It holds neither the editing scope nor
+    /// the current value, and the assessment is a function of both — so a classifier called from
+    /// here would answer for a different (path, scope, value) triple than the settings row does,
+    /// and the two surfaces would contradict each other on exactly the settings that matter most
+    /// (an API key is Caution at user scope and Critical in a project file). Delegating to
+    /// <see cref="IDangerAnnotatedEditor"/> returns the row's own assessment instead.
+    /// </para>
+    /// <para>
+    /// Three ways a hit legitimately has no severity, all of which render as no dot: the page's
+    /// editor cannot be asked (it is not danger-annotated), the path is empty (a page-title
+    /// fallback row, or a synthetic row that points at a page rather than a property), or the
+    /// editor does not render that path. None is an error — a product with no danger table is a
+    /// missing feature, not a wrong answer.
+    /// </para>
+    /// </remarks>
+    private static DangerAssessment AssessHit(NavigationNodeViewModel node, string jsonPath) =>
+        string.IsNullOrEmpty(jsonPath)
+            ? DangerAssessment.Unremarkable
+            : (node.Editor as IDangerAnnotatedEditor)?.AssessDanger(jsonPath)
+              ?? DangerAssessment.Unremarkable;
 
     /// <summary>
     /// Yields every node in the tree depth-first, including nested

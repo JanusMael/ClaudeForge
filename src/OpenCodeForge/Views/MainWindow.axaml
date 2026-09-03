@@ -5,10 +5,19 @@
         xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:services="using:Bennewitz.Ninja.OpenCodeForge.Services"
+        xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
         x:Class="Bennewitz.Ninja.OpenCodeForge.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
         Width="1280" Height="860">
+
+    <Window.Resources>
+        <!-- Same converters the settings row's wrapper uses, so a severity reads identically on
+             both surfaces. The brush converter resolves the themed AppSeverity*Brush pair, which
+             this app declares in App.axaml alongside ClaudeForge's. -->
+        <conv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <conv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+    </Window.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         <!-- Install banner. Informational only: editing a config for a not-yet-installed agent
@@ -110,7 +119,29 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="search:SearchResultViewModel">
                             <StackPanel Margin="4">
-                                <TextBlock Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
+                                <!--
+                                    Severity dot, so a search lands on a knob already labelled
+                                    rather than one the user has to open to judge. Same glyphs,
+                                    same tokens and the same bound member names as the settings
+                                    row's PropertyEditorWrapper - the assessment is literally that
+                                    row's own, fetched through IDangerAnnotatedEditor, so the two
+                                    surfaces cannot disagree.
+
+                                    ⛔ HelpText, never Name: a TextBlock's Text always wins and an
+                                    explicit Name is ignored (see AVALONIA-GOTCHAS). Wrapping the
+                                    glyph to work around that is worse - a Border and a
+                                    ContentControl both get no automation peer at all.
+                                -->
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                               Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                                               ToolTip.Tip="{Binding DangerAccessibleText}" />
+                                    <TextBlock Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
+                                </StackPanel>
                                 <TextBlock Opacity="0.7" FontSize="12"
                                            Text="{Binding GroupTitle}" />
                                 <TextBlock Opacity="0.6" FontSize="12" TextWrapping="Wrap"

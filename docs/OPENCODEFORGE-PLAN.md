@@ -95,10 +95,46 @@
 > ⓘ **Nested children of an object editor show no dot** — they render through the object editor's
 > own template rather than the wrapper header, so they never reach this code.
 >
-> **Still open in 11.5:** the remaining three surfaces (effective view, search hits, save-preview),
-> Claude's own danger table, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire modelled
-> on `GuardUnusedResxKeys`. ⛔ **The save-preview is NOT the cheap one the plan assumed** — see the
-> ordering note below.
+> **Slice 3b — search hits, the second surface.** A severity dot on every search result, in
+> **both** apps' templates, so a search lands on a knob already labelled. 21 tests, 7 canaries.
+>
+> ⭐⭐ **The dot is not classified at the search site — the hit ASKS THE EDITOR.** New
+> `IDangerAnnotatedEditor.AssessDanger(path)` (in `LayeredEditors.ViewModels`, beside
+> `IChildEditorHost` and for the same reason: `PropertyEditorViewModel` implements it and the
+> library cannot reference the shell). The obvious alternative — hand `SearchViewModel` a
+> classifier — **quietly reclassifies**: search holds neither the editing scope nor the value, and
+> the assessment is a function of both, so the hit would contradict the row it navigates to. The
+> assessment returned is the row's own instance, so agreement is structural rather than tested-for.
+> `SettingsGroupEditorViewModel` implements the same interface by delegating to its `Editors`.
+>
+> ⓘ **`null` and `Unremarkable` are different answers** and the distinction is load-bearing: `null`
+> means "this editor does not render that path, keep looking", which is what lets the group editor
+> stop at the first owner. Collapsing them makes the walk stop at editor #1 and call every later
+> path safe. ⭐ The descent into nested paths goes through `IChildEditorHost`, **never a concrete
+> object-editor type** — there are two `ObjectPropertyEditorViewModel` classes and the app's does
+> not derive from the library's, so a type test covers half the object editors in play.
+>
+> ⛔⛔ **A REAL DEFECT FELL OUT OF SLICE 2, and it made the headline escalation inert.**
+> `IsGitCommittedScope` compared a scope id ordinally against `OpenCodeScopes.Project`
+> (`"Project"`), but what arrives is an `IEditorScope.Id`, which `ConfigScope.Id` produces by
+> **lower-casing** the rung name (`"project"`). So a plaintext API key in a git-committed project
+> file rendered **Caution amber instead of Critical red** in the running app. ⚠ **All 85
+> slice-2 tests stayed green** because they build their own scope from that same constant —
+> tautological with respect to casing. Fixed to `OrdinalIgnoreCase`; new
+> `ScopeEscalationRealScopeTests` compares against `ConfigScopeAdapter`, the object the app
+> actually hands the classifier. *Canary C4 restored `Ordinal` and reddened only the new test
+> while every table-level test stayed green — the asymmetry is the proof.*
+>
+> ⚠ **And the escalation is still unobservable on every SURFACE**, for a different reason: its
+> only escalating key is `provider.*.options.apiKey`, a wildcard segment under an open-ended
+> provider dictionary, so no concrete schema node exists for it and it can never become a settings
+> row or a search hit. The policy is now correct; nothing renders it. Worth a decision when
+> Claude's table lands, since `.claude/settings.json` is committed too.
+>
+> **Still open in 11.5:** the effective view and the save-preview, Claude's own danger table,
+> `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire modelled on `GuardUnusedResxKeys`.
+> ⛔ **Neither remaining surface is buildable in the app that has a table** — see the ordering note
+> below.
 >
 > ### ⛔⛔ The surface ordering above is not buildable as written
 >
@@ -111,6 +147,23 @@
 > (one production call site, `MainWindowViewModel.cs:1867`), and `PropertyDiff.OldValue`/`NewValue`
 > are **JSON strings**, not the editor value currency — so that path needs
 > `JsonCurrency.FromJsonNode` before any predicate can run on it.
+>
+> ⛔⛔ **The EFFECTIVE VIEW is unbuildable for the same reason, and the earlier handoff got this
+> wrong.** Session 14's anchor listed the effective view as the next buildable surface. Measured:
+> the rows are produced in the **shared** shell (`SettingsGroupEditorViewModel.EffectiveRows` →
+> `EffectivePropertyRow`), but the only thing that RENDERS them is
+> `src/ClaudeForge/Views/GroupEffectiveView.axaml`, reached through ClaudeForge's own
+> `GroupTabBodyTemplate`. **OpenCodeForge renders no tab strip at all** — its
+> `SettingsPageHost.axaml` binds `GroupName`, `GroupDescription`, the scope selector and
+> `FilteredEditors`, and nothing else. So OpenCodeForge computes effective rows nobody can see, and
+> a severity column added there would be invisible in the only product with a table. (It does
+> supply `TabEffective` text via `OpenCodeSettingsGroupText`, which is what makes this look wired.)
+>
+> ⭐ **So the ordering that survives measurement is: settings tree (3a) → search hits (3b) →
+> Claude's own danger table → then the effective view and the save-preview, both of which that
+> table unblocks in ClaudeForge where the renderers already exist.** Search hits were buildable
+> because `SearchViewModel`/`SearchResultViewModel` are shared **and both apps render results**
+> (OpenCodeForge a `ListBox`, ClaudeForge a `Popup` + `ItemsControl`).
 >
 > ### What running the UI keeps finding — read this before trusting a green suite
 >
