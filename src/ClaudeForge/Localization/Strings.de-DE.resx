@@ -1793,6 +1793,9 @@ Abbrechen — das Fenster geöffnet lassen.</value>
     <value>Geänderte Eigenschaft</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} dieser Änderungen setzen einen Wert, der eine Sicherheitsgrenze schwächt. Prüfen Sie die markierten Zeilen vor dem Speichern.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>Kopieren</value>

@@ -72,6 +72,10 @@ public sealed class DangerSurfaceMarkupTests
         // failure this discovery-driven scan exists to catch.
         new("EffectivePropertyRow", 2,
             "an effective-value row (the group's Effective tab and the standalone page)"),
+        // ⚠ Minimum 1: only ClaudeForge has a save dialog. OpenCodeForge has no
+        // ISaveChangesPrompt or SaveDialogBuilder reference anywhere, which is why this surface
+        // could not be built until Claude got a table.
+        new("SaveChangeEntryViewModel", 1, "a pending change in the save-confirmation dialog"),
     ];
 
     /// <summary>
@@ -170,10 +174,10 @@ public sealed class DangerSurfaceMarkupTests
             }
         }
 
-        Assert.IsTrue(checkedFiles >= 6,
+        Assert.IsTrue(checkedFiles >= 7,
             $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers, two search "
-            + "templates and two effective-value grids carry it, so the scan has lost its "
-            + "subjects and would pass without checking anything.");
+            + "templates, two effective-value grids and the save dialog carry it, so the scan has "
+            + "lost its subjects and would pass without checking anything.");
 
         Assert.IsTrue(offenders.Count == 0,
             "AutomationProperties.Name is ignored on a TextBlock (its Text wins), so these "

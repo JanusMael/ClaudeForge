@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -53,16 +54,21 @@ internal sealed class ProductSection
     /// that list to know which folders the archive contains. Composing the path from the
     /// descriptor makes the two agree structurally instead of by matching literals.
     /// </param>
+    /// <param name="danger">
+    /// This product's danger policy, or <see langword="null"/> for a product that has none.
+    /// </param>
     internal ProductSection(
         ProductDescriptor product,
         string navTitle,
         Func<string> workspaceDisplayName,
-        string exportEntryRelativePath)
+        string exportEntryRelativePath,
+        IDangerClassifier? danger = null)
     {
         Product = product;
         NavTitle = navTitle;
         WorkspaceDisplayName = workspaceDisplayName;
         _exportEntryRelativePath = exportEntryRelativePath;
+        Danger = danger;
     }
 
     private readonly string _exportEntryRelativePath;
@@ -86,4 +92,25 @@ internal sealed class ProductSection
     /// one over the same section.
     /// </summary>
     internal ClaudeConfigClientBase? Client { get; set; }
+
+    /// <summary>
+    /// This product's danger policy, or <see langword="null"/> when it has none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>Stated ONCE, here, because it is consumed in two unrelated places and they must not
+    /// drift.</b> The settings pages get it through <c>NavigationTreeBuilder.BuildGroups</c>; the
+    /// save-confirmation dialog gets it through <c>DirtySources()</c>. Written as a literal at each
+    /// call site instead, the two would agree only by vigilance — and the failure mode is silent:
+    /// this app hosts Claude Code AND Claude Desktop, their schemas share almost no key names, so
+    /// the wrong table shows nothing on most rows and a confident mislabel on the few that collide
+    /// (<c>env</c> is in both).
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Claude Desktop deliberately has none.</b> Absence renders as no severity anywhere,
+    /// which is honest — nobody has triaged that product's keys. Reusing Claude Code's would not
+    /// be a shortcut, it would be a false claim.
+    /// </para>
+    /// </remarks>
+    internal IDangerClassifier? Danger { get; }
 }

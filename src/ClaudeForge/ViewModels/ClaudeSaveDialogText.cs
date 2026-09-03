@@ -41,6 +41,7 @@ public static class ClaudeSaveDialogText
             KindAdded = Strings.SaveDialogKindAdded,
             KindRemoved = Strings.SaveDialogKindRemoved,
             KindModified = Strings.SaveDialogKindModified,
+            UnsafeChangeWarningFormat = Strings.TextSaveUnsafeChangeWarning,
         };
     }
 }

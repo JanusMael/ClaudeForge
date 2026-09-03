@@ -1793,6 +1793,9 @@ Cancelar — mantener la ventana abierta.</value>
     <value>Propiedad modificada</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} de estos cambios establecen un valor que debilita un límite de seguridad. Revisa las filas marcadas antes de guardar.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>Copiar</value>

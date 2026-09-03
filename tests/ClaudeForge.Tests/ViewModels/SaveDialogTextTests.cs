@@ -31,6 +31,7 @@ public sealed class SaveDialogTextTests
         KindAdded = "added",
         KindRemoved = "removed",
         KindModified = "modified",
+        UnsafeChangeWarningFormat = "unsafe {0}",
     };
 
     [TestMethod]

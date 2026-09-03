@@ -1866,6 +1866,9 @@
     <value>已修改属性</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>其中 {0} 项更改会设置削弱安全边界的值。保存前请检查已标记的行。</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>复制</value>

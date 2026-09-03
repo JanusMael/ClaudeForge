@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -45,12 +46,13 @@ internal static class WorkspaceDiagnostics
     /// one parameter per product: this method has no business knowing how many products the
     /// shell hosts, and it never did — it only needed each client and its label.
     /// </param>
-    internal static void LogPendingChanges(
-        IEnumerable<(AgentConfigClientCore Client, string DisplayName)> sources)
+    internal static void LogPendingChanges(IEnumerable<DirtySource> sources)
     {
-        foreach ((AgentConfigClientCore client, string displayName) in sources)
+        // Reads Client and DisplayName only — the log has no severity column, and adding one
+        // would put a product's threat model into a file that gets attached to bug reports.
+        foreach (DirtySource source in sources)
         {
-            LogSdkChanges(client.SnapshotDirtyDocuments(), displayName);
+            LogSdkChanges(source.Client.SnapshotDirtyDocuments(), source.DisplayName);
         }
     }
 

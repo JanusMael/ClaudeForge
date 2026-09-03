@@ -5341,6 +5341,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} of these changes set a value that weakens a safety boundary. Review the flagged rows before saving..
+        /// </summary>
+        public static string TextSaveUnsafeChangeWarning {
+            get {
+                return ResourceManager.GetString("TextSaveUnsafeChangeWarning", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Saving {0} change(s) across {1} file(s):.
         /// </summary>
         public static string TextSaveSummary {

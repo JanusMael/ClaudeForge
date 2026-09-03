@@ -67,6 +67,17 @@ public sealed record SaveDialogText
     /// <summary>Screen-reader name for the "modified" change pill.</summary>
     public required string KindModified { get; init; }
 
+    /// <summary>
+    /// Headline shown when one or more pending changes write a value the product calls unsafe.
+    /// A composite format string taking <c>{0}</c> = the count of such changes.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The wording is the host's because the consequence is: what "unsafe" costs differs per
+    /// product, and a neutral sentence here would either be vague enough to ignore or specific
+    /// enough to be wrong for the next product.
+    /// </remarks>
+    public required string UnsafeChangeWarningFormat { get; init; }
+
     /// <summary>Window title for <paramref name="mode"/>.</summary>
     public string TitleFor(SaveDialogMode mode)
     {

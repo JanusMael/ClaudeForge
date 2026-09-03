@@ -1819,6 +1819,9 @@
     <value>変更されたプロパティ</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>これらの変更のうち {0} 件は、安全境界を弱める値を設定します。保存する前に、マークされた行を確認してください。</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>コピー</value>
