@@ -112,8 +112,23 @@ public static class OpenCodeDangerTable
     /// Scopes whose files are committed to git, so a secret written there is published to
     /// everyone with repo access rather than kept locally.
     /// </summary>
+    /// <remarks>
+    /// ⛔⛔ <b>Case-insensitive, and that is a fix rather than sloppiness.</b> The constant is a
+    /// ladder RUNG NAME (<c>"Project"</c>); what arrives here is an
+    /// <see cref="IEditorScope.Id"/>, which <see cref="ConfigScope.Id"/> produces by
+    /// lower-casing that same name (<c>"project"</c>) — the interface documents ids in that form.
+    /// An ordinal comparison therefore never matched in the running app, so this escalation was
+    /// inert: a plaintext API key in a git-committed project file rendered Caution amber instead
+    /// of Critical red.
+    /// <para>
+    /// ⚠ <b>Every table-level test stayed green through that</b>, because they construct their own
+    /// scope from this very constant — tautological with respect to casing.
+    /// <c>ScopeEscalationRealScopeTests</c> exists to compare against the adapter the app actually
+    /// hands the classifier, which is the only version of this assertion that can fail.
+    /// </para>
+    /// </remarks>
     private static bool IsGitCommittedScope(string? scopeId) =>
-        string.Equals(scopeId, OpenCodeScopes.Project, StringComparison.Ordinal);
+        string.Equals(scopeId, OpenCodeScopes.Project, StringComparison.OrdinalIgnoreCase);
 
     // ── config.json — all 36 top-level keys, plus nested refinements ──────────
 
