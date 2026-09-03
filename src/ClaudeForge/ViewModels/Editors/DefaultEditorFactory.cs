@@ -4,6 +4,7 @@ using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Services;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -28,6 +29,26 @@ public class DefaultEditorFactory : ISchemaEditorFactory
     /// for the production build.
     /// </summary>
     public IUnsupportedShapeSink? UnsupportedShapeSink { get; set; }
+
+    /// <summary>
+    /// This product's danger policy, applied to every editor the factory produces, or
+    /// <see langword="null"/> for a caller that declares none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>Read by <see cref="CompositeEditorFactory.Create"/>, which is the single attach
+    /// site.</b> It is declared here rather than there because this base holds the state and the
+    /// derived class holds the dispatch — and because a caller configures the factory once, not
+    /// per editor.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The failure mode of leaving it unset is silence:</b> the rows render with no severity
+    /// at all, which looks exactly like "this product has nothing dangerous". That is why
+    /// <c>ClaudeEditorDangerWiringTests</c> drives every top-level schema node through the real
+    /// factory and fails on any editor that came back without a classifier.
+    /// </para>
+    /// </remarks>
+    public IDangerClassifier? Danger { get; init; }
 
     /// <summary>
     /// Build the raw-JSON fallback editor for a shape the factory cannot classify,

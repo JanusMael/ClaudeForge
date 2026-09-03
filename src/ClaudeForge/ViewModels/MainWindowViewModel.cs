@@ -40,6 +40,7 @@ using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
@@ -4179,8 +4180,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
             await Task.Run(() => (
                 ccWorkspace is not null && ccSdk is not null
+                    // Claude Code's rows carry Claude Code's danger table. ⛔ Desktop gets NO
+                    // table rather than this one: the two schemas share almost no key names, so
+                    // reusing it would label Desktop's page with a policy written about a
+                    // different product — silently blank for most keys and confidently wrong on
+                    // any that collide.
                     ? NavigationTreeBuilder.BuildGroups(
-                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes)
+                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes,
+                        ClaudeDangerTable.Settings)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
                 dtWorkspace is not null && dtSdk is not null
                     ? NavigationTreeBuilder.BuildGroups(
