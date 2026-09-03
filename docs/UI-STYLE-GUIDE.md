@@ -132,6 +132,47 @@ variants of both apps, and light ≠ dark) and
 `AppSeverityThemedLookupTests` (the converter resolves the declared token
 rather than its fallback).
 
+### 3b. Where severity is rendered, and what the two codes mean
+
+As of Phase 11.5 the family appears on **four** surfaces: Essentials cards, the
+settings row (`PropertyEditorWrapper` — ⚠ **each app has its own copy**, the
+shared one under `LayeredEditors.Avalonia` and ClaudeForge's under
+`src/ClaudeForge/Controls/`), search hits, and the row's danger banner. Both
+products now supply a table: `ClaudeDangerTable` (142 top-level keys) and
+`OpenCodeDangerTable` (36 + 13).
+
+⭐ **The dot and the banner answer DIFFERENT questions, and both are needed.**
+The dot is the **tier** — present even when the value sits at its safe default,
+which is what lets someone spot a dangerous knob *before* turning it. The banner
+appears only when the value actually held is the unsafe one, so it never becomes
+wallpaper: on a page of safe defaults, no banner renders at all.
+
+⛔ **Dual-coding is normative, not advisory.** Severity carries a **glyph** as
+well as a colour — `▲` Critical, `◆` Caution, `●` Info, `○` Neutral — because
+colour alone excludes colour-blind users and Critical-vs-Caution sits exactly on
+the red-green axis. Geometric shapes, never emoji: emoji need a system emoji
+font and render as tofu without one.
+
+⛔ **Colour the banner from `AppSeverity*Brush`, never from `LE.DangerText` /
+`LE.DangerBorder`.** Measured: `LE.DangerText` is a single flat `#C62828` —
+`LE.*` tokens are theme-neutral *by design* — which lands near **3:1** on the
+dark surface, under the 4.5:1 §2 requires for text. A hardcoded red also says
+"critical" for a Caution-tier problem.
+
+⚠ **A Neutral row still renders its `○`.** Every key in both tables carries an
+explanation, so every row gets a dot; the hollow ring is deliberately the least
+prominent glyph. Verified on screen — it reads as quiet punctuation, not noise.
+
+⚠ **Announce it with `AutomationProperties.HelpText`, not `Name`.** On a
+`TextBlock` the `Text` always wins and an explicit `Name` is ignored outright, so
+a dot annotated that way announces the glyph character and nothing else. Do not
+wrap the glyph to work around it — a `Border` and a `ContentControl` both get no
+automation peer at all.
+
+Guard: `DangerSurfaceMarkupTests` **discovers** the surfaces by their
+`x:DataType` (so a new one is covered without editing a list), requires both the
+dot and the banner, and rejects a glyph annotated with `Name`.
+
 ---
 
 ## 4. Surface-specific tokens
