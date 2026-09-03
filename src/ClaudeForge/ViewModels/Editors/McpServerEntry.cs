@@ -124,6 +124,25 @@ public partial class McpServerEntry : ObservableObject
         UrlInvalid ? Strings.ValidationMcpUrlInvalid :
         string.Empty;
 
+    /// <summary>
+    /// What a screen reader announces for this row of the server list: which server, its
+    /// transport, and whether it is currently misconfigured.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>An <c>ItemsSource</c>-generated <c>ListBoxItem</c> takes its name from the ITEM and
+    /// falls back to <see cref="object.ToString"/>, so without this every row of the server list
+    /// announced <c>Bennewitz.Ninja.ClaudeForge.ViewModels.Editors.McpServerEntry</c>.</b>
+    /// Guarded by <c>ItemsSourceBoundListBoxesTests</c>. The validation state rides along because
+    /// a server that cannot start is the one thing a user most needs to hear about this row, and
+    /// it is otherwise conveyed by an icon.
+    /// </remarks>
+    public string AccessibleName => HasValidationError
+        ? $"{Name}, {Type}, {ValidationMessage}"
+        : $"{Name}, {Type}";
+
+    /// <inheritdoc cref="AccessibleName"/>
+    public override string ToString() => AccessibleName;
+
     private readonly JsonObject _extraFields = new();
 
     /// <summary>
