@@ -51,7 +51,8 @@
 > directory spellings, and that a 130-row skills tab scrolls to its last row. **A green,
 > trim-clean page still had four defects** — see "What running the UI keeps finding" below.
 >
-> 🔶 **Phase 11.5 is STARTED, not done — slices 1 and 2 of N.**
+> 🔶 **Phase 11.5 is STARTED, not done — slices 1, 2, 3a, 3b, 4a, 4b and 5 are in; the
+> save-preview, `DANGER-TAXONOMY.md` and the no-raw-hex tripwire are not.**
 >
 > **Slice 1 (`c1dbb4f`) — severity became a type.** The `AppSeverity` enum in
 > `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
@@ -172,9 +173,36 @@
 > ⓘ `mcpServers` is a **claude-desktop-config.json** key, not a settings key — the specialised MCP
 > registration is live but for the other product's tree. Measured after a test asserted otherwise.
 >
-> **Still open in 11.5:** the effective view and the save-preview — **both now unblocked**, since
-> ClaudeForge has the renderers AND a table — plus `docs/DANGER-TAXONOMY.md` and the no-raw-hex
-> build tripwire modelled on `GuardUnusedResxKeys`.
+> **Slice 5 (`7222936`) — the effective view, DONE and seen running.** A Risk column on **both**
+> of ClaudeForge's effective-value surfaces: the group editor's Effective tab
+> (`GroupEffectiveView.axaml`) and the standalone Effective Settings page
+> (`EffectiveSettingsView.axaml`). ⚠ **Two producers, not one** — the standalone page builds rows
+> from `AllDefinedKeys()` through `EffectiveSettingsViewModel`, the group tab from `SchemaNodes`
+> through the shell; they share the row type and nothing else, so a fix to one leaves the other
+> silent. 16 tests, 10 canaries. Verified on screen: red ▲ on `enabledPlugins`/`hooks`/
+> `permissions`, amber ◆ on `autoUpdatesChannel`/`cleanupPeriodDays`/`effortLevel`/`env`/
+> `extraKnownMarketplaces`, dim ○ on `$schema`; glyph code points read back through UIA as
+> **U+25B2 / U+25C6 / U+25CB**, so dual-coding is real and not three tofu boxes.
+>
+> ⭐⭐ **The effective row CLASSIFIES; it does not ask the editor — the opposite of slice 3b, for
+> the reason that made 3b right.** 3b's rule was "do not classify with inputs you do not have":
+> search holds neither the value nor an editing scope. An effective row *is* a (path, winning
+> scope, winning value) triple — the three inputs classification takes — and they are **different
+> inputs from the editor's**. A key that escalates in a git-committed file reads Caution while you
+> edit it at User scope and Critical once a project file overrides it, so delegating would report
+> the scope you happen to be editing and mislabel the runtime truth. The two dots disagreeing is
+> correct; the column header tooltip says so, because otherwise it reads as a bug.
+>
+> ⭐ **The classifier comes off a new `ISchemaEditorFactory.Danger`**, not a second constructor
+> parameter, so the Effective tab and the Properties tab of one page are the same instance **by
+> construction**. Both factories already held the table; zero construction-site churn.
+>
+> ⛔ Classification uses `SchemaNode.JsonPath`, **never** the Property column's display title
+> (`Title ?? Name`) — a title matches no rule, so passing it reports every row unremarkable while
+> the column still renders and every other test stays green.
+>
+> **Still open in 11.5:** the **save-preview** — now the last missing surface — plus
+> `docs/DANGER-TAXONOMY.md` and the no-raw-hex build tripwire modelled on `GuardUnusedResxKeys`.
 >
 > ### ⛔⛔ The surface ordering above is not buildable as written
 >
@@ -188,8 +216,11 @@
 > are **JSON strings**, not the editor value currency — so that path needs
 > `JsonCurrency.FromJsonNode` before any predicate can run on it.
 >
-> ⛔⛔ **The EFFECTIVE VIEW is unbuildable for the same reason, and the earlier handoff got this
-> wrong.** Session 14's anchor listed the effective view as the next buildable surface. Measured:
+> ⛔⛔ **The EFFECTIVE VIEW was unbuildable for the same reason, and the earlier handoff got this
+> wrong.** *(Resolved by slice 5 — Claude's table landed in slice 4, which unblocked it. The
+> analysis below is kept because it explains why the ordering had to change, and it still governs
+> the save-preview.)* Session 14's anchor listed the effective view as the next buildable surface.
+> Measured:
 > the rows are produced in the **shared** shell (`SettingsGroupEditorViewModel.EffectiveRows` →
 > `EffectivePropertyRow`), but the only thing that RENDERS them is
 > `src/ClaudeForge/Views/GroupEffectiveView.axaml`, reached through ClaudeForge's own
