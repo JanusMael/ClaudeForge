@@ -194,6 +194,25 @@ public sealed partial class OpenCodeKeybindActionViewModel : ObservableObject, I
     /// <summary>True when any binding names no key, so the schema rejects the value.</summary>
     public bool IsIncomplete => EffectiveBindings.Any(b => b.IsIncomplete);
 
+    /// <summary>
+    /// What a screen reader announces for this row of the action list: which action, the keys
+    /// bound to it, and whether the value is one the schema will reject.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>An <c>ItemsSource</c>-generated <c>ListBoxItem</c> takes its name from the ITEM and
+    /// falls back to <see cref="object.ToString"/>, so without this all ~90 rows announced
+    /// <c>Bennewitz.Ninja.OpenCode.Avalonia.Keybinds.OpenCodeKeybindActionViewModel</c>.</b>
+    /// Guarded by <c>ItemsSourceBoundListBoxesTests</c>. <see cref="Summary"/> rides along because
+    /// the whole purpose of the row is which keys are bound, and the incompleteness because it is
+    /// otherwise signalled only by colour.
+    /// </remarks>
+    public string AccessibleName => IsIncomplete
+        ? $"{Label}, {Summary}, incomplete"
+        : $"{Label}, {Summary}";
+
+    /// <inheritdoc cref="AccessibleName"/>
+    public override string ToString() => AccessibleName;
+
     /// <summary>This action's value as one line, for the collapsed row and for search.</summary>
     public string Summary => Mode switch
     {

@@ -103,4 +103,33 @@ public sealed class SearchResultViewModel
     public string TooltipText => string.IsNullOrWhiteSpace(FullDescription)
         ? NavigationContext
         : $"{FullDescription}\n\n{NavigationContext}";
+
+    /// <summary>
+    /// What a screen reader should announce for the whole row: which knob, where it lives, and —
+    /// when the product said something — how much it matters.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>An <c>ItemsSource</c>-generated <c>ListBoxItem</c> takes its name from the ITEM, not
+    /// from the <c>ItemTemplate</c>, and falls back to <see cref="object.ToString"/>.</b> Measured
+    /// via UIA: without this, every row of OpenCodeForge's search results announced
+    /// <c>Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchResultViewModel</c> — the type
+    /// name, five times over. This is the same defect already fixed for both of the repo's
+    /// <c>ItemsSource</c>-bound TabControls, on a third container type.
+    /// </para>
+    /// <para>
+    /// ⚠ The severity rides along because the row's dot carries it on an inner
+    /// <c>TextBlock</c>'s <c>HelpText</c>, and a reader announcing the CONTAINER does not
+    /// necessarily read a child's help text. The whole point of the dot is lost if the one
+    /// announcement a keyboard user hears omits it. ClaudeForge's rows are Buttons with an
+    /// explicit name and so never fell back here, which is exactly why this went unnoticed in one
+    /// app while being broken in the other.
+    /// </para>
+    /// </remarks>
+    public string AccessibleName => HasDangerSeverity
+        ? $"{PropertyDisplayName}, {NavigationContext}. {DangerAccessibleText}"
+        : $"{PropertyDisplayName}, {NavigationContext}";
+
+    /// <inheritdoc cref="AccessibleName"/>
+    public override string ToString() => AccessibleName;
 }

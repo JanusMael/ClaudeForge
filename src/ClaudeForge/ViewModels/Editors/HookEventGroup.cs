@@ -55,6 +55,25 @@ public partial class HookEventGroup : ObservableObject
     /// </summary>
     public bool HasAnyHookWithWarning => Hooks.Any(h => h.HasValidationWarning);
 
+    /// <summary>
+    /// What a screen reader announces for this row of the event rail: which event, how many hooks
+    /// it holds, and whether any of them will silently fail to fire.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>An <c>ItemsSource</c>-generated <c>ListBoxItem</c> takes its name from the ITEM and
+    /// falls back to <see cref="object.ToString"/>, so without this the rail announced
+    /// <c>Bennewitz.Ninja.ClaudeForge.ViewModels.Editors.HookEventGroup</c> for every event.</b>
+    /// Guarded by <c>ItemsSourceBoundListBoxesTests</c>; the count and the warning ride along
+    /// because both are rendered beside the label and neither is visible to a screen reader
+    /// otherwise.
+    /// </remarks>
+    public string AccessibleName => HasAnyHookWithWarning
+        ? $"{EventName}, {Hooks.Count} hooks, some incomplete"
+        : $"{EventName}, {Hooks.Count} hooks";
+
+    /// <inheritdoc cref="AccessibleName"/>
+    public override string ToString() => AccessibleName;
+
     private void OnHooksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         // Subscribe to PropertyChanged on newly-added entries so HasAnyHookWithWarning

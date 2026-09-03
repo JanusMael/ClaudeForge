@@ -239,6 +239,8 @@ Same underlying rule as the `TabControl` entry above — the container's name do
 |---|---|---|
 | `TabItem` | the item's `ToString()` → announces the **type name** | override `ToString()` |
 | `TreeViewItem` | **nothing — an empty name** | `AutomationProperties.Name` on the container, via a `Style` |
+| `ListBoxItem` | the item's `ToString()` → announces the **type name** | either works — see the `ListBox` entry below |
+| `ItemsControl` | **not in this class** — its `ContentPresenter` takes no focus, so the name comes from whatever focusable control the template contains | name that control |
 
 ⛔⛔ **A `ToString()` override does NOT fix a `TreeViewItem`.** Measured: a probe override returning `"PROBE-" + Title` on `NavigationNodeViewModel` never reached UIA — all 26 rows stayed empty. The empty name is itself the tell, because `ToString()` can never *return* empty.
 
@@ -266,6 +268,29 @@ Each tree's own `Tree` element was already named `Settings navigation` in both a
 ⚠ **Do not name a decorative row.** The two divider nodes carry the vestigial `Title` `"─────────────"` — thirteen box-drawing characters the template has never rendered (it draws a 1px `Border`) — so binding `Name` to `Title` made them announce thirteen glyphs each. `AutomationProperties.AccessibilityView="Raw"` drops an element from the control view; applying it to every row took the census from 26 to 0, confirming the lever. `BoolToAccessibilityViewConverter` applies it to dividers only, so a screen reader walks 24 rows rather than 26.
 
 ⛔ **`AxamlAccessibilityCoverageTests` scored both files clean, and a baseline of zero was quoted as evidence.** Guarded instead by `ItemsSourceBoundTreeViewsTests`, which requires every `ItemsSource`-bound `TreeView` to declare a container-naming `Style` — no exceptions, for the reason above. Canaried in both directions and per-file: dropping either app's style reds only that app, dropping both names both, and a *scoped* `TreeView > TreeViewItem` selector is still accepted (the `>` inside the attribute value breaks a naive tag regex — the guard skips quoted strings).
+
+---
+
+### A `ListBox` bound to `ItemsSource` announces the item's type name for every row
+
+**Symptom:** A screen reader reads `Bennewitz.Ninja.<…>.SomeViewModel` for each row of a list, once per row, while the rows render perfectly on screen.
+
+Third container type, same rule, and **four of the repo's four `ItemsSource`-bound ListBoxes had it** — the pattern's hit rate is now 8 for 8 across `TabControl`, `TreeView` and `ListBox`. Found by running OpenCodeForge and reading the search results after building an unrelated feature on that surface:
+
+| View | Item type | Rows before | Rows after |
+|---|---|---|---|
+| `OpenCodeForge/Views/MainWindow.axaml` (search results) | `SearchResultViewModel` | 5 × `[…Search.SearchResultViewModel]` | `[share, OpenCode › Sharing. Critical: On auto, every session is uploaded to a shareable link.]` |
+| `ClaudeForge/Views/HooksEditorView.axaml` | `HookEventGroup` | type name | `[PreToolUse, 2 hooks]` |
+| `ClaudeForge/Views/McpServersEditorView.axaml` | `McpServerEntry` | type name | `[my-server, stdio]` |
+| `OpenCode.Avalonia/Keybinds/OpenCodeKeybindEditorView.axaml` | `OpenCodeKeybindActionViewModel` | type name | `[Share current session, <leader>s]` |
+
+⚠ **Only the first row of that table was measured before and after.** The other three are the same container type generated the same way and were fixed by the same mechanism; the guard proves the override is present, but they have not individually been seen on screen.
+
+**Fix** — either the `ToString()` override (as for a `TabItem`) or a container-naming `Style` (as for a `TreeViewItem`). Both genuinely work here, which is why `ItemsSourceBoundListBoxesTests` accepts either while its two sibling guards each require exactly one. The convention is an `AccessibleName` property with `public override string ToString() => AccessibleName;`, matching `OpenCodeArtifactTabViewModel`.
+
+⭐ **Put in the announcement whatever the row conveys visually and only visually.** Each fix above carries a count, a transport, a key summary, or a severity, because those are rendered beside the label and a reader gets none of them otherwise. A row whose dot says "Critical" is the clearest case: the dot's own `HelpText` is on an inner `TextBlock`, and a reader announcing the **container** does not necessarily read a child's help text.
+
+⚠ **An `ItemsControl` is not in this class and is deliberately not scanned.** It generates non-focusable `ContentPresenter`s, so the announced name comes from the focusable control inside the template. ClaudeForge's search popup is an `ItemsControl` of `Button`s carrying an explicit `AutomationProperties.Name`, which is why the *same view-model* was broken in one app and correct in the other — a per-app difference no view-model test can see.
 
 ---
 

@@ -180,6 +180,7 @@
 > | Every OpenCodeForge property heading rendered unstyled | `6b8e9c1` | `App*Brush` is declared **per app**; a shared library referenced one ClaudeForge alone defined |
 > | A folded `description: >-` read as the literal `">-"`, **and its continuation lines became phantom FIELDS** | `05fb560` | `">-"` is non-empty, so `SkillHasNoDescription` never fired — an unreadable description reported as healthy |
 > | ClaudeForge's nav tree announced nothing; 6 settings tabs announced `…Settings.GroupTab` | `d528997` | `AxamlAccessibilityCoverageTests` did not scan `TreeView` **at all**, and scored the file a clean 0 |
+> | Every search row announced `…Search.SearchResultViewModel` — and 3 more `ListBox`es did the same | slice 3b | Third container type in the same class; the two existing container guards cover `TabControl` and `TreeView` only. **4 of 4 ListBoxes were broken; the pattern is now 8 for 8.** |
 >
 > ⭐ **Both `ItemsSource`-bound TabControls in the repo were broken — a 100% hit rate.** New
 > `ItemsSourceBoundTabsTests` fails any third one that forgets `ToString()`.
