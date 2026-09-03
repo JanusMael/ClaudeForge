@@ -131,10 +131,50 @@
 > row or a search hit. The policy is now correct; nothing renders it. Worth a decision when
 > Claude's table lands, since `.claude/settings.json` is committed too.
 >
-> **Still open in 11.5:** the effective view and the save-preview, Claude's own danger table,
-> `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire modelled on `GuardUnusedResxKeys`.
-> ⛔ **Neither remaining surface is buildable in the app that has a table** — see the ordering note
-> below.
+> **Slice 4 — Claude's own danger table, and ClaudeForge's settings tree.** `ClaudeDangerTable`
+> (`4a`) plus the wiring and the dot in ClaudeForge's own wrapper (`4b`). 45 tests, 12 canaries.
+> **Verified ON SCREEN**: amber ◆ on `autoMemoryEnabled` / `autoUpdatesChannel` /
+> `cleanupPeriodDays` / `respectGitignore`, a dim hollow ○ on `verbose`, and — because the hit
+> asks the editor — the *search* dot lit up in ClaudeForge at the same time, with
+> *"Critical: Decides which tools Claude may run without asking you first."*
+>
+> ⚠ **142 top-level keys, not the "~25" this plan budgeted** — a 5.7× miss. Most of the growth is
+> presentation, grouped under shared sentences rather than 70 variants of "this only changes what
+> you see".
+>
+> ⭐ **Two conventions that keep the banner readable.** `Unsafe` fires only when the held value is
+> SPECIFICALLY boundary-weakening (`bypassPermissions`, a sandbox off, a bare `*`, a secret-shaped
+> name in `env`) — never merely because a powerful feature is configured, or every real
+> installation carries a standing red banner on `hooks`. And a `disableX` / `allowManagedXOnly`
+> key points the SAFE way, so it gets a tier and no predicate: its unsafe state is absence, which
+> is also every untouched machine's default.
+>
+> ⛔ **Writing the escalation test exposed a no-op in this table's own first draft.**
+> `EscalatesAt` was attached to three keys already pinned at Critical, where it escalates Critical
+> to Critical and does nothing — invisible, and it still reads as a configured feature.
+> **Escalation is only observable from a base tier BELOW Critical**, which the honest model wanted
+> anyway: a secret in `~/.claude/settings.json` is plaintext on your own disk (Caution), the same
+> secret in the committed `.claude/settings.json` is published to everyone with repo read
+> (Critical). ⚠ **`Local` does NOT escalate** — `settings.local.json` is git-ignored, i.e. the
+> file a machine-local secret is *supposed* to live in.
+>
+> ⛔ **`CreateDefault` deliberately does NOT default the table.** One factory type serves BOTH
+> Claude products, and `NavigationTreeBuilder.BuildGroups` already builds one per section for
+> exactly that reason — defaulting would hand **Claude Desktop** rows Claude Code's policy, silent
+> for most keys and confidently wrong on any that collide (`env` is in both). Same hazard OpenCode
+> avoided per-document. Desktop passes no table and shows no dots until it has one.
+>
+> ⚠ **`LooksSecret` matches word boundaries, not substrings**, because `MAX_OUTPUT_TOKENS` and
+> `MAX_THINKING_TOKENS` are real Claude env vars the Essentials page writes itself. A substring
+> test on "TOKEN" flags both, and a dot on a value the app set for you is the false positive that
+> teaches people to ignore dots.
+>
+> ⓘ `mcpServers` is a **claude-desktop-config.json** key, not a settings key — the specialised MCP
+> registration is live but for the other product's tree. Measured after a test asserted otherwise.
+>
+> **Still open in 11.5:** the effective view and the save-preview — **both now unblocked**, since
+> ClaudeForge has the renderers AND a table — plus `docs/DANGER-TAXONOMY.md` and the no-raw-hex
+> build tripwire modelled on `GuardUnusedResxKeys`.
 >
 > ### ⛔⛔ The surface ordering above is not buildable as written
 >
@@ -160,10 +200,16 @@
 > supply `TabEffective` text via `OpenCodeSettingsGroupText`, which is what makes this look wired.)
 >
 > ⭐ **So the ordering that survives measurement is: settings tree (3a) → search hits (3b) →
-> Claude's own danger table → then the effective view and the save-preview, both of which that
-> table unblocks in ClaudeForge where the renderers already exist.** Search hits were buildable
-> because `SearchViewModel`/`SearchResultViewModel` are shared **and both apps render results**
-> (OpenCodeForge a `ListBox`, ClaudeForge a `Popup` + `ItemsControl`).
+> Claude's own danger table (4a/4b) → then the effective view and the save-preview, both of which
+> that table unblocks in ClaudeForge where the renderers already exist.** Search hits were
+> buildable because `SearchViewModel`/`SearchResultViewModel` are shared **and both apps render
+> results** (OpenCodeForge a `ListBox`, ClaudeForge a `Popup` + `ItemsControl`).
+>
+> ✅ **Slice 4 has landed, so both blocked surfaces are now buildable** — in ClaudeForge, against
+> `GroupEffectiveView.axaml` and `SaveDialogBuilder` (one production call site,
+> `MainWindowViewModel.cs:~1867`), which is where the renderers live. ⚠ The save-preview still
+> needs `JsonCurrency.FromJsonNode` first: `PropertyDiff.OldValue`/`NewValue` are JSON strings,
+> not the editor value currency the predicates take.
 >
 > ### What running the UI keeps finding — read this before trusting a green suite
 >

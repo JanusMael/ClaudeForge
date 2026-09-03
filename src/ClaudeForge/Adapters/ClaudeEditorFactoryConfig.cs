@@ -2,6 +2,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 
@@ -88,9 +89,26 @@ public static class ClaudeEditorFactoryConfig
     /// Optional SDK client to inject into migrated editors. See
     /// <see cref="Register"/> for the migration semantics.
     /// </param>
-    public static CompositeEditorFactory CreateDefault(IClaudeConfigClient? sdkClient = null)
+    /// <param name="danger">
+    /// The danger policy for the product section this factory serves, or <see langword="null"/>
+    /// for a section that has no table.
+    /// </param>
+    /// <remarks>
+    /// ⛔⛔ <b><paramref name="danger"/> is deliberately NOT defaulted to
+    /// <see cref="ClaudeDangerTable.Settings"/>, tempting as that is.</b> This app hosts TWO
+    /// products through this one factory type — Claude Code and Claude Desktop — and
+    /// <c>NavigationTreeBuilder.BuildGroups</c> already builds a separate factory per section for
+    /// exactly that reason. Defaulting would hand Desktop rows Claude Code's policy, and because
+    /// the two schemas share almost no key names the result is not a visible error but a page of
+    /// silently unlabelled settings, plus a confident mislabel on any name that happens to
+    /// collide (<c>env</c> is in both). This mirrors OpenCode's per-document wiring, where the
+    /// same shortcut would have labelled <c>tui.json</c> with <c>opencode.json</c>'s table.
+    /// </remarks>
+    public static CompositeEditorFactory CreateDefault(
+        IClaudeConfigClient? sdkClient = null,
+        IDangerClassifier? danger = null)
     {
-        CompositeEditorFactory factory = new();
+        CompositeEditorFactory factory = new() { Danger = danger };
         Register(factory, sdkClient);
         return factory;
     }

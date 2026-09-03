@@ -7,6 +7,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -169,18 +170,26 @@ public static class NavigationTreeBuilder
     /// closure captures the client once per call so every group VM in this section
     /// shares the same instance.
     /// </param>
+    /// <param name="danger">
+    /// The danger policy for the product section being built, or <see langword="null"/> for a
+    /// section that has no table. Supplied per call for the same reason the factory is: it is a
+    /// statement about ONE product's threat model, and Claude Desktop's settings are not Claude
+    /// Code's.
+    /// </param>
     public static IReadOnlyList<NavigationGroup> BuildGroups(
         IReadOnlyList<SchemaNode> allNodes,
         SettingsWorkspace workspace,
         Func<Task<string?>>? browseDialog = null,
         SharedScopeContext? sharedScope = null,
         ClaudeConfigClientBase? sdkClient = null,
-        IUnsupportedShapeSink? unsupportedShapeSink = null)
+        IUnsupportedShapeSink? unsupportedShapeSink = null,
+        IDangerClassifier? danger = null)
     {
         // One factory per call: SDK-aware editors capture this client when
         // they are constructed. Sharing across both sections (Claude Code +
-        // Desktop) would mis-route editor reads.
-        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault(sdkClient);
+        // Desktop) would mis-route editor reads — and, since 11.5, would also
+        // label one product's rows with the other's danger policy.
+        CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault(sdkClient, danger);
         // The factory reports any raw-JSON fallback (a schema shape it can't
         // classify) to this sink so the host can raise one aggregated load-time
         // notice. Editors are built eagerly in each SettingsGroupEditorViewModel
