@@ -1819,6 +1819,9 @@
     <value>Изменённое свойство</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} из этих изменений задают значение, ослабляющее границу безопасности. Проверьте отмеченные строки перед сохранением.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>Копировать</value>

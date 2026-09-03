@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save"
         xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+        xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
         xmlns:app="using:Bennewitz.Ninja.ClaudeForge"
         xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
         x:Class="Bennewitz.Ninja.ClaudeForge.Views.SaveChangesDialog"
@@ -22,6 +23,10 @@
              Defined as a StaticResource rather than {x:Static} so compiled bindings
              resolve the converter correctly inside nested DataTemplates. -->
         <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
+        <!-- Severity rendering, shared with both PropertyEditorWrappers and the effective-value
+             grids so a tier looks the same wherever it appears. -->
+        <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
     </Window.Resources>
 
     <DockPanel>
@@ -53,6 +58,42 @@
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            </StackPanel>
+        </Border>
+
+        <!--
+            Unsafe-change headline. Visible ONLY when a pending change writes a value the
+            product calls unsafe — not merely when one touches a setting that matters.
+
+            ⭐ The per-row dots carry the tier; a headline that fired on those would show on
+            almost every real save and become wallpaper, which is the failure the row banner
+            was designed around too. This is the last screen before the value reaches disk,
+            so it is worth interrupting for — but only for the case that earns it.
+
+            Coloured from AppSeverity*Brush, never a raw hex or LE.DangerText: the flat
+            theme-neutral red measures ~3:1 on the dark surface, under the 4.5:1 required.
+        -->
+        <Border DockPanel.Dock="Top"
+                IsVisible="{Binding HasUnsafeChanges}"
+                Padding="12,8"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <!-- ⛔ HelpText, not Name: on a TextBlock the Text always wins. The sentence
+                     beside it is already real text, so the glyph is decoration for a screen
+                     reader — but it still needs to not announce a bare "▲". -->
+                <TextBlock Text="&#x25B2;"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource AppSeverityCriticalBrush}"
+                           AutomationProperties.HelpText="{Binding UnsafeChangeWarning}" />
+                <TextBlock Text="{Binding UnsafeChangeWarning}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource AppSeverityCriticalBrush}" />
             </StackPanel>
         </Border>
 
@@ -159,7 +200,10 @@
                                 <StackPanel>
 
                                     <!-- Header row -->
-                                    <Grid ColumnDefinitions="28,2*,3*,3*"
+                                    <!-- Column 0 carries the severity dot AND the kind pill, so
+                                         adding severity did not renumber four bindings in each
+                                         of two grids. Widened 28 → 46 to fit both. -->
+                                    <Grid ColumnDefinitions="46,2*,3*,3*"
                                           Margin="8,5,8,5">
                                         <TextBlock Grid.Column="0" Text=""
                                                    FontSize="11" FontWeight="SemiBold" />
@@ -178,7 +222,10 @@
                                     <ItemsControl ItemsSource="{Binding Entries}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="vm:SaveChangeEntryViewModel">
-                                                <Grid ColumnDefinitions="28,2*,3*,3*"
+                                                <!-- Column 0 carries the severity dot AND the kind pill, so
+                                         adding severity did not renumber four bindings in each
+                                         of two grids. Widened 28 → 46 to fit both. -->
+                                    <Grid ColumnDefinitions="46,2*,3*,3*"
                                                       Margin="8,4,8,4">
                                                     <!-- Coloured kind pill: green '+' for added, red '-' for removed,
                                                          orange '~' for modified.  ToolTip + AutomationProperties.Name
@@ -187,20 +234,56 @@
                                                          and screen-reader users get a real word announced.  Per the
                                                          2026-05-15 a11y sweep, displays should never depend solely on
                                                          colour or a single-glyph cue. -->
-                                                    <Border Grid.Column="0"
-                                                            Background="{Binding KindBackground}"
-                                                            CornerRadius="3"
-                                                            Padding="4,1"
-                                                            HorizontalAlignment="Left"
-                                                            VerticalAlignment="Center"
-                                                            ToolTip.Tip="{Binding KindAccessibleName}"
-                                                            AutomationProperties.Name="{Binding KindAccessibleName}">
-                                                        <TextBlock Text="{Binding KindLabel}"
-                                                                   Foreground="White"
-                                                                   FontFamily="Consolas,Menlo,monospace"
+                                                    <StackPanel Grid.Column="0"
+                                                                Orientation="Horizontal"
+                                                                Spacing="5"
+                                                                VerticalAlignment="Center">
+                                                        <!--
+                                                            Severity of the setting this change
+                                                            touches, assessed at the scope of the
+                                                            file being written and over the value
+                                                            that will be on disk once it is.
+
+                                                            ⭐ DUAL-CODED — glyph (▲ ◆ ● ○) as
+                                                            well as colour, because colour alone
+                                                            excludes colour-blind users and
+                                                            Critical-vs-Caution sits exactly on
+                                                            the red-green axis. Geometric shapes,
+                                                            never emoji (tofu without a system
+                                                            emoji font).
+
+                                                            ⛔ HelpText, not Name: on a TextBlock
+                                                            the Text always wins and an explicit
+                                                            Name is ignored outright, so a Name
+                                                            here would announce the glyph and
+                                                            nothing else.
+
+                                                            Hidden when the product says nothing
+                                                            about this path — including for a
+                                                            product with no table at all, which
+                                                            renders exactly as before.
+                                                        -->
+                                                        <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                                                   Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                                                   Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                                                    FontSize="11"
-                                                                   FontWeight="SemiBold" />
-                                                    </Border>
+                                                                   VerticalAlignment="Center"
+                                                                   AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                                                                   ToolTip.Tip="{Binding DangerAccessibleText}" />
+                                                        <Border Background="{Binding KindBackground}"
+                                                                CornerRadius="3"
+                                                                Padding="4,1"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Center"
+                                                                ToolTip.Tip="{Binding KindAccessibleName}"
+                                                                AutomationProperties.Name="{Binding KindAccessibleName}">
+                                                            <TextBlock Text="{Binding KindLabel}"
+                                                                       Foreground="White"
+                                                                       FontFamily="Consolas,Menlo,monospace"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold" />
+                                                        </Border>
+                                                    </StackPanel>
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding Key}"
                                                                TextWrapping="Wrap"

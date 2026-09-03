@@ -1958,6 +1958,9 @@ Cancel — keep the window open.</value>
     <value>Modified property</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} of these changes set a value that weakens a safety boundary. Review the flagged rows before saving.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>Copy</value>

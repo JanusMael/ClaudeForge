@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Core.Platform;
+﻿using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -40,7 +40,7 @@ public sealed class SaveDialogBuilderTests
     [TestMethod]
     public void Build_NothingDirty_ReturnsNull()
     {
-        Assert.IsNull(SaveDialogBuilder.Build([(MakeClient(), "Claude Code")], Text),
+        Assert.IsNull(SaveDialogBuilder.Build([new DirtySource(MakeClient(), "Claude Code")], Text),
             "A save with no content difference must not raise a dialog at all.");
     }
 
@@ -48,7 +48,7 @@ public sealed class SaveDialogBuilderTests
     public void Build_OneChange_ProducesOneSectionCarryingTheDiff()
     {
         SaveChangesDialogViewModel? dlg =
-            SaveDialogBuilder.Build([(DirtyClient(), "Claude Code")], Text);
+            SaveDialogBuilder.Build([new DirtySource(DirtyClient(), "Claude Code")], Text);
 
         Assert.IsNotNull(dlg);
         Assert.AreEqual(1, dlg!.Sections.Count);
@@ -67,8 +67,8 @@ public sealed class SaveDialogBuilderTests
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
             [
-                (DirtyClient("model", "opus"), "First Product"),
-                (DirtyClient("outputStyle", "concise"), "Second Product"),
+                new DirtySource(DirtyClient("model", "opus"), "First Product"),
+                new DirtySource(DirtyClient("outputStyle", "concise"), "Second Product"),
             ],
             Text);
 
@@ -84,8 +84,8 @@ public sealed class SaveDialogBuilderTests
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
             [
-                (MakeClient(), "Clean Product"),
-                (DirtyClient(), "Dirty Product"),
+                new DirtySource(MakeClient(), "Clean Product"),
+                new DirtySource(DirtyClient(), "Dirty Product"),
             ],
             Text);
 
@@ -100,7 +100,7 @@ public sealed class SaveDialogBuilderTests
     public void Build_RestoreContext_SwitchesModeAndEveryPieceOfWordingWithIt()
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
-            [(DirtyClient(), "Claude Code")], Text, isRestoreContext: true);
+            [new DirtySource(DirtyClient(), "Claude Code")], Text, isRestoreContext: true);
 
         Assert.IsNotNull(dlg);
         Assert.AreEqual(SaveDialogMode.Restore, dlg!.Mode);
@@ -115,7 +115,7 @@ public sealed class SaveDialogBuilderTests
     public void Build_SaveContext_UsesTheSaveWording()
     {
         SaveChangesDialogViewModel? dlg =
-            SaveDialogBuilder.Build([(DirtyClient(), "Claude Code")], Text);
+            SaveDialogBuilder.Build([new DirtySource(DirtyClient(), "Claude Code")], Text);
 
         Assert.IsNotNull(dlg);
         Assert.AreEqual(SaveDialogMode.Save, dlg!.Mode);
@@ -148,7 +148,7 @@ public sealed class SaveDialogBuilderTests
         modified.SetValue("model", "opus");
 
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
-            [(DirtyClient("outputStyle", "concise"), "Added"), (modified, "Modified")], Text);
+            [new DirtySource(DirtyClient("outputStyle", "concise"), "Added"), new DirtySource(modified, "Modified")], Text);
 
         Assert.IsNotNull(dlg);
         List<SaveChangeEntryViewModel> entries = dlg!.Sections.SelectMany(s => s.Entries).ToList();
@@ -195,7 +195,7 @@ public sealed class SaveDialogBuilderTests
         outside.SetValue("model", "opus");
 
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
-            [(inside, "Inside"), (outside, "Outside")], Text);
+            [new DirtySource(inside, "Inside"), new DirtySource(outside, "Outside")], Text);
 
         Assert.IsNotNull(dlg);
         string insidePath = dlg!.Sections.Single(s => s.WorkspaceName == "Inside").FilePath;
@@ -217,7 +217,7 @@ public sealed class SaveDialogBuilderTests
         client.SetValue("model", longValue);
 
         SaveChangesDialogViewModel? dlg =
-            SaveDialogBuilder.Build([(client, "Claude Code")], Text);
+            SaveDialogBuilder.Build([new DirtySource(client, "Claude Code")], Text);
 
         Assert.IsNotNull(dlg);
         SaveChangeEntryViewModel entry = dlg!.Sections[0].Entries.Single(e => e.Key == "model");

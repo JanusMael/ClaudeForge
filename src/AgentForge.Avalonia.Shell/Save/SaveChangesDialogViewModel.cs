@@ -1,5 +1,6 @@
 ﻿using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
@@ -84,6 +85,34 @@ public sealed class SaveChangesDialogViewModel : ISaveChangesPrompt
     public string ActionVerb => Text.ActionVerbFor(Mode);
 
     /// <summary>
+    /// How many pending changes are writing a value the product calls unsafe.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Counts <see cref="DangerAssessment.IsDangerNow"/>, not the tier.</b> Most of a real
+    /// save touches settings that merely *could* matter — a per-entry dot says that, and it is the
+    /// right density for a list. A headline is only worth interrupting someone with when the value
+    /// being written is actually the boundary-weakening one, and this is the last screen before it
+    /// reaches disk.
+    /// </para>
+    /// <para>
+    /// ⚠ Deliberately not a max-severity: "2 changes weaken a boundary" is actionable, whereas
+    /// "highest severity: Critical" restates what the dots already show.
+    /// </para>
+    /// </remarks>
+    public int UnsafeChangeCount =>
+        Sections.Sum(s => s.Entries.Count(e => e.Danger.IsDangerNow));
+
+    /// <summary>Whether to show the unsafe-change headline at all.</summary>
+    public bool HasUnsafeChanges => UnsafeChangeCount > 0;
+
+    /// <summary>
+    /// The headline itself, or the empty string when nothing pending is unsafe.
+    /// </summary>
+    public string UnsafeChangeWarning =>
+        HasUnsafeChanges ? string.Format(Text.UnsafeChangeWarningFormat, UnsafeChangeCount) : string.Empty;
+
+    /// <summary>
     /// Plain-text representation of all changes — one line per entry, no descriptions.
     /// Used by the "Copy changes to clipboard" button.
     /// </summary>
@@ -153,6 +182,31 @@ public sealed class SaveChangeEntryViewModel
     /// </para>
     /// </summary>
     public required string KindAccessibleName { get; init; }
+
+    /// <summary>
+    /// How much the setting this change touches matters, assessed at the scope of the file being
+    /// written and over the value that will be on disk once it is.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ Defaults to <see cref="DangerAssessment.Unremarkable"/> — no dot — so a caller with no
+    /// policy (tests, a product with no table) renders exactly as this dialog always has.
+    /// </remarks>
+    public DangerAssessment Danger { get; init; } = DangerAssessment.Unremarkable;
+
+    /// <summary>
+    /// Whether to render a severity dot. Named to match
+    /// <see cref="LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
+    /// so the markup is the same shape on every danger surface.
+    /// </summary>
+    public bool HasDangerSeverity => Danger.Explanation is not null;
+
+    /// <summary>Tier plus consequence, for the tooltip and the screen reader.</summary>
+    /// <remarks>
+    /// ⛔ Goes on <c>AutomationProperties.HelpText</c>, never <c>Name</c>: on a <c>TextBlock</c>
+    /// the <c>Text</c> wins and an explicit <c>Name</c> is ignored outright.
+    /// </remarks>
+    public string DangerAccessibleText =>
+        Danger.Explanation is null ? string.Empty : $"{Danger.Severity}: {Danger.Explanation}";
 
     /// <summary>Human-readable one-liner shown in the bordered textbox.</summary>
     public string FormattedText => Kind switch

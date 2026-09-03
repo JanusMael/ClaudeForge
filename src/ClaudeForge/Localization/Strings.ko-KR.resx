@@ -1819,6 +1819,9 @@
     <value>수정된 속성</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>이 변경 사항 중 {0}개가 안전 경계를 약화시키는 값을 설정합니다. 저장하기 전에 표시된 행을 검토하세요.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>복사</value>

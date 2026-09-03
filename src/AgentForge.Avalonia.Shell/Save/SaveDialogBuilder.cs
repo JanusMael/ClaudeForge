@@ -1,8 +1,10 @@
-﻿using Bennewitz.Ninja.AgentForge.Core.Platform;
+﻿using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 
@@ -25,9 +27,11 @@ public static class SaveDialogBuilder
     /// example the user pressed Save twice without editing anything).
     /// </summary>
     /// <param name="sources">
-    /// Open clients paired with the name their changes are grouped under. A sequence
-    /// rather than one parameter per product — the dialog renders whatever it is
-    /// handed, in order, and never needed to know how many there were.
+    /// Open clients paired with the name their changes are grouped under and the danger policy
+    /// that applies to them. A sequence rather than one parameter per product — the dialog
+    /// renders whatever it is handed, in order, and never needed to know how many there were.
+    /// ⛔ The policy rides on each source rather than being one parameter here, because this
+    /// dialog shows several products at once; see <see cref="DirtySource"/>.
     /// </param>
     /// <param name="text">The host's wording for titles, buttons and labels.</param>
     /// <param name="isRestoreContext">
@@ -35,7 +39,7 @@ public static class SaveDialogBuilder
     /// the title / buttons with it.
     /// </param>
     public static SaveChangesDialogViewModel? Build(
-        IEnumerable<(AgentConfigClientCore Client, string DisplayName)> sources,
+        IEnumerable<DirtySource> sources,
         SaveDialogText text,
         bool isRestoreContext = false)
     {
@@ -46,9 +50,10 @@ public static class SaveDialogBuilder
         SaveDialogMode mode = isRestoreContext ? SaveDialogMode.Restore : SaveDialogMode.Save;
         string actionVerb = text.ActionVerbFor(mode);
 
-        foreach ((AgentConfigClientCore client, string displayName) in sources)
+        foreach (DirtySource source in sources)
         {
-            AppendSdkSections(sections, client.SnapshotDirtyDocuments(), displayName, actionVerb, text);
+            AppendSdkSections(sections, source.Client.SnapshotDirtyDocuments(),
+                source.DisplayName, actionVerb, text, source.Danger);
         }
 
         return sections.Count == 0
@@ -71,7 +76,8 @@ public static class SaveDialogBuilder
         IReadOnlyList<DirtyDocumentSnapshot> snapshots,
         string workspaceName,
         string actionVerb,
-        SaveDialogText text)
+        SaveDialogText text,
+        IDangerClassifier? danger)
     {
         foreach (DirtyDocumentSnapshot doc in snapshots)
         {
@@ -81,7 +87,8 @@ public static class SaveDialogBuilder
                 continue;
             }
 
-            AppendSection(sections, workspaceName, doc.Scope, doc.FilePath, diffs, actionVerb, text);
+            AppendSection(sections, workspaceName, doc.Scope, doc.FilePath, diffs, actionVerb, text,
+                danger, doc.CurrentRoot);
         }
     }
 
@@ -93,7 +100,9 @@ public static class SaveDialogBuilder
         string filePath,
         IReadOnlyList<PropertyDiff> diffs,
         string actionVerb,
-        SaveDialogText text)
+        SaveDialogText text,
+        IDangerClassifier? danger,
+        JsonObject? currentRoot)
     {
         List<SaveChangeEntryViewModel> entries = diffs.Select(d => new SaveChangeEntryViewModel
         {
@@ -104,6 +113,7 @@ public static class SaveDialogBuilder
             FullOldValue = d.OldValue,
             FullNewValue = d.NewValue,
             KindAccessibleName = text.AccessibleNameFor(d.Kind),
+            Danger = Assess(danger, d, scope, currentRoot),
         }).ToList();
 
         sections.Add(new SaveChangeSectionViewModel
@@ -115,6 +125,75 @@ public static class SaveDialogBuilder
             FilePath = ToDisplayPath(filePath),
             ActionVerb = actionVerb,
         });
+    }
+
+    /// <summary>
+    /// Assess one pending change: how much the setting it touches matters, and whether the value
+    /// about to be written is the unsafe one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This surface CLASSIFIES rather than asking an editor</b>, for the same reason the
+    /// effective view does: a pending change is a (path, target scope, new value) triple, which is
+    /// exactly what classification takes. There is also no editor to ask — the dialog is built
+    /// from document snapshots, not from the page the user was on, and the change may have come
+    /// from a page that is no longer open.
+    /// </para>
+    /// <para>
+    /// ⛔⛔ <b>The value comes from <paramref name="currentRoot"/>, NOT from
+    /// <see cref="PropertyDiff.NewValue"/>, and the difference is a correctness bug rather than a
+    /// tidiness one.</b> For an array change <c>JsonDiff</c> emits the ARRAY's path as the key but
+    /// only the added/removed ELEMENT as the value. A rule written for
+    /// <c>permissions.allow</c> expects a list and would be handed one element's string, match no
+    /// type pattern, and answer "nothing wrong right now" — a silent false negative on exactly the
+    /// keys this dialog exists to catch. Resolving the key against the document root yields the
+    /// whole value that will be on disk after the save, which is the thing the user is actually
+    /// about to commit to.
+    /// </para>
+    /// <para>
+    /// ⚠ The scope is the DOCUMENT's — the file being written — which is what makes escalation
+    /// meaningful here: writing a secret into the committed project file is the case that
+    /// escalates, and the save dialog is the last moment anyone can stop it.
+    /// </para>
+    /// <para>
+    /// A <see cref="ChangeKind.Removed"/> key simply does not resolve, so the value is
+    /// <see langword="null"/> — correct, since the save removes it and "not set" is what the
+    /// file will hold.
+    /// </para>
+    /// </remarks>
+    private static DangerAssessment Assess(
+        IDangerClassifier? danger,
+        PropertyDiff diff,
+        ConfigScope scope,
+        JsonObject? currentRoot)
+    {
+        if (danger is null)
+        {
+            return DangerAssessment.Unremarkable;
+        }
+
+        return danger.Classify(
+            diff.Key,
+            ConfigScopeAdapter.For(scope),
+            JsonCurrency.FromJsonNode(ResolveByPath(currentRoot, diff.Key)));
+    }
+
+    /// <summary>
+    /// Walk a dotted key against a JSON object, returning the node it names or
+    /// <see langword="null"/> when any segment is missing or not an object.
+    /// </summary>
+    private static JsonNode? ResolveByPath(JsonNode? root, string key)
+    {
+        JsonNode? node = root;
+        foreach (string segment in key.Split('.'))
+        {
+            if (node is not JsonObject obj || !obj.TryGetPropertyValue(segment, out node))
+            {
+                return null;
+            }
+        }
+
+        return node;
     }
 
     /// <summary>

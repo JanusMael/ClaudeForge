@@ -99,10 +99,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // lifecycle operation below — save, validate, snapshot, subscribe, dispose, export,
     // search all iterate this rather than naming two fields. See ProductSection for what is
     // and is not N-product yet.
+    // ⛔ The danger table is stated HERE and nowhere else. Both consumers — the settings pages via
+    // BuildGroups and the save dialog via DirtySources() — read it off the section, so they cannot
+    // disagree about which product's threat model applies. Claude Desktop gets none on purpose:
+    // nobody has triaged its keys, and Claude Code's table would be a false claim rather than a
+    // shortcut (the schemas barely overlap, and `env` is in both).
     private readonly List<ProductSection> _sections =
     [
         new(SchemaRegistry.ClaudeCodeProduct, NavTitleClaudeCode,
-            () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json"),
+            () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json",
+            ClaudeDangerTable.Settings),
         new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
             () => Strings.WorkspaceNameClaudeDesktop, "claude_desktop_config.json"),
     ];
@@ -125,9 +131,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// The display name is resolved HERE, per call, rather than stored: it is resource-backed,
     /// and the two consumers render it into user-visible text.
     /// </remarks>
-    private IEnumerable<(AgentConfigClientCore Client, string DisplayName)> DirtySources()
+    private IEnumerable<DirtySource> DirtySources()
     {
-        return OpenSections.Select(s => ((AgentConfigClientCore)s.Client!, s.WorkspaceDisplayName()));
+        return OpenSections.Select(s =>
+            new DirtySource((AgentConfigClientCore)s.Client!, s.WorkspaceDisplayName(), s.Danger));
     }
 
     // Named accessors over the list. Kept — not a transitional shim — because the pages that
@@ -4180,18 +4187,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
             await Task.Run(() => (
                 ccWorkspace is not null && ccSdk is not null
-                    // Claude Code's rows carry Claude Code's danger table. ⛔ Desktop gets NO
-                    // table rather than this one: the two schemas share almost no key names, so
-                    // reusing it would label Desktop's page with a policy written about a
-                    // different product — silently blank for most keys and confidently wrong on
-                    // any that collide.
+                    // Each product's rows carry that product's own danger table, read off its
+                    // section rather than named here — the save dialog reads the same field, and
+                    // two literals would agree only by vigilance. ⛔ Desktop's is null on purpose:
+                    // the two schemas share almost no key names, so reusing Claude Code's would
+                    // label Desktop's page with a policy written about a different product —
+                    // silently blank for most keys, confidently wrong on any that collide.
                     ? NavigationTreeBuilder.BuildGroups(
                         ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes,
-                        ClaudeDangerTable.Settings)
+                        SectionFor(SchemaRegistry.ClaudeCodeProduct).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
                 dtWorkspace is not null && dtSdk is not null
                     ? NavigationTreeBuilder.BuildGroups(
-                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes)
+                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes,
+                        SectionFor(SchemaRegistry.ClaudeDesktopProduct).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>()));
         editorBuildSw.Stop();
         Log.Debug(

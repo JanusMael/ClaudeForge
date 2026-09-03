@@ -1819,6 +1819,9 @@ Annuler — laisser la fenêtre ouverte.</value>
     <value>Propriété modifiée</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
   </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} de ces modifications définissent une valeur qui affaiblit une limite de sécurité. Vérifiez les lignes signalées avant d'enregistrer.</value>
+  </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
     <value>Copier</value>
