@@ -5,7 +5,7 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 /// Works exclusively with the <see cref="LayeredEditors.Abstractions"/> interfaces;
 /// no JSON or domain types leak in here.
 /// </summary>
-public abstract partial class PropertyEditorViewModel : ObservableObject
+public abstract partial class PropertyEditorViewModel : ObservableObject, IDangerAnnotatedEditor
 {
     protected PropertyEditorViewModel(IEditorSchema schema, IEditorScope editingScope)
     {
@@ -27,7 +27,9 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
 
     /// <summary>
     /// The host product's danger policy, or <see langword="null"/> for a product that declares
-    /// none. Supplied via <see cref="EditorContext.Danger"/> at construction.
+    /// none. Supplied by the product's factory via
+    /// <see cref="AttachDangerClassifier(IDangerClassifier?)"/>, deliberately NOT through
+    /// <see cref="EditorContext"/> — see that type's remarks for why.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -137,6 +139,50 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
     /// </remarks>
     public string DangerAccessibleText =>
         Danger.Explanation is null ? string.Empty : $"{Danger.Severity}: {Danger.Explanation}";
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// Returns this editor's own <see cref="Danger"/> for its own <see cref="Path"/>, then
+    /// descends into <see cref="IChildEditorHost.Children"/> — so a nested path like
+    /// <c>attachment.image.maxWidth</c> resolves to the child editor that actually renders it,
+    /// carrying that child's value rather than its parent's.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The descent tests <see cref="IChildEditorHost"/>, never a concrete object-editor
+    /// type.</b> There are two <c>ObjectPropertyEditorViewModel</c> classes — one here and one in
+    /// the app — and the app's does not derive from this library's, so a type test would silently
+    /// cover only half the object editors in play. That is the same trap
+    /// <see cref="IChildEditorHost"/> was created for, and the symptom here would be a nested
+    /// dangerous key reporting no severity at all.
+    /// </para>
+    /// <para>
+    /// Ordinal comparison, matching the classifier's own table lookup: these are JSON paths, not
+    /// display text, and a case-insensitive match would let <c>Permission</c> answer for
+    /// <c>permission</c>.
+    /// </para>
+    /// </remarks>
+    public DangerAssessment? AssessDanger(string jsonPath)
+    {
+        if (string.Equals(jsonPath, Path, StringComparison.Ordinal))
+        {
+            return Danger;
+        }
+
+        if (this is IChildEditorHost host)
+        {
+            foreach (PropertyEditorViewModel child in host.Children)
+            {
+                DangerAssessment? nested = child.AssessDanger(jsonPath);
+                if (nested is not null)
+                {
+                    return nested;
+                }
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Re-raise <see cref="Danger"/> and its companions. Call after anything that changes the

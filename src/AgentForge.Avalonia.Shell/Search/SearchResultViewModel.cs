@@ -1,4 +1,5 @@
-﻿using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+﻿using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 
@@ -47,6 +48,46 @@ public sealed class SearchResultViewModel
     /// additional contextual UI once the row is clicked.
     /// </summary>
     public bool IsSynthetic { get; init; }
+
+    /// <summary>
+    /// How much the knob behind this hit matters, and whether it is set to the unsafe value right
+    /// now — as assessed by the editor that renders it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Not classified here.</b> The value comes from
+    /// <see cref="IDangerAnnotatedEditor.AssessDanger(string)"/> on the target editor, so it is
+    /// the same assessment the settings row shows. See that interface for why search must not
+    /// call the classifier itself.
+    /// </para>
+    /// <para>
+    /// Defaults to <see cref="DangerAssessment.Unremarkable"/>, which renders as no dot — the
+    /// right answer for a product with no danger table, a page whose editor cannot be asked, and
+    /// a synthetic row that points at a page rather than a property.
+    /// </para>
+    /// </remarks>
+    public DangerAssessment Danger { get; init; } = DangerAssessment.Unremarkable;
+
+    /// <summary>
+    /// Whether to render a severity dot on this row at all — true only when the product actually
+    /// said something about this path.
+    /// </summary>
+    /// <remarks>
+    /// Named to match <see cref="PropertyEditorViewModel.HasDangerSeverity"/> on purpose: the two
+    /// apps' search templates and the settings wrapper then bind identical names, so the dot
+    /// cannot be wired one way in one place and another way elsewhere.
+    /// </remarks>
+    public bool HasDangerSeverity => Danger.Explanation is not null;
+
+    /// <summary>
+    /// What a screen reader announces for this row's severity dot — the tier and the consequence.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ A coloured glyph conveys nothing without this, and on a search row it is the only place
+    /// the severity appears at all: the row has no banner to fall back on.
+    /// </remarks>
+    public string DangerAccessibleText =>
+        Danger.Explanation is null ? string.Empty : $"{Danger.Severity}: {Danger.Explanation}";
 
     /// <summary>
     /// Breadcrumb path shown as the secondary line of the tooltip — the hosted

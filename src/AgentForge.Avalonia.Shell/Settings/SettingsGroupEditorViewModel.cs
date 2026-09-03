@@ -13,6 +13,7 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -32,7 +33,8 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 /// concrete type.
 /// </para>
 /// </summary>
-public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposable, ISchemaGroupEditor, INavigablePage
+public partial class SettingsGroupEditorViewModel
+    : ObservableObject, IDisposable, ISchemaGroupEditor, INavigablePage, LibVm.IDangerAnnotatedEditor
 {
     private bool _disposed;
 
@@ -226,6 +228,33 @@ public partial class SettingsGroupEditorViewModel : ObservableObject, IDisposabl
     /// desynchronise the bound view from the workspace.
     /// </summary>
     public IReadOnlyList<LibVm.PropertyEditorViewModel> Editors { get; private set; }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// A group editor holds editors rather than being one, so it delegates: the first editor that
+    /// claims the path answers, and each of those descends into its own children. The assessment
+    /// handed back is therefore the very one that editor's settings row is rendering.
+    /// </para>
+    /// <para>
+    /// ⚠ Walks <see cref="Editors"/>, not <see cref="FilteredEditors"/>. A search hit must be
+    /// labelled the same whether or not the page it lives on happens to be filtered — and search
+    /// commonly sets that filter itself when navigating to the hit.
+    /// </para>
+    /// </remarks>
+    public DangerAssessment? AssessDanger(string jsonPath)
+    {
+        foreach (LibVm.PropertyEditorViewModel editor in Editors)
+        {
+            DangerAssessment? assessment = editor.AssessDanger(jsonPath);
+            if (assessment is not null)
+            {
+                return assessment;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Show the filter bar when the page has more than a handful of properties, OR

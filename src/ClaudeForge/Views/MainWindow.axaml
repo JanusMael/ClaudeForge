@@ -82,6 +82,11 @@
             <SolidColorBrush x:Key="InstallBannerCodeBorderBrush" Color="#FFD97706" />
             <!-- Teal-blue from LE.LinkBrush — the same colour used for hyperlinks throughout the app -->
             <SolidColorBrush x:Key="InstallBannerLinkBrush" Color="#FF006B8A" />
+
+            <!-- Severity dot on a search hit. The same two converters the settings row's wrapper
+                 uses, so a severity reads identically on both surfaces. -->
+            <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+            <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -257,14 +262,39 @@
                                                     Command="{Binding #RootWindow.((vm:MainWindowViewModel)DataContext).SelectSearchResultCommand}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip.Tip="{Binding TooltipText}"
-                                                    AutomationProperties.Name="{Binding TooltipText}">
+                                                    AutomationProperties.Name="{Binding TooltipText}"
+                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}">
                                                 <StackPanel>
-                                                    <TextBlock>
-                                                        <Run Text="{Binding GroupTitle}"
-                                                             Foreground="{DynamicResource SearchGroupLabelBrush}" />
-                                                        <Run Text=" › " />
-                                                        <Run Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
-                                                    </TextBlock>
+                                                    <!--
+                                                        Severity dot — see the same block in
+                                                        OpenCodeForge's MainWindow. The assessment
+                                                        is the settings row's own, reached through
+                                                        IDangerAnnotatedEditor, so the two surfaces
+                                                        cannot disagree. It stays invisible until a
+                                                        product supplies a danger table, which
+                                                        Claude does not yet do.
+
+                                                        HelpText also goes on the BUTTON above:
+                                                        the button is the focusable element, and a
+                                                        TextBlock's own HelpText is reachable via
+                                                        UIA but is not part of what a reader
+                                                        announces for the focused row.
+                                                    -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                                                   Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                                                   Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                                                                   FontSize="11"
+                                                                   VerticalAlignment="Center"
+                                                                   AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                                                                   ToolTip.Tip="{Binding DangerAccessibleText}" />
+                                                        <TextBlock>
+                                                            <Run Text="{Binding GroupTitle}"
+                                                                 Foreground="{DynamicResource SearchGroupLabelBrush}" />
+                                                            <Run Text=" › " />
+                                                            <Run Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
+                                                        </TextBlock>
+                                                    </StackPanel>
                                                     <TextBlock Text="{Binding Snippet}"
                                                                FontSize="11"
                                                                Foreground="{DynamicResource SearchDescriptionBrush}"
