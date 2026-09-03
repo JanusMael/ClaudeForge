@@ -1227,6 +1227,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>더 좁은 범위(예: local 또는 project)가 이 속성을 명시적으로 설정하여 이 행의 값을 재정의할 때 체크됩니다</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>위험도</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>이 설정의 중요도입니다. 우선 적용된 범위와 실제 적용 중인 값을 기준으로 판정하므로, 편집 중인 범위를 기준으로 판정하는 속성 탭의 동일한 설정과 다를 수 있습니다</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>클립보드에 복사</value>
   </data>

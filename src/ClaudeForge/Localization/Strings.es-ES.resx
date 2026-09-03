@@ -1284,6 +1284,12 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Se marca cuando un ámbito más estrecho (p. ej. local o project) define esta propiedad explícitamente, sobrescribiendo el valor de esta fila</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Riesgo</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>Cuánto importa esta opción, evaluada en el ámbito que prevalece y con el valor en vigor: puede diferir de la misma opción en la pestaña Propiedades, que evalúa el ámbito que estás editando</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copiar al portapapeles</value>
   </data>

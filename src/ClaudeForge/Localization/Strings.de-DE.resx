@@ -1284,6 +1284,12 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Markiert, wenn ein engerer Geltungsbereich (z. B. local oder project) diese Eigenschaft explizit setzt und damit den Wert dieser Zeile überschreibt</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Risiko</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>Wie wichtig diese Einstellung ist, bewertet für den maßgeblichen Bereich und den wirksamen Wert — kann daher von derselben Einstellung auf der Registerkarte „Eigenschaften“ abweichen, die den bearbeiteten Bereich bewertet</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>In Zwischenablage kopieren</value>
   </data>

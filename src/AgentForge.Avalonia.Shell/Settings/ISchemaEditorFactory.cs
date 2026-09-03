@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
@@ -43,4 +44,28 @@ public interface ISchemaEditorFactory
         ConfigScope editingScope,
         Func<Task<string?>>? browseDialog = null,
         SettingsWorkspace? workspace = null);
+
+    /// <summary>
+    /// The danger policy this factory stamps onto every editor it produces, or
+    /// <see langword="null"/> for a product section that declares none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Exposed so that a surface which is NOT an editor can classify from the same table
+    /// its editors do.</b> The effective-value view is the case: it renders one row per setting
+    /// without owning an editor for it, so it has to call
+    /// <see cref="IDangerClassifier.Classify(string, IEditorScope?, object?)"/> itself. Reading
+    /// the classifier off the factory that built the page's editors makes the two halves of that
+    /// page provably the same policy; an independently-supplied classifier could differ, and the
+    /// user would see one page contradict itself.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>This is not licence for search to classify.</b> Search holds neither the value nor
+    /// the editing scope, so it asks the editor instead — see
+    /// <see cref="LayeredEditors.Avalonia.ViewModels.IDangerAnnotatedEditor"/>. The effective view
+    /// is different in kind: a row there IS a (path, winning scope, winning value) triple, and
+    /// those are the three inputs classification takes.
+    /// </para>
+    /// </remarks>
+    IDangerClassifier? Danger { get; }
 }

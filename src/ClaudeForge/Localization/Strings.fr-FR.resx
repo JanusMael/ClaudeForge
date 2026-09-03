@@ -1227,6 +1227,12 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Coché lorsqu'une portée plus étroite (par exemple local ou project) définit cette propriété explicitement, remplaçant la valeur de cette ligne</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Risque</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>L'importance de ce paramètre, évaluée pour la portée qui l'emporte et la valeur en vigueur — elle peut donc différer du même paramètre dans l'onglet Propriétés, qui évalue la portée en cours de modification</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copier dans le presse-papiers</value>
   </data>

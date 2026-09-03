@@ -1227,6 +1227,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Отмечено, когда более узкая область (напр. local или project) явно задаёт это свойство, переопределяя значение в этой строке</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Риск</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>Насколько важна эта настройка — оценивается по области, которая победила, и по действующему значению, поэтому может отличаться от той же настройки на вкладке «Свойства», где оценивается редактируемая область</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Копировать в буфер обмена</value>
   </data>

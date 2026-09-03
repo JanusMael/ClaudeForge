@@ -1294,6 +1294,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>当较窄的作用域（例如 local 或 project）显式设置此属性、覆盖此行的值时勾选</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>风险</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>此设置的重要程度，按生效的作用域和当前生效值判定，因此可能与“属性”选项卡中同一设置的判定不同（后者按你正在编辑的作用域判定）</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>复制到剪贴板</value>
   </data>

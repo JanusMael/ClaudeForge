@@ -3,6 +3,7 @@
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
+             xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupEffectiveView"
@@ -16,6 +17,10 @@
         <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
         <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
         <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
+        <!-- Severity rendering, shared with both PropertyEditorWrappers so a tier looks the same
+             wherever it appears. -->
+        <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
     </UserControl.Resources>
 
     <DockPanel>
@@ -42,6 +47,48 @@
                   AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}"
                   AutomationProperties.HelpText="{x:Static loc:Strings.AutoHelpEffectiveRowsGrid}">
             <DataGrid.Columns>
+                <!--
+                    Risk — first column so the weight is read before the label, matching the
+                    property wrapper where the dot precedes the name.
+
+                    ⭐⭐ This is assessed at the scope that WON and the value in effect, so it can
+                    legitimately differ from the dot on the same setting in the Properties tab
+                    (which assesses the scope you are editing). That divergence is the column's
+                    reason to exist — see EffectivePropertyRow.Danger — and the header tooltip
+                    says so, because two dots disagreeing otherwise reads as a bug.
+
+                    Sortable on the enum, which is ordered least→most severe: one click on the
+                    header brings every Critical row together.
+                -->
+                <DataGridTemplateColumn Width="Auto"
+                                        CanUserSort="True"
+                                        SortMemberPath="Danger.Severity">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveSeverity}"
+                                   ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveSeverity}" />
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="shell:EffectivePropertyRow">
+                            <!-- Dual-coded: the GLYPH differs per tier (▲ ◆ ● ○) as well as the
+                                 colour, because Critical-vs-Caution sits exactly on the red-green
+                                 axis. Geometric shapes, not emoji — emoji need a system emoji
+                                 font and render as tofu without one.
+
+                                 ⛔ HelpText, not Name: on a TextBlock the Text always wins and an
+                                 explicit Name is ignored outright, so a Name here would announce
+                                 the glyph character and nothing else. -->
+                            <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                       Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                       Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                                       FontSize="11"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0"
+                                       AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                                       ToolTip.Tip="{Binding DangerAccessibleText}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Width="200" CanUserSort="True" SortMemberPath="Property">
                     <DataGridTemplateColumn.Header>
                         <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveProperty}"

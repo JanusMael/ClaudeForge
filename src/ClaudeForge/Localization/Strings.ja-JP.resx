@@ -1227,6 +1227,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>より狭いスコープ (例: local または project) がこのプロパティを明示的に設定し、この行の値を上書きしている場合にチェックされます</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>リスク</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>この設定の重要度。優先されたスコープと有効な値に基づいて判定されるため、編集中のスコープで判定する「プロパティ」タブの同じ設定とは異なる場合があります</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>クリップボードにコピー</value>
   </data>

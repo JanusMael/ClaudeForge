@@ -1284,6 +1284,12 @@ Novos terminais captarão a alteração; terminais existentes precisam ser reini
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Marcado quando um escopo mais restrito (ex.: local ou project) define esta propriedade explicitamente, sobrescrevendo o valor desta linha</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Risco</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>O quanto esta configuração importa, avaliada no escopo que prevaleceu e no valor em vigor — por isso pode diferir da mesma configuração na guia Propriedades, que avalia o escopo que você está editando</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copiar para Área de Transferência</value>
   </data>

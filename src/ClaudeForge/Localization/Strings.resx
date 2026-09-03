@@ -1364,6 +1364,12 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Checked when a narrower scope (e.g. local or project) sets this property explicitly, overriding this row's value</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Risk</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>How much this setting matters, judged at the scope that won and the value in effect — so it can differ from the same setting on the Properties tab, which judges the scope you are editing</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copy to Clipboard</value>
   </data>

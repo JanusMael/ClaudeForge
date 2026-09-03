@@ -4289,8 +4289,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
             NodeId = NavIdEffectiveSettings,
+            // The danger table is Claude CODE's, and so is this page: it reads ClaudeCodeSdk and
+            // ccNodes. Passing it explicitly rather than letting the VM default keeps that pairing
+            // visible at the one place where it is actually true — Claude Desktop's settings are
+            // not governed by this policy.
             Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
-                SchemaTreeBuilder.CollectDescriptions(ccNodes)),
+                SchemaTreeBuilder.CollectDescriptions(ccNodes),
+                ClaudeDangerTable.Settings),
             IsTopLevel = true,
         });
 

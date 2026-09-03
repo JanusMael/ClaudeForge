@@ -2054,6 +2054,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Risk.
+        /// </summary>
+        public static string HeaderEffectiveSeverity {
+            get {
+                return ResourceManager.GetString("HeaderEffectiveSeverity", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Effective Value.
         /// </summary>
         public static string HeaderEffectiveValue {
@@ -6217,6 +6226,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
             }
         }
         
+        /// <summary>
+        ///   Looks up a localized string similar to How much this setting matters, judged at the scope that won and the value in effect — so it can differ from the same setting on the Properties tab, which judges the scope you are editing.
+        /// </summary>
+        public static string TipHeaderEffectiveSeverity {
+            get {
+                return ResourceManager.GetString("TipHeaderEffectiveSeverity", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to The resolved value Claude reads, after all environment scopes are applied (process wins over user wins over Claude-stored).
         /// </summary>
