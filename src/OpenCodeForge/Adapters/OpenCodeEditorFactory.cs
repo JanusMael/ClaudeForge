@@ -58,13 +58,47 @@ namespace Bennewitz.Ninja.OpenCodeForge.Adapters;
 public sealed class OpenCodeEditorFactory : ISchemaEditorFactory
 {
     private readonly DefaultPropertyEditorFactory _generic = new();
+    private readonly IDangerClassifier? _danger;
+
+    /// <param name="danger">
+    /// The danger table for the document this factory serves, or <see langword="null"/> for none.
+    /// </param>
+    /// <remarks>
+    /// ⚠ <b>Per DOCUMENT, not per product.</b> <c>opencode.json</c> and <c>tui.json</c> have
+    /// separate tables (<c>plugin</c> is Critical in both, but almost nothing else lines up), so
+    /// one factory instance shared across both sections would label one document with the other's
+    /// policy. <c>MainWindowViewModel</c> therefore builds a factory per <c>HostedSection</c>
+    /// rather than holding a single shared one.
+    /// </remarks>
+    public OpenCodeEditorFactory(IDangerClassifier? danger = null)
+    {
+        _danger = danger;
+    }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// ⭐ Every arm's editor funnels through <see cref="PropertyEditorViewModel.AttachDangerClassifier"/>
+    /// exactly once here. Setting the classifier inside each arm's object initializer would mean a
+    /// thirteenth arm added later silently renders with no severity — which looks the same as a
+    /// product that declares nothing dangerous. Guarded by
+    /// <c>OpenCodeEditorDangerWiringTests</c>, which drives every top-level node of both bundled
+    /// schemas through this method.
+    /// </remarks>
     public PropertyEditorViewModel Create(
         SchemaNode schema,
         ConfigScope editingScope,
         Func<Task<string?>>? browseDialog = null,
         SettingsWorkspace? workspace = null)
+    {
+        return CreateCore(schema, editingScope, browseDialog, workspace)
+            .AttachDangerClassifier(_danger);
+    }
+
+    private PropertyEditorViewModel CreateCore(
+        SchemaNode schema,
+        ConfigScope editingScope,
+        Func<Task<string?>>? browseDialog,
+        SettingsWorkspace? workspace)
     {
         ArgumentNullException.ThrowIfNull(schema);
 

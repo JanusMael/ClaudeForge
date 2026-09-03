@@ -66,13 +66,51 @@
 > ⛔ **The carrier is NOT `IEditorSchema.Metadata`** — see the correction below; `Metadata` had
 > zero consumers, and neither the scope escalation nor the value predicates can be expressed as a
 > static per-property annotation. `AppSeverity`'s own remark citing `Metadata` is corrected too.
-> ⚠ **No surface consumes the classifier yet** — slice 2 is deliberately the data and the
-> mechanism, so the table could be reviewed as one artifact before four views started rendering it.
+> **Slice 3a — the settings tree, the first surface, SEEN RUNNING.** Every property row in
+> OpenCodeForge now carries a dual-coded severity dot (`▲ ◆ ● ○` + colour) and, only when the
+> value held is the unsafe one, a standing banner. `PropertyEditorViewModel` gained
+> `Danger`/`HasDangerSeverity`/`IsDangerNow`/`DangerAccessibleText` recomputed on value change,
+> scope change and reset; the classifier is attached at ONE choke point in
+> `OpenCodeEditorFactory.Create`, and `HostedSection` carries it **per document** so `tui.json`
+> cannot be labelled with `opencode.json`'s policy. 22 tests, 5 canaries.
 >
-> **Still open in 11.5:** the four surfaces (settings tree, effective view, search hits,
-> save-preview — the last is the cheapest, since `JsonDiff.Compute` already yields the change
-> list), Claude's own danger table, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire
-> modelled on `GuardUnusedResxKeys`.
+> ⛔ **Two defects the screenshot found that the green suite could not.** (a) The banner used
+> `LE.DangerText` — a flat theme-neutral `#C62828` that lands near **3:1 on the dark surface**,
+> under the 4.5:1 this plan requires; it now uses the themed `AppSeverity*Brush` pair, which also
+> makes a Caution-tier problem read amber instead of falsely red. (b) The banner stretched the
+> full row width for one short sentence, reading as a page-wide alert.
+>
+> ⛔⛔ **`AutomationProperties.Name` is IGNORED on a `TextBlock` — its `Text` always wins.**
+> Measured via UIA. So the severity dot announced "▲" and nothing else; `AutomationProperties.HelpText`
+> is what carries the sentence (and is already this file's own convention for descriptions).
+> A bare `Border` and a `ContentControl` both got **no peer at all**, which made the dot
+> *invisible* to assistive tech — worse than the glyph. Note this also means the repo's 15
+> `AutomationProperties.Name="{Binding DisplayName}"` on TextBlocks are no-ops that nobody noticed,
+> because their `Text` already equals `DisplayName`.
+>
+> ⚠ **This surface is OpenCodeForge-only, by construction.** The two apps use DIFFERENT wrappers —
+> OpenCodeForge takes the shared `LayeredEditors.Avalonia` one, ClaudeForge has its own copy under
+> `src/ClaudeForge/Controls/`. ClaudeForge gets the dot when its own danger table lands.
+>
+> ⓘ **Nested children of an object editor show no dot** — they render through the object editor's
+> own template rather than the wrapper header, so they never reach this code.
+>
+> **Still open in 11.5:** the remaining three surfaces (effective view, search hits, save-preview),
+> Claude's own danger table, `docs/DANGER-TAXONOMY.md`, and the no-raw-hex build tripwire modelled
+> on `GuardUnusedResxKeys`. ⛔ **The save-preview is NOT the cheap one the plan assumed** — see the
+> ordering note below.
+>
+> ### ⛔⛔ The surface ordering above is not buildable as written
+>
+> The plan calls the save-preview "the most valuable and the cheapest". It is currently
+> **unreachable**, measured: **OpenCodeForge has no save dialog at all** (no `ISaveChangesPrompt`
+> or `SaveDialogBuilder` reference anywhere in `src/OpenCodeForge/` or `src/OpenCode.Avalonia/`),
+> and **ClaudeForge has the dialog but no danger table**. So the product with a table cannot show a
+> save preview, and the product with a save preview has nothing to say in it. That is why slice 3a
+> did the settings tree instead. ⚠ Also: `SaveDialogBuilder` is static with no product context
+> (one production call site, `MainWindowViewModel.cs:1867`), and `PropertyDiff.OldValue`/`NewValue`
+> are **JSON strings**, not the editor value currency — so that path needs
+> `JsonCurrency.FromJsonNode` before any predicate can run on it.
 >
 > ### What running the UI keeps finding — read this before trusting a green suite
 >

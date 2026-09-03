@@ -13,6 +13,8 @@
         <conv:ScopeToDisplayNameConverter x:Key="ScopeToName" />
         <conv:BoolToStatusTextConverter x:Key="BoolToStatusText" />
         <conv:BoolToStatusBrushConverter x:Key="BoolToStatusBrush" />
+        <conv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <conv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
     </UserControl.Resources>
 
     <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
@@ -34,6 +36,32 @@
                         ToolTip.Tip="{x:Static loc:WrapperStrings.TipResetToInherited}" />
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!--
+                        Severity indicator — how much attention this setting deserves, from the
+                        host product's danger table. Rendered BEFORE the name so a user scanning
+                        a page reads the weight before the label.
+
+                        ⭐ DUAL-CODED, per UI-STYLE-GUIDE's status-pill principle: the GLYPH
+                        differs per severity (▲ ◆ ● ○) as well as the colour, because colour
+                        alone excludes colour-blind users and Critical-vs-Caution sits exactly on
+                        the red-green axis. Geometric shapes rather than emoji — emoji need a
+                        system emoji font and render as tofu without one (see AVALONIA-GOTCHAS).
+
+                        ⛔ AutomationProperties.Name is NOT decoration here. A coloured shape
+                        conveys nothing to a screen reader, so DangerAccessibleText names the tier
+                        AND the consequence; without it this whole surface would be sighted-only.
+
+                        Hidden entirely when the product says nothing about this path, so a
+                        product with no danger table renders exactly as before.
+                    -->
+                    <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                               Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                               FontSize="11"
+                               VerticalAlignment="Center"
+                               AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                               ToolTip.Tip="{Binding DangerAccessibleText}" />
+
                     <!-- 2026-05-16 — Property-name pill (background + foreground both
                          theme-aware via App-side tokens).  Tokens are defined in the
                          CONSUMER App.axaml (the host app's) rather than this
@@ -105,6 +133,52 @@
                     </Border>
                 </StackPanel>
             </DockPanel>
+
+            <!--
+                Row 1b: the standing "this value is unsafe RIGHT NOW" banner.
+
+                Distinct from the severity dot above on purpose. The dot is the TIER — it is
+                present even when the value is at its safe default, which is what lets a user
+                spot a dangerous knob before turning it. This banner appears only when the value
+                actually held is the unsafe one, so it never becomes wallpaper: on a page whose
+                settings are all at safe defaults, no banner renders at all.
+
+                ⛔ Coloured from the SEVERITY tokens, deliberately NOT from LE.DangerText /
+                LE.DangerBorder. Two reasons, both measured on screen:
+
+                  * CONTRAST. LE.DangerText is a single flat #C62828 — an LE.* token is
+                    theme-neutral by design — which lands at roughly 3:1 on this app's dark
+                    surface, under the 4.5:1 that UI-STYLE-GUIDE requires for text. The
+                    AppSeverity*Brush family is a themed light/dark PAIR whose values are the
+                    app's already-vetted status foregrounds (#A8071A / #F99090 for Critical), so
+                    it clears the budget in both themes.
+                  * TRUTHFULNESS. A hardcoded red says "critical" for every unsafe value,
+                    including a Caution-tier one like subagent_depth > 2. Binding the severity
+                    means a cost lever reads amber and a security boundary reads red.
+
+                ⚠ HorizontalAlignment=Left so the banner sizes to its sentence. Stretched across
+                the full row it read as a page-wide alert rather than one row's problem.
+            -->
+            <Border IsVisible="{Binding IsDangerNow}"
+                    BorderBrush="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="0,2,0,2"
+                    HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                               FontSize="11"
+                               VerticalAlignment="Top" />
+                    <TextBlock Text="{Binding Danger.Explanation}"
+                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               MaxWidth="720"
+                               AutomationProperties.HelpText="{Binding DangerAccessibleText}" />
+                </StackPanel>
+            </Border>
 
             <!-- Row 2: Description / help text (URLs are linkified) -->
             <ctrl:LinkifiedTextBlock SourceText="{Binding Description}"
