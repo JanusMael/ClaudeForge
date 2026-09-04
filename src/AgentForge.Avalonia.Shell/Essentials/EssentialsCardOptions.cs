@@ -40,8 +40,17 @@ public sealed record EssentialsCardOptions
     /// <summary>Refresh the card's bindings from the underlying accessor.</summary>
     public required Func<EssentialsCardViewModel, Task> ReadAsync { get; init; }
 
-    /// <summary>Persist the card's current value.</summary>
-    public required Func<EssentialsCardViewModel, Task> WriteAsync { get; init; }
+    /// <summary>
+    /// Persist the card's current value, or <see langword="null"/> on a
+    /// <see cref="EssentialsCardKind.Derived"/> card.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Not <c>required</c>, and the pairing is enforced in the constructor instead.</b>
+    /// Keeping it required would have every derived card pass a no-op lambda that reads as
+    /// "persists nothing yet" rather than "has nothing to persist" — and a no-op writer on an
+    /// editable card would then be indistinguishable from a correct one.
+    /// </remarks>
+    public Func<EssentialsCardViewModel, Task>? WriteAsync { get; init; }
 
     /// <summary>
     /// Title of the nav node this setting lives in, for the "View in &lt;group&gt;" deep link.
@@ -66,6 +75,12 @@ public sealed record EssentialsCardOptions
 
     /// <summary>Options for an <see cref="EssentialsCardKind.EnumString"/> card.</summary>
     public IReadOnlyList<string>? EnumOptions { get; init; }
+
+    /// <summary>
+    /// The closed, ordered option set for an <see cref="EssentialsCardKind.LabelledEnum"/> card.
+    /// Required on that kind and rejected on every other.
+    /// </summary>
+    public IReadOnlyList<EssentialsEnumOption>? LabelledOptions { get; init; }
 
     /// <summary>
     /// Evaluated on every value change to decide whether the standing danger banner shows.

@@ -28,15 +28,36 @@ public static class OpenCodePaths
     ];
 
     /// <summary>
-    /// The global config directory — <c>$OPENCODE_CONFIG_DIR</c> when set, otherwise
+    /// The global config directory OpenCode uses when <c>$OPENCODE_CONFIG_DIR</c> is NOT set —
     /// <c>~/.config/opencode</c>.
     /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Still relevant when the variable IS set</b>, which is why it is separate from
+    /// <see cref="GlobalDirectory"/>. Plugin discovery reads this directory regardless (measured —
+    /// see <c>OpenCodeArtifactSources</c>), and the documented <c>AGENTS.md</c> gotcha is a claim
+    /// about what happens when both this directory and the redirected one hold one. Callers
+    /// needing "the other one" must not re-derive the literal.
+    /// </remarks>
+    public static string DefaultGlobalDirectory()
+        => Path.Combine(PlatformPaths.UserProfile, ".config", "opencode");
+
+    /// <summary>
+    /// The global config directory — <c>$OPENCODE_CONFIG_DIR</c> when set, otherwise
+    /// <see cref="DefaultGlobalDirectory"/>.
+    /// </summary>
+    /// <remarks>
+    /// ✅ <b>Measured against v1.17.9</b>, because <c>opencode debug paths</c> disagrees: it prints
+    /// the DEFAULT config directory even when <c>$OPENCODE_CONFIG_DIR</c> is set. Probing
+    /// <c>debug config</c> with a distinct marker value in each location showed the redirected file
+    /// is the one that loads, so the variable IS honoured for configuration and <c>debug paths</c>
+    /// is a static table rather than a resolution. Do not "fix" this against that command's output.
+    /// </remarks>
     public static string GlobalDirectory(OpenCodeEnvironment env)
     {
         ArgumentNullException.ThrowIfNull(env);
         return env.ConfigDir is { } dir
             ? dir
-            : Path.Combine(PlatformPaths.UserProfile, ".config", "opencode");
+            : DefaultGlobalDirectory();
     }
 
     /// <summary>

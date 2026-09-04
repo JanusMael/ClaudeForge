@@ -190,7 +190,7 @@ public static class OpenCodeArtifactSources
             [new ArtifactProbe("AGENTS", Path.Combine(directory, "AGENTS.md"))]));
 
         // The default directory's plugins load regardless of the variable — see the remarks.
-        string fallback = Path.Combine(PlatformPaths.UserProfile, ".config", "opencode");
+        string fallback = OpenCodePaths.DefaultGlobalDirectory();
         if (!string.Equals(Path.TrimEndingDirectorySeparator(fallback),
                            Path.TrimEndingDirectorySeparator(directory),
                            StringComparison.OrdinalIgnoreCase))

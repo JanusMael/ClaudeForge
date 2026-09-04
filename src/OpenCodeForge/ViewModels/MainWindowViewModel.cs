@@ -8,12 +8,15 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.OpenCode.Avalonia.Artifacts;
+using Bennewitz.Ninja.OpenCode.Avalonia.Essentials;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
 using Bennewitz.Ninja.OpenCodeForge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
 
 namespace Bennewitz.Ninja.OpenCodeForge.ViewModels;
@@ -69,6 +72,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </remarks>
     public const string ArtifactsNodeId = "artifacts";
 
+    /// <summary>Deep-link and persisted-state key for the Essentials page.</summary>
+    public const string EssentialsNodeId = "essentials";
+
     /// <summary>Sections in navigation order.</summary>
     public IReadOnlyList<HostedSection> Sections { get; }
 
@@ -80,6 +86,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>The page whose editor is showing.</summary>
     [ObservableProperty] private NavigationNodeViewModel? _selectedNode;
+
+    /// <summary>
+    /// Let a page act on being arrived at or left.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Added with the first page that needs it, not speculatively.</b> Two of the Essentials
+    /// cards report the filesystem rather than the document — a global <c>AGENTS.md</c> can appear
+    /// while the app is open — so without this dispatch they would show whatever was true at
+    /// startup, for the whole session. The interface has default no-op bodies, so every existing
+    /// page is unaffected.
+    /// </remarks>
+    partial void OnSelectedNodeChanged(
+        NavigationNodeViewModel? oldValue, NavigationNodeViewModel? newValue)
+    {
+        if (oldValue?.Editor is INavigablePage leaving)
+        {
+            leaving.OnNavigatedFrom(!ReferenceEquals(oldValue.Editor, newValue?.Editor));
+        }
+
+        if (newValue?.Editor is INavigablePage entering)
+        {
+            entering.OnNavigatedTo();
+        }
+    }
 
     /// <summary>
     /// Install state of the agent this app configures.
@@ -192,6 +222,74 @@ public sealed partial class MainWindowViewModel : ObservableObject
             isLoadingProbe: () => IsLoading,
             getSyntheticEntries: () => OpenCodeSyntheticSearch.Build(Strings.SectionOpenCode),
             getSchemaSearchProviders: BuildSchemaSearchProviders);
+
+        // The Essentials cards' "View in <page>" buttons publish this. Without a subscriber the
+        // button is a control that does nothing — which looks like a broken app, not a missing
+        // feature — so it is registered here rather than left for the slice that adds more cards.
+        WeakReferenceMessenger.Default.Register<MainWindowViewModel, NavigateToNavGroupMessage>(
+            this, static (recipient, message) => recipient.OnNavigateToNavGroup(message));
+    }
+
+    /// <summary>
+    /// Deep-link from an Essentials card: select the page whose title matches, and filter its
+    /// editor to the named property when it has one.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Silently no-ops on no match, deliberately.</b> The alternative is throwing from a
+    /// button click on a mis-titled card, and the guard that catches the real mistake is a test
+    /// asserting every card's target resolves — not a runtime crash in the user's face.
+    /// </remarks>
+    private void OnNavigateToNavGroup(NavigateToNavGroupMessage message)
+    {
+        if (string.IsNullOrEmpty(message.GroupTitle))
+        {
+            return;
+        }
+
+        NavigationNodeViewModel? target = FindNodeByTitle(message.GroupTitle);
+        if (target is null)
+        {
+            return;
+        }
+
+        SelectedNode = target;
+
+        if (!string.IsNullOrEmpty(message.PropertyFilter)
+            && target.Editor is SettingsGroupEditorViewModel groupEditor)
+        {
+            groupEditor.ApplyNavigationFilter(message.PropertyFilter);
+        }
+    }
+
+    /// <summary>
+    /// The first node titled <paramref name="title"/> — top level first, then section children.
+    /// </summary>
+    internal NavigationNodeViewModel? FindNodeByTitle(string title)
+    {
+        foreach (NavigationNodeViewModel node in Navigation)
+        {
+            if (string.Equals(node.Title, title, StringComparison.Ordinal))
+            {
+                return node;
+            }
+        }
+
+        // ⚠ Both sections' pages are searched, and the two documents share page titles
+        // ("General" exists in the config layout and could in the TUI one), so the FIRST match
+        // wins and section order decides. That is only safe while the cards all belong to the
+        // config document; a TUI card would need the section in the message.
+        foreach (NavigationNodeViewModel header in Navigation)
+        {
+            foreach (NavigationNodeViewModel child in header.Children)
+            {
+                if (string.Equals(child.Title, title, StringComparison.Ordinal))
+                {
+                    return child;
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>One schema-search provider per loaded section.</summary>
@@ -226,11 +324,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
         List<string> failures = [];
         IsLoading = true;
 
+        // The section whose document holds the Essentials-page keys, once it has opened. Captured
+        // in the loop rather than looked up afterwards so a section that FAILED to open is never
+        // handed to a card — GetEffective on an unopened client throws, and it would throw inside
+        // a fire-and-forget read.
+        HostedSection? essentialsSection = null;
+
         foreach (HostedSection section in Sections)
         {
             try
             {
                 await section.Client.OpenAsync(projectRoot: null, ct).ConfigureAwait(false);
+
+                if (section.Product == OpenCodeProducts.Config)
+                {
+                    essentialsSection = section;
+                }
+
                 IReadOnlyList<NavigationNodeViewModel> pages =
                     await BuildPagesAsync(registry, section, ct).ConfigureAwait(false);
 
@@ -263,13 +373,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Editor = new OpenCodeArtifactsPageViewModel(OpenCodeEnvironment.FromProcess(), null),
         });
 
+        // Essentials goes FIRST, and is inserted rather than appended because it is built last:
+        // its editable card needs a client that has finished opening. Like the artifacts page it
+        // appears even when nothing loaded — its derived cards read the environment and the
+        // filesystem, so "which file was this app even trying to open?" still has an answer.
+        Navigation.Insert(0, new NavigationNodeViewModel(Strings.SectionEssentials)
+        {
+            NodeId = EssentialsNodeId,
+            IsTopLevel = true,
+            Editor = new OpenCodeEssentialsViewModel(
+                essentialsSection?.Client,
+                OpenCodeEnvironment.FromProcess(),
+                essentialsSection?.Layout ?? OpenCodePageLayout.Config),
+        });
+
         // Detection last: it runs a child process, and a slow or hung binary must not delay the
         // settings pages the user came for.
         InstallStatus = await OpenCodeInstallProbe.DetectAsync(ct).ConfigureAwait(false);
         HasProbedForInstall = true;
 
         IsLoading = false;
-        SelectedNode = Navigation.FirstOrDefault()?.Children.FirstOrDefault();
+
+        // ⚠ Explicitly the Essentials node, not Navigation[0].Children[0]. That expression used to
+        // mean "the first section's first page"; inserting a childless top-level node at the front
+        // silently turned it into null, leaving the window with a populated tree and an empty page
+        // area. Naming the landing page says what is meant and cannot rot the same way.
+        SelectedNode =
+            Navigation.FirstOrDefault(n => string.Equals(n.NodeId, EssentialsNodeId, StringComparison.Ordinal))
+            ?? Navigation.FirstOrDefault(n => n.Children.Count > 0)?.Children.FirstOrDefault();
         Status = failures.Count == 0
             ? string.Empty
             : $"Could not load: {string.Join(", ", failures)}. See the log for details.";

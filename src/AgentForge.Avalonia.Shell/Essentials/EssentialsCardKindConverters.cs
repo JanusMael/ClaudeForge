@@ -46,4 +46,6 @@ public static class EssentialsCardKindConverters
     public static readonly EssentialsCardKindConverter IsInt = new(EssentialsCardKind.Int);
     public static readonly EssentialsCardKindConverter IsEnumString = new(EssentialsCardKind.EnumString);
     public static readonly EssentialsCardKindConverter IsStringList = new(EssentialsCardKind.StringList);
+    public static readonly EssentialsCardKindConverter IsLabelledEnum = new(EssentialsCardKind.LabelledEnum);
+    public static readonly EssentialsCardKindConverter IsDerived = new(EssentialsCardKind.Derived);
 }

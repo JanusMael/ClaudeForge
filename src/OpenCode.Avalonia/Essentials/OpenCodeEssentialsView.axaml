@@ -1,0 +1,164 @@
+<!--
+    OpenCode's Essentials page. Same rules as every other view in this library:
+      * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
+      * No ancestor bindings — they resolve by reflection and trip IL2026, a build error here.
+      * Only LE.* theme tokens; no literal colours. Secondary text is Opacity, not a token.
+      * All text from Strings.resx, including every AutomationProperties.Name.
+
+    ⚠ Only the two card kinds this page's cards actually use have a surface here — the labelled
+    picker and the derived read-only report. The other four (Bool / Int / EnumString / StringList)
+    are deliberately absent rather than written blind: a card kind with no surface renders as a
+    blank card, silently, so OpenCodeEssentialsViewKindCoverageTests fails the build the moment a
+    card arrives whose kind this markup cannot draw. Adding the fourteen remaining cards means
+    adding their surfaces here, and the test says so out loud instead of leaving empty rectangles.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ess="using:Bennewitz.Ninja.OpenCode.Avalonia.Essentials"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials"
+             xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
+             x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Essentials.OpenCodeEssentialsView"
+             x:DataType="ess:OpenCodeEssentialsViewModel">
+
+    <UserControl.Resources>
+        <!-- The dot resolves AppSeverity*Brush per theme variant. Same converter the settings
+             rows and the search hits use, so one knob reads identically on all three surfaces. -->
+        <conv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Spacing="16" Margin="16">
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Subtitle}" TextWrapping="Wrap" Opacity="0.8" />
+            </StackPanel>
+
+            <ItemsControl ItemsSource="{Binding Cards}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="shell:EssentialsCardViewModel">
+
+                        <Border BorderBrush="{DynamicResource LE.BoolUnset}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12"
+                                Margin="0,0,0,8">
+                            <StackPanel Spacing="8">
+
+                                <!-- Header: severity dot + title + the deep link. -->
+                                <DockPanel LastChildFill="True">
+                                    <!-- Hidden rather than empty on a card with no group home:
+                                         a zero-width button is still a tab stop, and a screen
+                                         reader announces an unlabelled one. -->
+                                    <Button DockPanel.Dock="Right"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            Padding="6,2"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource LE.LinkBrush}"
+                                            Content="{Binding ViewInGroupLabel}"
+                                            ToolTip.Tip="{Binding ViewInGroupTitle}"
+                                            Command="{Binding ViewInGroupCommand}"
+                                            IsVisible="{Binding ViewInGroupTitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            AutomationProperties.Name="{Binding ViewInGroupLabel}" />
+
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <Border Width="10" Height="10" CornerRadius="5"
+                                                Background="{Binding Severity, Converter={StaticResource SeverityToBrush}}" />
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold" FontSize="14"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <!-- "Why this matters". -->
+                                <TextBlock Text="{Binding Body}"
+                                           Opacity="0.8"
+                                           TextWrapping="Wrap"
+                                           FontSize="12" />
+
+                                <!-- Standing danger banner, predicate-driven. -->
+                                <Border IsVisible="{Binding IsDanger}"
+                                        BorderBrush="{DynamicResource LE.DangerBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8,6">
+                                    <TextBlock Text="{Binding DangerBannerText}"
+                                               TextWrapping="Wrap"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource LE.DangerText}" />
+                                </Border>
+
+                                <!-- ── Editor surface — one per Kind ─────────────── -->
+
+                                <!-- LabelledEnum: a closed picker whose rows show the host's
+                                     words and commit the host's token. The item template shows
+                                     the label over its help line; the ComboBoxItem's accessible
+                                     name comes from EssentialsEnumOption.ToString(), NOT from
+                                     this template — see that override. -->
+                                <ComboBox ItemsSource="{Binding LabelledOptions}"
+                                          SelectedItem="{Binding SelectedOption, Mode=TwoWay}"
+                                          IsVisible="{Binding Kind, Converter={x:Static shell:EssentialsCardKindConverters.IsLabelledEnum}}"
+                                          IsEnabled="{Binding !EnumDisabled}"
+                                          MinWidth="280"
+                                          HorizontalAlignment="Left"
+                                          AutomationProperties.Name="{Binding Title}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="shell:EssentialsEnumOption">
+                                            <StackPanel Margin="0,2">
+                                                <TextBlock Text="{Binding Label}" />
+                                                <TextBlock Text="{Binding Description}"
+                                                           IsVisible="{Binding HasDescription}"
+                                                           FontSize="11"
+                                                           Opacity="0.8"
+                                                           TextWrapping="Wrap"
+                                                           MaxWidth="420" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <!-- Persistent notice — e.g. a value neither arm can express, held
+                                     verbatim rather than silently replaced. -->
+                                <Border IsVisible="{Binding ShowConstraintNotice}"
+                                        BorderBrush="{DynamicResource LE.DangerBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,3"
+                                        HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding ConstraintNoticeText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="520" />
+                                </Border>
+
+                                <!-- Derived: a read-only report. Selectable because the answer is
+                                     usually a path, and a path you cannot copy is half an answer. -->
+                                <!-- ⛔ HelpText, never Name: on a TextBlock (and so on a
+                                     SelectableTextBlock) the Text always wins and an explicit Name
+                                     is IGNORED — see AVALONIA-GOTCHAS. This started life as a Name
+                                     and a canary proved it inert: deleting it reddened nothing,
+                                     because the accessibility scan only requires names on
+                                     INTERACTIVE controls and the attribute did nothing anyway. The
+                                     announced text is a bare path, so the card's title is the
+                                     context a listener otherwise loses. -->
+                                <SelectableTextBlock Text="{Binding DerivedText}"
+                                                     IsVisible="{Binding Kind, Converter={x:Static shell:EssentialsCardKindConverters.IsDerived}}"
+                                                     FontFamily="Consolas,Menlo,monospace"
+                                                     FontSize="12"
+                                                     TextWrapping="Wrap"
+                                                     AutomationProperties.HelpText="{Binding Title}" />
+
+                            </StackPanel>
+                        </Border>
+
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

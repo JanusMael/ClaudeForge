@@ -85,4 +85,7 @@
   <data name="SectionArtifacts" xml:space="preserve">
     <value>Artifacts</value>
   </data>
+  <data name="SectionEssentials" xml:space="preserve">
+    <value>Essentials</value>
+  </data>
 </root>
