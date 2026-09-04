@@ -103,7 +103,12 @@ internal sealed class HooksAccessor : IHooksAccessor
                 JsonArray arr = new();
                 foreach (string name in allowedEnvVars)
                 {
-                    arr.Add(name);
+                    // Route through the non-generic IList<JsonNode?>.Add. Passing a
+                    // bare value binds JsonArray.Add<T>(T?), which carries
+                    // [RequiresUnreferencedCode] and fails a trimmed publish with
+                    // IL2026. The two other Add call sites in this file take the same
+                    // cast for the same reason; so does McpServersAccessor.ToJson.
+                    arr.Add((JsonNode?)JsonValue.Create(name));
                 }
 
                 inner["allowedEnvVars"] = arr;
@@ -169,7 +174,7 @@ internal sealed class HooksAccessor : IHooksAccessor
             }
 
             existingOuter["hooks"] = new JsonArray();
-            outerArr.Add(existingOuter);
+            outerArr.Add((JsonNode?)existingOuter);
         }
 
         if (existingOuter["hooks"] is not JsonArray innerArr)
@@ -182,7 +187,7 @@ internal sealed class HooksAccessor : IHooksAccessor
         // (CommandType, CommandValue); matcher is implied by the outer entry.
         if (!ContainsExact(innerArr, hook))
         {
-            innerArr.Add(inner);
+            innerArr.Add((JsonNode?)inner);
         }
 
         _client.SetValue("hooks", hooksObj);

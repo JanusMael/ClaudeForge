@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Trim-warning suppressions for third-party assemblies that we cannot modify.
+  Deliberately MINIMAL — this is not a copy of ClaudeForge's file. Every entry
+  below was observed in an actual trimmed publish of THIS app (Release, the
+  linux-x64 RID, self-contained, with trimming on).
+
+  Measured 2026-09-03: after the McpServersAccessor IL2026 was fixed at its call
+  site, DataGrid was the only remaining trim complaint in the whole closure.
+
+  What is NOT here, and why (verified by listing the transitive package closure
+  with `dotnet list package`, not assumed):
+
+    * Markdown.Avalonia / ColorTextBlock.Avalonia / Svg.Model / Svg.Custom /
+      Svg.Controls.Skia.Avalonia — ClaudeForge suppresses and roots all five.
+      NONE of them is in OpenCodeForge's package closure. OpenCodeForge therefore
+      carries no <TrimmerRootAssembly> entries at all; adding them would name
+      assemblies that do not exist in this app.
+
+    * Semi.Avalonia — IS in the closure (via LayeredEditors.Avalonia's
+      SemiBundle.axaml) but emits no warnings here. ClaudeForge's Semi.Avalonia
+      suppressions exist because Svg.Skia widens ILLink's reachability graph into
+      Semi's compiled AXAML; OpenCodeForge has no Svg.Skia, so that graph is
+      never widened. Do not add a Semi entry pre-emptively — if one is ever
+      needed it will announce itself as a real warning.
+
+    * ExCSS / Serilog — no observed warnings in this app's closure.
+
+  Wiring: referenced from OpenCodeForge.csproj via
+  `<_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>`. The leading
+  underscore is load-bearing — `<LinkAttributesXml>`, `<TrimmerRootDescriptor>`
+  and an `ILLink.LinkAttributes.xml` EmbeddedResource all FAIL SILENTLY or emit
+  spurious IL2007/IL2101. The long-form explanation of all three dead ends lives
+  in ClaudeForge.csproj (see the comment above its own _ILLinkSuppressions
+  ItemGroup) and in src/ClaudeForge/ILLink.Suppressions.xml; it is not repeated
+  here so the two files cannot drift into disagreeing.
+-->
+<linker>
+
+    <!--
+      Avalonia.Controls.DataGrid — 4x IL2070 in
+      Avalonia.Controls.Utils.TypeHelper.GetPropertyOrIndexer(Type, String, Object[]&),
+      which resolves column property paths by string via reflection. Collapses to
+      a single IL2104 when TrimmerSingleWarn is left at its default of true.
+
+      SAFETY: stronger here than in ClaudeForge. OpenCodeForge instantiates NO
+      DataGrid anywhere — grep the app's .axaml for `<DataGrid`, there are zero
+      hits. The assembly is only in the closure because LayeredEditors.Avalonia
+      package-references it (for DataGridCopyValueBehavior) and its SemiBundle
+      theme carries DataGrid styles. The reflecting code path is therefore
+      unreachable at runtime in this app, so suppressing it cannot mask a real
+      regression.
+
+      If OpenCodeForge ever does host a DataGrid, this justification lapses and
+      the ClaudeForge reasoning applies instead: column metadata must be rooted
+      by typed/compiled bindings.
+
+      IL2104 is listed alongside IL2070 so the suppression holds whether or not
+      TrimmerSingleWarn is on.
+    -->
+    <assembly fullname="Avalonia.Controls.DataGrid">
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2070</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2104</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+    </assembly>
+
+</linker>

@@ -143,7 +143,10 @@ internal sealed class PermissionsAccessor : IPermissionsAccessor
             return;
         }
 
-        newArr.Add(JsonValue.Create(path));
+        // Cast to JsonNode? so this binds the non-generic IList<JsonNode?>.Add.
+        // Uncast it binds JsonArray.Add<T>(T?), which carries
+        // [RequiresUnreferencedCode] and fails a trimmed publish with IL2026.
+        newArr.Add((JsonNode?)JsonValue.Create(path));
         _client.SetValue("permissions.additionalDirectories", newArr);
     }
 
@@ -302,7 +305,7 @@ internal sealed class PermissionsAccessor : IPermissionsAccessor
             return;
         }
 
-        newArr.Add(JsonValue.Create(rule.Value));
+        newArr.Add((JsonNode?)JsonValue.Create(rule.Value));
         _client.SetValue(path, newArr);
     }
 

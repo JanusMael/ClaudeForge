@@ -1,0 +1,50 @@
+<Project>
+    <!-- MSBuild applies only the CLOSEST Directory.Build.props by default.
+         To inherit the repo-root settings (Nullable, LangVersion, AutoVersioning,
+         debug-type policy, etc.) on top of the src-only additions below, the
+         root file must be explicitly imported.  GetPathOfFileAbove walks up
+         the directory tree to find the next Directory.Build.props above this
+         one — at the repo root, in this case.  Same idiom as tests/. -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <!--
+          Make every shipped assembly trim-ANALYSED, not merely trim-ABLE.
+
+          Why this exists — measured 2026-09-03, and it is not what it looks like:
+
+          ILLink only reports trim warnings for assemblies marked IsTrimmable.
+          Everything else it trims SILENTLY.  Every project under src/ was
+          unmarked, so both apps' Release publishes were trimming the whole
+          shared stack while reporting nothing about it.  A real IL2026 in
+          AgentForge.Sdk/McpServers/McpServersAccessor.cs sat in shared code
+          reachable from BOTH apps and neither publish said a word.
+
+          The reason that bug was ever seen is a command-line accident:
+          `dotnet publish -p:PublishTrimmed=true` sets a GLOBAL property, which
+          flows into every project in the build graph and switches on each one's
+          Roslyn trim analyser.  The same property written inside an app's own
+          csproj applies to that app alone, so it never reaches the libraries.
+          Enabling PublishTrimmed in OpenCodeForge.csproj therefore produces a
+          trim check that trims but stays blind to shared code — which is the
+          failure this property closes, and the reason a csproj-only change was
+          not sufficient.
+
+          Verified by canary rather than assumed: with the McpServersAccessor
+          cast removed, a publish reddens with IL2026 when this property is set
+          and stays GREEN (exit 0, zero diagnostics) when it is removed, for
+          ClaudeForge as well as OpenCodeForge.  If a future change makes trim
+          breaks stop being caught, re-run that canary before trusting the log.
+
+          Cost, measured rather than estimated: zero.  Turning this on surfaced
+          no new diagnostics anywhere in src/ at either the Roslyn-analyser or
+          the ILLink level, and TrimMode=link was already trimming these
+          assemblies — this changes what gets REPORTED, not what gets removed.
+
+          Scoped to src/ deliberately: tests/ has its own Directory.Build.props
+          and is never published or trimmed, so analysing it would be noise.
+        -->
+        <IsTrimmable>true</IsTrimmable>
+    </PropertyGroup>
+
+</Project>

@@ -51,4 +51,60 @@
 
     <!-- No <Generator> on the resx: Localization/Strings.cs is hand-written, so there is no
          designer file to keep in sync. The default globbing embeds the resx already. -->
+
+    <!--
+      TRIMMING
+
+      Mirrors the Debug/Release split in ClaudeForge.csproj so CI's "Trim Check"
+      job actually trims THIS app too. Until this block existed the job published
+      OpenCodeForge untrimmed and reported success — ILLink never ran, so an
+      IL2026/IL2072 in shared code could ship with CI green. That is not
+      hypothetical: the check was blind to a real IL2026 in AgentForge.Sdk's
+      McpServersAccessor for as long as OpenCodeForge existed.
+
+      Scope note: unlike ClaudeForge this app deliberately does NOT set
+      SelfContained / PublishSingleFile / RuntimeIdentifiers here. OpenCodeForge
+      has no release.yml pipeline of its own yet — its only Release publish is
+      the CI trim check, which passes the RID and the self-contained flag on the
+      command line. Adding packaging properties would change artifacts nothing
+      currently consumes. Add them alongside a real release workflow, not before.
+    -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <PublishTrimmed>false</PublishTrimmed>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>link</TrimMode>
+
+        <!-- Keep per-warning detail instead of ILLink's default collapsing, which
+             reduces every hit inside a type to one file/line-less IL2104. For
+             compiled Avalonia XAML that collapsing makes the originating .axaml
+             impossible to identify. Same rationale (and same four settings) as
+             ClaudeForge.csproj. -->
+        <TrimmerSingleWarn>false</TrimmerSingleWarn>
+        <TrimmerRemoveSymbols>false</TrimmerRemoveSymbols>
+        <DebugType>embedded</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <AvaloniaXamlIlVerboseExceptions>true</AvaloniaXamlIlVerboseExceptions>
+    </PropertyGroup>
+
+    <!--
+      Third-party trim warnings this app cannot fix upstream. `_ILLinkSuppressions`
+      is the item Microsoft.NET.ILLink.targets actually reads — the leading
+      underscore is load-bearing, and the three plausible-looking alternatives
+      (`LinkAttributesXml`, `TrimmerRootDescriptor`, an ILLink.LinkAttributes.xml
+      EmbeddedResource) fail silently or emit spurious IL2007/IL2101. The
+      long-form write-up of that trap lives in ClaudeForge.csproj.
+
+      NO <TrimmerRootAssembly> entries here, and that is deliberate rather than an
+      oversight: all five of ClaudeForge's roots (Markdown.Avalonia,
+      ColorTextBlock.Avalonia, Svg.Model, Svg.Custom, Svg.Controls.Skia.Avalonia)
+      are absent from this app's package closure — verified with
+      `dotnet list package` over the transitive closure, which reports zero hits
+      for every one of the five.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
+    </ItemGroup>
 </Project>
