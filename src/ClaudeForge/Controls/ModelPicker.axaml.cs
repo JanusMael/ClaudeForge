@@ -1,10 +1,11 @@
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;
 

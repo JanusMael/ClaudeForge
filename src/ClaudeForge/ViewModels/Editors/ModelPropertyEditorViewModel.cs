@@ -1,5 +1,6 @@
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+﻿using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 

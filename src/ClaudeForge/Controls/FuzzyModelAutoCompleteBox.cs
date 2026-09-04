@@ -1,5 +1,6 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;
 
