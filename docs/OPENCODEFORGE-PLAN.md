@@ -2327,7 +2327,7 @@ script's install paths are name-derived, so they cannot be shared.
 | Workflow | Change |
 |---|---|
 | `release.yml` | `APP_NAME` is already an env var — good, but the publish matrix gains an **app dimension** (6 RIDs × 2 apps = 12 jobs), the download table (6 rows), the install instructions, and the explicit `gh release create` artifact list all become per-app. Plus the tag strategy above. |
-| `ci.yml` | Builds the `.slnx`, so new projects come along free — but the RID-qualified restore note applies to both app csprojs, and the smoke gate needs a per-app run. |
+| `ci.yml` | Builds the `.slnx`, so new projects come along free — but the RID-qualified restore note applies to both app csprojs, and the smoke gate needs a per-app run. ⛔⛔ **The Trim Check passes for OpenCodeForge without trimming it** — see below. |
 | `winget-submit.yml` | Per-app; carries the `40c3ebf` lessons (submit builds only from `packaging/winget/*.yaml`; pin `ManifestVersion`; set `[Console]::OutputEncoding`; duplicate guard; signing precondition). |
 | `codeql.yml` | Likely unchanged. |
 | `model-catalog-refresh.yml` | Claude-only; leave. |
@@ -2335,6 +2335,24 @@ script's install paths are name-derived, so they cannot be shared.
 
 `packaging/` needs a second manifest set (`Bennewitz.Ninja.OpenCodeForge.{yaml,installer,locale}`)
 and `Submit-Winget.ps1` parameterized on package identity.
+
+> ⛔⛔ **The Trim Check is giving false assurance for OpenCodeForge, and the fix is one file.**
+> `src/OpenCodeForge/OpenCodeForge.csproj` sets no `PublishTrimmed`, so its Release publish is not
+> trimmed and an `IL2026` in that app could never fail CI the way it does for ClaudeForge.
+>
+> **Measured (2026-09-03, phase 12 slice 2)** by publishing it once with
+> `-p:PublishTrimmed=true -p:TrimMode=link`: exactly **one** error, and it is **not** in any
+> OpenCode project —
+> `src/AgentForge.Sdk/McpServers/McpServersAccessor.cs(236,17): error IL2026` on
+> `JsonArray.Add<T>`. Everything under `OpenCodeForge` / `OpenCode.Avalonia` / `OpenCode.Sdk`
+> trims clean today, including the Essentials page added in that slice.
+>
+> ClaudeForge does not hit it because its csproj pulls a Release-only `ILLink.Suppressions.xml`
+> through `<_ILLinkSuppressions>` — note the **underscore**; the `ILLinkSuppressions` spelling most
+> guides show is silently ignored, which that csproj's own comment already records. OpenCodeForge
+> has no such file. So the job is: fix or suppress that one call site, enable `PublishTrimmed`,
+> verify the app still renders after a trimmed publish (a clean trim log is not proof the XAML
+> survived), and only then does CI mean what it says.
 
 > **Signing note:** the release flow publishes *unsigned* archives and a developer-machine
 > script signs, re-uploads in place, then submits — CI cannot sign because the certificate
@@ -4583,14 +4601,84 @@ depends on Phase 5, so it can be pulled earlier if the shell extraction lands cl
 > ⭐ The 14-parameter constructor is now `EssentialsCardOptions`, per this plan's own note to
 > convert it "here, where the signature is already being changed".
 
-**Remaining:** add the two new card kinds (derived/read-only, tri-state enum) and write
-`OpenCodeEssentialsViewModel.BuildCards` for the 17 cards above, plus OpenCodeForge's own
-`EssentialsView.axaml` and nav wiring. Depends on Phase 11 for cards #16/#17, which report
-resolver state — 11a/b/c are complete, so that dependency is met.
+> ✅ **Slice 2 — DONE. The two new card kinds, the page they render on, and the three cards that
+> exercise them (#14 `autoupdate`, #16 rules, #17 active config).**
+>
+> **Sliced this way on purpose.** "Add the kinds" alone would have landed view-models that no view
+> could draw, and this plan's own Phase 11.5 lesson (canary C8) is that the gap between a
+> view-model guard and a markup guard is where an unguarded wiring lives. So slice 2 took the
+> machinery end-to-end — `OpenCode.Avalonia/Essentials/` (view-model + `OpenCodeEssentialsView`),
+> OpenCodeForge's nav node, its `App.axaml` template — and left the fourteen cards that reuse
+> existing kinds as a purely additive slice 3.
+>
+> ⭐ **`LabelledEnum`, not "tri-state enum".** The plan's name describes `autoupdate`'s first use,
+> not the mechanism: absent makes four states and an unreadable value makes five. What actually
+> separates it from `EnumString` is that each option carries a **display label distinct from the
+> token it commits** — which is what lets the card say "Notify only" while the file holds
+> `"notify"`. The card reuses the full editor's own `Strings.Autoupdate*` resources and its
+> ordering, so the two surfaces cannot describe one key with two vocabularies; a test asserts that
+> against `OpenCodeAutoupdateEditorViewModel.Options` rather than against a copy of the words.
+>
+> ⭐ **`Derived` cards have no writer at all**, and the constructor enforces the pairing in **both**
+> directions: a derived card carrying a writer looks editable and persists nothing; an editable
+> card without one drops every edit. Neither has a visible symptom. Same for `LabelledOptions` on a
+> kind that cannot render them.
+>
+> ⛔⛔ **Card #16 ships the SOURCED gotcha as sourced, because it could not be measured.** The
+> `OPENCODE_CONFIG_DIR`-`AGENTS.md`-is-ignored claim comes from an upstream issue. Probed against
+> the installed v1.17.9 with markers planted in both files: `opencode debug config` does not carry
+> rules at all, and `opencode debug agent build` does not include their text — neither surfaces
+> which `AGENTS.md` loaded. So the card reports the **observable precondition** (directory
+> redirected, both files present) and says OpenCode *may* be ignoring one. Same treatment, for the
+> same reason, as `OpenCodeArtifactIssue.SkillHasNoDescription`.
+>
+> ⭐⭐ **Two things measured against v1.17.9 while scoping this, both of which change what the code
+> may assume:**
+> 1. **`OPENCODE_CONFIG_DIR` IS honoured for the config file.** A distinct marker in each location
+>    showed `debug config` returning the redirected file's value. `OpenCodePaths.GlobalDirectory`
+>    is right.
+> 2. ⛔ **`opencode debug paths` reports the DEFAULT config directory even when
+>    `OPENCODE_CONFIG_DIR` is set** — it is a static path table, not a resolution. Do not "fix"
+>    our resolution against that command's output. This is also the strongest justification for
+>    card #17: OpenCode's own obvious diagnostic answers "which config am I using?" wrongly.
+>
+> ⛔⛔ **You cannot sandbox the running app from outside via `USERPROFILE`.**
+> `PlatformPaths.UserProfile` falls back to
+> `Environment.GetFolderPath(SpecialFolder.UserProfile)`, which on Windows reads the **token's**
+> profile path, not the environment variable — an app launched with `USERPROFILE=<sandbox>` still
+> reported `C:\Users\brian\.config\opencode\opencode.jsonc`. `PlatformPaths.TestUserProfileOverride`
+> is the only lever and it is `AsyncLocal`/in-process. `OPENCODE_CONFIG_DIR` and
+> `OPENCODE_CONFIG_CONTENT` *are* ordinary environment reads and do work out-of-process.
+>
+> **Consequence for card #16:** its shadowed-rules banner cannot be provoked by an out-of-process
+> probe without writing into the real `~/.config/opencode`, so the predicate is covered by unit
+> test and the *banner markup* was proven instead through card #17's inline-config danger, which
+> is reachable. Anyone adding a card whose danger state depends on the home directory should plan
+> for the same split rather than assume a launch-time sandbox.
+>
+> ⚠ **`Navigation.Insert(0, …)` silently broke the landing selection.** `SelectedNode` was
+> `Navigation[0].Children.FirstOrDefault()` — correct while element 0 was a section header, `null`
+> the moment a childless top-level node went in front of it, leaving a full tree beside an empty
+> page area. One existing assertion (`Initialize_BuildsSettingsPagesForBothSections`) does catch
+> it, confirmed by reverting; nothing said *which* page should be selected. Both are named now.
+>
+> ⚠ `NavigateToNavGroupMessage` had **no subscriber in OpenCodeForge** — every card's "View in …"
+> button would have been a control that does nothing, with no compiler or runtime signal.
+> Registered, and `INavigablePage` is now dispatched from `OnSelectedNodeChanged` so the two
+> filesystem-derived cards re-read on arrival instead of showing startup state all session.
+
+**Remaining (slice 3):** the other fourteen cards from the table above, all on kinds that already
+shipped — plus their editor surfaces in `OpenCodeEssentialsView.axaml`.
+`OpenCodeEssentialsViewKindCoverageTests` fails the moment a card is added whose kind the markup
+cannot draw, so a blank card cannot ship quietly. Card #16's "link to the Rules tab" is also
+deferred: it targets the artifacts page's Memory tab rather than a settings page, which is a
+different mechanism from `NavigateToNavGroupMessage`.
 
 Re-assert the `IsLoading`-must-not-span-`await` guard here
 (`IntValueWrite_NotSuppressed_WhileReadIsInAsyncPhase`) — that bug class is not
-Claude-specific and will recur in any new Essentials VM.
+Claude-specific and will recur in any new Essentials VM. ✅ Held in slice 2 by construction: every
+read delegate in `OpenCodeEssentialsViewModel` is synchronous, and the reason is stated at the
+delegate block.
 
 ### Phase 13 — Schema refresh: in-app + CI
 
