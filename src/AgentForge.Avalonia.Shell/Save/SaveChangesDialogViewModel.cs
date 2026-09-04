@@ -238,15 +238,15 @@ public sealed class SaveChangeEntryViewModel
         var _ => "~",
     };
 
-    /// <summary>Background colour for the kind pill — green/red/orange matching the change type.</summary>
-    public string KindBackground => Kind switch
-    {
-        ChangeKind.Added => "#2E7D32",
-        ChangeKind.Removed => "#C62828",
-        // Modified — Material Orange 700.  Was #E65100 (Orange 900) which is
-        // named "orange" but R230/G81/B0 visually reads as red — easy to
-        // confuse with the #C62828 "removed" pill.  #F57C00 keeps the
-        // Material palette + has a clearly more orange hue.
-        var _ => "#F57C00",
-    };
+    // The pill's colour is NOT here. A view-model returning a hex string puts presentation in the
+    // view-model and puts the value beyond the theme's reach; `GuardRawHexInViewModels` now fails
+    // the build on it. The view binds `Kind` through ClaudeForge's ChangeKindToBrushConverter,
+    // which resolves the themed `AppChangeKind*Brush` token.
+    //
+    // ⛔ Removing the old `KindBackground` also fixed a measured accessibility defect. It returned
+    // Material Orange 700 (#F57C00) for Modified, chosen over #E65100 by a comment reasoning
+    // purely about hue ("visually reads as red — easy to confuse with the removed pill") with no
+    // contrast measurement. White-on-#F57C00 is **2.70:1** — under 4.5:1 for text and under even
+    // the 3.0:1 non-text floor. The replacement token is #B45309, which holds the hue argument
+    // (26°, still clearly not red's 0°) AND measures **5.02:1**.
 }
