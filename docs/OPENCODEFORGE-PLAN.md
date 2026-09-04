@@ -51,8 +51,8 @@
 > directory spellings, and that a 130-row skills tab scrolls to its last row. **A green,
 > trim-clean page still had four defects** — see "What running the UI keeps finding" below.
 >
-> 🔶 **Phase 11.5 — ALL FOUR SURFACES ARE IN (slices 1–6). `DANGER-TAXONOMY.md` and the
-> no-raw-hex tripwire are not.**
+> ✅ **Phase 11.5 — COMPLETE.** Four surfaces, six guards, `docs/DANGER-TAXONOMY.md`, and the
+> no-raw-hex tripwire.
 >
 > **Slice 1 (`c1dbb4f`) — severity became a type.** The `AppSeverity` enum in
 > `LayeredEditors.Abstractions`, four per-variant `AppSeverity*Brush` tokens in **both** apps,
@@ -224,10 +224,23 @@
 > pages via `BuildGroups`, the save dialog via `DirtySources()`. Two literals agreed only by
 > vigilance before.
 >
-> **Still open in 11.5:** `docs/DANGER-TAXONOMY.md` and the no-raw-hex build tripwire modelled on
-> `GuardUnusedResxKeys`. ⚠ A naive scan flags ~30 LEGITIMATE literals (`JsonHighlightBlock` syntax
-> colours, `ConfigScopeToBrushConverter`, `CodeInline`, and every `BrushHelper.Resolve` fallback),
-> so it needs the opt-out property, not a blanket ban.
+> **The tripwire (`797722c`) — DONE, and it found a real defect.** `GuardRawHexInViewModels` in
+> `Directory.Build.targets`, a build error, modelled on `GuardUnusedResxKeys`.
+>
+> ⛔⛔ The literal it was written to catch was an **accessibility failure, not a style nit**:
+> `SaveChangeEntryViewModel.KindBackground` returned `#F57C00`, giving its white `~` glyph
+> **2.70:1** — under the 4.5:1 text floor and under even the 3.0:1 non-text one. The comment
+> defending it reasoned purely about hue and measured nothing. Now `AppChangeKindModifiedBrush` =
+> `#B45309`: keeps the hue argument (26°, not red's 0°), measures **5.02:1**.
+>
+> ⭐ **Scoping it to view-models dissolved the exception problem.** The earlier note here called
+> for an opt-out property to spare ~30 legitimate literals; scoped to `*ViewModel.cs` /
+> `ViewModels/` there are **zero** exceptions to carve out, because every one of those literals
+> lives in a converter, control or service — colour *definitions* and resolution *backstops*. A
+> view-model returning a colour is different in kind.
+>
+> **`docs/DANGER-TAXONOMY.md` — DONE.** The tenet, the tiers, the matcher, the scope-sensitivity
+> rule, both products' tables (counted, not estimated), and the six guards.
 >
 > ### ⛔⛔ The surface ordering above is not buildable as written
 >
