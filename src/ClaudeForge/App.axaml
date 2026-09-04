@@ -168,6 +168,17 @@
                     <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#874400" />
                     <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
                     <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
+                    <!-- Save-dialog change-kind pills. Same value in both variants ON
+                         PURPOSE: the fill carries a WHITE glyph, and the pair that matters is
+                         glyph-vs-fill (>= 4.5:1, measured: 5.13 / 5.62 / 5.02). Lightening the
+                         fill for the dark theme would raise fill-vs-surface (~2.8:1) at the cost
+                         of the glyph contrast that a user actually reads, and the fill is
+                         redundant with the +/-/~ glyph and its accessible name anyway. Declared
+                         per variant regardless, because ResolveThemed finds nothing in a flat
+                         dictionary. #B45309 replaced #F57C00, which measured 2.70:1. -->
+                    <SolidColorBrush x:Key="AppChangeKindAddedBrush" Color="#2E7D32" />
+                    <SolidColorBrush x:Key="AppChangeKindRemovedBrush" Color="#C62828" />
+                    <SolidColorBrush x:Key="AppChangeKindModifiedBrush" Color="#B45309" />
                     <!-- Group-header labels inside the Browse suggestions picker.
                          Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
                          in all theme variants, so we own this token explicitly. -->
@@ -263,6 +274,17 @@
                     <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#F0A03A" />
                     <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#6BB1F2" />
                     <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#AAAAAA" />
+                    <!-- Save-dialog change-kind pills. Same value in both variants ON
+                         PURPOSE: the fill carries a WHITE glyph, and the pair that matters is
+                         glyph-vs-fill (>= 4.5:1, measured: 5.13 / 5.62 / 5.02). Lightening the
+                         fill for the dark theme would raise fill-vs-surface (~2.8:1) at the cost
+                         of the glyph contrast that a user actually reads, and the fill is
+                         redundant with the +/-/~ glyph and its accessible name anyway. Declared
+                         per variant regardless, because ResolveThemed finds nothing in a flat
+                         dictionary. #B45309 replaced #F57C00, which measured 2.70:1. -->
+                    <SolidColorBrush x:Key="AppChangeKindAddedBrush" Color="#2E7D32" />
+                    <SolidColorBrush x:Key="AppChangeKindRemovedBrush" Color="#C62828" />
+                    <SolidColorBrush x:Key="AppChangeKindModifiedBrush" Color="#B45309" />
                     <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
                     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />

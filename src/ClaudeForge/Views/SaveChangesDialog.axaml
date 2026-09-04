@@ -27,6 +27,9 @@
              grids so a tier looks the same wherever it appears. -->
         <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <!-- The change-kind pill's fill. A converter rather than a bound hex string, so the
+             colour lives in the theme and not in SaveChangeEntryViewModel. -->
+        <conv:ChangeKindToBrushConverter x:Key="KindToBrush" />
     </Window.Resources>
 
     <DockPanel>
@@ -270,7 +273,7 @@
                                                                    VerticalAlignment="Center"
                                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                                                    ToolTip.Tip="{Binding DangerAccessibleText}" />
-                                                        <Border Background="{Binding KindBackground}"
+                                                        <Border Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
                                                                 CornerRadius="3"
                                                                 Padding="4,1"
                                                                 HorizontalAlignment="Left"
