@@ -121,6 +121,45 @@ variant, so the **light**-theme red and amber were what shipped into dark
 mode. Severity travels as an enum now; a colour string could also be
 malformed, which is why the old code needed a fallback branch at all.
 
+⛔⛔ **NORMATIVE: a view-model must not name a colour.** `GuardRawHexInViewModels`
+in `Directory.Build.targets` fails the build on a hex literal under
+`*ViewModel.cs` or `ViewModels/` (comments stripped, so prose citing an old
+hex is fine). Declare an `App*Brush` per variant in each app's `App.axaml`
+and bind through a converter over the enum.
+
+⚠ The rule is scoped to view-models, not to the repo: `App.axaml` **is** the
+token declaration, and converters, controls and `BrushHelper` fallbacks are
+resolution backstops. A view-model returning a colour is different in kind —
+it puts presentation in the layer with no view, and beyond the theme's reach
+in both variants at once.
+
+⛔ **This is an accessibility rule, not a tidiness one.** The literal that
+prompted the guard, `SaveChangeEntryViewModel.KindBackground`'s `#F57C00`,
+gave its white glyph **2.70:1** — below the 4.5:1 text floor and below even
+the 3.0:1 non-text one — defended by a comment that reasoned about hue and
+measured nothing. A colour nobody can see in the theme files is a colour
+nobody re-measures.
+
+### `AppChangeKind*Brush` — the save dialog's change pills
+
+| Token | Both variants | White glyph |
+|---|---|---|
+| `AppChangeKindAddedBrush` | `#2E7D32` | 5.13:1 |
+| `AppChangeKindRemovedBrush` | `#C62828` | 5.62:1 |
+| `AppChangeKindModifiedBrush` | `#B45309` | 5.02:1 |
+
+⚠ **Identical in light and dark ON PURPOSE — the one family where that is
+correct.** A severity token is a *foreground* on a themed surface, so one
+literal for both themes is exactly the bug above. A change-kind token is a
+*fill* behind a white glyph: the pair that must hold is glyph-vs-fill, and
+lightening the fill for dark mode trades that away for fill-vs-surface
+(~2.8:1), which is redundant with the `+`/`-`/`~` glyph and its accessible
+name. Declared per variant regardless, because a themed lookup finds nothing
+in a flat dictionary. Guards: `AppChangeKindTokenCoverageTests` (declared in
+both variants of both apps, **and** every fill ≥ 4.5:1 against white) and
+`ChangeKindThemedLookupTests` (the converter reaches the token rather than its
+fallback — which mirrors the light value, so nothing else can tell).
+
 ⚠ **Never look these up with `BrushHelper.Resolve`.** They live in
 `ThemeDictionaries`, and a themed key looked up with a null variant
 resolves to nothing — the caller silently takes its fallback hex. Use
