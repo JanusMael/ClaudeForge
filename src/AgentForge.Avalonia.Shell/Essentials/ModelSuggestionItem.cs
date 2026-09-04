@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+﻿namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 /// <summary>
 /// One entry in the Essentials model picker's suggestion list. Carries both the

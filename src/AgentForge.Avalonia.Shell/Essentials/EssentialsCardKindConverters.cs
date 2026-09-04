@@ -1,7 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 /// <summary>
 /// One-way value converters that map an <see cref="EssentialsCardKind"/>

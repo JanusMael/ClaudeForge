@@ -1,6 +1,5 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
-using System.Collections.ObjectModel;
-using Bennewitz.Ninja.ClaudeForge.Localization;
+﻿using System.Collections.ObjectModel;
+using System.Globalization;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,7 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 /// <summary>
 /// discriminator for which editor surface a single
@@ -199,7 +198,7 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// display brand names ("Opus 4.8") while committing model ids, and fuzzy-match
     /// either. Set only on the model card via its object initializer.
     /// </summary>
-    public IReadOnlyList<ModelSuggestionItem>? ModelSuggestions { get; init; }
+    public IReadOnlyList<ModelSuggestionItem>? ModelSuggestions { get; }
 
     /// <summary>True when the editor should be disabled (e.g. effort on a model that exposes none).</summary>
     [ObservableProperty] private bool _enumDisabled;
@@ -221,7 +220,14 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// spurious <see cref="EnumValue"/>=null write. Preserves the current
     /// selection when it is still offered.
     /// </summary>
-    internal void SetFilteredOptions(IEnumerable<string> options)
+    /// <remarks>
+    /// ⚠ Public, not internal, since the card moved to the shell: the orchestrator that narrows
+    /// an inter-related dropdown is each product's own <c>BuildCards</c> host, which is a separate
+    /// assembly. Same for <see cref="IsLoading"/>. Widening these beat adding an
+    /// <c>InternalsVisibleTo</c> for the apps — an app is an ordinary consumer of the shell, and a
+    /// friend grant would have quietly exposed every other internal too.
+    /// </remarks>
+    public void SetFilteredOptions(IEnumerable<string> options)
     {
         string? keep = EnumValue;
         bool wasLoading = IsLoading;
@@ -284,44 +290,39 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// the value-changed partial methods don't recurse through the
     /// accessor on every UI binding update.
     /// </summary>
-    internal bool IsLoading { get; set; }
+    public bool IsLoading { get; set; }
 
-    public EssentialsCardViewModel(
-        string id,
-        string title,
-        string body,
-        AppSeverity severity,
-        EssentialsCardKind kind,
-        string viewInGroupTitle,
-        bool isEnvVarCard,
-        Func<EssentialsCardViewModel, Task> readAsync,
-        Func<EssentialsCardViewModel, Task> writeAsync,
-        IReadOnlyList<string>? enumOptions = null,
-        Func<EssentialsCardViewModel, bool>? isDangerPredicate = null,
-        string dangerBannerText = "",
-        string amberCalloutText = "",
-        bool allowsFreeForm = false)
+    /// <param name="options">
+    /// The card's whole definition. A record rather than a positional list — see
+    /// <see cref="EssentialsCardOptions"/> for why.
+    /// </param>
+    public EssentialsCardViewModel(EssentialsCardOptions options)
     {
-        Id = id;
-        Title = title;
-        Body = body;
-        Severity = severity;
-        Kind = kind;
-        ViewInGroupTitle = viewInGroupTitle;
-        ViewInGroupLabel = string.IsNullOrEmpty(viewInGroupTitle)
+        ArgumentNullException.ThrowIfNull(options);
+
+        Id = options.Id;
+        Title = options.Title;
+        Body = options.Body;
+        Severity = options.Severity;
+        Kind = options.Kind;
+        ViewInGroupTitle = options.ViewInGroupTitle;
+        ViewInGroupLabel = string.IsNullOrEmpty(options.ViewInGroupTitle)
             ? string.Empty
             : string.Format(
-                Strings.LabelEssentialsViewInGroupFmt,
-                viewInGroupTitle);
-        IsEnvVarCard = isEnvVarCard;
-        _readAsync = readAsync;
-        _writeAsync = writeAsync;
-        EnumOptions = enumOptions ?? Array.Empty<string>();
+                CultureInfo.CurrentCulture,
+                options.ViewInGroupLabelFormat,
+                options.ViewInGroupTitle);
+        IsEnvVarCard = options.IsEnvVarCard;
+        _readAsync = options.ReadAsync;
+        _writeAsync = options.WriteAsync;
+        EnumOptions = options.EnumOptions ?? [];
         FilteredOptions = new ObservableCollection<string>(EnumOptions);
-        AllowsFreeForm = allowsFreeForm;
-        _isDangerPredicate = isDangerPredicate;
-        DangerBannerText = dangerBannerText;
-        AmberCalloutText = amberCalloutText;
+        AllowsFreeForm = options.AllowsFreeForm;
+        _isDangerPredicate = options.IsDangerPredicate;
+        DangerBannerText = options.DangerBannerText;
+        AmberCalloutText = options.AmberCalloutText;
+        ModelSuggestions = options.ModelSuggestions;
+        JsonPathFilter = options.JsonPathFilter;
 
         // Hook collection-changed on the StringList so adds/removes
         // route to the writer + danger-predicate refresh.
@@ -480,5 +481,5 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// for cards whose home group is a schema-driven settings page; left
     /// empty for cards that target a non-schema editor (Environment).
     /// </summary>
-    public string JsonPathFilter { get; init; } = string.Empty;
+    public string JsonPathFilter { get; }
 }

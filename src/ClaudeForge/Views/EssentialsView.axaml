@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:ess="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
@@ -48,7 +49,7 @@
             <!-- Card list -->
             <ItemsControl ItemsSource="{Binding Cards}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:EssentialsCardViewModel">
+                    <DataTemplate x:DataType="ess:EssentialsCardViewModel">
 
                         <Border BorderBrush="{DynamicResource AppPanelBorderBrush}"
                                 BorderThickness="1"
@@ -125,13 +126,13 @@
                                      future theme changes that strip Content from the auto-derive. -->
                                 <CheckBox IsThreeState="True"
                                           IsChecked="{Binding BoolValue, Mode=TwoWay}"
-                                          IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsBool}}"
+                                          IsVisible="{Binding Kind, Converter={x:Static ess:EssentialsCardKindConverters.IsBool}}"
                                           Content="{Binding Title}"
                                           AutomationProperties.Name="{Binding Title}" />
 
                                 <!-- Int: NumericUpDown.  Empty-text → null binds correctly to int?. -->
                                 <NumericUpDown Value="{Binding IntValue, Mode=TwoWay}"
-                                               IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsInt}}"
+                                               IsVisible="{Binding Kind, Converter={x:Static ess:EssentialsCardKindConverters.IsInt}}"
                                                Minimum="0"
                                                Maximum="999999"
                                                Increment="1000"
@@ -196,7 +197,7 @@
 
                                 <!-- StringList: existing entries + add-row textbox + Add button. -->
                                 <StackPanel Spacing="4"
-                                            IsVisible="{Binding Kind, Converter={x:Static vm:EssentialsCardKindConverters.IsStringList}}">
+                                            IsVisible="{Binding Kind, Converter={x:Static ess:EssentialsCardKindConverters.IsStringList}}">
                                     <ItemsControl ItemsSource="{Binding StringListValues}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="x:String">
@@ -209,7 +210,7 @@
                                                             BorderBrush="Transparent"
                                                             Foreground="{DynamicResource AppLinkBrush}"
                                                             Content="{x:Static loc:Strings.LabelEssentialsRemoveListEntry}"
-                                                            Command="{Binding $parent[ItemsControl].((vm:EssentialsCardViewModel)DataContext).RemoveStringListEntryCommand}"
+                                                            Command="{Binding $parent[ItemsControl].((ess:EssentialsCardViewModel)DataContext).RemoveStringListEntryCommand}"
                                                             CommandParameter="{Binding}"
                                                             AutomationProperties.Name="{Binding StringFormat='Remove {0}'}" />
                                                     <TextBlock Text="{Binding}" VerticalAlignment="Center" />

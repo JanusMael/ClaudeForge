@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:ess="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Controls.ModelPicker">
 
@@ -15,14 +16,14 @@
     <StackPanel Orientation="Horizontal" Spacing="4">
         <ctrl:FuzzyModelAutoCompleteBox Name="FreeFormBox"
                                         ItemsSource="{Binding $parent[ctrl:ModelPicker].Suggestions}"
-                                        ValueMemberBinding="{Binding Value, x:DataType=vm:ModelSuggestionItem}"
+                                        ValueMemberBinding="{Binding Value, x:DataType=ess:ModelSuggestionItem}"
                                         Text="{Binding $parent[ctrl:ModelPicker].Value, Mode=TwoWay, Delay=600}"
                                         PlaceholderText="{Binding $parent[ctrl:ModelPicker].Watermark}"
                                         MinimumPrefixLength="0"
                                         MinWidth="260"
                                         AutomationProperties.Name="{Binding $parent[ctrl:ModelPicker].AutomationLabel}">
             <ctrl:FuzzyModelAutoCompleteBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:ModelSuggestionItem">
+                <DataTemplate x:DataType="ess:ModelSuggestionItem">
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding Detail}" FontSize="11" Opacity="0.6" />

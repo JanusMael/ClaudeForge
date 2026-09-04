@@ -1,6 +1,7 @@
 ﻿using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
