@@ -240,7 +240,10 @@ Same underlying rule as the `TabControl` entry above — the container's name do
 | `TabItem` | the item's `ToString()` → announces the **type name** | override `ToString()` |
 | `TreeViewItem` | **nothing — an empty name** | `AutomationProperties.Name` on the container, via a `Style` |
 | `ListBoxItem` | the item's `ToString()` → announces the **type name** | either works — see the `ListBox` entry below |
+| `ComboBoxItem` | the item's `ToString()` → announces the **type name**, and a `record`'s synthesized one announces **every property** | override `ToString()` |
 | `ItemsControl` | **not in this class** — its `ContentPresenter` takes no focus, so the name comes from whatever focusable control the template contains | name that control |
+
+⚠ **A `record` used as an `ItemsSource` item is the worst case of the `ToString()` fallback**, because the synthesized implementation is plausible-looking text rather than an obviously-wrong type name: `EssentialsEnumOption { Value = NotSet, Label = Not set, Description = Writes nothing… }` announced for every row. Measured on `OpenCodeEssentialsView`'s picker: with `public override string ToString() => Label;` the four rows announce `Not set` / `Never update` / `Notify only` / `Update automatically`. ⭐ Return the **label**, never the committed value — the value is an internal discriminator.
 
 ⛔⛔ **A `ToString()` override does NOT fix a `TreeViewItem`.** Measured: a probe override returning `"PROBE-" + Title` on `NavigationNodeViewModel` never reached UIA — all 26 rows stayed empty. The empty name is itself the tell, because `ToString()` can never *return* empty.
 
