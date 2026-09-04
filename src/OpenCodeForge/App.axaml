@@ -9,6 +9,7 @@
              xmlns:upd="using:Bennewitz.Ninja.OpenCode.Avalonia.Updates"
              xmlns:kb="using:Bennewitz.Ninja.OpenCode.Avalonia.Keybinds"
              xmlns:art="using:Bennewitz.Ninja.OpenCode.Avalonia.Artifacts"
+             xmlns:ess="using:Bennewitz.Ninja.OpenCode.Avalonia.Essentials"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
              x:Class="Bennewitz.Ninja.OpenCodeForge.App"
@@ -139,6 +140,10 @@
 
         <DataTemplate DataType="art:OpenCodeArtifactsPageViewModel">
             <art:OpenCodeArtifactsPageView />
+        </DataTemplate>
+
+        <DataTemplate DataType="ess:OpenCodeEssentialsViewModel">
+            <ess:OpenCodeEssentialsView />
         </DataTemplate>
 
         <!-- MaxHeight rather than Height so a config with two rules does not leave a tall empty

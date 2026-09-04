@@ -1393,4 +1393,49 @@
   <data name="ArtifactsNoProject" xml:space="preserve">
     <value>No project folder set, so only the global and cross-tool sources are listed. Enter one above to see the agents, commands, skills and rules a project contributes.</value>
   </data>
+  <data name="EssentialsPageTitle" xml:space="preserve">
+    <value>Essentials</value>
+  </data>
+  <data name="EssentialsPageSubtitle" xml:space="preserve">
+    <value>The settings that most change what OpenCode is allowed to do, what it costs, and which file it reads. Everything here is also reachable from its own settings page.</value>
+  </data>
+  <data name="EssentialsViewInGroupFmt" xml:space="preserve">
+    <value>View in {0}</value>
+  </data>
+  <data name="EssentialsCardAutoupdateTitle" xml:space="preserve">
+    <value>Auto-update</value>
+  </data>
+  <data name="EssentialsCardAutoupdateBody" xml:space="preserve">
+    <value>Whether OpenCode replaces its own binary when a release appears. "Notify only" tells you a release exists and installs nothing, which keeps a long session on the version it started with.</value>
+  </data>
+  <data name="EssentialsCardRulesTitle" xml:space="preserve">
+    <value>Rules in effect</value>
+  </data>
+  <data name="EssentialsCardRulesBody" xml:space="preserve">
+    <value>The global AGENTS.md OpenCode loads into every session, whichever directory it comes from. Project rules are not shown here — they depend on which project you are in.</value>
+  </data>
+  <data name="EssentialsRulesGlobalFmt" xml:space="preserve">
+    <value>Global rules: {0}</value>
+  </data>
+  <data name="EssentialsRulesNone" xml:space="preserve">
+    <value>No global AGENTS.md, so OpenCode starts every session with no global rules.</value>
+  </data>
+  <data name="EssentialsRulesShadowedBanner" xml:space="preserve">
+    <value>Both your redirected config directory and the default ~/.config/opencode contain an AGENTS.md. OpenCode may be reading only the default one and silently ignoring yours — this is reported upstream and could not be confirmed against the installed version, so treat it as a thing to check rather than a certainty.</value>
+  </data>
+  <data name="EssentialsCardActiveConfigTitle" xml:space="preserve">
+    <value>Active config file</value>
+  </data>
+  <data name="EssentialsCardActiveConfigBody" xml:space="preserve">
+    <value>Which file this app is editing. OpenCode's own "debug paths" command reports the default directory even when OPENCODE_CONFIG_DIR points somewhere else, so this is worth stating plainly.</value>
+  </data>
+  <data name="EssentialsActiveConfigFromVarFmt" xml:space="preserve">
+    <value>{0}  (from {1})</value>
+  </data>
+  <data name="EssentialsActiveConfigInline" xml:space="preserve">
+    <value>OPENCODE_CONFIG_CONTENT is set — OpenCode is reading its configuration from that variable, not from a file.</value>
+  </data>
+  <data name="EssentialsActiveConfigInlineBanner" xml:space="preserve">
+    <value>OPENCODE_CONFIG_CONTENT overrides the files. Edits saved here are written to disk but will not change what OpenCode reads until that variable is cleared.</value>
+  </data>
 </root>

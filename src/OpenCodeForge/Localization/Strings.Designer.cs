@@ -71,4 +71,7 @@ public static class Strings
 
     /// <summary>Navigation header for the artifacts page.</summary>
     public static string SectionArtifacts => Get(nameof(SectionArtifacts));
+
+    /// <summary>Navigation header for the Essentials page.</summary>
+    public static string SectionEssentials => Get(nameof(SectionEssentials));
 }

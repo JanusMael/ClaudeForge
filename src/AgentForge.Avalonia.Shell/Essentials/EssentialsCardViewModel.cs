@@ -31,6 +31,29 @@ public enum EssentialsCardKind
 
     /// <summary>Add-row TextBox for a string list (sandbox.allowedDomains).</summary>
     StringList,
+
+    /// <summary>
+    /// ComboBox over <see cref="EssentialsEnumOption"/>s, whose display label is separate from the
+    /// token they commit.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>The plan calls this the "tri-state enum" kind</b>, after its first user —
+    /// <c>autoupdate</c>'s <c>true | false | "notify"</c> union. The name is not carried over
+    /// because the mechanism is not three-state: absent makes four, and a value matching no arm
+    /// makes five. What actually distinguishes it from <see cref="EnumString"/> is the label/value
+    /// split, so that is what it is named for.
+    /// </remarks>
+    LabelledEnum,
+
+    /// <summary>
+    /// Read-only card reporting resolver state rather than editing a key.
+    /// </summary>
+    /// <remarks>
+    /// The first two are OpenCode's "Rules in effect" and "Active config file" — questions whose
+    /// answer is computed from the environment and the filesystem, and which no single JSON key
+    /// holds. A card of this kind has no writer at all; see the constructor's invariant.
+    /// </remarks>
+    Derived,
 }
 
 /// <summary>
@@ -134,7 +157,12 @@ public partial class EssentialsCardViewModel : ObservableObject
     public string DangerBannerText { get; }
 
     private readonly Func<EssentialsCardViewModel, Task> _readAsync;
-    private readonly Func<EssentialsCardViewModel, Task> _writeAsync;
+
+    /// <summary>
+    /// Null on a <see cref="EssentialsCardKind.Derived"/> card, and only there — the constructor
+    /// enforces the pairing in both directions.
+    /// </summary>
+    private readonly Func<EssentialsCardViewModel, Task>? _writeAsync;
 
     /// <summary>One-time amber callout shown on first arrival from a synthetic search hit.</summary>
     [ObservableProperty] private bool _showAmberCallout;
@@ -251,6 +279,43 @@ public partial class EssentialsCardViewModel : ObservableObject
         }
     }
 
+    // ── LabelledEnum ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// The closed option set for a <see cref="EssentialsCardKind.LabelledEnum"/> card, in the
+    /// order they should be offered. Empty on every other kind.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Ordered by the host, and the order is a statement: <c>autoupdate</c>'s options run least
+    /// to most automatic rather than following the schema's arms, because that is the axis the
+    /// user is moving along. The same ordering its full editor uses.
+    /// </remarks>
+    public IReadOnlyList<EssentialsEnumOption> LabelledOptions { get; }
+
+    /// <summary>
+    /// The chosen option, or <see langword="null"/> when the card is showing a value it has no
+    /// option for.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>The single source of truth for this kind — it deliberately does NOT mirror into
+    /// <see cref="EnumValue"/>.</b> Measured before deciding: <c>EnumValue</c>'s only readers are
+    /// the Claude app's own orchestrator and its AXAML, so nothing generic needs the shadow copy,
+    /// and keeping two properties in step is how a card starts writing twice per edit.
+    /// </remarks>
+    [ObservableProperty] private EssentialsEnumOption? _selectedOption;
+
+    // ── Derived ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The resolved answer a <see cref="EssentialsCardKind.Derived"/> card reports — a path, a
+    /// filename, a short sentence. Empty on every other kind.
+    /// </summary>
+    /// <remarks>
+    /// Set by the card's <see cref="ReadAsync"/> delegate, which is where the resolver runs. The
+    /// card itself resolves nothing, exactly as it computes no value for any other kind.
+    /// </remarks>
+    [ObservableProperty] private string _derivedText = string.Empty;
+
     /// <summary>Items for <see cref="EssentialsCardKind.StringList"/>.</summary>
     public ObservableCollection<string> StringListValues { get; } = new();
 
@@ -299,6 +364,7 @@ public partial class EssentialsCardViewModel : ObservableObject
     public EssentialsCardViewModel(EssentialsCardOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ValidateKindPairing(options);
 
         Id = options.Id;
         Title = options.Title;
@@ -317,6 +383,7 @@ public partial class EssentialsCardViewModel : ObservableObject
         _writeAsync = options.WriteAsync;
         EnumOptions = options.EnumOptions ?? [];
         FilteredOptions = new ObservableCollection<string>(EnumOptions);
+        LabelledOptions = options.LabelledOptions ?? [];
         AllowsFreeForm = options.AllowsFreeForm;
         _isDangerPredicate = options.IsDangerPredicate;
         DangerBannerText = options.DangerBannerText;
@@ -356,9 +423,70 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// Persist the card's current value to the underlying accessor.
     /// Called on every value change (after the IsLoading guard clears).
     /// </summary>
+    /// <remarks>
+    /// A <see cref="EssentialsCardKind.Derived"/> card has nothing to persist and completes
+    /// silently. It returns rather than throws because every caller is a fire-and-forget
+    /// <c>_ = WriteAsync()</c> off a property-changed partial, where a throw would surface as an
+    /// unobserved task exception far from its cause — and the constructor has already rejected the
+    /// only way this can be reached wrongly.
+    /// </remarks>
     public Task WriteAsync()
     {
-        return _writeAsync(this);
+        return _writeAsync?.Invoke(this) ?? Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Reject a card whose kind and payload disagree, at construction rather than at first render.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Both directions, deliberately.</b> A <see cref="EssentialsCardKind.Derived"/> card
+    /// carrying a writer would look editable to a future reader and silently persist nothing; a
+    /// non-derived card WITHOUT one would drop every edit. Neither has a visible symptom — the
+    /// card renders, the value moves on screen, and the file does not change — which is the
+    /// failure shape this project has paid for repeatedly.
+    /// </para>
+    /// <para>
+    /// Likewise a <see cref="EssentialsCardKind.LabelledEnum"/> with no options renders an empty
+    /// picker, which reads as "this setting has no choices" rather than as a wiring mistake.
+    /// </para>
+    /// </remarks>
+    private static void ValidateKindPairing(EssentialsCardOptions options)
+    {
+        bool isDerived = options.Kind == EssentialsCardKind.Derived;
+
+        if (isDerived && options.WriteAsync is not null)
+        {
+            throw new ArgumentException(
+                $"Card '{options.Id}' is Derived and must not supply a writer: a derived card "
+                + "reports resolver state and has no key to persist.",
+                nameof(options));
+        }
+
+        if (!isDerived && options.WriteAsync is null)
+        {
+            throw new ArgumentException(
+                $"Card '{options.Id}' is {options.Kind} and must supply a writer, or every edit "
+                + "to it is silently discarded.",
+                nameof(options));
+        }
+
+        bool isLabelled = options.Kind == EssentialsCardKind.LabelledEnum;
+
+        if (isLabelled && (options.LabelledOptions is null || options.LabelledOptions.Count == 0))
+        {
+            throw new ArgumentException(
+                $"Card '{options.Id}' is LabelledEnum and must supply at least one option.",
+                nameof(options));
+        }
+
+        if (!isLabelled && options.LabelledOptions is { Count: > 0 })
+        {
+            throw new ArgumentException(
+                $"Card '{options.Id}' is {options.Kind} and must not supply LabelledOptions — "
+                + "they would never be rendered.",
+                nameof(options));
+        }
     }
 
     // ── Value-changed routers (auto-write) ────────────────────────────
@@ -407,6 +535,19 @@ public partial class EssentialsCardViewModel : ObservableObject
     {
         Log.Information("[Essentials.UserEdit] card={Id} kind=Enum value={Value} suppressed={Suppressed}",
             Id, value ?? "(null)", IsLoading);
+        RecomputeIsDanger();
+        if (IsLoading)
+        {
+            return;
+        }
+
+        _ = WriteAsync();
+    }
+
+    partial void OnSelectedOptionChanged(EssentialsEnumOption? value)
+    {
+        Log.Information("[Essentials.UserEdit] card={Id} kind=LabelledEnum value={Value} suppressed={Suppressed}",
+            Id, value?.Value ?? "(null)", IsLoading);
         RecomputeIsDanger();
         if (IsLoading)
         {
