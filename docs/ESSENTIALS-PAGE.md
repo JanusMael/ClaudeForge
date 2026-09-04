@@ -50,15 +50,30 @@ Wired into `IClaudeConfigClient.Env` alongside `Permissions` / `Hooks` / `McpSer
 ### Layer 2 — GUI: synthetic Essentials nav page
 
 ```
-src/ClaudeForge/ViewModels/
-├── EssentialsViewModel.cs           (orchestrator — builds 11 cards, dispatches read/write)
+src/AgentForge.Avalonia.Shell/Essentials/        ← product-NEUTRAL, shared by both apps
 ├── EssentialsCardViewModel.cs       (per-card model — value, source labels, danger predicate)
-└── EssentialsCardKindConverters.cs  (Kind → bool converters for AXAML IsVisible bindings)
+├── EssentialsCardOptions.cs         (the card definition record — see below)
+├── EssentialsCardKindConverters.cs  (Kind → bool converters for AXAML IsVisible bindings)
+└── ModelSuggestionItem.cs           (label + committed value for a free-form picker)
+
+src/ClaudeForge/ViewModels/
+└── EssentialsViewModel.cs           (orchestrator — CURATION, builds 11 cards, read/write)
 
 src/ClaudeForge/Views/
 ├── EssentialsView.axaml             (card list + per-Kind editor templates)
 └── EssentialsView.axaml.cs          (empty code-behind)
 ```
+
+⭐ **The card view-models are in the shell; the view and the curation are not.** Phase 12 slice 1
+moved the neutral half so OpenCodeForge can reuse it. Each app keeps its **own**
+`EssentialsView.axaml` — deliberately, since OpenCode adds two card kinds that render differently
+— and its own `BuildCards`, which is where the product judgement lives.
+
+⛔ **The shell cannot read a product's `Strings.resx`.** Every user-visible word on a card arrives
+through `EssentialsCardOptions`, including `ViewInGroupLabelFormat`. ClaudeForge applies its own
+format once, in `EssentialsViewModel.Card()`; the record's `"{0}"` default is a legitimate no-op
+for a host with no wording, which makes it indistinguishable from a host that FORGOT to supply one
+— so `EssentialsCardOptionsTests` asserts against the production resource rather than a copy.
 
 `EssentialsCardKind` is a flat enum (Bool / Int / EnumString / StringList) discriminating which inline editor surface a card renders. Kept as an enum (rather than a polymorphic class hierarchy) so the AXAML can switch on it via Kind→bool converters and so the card list is a single `ObservableCollection<EssentialsCardViewModel>` instead of a polymorphic list.
 
@@ -107,7 +122,12 @@ All new user-visible strings (page header + card titles + bodies + danger banner
 
 1. Add the `Strings.resx` entries (Title / Body / optionally DangerBanner). Mirror in `Strings.zh-CN.resx` with a **real** translation — `LocalizationParityTests` Contract #2 rejects `TODO` placeholders and Contract #1 requires the key in every locale.
 2. Append the `Designer.cs` accessor properties.
-3. In `EssentialsViewModel.BuildCards`, append a new `list.Add(new EssentialsCardViewModel(...))` block.
+3. In `EssentialsViewModel.BuildCards`, append a `Card(new EssentialsCardOptions { ... })` entry.
+   ⚠ An options **record**, not positional arguments — the constructor was 14 parameters deep and
+   Phase 12 adds more. `Card()` supplies the deep-link format so you do not repeat it.
+   ⚠ Set `JsonPathFilter` if the card targets a schema page, and add the id to
+   `EssentialsCardOptionsTests.EveryCardKeepsTheDeepLinkPathItTargets` — that property had NO
+   coverage until a canary found it, and losing it degrades the deep link silently.
 4. Add the card id to `ClaudeSyntheticSearch.EssentialsTriggers` with at least one trigger phrase, and its localized title to `ClaudeSyntheticSearch.EssentialsCardTitle`.
 5. Update `EssentialsViewModelTests.Cards_PinnedSet_HasElevenCards` to the new count.
 6. Update this doc's "What's pinned" table.
