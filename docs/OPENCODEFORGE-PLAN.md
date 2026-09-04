@@ -3003,9 +3003,26 @@ Move the product-neutral half of `src/ClaudeForge` into `AgentForge.Avalonia.She
 `MainWindow` chrome, `NavigationNodeViewModel`, `NavDeepPath`, `IDeepNavigable`,
 `Status/*`, `SearchViewModel`, `SaveChangesDialog`, `WindowStateService`, `DebugFlags`,
 `AppUpdateService`, `UpdateBanner`, `InstallCommandPanel` + `InstallCommandViewModel`,
-Add-to-PATH, `EssentialsCardViewModel` + `EssentialsCardKind*` + `EssentialsView`,
+Add-to-PATH, ~~`EssentialsCardViewModel` + `EssentialsCardKind*`~~ + `EssentialsView`,
 `BackupRestoreViewModel`, `AboutEditorViewModel`, `WelcomeView`.
 Split `Strings.resx` (Problem 8) in the same phase.
+
+> ✅ **The Essentials VIEW-MODELS are already done — `7ac2223`, ahead of this phase**, because
+> Phase 12 needed them. `EssentialsCardViewModel`, `EssentialsCardKind`,
+> `EssentialsCardKindConverters` and `ModelSuggestionItem` are in
+> `AgentForge.Avalonia.Shell/Essentials/`, and the 14-parameter constructor became
+> `EssentialsCardOptions` on the way. **`EssentialsView` deliberately did NOT move** — the shell
+> still has no AXAML, and each app wants its own card view anyway.
+>
+> ⚠ **Note what that implies for this phase's risk.** The shell holding no AXAML is the thing that
+> makes `MainWindow` / `WelcomeView` / `UpdateBanner` / `EssentialsView` expensive: the first view
+> to move brings AXAML compilation, a `LayeredEditors.Avalonia` reference, and the resx-split
+> question with it. Budget that once, not four times.
+>
+> ⭐ Also spent: the three `Messages/` records moved from `LayeredEditors.Avalonia` down to
+> `LayeredEditors.ViewModels` at **zero** call-site cost (they have no using directives and the
+> target project already uses the same namespace prefix). Any other view-model-layer type stranded
+> in the control library can move the same way.
 
 Diagnostics come along too: `AvaloniaDiagnostics` wiring, the F12 `LiveLogWindow` toggle,
 and the new Shift+F12 config-activity `LiveTailWindow` — plus the ownerless-helper-window
@@ -4546,9 +4563,30 @@ depends on Phase 5, so it can be pulled earlier if the shell extraction lands cl
 
 ### Phase 12 — OpenCode Essentials page
 
-The card infrastructure already moved to the shell in Phase 5. Here: add the two new card
-kinds (derived/read-only, tri-state enum) and write `OpenCodeEssentialsViewModel.BuildCards`
-for the 17 cards above. Depends on Phase 11 for cards #16/#17, which report resolver state.
+> ⛔⛔ **This section used to open "the card infrastructure already moved to the shell in Phase 5".
+> It had not** — Phase 5 is still largely unspent, and the shell holds **no AXAML at all**. Taken
+> literally the sentence sends you into the plan's own ⚠⚠ highest-risk phase (shell gains AXAML
+> compilation, a control-library reference, the resx split) before a single card exists. Third
+> ordering assumption in this plan that did not hold; see the Phase 11.5 notes for the other two.
+>
+> ✅ **Slice 1 (`7ac2223`) — DONE, on the agreed narrower route: the card VIEW-MODELS moved, the
+> views did not.** `EssentialsCardViewModel`, `EssentialsCardKind`, `EssentialsCardKindConverters`
+> and `ModelSuggestionItem` now live in `AgentForge.Avalonia.Shell/Essentials/`; each app keeps its
+> own `EssentialsView.axaml`, which OpenCodeForge needs anyway since two of its card kinds render
+> differently. ClaudeForge keeps `BuildCards` — the product half.
+>
+> ⭐ The three `Messages/` records moved **down** (`LayeredEditors.Avalonia` →
+> `LayeredEditors.ViewModels`) rather than the shell reaching **up** into a control library for one
+> record. They carry zero using directives and the target project already uses the same namespace
+> prefix, so the move cost **zero call-site edits**.
+>
+> ⭐ The 14-parameter constructor is now `EssentialsCardOptions`, per this plan's own note to
+> convert it "here, where the signature is already being changed".
+
+**Remaining:** add the two new card kinds (derived/read-only, tri-state enum) and write
+`OpenCodeEssentialsViewModel.BuildCards` for the 17 cards above, plus OpenCodeForge's own
+`EssentialsView.axaml` and nav wiring. Depends on Phase 11 for cards #16/#17, which report
+resolver state — 11a/b/c are complete, so that dependency is met.
 
 Re-assert the `IsLoading`-must-not-span-`await` guard here
 (`IntValueWrite_NotSuppressed_WhileReadIsInAsyncPhase`) — that bug class is not
