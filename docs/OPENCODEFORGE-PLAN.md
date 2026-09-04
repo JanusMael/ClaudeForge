@@ -2327,7 +2327,7 @@ script's install paths are name-derived, so they cannot be shared.
 | Workflow | Change |
 |---|---|
 | `release.yml` | `APP_NAME` is already an env var — good, but the publish matrix gains an **app dimension** (6 RIDs × 2 apps = 12 jobs), the download table (6 rows), the install instructions, and the explicit `gh release create` artifact list all become per-app. Plus the tag strategy above. |
-| `ci.yml` | Builds the `.slnx`, so new projects come along free — but the RID-qualified restore note applies to both app csprojs, and the smoke gate needs a per-app run. ⛔⛔ **The Trim Check passes for OpenCodeForge without trimming it** — see below. |
+| `ci.yml` | Builds the `.slnx`, so new projects come along free — but the RID-qualified restore note applies to both app csprojs, and the smoke gate needs a per-app run. ✅ **Trim Check fixed 2026-09-04** — it now trims OpenCodeForge *and* sees the shared stack, which it never did for **either** app. The workflow itself needed no edit. See below. |
 | `winget-submit.yml` | Per-app; carries the `40c3ebf` lessons (submit builds only from `packaging/winget/*.yaml`; pin `ManifestVersion`; set `[Console]::OutputEncoding`; duplicate guard; signing precondition). |
 | `codeql.yml` | Likely unchanged. |
 | `model-catalog-refresh.yml` | Claude-only; leave. |
@@ -2336,23 +2336,67 @@ script's install paths are name-derived, so they cannot be shared.
 `packaging/` needs a second manifest set (`Bennewitz.Ninja.OpenCodeForge.{yaml,installer,locale}`)
 and `Submit-Winget.ps1` parameterized on package identity.
 
-> ⛔⛔ **The Trim Check is giving false assurance for OpenCodeForge, and the fix is one file.**
-> `src/OpenCodeForge/OpenCodeForge.csproj` sets no `PublishTrimmed`, so its Release publish is not
-> trimmed and an `IL2026` in that app could never fail CI the way it does for ClaudeForge.
+> ✅ **RESOLVED (2026-09-04).** The Trim Check now trims OpenCodeForge and — the part that
+> mattered more — can *see* the shared stack, which it never did for **either** app.
 >
-> **Measured (2026-09-03, phase 12 slice 2)** by publishing it once with
-> `-p:PublishTrimmed=true -p:TrimMode=link`: exactly **one** error, and it is **not** in any
-> OpenCode project —
-> `src/AgentForge.Sdk/McpServers/McpServersAccessor.cs(236,17): error IL2026` on
-> `JsonArray.Add<T>`. Everything under `OpenCodeForge` / `OpenCode.Avalonia` / `OpenCode.Sdk`
-> trims clean today, including the Essentials page added in that slice.
+> ⛔⛔ **All three premises this was filed under (2026-09-03) were wrong, and the wrong one was
+> load-bearing.** Recorded rather than quietly overwritten, because the way each was wrong is the
+> reusable part.
 >
-> ClaudeForge does not hit it because its csproj pulls a Release-only `ILLink.Suppressions.xml`
-> through `<_ILLinkSuppressions>` — note the **underscore**; the `ILLinkSuppressions` spelling most
-> guides show is silently ignored, which that csproj's own comment already records. OpenCodeForge
-> has no such file. So the job is: fix or suppress that one call site, enable `PublishTrimmed`,
-> verify the app still renders after a trimmed publish (a clean trim log is not proof the XAML
-> survived), and only then does CI mean what it says.
+> **1. "ClaudeForge does not hit it because of its `ILLink.Suppressions.xml`" — FALSE.** That file
+> names **zero** `AgentForge.*` assemblies (grepped). ClaudeForge was never protected; it was
+> equally blind. *I inferred the cause from adjacency — a suppressions file existed, so it must be
+> what made the difference — and never tested it.* Re-measured here by canary: with the offending
+> cast removed and `IsTrimmable` in place, **both** apps' publishes fail on the named `IL2026`
+> (`T1`, `T3`); with `src/Directory.Build.props` moved aside, the identical break publishes
+> **exit 0, zero diagnostics** (`T2`). The props file is the eyesight, not the suppressions.
+>
+> **2. "exactly one error" — FALSE; it was first-error masking.** The `IL2026` aborted the build
+> before ILLink ran. Fixing it revealed 4 × `IL2070` in `Avalonia.Controls.DataGrid`, which
+> collapse to a single file-less `IL2104` unless `TrimmerSingleWarn=false`.
+>
+> **3. "the fix is one file" — FALSE; four.** And the gate paid for itself immediately by finding
+> **five more instances of the same defect** in ClaudeForge's own shipping SDK
+> (`PermissionsAccessor` ×2, `HooksAccessor` ×3) — latent and invisible for exactly the same
+> reason.
+>
+> ⭐⭐ **Why a csproj-only change would have made things worse.** The bug was ever visible only
+> because `-p:PublishTrimmed=true` on the **command line** is a *global* MSBuild property: it flows
+> into every project in the graph and switches on each one's Roslyn trim analyser. The same
+> property written inside an app's csproj applies to that app alone. So enabling `PublishTrimmed`
+> in `OpenCodeForge.csproj` and stopping there yields a gate that **trims but still cannot see
+> shared code** — a more convincing false assurance than the one it replaced.
+>
+> **What shipped**
+>
+> | Change | Why |
+> |---|---|
+> | `src/Directory.Build.props` **(new)** — `<IsTrimmable>true</IsTrimmable>` | The actual fix: every shipped assembly becomes trim-**analysed**, not merely trim-**able**. Measured cost **zero** new diagnostics — `TrimMode=link` was already trimming these assemblies, so this changes what is *reported*, not what is *removed*. Scoped to `src/`; `tests/` is never published. Imports the root props explicitly via `GetPathOfFileAbove`, since MSBuild applies only the closest one. |
+> | `McpServersAccessor` + `PermissionsAccessor` ×2 + `HooksAccessor` ×3 | Cast to `(JsonNode?)` to bind the non-generic `IList<JsonNode?>.Add`. Uncast, overload resolution prefers `JsonArray.Add<T>(T?)` — `T` infers to the exact argument type, beating the base-class parameter — and that overload carries `[RequiresUnreferencedCode]`. Genuinely trim-safe: the value is already a `JsonValue` from the non-generic `JsonValue.Create(string?)`. Same trick `SettingsGroupEditorViewModel.BuildPlaceholder` already documents. |
+> | `OpenCodeForge.csproj` — `PublishTrimmed` / `TrimMode=link` under the Release condition, plus the four diagnostic settings | So the app is trimmed at all. Deliberately **no** `SelfContained` / `PublishSingleFile` / `RuntimeIdentifiers`: this app has no `release.yml` pipeline yet and its only Release publish is the CI trim check, which passes those on the command line. Add them with a real release workflow, not before. |
+> | `src/OpenCodeForge/ILLink.Suppressions.xml` **(new)** — DataGrid `IL2070` + `IL2104` only | Third-party, unfixable upstream. The safety argument is *stronger* here than in ClaudeForge: OpenCodeForge instantiates **no** DataGrid (zero `<DataGrid` in its XAML — grepped), so the reflecting path is unreachable; the assembly is present only because `LayeredEditors.Avalonia` package-references it and the Semi bundle carries DataGrid styles. ⚠ `_ILLinkSuppressions` — the **underscore is load-bearing**; the un-prefixed spelling most guides show is silently ignored. |
+>
+> **No `TrimmerRootAssembly` entries, deliberately.** All five of ClaudeForge's roots
+> (`Markdown.Avalonia`, `ColorTextBlock.Avalonia`, `Svg.Model`, `Svg.Custom`,
+> `Svg.Controls.Skia.Avalonia`) are absent from OpenCodeForge's package closure. `Semi.Avalonia`
+> *is* present but emits nothing here — ClaudeForge needs its Semi suppressions only because
+> Svg.Skia widens ILLink's reachability graph into Semi's compiled AXAML, and this app has no
+> Svg.Skia.
+>
+> **Verification.** Suite **3,998 · 0 · 11**, unchanged. Four-way canary (`T1`–`T4` above) in both
+> directions and on both apps. ⭐ **Runtime proof that the XAML survived**, because a clean ILLink
+> log is not that proof: a trimmed `win-x64` publish was launched against a sandboxed config dir
+> and driven through UIA — 16 text elements, all three Essentials cards, the value read from disk,
+> and the picker's four rows still announcing their labels.
+>
+> ⚠ **Unresolved counterexample, recorded rather than smoothed over.** `807087c` (2026-08-18)
+> caught exactly this class of defect — an `IL2026` in `JsoncEditor.Quote` — when
+> `AgentForge.Jsonc` was already its own project with no `IsTrimmable` anywhere. By the behaviour
+> measured above that catch should not have been possible, so the rule is *not* simply "shared
+> libraries are invisible". The likeliest explanation is that the August run differed from the
+> command later written down for it (a global `-p:PublishTrimmed=true`, or `publish.ps1`, would
+> both explain it) — **not verified.** ⛔ **Do not lean on the mechanism; lean on the canary.** If
+> trim breaks ever stop being caught, re-run `T1`/`T2` before trusting a green log.
 
 > **Signing note:** the release flow publishes *unsigned* archives and a developer-machine
 > script signs, re-uploads in place, then submits — CI cannot sign because the certificate

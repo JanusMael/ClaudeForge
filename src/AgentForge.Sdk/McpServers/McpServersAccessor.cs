@@ -233,7 +233,15 @@ internal sealed class McpServersAccessor : IMcpServersAccessor
             JsonArray arr = new();
             foreach (string a in args)
             {
-                arr.Add(JsonValue.Create(a));
+                // The (JsonNode?) cast picks the non-generic IList<JsonNode?>.Add
+                // overload. Uncast, overload resolution prefers JsonArray.Add<T>(T?)
+                // — T infers as JsonValue, an identity match that beats the base-class
+                // JsonNode? parameter — and that generic overload carries
+                // [RequiresUnreferencedCode], failing a trimmed publish with IL2026.
+                // The value itself is already a JsonValue built by the non-generic
+                // JsonValue.Create(string?), so nothing here is reflection-bound.
+                // Same technique as BuildPlaceholder in SettingsGroupEditorViewModel.
+                arr.Add((JsonNode?)JsonValue.Create(a));
             }
 
             obj["args"] = arr;
