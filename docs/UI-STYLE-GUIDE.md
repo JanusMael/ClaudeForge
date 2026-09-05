@@ -74,6 +74,29 @@ Refer to the `App*` tokens in AXAML, not to `SystemControl*` keys.
 Falling back to `SystemControlForegroundBaseMediumBrush` for "muted
 text" works on light theme and disappears on dark.
 
+**Measured, not remembered (2026-09-05).** The `theme-audit` tool
+(from DiffView) inventories what Semi, Fluent and Simple actually define
+per variant — Default fallback, inheritance, brush opacity included — and
+scans this repository for what it references. The result is
+[`docs/theme-audit-report.md`](theme-audit-report.md), regenerated on
+every theme pin bump; [`docs/THEME-AUDIT.md`](THEME-AUDIT.md) says how.
+Two consequences for this section:
+
+- Semi 12.1.0.1 defines **none** of the `SystemControl*` family — the
+  "inconsistent" resolution above was a Fluent key surviving in one
+  variant's dictionary chain and not another's. Seven such references
+  remain in our views today (the report lists them; one,
+  `SystemAccentColorBrush`, is defined by no theme at all).
+- `Resources/Compat/FluentKeys.Semi.axaml` and `SimpleKeys.Semi.axaml`,
+  merged in `App.axaml`, define every Fluent- and Simple-family key Semi
+  lacks, aliased onto Semi's own tokens (`SystemAccentColor` →
+  `SemiBlue5Color`, `SystemChromeMediumColor` → `SemiGrey1Color`, …). A
+  control templated for Fluent — AvaloniaEdit's search panel, the
+  Markdown.Avalonia styles that only load under Fluent — now resolves
+  under every Semi variant, high-contrast ones included. They are a
+  safety net for what we host, not a licence to reference `SystemControl*`
+  in our own AXAML: the `App*` convention stands.
+
 ---
 
 ## 3. App-wide colour primitives
