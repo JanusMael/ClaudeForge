@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -75,6 +75,10 @@ public sealed class LiveTailWindow
             Margin = new Thickness(6, 2),
         };
 
+        // A SelectableTextBlock would otherwise announce its entire buffer as its name.
+        AutomationProperties.SetName(_text, "Live tail output");
+        AutomationProperties.SetHelpText(_text, "Select text and press Ctrl+C to copy it");
+
         _scroller = new ScrollViewer
         {
             Content = _text,
@@ -146,6 +150,9 @@ public sealed class LiveTailWindow
         }
     }
 
+    /// <summary>Test seam: the window this instance built, so a test can inspect its tree.</summary>
+    internal Window WindowForTesting => _window;
+
     private Border BuildHeader(string title)
     {
         SolidColorBrush labelBrush = new(Color.FromUInt32(HeaderLabelArgb));
@@ -166,11 +173,12 @@ public sealed class LiveTailWindow
             VerticalAlignment = VerticalAlignment.Center,
         });
 
-        stack.Children.Add(MakeLink(
-            "Clear",
-            "Remove all lines currently shown",
-            linkBrush,
-            (_, _) =>
+        stack.Children.Add(HeaderLink.Create(
+            text: "Clear",
+            automationName: "Clear",
+            tooltip: "Remove all lines currently shown",
+            foreground: linkBrush,
+            onClick: (_, _) =>
             {
                 _buffer.Clear();
                 _text.Text = string.Empty;
@@ -183,23 +191,6 @@ public sealed class LiveTailWindow
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = stack,
         };
-    }
-
-    private static TextBlock MakeLink(
-        string text, string tooltip, IBrush foreground, EventHandler<PointerPressedEventArgs> onClick)
-    {
-        TextBlock link = new()
-        {
-            Text = text,
-            FontSize = 11,
-            Foreground = foreground,
-            Cursor = new Cursor(StandardCursorType.Hand),
-            TextDecorations = TextDecorations.Underline,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTip.SetTip(link, tooltip);
-        link.PointerPressed += onClick;
-        return link;
     }
 
     private async Task DrainAsync()
