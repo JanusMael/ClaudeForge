@@ -17,6 +17,7 @@ public static class PlatformPaths
     // OS path is used.
     private static readonly AsyncLocal<string?> s_testUserProfileOverride = new();
     private static readonly AsyncLocal<string?> s_testAppBaseDirOverride = new();
+    private static readonly AsyncLocal<bool> s_testSuppressClaudeCodeBinaryProbe = new();
 
     /// <summary>
     /// Test-only override for the user-profile root. When non-null, every path derived
@@ -130,6 +131,26 @@ public static class PlatformPaths
     {
         get => s_testAppBaseDirOverride.Value;
         set => s_testAppBaseDirOverride.Value = value;
+    }
+
+    /// <summary>
+    /// Test-only switch that makes <see cref="TryFindClaudeCodeBinary"/> and
+    /// <see cref="IsClaudeCodeOnPath"/> report "not found" without probing.
+    /// The PATH probe reads the real process environment and the system-wide
+    /// entries in <c>CanonicalClaudeCodeCandidates</c> are absolute paths, so
+    /// neither is redirected by <see cref="TestUserProfileOverride"/> — a
+    /// developer machine with the CLI installed would otherwise leak into any
+    /// test of the "Claude Code not detected" state. Checked ahead of the
+    /// process-lifetime caches, so enabling it never records a stale miss and
+    /// <see cref="InvalidatePathCache"/> is not needed afterwards. Left
+    /// <see langword="false"/> in production. Backed by <see cref="AsyncLocal{T}"/>
+    /// (see <see cref="TestUserProfileOverride"/>) so concurrent (parallelized)
+    /// tests stay isolated.
+    /// </summary>
+    internal static bool TestSuppressClaudeCodeBinaryProbe
+    {
+        get => s_testSuppressClaudeCodeBinaryProbe.Value;
+        set => s_testSuppressClaudeCodeBinaryProbe.Value = value;
     }
 
     /// <summary>
@@ -317,10 +338,17 @@ public static class PlatformPaths
     /// profile switch (About page, version probe, install banner). Callers
     /// that mutate the in-process PATH (the About page's "Add to PATH"
     /// command) must invoke <see cref="InvalidatePathCache"/> to clear it.
+    /// Tests that need the "not installed" state on a machine with the CLI
+    /// present set <see cref="TestSuppressClaudeCodeBinaryProbe"/> instead.
     /// </para>
     /// </summary>
     public static ClaudeCodeLocation? TryFindClaudeCodeBinary()
     {
+        if (TestSuppressClaudeCodeBinaryProbe)
+        {
+            return null;
+        }
+
         // Volatile.Read pairs with the Volatile.Write in InvalidatePathCache.
         // _claudeCodeLocationCacheValid is the gate; the value field is read
         // only when the gate is true.
@@ -420,7 +448,8 @@ public static class PlatformPaths
     /// which also returns <see langword="true"/> when the binary is present
     /// at a canonical install location but PATH has not been updated.
     /// </summary>
-    public static bool IsClaudeCodeOnPath => FindFirstOnPath("claude") != null;
+    public static bool IsClaudeCodeOnPath =>
+        !TestSuppressClaudeCodeBinaryProbe && FindFirstOnPath("claude") != null;
 
     /// <summary>
     /// Returns true when the Claude Code CLI appears to be installed on this machine.

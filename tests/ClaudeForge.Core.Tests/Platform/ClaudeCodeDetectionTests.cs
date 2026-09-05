@@ -292,4 +292,49 @@ public sealed class ClaudeCodeDetectionTests
         Assert.AreEqual(binary, result!.BinaryPath);
         Assert.IsFalse(result.IsOnPath);
     }
+
+    [TestMethod]
+    public void TryFindClaudeCodeBinary_ProbeSuppressed_ReportsNotFoundWithoutCachingTheMiss()
+    {
+        // A binary is reachable both via PATH and at the canonical
+        // self-contained location, so every probe branch would otherwise hit.
+        string pathDir = Path.Combine(_sandbox, "bin");
+        Directory.CreateDirectory(pathDir);
+        string canonicalDir = Path.Combine(_sandbox, ".claude", "local");
+        Directory.CreateDirectory(canonicalDir);
+
+        string fileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "claude.exe"
+            : "claude";
+        File.WriteAllText(Path.Combine(pathDir, fileName), string.Empty);
+        File.WriteAllText(Path.Combine(canonicalDir, fileName), string.Empty);
+
+        Environment.SetEnvironmentVariable("PATH", pathDir);
+
+        try
+        {
+            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+
+            Assert.IsNull(PlatformPaths.TryFindClaudeCodeBinary());
+            Assert.IsFalse(PlatformPaths.IsClaudeCodeOnPath);
+            Assert.IsFalse(PlatformPaths.IsClaudeCodeInstalled);
+
+            // The suppressed calls must not have stored a negative result in
+            // the process-lifetime caches: clearing the switch on its own,
+            // without InvalidatePathCache, has to reveal the binary again.
+            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
+
+            PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary();
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result!.IsOnPath);
+            Assert.IsTrue(PlatformPaths.IsClaudeCodeOnPath);
+        }
+        finally
+        {
+            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
+            // Restore empty PATH so subsequent tests in this class see
+            // the sandboxed baseline.
+            Environment.SetEnvironmentVariable("PATH", string.Empty);
+        }
+    }
 }
