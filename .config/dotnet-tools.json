@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "bennewitz.ninja.themeaudit": {
+      "version": "1.1.0",
+      "commands": [
+        "theme-audit"
+      ],
+      "rollForward": false
+    }
+  }
+}
