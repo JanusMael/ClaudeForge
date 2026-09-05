@@ -252,6 +252,28 @@ public void Cleanup()
 
 Live example: `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`.
 
+### `PlatformPaths.TestSuppressClaudeCodeBinaryProbe` switch
+
+`TestUserProfileOverride` does not reach `PlatformPaths.TryFindClaudeCodeBinary`: its PATH
+probe reads the real process environment, and the Unix system-wide entries in
+`CanonicalClaudeCodeCandidates` are absolute paths. A test that needs the "Claude Code not
+detected" state on a machine with the CLI installed (anything asserting on
+`MainWindowViewModel.ShowInstallBanner`, or on `PlatformPaths.IsClaudeCodeInstalled` falling
+through to its `settings.json` check) sets the switch for the duration of the test:
+
+```csharp
+PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+try { /* assertions */ }
+finally { PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false; }
+```
+
+It is checked before the process-lifetime caches, so `InvalidatePathCache()` is not needed
+afterwards. `internal`, `AsyncLocal`-backed, exposed to both test projects via
+`InternalsVisibleTo`. Live example: `InstallBanner_AutoClearsDismissedFlag_WhenProductAppears`
+in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`; the switch's own
+contract test is `TryFindClaudeCodeBinary_ProbeSuppressed_ReportsNotFoundWithoutCachingTheMiss`
+in `tests/ClaudeForge.Core.Tests/Platform/ClaudeCodeDetectionTests.cs`.
+
 ### `MainWindowViewModel.GetClaudeCodeWorkspaceForTesting()` test seam
 
 For tests that need to mutate the workspace directly without driving the UI:

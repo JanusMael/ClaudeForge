@@ -202,14 +202,23 @@ public sealed class HasUnsavedChangesRecheckTests
         // the banner now re-appears — i.e. the dismissed-flag was cleared by the
         // "product detected" reload rather than staying permanently suppressed.
         //
-        // Note: this test only exercises the IsClaudeCodeInstalled seam (the
-        // File.Exists(UserSettingsPath) fallback is sandbox-isolated).
-        // IsDesktopInstalled's binary-check paths are not sandboxed, so on a
-        // machine with Desktop installed the second leg below may observe
-        // ShowInstallBanner=false for that reason — the assertion is
+        // Code detection: IsClaudeCodeInstalled consults TryFindClaudeCodeBinary
+        // before the sandboxed File.Exists(UserSettingsPath) fallback, and that
+        // probe reads the real process PATH plus absolute system-wide install
+        // locations, none of which TestUserProfileOverride redirects.  On a
+        // machine with the CLI installed leg 2 would therefore observe
+        // ShowInstallBanner=false regardless of the dismissed flag, so the probe
+        // is switched off via TestSuppressClaudeCodeBinaryProbe and Code is
+        // detected only through the sandboxed settings.json.
+        //
+        // Desktop detection: IsDesktopInstalled's binary-check paths are not
+        // sandboxed, so on a machine with Desktop installed the second leg below
+        // may observe ShowInstallBanner=false for that reason — the assertion is
         // therefore only made when Desktop is also not detected.
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
+
+        PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
 
         // ── leg 1: no products detected, load, then place Code settings ──
         MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
@@ -242,6 +251,7 @@ public sealed class HasUnsavedChangesRecheckTests
         finally
         {
             vm.Dispose();
+            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
         }
     }
 
