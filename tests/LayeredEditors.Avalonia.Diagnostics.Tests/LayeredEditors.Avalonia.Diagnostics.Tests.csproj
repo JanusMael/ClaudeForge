@@ -5,6 +5,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Headless Avalonia for the window tests (LiveLogWindowKeyTests); same version as ClaudeForge.Tests. -->
+        <PackageReference Include="Avalonia.Headless" Version="12.1.1" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\src\LayeredEditors.Avalonia.Diagnostics\LayeredEditors.Avalonia.Diagnostics.csproj"/>
     </ItemGroup>
 </Project>

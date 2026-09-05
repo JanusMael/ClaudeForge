@@ -78,6 +78,11 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   `HasUnsavedChanges` and nothing warned. The unsaved text now rides across the
   in-process reload in memory and comes back with the editor — the user's actual
   text, not a re-read from disk. It is never written to the UI-state file.
+- **F12 inside the live-log window did nothing.** The window's title promises
+  "F12 to hide", but the toggle lived on the main window's key handler, which never
+  sees a key pressed while the log window has focus. The window now hides itself
+  on plain F12; Shift+F12 stays with the host. Covered by a headless test in
+  `LayeredEditors.Avalonia.Diagnostics.Tests`.
 
 ### Changed
 
