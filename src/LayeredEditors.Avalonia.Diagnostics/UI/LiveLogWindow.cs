@@ -250,6 +250,11 @@ public static class LiveLogWindow
         // blocked by a cancelled close.
         _window.Closing += OnWindowClosing;
 
+        // The title promises "F12 to hide", but the host's F12 handler lives on its main
+        // window and never sees a key pressed while this window has focus. Honour the
+        // promise here; a modified F12 (Shift+F12 in ClaudeForge) stays with the host.
+        _window.KeyDown += OnWindowKeyDown;
+
         _window.Hide();
         RefreshLogPathLink();
     }
@@ -262,6 +267,19 @@ public static class LiveLogWindow
             _window.Hide();
         }
     }
+
+    /// <summary>Plain F12 inside the window hides it, matching the host's toggle.</summary>
+    private static void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F12 && e.KeyModifiers == KeyModifiers.None)
+        {
+            ToggleWindow();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Test seam: the window built by <see cref="Initialize"/>, or <c>null</c> before it.</summary>
+    internal static Window? WindowForTesting => _window;
 
     private static ListBox BuildLogList(IBrush background)
     {
