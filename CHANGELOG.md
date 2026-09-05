@@ -83,6 +83,9 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   sees a key pressed while the log window has focus. The window now hides itself
   on plain F12; Shift+F12 stays with the host. Covered by a headless test in
   `LayeredEditors.Avalonia.Diagnostics.Tests`.
+- **`dotnet pack` of `LayeredEditors.Avalonia.Diagnostics` failed** because the
+  project names a `PackageReadmeFile` it did not ship. The package now carries a
+  README describing the three-call wiring and each piece.
 
 ### Changed
 
