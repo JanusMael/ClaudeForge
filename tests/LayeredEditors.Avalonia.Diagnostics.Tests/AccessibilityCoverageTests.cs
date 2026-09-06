@@ -189,13 +189,12 @@ public sealed class AccessibilityCoverageTests
                     roots.Enqueue(menu);
 
                     // Items added directly are logical children of the menu; enqueue them too so
-                    // the walk does not depend on that detail of ItemsControl.
-                    foreach (object? item in menu.Items)
+                    // the walk does not depend on that detail of ItemsControl. Items is a
+                    // collection of object?, so filter explicitly rather than testing the type
+                    // inside the loop.
+                    foreach (ILogical menuItem in menu.Items.OfType<ILogical>())
                     {
-                        if (item is ILogical menuItem)
-                        {
-                            roots.Enqueue(menuItem);
-                        }
+                        roots.Enqueue(menuItem);
                     }
                 }
             }
