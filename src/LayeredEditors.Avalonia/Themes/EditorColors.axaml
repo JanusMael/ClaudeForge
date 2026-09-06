@@ -1,9 +1,11 @@
 <!--
     Library-level color resources for LayeredEditors.Avalonia.
 
-    All seven values are theme-neutral (work on both Semi Light and Dark backgrounds).
-    Host applications can override any key in their own Application.Resources before
-    the first render — no library fork required.
+    The six token colors are theme-neutral (they work on both Semi Light and Dark
+    backgrounds); the accent PAIR is per-variant, for the reason given below.
+    Host applications can override any key in their own Application.Resources
+    before the first render — no library fork required.  An override of a
+    per-variant key belongs in the host's own ThemeDictionaries.
 
     Included automatically by SemiBundle.axaml via StyleInclude. Hosts that use a
     different theme must include this file explicitly if they want the defaults:
@@ -29,29 +31,51 @@
     The fix: declare this file as a <Styles> document so SemiBundle.axaml can pull
     it in with a plain <StyleInclude>, which is the idiomatic Avalonia 11 pattern
     for composing theme fragments.
+
+    WHY THE ACCENT PAIR IS PER-VARIANT AND THE REST IS NOT
+    ──────────────────────────────────────────────────────
+    The other six are foregrounds picked to stay legible on either ground, which
+    a single mid-tone can do.  The accent pair is a PILL — text measured against
+    its own tint — and the badge that uses it is 9px bold, so the floor is 4.5:1
+    with no AA Large exemption.  No single color can clear 4.5:1 against both a
+    white page and a near-black one: that needs relative luminance <= 0.183 for
+    the light ground and >= 0.215 for the dark, which is a contradiction.  Hence
+    a Light/Dark pair, which is also what lets the pill sit a fixed, deliberate
+    step above whichever page it lands on.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Styles.Resources>
-        <!-- LinkifiedTextBlock — URL and env-var token colors -->
-        <SolidColorBrush x:Key="LE.LinkBrush" Color="#006B8A" />  <!-- teal-blue: unvisited URL -->
-        <SolidColorBrush x:Key="LE.VisitedBrush" Color="#6B3FA0" />  <!-- purple: visited URL -->
-        <SolidColorBrush x:Key="LE.EnvVarBrush" Color="#1565C0" />  <!-- blue: env-var token -->
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <!-- PropertyEditorWrapper — accent tint pill (the "✨ NEW" badge):
+                         a tinted background plus matching-hue text, NOT white on a
+                         saturated fill.  The badge annotates the property-name heading
+                         beside it, so it has to read lighter than what it annotates.
+                         Text #0F4C81 on #DCEAF7 = 7.24:1; pill 1.22:1 above a white page. -->
+                    <SolidColorBrush x:Key="LE.AccentBrush" Color="#0F4C81" />
+                    <SolidColorBrush x:Key="LE.AccentBackgroundBrush" Color="#DCEAF7" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <!-- Dark counterpart: text #9BCFF2 on #152C42 = 8.57:1;
+                         pill 1.27:1 above a #161618 page. -->
+                    <SolidColorBrush x:Key="LE.AccentBrush" Color="#9BCFF2" />
+                    <SolidColorBrush x:Key="LE.AccentBackgroundBrush" Color="#152C42" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
 
-        <!-- PropertyEditorWrapper — filled accent chip (the "✨ NEW" badge).
-             Carries WHITE text, so the fill has to clear 4.5:1 against white AND
-             stay visible on either page ground; #0B5FA5 gives 6.57:1 for the text,
-             6.57:1 against a white page and 2.65:1 against a #1A1A1A one.
-             Deliberately NOT one of the link/bool colours above: a filled badge and
-             a coloured word are different signals, and the bool palette is a
-             tri-state indicator whose meaning would be diluted by reuse. -->
-        <SolidColorBrush x:Key="LE.AccentBrush" Color="#0B5FA5" />  <!-- blue: filled accent badge -->
+            <!-- LinkifiedTextBlock — URL and env-var token colors -->
+            <SolidColorBrush x:Key="LE.LinkBrush" Color="#006B8A" />  <!-- teal-blue: unvisited URL -->
+            <SolidColorBrush x:Key="LE.VisitedBrush" Color="#6B3FA0" />  <!-- purple: visited URL -->
+            <SolidColorBrush x:Key="LE.EnvVarBrush" Color="#1565C0" />  <!-- blue: env-var token -->
 
-        <!-- BoolToStatusBrushConverter — tri-state boolean indicator colors -->
-        <SolidColorBrush x:Key="LE.BoolEnabled" Color="#2E7D32" />  <!-- green: true / enabled -->
-        <SolidColorBrush x:Key="LE.BoolDisabled" Color="#C62828" />  <!-- red: false / disabled -->
-        <SolidColorBrush x:Key="LE.BoolUnset" Color="#9E9E9E" />  <!-- grey: null / unset -->
+            <!-- BoolToStatusBrushConverter — tri-state boolean indicator colors -->
+            <SolidColorBrush x:Key="LE.BoolEnabled" Color="#2E7D32" />  <!-- green: true / enabled -->
+            <SolidColorBrush x:Key="LE.BoolDisabled" Color="#C62828" />  <!-- red: false / disabled -->
+            <SolidColorBrush x:Key="LE.BoolUnset" Color="#9E9E9E" />  <!-- grey: null / unset -->
+        </ResourceDictionary>
     </Styles.Resources>
 
 </Styles>

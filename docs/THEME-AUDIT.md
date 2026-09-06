@@ -32,7 +32,7 @@ Under Semi, ClaudeForge's views (`src/ClaudeForge`, `src/ClaudeForge.Avalonia`,
 | `SystemControlForegroundBaseLowBrush` | resolves |
 | `SystemControlForegroundBaseMediumBrush` | resolves |
 | `SystemControlHighlightListLowBrush` | resolves |
-| `SystemAccentColorBrush` | **unreachable, so the reference is gone** — no theme defines this key (Fluent has `SystemAccentColor` and `SystemControlHighlightAccentBrush`), so no compat dictionary could close it. Both uses, the "NEW" badge in each `PropertyEditorWrapper`, now take an owned token: `AppAccentBrush` in `App.axaml`, `LE.AccentBrush` in `LayeredEditors.Avalonia/Themes/EditorColors.axaml` |
+| `SystemAccentColorBrush` | **unreachable, so the reference is gone** — no theme defines this key (Fluent has `SystemAccentColor` and `SystemControlHighlightAccentBrush`), so no compat dictionary could close it. Both uses, the "NEW" badge in each `PropertyEditorWrapper`, now take owned tint-pill pairs: `AppAccentBrush` / `AppAccentBackgroundBrush` in `App.axaml`, `LE.AccentBrush` / `LE.AccentBackgroundBrush` in `LayeredEditors.Avalonia/Themes/EditorColors.axaml` |
 
 The compat dictionaries do not change what Semi defines: a key both define is Semi's, per
 variant, including the high-contrast overrides.
