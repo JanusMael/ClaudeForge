@@ -93,17 +93,20 @@
                                VerticalAlignment="Center"
                                ToolTip.Tip="{x:Static loc:WrapperStrings.TipUndocumented}" />
 
-                    <!-- New-since-last-snapshot badge.  Fill is the library's own
-                         LE.AccentBrush (Themes/EditorColors.axaml): no theme defines
-                         SystemAccentColorBrush, so that key painted nothing at all. -->
+                    <!-- New-since-last-snapshot badge.  Tint pill from the library's
+                         own Themes/EditorColors.axaml: no theme defines
+                         SystemAccentColorBrush, so the old key painted nothing at all.
+                         A tint plus matching-hue text rather than white on a solid
+                         fill — the badge annotates the property-name heading beside it
+                         and must not outweigh it. -->
                     <Border IsVisible="{Binding IsNew}"
-                            Background="{DynamicResource LE.AccentBrush}"
+                            Background="{DynamicResource LE.AccentBackgroundBrush}"
                             CornerRadius="4" Padding="6,2"
                             VerticalAlignment="Center"
                             ToolTip.Tip="{x:Static loc:WrapperStrings.TipNewSetting}">
                         <TextBlock Text="✨ NEW"
                                    FontSize="9" FontWeight="Bold"
-                                   Foreground="White" />
+                                   Foreground="{DynamicResource LE.AccentBrush}" />
                     </Border>
                 </StackPanel>
             </DockPanel>
