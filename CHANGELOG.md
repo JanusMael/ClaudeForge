@@ -69,6 +69,14 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Fixed
 
+- **Screen readers had nothing to announce in the diagnostics windows.** The crash
+  and notice dialogs, the F12 live-log window, and the live-tail window are built in
+  C#, so the AXAML accessibility guard never saw them: their buttons, text boxes,
+  log list, Copy menu item, and link-styled header text carried no
+  `AutomationProperties.Name`. Every interactive control there now has a clean-text
+  name (and help text where the label alone is ambiguous), the header links announce
+  as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
+  if a control lands without one.
 - **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
   the detail pane but never the row's subtitle, which is what the list renders —
   so editing a `description` and saving kept showing the old text until the next

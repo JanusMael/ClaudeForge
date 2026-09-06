@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Channels;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -94,6 +95,8 @@ public static class LiveLogWindow
     private const uint HeaderLabelArgb = 0xFF_9E_9E_9E;
     private const uint HeaderLinkArgb = 0xFF_6A_B0_F3;
     private const uint WindowBackgroundArgb = 0xFF_1E_1E_1E;
+
+    private const string LogFileLinkTooltip = "Open the current log file in the default editor";
 
     // All Avalonia-typed state is null until BuildWindow() runs. Modified only
     // on the UI thread (BuildWindow and the Dispatcher.UIThread.Post callbacks).
@@ -202,6 +205,37 @@ public static class LiveLogWindow
     public static void EnqueueLog(string message)
     {
         _channel.Writer.TryWrite(message);
+    }
+
+    /// <summary>
+    /// Test seam: rebuilds the window from these arguments even after
+    /// <see cref="Initialize"/> has latched, so a test can exercise the header links
+    /// that exist only when a sink, a logs directory, or a launch action was supplied.
+    /// The previous window, if any, is closed. The drain loop is left alone, so this
+    /// never starts a second reader on the channel. UI thread only.
+    /// </summary>
+    internal static Window RebuildWindowForTesting(
+        BucketedRollingFileSink? fileSink,
+        string? logsDirectory,
+        string? extraActionLabel,
+        Action? extraAction)
+    {
+        if (_window is not null)
+        {
+            // OnWindowClosing turns a close into a hide; detach it so this close is real.
+            _window.Closing -= OnWindowClosing;
+            _window.Close();
+        }
+
+        _fileSink = fileSink;
+        _logsDirectory = logsDirectory;
+        _extraActionLabel = extraActionLabel;
+        _extraAction = extraAction;
+        _logPathLink = null;
+        _currentLogFilePath = null;
+
+        BuildWindow();
+        return _window ?? throw new InvalidOperationException("BuildWindow did not create the window.");
     }
 
     // -----------------------------------------------------------------------
@@ -322,6 +356,12 @@ public static class LiveLogWindow
             }, supportsRecycling: true),
         };
 
+        // A ListBox derives no accessible name from its content, so without one a screen
+        // reader announces an anonymous list. The help text carries the copy affordance,
+        // which is otherwise discoverable only by right-clicking.
+        AutomationProperties.SetName(list, "Log lines");
+        AutomationProperties.SetHelpText(list, "Select rows, then press Ctrl+C or right-click and choose Copy to copy them");
+
         list.KeyDown += OnLogListKeyDown;
 
         // Right-click → Copy. Deliberately does NOT change the selection, so a
@@ -329,6 +369,8 @@ public static class LiveLogWindow
         // "Ctrl+click to select rows, then right-click → Copy").
         ContextMenu menu = new();
         MenuItem copyItem = new() { Header = "Copy" };
+        AutomationProperties.SetName(copyItem, "Copy");
+        AutomationProperties.SetHelpText(copyItem, "Copy the selected log rows to the clipboard");
         copyItem.Click += (_, _) => CopySelectedRows(list);
         menu.Items.Add(copyItem);
         list.ContextMenu = menu;
@@ -402,9 +444,10 @@ public static class LiveLogWindow
                 VerticalAlignment = VerticalAlignment.Center,
             };
 
-            _logPathLink = MakeLink(
+            _logPathLink = HeaderLink.Create(
                 text: string.Empty, // filled in by RefreshLogPathLink
-                tooltip: "Open the current log file in the default editor",
+                automationName: "Open log file",
+                tooltip: LogFileLinkTooltip,
                 foreground: linkBrush,
                 onClick: OnLogFileClicked);
             _logPathLink.FontFamily = new FontFamily("Consolas, Courier New, monospace");
@@ -427,8 +470,9 @@ public static class LiveLogWindow
                 stack.Children.Add(separator);
             }
 
-            TextBlock folderLink = MakeLink(
+            TextBlock folderLink = HeaderLink.Create(
                 text: "Open folder",
+                automationName: "Open logs folder",
                 tooltip: "Open the logs directory in the OS file browser",
                 foreground: linkBrush,
                 onClick: OnFolderClicked);
@@ -451,8 +495,11 @@ public static class LiveLogWindow
                 });
             }
 
-            stack.Children.Add(MakeLink(
+            // The host owns this label, so it is also the screen-reader name; the help
+            // text says what the link does when the label alone does not.
+            stack.Children.Add(HeaderLink.Create(
                 text: _extraActionLabel!,
+                automationName: _extraActionLabel!,
                 tooltip: "Open the related live view",
                 foreground: linkBrush,
                 onClick: (_, _) => extraAction()));
@@ -465,26 +512,6 @@ public static class LiveLogWindow
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = stack,
         };
-    }
-
-    private static TextBlock MakeLink(
-        string text,
-        string tooltip,
-        IBrush foreground,
-        EventHandler<PointerPressedEventArgs> onClick)
-    {
-        TextBlock link = new()
-        {
-            Text = text,
-            FontSize = 11,
-            Foreground = foreground,
-            Cursor = new Cursor(StandardCursorType.Hand),
-            TextDecorations = TextDecorations.Underline,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTip.SetTip(link, tooltip);
-        link.PointerPressed += onClick;
-        return link;
     }
 
     // -----------------------------------------------------------------------
@@ -549,6 +576,10 @@ public static class LiveLogWindow
 
         _currentLogFilePath = path;
         _logPathLink.Text = path;
+
+        // The accessible name stays "Open log file"; the path rides in the help text so a
+        // screen-reader user can still hear which file the link opens.
+        AutomationProperties.SetHelpText(_logPathLink, LogFileLinkTooltip + ": " + path);
     }
 
     // -----------------------------------------------------------------------
