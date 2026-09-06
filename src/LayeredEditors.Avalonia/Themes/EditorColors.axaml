@@ -1,7 +1,7 @@
 <!--
     Library-level color resources for LayeredEditors.Avalonia.
 
-    All six values are theme-neutral (work on both Semi Light and Dark backgrounds).
+    All seven values are theme-neutral (work on both Semi Light and Dark backgrounds).
     Host applications can override any key in their own Application.Resources before
     the first render — no library fork required.
 
@@ -38,6 +38,15 @@
         <SolidColorBrush x:Key="LE.LinkBrush" Color="#006B8A" />  <!-- teal-blue: unvisited URL -->
         <SolidColorBrush x:Key="LE.VisitedBrush" Color="#6B3FA0" />  <!-- purple: visited URL -->
         <SolidColorBrush x:Key="LE.EnvVarBrush" Color="#1565C0" />  <!-- blue: env-var token -->
+
+        <!-- PropertyEditorWrapper — filled accent chip (the "✨ NEW" badge).
+             Carries WHITE text, so the fill has to clear 4.5:1 against white AND
+             stay visible on either page ground; #0B5FA5 gives 6.57:1 for the text,
+             6.57:1 against a white page and 2.65:1 against a #1A1A1A one.
+             Deliberately NOT one of the link/bool colours above: a filled badge and
+             a coloured word are different signals, and the bool palette is a
+             tri-state indicator whose meaning would be diluted by reuse. -->
+        <SolidColorBrush x:Key="LE.AccentBrush" Color="#0B5FA5" />  <!-- blue: filled accent badge -->
 
         <!-- BoolToStatusBrushConverter — tri-state boolean indicator colors -->
         <SolidColorBrush x:Key="LE.BoolEnabled" Color="#2E7D32" />  <!-- green: true / enabled -->

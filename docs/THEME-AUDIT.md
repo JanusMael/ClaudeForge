@@ -22,7 +22,7 @@ a compat dictionary that closes the gap.
 ## What the report says about ClaudeForge
 
 Under Semi, ClaudeForge's views (`src/ClaudeForge`, `src/ClaudeForge.Avalonia`,
-`src/LayeredEditors.Avalonia`) reference seven keys that resolve to nothing in every variant:
+`src/LayeredEditors.Avalonia`) referenced seven keys that resolve to nothing in every variant:
 
 | Key | With the compat dictionaries |
 |---|---|
@@ -32,10 +32,14 @@ Under Semi, ClaudeForge's views (`src/ClaudeForge`, `src/ClaudeForge.Avalonia`,
 | `SystemControlForegroundBaseLowBrush` | resolves |
 | `SystemControlForegroundBaseMediumBrush` | resolves |
 | `SystemControlHighlightListLowBrush` | resolves |
-| `SystemAccentColorBrush` | **still undefined** — no theme defines this key (Fluent has `SystemAccentColor` and `SystemControlHighlightAccentBrush`); the reference is a typo to fix in the view |
+| `SystemAccentColorBrush` | **unreachable, so the reference is gone** — no theme defines this key (Fluent has `SystemAccentColor` and `SystemControlHighlightAccentBrush`), so no compat dictionary could close it. Both uses, the "NEW" badge in each `PropertyEditorWrapper`, now take an owned token: `AppAccentBrush` in `App.axaml`, `LE.AccentBrush` in `LayeredEditors.Avalonia/Themes/EditorColors.axaml` |
 
 The compat dictionaries do not change what Semi defines: a key both define is Semi's, per
 variant, including the high-contrast overrides.
+
+`docs/theme-audit-report.md` is a snapshot: it is generated from DiffView against the
+`../cl/ClaudeForge` checkout, so its "ClaudeForge under Semi" table still lists
+`SystemAccentColorBrush` until the next regeneration picks the removal up.
 
 ## Regenerating
 
