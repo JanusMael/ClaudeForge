@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input.Platform;
@@ -70,6 +71,8 @@ public sealed class NonFatalNoticeDialog : Window
             TextWrapping = TextWrapping.NoWrap,
             MinHeight = 220,
         };
+        AutomationProperties.SetName(bodyBox, "Notice details");
+        AutomationProperties.SetHelpText(bodyBox, "Read-only notice text; Copy to Clipboard copies all of it");
 
         ScrollViewer scroll = new()
         {
@@ -84,6 +87,10 @@ public sealed class NonFatalNoticeDialog : Window
             Content = "📋 Copy to Clipboard",
             Margin = new Thickness(0, 0, 8, 0),
         };
+        // The visible label carries a clipboard emoji; the accessible name must not, or a
+        // screen reader reads the glyph name aloud.
+        AutomationProperties.SetName(copyBtn, "Copy to Clipboard");
+        AutomationProperties.SetHelpText(copyBtn, "Copy the full notice text to the clipboard");
         copyBtn.Click += async (_, _) =>
         {
             IClipboard? clipboard = GetTopLevel(this)?.Clipboard;
@@ -98,6 +105,7 @@ public sealed class NonFatalNoticeDialog : Window
             Content = "Close",
             HorizontalAlignment = HorizontalAlignment.Right,
         };
+        AutomationProperties.SetName(closeBtn, "Close");
         closeBtn.Click += (_, _) => Close();
 
         DockPanel btnRow = new() { Margin = new Thickness(16, 0, 16, 16) };
