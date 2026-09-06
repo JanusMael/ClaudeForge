@@ -84,9 +84,17 @@ Two consequences for this section:
 
 - Semi 12.1.0.1 defines **none** of the `SystemControl*` family — the
   "inconsistent" resolution above was a Fluent key surviving in one
-  variant's dictionary chain and not another's. Seven such references
-  remain in our views today (the report lists them; one,
-  `SystemAccentColorBrush`, is defined by no theme at all).
+  variant's dictionary chain and not another's. Six such references
+  remain in our views (the report lists them), all of them Fluent keys
+  the compat dictionaries below now resolve.
+- The seventh, `SystemAccentColorBrush`, was defined by **no** theme at
+  all — not Semi, not Fluent, not Simple — so no compat dictionary could
+  reach it and the "NEW" badge it filled painted nothing. It is gone:
+  the badge now takes `AppAccentBrush` in the app and `LE.AccentBrush`
+  in `LayeredEditors.Avalonia`. Note the near-miss when reaching for a
+  theme accent — Fluent's key is `SystemAccentColor` (a `Color`, and
+  `SystemControlHighlightAccentBrush` for the brush); the `…ColorBrush`
+  spelling exists nowhere.
 - `Resources/Compat/FluentKeys.Semi.axaml` and `SimpleKeys.Semi.axaml`,
   merged in `App.axaml`, define every Fluent- and Simple-family key Semi
   lacks, aliased onto Semi's own tokens (`SystemAccentColor` →
@@ -112,11 +120,23 @@ on.  All are theme-aware (per-theme entry in App.axaml).
 | `AppCautionBrush` | `#D97706` | `#F59E0B` | Amber warning foreground (PATH warning row, no-restore-dir warning) |
 | `AppCautionBackgroundBrush` | `#FFFBEB` | `#292010` | Soft amber tint behind warning rows |
 | `AppPanelBorderBrush` | `#E0E0E0` | `#2E2E2E` | Subtle row/panel dividers — replaces `SystemControlForegroundBaseLowBrush` where Semi resolves to near-invisible |
+| `AppAccentBrush` | `#0055A5` | `#1E6BB5` | Filled accent chip carrying **white** text — the per-property "NEW" badge |
 
 **Contrast targets:** the `Primary` / `Secondary` text brushes are tuned
 for ≥7:1 (Primary, WCAG AAA) and ≥4.5:1 (Secondary, AA Normal) against
 their natural backgrounds.  Don't substitute a "looks fine" hex without
 checking — Semi's variant tweaks can drop you below threshold quietly.
+
+**A fill is not a foreground.**  `AppAccentBrush` is the only App-wide
+primitive here that gets *painted behind* text rather than into it, and
+that flips which number matters: white on the fill (7.39:1 light,
+5.49:1 dark — the badge text is 9px bold, so AA Large does not apply)
+plus enough separation from the page that the chip has an edge (7.39:1
+and 3.17:1).  This is why the accent *text* brushes can't stand in for
+it: `AppLinkBrush`'s dark `#4DBFE0` carries white at 2.13:1 and
+`AppPropertyHeadingBrush`'s `#74C2DE` at 2.00:1.  Both are excellent
+foregrounds and unusable as fills.  Before reusing any token in the
+opposite role, measure it in that role.
 
 ---
 

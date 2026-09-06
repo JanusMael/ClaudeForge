@@ -93,9 +93,11 @@
                                VerticalAlignment="Center"
                                ToolTip.Tip="{x:Static loc:WrapperStrings.TipUndocumented}" />
 
-                    <!-- New-since-last-snapshot badge -->
+                    <!-- New-since-last-snapshot badge.  Fill is the library's own
+                         LE.AccentBrush (Themes/EditorColors.axaml): no theme defines
+                         SystemAccentColorBrush, so that key painted nothing at all. -->
                     <Border IsVisible="{Binding IsNew}"
-                            Background="{DynamicResource SystemAccentColorBrush}"
+                            Background="{DynamicResource LE.AccentBrush}"
                             CornerRadius="4" Padding="6,2"
                             VerticalAlignment="Center"
                             ToolTip.Tip="{x:Static loc:WrapperStrings.TipNewSetting}">

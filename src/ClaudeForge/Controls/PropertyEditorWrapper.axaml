@@ -171,9 +171,12 @@
                          pattern as the scope-badge above.  Avalonia
                          tooltips don't propagate child→parent, so a hover
                          landing on the "NEW" glyph (the text fill) would
-                         see no tooltip if only the Border had one. -->
+                         see no tooltip if only the Border had one.
+                         Fill is AppAccentBrush (App.axaml ThemeDictionaries): no
+                         theme defines SystemAccentColorBrush, so that key painted
+                         nothing and the badge showed white-on-page text. -->
                     <Border IsVisible="{Binding IsNew}"
-                            Background="{DynamicResource SystemAccentColorBrush}"
+                            Background="{DynamicResource AppAccentBrush}"
                             CornerRadius="4" Padding="6,2"
                             VerticalAlignment="Center"
                             ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}">
