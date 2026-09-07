@@ -322,7 +322,9 @@ public sealed class SchemaRegistry : IDisposable
             JsonSchema schema = ParseSchema(Encoding.UTF8.GetString(bundledBytes));
             _memoryCache[url] = schema;
             // Keep disk cache in sync as a side-effect (fire-and-forget; failures are silent).
-            _ = SyncDiskWithBundledAsync(diskPath, bundledBytes, ct);
+            // Tracked rather than discarded so a caller that needs quiescence — a test tearing
+            // down its sandbox, most of all — can await it via WhenDiskCacheIdleAsync.
+            TrackDiskSync(SyncDiskWithBundledAsync(diskPath, bundledBytes, ct));
             return schema;
         }
 
@@ -373,6 +375,47 @@ public sealed class SchemaRegistry : IDisposable
 
         // 5. Absolute last resort — return an empty schema so the app can still start.
         return ParseSchema("{}");
+    }
+
+    /// <summary>
+    /// In-flight <see cref="SyncDiskWithBundledAsync"/> tasks.  The sync is deliberately not
+    /// awaited by <see cref="GetSchemaAsync"/> — it is a cache warm and must stay off the
+    /// startup path — but a discarded task is unobservable, so it is retained here instead.
+    /// Completed entries are pruned on each add, which bounds the list at the number of
+    /// concurrently-running syncs (in practice one or two: Code and Desktop).
+    /// </summary>
+    private readonly List<Task> _pendingDiskSyncs = [];
+
+    private void TrackDiskSync(Task sync)
+    {
+        lock (_pendingDiskSyncs)
+        {
+            _pendingDiskSyncs.RemoveAll(static t => t.IsCompleted);
+            _pendingDiskSyncs.Add(sync);
+        }
+    }
+
+    /// <summary>
+    /// Completes once every disk-cache sync started so far has finished.  Exists because the
+    /// sync is fire-and-forget: it can outlive the call that started it, and on Windows a
+    /// still-open handle on the cache file makes deleting the enclosing directory fail with
+    /// <see cref="IOException"/>.  Tests that point <c>PlatformPaths.TestUserProfileOverride</c>
+    /// at a temp sandbox must await this before removing that sandbox.
+    /// </summary>
+    /// <remarks>
+    /// Returns a snapshot: a sync started after this call is not covered, so await it once the
+    /// work that triggers schema loads has itself settled.  Never faults —
+    /// <see cref="SyncDiskWithBundledAsync"/> handles its own I/O failures.
+    /// </remarks>
+    internal Task WhenDiskCacheIdleAsync()
+    {
+        Task[] inFlight;
+        lock (_pendingDiskSyncs)
+        {
+            inFlight = _pendingDiskSyncs.FindAll(static t => !t.IsCompleted).ToArray();
+        }
+
+        return inFlight.Length == 0 ? Task.CompletedTask : Task.WhenAll(inFlight);
     }
 
     private static async Task SyncDiskWithBundledAsync(string diskPath, byte[] bundledBytes, CancellationToken ct)
