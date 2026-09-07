@@ -412,7 +412,12 @@ first or the sync snapshot is taken before the work exists.
 [TestCleanup]
 public async Task Cleanup()
 {
-    if (_vm.LastAutomaticReload is { } reload) { /* await, logging a fault */ }
+    if (_vm.LastAutomaticReload is { } reload)
+    {
+        // Wait for it to FINISH, not to succeed; reading Exception marks a fault observed.
+        await reload.ContinueWith(static t => _ = t.Exception,
+            CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+    }
     await _schemaRegistry.WhenDiskCacheIdleAsync();
     _vm.Dispose();
     _schemaRegistry.Dispose();

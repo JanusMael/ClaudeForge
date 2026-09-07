@@ -42,16 +42,17 @@ public sealed class AvailableProfileEntriesTests
         // with "the process cannot access the file 'claude-code-settings.json'".
         if (_vm.LastAutomaticReload is { } reload)
         {
-            try
-            {
-                await reload;
-            }
-            catch (Exception ex)
-            {
-                // A faulted reload is this test's business, not teardown's: report it and keep
-                // tearing down, so the failure surfaces without masking the real assertion.
-                Console.Error.WriteLine($"[TestCleanup] reload faulted: {ex.GetType().Name}: {ex.Message}");
-            }
+            // Teardown needs the reload to have FINISHED, not to have succeeded — its outcome is
+            // the test body's business. Waiting through a continuation rather than awaiting the
+            // task directly means a fault never rethrows here and fails an otherwise-green test,
+            // and reading Exception marks it observed so it cannot resurface later as an
+            // unobserved-task crash. Deliberately not a try/catch: catching every exception type
+            // just to discard it is the generic-catch anti-pattern in AGENTS.md §4.
+            await reload.ContinueWith(
+                static finished => _ = finished.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.None,
+                TaskScheduler.Default);
         }
 
         // Ordered second: the reload is what starts the sync, so draining it first is what makes
