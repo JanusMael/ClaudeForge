@@ -2567,7 +2567,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // should stay dismissed across profile switches in the same session.
         // Persist before reloading so the selection survives a crash/restart.
         SaveWindowState();
-        _ = ReloadCoreAsync();
+        LastAutomaticReload = ReloadCoreAsync();
     }
 
 
@@ -2869,6 +2869,18 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <c>AgentsSkillsEditorViewModel.LastRefresh</c> / <c>LastDescriptionFill</c>.
     /// </summary>
     internal Task? LastDeepRestore { get; private set; }
+
+    /// <summary>
+    /// Test seam: the reload started by the most recent AUTOMATIC trigger — a profile change
+    /// or a file-watcher fire — so a test can await it deterministically. Both triggers are
+    /// deliberately fire-and-forget in the app (one is a synchronous partial method, the other
+    /// a watcher callback); retaining the task changes nothing about that, it only makes the
+    /// work observable. A test that mutates <see cref="SelectedProfile"/> and then deletes its
+    /// sandbox MUST await this first, or the reload — and the schema disk-cache sync it starts
+    /// underneath — races the delete. Pairs with <c>SchemaRegistry.WhenDiskCacheIdleAsync</c>,
+    /// which covers the second hop. Same shape as <see cref="LastDeepRestore"/>.
+    /// </summary>
+    internal Task? LastAutomaticReload { get; private set; }
 
     private async Task RestoreDeepPathAsync(IDeepNavigable navigable, PendingDeepRestore pending)
     {
@@ -4626,7 +4638,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
             // watcher can fire many times per minute on a busy edit session;
             // resetting banners on each fire would nag the user constantly).
-            _ = ReloadCoreAsync();
+            LastAutomaticReload = ReloadCoreAsync();
         });
     }
 

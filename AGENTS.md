@@ -393,6 +393,45 @@ Two `internal static` methods in `src/ClaudeForge.Core/Schema/SchemaRegistry.cs`
 
 Both exercised by `tests/ClaudeForge.Core.Tests/Schema/SchemaRegistryOverlayTests.cs`. Adding a new bundled schema with hand-curated additions: create the base file + sibling `<name>.overlay.json` under `src/ClaudeForge.Core/Assets/Schemas/` (the existing `EmbeddedResource Include="Assets\Schemas\**\*.json"` glob picks both up automatically); the loader merges them at load time.
 
+### Draining fire-and-forget work before deleting a sandbox
+
+Two hops of deliberately unawaited work can outlive the test that started them and race
+`[TestCleanup]`'s `Directory.Delete`, which on Windows fails with *"the process cannot access the
+file `claude-code-settings.json`"*. Both are now observable; a fixture that triggers either MUST
+drain it before removing its sandbox.
+
+| Seam | Covers |
+|---|---|
+| `MainWindowViewModel.LastAutomaticReload` | The reload kicked by an automatic trigger — `OnSelectedProfileChanged` (so: any assignment to `SelectedProfile`) and the `ConfigFileWatcher` fire. Both call `ReloadCoreAsync` without awaiting it. |
+| `SchemaRegistry.WhenDiskCacheIdleAsync()` | The disk-cache sync `GetSchemaAsync` starts for a bundled schema. It is a cache warm kept off the startup path, so it is never awaited in production. |
+
+Order matters and is one-directional: the reload is what *starts* the sync, so await the reload
+first or the sync snapshot is taken before the work exists.
+
+```csharp
+[TestCleanup]
+public async Task Cleanup()
+{
+    if (_vm.LastAutomaticReload is { } reload)
+    {
+        // Wait for it to FINISH, not to succeed; reading Exception marks a fault observed.
+        await reload.ContinueWith(static t => _ = t.Exception,
+            CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+    }
+    await _schemaRegistry.WhenDiskCacheIdleAsync();
+    _vm.Dispose();
+    _schemaRegistry.Dispose();
+    PlatformPaths.TestUserProfileOverride = null;
+    TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
+}
+```
+
+Hold the `SchemaRegistry` in a field rather than inlining it into the view-model constructor, or
+there is nothing to await. `WhenDiskCacheIdleAsync` returns a snapshot and never faults.
+`DeleteDirectoryWithRetry` stays as the backstop for the `FileSystemWatcher` handle, which no seam
+covers; it is best-effort and warns rather than throwing. Live example:
+`tests/ClaudeForge.Tests/ViewModels/AvailableProfileEntriesTests.cs`.
+
 ### `LayeredWithXxx(scope, jsonObj)` builder helpers
 
 Most editor tests need a `LayeredValue` with one or two scope entries. The convention is a private helper:
