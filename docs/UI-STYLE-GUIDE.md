@@ -84,9 +84,18 @@ Two consequences for this section:
 
 - Semi 12.1.0.1 defines **none** of the `SystemControl*` family — the
   "inconsistent" resolution above was a Fluent key surviving in one
-  variant's dictionary chain and not another's. Seven such references
-  remain in our views today (the report lists them; one,
-  `SystemAccentColorBrush`, is defined by no theme at all).
+  variant's dictionary chain and not another's. Six such references
+  remain in our views (the report lists them), all of them Fluent keys
+  the compat dictionaries below now resolve.
+- The seventh, `SystemAccentColorBrush`, was defined by **no** theme at
+  all — not Semi, not Fluent, not Simple — so no compat dictionary could
+  reach it and the "NEW" badge it filled painted nothing. It is gone:
+  the badge now takes the `AppAccentBrush` / `AppAccentBackgroundBrush`
+  pair in the app and `LE.AccentBrush` / `LE.AccentBackgroundBrush` in
+  `LayeredEditors.Avalonia`. Note the near-miss when reaching for a
+  theme accent — Fluent's key is `SystemAccentColor` (a `Color`, and
+  `SystemControlHighlightAccentBrush` for the brush); the `…ColorBrush`
+  spelling exists nowhere.
 - `Resources/Compat/FluentKeys.Semi.axaml` and `SimpleKeys.Semi.axaml`,
   merged in `App.axaml`, define every Fluent- and Simple-family key Semi
   lacks, aliased onto Semi's own tokens (`SystemAccentColor` →
@@ -112,11 +121,38 @@ on.  All are theme-aware (per-theme entry in App.axaml).
 | `AppCautionBrush` | `#D97706` | `#F59E0B` | Amber warning foreground (PATH warning row, no-restore-dir warning) |
 | `AppCautionBackgroundBrush` | `#FFFBEB` | `#292010` | Soft amber tint behind warning rows |
 | `AppPanelBorderBrush` | `#E0E0E0` | `#2E2E2E` | Subtle row/panel dividers — replaces `SystemControlForegroundBaseLowBrush` where Semi resolves to near-invisible |
+| `AppAccentBrush` | `#0F4C81` | `#9BCFF2` | Accent text on its own tint — the per-property "NEW" badge |
+| `AppAccentBackgroundBrush` | `#DCEAF7` | `#152C42` | The tint behind it |
 
 **Contrast targets:** the `Primary` / `Secondary` text brushes are tuned
 for ≥7:1 (Primary, WCAG AAA) and ≥4.5:1 (Secondary, AA Normal) against
 their natural backgrounds.  Don't substitute a "looks fine" hex without
 checking — Semi's variant tweaks can drop you below threshold quietly.
+
+**Weight is a design constraint, not just contrast.**  `AppAccentBrush`
+is a two-tone *pill* (tint + matching-hue text), the same shape as the
+property-name pill in §4b, and it is deliberately the quieter of the
+two: the "NEW" badge annotates the property name it sits beside, so it
+must not outweigh what it annotates.
+
+| Pill | vs page, light | vs page, dark | text on pill |
+|---|---:|---:|---|
+| `AppPropertyHeading*` | 1.46:1 | 1.50:1 | 5.52 / 6.05 |
+| `AppAccent*` | 1.22:1 | 1.27:1 | 7.24 / 8.57 |
+
+The first shipped attempt at this badge was a *solid* `#0055A5` chip
+under white text.  Its contrast was fine (7.39:1) and it still looked
+wrong — beside the pale teal property pill it read as the loudest thing
+in the row, which a "by the way, this is new" marker should never be.
+Two lessons worth carrying:
+
+- **Passing WCAG is a floor, not a design.**  Check the new element's
+  weight against its *neighbours*, not only against the page.
+- **A fill is not a foreground.**  Measure a token in the role you are
+  about to use it in: `AppLinkBrush`'s dark `#4DBFE0` carries white at
+  2.13:1 and `AppPropertyHeadingBrush`'s `#74C2DE` at 2.00:1 — fine
+  foregrounds, unusable as fills.  Contrast for a pill is measured
+  against the pill, never the page behind it.
 
 ---
 

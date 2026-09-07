@@ -147,6 +147,8 @@
                   and other secondary action text (matches LayeredEditors LinkBrush hue).
                 AppCautionBrush — amber warning foreground for the PATH-warning row.
                 AppCautionBackgroundBrush — warm tint for bordered caution panels.
+                AppAccentBrush / AppAccentBackgroundBrush — accent tint pill: tinted
+                  background plus matching-hue text (the per-property "NEW" badge).
             -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
@@ -156,6 +158,33 @@
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#005D7F" />
                     <SolidColorBrush x:Key="AppCautionBrush" Color="#D97706" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#FFFBEB" />
+                    <!-- Accent TINT PILL — a tinted background plus matching-hue text,
+                         the same two-tone shape as the property-name pill.  Currently
+                         the per-property "NEW" badge in PropertyEditorWrapper.
+
+                         Deliberately NOT a saturated fill under white text.  A solid
+                         accent chip sits beside the much paler property-name pill and
+                         dominates the row; this badge is a quiet annotation on a
+                         property, not a call to action, so it has to read lighter than
+                         the thing it annotates.  Tuned to land just under the
+                         property pill's own weight:
+
+                                                pill vs page   text on pill
+                           AppPropertyHeading*      1.46:1         5.52:1
+                           AppAccent* (this)        1.22:1         7.24:1
+
+                         Text contrast is measured against the PILL, not the page, and
+                         the floor is 4.5:1 — the badge is 9px bold, so the AA Large
+                         exemption does not apply at any point in this pair.
+
+                         Blue, not the green that "new" might suggest: green already
+                         carries success (AppStatusSuccess*), enabled (LE.BoolEnabled)
+                         and the Project scope chiclet.  This is the accent hue, one
+                         family with McpServersEditorView's selected-server fill.
+                         Light: text #0F4C81 on #DCEAF7 = 7.24:1; pill vs page 1.22:1.
+                         Dark:  text #9BCFF2 on #152C42 = 8.57:1; pill vs page 1.27:1. -->
+                    <SolidColorBrush x:Key="AppAccentBrush" Color="#0F4C81" />
+                    <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#DCEAF7" />
                     <!-- Group-header labels inside the Browse suggestions picker.
                          Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
                          in all theme variants, so we own this token explicitly. -->
@@ -247,6 +276,12 @@
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#4DBFE0" />
                     <SolidColorBrush x:Key="AppCautionBrush" Color="#F59E0B" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#292010" />
+                    <!-- Dark-theme accent tint pill (see Light counterpart for rationale).
+                         Text 8.57:1 on the pill; pill 1.27:1 above the page, against
+                         the property pill's 1.50:1 — subtler than its neighbour on
+                         this theme too. -->
+                    <SolidColorBrush x:Key="AppAccentBrush" Color="#9BCFF2" />
+                    <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#152C42" />
                     <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
                     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />

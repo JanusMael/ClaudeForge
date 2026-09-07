@@ -171,15 +171,20 @@
                          pattern as the scope-badge above.  Avalonia
                          tooltips don't propagate child→parent, so a hover
                          landing on the "NEW" glyph (the text fill) would
-                         see no tooltip if only the Border had one. -->
+                         see no tooltip if only the Border had one.
+                         Tint pill from App.axaml's ThemeDictionaries: no theme
+                         defines SystemAccentColorBrush, so the old key painted
+                         nothing at all.  A tint plus matching-hue text rather than
+                         white on a solid fill — the badge annotates the property-name
+                         pill beside it and must not outweigh it. -->
                     <Border IsVisible="{Binding IsNew}"
-                            Background="{DynamicResource SystemAccentColorBrush}"
+                            Background="{DynamicResource AppAccentBackgroundBrush}"
                             CornerRadius="4" Padding="6,2"
                             VerticalAlignment="Center"
                             ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}">
                         <TextBlock Text="{x:Static loc:Strings.TextNewBadge}"
                                    FontSize="9" FontWeight="Bold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource AppAccentBrush}"
                                    ToolTip.Tip="{x:Static loc:Strings.TipNewSetting}" />
                     </Border>
 
