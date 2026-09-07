@@ -12,9 +12,11 @@
          visual states × theme combinations.  We avoid Semi.Avalonia's
          SystemControlForegroundBaseHighBrush because its resolved value
          varies across Semi versions and can clash with the ListBox
-         background in dark mode.  The selected-item background is a fixed
-         dark blue so white text is always readable regardless of what
-         Semi maps SystemAccentColorBrush to in the current accent theme. -->
+         background in dark mode.  The selected-item background is an
+         app-owned dark blue (McpSelectedBgBrush) so white text is always
+         readable rather than depending on a theme accent key — the
+         SystemAccentColorBrush this comment used to name is defined by no
+         theme at all.  Same blue family as App.axaml's AppAccentBrush. -->
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
@@ -76,9 +78,9 @@
                                 <Setter Property="Foreground"
                                         Value="{DynamicResource McpItemForegroundBrush}" />
                             </Style>
-                            <!-- Selected: fixed dark-blue background so white text is always
-                             readable regardless of what Semi maps SystemAccentColorBrush to
-                             in the current accent theme.  TextElement.Foreground on the
+                            <!-- Selected: app-owned dark-blue background (McpSelectedBgBrush,
+                             declared above) so white text is always readable instead of
+                             depending on a theme accent key.  TextElement.Foreground on the
                              ContentPresenter cascades white into all child elements. -->
                             <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
                                 <Setter Property="Background"
