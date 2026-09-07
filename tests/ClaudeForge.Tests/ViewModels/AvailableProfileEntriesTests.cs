@@ -14,6 +14,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 public sealed class AvailableProfileEntriesTests
 {
     private string _sandbox = null!;
+    private SchemaRegistry _schemaRegistry = null!;
     private MainWindowViewModel _vm = null!;
 
     [TestInitialize]
@@ -23,21 +24,48 @@ public sealed class AvailableProfileEntriesTests
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
+        // Held in a field, not inlined, so Cleanup can await the registry's disk-cache sync.
+        _schemaRegistry = new SchemaRegistry();
+
         // Instantiate without triggering InitializeAsync (no workspace load needed).
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService());
     }
 
     [TestCleanup]
-    public void Cleanup()
+    public async Task Cleanup()
     {
+        // Drain the two fire-and-forget hops a test in this class can start before deleting the
+        // sandbox they write into. Assigning SelectedProfile runs OnSelectedProfileChanged, which
+        // kicks ReloadCoreAsync; that loads the schema, which kicks the registry's disk-cache
+        // sync. Neither is awaited in the app — both are deliberately off the UI path — so
+        // without this the writes outlive the test and Windows refuses to delete the directory
+        // with "the process cannot access the file 'claude-code-settings.json'".
+        if (_vm.LastAutomaticReload is { } reload)
+        {
+            try
+            {
+                await reload;
+            }
+            catch (Exception ex)
+            {
+                // A faulted reload is this test's business, not teardown's: report it and keep
+                // tearing down, so the failure surfaces without masking the real assertion.
+                Console.Error.WriteLine($"[TestCleanup] reload faulted: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        // Ordered second: the reload is what starts the sync, so draining it first is what makes
+        // this snapshot complete.
+        await _schemaRegistry.WhenDiskCacheIdleAsync();
+
         _vm.Dispose();
+        _schemaRegistry.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
-        // Robust delete: the MainWindowViewModel constructor wires a
-        // FileSystemWatcher against the sandbox directory.  On the CI
-        // windows-latest runner the watcher's ReadDirectoryChangesW
-        // completion-port handle can outlive Dispose() by tens of
-        // milliseconds, racing with Directory.Delete.  The helper does
-        // a forced GC pass + retry-with-backoff to absorb that latency.
+
+        // Belt to the braces above: the MainWindowViewModel constructor also wires a
+        // FileSystemWatcher against the sandbox, and its ReadDirectoryChangesW completion-port
+        // handle can outlive Dispose() by tens of milliseconds on the CI windows-latest runner.
+        // The helper absorbs that with a forced GC pass and retry-with-backoff.
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
