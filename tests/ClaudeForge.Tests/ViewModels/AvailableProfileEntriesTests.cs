@@ -14,6 +14,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 public sealed class AvailableProfileEntriesTests
 {
     private string _sandbox = null!;
+    private SchemaRegistry _schemaRegistry = null!;
     private MainWindowViewModel _vm = null!;
 
     [TestInitialize]
@@ -23,21 +24,49 @@ public sealed class AvailableProfileEntriesTests
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
+        // Held in a field, not inlined, so Cleanup can await the registry's disk-cache sync.
+        _schemaRegistry = new SchemaRegistry();
+
         // Instantiate without triggering InitializeAsync (no workspace load needed).
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService());
     }
 
     [TestCleanup]
-    public void Cleanup()
+    public async Task Cleanup()
     {
+        // Drain the two fire-and-forget hops a test in this class can start before deleting the
+        // sandbox they write into. Assigning SelectedProfile runs OnSelectedProfileChanged, which
+        // kicks ReloadCoreAsync; that loads the schema, which kicks the registry's disk-cache
+        // sync. Neither is awaited in the app — both are deliberately off the UI path — so
+        // without this the writes outlive the test and Windows refuses to delete the directory
+        // with "the process cannot access the file 'claude-code-settings.json'".
+        if (_vm.LastAutomaticReload is { } reload)
+        {
+            // Teardown needs the reload to have FINISHED, not to have succeeded — its outcome is
+            // the test body's business. Waiting through a continuation rather than awaiting the
+            // task directly means a fault never rethrows here and fails an otherwise-green test,
+            // and reading Exception marks it observed so it cannot resurface later as an
+            // unobserved-task crash. Deliberately not a try/catch: catching every exception type
+            // just to discard it is the generic-catch anti-pattern in AGENTS.md §4.
+            await reload.ContinueWith(
+                static finished => _ = finished.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.None,
+                TaskScheduler.Default);
+        }
+
+        // Ordered second: the reload is what starts the sync, so draining it first is what makes
+        // this snapshot complete.
+        await _schemaRegistry.WhenDiskCacheIdleAsync();
+
         _vm.Dispose();
+        _schemaRegistry.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
-        // Robust delete: the MainWindowViewModel constructor wires a
-        // FileSystemWatcher against the sandbox directory.  On the CI
-        // windows-latest runner the watcher's ReadDirectoryChangesW
-        // completion-port handle can outlive Dispose() by tens of
-        // milliseconds, racing with Directory.Delete.  The helper does
-        // a forced GC pass + retry-with-backoff to absorb that latency.
+
+        // Belt to the braces above: the MainWindowViewModel constructor also wires a
+        // FileSystemWatcher against the sandbox, and its ReadDirectoryChangesW completion-port
+        // handle can outlive Dispose() by tens of milliseconds on the CI windows-latest runner.
+        // The helper absorbs that with a forced GC pass and retry-with-backoff.
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
