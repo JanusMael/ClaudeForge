@@ -197,6 +197,20 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// <summary>Available options for <see cref="EssentialsCardKind.EnumString"/>.</summary>
     public IReadOnlyList<string> EnumOptions { get; }
 
+    /// <summary>Spinner floor for an <see cref="EssentialsCardKind.Int"/> card.</summary>
+    /// <remarks>
+    /// <see langword="decimal"/> because <c>NumericUpDown</c>'s bounds are, and this exists purely
+    /// to be bound to them. See <see cref="EssentialsCardOptions.IntMinimum"/> for why the range
+    /// belongs to the card rather than to the markup.
+    /// </remarks>
+    public decimal IntMinimum { get; }
+
+    /// <summary>Spinner ceiling for an <see cref="EssentialsCardKind.Int"/> card.</summary>
+    public decimal IntMaximum { get; }
+
+    /// <summary>Spinner step for an <see cref="EssentialsCardKind.Int"/> card.</summary>
+    public decimal IntIncrement { get; }
+
     /// <summary>
     /// When true the EnumString card is editable — the options are
     /// <em>suggestions</em>, not a closed set (e.g. the model card, where a user
@@ -383,6 +397,9 @@ public partial class EssentialsCardViewModel : ObservableObject
         _writeAsync = options.WriteAsync;
         EnumOptions = options.EnumOptions ?? [];
         FilteredOptions = new ObservableCollection<string>(EnumOptions);
+        IntMinimum = options.IntMinimum;
+        IntMaximum = options.IntMaximum;
+        IntIncrement = options.IntIncrement;
         LabelledOptions = options.LabelledOptions ?? [];
         AllowsFreeForm = options.AllowsFreeForm;
         _isDangerPredicate = options.IsDangerPredicate;

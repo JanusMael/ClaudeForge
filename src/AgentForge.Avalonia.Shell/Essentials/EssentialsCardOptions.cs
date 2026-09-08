@@ -76,6 +76,26 @@ public sealed record EssentialsCardOptions
     /// <summary>Options for an <see cref="EssentialsCardKind.EnumString"/> card.</summary>
     public IReadOnlyList<string>? EnumOptions { get; init; }
 
+    /// <summary>Smallest value an <see cref="EssentialsCardKind.Int"/> card's spinner offers.</summary>
+    /// <remarks>
+    /// ⚠ <b>Per card, because the schema is per key.</b> A single range hardcoded in the markup
+    /// serves whichever card was written first: OpenCode's <c>subagent_depth</c> admits 0, while
+    /// <c>tool_output.max_lines</c> and <c>max_bytes</c> are <c>exclusiveMinimum: 0</c> — so a
+    /// shared <c>Minimum="0"</c> offers those two a value OpenCode rejects at load, and the user
+    /// finds out at save time instead of never being able to pick it.
+    /// </remarks>
+    public decimal IntMinimum { get; init; }
+
+    /// <summary>Largest value an <see cref="EssentialsCardKind.Int"/> card's spinner offers.</summary>
+    /// <remarks>
+    /// Defaults to <see cref="int.MaxValue"/> — the card's value is an <c>int?</c>, so that is the
+    /// real ceiling regardless of what a schema's <c>maximum</c> says.
+    /// </remarks>
+    public decimal IntMaximum { get; init; } = int.MaxValue;
+
+    /// <summary>Step the spinner's arrows move an <see cref="EssentialsCardKind.Int"/> card by.</summary>
+    public decimal IntIncrement { get; init; } = 1;
+
     /// <summary>
     /// The closed, ordered option set for an <see cref="EssentialsCardKind.LabelledEnum"/> card.
     /// Required on that kind and rejected on every other.
