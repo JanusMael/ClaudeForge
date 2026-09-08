@@ -2518,6 +2518,68 @@ threshold, or if any key the nav grouping map references disappears. A silent up
 restructure would otherwise land the whole page in the `JsonRaw` fallback with no test
 failure.
 
+> ✅ **SHIPPED 2026-09-08 — the CI half of Phase 13.** `da89131` · `da8bf63` · `d937c8c` ·
+> `a4cb70c`. The in-app half (provenance, opt-in promotion, badge, `--schema-source`) is
+> untouched.
+>
+> **The table above is right about the URLs and wrong about the work.** All three upstreams are
+> live and, measured 2026-09-08, every property set already matched bundled — but two things the
+> table does not mention decide whether the tooling is safe to run at all.
+>
+> ⛔⛔ **The `models.dev` strip is mandatory, and it is not configuration — it is the reason a
+> naive refresh ships a broken schema.** Upstream `opencode-config.json` types **four** `model`
+> properties with `"$ref": "https://models.dev/model-schema.json#/$defs/Model"`. Leaving one in
+> makes evaluation throw through `ValidateWorkspaceAsync` → `SaveAsync` for *any* config that
+> sets a model, and the restore path's evaluate guard does not catch that exception type.
+> Measured by planting the un-stripped upstream file: build succeeds, 645 OpenCode tests pass,
+> and **only `BundledOpenCodeSchemaTests` fails.** That test's own remarks had already
+> anticipated this phase — *"Any future refresh — by hand or by the tooling Phase 13 adds —
+> re-downloads a file that has them"* — so the requirement was written down; the plan's table
+> simply never inherited it.
+>
+> The strip is **textual**. Parse-and-reserialise would reformat all ~1,300 lines into a diff no
+> reviewer could read. Two cases, and reversing them yields invalid JSON: a `$ref` line ending
+> in a comma has siblings after it; one that does not was the last key, so the **preceding**
+> line's comma must go too. All four sites today are the second case.
+>
+> ⚠ **The old up-to-date check was wrong on Windows.** `.gitattributes` sets `* text=auto`, so a
+> Windows checkout holds CRLF while every download is LF — `claude-code-settings.json` is 4,260
+> bytes larger on disk for exactly that reason, byte-identical once normalised. The byte-hash
+> short-circuit therefore reported drift on every local run and `-DryRun` always claimed a
+> 4,260-line change. **CI never saw it** (a Linux checkout is LF), which is how it survived.
+> Comparison is now normalised.
+>
+> ⛔ **`refresh-schema.sh` had been broken since the initial commit** — `TARGET_PATH` named
+> `src/ClaudeForge.Core/`, which Phase 1's rename deleted, so the script exited "target not
+> found" before doing anything. `BuildFilePathIntegrityTests` scanned `scripts/**/*.ps1` only,
+> and that guard exists *because of* this very rename. It scans `*.sh` now; widening it turned
+> it red on the real defect before the fix.
+>
+> ⭐ **Parity between the two scripts is asserted by BYTE comparison of what they write, not by
+> matching verdicts** — and that caught a real defect. `awk` always terminates its last line, so
+> the two schemas that carry **no trailing newline** (`opencode-config`, `opencode-tui`) came
+> back one byte longer and reported CHANGED on every run, while PowerShell round-tripped exactly.
+> The shell version now takes the input's newline state as an `awk -v` variable and skips the
+> transform entirely when there is nothing to strip.
+>
+> **The extra guard is `SchemaRefreshDriftTests` (5 tests, `tests/OpenCodeForge.Tests/`), not a
+> scheduled job.** A test runs on every PR including the refresh PR, which is strictly better
+> than a weekly job. It pins the top-level property counts per schema (142 / 36 / 13, measured
+> against the live upstreams so they are the counts a refresh *today* would produce) and asserts
+> every key `OpenCodePageLayout` maps still exists in its schema.
+>
+> ⭐ **What it deliberately does NOT assert, and why that was measured rather than assumed:** a
+> *new* upstream key with no map entry is legal — it falls to the fallback page — and cannot ship
+> untriaged because `OpenCodeDangerTableTests` already fails on any schema key with no danger
+> entry. A canary that added a key confirmed both halves: `EveryConfigSchemaKeyIsClassified`
+> reddens and the orphan check stays quiet. So the guard is neither duplicated nor over-tight.
+>
+> ⚠ **Not adopted: today's upstream content.** `opencode-config.json` has genuine drift
+> (`chunkTimeout` became `anyOf[integer, false]`; two timeout descriptions now document a 300000
+> default). Shipping the tooling and adopting a schema change are separate decisions, so the
+> bundled files are untouched — every test run above restored them byte-identically. Run
+> `pwsh scripts/refresh-schema.ps1` when that change is wanted.
+
 ---
 
 ## Phased implementation
@@ -4815,6 +4877,16 @@ read delegate in `OpenCodeEssentialsViewModel` is synchronous, and the reason is
 delegate block.
 
 ### Phase 13 — Schema refresh: in-app + CI
+
+> **The CI half is ✅ DONE (2026-09-08).** Both refresh scripts walk a three-schema table with
+> the mandatory `models.dev` strip and line-ending-normalised comparison; the workflow's drift
+> check covers the whole `Assets/Schemas/` directory and names the changed files in the PR body;
+> `SchemaRefreshDriftTests` pins the property counts and the nav-map keys. Full write-up, with
+> the two things the plan's table omitted, is in **CI changes** above.
+>
+> **Remaining: the in-app half only** — `SchemaProvenance`, the *Check for schema updates*
+> action, the per-product opt-in promotion, the provenance badge, and the `--schema-source`
+> debug flag.
 
 Generalize `scripts/refresh-schema.ps1` to the four-schema table; widen
 `schema-refresh.yml`'s drift check to all of `Assets/Schemas/`; add the property-count /
