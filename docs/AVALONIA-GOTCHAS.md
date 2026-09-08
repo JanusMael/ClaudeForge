@@ -319,6 +319,26 @@ Combined with `AutomationProperties.AccessibilityView="Raw"` on the inner glyph,
 ⭐ **A UIA dump reports `Name` by default, so `HelpText` looks absent unless you ask for it** — read `element.Current.HelpText` explicitly before concluding the annotation did not apply.
 
 ---
+---
+
+### An `AutoCompleteBox` reports `ControlType.Group`, and a `NumericUpDown`'s inner `TextBox` is a separate unnamed element
+
+**Symptom:** A UIA sweep that queries the obvious control types — `Edit`, `ComboBox`, `CheckBox` — finds the free-form pickers **missing** and reports several unnamed `Edit` elements instead. It reads exactly like `AutomationProperties.Name` having been ignored.
+
+**It has not been.** Measured on OpenCodeForge's Essentials page, where three `AutoCompleteBox`es and three `NumericUpDown`s each carry `AutomationProperties.Name="{Binding Title}"`:
+
+| Control in markup | What UIA actually exposes |
+|---|---|
+| `AutoCompleteBox` | one `ControlType.Group`, **correctly named**, keyboard-focusable — plus one unnamed `ControlType.Edit` child (its templated `TextBox`) |
+| `NumericUpDown` | one `ControlType.Spinner`, **correctly named** — plus one unnamed `Edit` child, and two `Button`s |
+
+So the name arrives; it is on the composite's own peer, and the inner `TextBox` is a distinct element that has no name of its own. Both apps behave identically, and have since the first `NumericUpDown` shipped.
+
+⛔ **The trap is the probe, not the app.** Enumerate by `TrueCondition` and read `Current.ControlType.ProgrammaticName`, or filter to `Current.IsKeyboardFocusable` — the focus targets are what a screen reader actually lands on, and they line up with the markup one-for-one. Querying a hand-picked list of control types produced a confident false conclusion here, and the count of unnamed `Edit`s (six) happened to look like a plausible defect: 3 + 3.
+
+⚠ **A `NumericUpDown`'s spin buttons announce `Avalonia.Controls.PathIcon`.** Same `ToString()` fallback as the `ItemsSource` container cases above — Avalonia's default template gives them no name. Pre-existing in both apps wherever a `NumericUpDown` ships; not yet fixed.
+
+⭐ **Related:** `CopyFromScreen` captures the **physical screen**, so screenshotting a background window silently yields whatever is on top of it — for one run here, the editor that launched the harness. Force the window foreground first (`ShowWindow` + `SetWindowPos` topmost + `SetForegroundWindow`) or treat the UIA dump, not the image, as the evidence.
 
 ## Virtualization / perf
 

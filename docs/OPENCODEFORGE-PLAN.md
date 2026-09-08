@@ -1399,10 +1399,36 @@ highest-impact knobs are single booleans or single enums with no Claude analogue
 | 16 | **Rules in effect** | *derived* | 🔵 quality | "No global `AGENTS.md` found", or "your `OPENCODE_CONFIG_DIR` `AGENTS.md` is being ignored" (Problem 7 gotcha #1). Read-only card linking to the Rules tab. | ignored-rules detected |
 | 17 | **Active config file** | *derived* from `OPENCODE_CONFIG` / `OPENCODE_CONFIG_DIR` / `OPENCODE_CONFIG_CONTENT` | 🔵 diagnostic | *Which file am I actually editing?* This is the structural analogue of Claude's "effective source" sub-row, and it directly defuses the config-dir confusion. | inline-config override active |
 
+> ⛔⛔ **The table above was written from prose and the schema disagrees with it in six places.**
+> Measured 2026-09-04 against the bundled `opencode-config.json` (`$defs/Config`, 36 properties)
+> while building slice 3. **Read this before building any card from that table.**
+>
+> | Row says | Schema / measurement says |
+> |---|---|
+> | #1 `permission` is "a bare string, or `"*"`" | `anyOf[PermissionActionConfig, per-tool object]`. **There is no `"*"` arm** — it does not exist. |
+> | #2/#3/#4 are a 3-value enum | `PermissionRuleConfig` = `anyOf[action, pattern→action object]`. A plain enum card **cannot always represent them**; ordered per-pattern rules are a second shape. |
+> | #5 is 🟠 | The danger table tiers `permission.webfetch` and `.websearch` **Critical**. |
+> | #8 `plugin[]` is a string list | Items are `anyOf[string, [string, object]]` — a **tuple carrying an options object**. |
+> | #9 `model` is 🔴 | The danger table tiers it **Caution**. |
+> | #15 `default_agent` is a picker | Plain `string`, **no enum**. And only **`build`** and **`plan`** are offerable: probing `opencode debug agent` on v1.17.9 shows `general`/`explore` are `subagent`, `summary`/`compaction` are primary but `hidden`, and `title` **does not exist in the binary**. |
+>
+> ⭐⭐ **A card's severity must be read from the danger table, never written in `BuildCards`.** Both
+> surfaces show a dot for the same key, and one literal per surface agreed only by vigilance —
+> which had already failed: slice 2's `autoupdate` card said `Neutral` while the table says `Info`.
+>
+> ⛔⛔ **`permission` cards must interlock, or they destroy data.** When the file holds the bare
+> form, writing `permission.bash` replaces that string with an object and **silently deletes the
+> global rule covering every other tool**; when a tool holds ordered per-pattern rules, writing a
+> bare action discards them, and their order is semantics (last match wins). Whichever form is in
+> the file, the cards that cannot safely write it stand down and say why.
+
 **Two card kinds are new:** a *derived / read-only* kind (#16, #17) that reports resolver
 state rather than editing a key, and a *tri-state enum* for `autoupdate`'s
-`true | false | "notify"` union. Everything else reuses the existing
-Bool / Int / EnumString / StringList kinds unchanged.
+`true | false | "notify"` union — shipped as **`LabelledEnum`**, since absent makes four states and
+an unreadable value five, and the real distinction is a display label separate from the committed
+token. Everything else reuses the existing Bool / Int / EnumString kinds unchanged. ⚠ **Not
+`StringList`** — the one card that looked like a list (#8 `plugin`) ships `Derived` instead, because
+a string list would drop the tuple form's options on write.
 
 **Reuse note.** `EssentialsCardViewModel` already takes read/write delegate closures so
 the card is agnostic about which accessor it talks to — that indirection is exactly what
@@ -4711,12 +4737,76 @@ depends on Phase 5, so it can be pulled earlier if the shell extraction lands cl
 > Registered, and `INavigablePage` is now dispatched from `OnSelectedNodeChanged` so the two
 > filesystem-derived cards re-read on arrival instead of showing startup state all session.
 
-**Remaining (slice 3):** the other fourteen cards from the table above, all on kinds that already
-shipped — plus their editor surfaces in `OpenCodeEssentialsView.axaml`.
-`OpenCodeEssentialsViewKindCoverageTests` fails the moment a card is added whose kind the markup
-cannot draw, so a blank card cannot ship quietly. Card #16's "link to the Rules tab" is also
-deferred: it targets the artifacts page's Memory tab rather than a settings page, which is a
-different mechanism from `NavigateToNavGroupMessage`.
+**Slice 3 — ✅ complete.** The other fourteen cards, all on kinds that already shipped, plus their
+editor surfaces in `OpenCodeEssentialsView.axaml`. The measurements are recorded in the corrections
+block above the card table — they were the expensive half, and they invalidate six of its rows.
+
+Shipped as **19 cards, not 17**: two rows name two keys each (`permission.webfetch`·`websearch`,
+`tool_output.max_lines`·`max_bytes`) and a card binds exactly one value, so splitting them keeps
+each independently editable and independently dangerous.
+
+| What landed | Why it is not what the table said |
+|---|---|
+| Severity read from `IDangerClassifier`, never written in `BuildCards` | Fixes the slice-2 defect where the two surfaces disagreed about `autoupdate`. Classified with a **null scope and null value** so the standing dot shows the setting's base tier and does not flicker as the user edits — the value-sensitive half is what `IsDangerNow` and the per-card predicates are for. |
+| The `permission` cards **interlock** | `anyOf[bare action, per-tool object]`, and writing either arm destroys the other. Whichever form is in the file, the cards that cannot safely write it stand down with an explanation. |
+| `plugin` is `Derived`, read-only | A `StringList` would read a `[name, options]` tuple as nothing and write the list back without it. |
+| `model` / `small_model` free-form with **no** suggestions | The real set comes from the configured providers; a hardcoded subset would read as complete. |
+| `default_agent` free-form, suggesting only `build` and `plan` | The five other schema-named agents are subagent, hidden, or absent from the binary. A user's own agents are added; those five never are. |
+| **Per-card integer bounds** on `EssentialsCardOptions` (`IntMinimum` / `IntMaximum` / `IntIncrement`) | `subagent_depth` admits 0; `tool_output.max_lines` and `max_bytes` are `exclusiveMinimum: 0`. One range hardcoded in markup offers two of the three cards a value OpenCode rejects at load — and a rejected config bricks every command rather than falling back. |
+
+The window takes the danger table from its **section list**, not from the opened-section local: the
+client must have opened (`GetEffective` throws otherwise, inside a fire-and-forget read) but a
+static tiering of keys need not, and greying out every dot on a section whose open threw would
+strip the signal from the one user who cannot load their configuration.
+
+### ⛔⛔ The interlock was defeatable in one visit, and only re-reading the code found it
+
+**The guard was computed at read time and never recomputed after a sibling wrote.** Cards refresh on
+construction and on arrival, so setting the global action left the five tool cards holding the
+`EnumDisabled` they had computed *before* that write — enabled, with no notice. Two ordinary clicks
+(global → `deny`, then bash → `allow`) replaced the bare string with an object and **deleted the
+global rule covering every tool without a card.** Precisely the data loss the interlock exists to
+prevent, reached through the interlock.
+
+Nothing was asserting it: every interlock test loaded a file already in one arm and checked the
+cards read it correctly, which is a different claim from *the cards stay correct as the file
+changes underneath them*. Fixed by `RefreshPermissionCards`, called after either permission writer;
+seven new `[DataRow]`-driven assertions cover both directions **and** the release case — the
+refresh has to stand the cards back **up** when the last rule is removed, or the page latches
+read-only after the first edit and still looks like a working interlock.
+
+⚠ The refresh cannot recurse: every permission read sets `IsLoading` around its assignment and the
+value-changed routers return early while it is set, so the re-read that lands on the card currently
+being written raises no second write.
+
+### Two things the canary pass corrected
+
+⛔ **A test asserting a premise it could not produce.** `TheTiersSurviveASectionThatFailedToOpen`
+planted malformed JSON to force a failed open, and passed. A premise assertion on
+`MainWindowViewModel.Status` proved it was passing as a duplicate of its neighbour:
+`ConfigFileLoader` catches `JsonException` deliberately, loading the file as an empty root and
+recording `SettingsDocument.LoadFailure` rather than throwing — so **a parse-broken config opens
+successfully**, and no amount of bad JSON reaches that branch. The invariant it meant to cover is a
+statement about the page, and is now asserted directly against a null client.
+
+⛔ **The kind-coverage guard could not see the `EnumString` flavours.** It scans for
+`EssentialsCardKindConverters.Is*`, and both flavours live inside one container keyed on
+`IsEnumString` — so deleting the free-form control left the *kind* with a surface while three cards
+rendered no editor at all. Found by a canary whose prediction was deliberately `[]`. Closed by
+`BothEnumStringFlavoursThePageBuilds_HaveASurfaceInTheMarkup`, which checks both directions against
+`IsStrictEnumString` / `IsFreeFormEnumString`; those are card properties rather than kinds, which is
+precisely why the converter scan is blind to them.
+
+⭐ Thirteen mutations canaried in all, no missed reds. One deliberately-empty prediction was wrong in
+the useful direction: cross-wiring the TUI danger table into the Config page **was** caught, because
+the app-side spot-check compares against the named table rather than merely asserting "some card is
+not Neutral".
+
+Card #16's "link to the Rules tab" stays deferred: it targets the artifacts page's Memory tab rather
+than a settings page, which is a different mechanism from `NavigateToNavGroupMessage`.
+
+⛔ `OpenCodeEssentialsViewKindCoverageTests` fails the moment a card is built whose kind the markup
+cannot draw — that is the guard working, and it is what stops a blank card shipping quietly.
 
 Re-assert the `IsLoading`-must-not-span-`await` guard here
 (`IntValueWrite_NotSuppressed_WhileReadIsInAsyncPhase`) — that bug class is not
