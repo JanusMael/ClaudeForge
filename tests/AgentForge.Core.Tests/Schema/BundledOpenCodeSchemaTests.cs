@@ -66,6 +66,44 @@ public class BundledOpenCodeSchemaTests
     }
 
     /// <summary>
+    /// Every site upstream puts an external <c>$ref</c> on, named as a JSON pointer.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>There are FOUR, and one of them is nested two levels deeper than the other three.</b>
+    /// Measured 2026-09-08 by walking the live upstream file for <c>$ref</c> values containing
+    /// <c>models.dev</c>. The <c>command</c> one does not fit a <c>(def, property)</c> pair, which
+    /// is exactly why an earlier revision of this test covered only three of the four: the shape
+    /// of the fixture decided the coverage. Pointers instead, so depth is not a filter.
+    /// <para>
+    /// Every site carries a <c>type</c> sibling upstream, which is what makes stripping the
+    /// keyword alone a safe mechanical edit.
+    /// </para>
+    /// </remarks>
+    private static readonly string[] ModelRefSites =
+    [
+        "/$defs/Config/properties/model",
+        "/$defs/Config/properties/small_model",
+        "/$defs/AgentConfig/properties/model",
+        "/$defs/Config/properties/command/additionalProperties/properties/model",
+    ];
+
+    /// <summary>Resolve a slash-delimited JSON pointer, or <see langword="null"/>.</summary>
+    private static JsonNode? Resolve(JsonNode? root, string pointer)
+    {
+        JsonNode? node = root;
+        foreach (string segment in pointer.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            node = node?[segment];
+            if (node is null)
+            {
+                return null;
+            }
+        }
+
+        return node;
+    }
+
+    /// <summary>
     /// The strip must remove only the keyword. If it took the enclosing property with it,
     /// the four model fields would become untyped — every value would validate, and the
     /// editor would offer no type information at all.
@@ -74,23 +112,28 @@ public class BundledOpenCodeSchemaTests
     public void StrippingTheRefLeftTheModelPropertiesTyped()
     {
         JsonNode? root = JsonNode.Parse(ReadBundled(ConfigSchema));
-        JsonNode? defs = root?["$defs"];
-        Assert.IsNotNull(defs, "$defs is missing — the schema shape changed upstream.");
+        Assert.IsNotNull(root?["$defs"], "$defs is missing — the schema shape changed upstream.");
 
-        foreach ((string defName, string propertyName) in new[]
-                 {
-                     ("Config", "model"),
-                     ("Config", "small_model"),
-                     ("AgentConfig", "model"),
-                 })
+        foreach (string pointer in ModelRefSites)
         {
-            JsonNode? property = defs[defName]?["properties"]?[propertyName];
-            Assert.IsNotNull(property, $"$defs.{defName}.properties.{propertyName} is gone.");
+            JsonNode? property = Resolve(root, pointer);
+
+            // Premise before claim: a pointer that stopped resolving would otherwise let this
+            // loop pass over a site it never looked at.
+            Assert.IsNotNull(property,
+                $"'{pointer}' no longer resolves. Upstream moved or removed it, so the strip "
+                + "this test guards may now be aimed at nothing — re-measure the ref sites "
+                + "against the live upstream file before editing the list.");
+
             Assert.AreEqual(
                 "string",
                 property["type"]?.GetValue<string>(),
-                $"$defs.{defName}.properties.{propertyName} lost its type. The strip is "
-                + "supposed to remove the $ref keyword and nothing else.");
+                $"'{pointer}' lost its type. The strip is supposed to remove the $ref keyword "
+                + "and nothing else.");
+
+            Assert.IsNull(property["$ref"],
+                $"'{pointer}' still carries a $ref. The strip missed this site — and it is the "
+                + "deeply-nested one if this is the `command` pointer.");
         }
     }
 
