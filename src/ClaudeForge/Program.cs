@@ -69,6 +69,11 @@ internal sealed class Program
             nameof(WrapperStrings.TipNewSetting) => Strings.TipNewSetting,
             nameof(WrapperStrings.LabelOverridden) => Strings.TextOverridden,
             nameof(WrapperStrings.LabelReset) => Strings.ButtonReset,
+            // Unlike the seven above, these two DO render here: they name the
+            // NumericUpDown spinner's up/down buttons, which the theme bundle in
+            // Themes/AccessibilityNames.axaml styles for every host.
+            nameof(WrapperStrings.LabelSpinnerIncrease) => Strings.AutoNameSpinnerIncrease,
+            nameof(WrapperStrings.LabelSpinnerDecrease) => Strings.AutoNameSpinnerDecrease,
             var _ => key,
         };
 

@@ -1,0 +1,42 @@
+<!--
+    Screen-reader names for control-template parts that ship WITHOUT one.
+
+    A control's default template can contribute interactive elements that the markup
+    hosting the control never sees, so no amount of AutomationProperties.Name in a view
+    reaches them, and a static AXAML scan cannot find them either — there is no element
+    in the markup to scan.  Naming them is the theme's job, which is why this file sits
+    beside the theme bundle rather than in any one app.
+
+    ── NumericUpDown / ButtonSpinner ────────────────────────────────────────────────
+    NumericUpDown draws a ButtonSpinner, whose template puts two RepeatButtons
+    (PART_IncreaseButton / PART_DecreaseButton) beside the text box.  Their Content is a
+    PathIcon, and Avalonia's ContentControlAutomationPeer falls back to Content.ToString()
+    when no name is set — so a screen reader announces each one as the literal string
+    "Avalonia.Controls.PathIcon".  Measured through UIA 2026-09-07 on both apps: every
+    NumericUpDown on screen contributed two such buttons (four on ClaudeForge's Essentials
+    page, six on OpenCodeForge's).  The NumericUpDown itself is fine — it carries the name
+    its view sets and surfaces as a correctly-named ControlType.Spinner.
+
+    The /template/ selector is required: without it the style does not reach an element
+    that lives inside a control template.  Names come from WrapperStrings so a host can
+    localise them through the same Resolver hook the wrapper chrome uses; the default is
+    English.
+
+    Guard: LayeredEditors.Avalonia.Tests/Themes/SpinnerAutomationNameTests.cs applies this
+    file's styles to a real templated NumericUpDown and reads the automation peers.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Localization">
+
+    <Style Selector="ButtonSpinner /template/ RepeatButton#PART_IncreaseButton">
+        <Setter Property="AutomationProperties.Name"
+                Value="{x:Static loc:WrapperStrings.LabelSpinnerIncrease}" />
+    </Style>
+
+    <Style Selector="ButtonSpinner /template/ RepeatButton#PART_DecreaseButton">
+        <Setter Property="AutomationProperties.Name"
+                Value="{x:Static loc:WrapperStrings.LabelSpinnerDecrease}" />
+    </Style>
+
+</Styles>

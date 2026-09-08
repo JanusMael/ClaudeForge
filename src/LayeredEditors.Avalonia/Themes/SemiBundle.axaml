@@ -27,4 +27,11 @@
          <Styles.Resources><ResourceInclude> does NOT work in Avalonia 11 (AVLN3000). -->
     <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/EditorColors.axaml" />
 
+    <!-- Screen-reader names for template parts that ship without one (the NumericUpDown
+         spinner buttons). Nothing in it is Semi-specific — Avalonia's own Fluent theme
+         leaves the same buttons unnamed — so a consumer that skips this bundle should
+         still include AccessibilityNames.axaml on its own. It is included here because
+         that is the one line every host in this repo already has. -->
+    <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml" />
+
 </Styles>

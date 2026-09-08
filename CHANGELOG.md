@@ -69,6 +69,15 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Fixed
 
+- **Screen readers read out `Avalonia.Controls.PathIcon` on every number field's
+  up/down buttons.** Those two buttons come from the `NumericUpDown` control template,
+  not from any view, so nothing could annotate them and the AXAML accessibility guard
+  had no element to flag at any scan width — and with no name set, Avalonia announces a
+  `Content.ToString()`, which for an icon is its type name. Twelve buttons in ClaudeForge:
+  Essentials (Max Output Tokens, Max Thinking Tokens), General, Sandbox, and the
+  Backup / Restore retention count; six more on OpenCodeForge's Essentials page. They now
+  announce "Increase value" / "Decrease value", translated in all eight locales, named
+  once in the shared theme so both apps get it.
 - **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
   the detail pane but never the row's subtitle, which is what the list renders —
   so editing a `description` and saving kept showing the old text until the next

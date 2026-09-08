@@ -553,7 +553,25 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("AutoNameShowAllSchemaProps", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Decrease value.
+        /// </summary>
+        public static string AutoNameSpinnerDecrease {
+            get {
+                return ResourceManager.GetString("AutoNameSpinnerDecrease", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Increase value.
+        /// </summary>
+        public static string AutoNameSpinnerIncrease {
+            get {
+                return ResourceManager.GetString("AutoNameSpinnerIncrease", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Toggle theme.
         /// </summary>
