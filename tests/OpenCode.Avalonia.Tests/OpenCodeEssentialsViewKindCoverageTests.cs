@@ -172,4 +172,111 @@ public sealed class OpenCodeEssentialsViewKindCoverageTests
                 + "EssentialsCardKind — so the surface it guards can never become visible.");
         }
     }
+
+    /// <summary>
+    /// The two EnumString <em>flavours</em> each have a surface, not just the kind.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>A canary with a deliberately empty prediction found this hole, and the prediction was
+    /// right.</b> Deleting the free-form <c>AutoCompleteBox</c> from the markup reddened
+    /// <b>nothing</b>: the test above scans for <c>EssentialsCardKindConverters.Is*</c>, and both
+    /// flavours live inside one container keyed on <c>IsEnumString</c> — so the kind still had "a
+    /// surface" while three cards (<c>model</c>, <c>small_model</c>, <c>default_agent</c>) rendered
+    /// with no editor at all. Exactly the blank-card failure one level down from the one that test
+    /// exists to prevent.
+    /// </para>
+    /// <para>
+    /// The flavours are discriminated by two card properties rather than by a converter, because
+    /// <c>AllowsFreeForm</c> is not part of the kind — which is why the converter scan cannot see
+    /// them and this check is separate rather than folded in.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void BothEnumStringFlavoursThePageBuilds_HaveASurfaceInTheMarkup()
+    {
+        HashSet<string> bound = FlavourBindingsInTheMarkup();
+        IReadOnlyList<EssentialsCardViewModel> cards = [.. BuildPage().Cards];
+
+        Assert.IsTrue(cards.Any(c => c.Kind == EssentialsCardKind.EnumString),
+            "The page builds no EnumString card, so this test checked nothing.");
+
+        List<string> missing = [];
+
+        if (cards.Any(c => c.IsStrictEnumString) && !bound.Contains(nameof(EssentialsCardViewModel.IsStrictEnumString)))
+        {
+            missing.Add(nameof(EssentialsCardViewModel.IsStrictEnumString));
+        }
+
+        if (cards.Any(c => c.IsFreeFormEnumString) && !bound.Contains(nameof(EssentialsCardViewModel.IsFreeFormEnumString)))
+        {
+            missing.Add(nameof(EssentialsCardViewModel.IsFreeFormEnumString));
+        }
+
+        Assert.AreEqual(0, missing.Count,
+            "OpenCodeEssentialsView.axaml has no editor bound to: "
+            + string.Join(", ", missing)
+            + " — yet the page builds cards of that flavour, so they render with a title and no "
+            + "control. The kind-level test cannot see this: both flavours sit inside one "
+            + "IsEnumString container, so the KIND still has a surface.");
+    }
+
+    /// <summary>The reverse direction, as for the kinds.</summary>
+    [TestMethod]
+    public void TheMarkupBindsNoEnumStringFlavourThePageNeverBuilds()
+    {
+        HashSet<string> bound = FlavourBindingsInTheMarkup();
+        IReadOnlyList<EssentialsCardViewModel> cards = [.. BuildPage().Cards];
+
+        Assert.IsTrue(bound.Count > 0,
+            "No flavour binding was found in the markup, so the syntax this scans for has "
+            + "probably changed and the test above is now vacuous too.");
+
+        List<string> unused = [];
+
+        if (bound.Contains(nameof(EssentialsCardViewModel.IsStrictEnumString))
+            && !cards.Any(c => c.IsStrictEnumString))
+        {
+            unused.Add(nameof(EssentialsCardViewModel.IsStrictEnumString));
+        }
+
+        if (bound.Contains(nameof(EssentialsCardViewModel.IsFreeFormEnumString))
+            && !cards.Any(c => c.IsFreeFormEnumString))
+        {
+            unused.Add(nameof(EssentialsCardViewModel.IsFreeFormEnumString));
+        }
+
+        Assert.AreEqual(0, unused.Count,
+            "OpenCodeEssentialsView.axaml binds an editor to " + string.Join(", ", unused)
+            + ", which no card ever satisfies — markup nobody has seen evaluate true. Either add "
+            + "the card or drop the control.");
+    }
+
+    /// <summary>Which flavour properties the markup binds an <c>IsVisible</c> to.</summary>
+    /// <remarks>
+    /// Parsed attribute values, never file text, so the names in this file's own comments — and
+    /// they appear there — cannot count as a surface.
+    /// </remarks>
+    private static HashSet<string> FlavourBindingsInTheMarkup()
+    {
+        string view = Path.Combine(
+            RepoRoot(), "src", "OpenCode.Avalonia", "Essentials", "OpenCodeEssentialsView.axaml");
+        Assert.IsTrue(File.Exists(view), $"'{view}' not found.");
+
+        Regex binding = new(
+            @"^\s*\{\s*Binding\s+(IsStrictEnumString|IsFreeFormEnumString)\s*\}\s*$",
+            RegexOptions.CultureInvariant);
+
+        return
+        [
+            .. XDocument
+                .Load(view)
+                .Descendants()
+                .SelectMany(e => e.Attributes())
+                .Where(a => string.Equals(a.Name.LocalName, "IsVisible", StringComparison.Ordinal))
+                .Select(a => binding.Match(a.Value))
+                .Where(m => m.Success)
+                .Select(m => m.Groups[1].Value),
+        ];
+    }
 }

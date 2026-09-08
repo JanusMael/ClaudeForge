@@ -384,7 +384,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Editor = new OpenCodeEssentialsViewModel(
                 essentialsSection?.Client,
                 OpenCodeEnvironment.FromProcess(),
-                essentialsSection?.Layout ?? OpenCodePageLayout.Config),
+                essentialsSection?.Layout ?? OpenCodePageLayout.Config,
+
+                // ⚠ Taken from the section list, NOT from essentialsSection — the danger table is
+                // a static tiering of keys and needs no open client, while the CLIENT above must
+                // have opened (GetEffective throws otherwise, inside a fire-and-forget read).
+                // Gating the table on the client too would grey out every dot on a section whose
+                // open threw, which is the one place the tiers are the only thing still working.
+                // ⓘ Note this is NOT the malformed-file case: ConfigFileLoader catches
+                // JsonException on purpose and loads an unparseable file as an empty root with
+                // SettingsDocument.LoadFailure set, so a broken file opens successfully.
+                Sections.FirstOrDefault(s => s.Product == OpenCodeProducts.Config)?.Danger),
         });
 
         // Detection last: it runs a child process, and a slow or hung binary must not delay the

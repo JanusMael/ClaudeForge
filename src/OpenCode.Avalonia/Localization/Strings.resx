@@ -1438,4 +1438,157 @@
   <data name="EssentialsActiveConfigInlineBanner" xml:space="preserve">
     <value>OPENCODE_CONFIG_CONTENT overrides the files. Edits saved here are written to disk but will not change what OpenCode reads until that variable is cleared.</value>
   </data>
+  <data name="EssentialsCardGlobalPermissionTitle" xml:space="preserve">
+    <value>Global approval mode</value>
+  </data>
+  <data name="EssentialsCardGlobalPermissionBody" xml:space="preserve">
+    <value>One setting covering every tool. Set to “allow”, OpenCode approves every action automatically — the widest single statement this configuration can make. Leave it unset to decide per tool below.</value>
+  </data>
+  <data name="EssentialsCardGlobalPermissionDanger" xml:space="preserve">
+    <value>Every tool is auto-approved. OpenCode will run shell commands, edit files and reach outside the project without asking.</value>
+  </data>
+  <data name="EssentialsCardBashTitle" xml:space="preserve">
+    <value>Shell command approval</value>
+  </data>
+  <data name="EssentialsCardBashBody" xml:space="preserve">
+    <value>Whether OpenCode runs shell commands without asking. These execute with your credentials, your network access and your filesystem.</value>
+  </data>
+  <data name="EssentialsCardBashDanger" xml:space="preserve">
+    <value>Shell commands run unattended. Anything the agent decides to run, runs — including commands assembled from text it read elsewhere.</value>
+  </data>
+  <data name="EssentialsCardEditTitle" xml:space="preserve">
+    <value>File edit approval</value>
+  </data>
+  <data name="EssentialsCardEditBody" xml:space="preserve">
+    <value>Whether OpenCode writes to files without asking. Snapshots are what makes a bad edit run recoverable, so this pairs with the snapshot setting below.</value>
+  </data>
+  <data name="EssentialsCardEditDanger" xml:space="preserve">
+    <value>Files are written without asking, so a bad edit run lands before you see any of it.</value>
+  </data>
+  <data name="EssentialsCardExternalDirTitle" xml:space="preserve">
+    <value>Outside-project access</value>
+  </data>
+  <data name="EssentialsCardExternalDirBody" xml:space="preserve">
+    <value>Whether OpenCode may read and write outside the working tree — your home directory, other repositories, anything the process can reach.</value>
+  </data>
+  <data name="EssentialsCardExternalDirDanger" xml:space="preserve">
+    <value>Reads and writes outside the project are auto-approved, which is beyond anything git can undo.</value>
+  </data>
+  <data name="EssentialsCardWebFetchTitle" xml:space="preserve">
+    <value>Web fetch approval</value>
+  </data>
+  <data name="EssentialsCardWebFetchBody" xml:space="preserve">
+    <value>Whether OpenCode fetches URLs without asking. This is both a way for data to leave and a way for untrusted text to enter the session.</value>
+  </data>
+  <data name="EssentialsCardWebFetchDanger" xml:space="preserve">
+    <value>URLs are fetched without asking — an exfiltration path out and a prompt-injection surface in.</value>
+  </data>
+  <data name="EssentialsCardWebSearchTitle" xml:space="preserve">
+    <value>Web search approval</value>
+  </data>
+  <data name="EssentialsCardWebSearchBody" xml:space="preserve">
+    <value>Whether OpenCode searches the web without asking. Queries go out and untrusted results come back into the conversation.</value>
+  </data>
+  <data name="EssentialsCardWebSearchDanger" xml:space="preserve">
+    <value>Searches run without asking, pulling untrusted text straight into the session.</value>
+  </data>
+  <data name="EssentialsPermissionUnreadable" xml:space="preserve">
+    <value>This permission value is not a shape OpenCode accepts, so it is shown here rather than edited. Open the Permissions page to see it in full.</value>
+  </data>
+  <data name="EssentialsPermissionPerToolConfigured" xml:space="preserve">
+    <value>Per-tool rules are configured, so there is no single global action. Editing this here would delete them — use the cards below, or the Permissions page.</value>
+  </data>
+  <data name="EssentialsPermissionGlobalInForce" xml:space="preserve">
+    <value>A single global approval mode is set above and covers this tool. Setting a value here would replace it and drop the rule for every other tool.</value>
+  </data>
+  <data name="EssentialsPermissionPatternRules" xml:space="preserve">
+    <value>This tool has per-pattern rules, and their order decides which one wins. A single action here would discard them — edit them on the Permissions page.</value>
+  </data>
+  <data name="EssentialsCardShareTitle" xml:space="preserve">
+    <value>Session sharing</value>
+  </data>
+  <data name="EssentialsCardShareBody" xml:space="preserve">
+    <value>Whether sessions are uploaded to a shareable link. On “auto” every session is uploaded, including whatever files and output it contained.</value>
+  </data>
+  <data name="EssentialsCardShareDanger" xml:space="preserve">
+    <value>Every session is uploaded automatically to a shareable link, including any file contents and command output it saw.</value>
+  </data>
+  <data name="EssentialsCardSnapshotTitle" xml:space="preserve">
+    <value>Snapshot tracking</value>
+  </data>
+  <data name="EssentialsCardSnapshotBody" xml:space="preserve">
+    <value>Filesystem snapshots are what undo and revert are built on. Defaults to on; leave it unset unless you have a reason.</value>
+  </data>
+  <data name="EssentialsCardSnapshotDanger" xml:space="preserve">
+    <value>Snapshots are off, so undo and revert cannot restore file changes. A bad edit run has no way back.</value>
+  </data>
+  <data name="EssentialsCardPluginsTitle" xml:space="preserve">
+    <value>Plugins</value>
+  </data>
+  <data name="EssentialsCardPluginsBody" xml:space="preserve">
+    <value>npm packages loaded into the agent process, with no marketplace-trust layer in front of them. Listed here; edit them on the Plugins page.</value>
+  </data>
+  <data name="EssentialsPluginsNone" xml:space="preserve">
+    <value>No plugins configured.</value>
+  </data>
+  <data name="EssentialsPluginsListFmt" xml:space="preserve">
+    <value>{0} configured: {1}</value>
+  </data>
+  <data name="EssentialsPluginsWithOptionsFmt" xml:space="preserve">
+    <value>{0} (with options)</value>
+  </data>
+  <data name="EssentialsPluginsUnreadableEntry" xml:space="preserve">
+    <value>an entry this app could not read</value>
+  </data>
+  <data name="EssentialsCardModelTitle" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="EssentialsCardModelBody" xml:space="preserve">
+    <value>The model every request bills against, in provider/model form. Blank means OpenCode picks its own default.</value>
+  </data>
+  <data name="EssentialsCardModelDanger" xml:space="preserve">
+    <value>This model's provider is switched off by enabled_providers or disabled_providers, so the model will not load.</value>
+  </data>
+  <data name="EssentialsCardSmallModelTitle" xml:space="preserve">
+    <value>Small model</value>
+  </data>
+  <data name="EssentialsCardSmallModelBody" xml:space="preserve">
+    <value>Used for cheap auxiliary work — titles, summaries, compaction. A large model here is billed far more often than the main one.</value>
+  </data>
+  <data name="EssentialsCardSubagentDepthTitle" xml:space="preserve">
+    <value>Subagent depth</value>
+  </data>
+  <data name="EssentialsCardSubagentDepthBody" xml:space="preserve">
+    <value>How deeply subagents may nest. Defaults to 1, which stops a subagent launching its own. Each extra level multiplies the work a single request can trigger.</value>
+  </data>
+  <data name="EssentialsCardSubagentDepthDanger" xml:space="preserve">
+    <value>Deep nesting multiplies delegated work, so cost grows faster than this number suggests.</value>
+  </data>
+  <data name="EssentialsCardCompactionTitle" xml:space="preserve">
+    <value>Auto-compaction</value>
+  </data>
+  <data name="EssentialsCardCompactionBody" xml:space="preserve">
+    <value>Whether long conversations are compacted automatically as they fill the context window. Defaults to on.</value>
+  </data>
+  <data name="EssentialsCardCompactionDanger" xml:space="preserve">
+    <value>Auto-compaction is off, so long sessions hit the context limit instead of being summarised.</value>
+  </data>
+  <data name="EssentialsCardMaxLinesTitle" xml:space="preserve">
+    <value>Tool output — line limit</value>
+  </data>
+  <data name="EssentialsCardMaxLinesBody" xml:space="preserve">
+    <value>Lines of tool output kept before the rest is truncated to disk (default 2000). Set it too low and the agent acts on a partial picture.</value>
+  </data>
+  <data name="EssentialsCardMaxBytesTitle" xml:space="preserve">
+    <value>Tool output — byte limit</value>
+  </data>
+  <data name="EssentialsCardMaxBytesBody" xml:space="preserve">
+    <value>Bytes of tool output kept before the rest is truncated to disk (default 51200). Whichever limit is hit first applies.</value>
+  </data>
+  <data name="EssentialsCardDefaultAgentTitle" xml:space="preserve">
+    <value>Default agent</value>
+  </data>
+  <data name="EssentialsCardDefaultAgentBody" xml:space="preserve">
+    <value>Which agent a new session starts in. It must be a primary agent — “build” and “plan” are the built-in ones, and they differ in what tools are available by default. Falls back to “build” if unset.</value>
+  </data>
 </root>

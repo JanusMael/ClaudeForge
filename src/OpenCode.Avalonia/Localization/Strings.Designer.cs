@@ -3100,5 +3100,158 @@ namespace Bennewitz.Ninja.OpenCode.Avalonia.Localization {
         public static string EssentialsActiveConfigInlineBanner {
             get { return ResourceManager.GetString("EssentialsActiveConfigInlineBanner", resourceCulture); }
         }
+        public static string EssentialsCardGlobalPermissionTitle {
+            get { return ResourceManager.GetString("EssentialsCardGlobalPermissionTitle", resourceCulture); }
+        }
+        public static string EssentialsCardGlobalPermissionBody {
+            get { return ResourceManager.GetString("EssentialsCardGlobalPermissionBody", resourceCulture); }
+        }
+        public static string EssentialsCardGlobalPermissionDanger {
+            get { return ResourceManager.GetString("EssentialsCardGlobalPermissionDanger", resourceCulture); }
+        }
+        public static string EssentialsCardBashTitle {
+            get { return ResourceManager.GetString("EssentialsCardBashTitle", resourceCulture); }
+        }
+        public static string EssentialsCardBashBody {
+            get { return ResourceManager.GetString("EssentialsCardBashBody", resourceCulture); }
+        }
+        public static string EssentialsCardBashDanger {
+            get { return ResourceManager.GetString("EssentialsCardBashDanger", resourceCulture); }
+        }
+        public static string EssentialsCardEditTitle {
+            get { return ResourceManager.GetString("EssentialsCardEditTitle", resourceCulture); }
+        }
+        public static string EssentialsCardEditBody {
+            get { return ResourceManager.GetString("EssentialsCardEditBody", resourceCulture); }
+        }
+        public static string EssentialsCardEditDanger {
+            get { return ResourceManager.GetString("EssentialsCardEditDanger", resourceCulture); }
+        }
+        public static string EssentialsCardExternalDirTitle {
+            get { return ResourceManager.GetString("EssentialsCardExternalDirTitle", resourceCulture); }
+        }
+        public static string EssentialsCardExternalDirBody {
+            get { return ResourceManager.GetString("EssentialsCardExternalDirBody", resourceCulture); }
+        }
+        public static string EssentialsCardExternalDirDanger {
+            get { return ResourceManager.GetString("EssentialsCardExternalDirDanger", resourceCulture); }
+        }
+        public static string EssentialsCardWebFetchTitle {
+            get { return ResourceManager.GetString("EssentialsCardWebFetchTitle", resourceCulture); }
+        }
+        public static string EssentialsCardWebFetchBody {
+            get { return ResourceManager.GetString("EssentialsCardWebFetchBody", resourceCulture); }
+        }
+        public static string EssentialsCardWebFetchDanger {
+            get { return ResourceManager.GetString("EssentialsCardWebFetchDanger", resourceCulture); }
+        }
+        public static string EssentialsCardWebSearchTitle {
+            get { return ResourceManager.GetString("EssentialsCardWebSearchTitle", resourceCulture); }
+        }
+        public static string EssentialsCardWebSearchBody {
+            get { return ResourceManager.GetString("EssentialsCardWebSearchBody", resourceCulture); }
+        }
+        public static string EssentialsCardWebSearchDanger {
+            get { return ResourceManager.GetString("EssentialsCardWebSearchDanger", resourceCulture); }
+        }
+        public static string EssentialsPermissionUnreadable {
+            get { return ResourceManager.GetString("EssentialsPermissionUnreadable", resourceCulture); }
+        }
+        public static string EssentialsPermissionPerToolConfigured {
+            get { return ResourceManager.GetString("EssentialsPermissionPerToolConfigured", resourceCulture); }
+        }
+        public static string EssentialsPermissionGlobalInForce {
+            get { return ResourceManager.GetString("EssentialsPermissionGlobalInForce", resourceCulture); }
+        }
+        public static string EssentialsPermissionPatternRules {
+            get { return ResourceManager.GetString("EssentialsPermissionPatternRules", resourceCulture); }
+        }
+        public static string EssentialsCardShareTitle {
+            get { return ResourceManager.GetString("EssentialsCardShareTitle", resourceCulture); }
+        }
+        public static string EssentialsCardShareBody {
+            get { return ResourceManager.GetString("EssentialsCardShareBody", resourceCulture); }
+        }
+        public static string EssentialsCardShareDanger {
+            get { return ResourceManager.GetString("EssentialsCardShareDanger", resourceCulture); }
+        }
+        public static string EssentialsCardSnapshotTitle {
+            get { return ResourceManager.GetString("EssentialsCardSnapshotTitle", resourceCulture); }
+        }
+        public static string EssentialsCardSnapshotBody {
+            get { return ResourceManager.GetString("EssentialsCardSnapshotBody", resourceCulture); }
+        }
+        public static string EssentialsCardSnapshotDanger {
+            get { return ResourceManager.GetString("EssentialsCardSnapshotDanger", resourceCulture); }
+        }
+        public static string EssentialsCardPluginsTitle {
+            get { return ResourceManager.GetString("EssentialsCardPluginsTitle", resourceCulture); }
+        }
+        public static string EssentialsCardPluginsBody {
+            get { return ResourceManager.GetString("EssentialsCardPluginsBody", resourceCulture); }
+        }
+        public static string EssentialsPluginsNone {
+            get { return ResourceManager.GetString("EssentialsPluginsNone", resourceCulture); }
+        }
+        public static string EssentialsPluginsListFmt {
+            get { return ResourceManager.GetString("EssentialsPluginsListFmt", resourceCulture); }
+        }
+        public static string EssentialsPluginsWithOptionsFmt {
+            get { return ResourceManager.GetString("EssentialsPluginsWithOptionsFmt", resourceCulture); }
+        }
+        public static string EssentialsPluginsUnreadableEntry {
+            get { return ResourceManager.GetString("EssentialsPluginsUnreadableEntry", resourceCulture); }
+        }
+        public static string EssentialsCardModelTitle {
+            get { return ResourceManager.GetString("EssentialsCardModelTitle", resourceCulture); }
+        }
+        public static string EssentialsCardModelBody {
+            get { return ResourceManager.GetString("EssentialsCardModelBody", resourceCulture); }
+        }
+        public static string EssentialsCardModelDanger {
+            get { return ResourceManager.GetString("EssentialsCardModelDanger", resourceCulture); }
+        }
+        public static string EssentialsCardSmallModelTitle {
+            get { return ResourceManager.GetString("EssentialsCardSmallModelTitle", resourceCulture); }
+        }
+        public static string EssentialsCardSmallModelBody {
+            get { return ResourceManager.GetString("EssentialsCardSmallModelBody", resourceCulture); }
+        }
+        public static string EssentialsCardSubagentDepthTitle {
+            get { return ResourceManager.GetString("EssentialsCardSubagentDepthTitle", resourceCulture); }
+        }
+        public static string EssentialsCardSubagentDepthBody {
+            get { return ResourceManager.GetString("EssentialsCardSubagentDepthBody", resourceCulture); }
+        }
+        public static string EssentialsCardSubagentDepthDanger {
+            get { return ResourceManager.GetString("EssentialsCardSubagentDepthDanger", resourceCulture); }
+        }
+        public static string EssentialsCardCompactionTitle {
+            get { return ResourceManager.GetString("EssentialsCardCompactionTitle", resourceCulture); }
+        }
+        public static string EssentialsCardCompactionBody {
+            get { return ResourceManager.GetString("EssentialsCardCompactionBody", resourceCulture); }
+        }
+        public static string EssentialsCardCompactionDanger {
+            get { return ResourceManager.GetString("EssentialsCardCompactionDanger", resourceCulture); }
+        }
+        public static string EssentialsCardMaxLinesTitle {
+            get { return ResourceManager.GetString("EssentialsCardMaxLinesTitle", resourceCulture); }
+        }
+        public static string EssentialsCardMaxLinesBody {
+            get { return ResourceManager.GetString("EssentialsCardMaxLinesBody", resourceCulture); }
+        }
+        public static string EssentialsCardMaxBytesTitle {
+            get { return ResourceManager.GetString("EssentialsCardMaxBytesTitle", resourceCulture); }
+        }
+        public static string EssentialsCardMaxBytesBody {
+            get { return ResourceManager.GetString("EssentialsCardMaxBytesBody", resourceCulture); }
+        }
+        public static string EssentialsCardDefaultAgentTitle {
+            get { return ResourceManager.GetString("EssentialsCardDefaultAgentTitle", resourceCulture); }
+        }
+        public static string EssentialsCardDefaultAgentBody {
+            get { return ResourceManager.GetString("EssentialsCardDefaultAgentBody", resourceCulture); }
+        }
 }
 }
