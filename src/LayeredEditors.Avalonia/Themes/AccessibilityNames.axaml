@@ -7,28 +7,33 @@
     in the markup to scan.  Naming them is the theme's job, which is why this file sits
     beside the theme bundle rather than in any one app.
 
-    ── NumericUpDown / ButtonSpinner ────────────────────────────────────────────────
-    NumericUpDown draws a ButtonSpinner, whose template puts two RepeatButtons
-    (PART_IncreaseButton / PART_DecreaseButton) beside the text box.  Their Content is a
-    PathIcon, and Avalonia's ContentControlAutomationPeer falls back to Content.ToString()
-    when no name is set — so a screen reader announces each one as the literal string
-    "Avalonia.Controls.PathIcon".  Measured through UIA 2026-09-07 on both apps: every
-    NumericUpDown on screen contributed two such buttons (four on ClaudeForge's Essentials
-    page, six on OpenCodeForge's).  The NumericUpDown itself is fine — it carries the name
-    its view sets and surfaces as a correctly-named ControlType.Spinner.
+    The /template/ selector is required throughout: without it a style does not reach an
+    element that lives inside a control template.  Which control owns a part is a fact
+    about the template, not a guess — `PART_TextBox` below is a child of the
+    NumericUpDown's own template even though it renders inside the ButtonSpinner, so
+    scoping it to ButtonSpinner would match nothing.  TemplatePartAutomationNameTests reads
+    TemplatedParent to keep both facts honest.
 
-    The /template/ selector is required: without it the style does not reach an element
-    that lives inside a control template.  Names come from WrapperStrings so a host can
-    localise them through the same Resolver hook the wrapper chrome uses; the default is
-    English.
-
-    Guard: LayeredEditors.Avalonia.Tests/Themes/SpinnerAutomationNameTests.cs applies this
-    file's styles to a real templated NumericUpDown and reads the automation peers.
+    Guard: LayeredEditors.Avalonia.Tests/Themes/TemplatePartAutomationNameTests.cs applies this
+    file's styles to real templated controls and reads their automation peers.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Localization">
 
+    <!--
+        ── Fixed names: the NumericUpDown spinner buttons ────────────────────────────
+
+        NumericUpDown draws a ButtonSpinner, whose template puts two RepeatButtons beside
+        the text box.  Their Content is a PathIcon, and Avalonia's
+        ContentControlAutomationPeer falls back to Content.ToString() when no name is set
+        — so a screen reader announced each one as the literal string
+        "Avalonia.Controls.PathIcon".  Measured through UIA 2026-09-07: twelve such
+        buttons across ClaudeForge, six on OpenCodeForge's Essentials page alone.
+
+        These two names are constants, so they come from WrapperStrings and a host can
+        localise them through the same Resolver hook the wrapper chrome uses.
+    -->
     <Style Selector="ButtonSpinner /template/ RepeatButton#PART_IncreaseButton">
         <Setter Property="AutomationProperties.Name"
                 Value="{x:Static loc:WrapperStrings.LabelSpinnerIncrease}" />
@@ -37,6 +42,38 @@
     <Style Selector="ButtonSpinner /template/ RepeatButton#PART_DecreaseButton">
         <Setter Property="AutomationProperties.Name"
                 Value="{x:Static loc:WrapperStrings.LabelSpinnerDecrease}" />
+    </Style>
+
+    <!--
+        ── Inherited names: the element that actually takes focus ────────────────────
+
+        NumericUpDown and AutoCompleteBox are composite: each is correctly named by its
+        view and surfaces under its own control type (Spinner, and Group for
+        AutoCompleteBox), but neither ever HOLDS focus.  Focus goes to the inner
+        PART_TextBox, and that TextBox had no name and no LabeledBy — measured through
+        UIA 2026-09-07 with HasKeyboardFocus, which read True on the inner Edit and False
+        on the named Spinner above it.  So the AutomationProperties.Name every view
+        carefully sets sat on an element a screen-reader user never lands on: 6
+        NumericUpDowns and 8 AutoCompleteBoxes across ClaudeForge.
+
+        There is no string to localise here — the name is the host control's own name,
+        which the view already supplies in the user's language.  Copying it down means a
+        screen reader may hear it twice, once as container context and once for the
+        focused field; that is a verbosity cost, and it is the right side of the trade,
+        because the alternative is a focused edit field with no name at all.
+
+        A control whose name the view leaves unset copies down an empty string, which
+        changes nothing — this cannot mask a missing name, it only relocates a present
+        one.
+    -->
+    <Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+        <Setter Property="AutomationProperties.Name"
+                Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ TextBox#PART_TextBox">
+        <Setter Property="AutomationProperties.Name"
+                Value="{Binding $parent[AutoCompleteBox].(AutomationProperties.Name)}" />
     </Style>
 
 </Styles>

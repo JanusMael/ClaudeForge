@@ -321,7 +321,7 @@ Combined with `AutomationProperties.AccessibilityView="Raw"` on the inner glyph,
 ---
 ---
 
-### An `AutoCompleteBox` reports `ControlType.Group`, and a `NumericUpDown`'s inner `TextBox` is a separate unnamed element
+### An `AutoCompleteBox` reports `ControlType.Group`, and a `NumericUpDown`'s inner `TextBox` is a separate element that needs its own name
 
 **Symptom:** A UIA sweep that queries the obvious control types — `Edit`, `ComboBox`, `CheckBox` — finds the free-form pickers **missing** and reports several unnamed `Edit` elements instead. It reads exactly like `AutomationProperties.Name` having been ignored.
 
@@ -329,12 +329,25 @@ Combined with `AutomationProperties.AccessibilityView="Raw"` on the inner glyph,
 
 | Control in markup | What UIA actually exposes |
 |---|---|
-| `AutoCompleteBox` | one `ControlType.Group`, **correctly named**, keyboard-focusable — plus one unnamed `ControlType.Edit` child (its templated `TextBox`) |
-| `NumericUpDown` | one `ControlType.Spinner`, **correctly named** — plus one unnamed `Edit` child, and two `Button`s |
+| `AutoCompleteBox` | one `ControlType.Group`, **correctly named**, keyboard-focusable — plus one `ControlType.Edit` child (its templated `TextBox`), which was unnamed and is the element that actually takes focus |
+| `NumericUpDown` | one `ControlType.Spinner`, **correctly named** — plus one `Edit` child that was unnamed and takes the focus, and two `Button`s that announced their own type name |
 
-So the name arrives; it is on the composite's own peer, and the inner `TextBox` is a distinct element that has no name of its own. Both apps behave identically, and have since the first `NumericUpDown` shipped.
+So the name arrives — but it arrives on the composite's own peer, and the inner `TextBox` is a distinct element that had no name of its own. Both apps behaved identically, and had since the first `NumericUpDown` shipped.
 
-⛔ **The trap is the probe, not the app.** Enumerate by `TrueCondition` and read `Current.ControlType.ProgrammaticName`, or filter to `Current.IsKeyboardFocusable` — the focus targets are what a screen reader actually lands on, and they line up with the markup one-for-one. Querying a hand-picked list of control types produced a confident false conclusion here, and the count of unnamed `Edit`s (six) happened to look like a plausible defect: 3 + 3.
+⛔ **That distinction is the whole defect, because the composite never HOLDS focus.** Measured with `HasKeyboardFocusProperty`: True on the inner `Edit`, False on the correctly-named `Spinner` above it. So the `AutomationProperties.Name` every view carefully binds sat on an element a screen-reader user never lands on — 6 number fields and 8 pickers. **Fixed 2026-09-08** by copying the host's name down to the part, in the same theme file as the spin buttons below. No new string: the name is the host's own, already localised by whatever the view bound.
+
+```xml
+<Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+    <Setter Property="AutomationProperties.Name"
+            Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
+</Style>
+```
+
+⚠ **Scope such a selector to the control whose `TemplatedParent` OWNS the part, which is not always the one it renders inside.** `PART_TextBox` draws within the `ButtonSpinner` but belongs to the `NumericUpDown`'s template, so a `ButtonSpinner /template/` selector — the natural guess from the UIA tree — matches nothing. UIA shows nesting; it never shows template ownership. Read `TemplatedParent` from a headless dump instead of reasoning about it; the guard asserts it so the selector and the test cannot drift apart.
+
+A host the view left unnamed copies down an empty string and stays unnamed — deliberately, so this cannot paper over a genuinely missing name. One `AutoCompleteBox` on ClaudeForge's Model & Effort page is in exactly that state, and the app-wide count of blank-named focusable `PART_TextBox` instances went 15 → 1 rather than to zero for that reason. The container and the focused field now carry the same name, so a screen reader may say it twice; that verbosity is the right side of the trade against a focused field with no name at all.
+
+⛔ **The trap is the probe, not the app.** Enumerate by `TrueCondition` and read `Current.ControlType.ProgrammaticName`, or filter to `Current.IsKeyboardFocusable` — the focus targets are what a screen reader actually lands on. ⛔ They did **not** line up with the markup one-for-one, which an earlier revision of this entry claimed: the composite reports itself focusable yet never holds focus, so the focusable set included both it and its unnamed inner `Edit`. `IsKeyboardFocusable` tells you what *can* take focus; only `HasKeyboardFocusProperty` tells you what *does*. `AutomationElement.FocusedElement` is no substitute — it is global, and from an agent session the app usually cannot be brought foreground, so it returns the desktop's `Pane class=#32769`. Querying a hand-picked list of control types produced a confident false conclusion here, and the count of unnamed `Edit`s (six) happened to look like a plausible defect: 3 + 3.
 
 ⚠ **A `NumericUpDown`'s spin buttons announced `Avalonia.Controls.PathIcon`** — same `ToString()` fallback as the `ItemsSource` container cases above, because Avalonia's default template gives them no name and their content is a `PathIcon`. Twelve of them in ClaudeForge (Essentials, General, Sandbox, Backup / Restore) and six on OpenCodeForge's Essentials page. **Fixed 2026-09-08.**
 
