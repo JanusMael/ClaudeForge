@@ -5,12 +5,12 @@
       * Only LE.* theme tokens; no literal colours. Secondary text is Opacity, not a token.
       * All text from Strings.resx, including every AutomationProperties.Name.
 
-    ⚠ Only the two card kinds this page's cards actually use have a surface here — the labelled
-    picker and the derived read-only report. The other four (Bool / Int / EnumString / StringList)
-    are deliberately absent rather than written blind: a card kind with no surface renders as a
-    blank card, silently, so OpenCodeEssentialsViewKindCoverageTests fails the build the moment a
-    card arrives whose kind this markup cannot draw. Adding the fourteen remaining cards means
-    adding their surfaces here, and the test says so out loud instead of leaving empty rectangles.
+    ⚠ Five of the six card kinds have a surface here, and the sixth is absent on purpose:
+    nothing on this page builds a StringList, and the one list-shaped key that looked like a
+    candidate — `plugin` — is a read-only Derived card precisely because a StringList would
+    silently drop a plugin's options tuple. A card kind with no surface renders as a blank card,
+    silently, so OpenCodeEssentialsViewKindCoverageTests fails the build in BOTH directions: a
+    built kind this markup cannot draw, and markup for a kind nothing builds.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -92,6 +92,75 @@
                                 </Border>
 
                                 <!-- ── Editor surface — one per Kind ─────────────── -->
+
+                                <!-- Bool: tri-state CheckBox. IsThreeState makes null ("not set,
+                                     so the documented default applies") an explicit visible state
+                                     rather than a silent false.
+                                     ⚠ Content repeats the card title on purpose. A bare box cannot
+                                     say which way round it runs, and a generic word ("Enabled")
+                                     would be a lie the day a key named `disable_*` earns a card. -->
+                                <CheckBox IsThreeState="True"
+                                          IsChecked="{Binding BoolValue, Mode=TwoWay}"
+                                          IsVisible="{Binding Kind, Converter={x:Static shell:EssentialsCardKindConverters.IsBool}}"
+                                          Content="{Binding Title}"
+                                          AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- Int: NumericUpDown. Bounds come from the CARD, not from this
+                                     markup — the three Int cards have genuinely different ranges,
+                                     and two of them (tool_output.max_lines / max_bytes) are
+                                     exclusiveMinimum 0 in the schema, so a shared Minimum="0" here
+                                     would offer a value OpenCode rejects at load. Empty text binds
+                                     back as null, which removes the key. -->
+                                <NumericUpDown Value="{Binding IntValue, Mode=TwoWay}"
+                                               IsVisible="{Binding Kind, Converter={x:Static shell:EssentialsCardKindConverters.IsInt}}"
+                                               Minimum="{Binding IntMinimum}"
+                                               Maximum="{Binding IntMaximum}"
+                                               Increment="{Binding IntIncrement}"
+                                               FormatString="0"
+                                               Width="200"
+                                               HorizontalAlignment="Left"
+                                               AutomationProperties.Name="{Binding Title}" />
+
+                                <!-- EnumString, in its two flavours. The group's IsVisible is the
+                                     kind; the children only pick strict vs free-form, which is
+                                     exactly what those two card properties mean. -->
+                                <StackPanel IsVisible="{Binding Kind, Converter={x:Static shell:EssentialsCardKindConverters.IsEnumString}}"
+                                            HorizontalAlignment="Left">
+
+                                    <!-- Strict: a closed set. ItemsSource is FilteredOptions so an
+                                         inter-related card can narrow it; IsEnabled drops when the
+                                         card has stood down (a permission form it cannot write
+                                         without destroying something). -->
+                                    <ComboBox ItemsSource="{Binding FilteredOptions}"
+                                              SelectedItem="{Binding EnumValue, Mode=TwoWay}"
+                                              IsVisible="{Binding IsStrictEnumString}"
+                                              IsEnabled="{Binding !EnumDisabled}"
+                                              MinWidth="220"
+                                              HorizontalAlignment="Left"
+                                              AutomationProperties.Name="{Binding Title}" />
+
+                                    <!-- Free-form: the options are SUGGESTIONS, so the value must
+                                         stay typeable. model / small_model supply none at all (the
+                                         real set comes from the configured providers, which is the
+                                         plan's own "Providers and models" work) and default_agent
+                                         supplies the two measured-primary built-ins.
+                                         ⚠ Delay coalesces keystrokes: Text is TwoWay by default on
+                                         this control, so without it every character is a separate
+                                         SetValue, a separate audit line and a separate save-banner
+                                         nudge. Same 600ms the Claude model picker settled on.
+                                         ⚠ No chevron button. It would need code-behind, and it
+                                         would drop an empty list on two of the three cards; the
+                                         cards that do have suggestions name them in their body. -->
+                                    <AutoCompleteBox Text="{Binding EnumValue, Mode=TwoWay, Delay=600}"
+                                                     ItemsSource="{Binding FilteredOptions}"
+                                                     IsVisible="{Binding IsFreeFormEnumString}"
+                                                     IsEnabled="{Binding !EnumDisabled}"
+                                                     FilterMode="Contains"
+                                                     MinimumPrefixLength="0"
+                                                     MinWidth="280"
+                                                     HorizontalAlignment="Left"
+                                                     AutomationProperties.Name="{Binding Title}" />
+                                </StackPanel>
 
                                 <!-- LabelledEnum: a closed picker whose rows show the host's
                                      words and commit the host's token. The item template shows

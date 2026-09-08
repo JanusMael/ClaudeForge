@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
@@ -8,6 +9,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.OpenCode.Avalonia.Localization;
 using Bennewitz.Ninja.OpenCode.Sdk;
+using Bennewitz.Ninja.OpenCode.Sdk.Permissions;
 using Bennewitz.Ninja.OpenCode.Sdk.Updates;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -22,37 +24,22 @@ namespace Bennewitz.Ninja.OpenCode.Avalonia.Essentials;
 /// ⭐ <b>Composition, not machinery.</b> The card, its danger banner, its deep link and its
 /// value plumbing are all <see cref="EssentialsCardViewModel"/>'s, in the shell. What lives here
 /// is the product half the plan names: <em>which</em> knobs deserve a card, and how to describe
-/// them.
+/// them. The curation itself is in the <c>Cards</c> partial.
 /// </para>
 /// <para>
-/// ⚠ <b>Three of the plan's seventeen, deliberately.</b> These are exactly the cards that exercise
-/// the two new card kinds — the labelled union (<c>autoupdate</c>) and the two derived, read-only
-/// resolver reports. The remaining fourteen all reuse kinds that already shipped, so they are
-/// additive to a page whose machinery has been seen working.
+/// ⭐⭐ <b>A card's severity is READ FROM THE DANGER TABLE, never written here.</b> Both surfaces
+/// show a dot for the same key, and one literal per surface agreed only by vigilance — which had
+/// already failed: slice 2's <c>autoupdate</c> card said <c>Neutral</c> while the table said
+/// <c>Info</c>, so the Essentials page and the settings page disagreed about the same setting.
+/// See <see cref="SeverityFor"/>.
 /// </para>
 /// </remarks>
 public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INavigablePage
 {
-    /// <summary>Card id for the <c>autoupdate</c> union card.</summary>
-    public const string CardIdAutoupdate = "autoupdate";
-
-    /// <summary>Card id for the derived "rules in effect" report.</summary>
-    /// <remarks>
-    /// Not a JSON path — no key holds this. The ids are stable handles for deep links and tests,
-    /// and this project has already been bitten once by a guard that assumed a card id WAS its
-    /// path.
-    /// </remarks>
-    public const string CardIdRules = "derived.rules";
-
-    /// <summary>Card id for the derived "active config file" report.</summary>
-    public const string CardIdActiveConfig = "derived.activeConfig";
-
-    /// <summary>The <c>autoupdate</c> key, as it appears at the document root.</summary>
-    internal const string AutoupdatePath = "autoupdate";
-
     private readonly AgentConfigClientCore? _client;
     private readonly OpenCodeEnvironment _environment;
     private readonly SchemaPageLayout _layout;
+    private readonly IDangerClassifier? _danger;
 
     /// <summary>Construct the page.</summary>
     /// <param name="client">
@@ -65,19 +52,25 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
     /// <param name="layout">
     /// This product's key→page table, used to label the "View in …" deep link.
     /// <para>
-    /// ⭐ Passed in rather than a literal <c>"General"</c> here. The page a key lands on is the
-    /// layout's decision, and a copy of it in this file would keep pointing at the old page after
-    /// the table moved the key — with a button that silently navigates nowhere.
+    /// ⭐ Passed in rather than a literal here. The page a key lands on is the layout's decision,
+    /// and a copy of it in this file would keep pointing at the old page after the table moved the
+    /// key — with a button that silently navigates nowhere.
     /// </para>
+    /// </param>
+    /// <param name="danger">
+    /// This document's danger table. Supplies every card's severity; <see langword="null"/> leaves
+    /// them all <see cref="AppSeverity.Neutral"/>, which is what a host with no table should show.
     /// </param>
     public OpenCodeEssentialsViewModel(
         AgentConfigClientCore? client,
         OpenCodeEnvironment environment,
-        SchemaPageLayout layout)
+        SchemaPageLayout layout,
+        IDangerClassifier? danger = null)
     {
         _client = client;
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
         _layout = layout ?? throw new ArgumentNullException(nameof(layout));
+        _danger = danger;
 
         Cards = new ObservableCollection<EssentialsCardViewModel>(BuildCards());
 
@@ -99,12 +92,12 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
     public Task RefreshAsync() => Task.WhenAll(Cards.Select(c => c.ReadAsync()));
 
     /// <summary>
-    /// Re-read on arrival, because two of these three cards report the filesystem rather than the
-    /// document.
+    /// Re-read on arrival, because several of these cards report the filesystem or the environment
+    /// rather than the document.
     /// </summary>
     /// <remarks>
     /// A global <c>AGENTS.md</c> can appear while the app is open — the user creating one is a
-    /// likely consequence of having just read this card. The environment variables cannot change
+    /// likely consequence of having just read that card. The environment variables cannot change
     /// within the process, but re-reading them costs nothing and keeps one rule instead of two.
     /// </remarks>
     public void OnNavigatedTo() => _ = RefreshAsync();
@@ -117,118 +110,399 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
     private string PageTitleFor(string key)
         => _layout.PropertyToPage.TryGetValue(key, out string? page) ? page : _layout.FallbackPage;
 
-    // ── Curation ──────────────────────────────────────────────────────
+    /// <summary>
+    /// The standing tier the danger table assigns <paramref name="path"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Classified with a null scope and a null value on purpose.</b> That asks for the
+    /// setting's BASE tier — what this knob is worth in general — rather than an assessment of the
+    /// value currently in the file. The card's standing dot must not flicker as the user edits;
+    /// the value-sensitive half of the table is what <c>IsDangerNow</c> is for, and the cards
+    /// carry their own predicates for the banner. The interface contract guarantees a null scope
+    /// never RAISES severity, which is what makes this safe to read as a floor.
+    /// </remarks>
+    private AppSeverity SeverityFor(string path)
+        => _danger?.Classify(path, scope: null, currentValue: null).Severity ?? AppSeverity.Neutral;
 
-    private IEnumerable<EssentialsCardViewModel> BuildCards()
+    // ── Value plumbing ────────────────────────────────────────────────
+    //
+    // ⚠ Every delegate below is SYNCHRONOUS, and that is load-bearing: IsLoading must not span an
+    // await, or a user edit landing during the continuation is silently discarded. The guard test
+    // the plan re-asserts each phase (…_NotSuppressed_WhileReadIsInAsyncPhase) exists for exactly
+    // this bug class, and keeping the reads synchronous is how this page stays out of its way.
+
+    private JsonNode? Effective(string path)
+        => _client?.GetEffective<JsonNode>(path);
+
+    private Func<EssentialsCardViewModel, Task> ReadBool(string path) => card =>
     {
-        yield return BuildAutoupdateCard();
-        yield return BuildRulesCard();
-        yield return BuildActiveConfigCard();
+        card.IsLoading = true;
+        try
+        {
+            card.BoolValue = Effective(path) is JsonValue v && v.TryGetValue(out bool b) ? b : null;
+        }
+        finally
+        {
+            card.IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> WriteBool(string path) => card =>
+    {
+        if (_client is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (card.BoolValue is not { } value)
+        {
+            // Null is the tri-state CheckBox's "inherit" — remove the key rather than writing a
+            // literal, so a lower-priority scope decides again.
+            _client.RemoveValue(path, _client.DefaultScope);
+        }
+        else if (Effective(path) is not JsonValue v || !v.TryGetValue(out bool current) || current != value)
+        {
+            _client.SetValue(path, value, _client.DefaultScope);
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> ReadInt(string path) => card =>
+    {
+        card.IsLoading = true;
+        try
+        {
+            card.IntValue = Effective(path) is JsonValue v && v.TryGetValue(out int i) ? i : null;
+        }
+        finally
+        {
+            card.IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> WriteInt(string path) => card =>
+    {
+        if (_client is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (card.IntValue is not { } value)
+        {
+            _client.RemoveValue(path, _client.DefaultScope);
+        }
+        else if (Effective(path) is not JsonValue v || !v.TryGetValue(out int current) || current != value)
+        {
+            _client.SetValue(path, value, _client.DefaultScope);
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> ReadString(string path) => card =>
+    {
+        card.IsLoading = true;
+        try
+        {
+            card.EnumValue = Effective(path) is JsonValue v && v.TryGetValue(out string? s) ? s : null;
+        }
+        finally
+        {
+            card.IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> WriteString(string path) => card =>
+    {
+        if (_client is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        string? value = card.EnumValue;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            // Blank means "unset", never a literal empty string — a free-form box the user cleared
+            // must remove the key, not pin model="".
+            _client.RemoveValue(path, _client.DefaultScope);
+        }
+        else if (Effective(path) is not JsonValue v
+                 || !v.TryGetValue(out string? current)
+                 || !string.Equals(current, value, StringComparison.Ordinal))
+        {
+            // Ghost-change guard: re-emitting the already-effective value would pin a redundant
+            // key and light the Save banner over an empty diff.
+            _client.SetValue(path, value, _client.DefaultScope);
+        }
+
+        return Task.CompletedTask;
+    };
+
+    // ── permission ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The parsed <c>permission</c> value, or <see langword="null"/> when it is a shape OpenCode
+    /// itself would reject.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <see cref="OpenCodePermissionModel.Parse"/> THROWS on an invalid shape rather than
+    /// dropping the offending entry — deliberately, because a permission rule that silently
+    /// disappears is one the user believes is protecting them. A summary card must not propagate
+    /// that out of a fire-and-forget read, so it is caught here and surfaced as "cannot read this"
+    /// on the card instead.
+    /// </remarks>
+    private OpenCodePermissionModel? ReadPermissionModel()
+    {
+        try
+        {
+            return OpenCodePermissionModel.Parse(Effective(PermissionKey));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static string? WireOrNull(PermissionOutcome? action)
+        => action is { } a && a != PermissionOutcome.Default
+            ? OpenCodePermissionModel.ToWireString(a)
+            : null;
+
+    /// <summary>
+    /// Put a permission card into a state where it shows a value but refuses to write it.
+    /// </summary>
+    /// <remarks>
+    /// ⛔⛔ <b>This is a data-loss guard, not a cosmetic one.</b> <c>permission</c> is
+    /// <c>anyOf[bare action, per-tool object]</c>. When the file holds the BARE form, writing
+    /// <c>permission.bash</c> would replace that string with an object and <b>silently delete the
+    /// global rule covering every other tool</b>. When a tool holds per-pattern rules, writing a
+    /// bare action would discard the whole ordered rule list — and order is semantics here. Both
+    /// are unrecoverable from the UI, so the card explains and stands down.
+    /// </remarks>
+    private static void StandDown(EssentialsCardViewModel card, string notice)
+    {
+        card.EnumDisabled = true;
+        card.ShowConstraintNotice = true;
+        card.ConstraintNoticeText = notice;
+    }
+
+    private static void StandUp(EssentialsCardViewModel card)
+    {
+        card.EnumDisabled = false;
+        card.ShowConstraintNotice = false;
+        card.ConstraintNoticeText = string.Empty;
+    }
+
+    /// <summary>Read the whole-<c>permission</c> card (the bare global action).</summary>
+    private Task ReadGlobalPermission(EssentialsCardViewModel card)
+    {
+        card.IsLoading = true;
+        try
+        {
+            OpenCodePermissionModel? model = ReadPermissionModel();
+            if (model is null)
+            {
+                card.EnumValue = null;
+                StandDown(card, Strings.EssentialsPermissionUnreadable);
+            }
+            else if (model.Tools.Count > 0)
+            {
+                // Per-tool rules are configured, so there is no single global action to show and
+                // writing one would delete them.
+                card.EnumValue = null;
+                StandDown(card, Strings.EssentialsPermissionPerToolConfigured);
+            }
+            else
+            {
+                card.EnumValue = WireOrNull(model.GlobalAction);
+                StandUp(card);
+            }
+        }
+        finally
+        {
+            card.IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task WriteGlobalPermission(EssentialsCardViewModel card)
+    {
+        if (_client is null || card.EnumDisabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        _ = WriteString(PermissionKey)(card);
+        return RefreshPermissionCards();
     }
 
     /// <summary>
-    /// Card 14 — <c>autoupdate</c>: <c>true</c> | <c>false</c> | <c>"notify"</c>, plus absent.
-    /// </summary>
-    /// <remarks>
-    /// ⭐ <b>The option labels are the full editor's own strings</b>, not a second set written for
-    /// this surface. Two pickers for one key that disagree about what its values are called is a
-    /// drift this repo has paid for elsewhere; sharing the resource makes agreement structural.
-    /// The same argument applies to the ordering, which runs least-to-most automatic here because
-    /// that is the axis the user moves along.
-    /// </remarks>
-    private EssentialsCardViewModel BuildAutoupdateCard() => new(new EssentialsCardOptions
-    {
-        Id = CardIdAutoupdate,
-        Title = Strings.EssentialsCardAutoupdateTitle,
-        Body = Strings.EssentialsCardAutoupdateBody,
-
-        // Behaviour, not a hazard: no value of this key weakens a safety boundary, so a coloured
-        // dot here would spend the user's attention where nothing is wrong. The plan's own tier.
-        Severity = AppSeverity.Neutral,
-        Kind = EssentialsCardKind.LabelledEnum,
-        LabelledOptions =
-        [
-            new(nameof(OpenCodeAutoupdateMode.NotSet), Strings.AutoupdateNotSet, Strings.AutoupdateNotSetHelp),
-            new(nameof(OpenCodeAutoupdateMode.Disabled), Strings.AutoupdateDisabled, Strings.AutoupdateDisabledHelp),
-            new(nameof(OpenCodeAutoupdateMode.Notify), Strings.AutoupdateNotify, Strings.AutoupdateNotifyHelp),
-            new(nameof(OpenCodeAutoupdateMode.Automatic), Strings.AutoupdateAutomatic, Strings.AutoupdateAutomaticHelp),
-        ],
-        ReadAsync = ReadAutoupdate,
-        WriteAsync = WriteAutoupdate,
-        ViewInGroupTitle = PageTitleFor(AutoupdatePath),
-        ViewInGroupLabelFormat = Strings.EssentialsViewInGroupFmt,
-        JsonPathFilter = AutoupdatePath,
-    });
-
-    /// <summary>
-    /// Card 16 — which global <c>AGENTS.md</c> is in force, and the one case where that answer may
-    /// be a lie.
+    /// Re-read all six <c>permission</c> cards, because one card's write changes which of the
+    /// others may safely write.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⚠⚠ <b>Global rules only.</b> The plan's two example messages are both about the global
-    /// file, and project rules cannot be resolved without a project directory — which the
-    /// artifacts page asks for and pointedly refuses to guess, because a GUI launched from a
-    /// shortcut has an arbitrary working directory. A card that quietly used it would describe a
-    /// project the user is not in.
+    /// ⛔⛔ <b>Without this the whole interlock is defeatable in one visit, by two ordinary
+    /// clicks.</b> The interlock is decided in <see cref="ReadPermissionModel"/> at read time, and
+    /// cards are otherwise read on construction and on arrival — so setting the global action left
+    /// the five tool cards holding the <c>EnumDisabled</c> they had computed *before* it. Editing
+    /// one then replaced the bare string with an object and deleted the global rule covering every
+    /// tool without a card. Found by re-reading the finished slice; nothing was asserting it.
     /// </para>
     /// <para>
-    /// ⚠ <b>The caution is SOURCED, not measured, and is worded to say so.</b> OpenCode's issue
-    /// tracker reports that the global-files loop stops after the first hit, so an
-    /// <c>AGENTS.md</c> under <c>$OPENCODE_CONFIG_DIR</c> is ignored when the default directory
-    /// also has one. The probes this repo has cannot confirm it: <c>debug config</c> does not
-    /// carry rules and <c>debug agent</c> does not include their text — both tried, neither
-    /// showed a marker planted in either file. So the card reports the observable precondition
-    /// (both files exist, the directory is redirected) and says OpenCode <em>may</em> be ignoring
-    /// one. Same treatment, for the same reason, as
-    /// <c>OpenCodeArtifactIssue.SkillHasNoDescription</c>.
+    /// ⚠ <b>This cannot recurse.</b> Every permission read sets <see cref="EssentialsCardViewModel.IsLoading"/>
+    /// around its assignment, and the value-changed routers return early while it is set — so the
+    /// re-read that lands on the card currently being written raises no second write. The reads are
+    /// synchronous, so the group is consistent before this returns.
     /// </para>
     /// </remarks>
-    private EssentialsCardViewModel BuildRulesCard() => new(new EssentialsCardOptions
+    private Task RefreshPermissionCards()
     {
-        Id = CardIdRules,
-        Title = Strings.EssentialsCardRulesTitle,
-        Body = Strings.EssentialsCardRulesBody,
-        Severity = AppSeverity.Neutral,
-        Kind = EssentialsCardKind.Derived,
-        ReadAsync = ReadRules,
-        IsDangerPredicate = _ => HasShadowedGlobalRules(),
-        DangerBannerText = Strings.EssentialsRulesShadowedBanner,
-    });
+        foreach (EssentialsCardViewModel card in Cards)
+        {
+            if (PermissionCardIds.Contains(card.Id, StringComparer.Ordinal))
+            {
+                _ = card.ReadAsync();
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Read one tool's entry under <c>permission</c>.</summary>
+    private Func<EssentialsCardViewModel, Task> ReadToolPermission(string tool) => card =>
+    {
+        card.IsLoading = true;
+        try
+        {
+            OpenCodePermissionModel? model = ReadPermissionModel();
+            if (model is null)
+            {
+                card.EnumValue = null;
+                StandDown(card, Strings.EssentialsPermissionUnreadable);
+            }
+            else if (model.GlobalAction is not null)
+            {
+                // A bare global action covers this tool. Writing here would replace the string
+                // with an object and drop the global rule for every OTHER tool.
+                card.EnumValue = null;
+                StandDown(card, Strings.EssentialsPermissionGlobalInForce);
+            }
+            else
+            {
+                OpenCodeToolPermission? entry = model.Tools
+                    .FirstOrDefault(t => string.Equals(t.Key, tool, StringComparison.Ordinal)).Value;
+
+                if (entry is { Rules.Count: > 0 })
+                {
+                    // Ordered per-pattern rules; a bare action would discard them, and the order
+                    // is load-bearing (last match wins).
+                    card.EnumValue = null;
+                    StandDown(card, Strings.EssentialsPermissionPatternRules);
+                }
+                else
+                {
+                    card.EnumValue = WireOrNull(entry?.SingleAction);
+                    StandUp(card);
+                }
+            }
+        }
+        finally
+        {
+            card.IsLoading = false;
+        }
+
+        return Task.CompletedTask;
+    };
+
+    private Func<EssentialsCardViewModel, Task> WriteToolPermission(string tool) => card =>
+    {
+        if (_client is null || card.EnumDisabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        _ = WriteString($"{PermissionKey}.{tool}")(card);
+        return RefreshPermissionCards();
+    };
+
+    /// <summary>True when a permission card currently shows the unsafe action.</summary>
+    private static bool IsAllow(EssentialsCardViewModel card)
+        => string.Equals(card.EnumValue, "allow", StringComparison.Ordinal);
+
+    // ── model / provider gating ───────────────────────────────────────
 
     /// <summary>
-    /// Card 17 — which configuration file the app is actually editing.
+    /// True when the pinned model names a provider this configuration has switched off.
     /// </summary>
     /// <remarks>
-    /// ⭐ <b>The card exists because OpenCode's own tooling answers this wrongly.</b>
-    /// <c>opencode debug paths</c> prints <c>~/.config/opencode</c> even when
-    /// <c>$OPENCODE_CONFIG_DIR</c> points elsewhere — measured against v1.17.9 — while
-    /// <c>debug config</c> proves the redirected file is the one that loads. A user checking the
-    /// obvious command gets the wrong answer, which is exactly the confusion this card defuses.
+    /// Two ways to be off, and both are real: named in <c>disabled_providers</c>, or absent from a
+    /// non-empty <c>enabled_providers</c>, which the schema describes as "ONLY these providers
+    /// will be enabled". A model whose provider is off does not run, and nothing else on the page
+    /// would say so.
     /// </remarks>
-    private EssentialsCardViewModel BuildActiveConfigCard() => new(new EssentialsCardOptions
+    private bool IsProviderDisabled(EssentialsCardViewModel card)
     {
-        Id = CardIdActiveConfig,
-        Title = Strings.EssentialsCardActiveConfigTitle,
-        Body = Strings.EssentialsCardActiveConfigBody,
-        Severity = AppSeverity.Neutral,
-        Kind = EssentialsCardKind.Derived,
-        ReadAsync = ReadActiveConfig,
+        if (card.EnumValue is not { Length: > 0 } value)
+        {
+            return false;
+        }
 
-        // Inline content is the one state where editing a file changes nothing the agent reads.
-        IsDangerPredicate = _ => _environment.InlineContent is not null,
-        DangerBannerText = Strings.EssentialsActiveConfigInlineBanner,
-    });
+        int slash = value.IndexOf('/', StringComparison.Ordinal);
+        if (slash <= 0)
+        {
+            // Not in provider/model form — nothing to check, and complaining about it is the
+            // schema validator's job, not this card's.
+            return false;
+        }
 
-    // ── Read / write delegates ────────────────────────────────────────
+        string provider = value[..slash];
 
-    /// <remarks>
-    /// ⚠ <c>IsLoading</c> must not span an <c>await</c> — a suppression flag held across a
-    /// continuation lets a user edit land while writes are still suppressed, and the edit is
-    /// silently discarded. Every delegate here is synchronous for that reason, and the guard test
-    /// this plan re-asserts each phase (<c>…_NotSuppressed_WhileReadIsInAsyncPhase</c>) is what
-    /// keeps it that way.
-    /// </remarks>
+        if (StringsAt("disabled_providers").Contains(provider, StringComparer.Ordinal))
+        {
+            return true;
+        }
+
+        IReadOnlyList<string> enabled = StringsAt("enabled_providers");
+        return enabled.Count > 0 && !enabled.Contains(provider, StringComparer.Ordinal);
+    }
+
+    /// <summary>The string elements of an array-valued key, skipping anything that is not one.</summary>
+    private IReadOnlyList<string> StringsAt(string path)
+    {
+        if (Effective(path) is not JsonArray arr)
+        {
+            return [];
+        }
+
+        List<string> result = [];
+        foreach (JsonNode? n in arr)
+        {
+            if (n is JsonValue v && v.TryGetValue(out string? s) && s is not null)
+            {
+                result.Add(s);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>The agent names this configuration defines, for the default-agent suggestions.</summary>
+    private IReadOnlyList<string> ConfiguredAgentNames()
+        => Effective("agent") is JsonObject obj
+            ? [.. obj.Select(kv => kv.Key)]
+            : [];
+
+    // ── autoupdate ────────────────────────────────────────────────────
+
     private Task ReadAutoupdate(EssentialsCardViewModel card)
     {
         card.IsLoading = true;
@@ -264,7 +538,7 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
             return new OpenCodeAutoupdateConfig { Mode = OpenCodeAutoupdateMode.NotSet };
         }
 
-        JsonNode? node = _client.GetEffective<JsonNode>(AutoupdatePath);
+        JsonNode? node = Effective(AutoupdatePath);
 
         // ⚠ The effective value cannot distinguish "absent everywhere" from "explicitly null":
         // both arrive as a null node. The codec is told "defined" only when a node came back, so
@@ -296,9 +570,7 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
             return Task.CompletedTask;
         }
 
-        // Ghost-change guard, as on every other card: only persist when this actually changes the
-        // effective value, so a picker reasserting its selection cannot pin a redundant key and
-        // light the Save banner over an empty diff.
+        // Ghost-change guard, as on every other card.
         if (ReadAutoupdateConfig().Mode != mode)
         {
             _client.SetValue(AutoupdatePath, value, _client.DefaultScope);
@@ -307,6 +579,8 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
         return Task.CompletedTask;
     }
 
+    // ── Derived resolver reports ──────────────────────────────────────
+
     private Task ReadRules(EssentialsCardViewModel card)
     {
         card.IsLoading = true;
@@ -314,7 +588,7 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
         {
             string globalRules = Path.Combine(OpenCodePaths.GlobalDirectory(_environment), "AGENTS.md");
             card.DerivedText = File.Exists(globalRules)
-                ? string.Format(CultureInfo.CurrentCulture, Strings.EssentialsRulesGlobalFmt, globalRules)
+                ? Format(Strings.EssentialsRulesGlobalFmt, globalRules)
                 : Strings.EssentialsRulesNone;
         }
         finally
@@ -340,8 +614,8 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
         string fallback = Path.Combine(OpenCodePaths.DefaultGlobalDirectory(), "AGENTS.md");
 
         // A redirect that resolves to the default directory is not a redirect; comparing the
-        // resolved paths rather than trusting the variable keeps OPENCODE_CONFIG_DIR=~/.config/opencode
-        // from raising a warning about a file shadowing itself.
+        // resolved paths rather than trusting the variable keeps
+        // OPENCODE_CONFIG_DIR=~/.config/opencode from warning about a file shadowing itself.
         if (string.Equals(
                 Path.TrimEndingDirectorySeparator(redirected),
                 Path.TrimEndingDirectorySeparator(fallback),
@@ -382,17 +656,16 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
 
         if (_environment.ConfigPath is { } explicitPath)
         {
-            return string.Format(
-                CultureInfo.CurrentCulture, Strings.EssentialsActiveConfigFromVarFmt,
-                explicitPath, "OPENCODE_CONFIG");
+            return Format(Strings.EssentialsActiveConfigFromVarFmt, explicitPath, "OPENCODE_CONFIG");
         }
 
         string path = OpenCodePaths.GlobalConfigPath(_environment);
 
         return _environment.ConfigDir is null
             ? path
-            : string.Format(
-                CultureInfo.CurrentCulture, Strings.EssentialsActiveConfigFromVarFmt,
-                path, "OPENCODE_CONFIG_DIR");
+            : Format(Strings.EssentialsActiveConfigFromVarFmt, path, "OPENCODE_CONFIG_DIR");
     }
+
+    private static string Format(string format, params object?[] args)
+        => string.Format(CultureInfo.CurrentCulture, format, args);
 }

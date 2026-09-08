@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Essentials;
@@ -273,5 +274,83 @@ public sealed class OpenCodeEssentialsWiringTests
         Assert.AreNotEqual(before, rules.DerivedText,
             "The rules card did not re-read on arrival, so it still reports the startup state.");
         StringAssert.Contains(rules.DerivedText, agents, StringComparison.Ordinal);
+    }
+
+    // ── The danger table reaches the page ─────────────────────────────
+    //
+    // ⛔⛔ Slice 2 shipped the Essentials dot and the settings-page dot disagreeing about
+    // `autoupdate`: the card's severity was a literal and the table said something else. The
+    // card now reads IDangerClassifier, which makes them structurally the same answer — but only
+    // if the page is actually HANDED the classifier. That is the wiring these two tests guard,
+    // and dropping it has no symptom other than every dot quietly turning grey.
+    //
+    // ⭐ Both use the PRODUCTION constructor. `BuildViewModel` above builds its HostedSections
+    // without a danger table, so a test written against it would assert the wiring against a
+    // fixture that has already removed the thing under test.
+
+    /// <summary>The real table's tiers reach the real cards.</summary>
+    [TestMethod]
+    public async Task TheEssentialsCardsCarryTheDangerTablesTiers()
+    {
+        MainWindowViewModel vm = new();
+        await vm.InitializeAsync(TestContext.CancellationTokenSource.Token);
+        OpenCodeEssentialsViewModel page = EssentialsOf(vm);
+
+        Assert.IsTrue(
+            page.Cards.Any(c => c.Severity != AppSeverity.Neutral),
+            "Every card is Neutral, which is what a page with NO classifier shows. The danger "
+            + "table is not reaching the Essentials page, so its dots and the settings pages' "
+            + "dots now disagree about every key.");
+
+        // Spot-checked against the table itself rather than a literal tier: the point is that the
+        // two surfaces give one answer, not that the answer is any particular colour today.
+        EssentialsCardViewModel permission =
+            page.GetCardById(OpenCodeEssentialsViewModel.CardIdGlobalPermission)
+            ?? throw new AssertFailedException("No permission card.");
+
+        Assert.AreEqual(
+            OpenCodeDangerTable.Config.Classify("permission", scope: null, currentValue: null).Severity,
+            permission.Severity);
+    }
+
+    /// <summary>
+    /// A malformed configuration does not fail the section open — so the page gets a real client,
+    /// and its tiers are the ordinary ones.
+    /// </summary>
+    /// <remarks>
+    /// ⭐⭐ <b>Measured, and it corrected a test I had already written.</b> This started life as
+    /// "the tiers survive a section too broken to open", planting malformed JSON to produce that
+    /// state. It passed — and a premise assertion on <see cref="MainWindowViewModel.Status"/>
+    /// proved it was passing as a duplicate of the test above: <c>ConfigFileLoader</c> catches
+    /// <c>JsonException</c> deliberately, loading the file as an empty root and recording
+    /// <c>SettingsDocument.LoadFailure</c> instead of throwing. So a parse-broken file opens
+    /// <em>successfully</em>, and no amount of bad JSON reaches the failed-section branch.
+    /// <para>
+    /// The invariant that branch actually carries — a null client still gets real tiers — is a
+    /// statement about the page rather than about the window, and is asserted directly in
+    /// <c>OpenCodeEssentialsViewModelTests.WithNoClient_TheSeveritiesStillComeFromTheClassifier</c>.
+    /// What is left worth checking here is this: the app keeps working on a file it could not
+    /// parse, which is the state a user in trouble is actually in.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task AMalformedConfigStillOpens_AndTheCardsKeepTheirTiers()
+    {
+        await File.WriteAllTextAsync(
+            Path.Combine(_sandbox, "opencode.json"), "{ this is not json",
+            TestContext.CancellationTokenSource.Token);
+
+        MainWindowViewModel vm = new();
+        await vm.InitializeAsync(TestContext.CancellationTokenSource.Token);
+
+        Assert.AreEqual(string.Empty, vm.Status,
+            "A malformed file is loaded as empty rather than failing the section. If this now "
+            + "reports a failure, that resilience changed and the load-failure banner is the "
+            + "surface to check.");
+
+        Assert.IsTrue(
+            EssentialsOf(vm).Cards.Any(c => c.Severity != AppSeverity.Neutral),
+            "Every dot went grey on an unparseable config — the page lost its danger table in "
+            + "exactly the situation a user needs it most.");
     }
 }
