@@ -20,8 +20,18 @@ namespace Bennewitz.Ninja.ClaudeForge.Views;
 /// VM's commands.  The only code-behind is <see cref="OnRawKeyDown"/>, which
 /// adds smart indentation to the raw front-matter editor (a behaviour that
 /// needs <see cref="KeyEventArgs"/>, which a binding can't supply) — no new
-/// dependency, no syntax-highlighting library (AvaloniaEdit is incompatible
-/// with Semi.Avalonia; see CLAUDE.md "Common gotchas").
+/// dependency and no syntax-highlighting library.
+/// <para>
+/// That is a scope choice, not a compatibility one.  This note used to assert
+/// that AvaloniaEdit is incompatible with Semi.Avalonia and cite a
+/// <c>CLAUDE.md</c> "Common gotchas" entry; no such file has ever existed in
+/// this repository.  The narrow claim was real — AvaloniaEdit's themes leave
+/// keys undefined under bare Semi, some of them <c>StaticResource</c>, which
+/// throws at template load — but the Fluent and Simple compat dictionaries
+/// merged in <c>App.axaml</c> now define every one of them.  See
+/// <c>docs/AVALONIA-GOTCHAS.md</c>, "AvaloniaEdit under Semi resolves only
+/// with the compat dictionaries".
+/// </para>
 /// </summary>
 public partial class AgentsSkillsEditorView : UserControl
 {
