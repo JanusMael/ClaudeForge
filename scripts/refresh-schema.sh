@@ -3,7 +3,7 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# The bundled schema at src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json
+# The bundled schema at src/AgentForge.Core/Assets/Schemas/claude-code-settings.json
 # is the AUTHORITATIVE source the runtime reads — even when the app's HTTP
 # refresh downloads a newer copy into ~/.claude/cache/schemas/, the runtime
 # priority (memory cache > bundled embedded > disk cache > HTTP fetch >
@@ -62,7 +62,7 @@ fi
 # of cwd.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
-TARGET_PATH="$REPO_ROOT/src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json"
+TARGET_PATH="$REPO_ROOT/src/AgentForge.Core/Assets/Schemas/claude-code-settings.json"
 UPSTREAM_URL='https://json.schemastore.org/claude-code-settings.json'
 
 # ANSI colour helpers — disable when stdout is not a tty (CI logs, redirected
@@ -210,7 +210,7 @@ echo
 # 6. Note about the sibling overlay file.
 # ---------------------------------------------------------------------------
 echo "${C_CYAN}Note:${C_RESET} hand-curated additions live in"
-echo "      src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.overlay.json"
+echo "      src/AgentForge.Core/Assets/Schemas/claude-code-settings.overlay.json"
 echo "      and are applied at load time via RFC 7396 JSON Merge Patch."
 echo "      This refresh did NOT touch them; they will surface in the merged"
 echo "      runtime schema unchanged."
@@ -218,6 +218,6 @@ echo
 echo "${C_CYAN}Next steps:${C_RESET}"
 echo "  1. dotnet build              # verify the refreshed schema still parses + bundles."
 echo "  2. dotnet test               # verify dependent tests still pass."
-echo "  3. git diff -- src/ClaudeForge.Core/Assets/Schemas/claude-code-settings.json"
+echo "  3. git diff -- src/AgentForge.Core/Assets/Schemas/claude-code-settings.json"
 echo "  4. git add + commit with: 'chore: refresh bundled claude-code-settings.json from schemastore.org'"
 echo

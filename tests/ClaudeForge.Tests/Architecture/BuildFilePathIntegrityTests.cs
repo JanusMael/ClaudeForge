@@ -80,12 +80,20 @@ public sealed class BuildFilePathIntegrityTests
             }
         }
 
+        // ⛔ BOTH extensions. Scanning *.ps1 alone is how `refresh-schema.sh` kept pointing at
+        // `src/ClaudeForge.Core/` for the entire life of this guard — a path the very rename
+        // that PROMPTED this test deleted. Its PowerShell twin was fixed at the time; the shell
+        // copy was not, because nothing looked at it. Add an extension here whenever a new kind
+        // of build script appears, or it inherits exactly that blind spot.
         string scripts = Path.Combine(repoRoot, "scripts");
         if (Directory.Exists(scripts))
         {
-            foreach (string f in Directory.GetFiles(scripts, "*.ps1", SearchOption.AllDirectories))
+            foreach (string pattern in new[] { "*.ps1", "*.sh" })
             {
-                yield return f;
+                foreach (string f in Directory.GetFiles(scripts, pattern, SearchOption.AllDirectories))
+                {
+                    yield return f;
+                }
             }
         }
 
