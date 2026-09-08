@@ -336,7 +336,20 @@ So the name arrives; it is on the composite's own peer, and the inner `TextBox` 
 
 ⛔ **The trap is the probe, not the app.** Enumerate by `TrueCondition` and read `Current.ControlType.ProgrammaticName`, or filter to `Current.IsKeyboardFocusable` — the focus targets are what a screen reader actually lands on, and they line up with the markup one-for-one. Querying a hand-picked list of control types produced a confident false conclusion here, and the count of unnamed `Edit`s (six) happened to look like a plausible defect: 3 + 3.
 
-⚠ **A `NumericUpDown`'s spin buttons announce `Avalonia.Controls.PathIcon`.** Same `ToString()` fallback as the `ItemsSource` container cases above — Avalonia's default template gives them no name. Pre-existing in both apps wherever a `NumericUpDown` ships; not yet fixed.
+⚠ **A `NumericUpDown`'s spin buttons announced `Avalonia.Controls.PathIcon`** — same `ToString()` fallback as the `ItemsSource` container cases above, because Avalonia's default template gives them no name and their content is a `PathIcon`. Twelve of them in ClaudeForge (Essentials, General, Sandbox, Backup / Restore) and six on OpenCodeForge's Essentials page. **Fixed 2026-09-08.**
+
+This one cannot be fixed from a view, and no widening of the AXAML scan reaches it: the buttons exist only inside `ButtonSpinner`'s control template, so there is no element in any markup to annotate or to scan. They are named from the theme instead — `src/LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml`, included by `SemiBundle.axaml`, which is the one line both apps' `App.axaml` already take from the shared library:
+
+```xml
+<Style Selector="ButtonSpinner /template/ RepeatButton#PART_IncreaseButton">
+    <Setter Property="AutomationProperties.Name"
+            Value="{x:Static loc:WrapperStrings.LabelSpinnerIncrease}" />
+</Style>
+```
+
+The `/template/` combinator is not optional — a selector without it does not reach an element that lives inside a control template. The two strings come from `WrapperStrings` so a host localises them through the same `Resolver` hook as the wrapper chrome.
+
+**Guard:** `tests/LayeredEditors.Avalonia.Tests/Themes/TemplatePartAutomationNameTests.cs` builds a real templated `NumericUpDown` on the headless UI thread — in an app that loads exactly the host's `SemiBundle.axaml` include — and reads its automation PEERS, because the `ToString()` fallback lives in the peer and only the peer can show it is gone. It asserts its own premise first (one `ButtonSpinner`, one button per part name), since a template whose parts get renamed would otherwise hand the test an empty set to pass over.
 
 ⭐ **Related:** `CopyFromScreen` captures the **physical screen**, so screenshotting a background window silently yields whatever is on top of it — for one run here, the editor that launched the harness. Force the window foreground first (`ShowWindow` + `SetWindowPos` topmost + `SetForegroundWindow`) or treat the UIA dump, not the image, as the evidence.
 

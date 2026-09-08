@@ -1,10 +1,13 @@
-// Default English strings for the library-side PropertyEditorWrapper chrome.
+// Default English strings for the library-side chrome: the PropertyEditorWrapper,
+// and the Themes/*.axaml styles this library ships.
 //
 // The library wrapper is consumed as a fallback by external users of
 // LayeredEditors.Avalonia who don't supply their own; a host app can supply
 // its own fully-localised wrapper control instead, so this default surface
 // rarely renders in a complete app — but the strings
 // still need to be overridable so the library is genuinely reusable.
+// The Themes strings (the spinner button names) DO render in every host,
+// because every host that includes the theme bundle gets those styles.
 //
 // Pattern: a static `Resolver` Func returns the localised text for a key.
 // The default resolver returns the English literal.  Consumers wire a
@@ -30,9 +33,9 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
 
 /// <summary>
 /// Chrome-string surface for the library-side
-/// <see cref="Controls.PropertyEditorWrapper"/>.  All strings default to
-/// English literals; hosts override by assigning <see cref="Resolver"/> at
-/// startup before any wrapper XAML is parsed.
+/// <see cref="Controls.PropertyEditorWrapper"/> and for the styles under
+/// <c>Themes/</c>.  All strings default to English literals; hosts override by
+/// assigning <see cref="Resolver"/> at startup before any library XAML is parsed.
 /// </summary>
 public static class WrapperStrings
 {
@@ -60,6 +63,8 @@ public static class WrapperStrings
             nameof(TipNewSetting) => "New setting — added since your last session",
             nameof(LabelOverridden) => "(overridden)",
             nameof(LabelReset) => "Reset",
+            nameof(LabelSpinnerIncrease) => "Increase value",
+            nameof(LabelSpinnerDecrease) => "Decrease value",
             var _ => key,
         };
     }
@@ -84,6 +89,16 @@ public static class WrapperStrings
 
     /// <summary>Label for the Reset-to-inherited button.</summary>
     public static string LabelReset => Resolver(nameof(LabelReset));
+
+    /// <summary>
+    /// Screen-reader name for a <c>ButtonSpinner</c>'s up button — the one a
+    /// <c>NumericUpDown</c> draws.  See <c>Themes/AccessibilityNames.axaml</c> for why
+    /// the theme has to supply this rather than the markup that hosts the control.
+    /// </summary>
+    public static string LabelSpinnerIncrease => Resolver(nameof(LabelSpinnerIncrease));
+
+    /// <summary>Screen-reader name for a <c>ButtonSpinner</c>'s down button.</summary>
+    public static string LabelSpinnerDecrease => Resolver(nameof(LabelSpinnerDecrease));
 
     /// <summary>
     /// Restore <see cref="Resolver"/> to the default-English implementation.
