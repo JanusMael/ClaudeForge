@@ -69,6 +69,14 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Fixed
 
+- **Every number field and model picker announced itself as an unnamed edit box.**
+  `NumericUpDown` and `AutoCompleteBox` are composite controls: each carried the correct
+  screen-reader name, but neither ever holds focus — focus goes to an inner text box that
+  had no name of its own, so the name sat on an element a screen-reader user never lands
+  on. Measured with UIA: 6 number fields and 8 pickers. The text box now inherits the
+  name the view already sets, so tabbing into "Max Output Tokens" announces
+  "Max Output Tokens" instead of nothing. A field whose name is genuinely missing stays
+  unnamed rather than being papered over.
 - **Screen readers read out `Avalonia.Controls.PathIcon` on every number field's
   up/down buttons.** Those two buttons come from the `NumericUpDown` control template,
   not from any view, so nothing could annotate them and the AXAML accessibility guard
