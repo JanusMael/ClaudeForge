@@ -67,9 +67,6 @@ public static class PlatformPaths
     public static string ProfilesDirectory =>
         Path.Combine(ClaudeHome, "profiles");
 
-    /// <summary>~/.claude/cache/schemas/ — Disk cache for fetched JSON schemas.</summary>
-    public static string SchemaCacheDirectory =>
-        Path.Combine(ClaudeHome, "cache", "schemas");
 
     /// <summary>
     /// ~/claude-backups/ — Default location for backup <c>.zip</c> archives written

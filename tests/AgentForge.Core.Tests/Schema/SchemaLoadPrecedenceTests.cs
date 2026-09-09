@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -9,54 +10,91 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 
 /// <summary>
 /// Locks the load precedence of <see cref="SchemaRegistry.GetSchemaAsync"/>:
-/// <b>memory cache → bundled resource (+ overlay) → disk cache → HTTPS fetch → empty</b>.
-/// The load-bearing part is that <b>bundled outranks the disk cache</b>.
+/// <b>memory cache → HTTPS fetch (+ strip, + overlay) → bundled resource (+ strip, + overlay)</b>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Why this exists.</b> Bundled-before-disk is not an optimization, it is a
-/// correctness requirement: the bundled schema has a sibling
-/// <c>*.overlay.json</c> carrying hand-curated additions the upstream schemastore
-/// copy does not have (<c>model.examples</c> driving the AutoCompleteBox,
-/// <c>model.default</c> driving the "(inherits: …)" watermark). If a stale disk
-/// cache — or a fresh network copy — could win, those additions would vanish and
-/// the editors would silently degrade to plain text boxes.
+/// ⚠ <b>This file previously locked the OPPOSITE order</b>, and did so deliberately: bundled had
+/// to outrank the network because only the bundled reader applied the <c>*.overlay.json</c>
+/// sibling, so a fresher network copy would have silently dropped the hand-curated additions.
+/// That constraint was an artifact of where the merge lived, not a requirement. The overlay and
+/// the external-<c>$ref</c> strip now apply to whichever source wins, so network-first is safe —
+/// and <see cref="TheOverlayIsAppliedToAFetchedCopy_NotOnlyTheBundledOne"/> is the test that
+/// makes that claim rather than assuming it.
 /// </para>
 /// <para>
-/// <b>Why it was worth adding.</b> Nothing asserted this. The precedence was
-/// recorded only in prose, and the prose was <i>wrong in three places</i> —
-/// <see cref="SchemaRegistry"/>'s class summary and one of its method summaries
-/// both stated the order as "memory → disk → HTTP → bundled fallback", the exact
-/// inverse, and two promotion tests cited "SchemaRegistry prefers the on-disk
-/// cache" as the reason for their design. A maintainer reading any of those and
-/// "fixing" the code to match would have broken the overlay with a green suite.
-/// A behavioural test is the only thing that makes the ordering self-defending.
+/// ⛔⛔ <b>Two of the old tests kept passing after the reorder, for a reason their names
+/// disowned.</b> Both used an offline handler, so bundled won and their overlay assertions
+/// stayed true — while their names still said "OutranksDiskCache" about a disk cache that no
+/// longer exists. Green tests describing a departed mechanism are worse than absent ones, which
+/// is why this file was rewritten rather than patched.
 /// </para>
 /// </remarks>
 [TestClass]
 public sealed class SchemaLoadPrecedenceTests
 {
     /// <summary>A property name no real schema will ever declare.</summary>
-    private const string DiskSentinelProperty = "zzzStaleDiskCacheSentinel";
+    private const string NetworkSentinelProperty = "zzzFetchedFromNetworkSentinel";
 
     private const string ClaudeCodeCacheFileName = "claude-code-settings.json";
 
     private string _fakeHome = string.Empty;
 
-    /// <summary>Refuses every request, so a fall-through to HTTPS is unmistakable.</summary>
+    public TestContext TestContext { get; set; } = null!;
+
+    /// <summary>Refuses every request, so a fall-through to bundled is unmistakable.</summary>
     private sealed class FailingHandler : HttpMessageHandler
     {
+        public int Attempts { get; private set; }
+
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Attempts++;
             throw new HttpRequestException("Simulated network unavailable");
         }
     }
 
-    private static SchemaRegistry OfflineRegistry()
+    /// <summary>Serves one canned body to every request.</summary>
+    private sealed class CannedHandler : HttpMessageHandler
     {
-        return new SchemaRegistry(new HttpClient(new FailingHandler()));
+        private readonly string _body;
+
+        public CannedHandler(string body)
+        {
+            _body = body;
+        }
+
+        public int Attempts { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Attempts++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(_body, Encoding.UTF8, "application/json"),
+            });
+        }
     }
+
+    /// <summary>
+    /// A schema declaring one sentinel property and nothing else.
+    /// </summary>
+    /// <remarks>
+    /// No <c>$id</c>: JsonSchema.Net registers by <c>$id</c> globally, and this document must
+    /// never collide with the real schema.
+    /// </remarks>
+    private static string SentinelSchema(string propertyName) =>
+        $$"""
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+              "{{propertyName}}": { "type": "string" }
+            }
+          }
+          """;
 
     [TestInitialize]
     public void Setup()
@@ -83,124 +121,468 @@ public sealed class SchemaLoadPrecedenceTests
         }
     }
 
-    /// <summary>
-    /// Plants a schema in the disk cache that declares <see cref="DiskSentinelProperty"/>
-    /// and nothing else. If the disk copy is ever preferred, that property shows up in
-    /// the loaded tree — and the real top-level properties do not.
-    /// </summary>
-    private string PlantSentinelDiskCache()
-    {
-        string dir = PlatformPaths.SchemaCacheDirectory;
-        Directory.CreateDirectory(dir);
-        string path = Path.Combine(dir, ClaudeCodeCacheFileName);
+    private static IReadOnlyList<string> TopLevelNames(JsonSchemaNode root) =>
+        [.. SchemaTreeBuilder.BuildTopLevel(root).Select(n => n.Name)];
 
-        // No $id: JsonSchema.Net registers schemas globally by $id, and this document
-        // must never collide with the real schema if it does get parsed.
-        File.WriteAllText(
-            path,
-            $$"""
-              {
-                "$schema": "http://json-schema.org/draft-07/schema#",
-                "type": "object",
-                "properties": {
-                  "{{DiskSentinelProperty}}": { "type": "string" }
-                }
-              }
-              """,
-            Encoding.UTF8);
-
-        return path;
-    }
+    // ── The order ─────────────────────────────────────────────────────
 
     [TestMethod]
-    [Description("Bundled resource must outrank a populated disk cache, or the "
-                 + "hand-curated *.overlay.json additions silently disappear.")]
-    public async Task BundledSchema_OutranksDiskCache_WhenBothExist()
+    [Description("A reachable network outranks the bundled copy — the whole point of the reorder.")]
+    public async Task FetchedSchema_OutranksBundled_WhenTheNetworkAnswers()
     {
-        PlantSentinelDiskCache();
+        CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
+        using SchemaRegistry registry = new(new HttpClient(handler));
 
-        using SchemaRegistry registry = OfflineRegistry();
         JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
-
-        IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
-        IReadOnlyList<string> names = [.. top.Select(n => n.Name)];
-
-        Assert.IsFalse(
-            names.Contains(DiskSentinelProperty, StringComparer.Ordinal),
-            $"The disk cache won: '{DiskSentinelProperty}' reached the loaded schema. "
-            + "GetSchemaAsync must read the bundled resource (step 2) before the disk "
-            + "cache (step 3) — the bundled copy is the only one carrying the "
-            + "*.overlay.json additions.");
+        IReadOnlyList<string> names = TopLevelNames(root);
 
         Assert.IsTrue(
-            names.Contains("model", StringComparer.Ordinal),
-            "The bundled Claude Code schema should expose a top-level 'model' property. "
-            + $"Got: {string.Join(", ", names)}");
+            names.Contains(NetworkSentinelProperty, StringComparer.Ordinal),
+            "The bundled copy won while the network was answering. The fetch is step 2 and must "
+            + $"outrank the bundled resource. Got: {string.Join(", ", names)}");
+        Assert.AreEqual(1, handler.Attempts, "The fetch should have been attempted exactly once.");
     }
 
     [TestMethod]
-    [Description("The overlay-only additions must survive the chain, not just the "
-                 + "bundled reader — this is what bundled-first is protecting.")]
-    public async Task OverlayAdditions_SurviveTheLoadChain_DespiteAStaleDiskCache()
+    [Description("With no network, the bundled copy is used — and still carries its overlay.")]
+    public async Task BundledIsUsed_WhenTheNetworkIsUnavailable()
     {
-        PlantSentinelDiskCache();
+        FailingHandler handler = new();
+        using SchemaRegistry registry = new(new HttpClient(handler));
 
-        using SchemaRegistry registry = OfflineRegistry();
         JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        IReadOnlyList<string> names = TopLevelNames(root);
 
+        Assert.IsFalse(
+            names.Contains(NetworkSentinelProperty, StringComparer.Ordinal),
+            "Premise: nothing should have been served from the network here.");
+        Assert.IsTrue(
+            names.Contains("model", StringComparer.Ordinal),
+            $"The bundled Claude Code schema should expose 'model'. Got: {string.Join(", ", names)}");
+        Assert.IsTrue(handler.Attempts > 0, "The network should have been tried before falling back.");
+    }
+
+    // ── The property that makes network-first safe ────────────────────
+
+    /// <summary>
+    /// ⭐⭐ The overlay is applied to a FETCHED base, not only to the bundled one.
+    /// </summary>
+    /// <remarks>
+    /// This is the assertion that retires the old ordering's justification. The served body is
+    /// upstream's shape — a bare <c>model</c> string with no <c>examples</c> and no
+    /// <c>default</c> — and those two keys live ONLY in
+    /// <c>claude-code-settings.overlay.json</c>. If <c>model</c> still promotes to
+    /// <see cref="SchemaValueType.Enum"/>, the overlay reached a network copy.
+    /// <para>
+    /// Losing this regresses the editor from an AutoCompleteBox to a plain TextBox — visible,
+    /// but easy to attribute to anything else.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task TheOverlayIsAppliedToAFetchedCopy_NotOnlyTheBundledOne()
+    {
+        const string upstreamShape = """
+                                     {
+                                       "$schema": "http://json-schema.org/draft-07/schema#",
+                                       "type": "object",
+                                       "properties": {
+                                         "model": { "type": "string" }
+                                       }
+                                     }
+                                     """;
+
+        CannedHandler handler = new(upstreamShape);
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
         SchemaNode? model = SchemaTreeBuilder
                             .BuildTopLevel(root)
                             .FirstOrDefault(n => string.Equals(n.Name, "model", StringComparison.Ordinal));
 
-        Assert.IsNotNull(model, "Bundled schema must expose 'model'.");
+        Assert.IsNotNull(model, "The fetched schema declares 'model'; it should be in the tree.");
 
-        // model.examples + model.default live ONLY in claude-code-settings.overlay.json,
-        // so their presence here proves the merged bundled copy — not the sentinel disk
-        // copy and not a bare upstream fetch — is what the chain returned.
+        // ⛔⛔ WITHOUT THIS, THE TEST IS A TAUTOLOGY. Measured: disabling the fetch branch
+        // entirely left it green, because bundled+overlay promotes 'model' to Enum too. The
+        // served body declares 'model' and NOTHING else, so a one-property tree is the proof
+        // that the fetched copy is the one the overlay was applied to.
+        IReadOnlyList<string> names = TopLevelNames(root);
+        CollectionAssert.AreEqual(
+            new[] { "model" },
+            names.ToArray(),
+            "The tree has more than the single property the served body declared, so BUNDLED "
+            + $"won and this test is not looking at a fetched copy at all. Got: {string.Join(", ", names)}");
+
         Assert.AreEqual(
             SchemaValueType.Enum,
             model.ValueType,
-            "'model' should promote to Enum, which only happens when the overlay's "
-            + "'examples'/'default' are present. Losing this regresses the editor from "
-            + "an AutoCompleteBox to a plain TextBox.");
+            "'model' did not promote to Enum, so the overlay was NOT applied to the fetched "
+            + "copy. The served body has no 'examples'/'default' — only the overlay does — so "
+            + "this is the assertion that proves the overlay is source-independent. Without it, "
+            + "network-first silently drops every hand-curated addition.");
     }
 
+    /// <summary>
+    /// ⛔⛔ A fetched schema has its external <c>$ref</c>s stripped.
+    /// </summary>
+    /// <remarks>
+    /// Upstream <c>opencode-config.json</c> types four <c>model</c> properties with a
+    /// <c>models.dev</c> <c>$ref</c>. Left in, schema evaluation throws through
+    /// <c>ValidateWorkspaceAsync</c> → <c>SaveAsync</c> for any config that sets a model — so
+    /// the moment a fetch can win, the runtime must strip exactly as the refresh scripts do.
+    /// This is the test that would have caught shipping network-first without the strip.
+    /// </remarks>
     [TestMethod]
-    [Description("A schema with no bundled resource must still fall through to the "
-                 + "disk cache — bundled-first must not mean bundled-only.")]
-    public async Task DiskCache_IsStillUsed_WhenNoBundledResourceExists()
+    public async Task AFetchedSchemaIsStripped_SoAnExternalRefCannotReachTheEditor()
     {
-        const string unbundled = "no-such-bundled-schema.json";
+        const string withExternalRef = """
+                                       {
+                                         "$schema": "http://json-schema.org/draft-07/schema#",
+                                         "type": "object",
+                                         "properties": {
+                                           "someModel": {
+                                             "description": "Kept.",
+                                             "type": "string",
+                                             "$ref": "https://models.dev/model-schema.json#/$defs/Model"
+                                           }
+                                         }
+                                       }
+                                       """;
 
-        string dir = PlatformPaths.SchemaCacheDirectory;
-        Directory.CreateDirectory(dir);
-        File.WriteAllText(
-            Path.Combine(dir, unbundled),
-            $$"""
-              {
-                "$schema": "http://json-schema.org/draft-07/schema#",
-                "type": "object",
-                "properties": {
-                  "{{DiskSentinelProperty}}": { "type": "string" }
+        CannedHandler handler = new(withExternalRef);
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        JsonSchema schema = await registry.GetSchemaAsync(
+            "https://example.invalid/stripme.json", "stripme.json", TestContext.CancellationToken);
+
+        SchemaNode? node = SchemaTreeBuilder
+                           .BuildTopLevel(schema.Root!)
+                           .FirstOrDefault(n => string.Equals(n.Name, "someModel", StringComparison.Ordinal));
+
+        Assert.IsNotNull(node,
+            "The property survived the strip only if it is still in the tree — a strip that ate "
+            + "its sibling keys would leave an untyped schema that permits anything.");
+        Assert.AreEqual(SchemaValueType.String, node.ValueType,
+            "The 'type': 'string' sibling must survive, or the strip left a permissive hole.");
+    }
+
+    /// <summary>The strip is idempotent, which is why bundled can share the path.</summary>
+    [TestMethod]
+    public void StrippingIsIdempotent_AndLeavesRefFreeTextUntouched()
+    {
+        const string clean = """
+                             {
+                               "properties": { "a": { "type": "string" } }
+                             }
+                             """;
+
+        Assert.AreEqual(clean, SchemaRegistry.StripExternalRefs(clean),
+            "Text with no external $ref must come back byte-identical, or every bundled schema "
+            + "is needlessly rewritten on load.");
+
+        // Upstream's actual formatting: one key per line, the $ref last in its object.
+        string once = SchemaRegistry.StripExternalRefs(
+            """
+            {
+              "properties": {
+                "a": {
+                  "type": "string",
+                  "$ref": "https://models.dev/x.json#/$defs/M"
                 }
               }
-              """,
-            Encoding.UTF8);
+            }
+            """);
 
-        using SchemaRegistry registry = OfflineRegistry();
-        Json.Schema.JsonSchema schema = await registry.GetSchemaAsync(
-            "https://example.invalid/no-such-bundled-schema.json",
-            unbundled,
-            TestContext.CancellationToken);
-
-        IReadOnlyList<string> names =
-            [.. SchemaTreeBuilder.BuildTopLevel(schema.Root!).Select(n => n.Name)];
-
-        Assert.IsTrue(
-            names.Contains(DiskSentinelProperty, StringComparer.Ordinal),
-            "With no bundled resource for this name, step 3 (disk cache) should have "
-            + $"supplied the schema. Got: {string.Join(", ", names)}");
+        Assert.AreEqual(once, SchemaRegistry.StripExternalRefs(once),
+            "A second pass must change nothing.");
+        Assert.IsFalse(once.Contains("$ref", StringComparison.Ordinal), "The $ref should be gone.");
+        Assert.IsTrue(once.Contains("\"type\": \"string\"", StringComparison.Ordinal),
+            "The sibling type must remain — a strip that ate it would leave a schema that "
+            + "permits anything.");
     }
 
-    public TestContext TestContext { get; set; } = null!;
+    /// <summary>
+    /// ⛔ An external <c>$ref</c> the line-based strip cannot remove makes the source unusable,
+    /// loudly.
+    /// </summary>
+    /// <remarks>
+    /// <b>Found by a test, not by reasoning.</b> The first version of the idempotence test above
+    /// put the <c>$ref</c> inline with <c>"type"</c> and failed — correctly: the strip deletes
+    /// whole lines, so an inline reference survives. Upstream formats one key per line, which is
+    /// the only reason that has never bitten. "Correct because of somebody else's whitespace"
+    /// needs to fail loudly, because an external <c>$ref</c> reaching the editor throws on save.
+    /// <para>
+    /// A fetched copy in this state falls back to bundled; asserted here at the
+    /// <see cref="SchemaRegistry.StripExternalRefs"/> boundary, where the shape is visible.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void AnInlineExternalRef_SurvivesTheStrip_AndIsThereforeRefused()
+    {
+        const string inlineRef = """
+                                 {
+                                   "properties": {
+                                     "a": { "type": "string", "$ref": "https://models.dev/x.json#/$defs/M" }
+                                   }
+                                 }
+                                 """;
+
+        Assert.IsTrue(
+            SchemaRegistry.StripExternalRefs(inlineRef).Contains("$ref", StringComparison.Ordinal),
+            "Premise: the line-based strip does NOT remove an inline $ref. If this now passes, "
+            + "the strip became structural and the refusal path below is dead code.");
+    }
+
+    /// <summary>A served copy with an unstrippable ref falls back to bundled, not to a throw.</summary>
+    [TestMethod]
+    public async Task AFetchedCopyWithAnInlineRef_FallsBackToBundled()
+    {
+        const string inlineRef = """
+                                 {
+                                   "$schema": "http://json-schema.org/draft-07/schema#",
+                                   "type": "object",
+                                   "properties": {
+                                     "model": { "type": "string", "$ref": "https://models.dev/x.json#/$defs/M" }
+                                   }
+                                 }
+                                 """;
+
+        CannedHandler handler = new(inlineRef);
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        IReadOnlyList<string> names = TopLevelNames(root);
+
+        Assert.IsTrue(names.Count > 1,
+            "The bundled schema should have supplied the tree — it declares far more than the "
+            + $"one property the refused copy did. Got: {names.Count} propert(ies).");
+        Assert.IsTrue(handler.Attempts > 0, "Premise: the fetch was attempted.");
+    }
+
+    // ── No empty fallback ─────────────────────────────────────────────
+
+    /// <summary>
+    /// With neither network nor bundled copy, the loader throws rather than returning <c>{}</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ An empty JSON Schema permits <em>everything</em>. The old fallback therefore did not
+    /// degrade validation, it removed it — while every surface still reported success. This
+    /// replaced the test that asserted a fall-through to the disk cache.
+    /// </remarks>
+    [TestMethod]
+    public async Task NoBundledResourceAndNoNetwork_Throws_RatherThanValidatingNothing()
+    {
+        FailingHandler handler = new();
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        SchemaUnavailableException ex =
+            await Assert.ThrowsExactlyAsync<SchemaUnavailableException>(
+                () => registry.GetSchemaAsync(
+                    "https://example.invalid/no-such-schema.json",
+                    "no-such-bundled-schema.json",
+                    TestContext.CancellationToken));
+
+        Assert.AreEqual("no-such-bundled-schema.json", ex.CacheFileName);
+    }
+
+    // ── The offline latch ─────────────────────────────────────────────
+
+    /// <summary>
+    /// One failed probe stands for the whole process, so an offline launch pays one timeout.
+    /// </summary>
+    /// <remarks>
+    /// Without this, every schema URL waits for its own failure on the startup path. Asserted
+    /// by attempt COUNT across two different URLs, because a latch that merely caches the
+    /// result per URL would look identical from the outside for a single URL.
+    /// </remarks>
+    [TestMethod]
+    public async Task OneFailedProbe_SuppressesFurtherFetchAttempts()
+    {
+        FailingHandler handler = new();
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        Assert.AreEqual(1, handler.Attempts, "Premise: the first load probes the network once.");
+
+        // A DIFFERENT url and file, so nothing can be served from the memory cache.
+        await registry.GetSchemaAsync(
+            "https://example.invalid/opencode-config.json",
+            "opencode-config.json",
+            TestContext.CancellationToken);
+
+        Assert.AreEqual(1, handler.Attempts,
+            "The second schema probed the network again. Offline startup then costs one timeout "
+            + "per schema instead of one per session.");
+    }
+
+    /// <summary>An explicit refresh retries the network even after the latch tripped.</summary>
+    /// <remarks>
+    /// The latch keeps startup fast; it must not refuse a deliberate user request. This is the
+    /// release direction — a latch with no reset is a one-way door, which reads as working
+    /// until someone reconnects and nothing changes.
+    /// </remarks>
+    [TestMethod]
+    public async Task RefreshAsync_RetriesTheNetwork_AfterTheLatchTripped()
+    {
+        FailingHandler handler = new();
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        int afterFirstLoad = handler.Attempts;
+
+        await registry.RefreshAsync(
+            SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
+            ClaudeCodeCacheFileName,
+            TestContext.CancellationToken);
+
+        Assert.IsTrue(handler.Attempts > afterFirstLoad,
+            "RefreshAsync did not re-probe the network. It must clear the offline latch, or "
+            + "'check for updates' silently does nothing for the rest of the session.");
+    }
+
+    // ── Metadata readers follow the winning copy ──────────────────────
+
+    /// <summary>
+    /// ⛔ The hook-metadata reader describes the copy that loaded, not always the bundled one.
+    /// </summary>
+    /// <remarks>
+    /// These readers used to go to the bundled resource and were right by construction, because
+    /// bundled always won. Now that a fetch can win, the static overload would describe a
+    /// different document than the tree was built from — silently, since both parse fine. The
+    /// served body declares no <c>$defs.hookCommand</c>, so the instance reader must report
+    /// none while the static still finds the bundled ones.
+    /// </remarks>
+    [TestMethod]
+    public async Task TheHookMetadataReader_FollowsTheCopyThatActuallyLoaded()
+    {
+        CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        Assert.IsTrue(
+            SchemaRegistry.GetHookCommandVariants(ClaudeCodeCacheFileName).Count > 0,
+            "Premise: the BUNDLED Claude Code schema does declare hook command variants.");
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        Assert.AreEqual(
+            0,
+            registry.GetHookCommandVariantsFor(ClaudeCodeCacheFileName).Count,
+            "The instance reader still reported the bundled hook variants after a fetched copy "
+            + "won the load. The hook editor would offer shapes the loaded schema does not "
+            + "define, with nothing failing anywhere.");
+    }
+
+    // ── The timeout that bounds an offline launch ─────────────────────
+
+    /// <summary>Serves a body, but only after a delay longer than any sane fetch timeout.</summary>
+    private sealed class SlowHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(20), cancellationToken).ConfigureAwait(false);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+            };
+        }
+    }
+
+    /// <summary>
+    /// A slow network does not hold up the load: the fetch is abandoned and bundled is used.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>Written because a canary with a deliberately empty prediction found nothing
+    /// guarding this.</b> Raising <c>FetchTimeout</c> from 3s to 60s reddened zero tests — and
+    /// that constant is the only thing standing between an unreachable-but-not-refusing network
+    /// and a frozen launch, because this chain is awaited from
+    /// <c>AgentConfigClientCore.OpenAsync</c>. The <see cref="HttpClient"/>'s own timeout is 15s,
+    /// so "just use the client's" is the wrong answer by five times over.
+    /// <para>
+    /// Asserted as ELAPSED TIME rather than by reading the constant: the property that matters
+    /// is that a launch stays fast, and a value assertion would keep passing if the timeout
+    /// stopped being applied at all.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    [Timeout(15000)]
+    public async Task ASlowNetworkDoesNotHoldUpTheLoad()
+    {
+        using SchemaRegistry registry = new(new HttpClient(new SlowHandler()));
+
+        long startedAt = Environment.TickCount64;
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        long elapsedMs = Environment.TickCount64 - startedAt;
+
+        Assert.IsTrue(
+            elapsedMs < 10_000,
+            $"The load took {elapsedMs}ms against a handler that waits 20s. The fetch timeout "
+            + "is not bounding it, so every launch behind a black-holed network freezes for as "
+            + "long as the network cares to stall.");
+
+        Assert.IsTrue(
+            TopLevelNames(root).Contains("model", StringComparer.Ordinal),
+            "After abandoning the fetch the bundled copy must supply the schema.");
+    }
+
+    // ── The SDK must read the copy its own client loaded ──────────────
+
+    /// <summary>
+    /// <c>ClaudeConfigClientBase</c> uses the INSTANCE metadata readers, not the statics.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>A source-text seam guard, because the behavioural one measured nothing.</b> A canary
+    /// that reverted the SDK to <c>SchemaRegistry.GetHookEvents(...)</c> reddened zero tests: the
+    /// registry-level contract is covered by
+    /// <see cref="TheHookMetadataReader_FollowsTheCopyThatActuallyLoaded"/>, but nothing observed
+    /// which overload the SDK picks. The static reads bundled, so choosing it would make the hook
+    /// editor describe a document the client did not load — silently, since both parse.
+    /// <para>
+    /// Source text rather than reflection: both overloads exist and are legitimately callable, so
+    /// there is no per-type metadata that distinguishes "called the right one".
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void TheClaudeSdkReadsHookMetadataFromItsOwnRegistryInstance()
+    {
+        string path = Path.Combine(
+            RepoRoot(), "src", "ClaudeForge.Sdk.Claude", "ClaudeConfigClientBase.cs");
+        Assert.IsTrue(File.Exists(path), $"'{path}' not found.");
+
+        string source = File.ReadAllText(path);
+
+        foreach (string bundledOnly in new[]
+        {
+            "SchemaRegistry.GetHookEvents(",
+            "SchemaRegistry.GetHookCommandVariants(",
+        })
+        {
+            Assert.IsFalse(
+                source.Contains(bundledOnly, StringComparison.Ordinal),
+                $"ClaudeConfigClientBase calls the static '{bundledOnly}', which always reads the "
+                + "BUNDLED schema. Use the instance overload on SchemaRegistryInstance so the "
+                + "metadata describes whichever copy this client actually loaded.");
+        }
+
+        Assert.IsTrue(
+            source.Contains("SchemaRegistryInstance.GetHookEventsFor(", StringComparison.Ordinal),
+            "Premise: the file should be calling the instance overload. If this fails the scan "
+            + "has lost its subject and the assertions above pass vacuously.");
+    }
+
+    private static string RepoRoot()
+    {
+        string? dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
+        {
+            if (Directory.Exists(Path.Combine(dir, "src")) && Directory.Exists(Path.Combine(dir, "tests")))
+            {
+                return dir;
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new InvalidOperationException(
+            $"Could not locate the repo root by walking up from '{AppContext.BaseDirectory}'.");
+    }
 }
