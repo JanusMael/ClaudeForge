@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -68,6 +69,10 @@ public sealed class SchemaRegistry : IDisposable
     /// readers describe the document the tree was actually built from.
     /// </summary>
     private readonly ConcurrentDictionary<string, byte[]> _materialisedBytes = new(StringComparer.Ordinal);
+
+    /// <summary>Where each loaded schema came from, keyed by file name.</summary>
+    private readonly ConcurrentDictionary<string, SchemaProvenance> _provenance =
+        new(StringComparer.Ordinal);
 
     // ConcurrentDictionary: GetSchemaAsync is called from multiple async call sites
     // (including background tasks); a plain Dictionary is not thread-safe for concurrent
@@ -494,7 +499,7 @@ public sealed class SchemaRegistry : IDisposable
                 fetchCts.CancelAfter(FetchTimeout);
 
                 string json = await FetchWithRedirectAsync(url, fetchCts.Token).ConfigureAwait(false);
-                JsonSchema fetched = Materialise(json, cacheFileName);
+                JsonSchema fetched = Materialise(json, cacheFileName, SchemaSource.Fetched);
                 _memoryCache[url] = fetched;
                 Log.Information("[Schema] {File} loaded from {Url}", cacheFileName, url);
                 return fetched;
@@ -538,7 +543,8 @@ public sealed class SchemaRegistry : IDisposable
         byte[]? bundledBytes = TryReadBundledBytes(cacheFileName);
         if (bundledBytes != null)
         {
-            JsonSchema schema = Materialise(Encoding.UTF8.GetString(bundledBytes), cacheFileName);
+            JsonSchema schema = Materialise(
+                Encoding.UTF8.GetString(bundledBytes), cacheFileName, SchemaSource.Bundled);
             _memoryCache[url] = schema;
             return schema;
         }
@@ -559,7 +565,7 @@ public sealed class SchemaRegistry : IDisposable
     /// right by construction; now that a fetch can win, reading bundled would describe a
     /// different document than the tree was built from.
     /// </remarks>
-    private JsonSchema Materialise(string json, string cacheFileName)
+    private JsonSchema Materialise(string json, string cacheFileName, SchemaSource source)
     {
         string stripped = StripExternalRefs(json);
 
@@ -576,6 +582,14 @@ public sealed class SchemaRegistry : IDisposable
 
         byte[] merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), cacheFileName);
         _materialisedBytes[cacheFileName] = merged;
+
+        // Hash the MERGED bytes, not the raw source — see SchemaProvenance for why. Recorded
+        // here rather than at the call sites so a future third source cannot forget to.
+        _provenance[cacheFileName] = new SchemaProvenance(
+            source,
+            source == SchemaSource.Fetched ? DateTimeOffset.UtcNow : null,
+            Convert.ToHexString(SHA256.HashData(merged)).ToLowerInvariant());
+
         return ParseSchema(Encoding.UTF8.GetString(merged));
     }
 
@@ -657,6 +671,7 @@ public sealed class SchemaRegistry : IDisposable
     {
         _memoryCache.TryRemove(url, out JsonSchema? _);
         _materialisedBytes.TryRemove(cacheFileName, out byte[]? _);
+        _provenance.TryRemove(cacheFileName, out SchemaProvenance? _);
         _networkUnavailable = false;
 
         return await GetSchemaAsync(url, cacheFileName, ct).ConfigureAwait(false);
@@ -692,6 +707,18 @@ public sealed class SchemaRegistry : IDisposable
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(ct);
     }
+
+    /// <summary>
+    /// Where this registry's copy of a schema came from, or <see langword="null"/> if it has
+    /// not loaded that schema yet.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Null rather than a Bundled default. "Not loaded" and "loaded from the binary" are
+    /// different facts, and a badge that renders the second when it means the first would
+    /// state something nobody established.
+    /// </remarks>
+    public SchemaProvenance? ProvenanceFor(string cacheFileName)
+        => _provenance.TryGetValue(cacheFileName, out SchemaProvenance? p) ? p : null;
 
     /// <summary>
     /// The merged bytes this registry last loaded for a schema, or the bundled copy when it
