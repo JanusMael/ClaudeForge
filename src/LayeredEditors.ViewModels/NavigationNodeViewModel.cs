@@ -103,4 +103,39 @@ public partial class NavigationNodeViewModel : ObservableObject
     [ObservableProperty] private bool _isExpanded;
 
     [ObservableProperty] private bool _isSelected;
+
+    /// <summary>
+    /// Optional short annotation rendered after the title — e.g. a schema-provenance badge
+    /// reading <c>bundled</c> or <c>fetched 14:32</c>. Empty on rows that have nothing to say.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>A plain string, and deliberately not a provenance type.</b> This assembly is the
+    /// editor library; it knows nothing about schemas, and it must not learn. Each app formats
+    /// its own badge from its own resx and assigns it here, exactly as <see cref="Description"/>
+    /// already works — which is what keeps one nav template serving two products.
+    /// </para>
+    /// <para>
+    /// Observable rather than <c>init</c>, because provenance is not final: a "check for schema
+    /// updates" action re-reads it mid-session, and a node created before the load completes
+    /// would otherwise be stuck with whatever was true at construction.
+    /// </para>
+    /// </remarks>
+    [ObservableProperty] private string? _badge;
+
+    /// <summary>
+    /// Hover text for <see cref="Badge"/> — the detail the badge itself is too small to carry.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="Description"/> because the row already uses that for "what this
+    /// section is for", and a badge's tooltip answers a different question ("which copy of the
+    /// schema is this, exactly?"). Overloading one tooltip would mean the badge's detail
+    /// replaced the section's purpose, or the other way round.
+    /// <para>
+    /// ⚠ The template must put this on the badge's own <c>TextBlock</c>: Avalonia tooltips do
+    /// not propagate child → parent, so a hover landing on the badge glyphs sees nothing if only
+    /// the row's Border carries one. Same reason the icon and title each repeat the row tooltip.
+    /// </para>
+    /// </remarks>
+    [ObservableProperty] private string? _badgeTooltip;
 }
