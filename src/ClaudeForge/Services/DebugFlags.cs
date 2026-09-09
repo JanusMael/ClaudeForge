@@ -363,11 +363,24 @@ public static class DebugFlags
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
                 case "--help-debug":
+                    // ⚠ Two messages, because these are two different KINDS of argument and
+                    // AGENTS.md is explicit that they must not be conflated. A debug flag
+                    // configures the app and then it starts; a CLI-bypass tool does its work
+                    // and exits without ever building Avalonia, and is dispatched in
+                    // Program.cs above BuildAvaloniaApp(). Listing the tool among the flags
+                    // told a user it was a flag and sent the next maintainer looking for a
+                    // `case` here that does not exist.
+                    //
+                    // ⛔ DebugHelpAdvertisesNothingItCannotParse asserts the first message
+                    // names only things this switch parses, so the two cannot re-merge.
                     _deferredWarnings.Add(
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
                         "--simulate-update, --deep-link <path>, --writer <legacy|jsonc>, " +
-                        "--cleanup-restore-sidecars, --debug-help");
+                        "--debug-help");
+                    _deferredWarnings.Add(
+                        "[DebugFlags] CLI-bypass tools (run and exit, no window): " +
+                        "--cleanup-restore-sidecars");
                     break;
             }
         }
