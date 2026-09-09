@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
@@ -318,10 +319,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// get their main configuration, so each section is opened independently and its failure is
     /// reported rather than thrown.
     /// </remarks>
-    public async Task InitializeAsync(CancellationToken ct = default)
+    /// <param name="schemaRegistry">
+    /// The registry the pages are built from. <see langword="null"/> creates one WITH network
+    /// access, which is what the app wants.
+    /// <para>
+    /// ⚠ A test seam, and it exists because the provenance badge is otherwise untestable: the
+    /// badge reports whether a schema was fetched or bundled, and a test that cannot control
+    /// the network cannot assert either state without depending on the machine it runs on.
+    /// Mirrors <c>AgentConfigClientCore</c>, which already takes one for the same reason.
+    /// </para>
+    /// </param>
+    public async Task InitializeAsync(
+        CancellationToken ct = default, SchemaRegistry? schemaRegistry = null)
     {
         // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design.
-        SchemaRegistry registry = SchemaRegistry.CreateWithNetwork();
+        SchemaRegistry registry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork();
         List<string> failures = [];
         IsLoading = true;
 
@@ -353,6 +365,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 {
                     header.Children.Add(page);
                 }
+
+                ApplyProvenanceBadge(header, registry, section);
 
                 Navigation.Add(header);
             }
@@ -415,6 +429,63 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Status = failures.Count == 0
             ? string.Empty
             : $"Could not load: {string.Join(", ", failures)}. See the log for details.";
+    }
+
+    /// <summary>
+    /// Label a section header with which copy of its schema the pages beneath it were built from.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Network-first made this necessary.</b> A section's shape now comes either from the
+    /// binary or from a download that happened moments ago, and until this badge nothing on
+    /// screen — or in a screenshot attached to a bug report — distinguished them. "The editor
+    /// shows a field I do not have" and "the editor is missing a field I do have" are both
+    /// explained by provenance and by nothing else.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Reads the registry that BUILT THE PAGES</b>, which is what the badge's wording
+    /// claims and all it claims. Each client also holds its own registry and validates saves
+    /// against that copy; the two fetch the same URL moments apart, so they agree in every
+    /// non-pathological case, but they are not the same instance. Sharing one is worth doing and
+    /// is deliberately not done here — it would change client construction, and this badge does
+    /// not depend on it because it does not speak for save-validation.
+    /// </para>
+    /// <para>
+    /// ⓘ <b>The null-provenance guard is defensive and currently UNREACHABLE</b>, which a canary
+    /// established rather than reasoning: making it render "bundled" reddened nothing. By the
+    /// time this runs, <c>BuildPagesAsync</c> has either recorded provenance or thrown — and a
+    /// throw skips the header entirely. It stays because <c>ProvenanceFor</c> is genuinely
+    /// nullable and an absent badge is the honest rendering, but do not go looking for the test
+    /// that covers it.
+    /// </para>
+    /// </remarks>
+    internal static void ApplyProvenanceBadge(
+        NavigationNodeViewModel header, SchemaRegistry registry, HostedSection section)
+    {
+        SchemaProvenance? provenance = registry.ProvenanceFor(section.Product.SchemaFileName);
+        if (provenance is null)
+        {
+            return;
+        }
+
+        if (provenance.Source == SchemaSource.Bundled)
+        {
+            header.Badge = Strings.SchemaBadgeBundled;
+            header.BadgeTooltip = string.Format(
+                CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipBundledFmt, provenance.ShortSha);
+            return;
+        }
+
+        // Local time, not UTC: the badge is read by a human looking at a clock, and the tooltip
+        // carries the digest for anything that needs to be compared across machines.
+        string when = provenance.FetchedUtc is { } utc
+            ? utc.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)
+            : string.Empty;
+
+        header.Badge = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeFetchedFmt, when);
+        header.BadgeTooltip = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipFetchedFmt, when, provenance.ShortSha);
     }
 
     private async Task<IReadOnlyList<NavigationNodeViewModel>> BuildPagesAsync(

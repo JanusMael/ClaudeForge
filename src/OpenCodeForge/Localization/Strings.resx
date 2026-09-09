@@ -88,4 +88,16 @@
   <data name="SectionEssentials" xml:space="preserve">
     <value>Essentials</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>bundled</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>fetched {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>This section's settings are described by the schema built into this app (fingerprint {0}). The app tried to fetch a newer copy and could not — usually no network, or the download was too slow.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>This section's settings are described by a schema downloaded at {0} (fingerprint {1}). The copy built into this app is used instead when the download is unavailable.</value>
+  </data>
 </root>

@@ -14,7 +14,7 @@
     <Window.Resources>
         <!-- Same converters the settings row's wrapper uses, so a severity reads identically on
              both surfaces. The brush converter resolves the themed AppSeverity*Brush pair, which
-             this app declares in App.axaml alongside ClaudeForge's. -->
+             this app declares in App.axaml alongside ClaudeForge’s. -->
         <conv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <conv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
     </Window.Resources>
@@ -85,11 +85,36 @@
                     -->
                     <Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
                         <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+
+                        <!-- The schema-provenance detail rides HelpText on the CONTAINER, for two
+                             reasons. UIA announces name then help text, so focusing a section row
+                             reads "OpenCode" and then which copy of the schema built it. And the
+                             badge TextBlock in the template cannot carry it: AutomationProperties.Name
+                             is IGNORED on a TextBlock — its Text always wins — so a Name there
+                             would be dead markup, which this repo already has fifteen instances of.
+                             Empty on rows with no badge, which UIA treats as absent. -->
+                        <Setter Property="AutomationProperties.HelpText" Value="{Binding BadgeTooltip}" />
                     </Style>
                 </TreeView.Styles>
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="libvm:NavigationNodeViewModel">
-                        <TextBlock Text="{Binding Title}" Margin="2,4" />
+                        <!-- Title + optional schema-provenance badge. Layout follows ClaudeForge’s
+                             nav template: a horizontal StackPanel with Spacing, and the tooltip
+                             repeated on the element the pointer actually lands on, because Avalonia
+                             tooltips do not propagate from child to parent. -->
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{Binding Title}" Margin="2,4" VerticalAlignment="Center" />
+
+                            <!-- Secondary text is Opacity, not a colour token — the convention in
+                                 this library, and it keeps the badge legible in both theme variants
+                                 without declaring a brush per variant. -->
+                            <TextBlock Text="{Binding Badge}"
+                                       IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       FontSize="10"
+                                       Opacity="0.65"
+                                       VerticalAlignment="Center"
+                                       ToolTip.Tip="{Binding BadgeTooltip}" />
+                        </StackPanel>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>

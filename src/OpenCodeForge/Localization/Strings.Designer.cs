@@ -74,4 +74,17 @@ public static class Strings
 
     /// <summary>Navigation header for the Essentials page.</summary>
     public static string SectionEssentials => Get(nameof(SectionEssentials));
+
+    /// <summary>Badge text when the schema came from the binary.</summary>
+    public static string SchemaBadgeBundled => Get(nameof(SchemaBadgeBundled));
+
+    /// <summary>Badge text when the schema was downloaded. {0} = local time.</summary>
+    public static string SchemaBadgeFetchedFmt => Get(nameof(SchemaBadgeFetchedFmt));
+
+    /// <summary>Badge hover text for a bundled schema. {0} = short digest.</summary>
+    public static string SchemaBadgeTooltipBundledFmt => Get(nameof(SchemaBadgeTooltipBundledFmt));
+
+    /// <summary>Badge hover text for a fetched schema. {0} = local time, {1} = short digest.</summary>
+    public static string SchemaBadgeTooltipFetchedFmt => Get(nameof(SchemaBadgeTooltipFetchedFmt));
+
 }
