@@ -79,6 +79,36 @@ public sealed class SchemaLoadPrecedenceTests
     }
 
     /// <summary>
+    /// Serves a body that can be swapped, and can be told to start failing.
+    /// </summary>
+    /// <remarks>
+    /// Needed because the interesting provenance cases are TRANSITIONS — a body that changes
+    /// between two loads, and a network that works and then does not. A handler fixed at
+    /// construction cannot express either, which is why the first version of
+    /// <see cref="AFailedRefresh_LeavesNoStaleProvenance"/> could not fail.
+    /// </remarks>
+    private sealed class MutableHandler : HttpMessageHandler
+    {
+        public string Body { get; set; } = "{}";
+
+        public bool Failing { get; set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (Failing)
+            {
+                throw new HttpRequestException("Simulated network unavailable");
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(Body, Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    /// <summary>
     /// A schema declaring one sentinel property and nothing else.
     /// </summary>
     /// <remarks>
@@ -584,5 +614,198 @@ public sealed class SchemaLoadPrecedenceTests
 
         throw new InvalidOperationException(
             $"Could not locate the repo root by walking up from '{AppContext.BaseDirectory}'.");
+    }
+
+    // ── Provenance ────────────────────────────────────────────────────
+
+    /// <summary>Nothing loaded yet is <see langword="null"/>, not "bundled".</summary>
+    /// <remarks>
+    /// "Not loaded" and "loaded from the binary" are different facts. A badge rendering the
+    /// second when it means the first would state something nobody established — and it would
+    /// do so on exactly the startup window where a page is most likely to be looked at.
+    /// </remarks>
+    [TestMethod]
+    public void ProvenanceIsNull_BeforeAnythingIsLoaded()
+    {
+        using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
+
+        Assert.IsNull(registry.ProvenanceFor(ClaudeCodeCacheFileName));
+    }
+
+    [TestMethod]
+    public async Task AFetchedSchemaIsRecordedAsFetched_WithATimestamp()
+    {
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+        CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
+        Assert.IsNotNull(p);
+        Assert.AreEqual(SchemaSource.Fetched, p.Source);
+        Assert.IsNotNull(p.FetchedUtc, "A fetched schema must carry when it was fetched.");
+        Assert.IsTrue(p.FetchedUtc >= before, "The timestamp predates the fetch.");
+    }
+
+    /// <summary>A bundled schema has no timestamp, because it has no meaningful one.</summary>
+    /// <remarks>
+    /// It is as old as the binary, which the version already states. Inventing "now" would make
+    /// every launch look like a fresh download.
+    /// </remarks>
+    [TestMethod]
+    public async Task ABundledSchemaIsRecordedAsBundled_WithNoTimestamp()
+    {
+        using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
+        Assert.IsNotNull(p);
+        Assert.AreEqual(SchemaSource.Bundled, p.Source);
+        Assert.IsNull(p.FetchedUtc,
+            "A bundled schema is as old as the binary; a timestamp here would read as a download.");
+    }
+
+    /// <summary>
+    /// ⭐ The digest fingerprints the MERGED bytes, so it changes when the overlay does.
+    /// </summary>
+    /// <remarks>
+    /// This is the assertion that pins <em>which</em> bytes are hashed, and it is the one that
+    /// would fail if someone "simplified" it to hash the raw source. Two schemas serving the
+    /// same upstream text but merging different overlays are different documents to the editor,
+    /// and a fingerprint that called them equal would send a bug report down the wrong path.
+    /// <para>
+    /// Asserted by serving a body that differs ONLY where the overlay does not reach, then
+    /// again where it does — the digests must differ in both cases, but the second is the one
+    /// raw-source hashing would get wrong.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task TheDigestCoversTheMergedDocument_NotTheRawSource()
+    {
+        // Same served text both times; the difference is the file name, which selects the
+        // overlay. claude-code-settings has one; the sentinel name has none.
+        const string body = """
+                            {
+                              "$schema": "http://json-schema.org/draft-07/schema#",
+                              "type": "object",
+                              "properties": { "model": { "type": "string" } }
+                            }
+                            """;
+
+        using SchemaRegistry withOverlay = new(new HttpClient(new CannedHandler(body)));
+        await withOverlay.GetSchemaAsync(
+            "https://example.invalid/a.json", ClaudeCodeCacheFileName, TestContext.CancellationToken);
+
+        using SchemaRegistry withoutOverlay = new(new HttpClient(new CannedHandler(body)));
+        await withoutOverlay.GetSchemaAsync(
+            "https://example.invalid/b.json", "no-overlay-for-this.json", TestContext.CancellationToken);
+
+        string merged = withOverlay.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
+        string bare = withoutOverlay.ProvenanceFor("no-overlay-for-this.json")!.Sha256;
+
+        Assert.AreNotEqual(bare, merged,
+            "Identical served text produced identical digests even though one had an overlay "
+            + "merged onto it. The hash is covering the raw download, so two installs whose "
+            + "editors behave differently would report the same fingerprint.");
+    }
+
+    [TestMethod]
+    public async Task TheDigestIsStableForTheSameDocument()
+    {
+        CannedHandler h1 = new(SentinelSchema(NetworkSentinelProperty));
+        using SchemaRegistry a = new(new HttpClient(h1));
+        await a.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        CannedHandler h2 = new(SentinelSchema(NetworkSentinelProperty));
+        using SchemaRegistry b = new(new HttpClient(h2));
+        await b.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        Assert.AreEqual(
+            a.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256,
+            b.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256,
+            "The same document hashed differently across two registries, so the digest is "
+            + "picking up something other than the bytes — a timestamp, or ordering.");
+    }
+
+    /// <summary>
+    /// A refresh re-records the provenance, observed as a CHANGED digest.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Asserted as a change, not as <c>Source == Fetched</c>. The first version of this test
+    /// checked the latter after a first load that was also Fetched, so it held whether or not
+    /// the refresh re-recorded anything — <c>Materialise</c> overwrites the entry on every load.
+    /// Serving different bytes the second time is what makes the re-record observable.
+    /// </remarks>
+    [TestMethod]
+    public async Task RefreshAsync_ReRecordsTheProvenance()
+    {
+        MutableHandler handler = new() { Body = SentinelSchema("zzzBeforeRefresh") };
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        string before = registry.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
+
+        handler.Body = SentinelSchema("zzzAfterRefresh");
+        await registry.RefreshAsync(
+            SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
+            ClaudeCodeCacheFileName,
+            TestContext.CancellationToken);
+
+        SchemaProvenance after = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
+        Assert.AreEqual(SchemaSource.Fetched, after.Source);
+        Assert.AreNotEqual(before, after.Sha256,
+            "The digest did not change after a refresh that served different bytes, so the "
+            + "provenance is describing the previous load.");
+    }
+
+    /// <summary>
+    /// ⛔ A refresh that fails outright leaves NO provenance, not the previous load's.
+    /// </summary>
+    /// <remarks>
+    /// <b>This is the only thing the explicit clear in <c>RefreshAsync</c> protects</b>, and
+    /// finding that out took a canary: removing the clear reddened nothing, because
+    /// <c>Materialise</c> overwrites the entry whenever a load succeeds. It matters only when
+    /// the refresh throws — then the cached schema is gone but a stale record would still
+    /// describe it, which is a badge confidently reporting a document the app is not using.
+    /// </remarks>
+    [TestMethod]
+    public async Task AFailedRefresh_LeavesNoStaleProvenance()
+    {
+        // A name with NO bundled resource, so a failed fetch has nothing to fall back to.
+        const string url = "https://example.invalid/no-bundled-here.json";
+        const string file = "no-bundled-here.json";
+
+        MutableHandler handler = new() { Body = SentinelSchema("zzzFirstLoad") };
+        using SchemaRegistry registry = new(new HttpClient(handler));
+
+        await registry.GetSchemaAsync(url, file, TestContext.CancellationToken);
+        Assert.IsNotNull(registry.ProvenanceFor(file), "Premise: the first load recorded one.");
+
+        handler.Failing = true;
+
+        await Assert.ThrowsExactlyAsync<SchemaUnavailableException>(
+            () => registry.RefreshAsync(url, file, TestContext.CancellationToken));
+
+        Assert.IsNull(registry.ProvenanceFor(file),
+            "After a refresh that could load nothing, the provenance still describes the "
+            + "previous load — so a badge would report a schema the registry no longer holds.");
+    }
+
+    /// <summary>The short digest is a prefix of the full one, and long enough to distinguish.</summary>
+    [TestMethod]
+    public async Task TheShortDigestIsAPrefixOfTheFullOne()
+    {
+        using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+
+        SchemaProvenance p = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
+
+        Assert.AreEqual(64, p.Sha256.Length, "SHA-256 hex is 64 characters.");
+        Assert.AreEqual(12, p.ShortSha.Length);
+        Assert.IsTrue(p.Sha256.StartsWith(p.ShortSha, StringComparison.Ordinal));
+        Assert.AreEqual(p.Sha256.ToLowerInvariant(), p.Sha256,
+            "Lower-case hex, so two reports of the same digest compare as strings.");
     }
 }
