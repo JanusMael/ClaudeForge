@@ -2,11 +2,14 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# The bundled schemas under src/AgentForge.Core/Assets/Schemas/ are the AUTHORITATIVE
-# source the runtime reads — even when the app's HTTP refresh downloads a newer copy into
-# the disk cache, the runtime priority (memory cache > bundled embedded > disk cache >
-# HTTP fetch > empty fallback) means the bundled file wins.  See CLAUDE.md
-# "Schema loading priority".
+# The bundled schemas under src/AgentForge.Core/Assets/Schemas/ are the OFFLINE FALLBACK
+# the runtime reads when the network does not answer.  Runtime priority is
+# memory cache > HTTPS fetch (+ strip, + overlay) > bundled resource (+ strip, + overlay);
+# there is no disk cache and no empty fallback.  See CLAUDE.md "Schema loading priority".
+#
+# So refreshing these files matters for every user who is offline, on a slow link, or behind
+# something that blocks the fetch — and for the first three seconds of every launch, since
+# the fetch has a short timeout by design.
 #
 # Consequence: if an upstream ships a new model id, hook trigger, or settings property and
 # we don't refresh THESE files, the editor never surfaces it.

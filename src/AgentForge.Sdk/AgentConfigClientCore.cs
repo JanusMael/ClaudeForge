@@ -84,7 +84,9 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         IConfigWriter? configWriter = null)
     {
         DefaultScope = defaultScope;
-        _schemaRegistry = schemaRegistry ?? new SchemaRegistry();
+        // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design so tests
+        // cannot make live calls. See SchemaRegistry's constructor.
+        _schemaRegistry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork();
         _ownsSchemaRegistry = schemaRegistry is null;
         _workspace = preLoadedWorkspace;
         ConfigWriter = configWriter;
@@ -111,6 +113,19 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// Core cannot see, and this is the seam that carries the decision down.
     /// </remarks>
     protected IConfigWriter? ConfigWriter { get; }
+
+    /// <summary>
+    /// This client's schema registry, for derived classes that read schema-derived metadata.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Exists so a subclass reads the schema copy THIS client loaded.</b> The registry's
+    /// static metadata readers go to the bundled resource, which was equivalent while bundled
+    /// always won the load chain. It no longer does — a fetched copy can be what the tree was
+    /// built from — so a subclass reaching for the static overload would describe a different
+    /// document than the one in use, with nothing failing. See
+    /// <c>SchemaRegistry.GetHookEventsFor</c>.
+    /// </remarks>
+    protected SchemaRegistry SchemaRegistryInstance => _schemaRegistry;
 
     /// <summary>
     /// Discover the set of config files this client is responsible for.

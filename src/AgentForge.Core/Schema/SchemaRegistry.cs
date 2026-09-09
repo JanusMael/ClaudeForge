@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
@@ -13,33 +14,101 @@ namespace Bennewitz.Ninja.AgentForge.Core.Schema;
 /// <summary>
 /// Manages loading and caching of JSON schemas.
 /// <para>
-/// Loading priority: <b>memory cache → bundled resource (+ overlay) → disk cache →
-/// HTTPS fetch → empty schema</b>. Note that <b>bundled outranks both the disk cache
-/// and the network</b>, which is the opposite of a normal cache hierarchy and is
-/// deliberate: only the bundled copy has its hand-curated <c>*.overlay.json</c>
-/// sibling merged in. See <see cref="GetSchemaAsync"/> for the full rationale, and
+/// Loading priority: <b>memory cache → HTTPS fetch (+ strip, + overlay) → bundled resource
+/// (+ strip, + overlay)</b>. There is no disk cache and no empty fallback. See
+/// <see cref="GetSchemaAsync"/> for the full rationale, and
 /// <c>SchemaLoadPrecedenceTests</c> for the behavioural guard.
+/// </para>
+/// <para>
+/// ⚠ <b>This used to be bundled-first, and the prose said so in four places — twice as the
+/// stated reason for a test's design.</b> The reversal is deliberate, not drift: the overlay
+/// and the external-<c>$ref</c> strip now apply to whichever source wins, which is what made
+/// bundled-first unnecessary. If you are about to "fix" a comment to match the old order,
+/// read <see cref="GetSchemaAsync"/> first.
 /// </para>
 /// </summary>
 public sealed class SchemaRegistry : IDisposable
 {
     public const string ClaudeCodeSettingsSchemaUrl = "https://json.schemastore.org/claude-code-settings.json";
 
-    private readonly HttpClient _http;
+    private readonly HttpClient? _http;
+
+    /// <summary>
+    /// How long one schema fetch may take before the bundled copy is used instead.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Deliberately far shorter than the <see cref="HttpClient"/>'s own 15s. This runs on
+    /// the startup path, once per schema URL, so the client timeout would let a black-holed
+    /// network freeze a launch for three quarters of a minute. Three seconds is generous for a
+    /// small JSON over HTTPS. <see cref="_networkUnavailable"/> then bounds the offline cost to
+    /// one timeout per REGISTRY INSTANCE rather than one per schema.
+    /// <para>
+    /// ⚠ <b>Measured: a launch builds TWO registries</b> — the window makes one for its page
+    /// tree and each client makes its own — so each schema is fetched twice and an offline
+    /// launch pays two timeouts, not one. Found by reading the app log, not by a test. Sharing
+    /// one instance is worth doing; it needs the registry threaded through client
+    /// construction, which is a separate change.
+    /// </para>
+    /// </remarks>
+    private static readonly TimeSpan FetchTimeout = TimeSpan.FromSeconds(3);
+
+    /// <summary>A line whose only content is an <c>http(s)</c> <c>$ref</c>.</summary>
+    private static readonly Regex ExternalRefLine = new(
+        @"^\s*""\$ref""\s*:\s*""https?://",
+        RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Set once a fetch fails for a connectivity reason; suppresses further attempts for the
+    /// life of this registry. Per-instance rather than static so tests stay isolated.
+    /// </summary>
+    private bool _networkUnavailable;
+
+    /// <summary>
+    /// The merged bytes per schema file name, from whichever source won. Lets the metadata
+    /// readers describe the document the tree was actually built from.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, byte[]> _materialisedBytes = new(StringComparer.Ordinal);
 
     // ConcurrentDictionary: GetSchemaAsync is called from multiple async call sites
     // (including background tasks); a plain Dictionary is not thread-safe for concurrent
     // reads + writes and would cause intermittent data races.
     private readonly ConcurrentDictionary<string, JsonSchema> _memoryCache = new();
 
+    /// <param name="httpClient">
+    /// The client used for the HTTPS step.
+    /// <para>
+    /// ⛔⛔ <b><see langword="null"/> means OFFLINE</b> — the fetch is skipped entirely and the
+    /// bundled resource is used. That is the default deliberately, and it is the opposite of
+    /// what it used to be: since the fetch now OUTRANKS bundled, a registry built without
+    /// saying anything about the network would otherwise make live outbound requests and
+    /// resolve its schemas against whatever upstream is serving today. Thirty-four test sites
+    /// construct one exactly that way.
+    /// </para>
+    /// <para>
+    /// Production wants the network, so it asks for it by name — see
+    /// <see cref="CreateWithNetwork"/>. A production site that forgets simply behaves as the
+    /// app did before network-first, which is why this default is the safe one.
+    /// </para>
+    /// </param>
     public SchemaRegistry(HttpClient? httpClient = null)
     {
-        _http = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        _http = httpClient;
     }
 
     /// <summary>
+    /// A registry allowed to fetch schemas over HTTPS. <b>The production composition root.</b>
+    /// </summary>
+    /// <remarks>
+    /// The client's own 15s timeout is a backstop only; <see cref="FetchTimeout"/> is what
+    /// actually bounds a load, because this runs on the startup path.
+    /// </remarks>
+    public static SchemaRegistry CreateWithNetwork()
+        => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) });
+
+    /// <summary>
     /// Get the Claude Code settings schema root node.
-    /// Uses the standard loading chain: memory → bundled (+ overlay) → disk → HTTPS → empty.
+    /// Uses the standard loading chain: memory → HTTPS (+ strip, + overlay) → bundled
+    /// (+ strip, + overlay).
     /// </summary>
     /// <summary>
     /// The two products this registry knew by name before Phase 4. They are declared once,
@@ -63,7 +132,12 @@ public sealed class SchemaRegistry : IDisposable
 
     /// <summary>
     /// Get the settings schema root node for <paramref name="product"/>.
-    /// Uses the standard loading chain: memory → bundled (+ overlay) → disk → HTTPS → empty.
+    /// Uses the standard loading chain: memory → HTTPS (+ strip, + overlay) → bundled
+    /// (+ strip, + overlay).
+    /// </summary>
+    /// <exception cref="SchemaUnavailableException">
+    /// No source could supply the schema. There is no empty-schema fallback — see that
+    /// exception's remarks for why returning one would be worse than failing.
     /// </summary>
     public async Task<JsonSchemaNode> GetSettingsNodeAsync(
         ProductDescriptor product,
@@ -71,8 +145,9 @@ public sealed class SchemaRegistry : IDisposable
     {
         ArgumentNullException.ThrowIfNull(product);
         JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
-        // Root is non-null for any successfully parsed schema; the fallback ParseSchema("{}")
-        // may return null Root, which would indicate a library contract break — throw explicitly.
+        // Root is non-null for any successfully parsed schema, and there is no longer an
+        // empty-schema fallback that could hand back a null one — so this throw now only fires
+        // on a library contract break rather than on the ordinary offline path.
         return schema.Root
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
     }
@@ -181,8 +256,24 @@ public sealed class SchemaRegistry : IDisposable
     /// resource is missing or malformed (fail-open — never blocks the editor).
     /// </remarks>
     public static IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariants(string cacheFileName)
+        => ParseHookCommandVariants(TryReadBundledBytesMerged(cacheFileName));
+
+    /// <summary>
+    /// The hook command variants of the schema copy that actually loaded, not always the bundled one.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Prefer this over the static overload wherever a registry instance is in hand.</b>
+    /// The static reads the bundled resource, which was equivalent while bundled always won.
+    /// Under network-first a fetched copy can be the one the tree was built from, and then the
+    /// static describes a different document — silently, because both parse fine and neither
+    /// is empty. The symptom would be an editor offering last release's shapes.
+    /// </remarks>
+    public IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariantsFor(string cacheFileName)
+        => ParseHookCommandVariants(MaterialisedOrBundled(cacheFileName));
+
+    /// <summary>Shared body, over bytes that already have the overlay applied.</summary>
+    internal static IReadOnlyList<HookCommandVariantInfo> ParseHookCommandVariants(byte[]? bytes)
     {
-        byte[]? bytes = TryReadBundledBytesMerged(cacheFileName);
         if (bytes is null)
         {
             return EmptyHookCommandVariants;
@@ -256,8 +347,24 @@ public sealed class SchemaRegistry : IDisposable
     /// or malformed resource.
     /// </summary>
     public static IReadOnlyList<HookEventInfo> GetHookEvents(string cacheFileName)
+        => ParseHookEvents(TryReadBundledBytesMerged(cacheFileName));
+
+    /// <summary>
+    /// The hook events of the schema copy that actually loaded, not always the bundled one.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Prefer this over the static overload wherever a registry instance is in hand.</b>
+    /// The static reads the bundled resource, which was equivalent while bundled always won.
+    /// Under network-first a fetched copy can be the one the tree was built from, and then the
+    /// static describes a different document — silently, because both parse fine and neither
+    /// is empty. The symptom would be an editor offering last release's shapes.
+    /// </remarks>
+    public IReadOnlyList<HookEventInfo> GetHookEventsFor(string cacheFileName)
+        => ParseHookEvents(MaterialisedOrBundled(cacheFileName));
+
+    /// <summary>Shared body, over bytes that already have the overlay applied.</summary>
+    internal static IReadOnlyList<HookEventInfo> ParseHookEvents(byte[]? bytes)
     {
-        byte[]? bytes = TryReadBundledBytesMerged(cacheFileName);
         if (bytes is null)
         {
             return EmptyHookEvents;
@@ -325,81 +432,98 @@ public sealed class SchemaRegistry : IDisposable
     }
 
     /// <summary>
-    /// Get a schema by URL, with bundled-first loading and disk caching.
-    /// Loading priority: memory cache → bundled resource (+ overlay) → disk cache → HTTP fetch.
-    /// <para>
-    /// Bundled resources are loaded before the disk cache or network because the
-    /// embedded schema may have an accompanying <c>.overlay.json</c> sibling that
-    /// adds hand-curated fields the upstream schemastore.org schema does not carry
-    /// (e.g. <c>model.examples</c> populating the AutoCompleteBox suggestion list,
-    /// <c>model.default</c> driving the "(inherits: &lt;alias&gt;)" watermark).  The
-    /// overlay is applied at this layer via RFC 7396 JSON Merge Patch semantics so
-    /// refreshing the upstream schema via <c>scripts/refresh-schema.{sh,ps1}</c>
-    /// never touches the hand-curated additions — they live in a separate file.
-    /// Placing bundled second (over disk/network) ensures the merged result is
-    /// always the source of truth regardless of whether a stale disk cache or fresh
-    /// network copy exists.
-    /// </para>
+    /// Get a schema by URL. <b>Network first, bundled as the fallback.</b>
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Order: <b>memory cache → HTTPS fetch (+ strip, + overlay) → bundled resource
+    /// (+ strip, + overlay)</b>. There is no disk cache and no empty fallback.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>The overlay and the external-<c>$ref</c> strip apply to whichever source wins</b>,
+    /// which is what makes network-first safe. An earlier design welded both to the bundled
+    /// reader, and the resulting "bundled must outrank the network or the overlay disappears"
+    /// was an artifact of that welding rather than a requirement — it was then written down as
+    /// a design principle. Materialising every source the same way removes the argument.
+    /// </para>
+    /// <para>
+    /// ⛔⛔ <b>The strip is not optional and it is not only the script's job.</b> Upstream
+    /// <c>opencode-config.json</c> types four <c>model</c> properties with a
+    /// <c>models.dev</c> <c>$ref</c>. A fetched copy carrying one makes schema evaluation
+    /// throw through <c>ValidateWorkspaceAsync</c> → <c>SaveAsync</c> for any config that sets
+    /// a model — so the moment a fetch can win, the runtime has to strip exactly as
+    /// <c>scripts/refresh-schema.{ps1,sh}</c> does. Bundled files are already stripped, so
+    /// re-applying it there is a no-op; that is deliberate, because one code path for every
+    /// source is what stops the two drifting.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Startup blocks on this</b> — it is awaited from <c>AgentConfigClientCore.OpenAsync</c>.
+    /// Hence <see cref="FetchTimeout"/>, which is deliberately much shorter than the
+    /// <see cref="HttpClient"/>'s own 15s, and <see cref="_networkUnavailable"/>, which makes
+    /// one failed probe stand for the whole process: an offline launch pays a single timeout
+    /// rather than one per schema.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="SchemaUnavailableException">
+    /// Neither the network nor a bundled resource could supply this schema. Deliberately a
+    /// throw rather than an empty schema: an empty JSON Schema permits <em>everything</em>, so
+    /// returning one turns save-validation into a no-op and reports success for a document
+    /// nothing has checked. A section that cannot load its schema is broken, and the hosts
+    /// already degrade a failed section visibly.
+    /// </exception>
     public async Task<JsonSchema> GetSchemaAsync(string url, string cacheFileName, CancellationToken ct = default)
     {
-        // 1. Memory cache
+        // 1. Memory cache — one fetch per URL per process, whatever the source.
         if (_memoryCache.TryGetValue(url, out JsonSchema? cached))
         {
             return cached;
         }
 
-        string diskPath = Path.Combine(PlatformPaths.SchemaCacheDirectory, cacheFileName);
-
-        // 2. Bundled resource (with overlay applied) — always preferred over
-        //    disk/network when present.  Hand-curated additions survive cache
-        //    refreshes via the overlay-merge step inside the helper.
-        byte[]? bundledBytes = TryReadBundledBytesMerged(cacheFileName);
-        if (bundledBytes != null)
-        {
-            JsonSchema schema = ParseSchema(Encoding.UTF8.GetString(bundledBytes));
-            _memoryCache[url] = schema;
-            // Keep disk cache in sync as a side-effect (fire-and-forget; failures are silent).
-            _ = SyncDiskWithBundledAsync(diskPath, bundledBytes, ct);
-            return schema;
-        }
-
-        // 3. Disk cache (for schemas without a bundled resource)
-        if (File.Exists(diskPath))
-        {
-            try
-            {
-                JsonSchema schema = await LoadFromFileAsync(diskPath, ct);
-                _memoryCache[url] = schema;
-                return schema;
-            }
-            catch (Exception ex) when (ex is IOException or JsonException)
-            {
-                Log.Debug(ex, "[Schema] Disk cache read failed for {Url}, falling through to HTTP", url);
-            }
-        }
-
-        // 4. HTTPS fetch (only for real HTTPS URLs — "bundled://" etc. fall straight through).
+        // 2. HTTPS fetch.
         //
-        // Plain http:// is rejected: a network intercept could serve an attacker-crafted
-        // schema that the cache step at SaveToDiskCacheAsync would persist, poisoning
-        // every subsequent launch even after the network is healthy. If a caller passes
-        // an http URL we fall straight through to the empty-schema fallback rather than
-        // fetching over plaintext.
-        if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        // Plain http:// is refused outright: this copy now OUTRANKS the bundled one, so a
+        // network intercept serving an attacker-crafted schema would decide what the editor
+        // considers valid. https or nothing.
+        if (_http is not null
+            && !_networkUnavailable
+            && url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
-                string json = await FetchWithRedirectAsync(url, ct);
-                JsonSchema schema = ParseSchema(json);
-                _memoryCache[url] = schema;
-                await SaveToDiskCacheAsync(diskPath, json, ct);
-                return schema;
+                using CancellationTokenSource fetchCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                fetchCts.CancelAfter(FetchTimeout);
+
+                string json = await FetchWithRedirectAsync(url, fetchCts.Token).ConfigureAwait(false);
+                JsonSchema fetched = Materialise(json, cacheFileName);
+                _memoryCache[url] = fetched;
+                Log.Information("[Schema] {File} loaded from {Url}", cacheFileName, url);
+                return fetched;
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
-                                           or IOException or JsonException)
+            catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
-                Log.Warning(ex, "[Schema] HTTPS fetch failed for {Url}, falling back to empty schema", url);
+                // Connectivity-shaped: assume the whole process is offline and stop probing.
+                _networkUnavailable = true;
+                Log.Information(ex, "[Schema] Network unavailable; using bundled schemas for this session");
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                // Our own FetchTimeout fired, not the caller's cancellation. Same conclusion.
+                _networkUnavailable = true;
+                Log.Information(
+                    "[Schema] Fetch of {Url} exceeded {Timeout}; using bundled schemas for this session",
+                    url, FetchTimeout);
+            }
+            catch (JsonException ex)
+            {
+                // Reachable but serving nonsense. NOT a connectivity failure, so the latch
+                // stays open — another schema on another host may still be fine.
+                Log.Warning(ex, "[Schema] {Url} returned content that is not valid JSON", url);
+            }
+            catch (UnstrippableSchemaRefException ex)
+            {
+                // The served copy carries an external $ref the line-based strip cannot remove.
+                // Fall back to bundled, which is known-stripped. Not a connectivity failure.
+                Log.Warning(ex, "[Schema] {Url} carries an unstrippable external $ref; using bundled", url);
             }
         }
         else if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
@@ -409,49 +533,133 @@ public sealed class SchemaRegistry : IDisposable
                 url);
         }
 
-        // 5. Absolute last resort — return an empty schema so the app can still start.
-        return ParseSchema("{}");
-    }
+        // 3. Bundled resource. Always present for every product this repo ships, so in
+        //    practice this is what runs whenever the network is slow, blocked or absent.
+        byte[]? bundledBytes = TryReadBundledBytes(cacheFileName);
+        if (bundledBytes != null)
+        {
+            JsonSchema schema = Materialise(Encoding.UTF8.GetString(bundledBytes), cacheFileName);
+            _memoryCache[url] = schema;
+            return schema;
+        }
 
-    private static async Task SyncDiskWithBundledAsync(string diskPath, byte[] bundledBytes, CancellationToken ct)
-    {
-        try
-        {
-            if (File.Exists(diskPath))
-            {
-                byte[] diskBytes = await File.ReadAllBytesAsync(diskPath, ct);
-                if (bundledBytes.AsSpan().SequenceEqual(diskBytes.AsSpan()))
-                {
-                    return; // already in sync
-                }
-            }
-
-            await SaveToDiskCacheAsync(diskPath, Encoding.UTF8.GetString(bundledBytes), ct);
-        }
-        catch (OperationCanceledException)
-        {
-            /* app shutting down — normal */
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Disk sync is best-effort; a read-only cache directory is acceptable.
-            Log.Debug(ex, "[Schema] Disk-sync failed for {Path}", diskPath);
-        }
+        // 4. Nothing could supply it. See the exception's remarks for why this is not "{}".
+        throw new SchemaUnavailableException(url, cacheFileName);
     }
 
     /// <summary>
-    /// Force-refresh the disk cache for a schema URL.
+    /// Turn raw schema text from <em>any</em> source into the schema the editors see: strip
+    /// external <c>$ref</c>s, apply the sibling overlay, parse.
     /// </summary>
-    public async Task RefreshAsync(string url, string cacheFileName, CancellationToken ct = default)
+    /// <remarks>
+    /// The merged bytes are retained per file name so the metadata readers
+    /// (<see cref="GetHookEventsFor"/>, <see cref="GetHookCommandVariantsFor"/>,
+    /// <see cref="GetEnumDescriptionsFor"/>) can report on the copy that actually won rather
+    /// than always on the bundled one. Before network-first they could read bundled and be
+    /// right by construction; now that a fetch can win, reading bundled would describe a
+    /// different document than the tree was built from.
+    /// </remarks>
+    private JsonSchema Materialise(string json, string cacheFileName)
     {
-        _memoryCache.TryRemove(url, out JsonSchema? _);
-        string diskPath = Path.Combine(PlatformPaths.SchemaCacheDirectory, cacheFileName);
-        if (File.Exists(diskPath))
+        string stripped = StripExternalRefs(json);
+
+        // ⛔ The strip is LINE-based, so an external $ref sharing a line with its siblings
+        // survives it. Upstream formats one key per line, which is the only reason this has
+        // never mattered — so verify rather than trust the formatting. A surviving ref makes
+        // evaluation throw on save, and refusing the source is recoverable where shipping it
+        // is not: the fetch branch falls back to bundled, and a BUNDLED file in this state is
+        // a build-time defect that should be loud.
+        if (ExternalRefLine.IsMatch(stripped) || stripped.Contains("\"$ref\": \"http", StringComparison.Ordinal))
         {
-            File.Delete(diskPath);
+            throw new UnstrippableSchemaRefException(cacheFileName);
         }
 
-        await GetSchemaAsync(url, cacheFileName, ct);
+        byte[] merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), cacheFileName);
+        _materialisedBytes[cacheFileName] = merged;
+        return ParseSchema(Encoding.UTF8.GetString(merged));
+    }
+
+    /// <summary>
+    /// Delete every line whose only content is an <c>http(s)</c> <c>$ref</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>This rule is duplicated in <c>scripts/refresh-schema.ps1</c> and its <c>.sh</c>
+    /// twin, and the three must agree.</b> The scripts strip at refresh time so the committed
+    /// file resolves offline; this strips at load time so a fetched copy does too. A change
+    /// here needs the same change there — <c>SchemaStripParityTests</c> asserts this
+    /// implementation against the same fixtures the scripts are checked with.
+    /// </para>
+    /// <para>
+    /// Textual, not parse-and-reserialise, for the same reason the scripts are: it keeps the
+    /// document byte-identical apart from the removed lines. Two cases, and reversing them
+    /// yields invalid JSON — a <c>$ref</c> line ending in a comma has siblings after it, one
+    /// that does not was the last key in its object and the PRECEDING line's comma must go too.
+    /// </para>
+    /// <para>
+    /// Idempotent: text with no external <c>$ref</c> is returned unchanged, which is why a
+    /// bundled file (already stripped by the script) can go through the same path.
+    /// </para>
+    /// </remarks>
+    internal static string StripExternalRefs(string json)
+    {
+        if (!ExternalRefLine.IsMatch(json))
+        {
+            return json;
+        }
+
+        string[] lines = json.Split('\n');
+        List<string> kept = new(lines.Length);
+
+        foreach (string line in lines)
+        {
+            if (!ExternalRefLine.IsMatch(line))
+            {
+                kept.Add(line);
+                continue;
+            }
+
+            if (line.TrimEnd().EndsWith(','))
+            {
+                continue;
+            }
+
+            for (int j = kept.Count - 1; j >= 0; j--)
+            {
+                if (kept[j].Trim().Length == 0)
+                {
+                    continue;
+                }
+
+                string trimmed = kept[j].TrimEnd();
+                if (trimmed.EndsWith(','))
+                {
+                    kept[j] = trimmed[..^1];
+                }
+
+                break;
+            }
+        }
+
+        return string.Join('\n', kept);
+    }
+
+    /// <summary>
+    /// Force a re-load for one schema URL, bypassing the memory cache.
+    /// </summary>
+    /// <remarks>
+    /// Under network-first this is a genuine re-fetch, which is what an in-app "check for
+    /// schema updates" action needs. It also clears the offline latch, so an explicit user
+    /// request retries the network even after an earlier probe failed — the latch exists to
+    /// keep startup fast, not to refuse a deliberate retry.
+    /// </remarks>
+    public async Task<JsonSchema> RefreshAsync(string url, string cacheFileName, CancellationToken ct = default)
+    {
+        _memoryCache.TryRemove(url, out JsonSchema? _);
+        _materialisedBytes.TryRemove(cacheFileName, out byte[]? _);
+        _networkUnavailable = false;
+
+        return await GetSchemaAsync(url, cacheFileName, ct).ConfigureAwait(false);
     }
 
     // -----------------------------------------------------------------------
@@ -477,32 +685,27 @@ public sealed class SchemaRegistry : IDisposable
         return JsonSchema.FromText(json, opts);
     }
 
-    private static async Task<JsonSchema> LoadFromFileAsync(string path, CancellationToken ct)
-    {
-        string json = await File.ReadAllTextAsync(path, ct);
-        return ParseSchema(json);
-    }
-
     private async Task<string> FetchWithRedirectAsync(string url, CancellationToken ct)
     {
-        // schemastore.org sends a 301; HttpClient follows automatically
-        HttpResponseMessage response = await _http.GetAsync(url, ct);
+        // Only ever reached from the fetch step, which checks _http first.
+        HttpResponseMessage response = await _http!.GetAsync(url, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync(ct);
     }
 
-    private static async Task SaveToDiskCacheAsync(string path, string json, CancellationToken ct)
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            await File.WriteAllTextAsync(path, json, ct);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            Log.Debug(ex, "[Schema] Cannot write disk cache for {Path}", path);
-        }
-    }
+    /// <summary>
+    /// The merged bytes this registry last loaded for a schema, or the bundled copy when it
+    /// has not loaded that schema yet.
+    /// </summary>
+    /// <remarks>
+    /// The fallback matters: these readers are called from view-models that may run before, or
+    /// entirely without, a <see cref="GetSchemaAsync"/> for that file. Bundled is the right
+    /// answer then — it is what the tree would be built from too.
+    /// </remarks>
+    private byte[]? MaterialisedOrBundled(string cacheFileName)
+        => _materialisedBytes.TryGetValue(cacheFileName, out byte[]? bytes)
+            ? bytes
+            : TryReadBundledBytesMerged(cacheFileName);
 
     private static byte[]? TryReadBundledBytes(string cacheFileName)
         => BundledResource.TryRead("Schemas", cacheFileName);
@@ -539,11 +742,20 @@ public sealed class SchemaRegistry : IDisposable
     internal static byte[]? TryReadBundledBytesMerged(string cacheFileName)
     {
         byte[]? baseBytes = TryReadBundledBytes(cacheFileName);
-        if (baseBytes == null)
-        {
-            return null;
-        }
+        return baseBytes == null ? null : MergeOverlayOnto(baseBytes, cacheFileName);
+    }
 
+    /// <summary>
+    /// Apply a schema's sibling <c>.overlay.json</c> to <paramref name="baseBytes"/>, whatever
+    /// source those came from.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ Extracted from the bundled reader so a FETCHED base gets the overlay too. While the
+    /// merge lived inside that reader, only the bundled copy could carry hand-curated
+    /// additions — which is the whole reason bundled used to have to outrank the network.
+    /// </remarks>
+    internal static byte[] MergeOverlayOnto(byte[] baseBytes, string cacheFileName)
+    {
         byte[]? overlayBytes = TryReadBundledBytes(OverlayFileNameFor(cacheFileName));
         if (overlayBytes == null)
         {
@@ -556,7 +768,7 @@ public sealed class SchemaRegistry : IDisposable
             JsonNode? overlayNode = JsonNode.Parse(overlayBytes);
             JsonNode? merged = ApplyMergePatch(baseNode, overlayNode);
             // Serialise with the same compact-ish indentation upstream uses; the
-            // bytes feed into ParseSchema + may also land in the disk cache.
+            // bytes feed into ParseSchema.
             string json = merged?.ToJsonString(new JsonSerializerOptions { WriteIndented = true })
                           ?? Encoding.UTF8.GetString(baseBytes);
             return Encoding.UTF8.GetBytes(json);
@@ -1099,7 +1311,8 @@ public sealed class SchemaRegistry : IDisposable
 
     public void Dispose()
     {
-        _http.Dispose();
+        // Null on an offline registry, which is the default. See the constructor.
+        _http?.Dispose();
     }
 }
 

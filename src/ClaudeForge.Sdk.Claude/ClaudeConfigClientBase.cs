@@ -116,13 +116,13 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
 
         // No cached schema tree — the client was constructed via FromExistingWorkspace
         // (the GUI's path) and never ran OpenAsync, so CachedSchemaNodes is null. Read the
-        // event names + descriptions straight from the bundled schema (same source, same
+        // event names + descriptions from whichever schema copy THIS client loaded (same source, same
         // descriptions) so KnownEvents — and thus the editor's per-event tooltips/labels —
         // stay populated regardless of how the client was built. Mirrors SchemaHookCommandVariants.
         // No product test needed: GetHookEvents returns empty for a schema with no hooks
         // section, which is exactly what Desktop's is. The former `IsClaudeCode ? … : []`
         // hardcoded that answer instead of reading it.
-        return SchemaRegistry.GetHookEvents(Product.SchemaFileName);
+        return SchemaRegistryInstance.GetHookEventsFor(Product.SchemaFileName);
     }
 
     /// <summary>
@@ -130,11 +130,11 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
     /// each variant's <c>type</c> discriminator, description, and field descriptions. Read
     /// from the bundled merged schema JSON because the <c>anyOf</c> variants don't survive the
     /// flattened <see cref="SchemaNode"/> tree the GUI builds from (unlike <see cref="SchemaHookEvents"/>,
-    /// which reads that tree); the bundled schema is the same source the tree derives from, so
+    /// which reads that tree); the instance overload reads whichever copy this client loaded, so
     /// they stay consistent. Empty for Claude Desktop — hooks are a Claude Code concept.
     /// Consumed by the Hooks accessor's <c>KnownCommandTypes</c> so headless callers and the editor
     /// share one source for the per-type picker text and per-field descriptions.
     /// </summary>
     internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
-        SchemaRegistry.GetHookCommandVariants(Product.SchemaFileName);
+        SchemaRegistryInstance.GetHookCommandVariantsFor(Product.SchemaFileName);
 }

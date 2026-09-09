@@ -320,7 +320,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </remarks>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        SchemaRegistry registry = new();
+        // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design.
+        SchemaRegistry registry = SchemaRegistry.CreateWithNetwork();
         List<string> failures = [];
         IsLoading = true;
 
