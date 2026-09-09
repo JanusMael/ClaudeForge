@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -513,5 +514,132 @@ public sealed class DebugFlagsTests
         Assert.IsNull(DebugFlags.ConfigWriterName,
             "Static flag state must not bleed into the next test — a leaked 'legacy' here "
             + "would silently make other tests assert against the lossy writer.");
+    }
+
+    // ── The --debug-help text must match what Initialize actually parses ──
+
+    /// <summary>The source of <c>DebugFlags.cs</c>, which is the only place the pairing lives.</summary>
+    /// <remarks>
+    /// Source text rather than reflection: a <c>case "--x":</c> label leaves no metadata to
+    /// reflect over, and the help string is a literal inside a switch arm. There is nothing at
+    /// runtime that relates the two.
+    /// </remarks>
+    private static string DebugFlagsSource()
+    {
+        string? dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
+        {
+            string candidate = Path.Combine(dir, "src", "ClaudeForge", "Services", "DebugFlags.cs");
+            if (File.Exists(candidate))
+            {
+                return File.ReadAllText(candidate);
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new InvalidOperationException(
+            $"Could not locate DebugFlags.cs by walking up from '{AppContext.BaseDirectory}'.");
+    }
+
+    /// <summary>Every <c>case "--x":</c> label in the file, lower-cased as the switch sees them.</summary>
+    private static HashSet<string> ParsedFlagNames()
+    {
+        MatchCollection matches = Regex.Matches(
+            DebugFlagsSource(), @"case\s+""(--[a-z0-9-]+)""\s*:", RegexOptions.CultureInvariant);
+
+        return [.. matches.Select(m => m.Groups[1].Value)];
+    }
+
+    /// <summary>Every flag the <c>--debug-help</c> output advertises.</summary>
+    private static HashSet<string> AdvertisedFlagNames()
+    {
+        // The help text is the concatenated string literals in the --debug-help arm. Take the
+        // whole file and pull flag-shaped tokens out of the "available flags:" message only, so
+        // a flag named in an ordinary comment cannot count as documented.
+        Match message = Regex.Match(
+            DebugFlagsSource(),
+            @"available flags:(?<body>.*?)""\s*\)\s*;",
+            RegexOptions.Singleline | RegexOptions.CultureInvariant);
+
+        Assert.IsTrue(message.Success,
+            "Could not find the \"available flags:\" message in DebugFlags.cs. If it was "
+            + "reworded, update this scan — otherwise both directions below pass vacuously.");
+
+        return
+        [
+            .. Regex.Matches(message.Groups["body"].Value, @"--[a-zA-Z0-9-]+",
+                    RegexOptions.CultureInvariant)
+                .Select(m => m.Value.ToLowerInvariant()),
+        ];
+    }
+
+    /// <summary>
+    /// Every flag <c>Initialize</c> parses is advertised by <c>--debug-help</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Nothing enforced this, and the absence cost real time.</b> <c>AGENTS.md</c>'s
+    /// flag-adding checklist says to update the help text, but a checklist is not a guard: a new
+    /// <c>case</c> ships undiscoverable and the only symptom is a flag nobody can find. The
+    /// author of this test first asserted, from a truncated grep, that
+    /// <c>--showInstallBanner</c> was missing. It was not — reading the file settled in seconds
+    /// what a guess got wrong, which is the argument for having the check at all.
+    /// </remarks>
+    [TestMethod]
+    public void EveryFlagInitializeParses_IsAdvertisedByDebugHelp()
+    {
+        HashSet<string> parsed = ParsedFlagNames();
+        HashSet<string> advertised = AdvertisedFlagNames();
+
+        Assert.IsTrue(parsed.Count > 5,
+            $"Only {parsed.Count} flag case(s) were found; the scan has lost its subject.");
+
+        // --help-debug is an alias of --debug-help and needs no separate line.
+        List<string> undocumented =
+        [
+            .. parsed
+                .Where(f => !advertised.Contains(f))
+                .Where(f => f != "--help-debug")
+                .Order(StringComparer.Ordinal),
+        ];
+
+        Assert.AreEqual(0, undocumented.Count,
+            $"{undocumented.Count} flag(s) are parsed but not listed by --debug-help: "
+            + string.Join(", ", undocumented)
+            + ". A flag nobody can discover is a flag nobody uses. Add it to the "
+            + "\"available flags:\" message.");
+    }
+
+    /// <summary>
+    /// The reverse: <c>--debug-help</c> advertises nothing <c>Initialize</c> does not parse.
+    /// </summary>
+    /// <remarks>
+    /// ⛔⛔ <b>This is the direction that found a real defect.</b> The help text listed
+    /// <c>--cleanup-restore-sidecars</c>, which <c>DebugFlags</c> does not parse at all — it is a
+    /// CLI-bypass tool dispatched in <c>Program.cs</c> above <c>BuildAvaloniaApp()</c>.
+    /// <c>AGENTS.md</c> is explicit that the two are "conceptually different" and that a tool
+    /// belongs in the CLI-bypass section, NOT the debug-flags table. Advertising it here told a
+    /// user it was a debug flag and told the next maintainer to look for a <c>case</c> that does
+    /// not exist.
+    /// </remarks>
+    [TestMethod]
+    public void DebugHelpAdvertisesNothingItCannotParse()
+    {
+        HashSet<string> parsed = ParsedFlagNames();
+        HashSet<string> advertised = AdvertisedFlagNames();
+
+        Assert.IsTrue(advertised.Count > 5,
+            $"Only {advertised.Count} advertised flag(s) were found; the scan has lost its subject.");
+
+        List<string> phantom =
+        [
+            .. advertised.Where(f => !parsed.Contains(f)).Order(StringComparer.Ordinal),
+        ];
+
+        Assert.AreEqual(0, phantom.Count,
+            $"--debug-help advertises {phantom.Count} name(s) DebugFlags.Initialize does not "
+            + "parse: " + string.Join(", ", phantom)
+            + ". Either it is a CLI-bypass tool — which belongs in its own list, not this one, "
+            + "per AGENTS.md — or the flag was renamed and the help text was not.");
     }
 }

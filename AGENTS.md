@@ -96,6 +96,7 @@ Two specific anti-patterns this file refuses on principle:
   - **Closed value set** (`--writer legacy|jsonc`): read `args[i + 1]` WITHOUT advancing, and `i++` only once the value is recognised. `--writer --linux` then rejects the writer *and* still honours `--linux`, instead of silently swallowing it. Consuming first is a real bug — it was caught here only because the test asserted the next flag still took effect.
 - [ ] Read the flag at the relevant call site, ORed with the production condition (existing template: `ShowInstallBanner = DebugFlags.ShowInstallBanner || (!Detected)`).
 - [ ] Add a test in `tests/ClaudeForge.Tests/Services/DebugFlagsTests.cs` that asserts the flag flips on the matching arg and stays default otherwise. For two-token flags, add cases for missing-value (last arg with no value), invalid-value (validation rejects), and value-then-next-flag (consumes the value and lets the outer loop see the next flag).
+- [ ] Add the flag to the **"available flags:"** message in `DebugFlags.Initialize`, so `--debug-help` can discover it. ⛔ This step was missing from this list and present on the CLI-tool list below, which is the wrong way round — a new *flag* had no instruction to become discoverable while a new *tool* was told to advertise itself as one. `DebugFlagsTests.EveryFlagInitializeParses_IsAdvertisedByDebugHelp` now fails on an undocumented flag, in both directions, so neither omission can recur silently.
 - [ ] Document the flag in `CLAUDE.md`'s debug-flags table.
 - [ ] Document the flag in `README.md`'s features section if it's user-visible.
 
@@ -117,7 +118,7 @@ Two specific anti-patterns this file refuses on principle:
    - Calls `Log.CloseAndFlush()` before returning. Avoid the outer `finally` in `Main` for CLI tools — the explicit flush makes intent obvious and avoids racing with the parent terminal which may already be re-attached to the next command.
 - [ ] Document the tool in `CLAUDE.md`'s **CLI-bypass tools** section (NOT the debug-flags table — they're conceptually different).
 - [ ] Document the tool in `README.md` under the relevant user-facing section (Backup workflow for the cleanup tool, etc.).
-- [ ] Update `--debug-help`'s emitted line in `DebugFlags.Initialize` to include the new flag so users discover it.
+- [ ] Add the tool to the **CLI-bypass tools** message in `DebugFlags.Initialize` — the *second* `_deferredWarnings.Add` in the `--debug-help` arm, NOT the "available flags:" one. ⛔ This bullet used to say "update `--debug-help`'s emitted line", which contradicted the bullet three above it and is exactly how `--cleanup-restore-sidecars` came to be advertised as a debug flag: it told a user it was a flag and sent the next maintainer looking for a `case` that does not exist. `DebugFlagsTests.DebugHelpAdvertisesNothingItCannotParse` now fails if a tool re-enters the flags list.
 - [ ] Tests: cover the worker's Result shape in `AgentForge.Core.Tests` (no GUI deps). Verify the file/directory side effects, the failure-resilience path (locked / read-only / missing inputs), and the progress callback contract.
 
 ### X = Adding a new persisted UI-state field
