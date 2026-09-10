@@ -6,6 +6,12 @@
         <AssemblyProduct>OpenCodeForge</AssemblyProduct>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Version>1.0.0</Version>
+        <!-- Static Windows app/taskbar icon embedded in the apphost exe, same role as
+             ClaudeForge's: the taskbar and titlebar get an icon immediately, with no
+             runtime render on the startup path. ⚠ PLACEHOLDER ARTWORK — see
+             Resources/OpenCodeForge.svg. Replacing it means regenerating BOTH the .ico
+             and the .png; nothing rebuilds them from the .svg. -->
+        <ApplicationIcon>Resources\OpenCodeForge.ico</ApplicationIcon>
         <!-- Windows TFM for the same reason ClaudeForge carries it: it picks up the
              net10.0-windows build of LayeredEditors.Avalonia.Services. -->
         <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
@@ -18,6 +24,19 @@
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>OpenCodeForge.Tests</_Parameter1>
         </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The window icon, as a PNG rather than the SVG beside it.
+             ⛔ DELIBERATELY NOT the SVG-at-runtime approach ClaudeForge uses. That one
+             renders Resources/*.svg through SKSvg, which costs this app a Svg.Skia +
+             Svg.Custom + Svg.Controls.Skia.Avalonia package closure and the three
+             TrimmerRootAssembly entries those need — a large trim surface to buy one
+             256px bitmap. A pre-rendered PNG needs no rasteriser at all.
+             The .svg is still shipped, but only to disk: it is what the Linux icon
+             theme resolves Icon=opencodeforge against, staged into the archive by
+             Publish-Rid.ps1 rather than embedded here. -->
+        <AvaloniaResource Include="Resources\OpenCodeForge.png"/>
     </ItemGroup>
 
     <ItemGroup>

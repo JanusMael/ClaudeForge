@@ -78,14 +78,13 @@ $script:PublishAppTable = @(
         StartupLogToken = 'Starting OpenCodeForge'
         LogFilePattern  = 'opencodeforge-*.log'
         TagPrefix       = 'opencodeforge-'
-        # ⛔ No icon, no .desktop, no setup script yet. Left NULL rather than
-        # pointed at ClaudeForge's: a Linux archive carrying the other app's icon
-        # and an Exec= line naming the other app's binary is worse than one that
-        # ships without desktop integration and says so. Publish-Rid reports the
-        # omission per RID instead of silently staging nothing.
-        IconSvg         = $null
-        DesktopFile     = $null
-        LinuxSetup      = $null
+        # ⚠ The icon is PLACEHOLDER artwork — see the comment inside the SVG.
+        # linux-setup.sh is the SAME FILE both apps ship: it identifies the app
+        # from the single .desktop staged beside it, so there is one script
+        # rather than two that drift.
+        IconSvg         = 'src/OpenCodeForge/Resources/OpenCodeForge.svg'
+        DesktopFile     = 'assets/linux/opencodeforge.desktop'
+        LinuxSetup      = 'assets/linux/linux-setup.sh'
     }
 )
 

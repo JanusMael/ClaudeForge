@@ -102,6 +102,13 @@ public partial class AboutDialog : Window, INotifyPropertyChanged
         DataContext = this;
         InitializeComponent();
 
+        // Same icon as the main window: a dialog with the default Avalonia icon next to a
+        // parent that has the app's reads as a different application in the Alt-Tab list.
+        if (AppIcon.Instance is { } icon)
+        {
+            Icon = icon;
+        }
+
         Closed += (_, _) =>
         {
             try

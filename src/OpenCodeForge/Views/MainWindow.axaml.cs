@@ -18,6 +18,13 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // Set in code rather than AXAML: AppIcon caches one WindowIcon for every window, and a
+        // null (the asset failed to load) has to leave Icon alone rather than clear it.
+        if (AppIcon.Instance is { } icon)
+        {
+            Icon = icon;
+        }
+
         SavedWindowState remembered = WindowStateService.Load();
         Width = remembered.Width;
         Height = remembered.Height;

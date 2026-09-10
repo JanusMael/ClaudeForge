@@ -1,0 +1,61 @@
+[Desktop Entry]
+# OpenCodeForge desktop integration entry.  Install at
+# ~/.local/share/applications/opencodeforge.desktop  (per-user)  OR
+# /usr/share/applications/opencodeforge.desktop      (system-wide).
+#
+# Normally you do not edit this by hand — run the bundled linux-setup.sh,
+# which rewrites Exec= to this directory's binary and installs both this
+# file and the icon.  See docs/LINUX-DESKTOP-INTEGRATION.md.
+#
+# After a manual installation:
+#   update-desktop-database ~/.local/share/applications/   (per-user)
+#   sudo update-desktop-database /usr/share/applications/  (system-wide)
+
+Type=Application
+Version=1.0
+
+# Visible app name in launchers / Alt-Tab / dock.
+Name=OpenCodeForge
+GenericName=OpenCode Configuration Editor
+Comment=Edit OpenCode and OpenCode TUI configuration files
+
+# REPLACE the path below with the actual install location of the
+# OpenCodeForge binary.  Common patterns:
+#   /usr/local/bin/OpenCodeForge          (system-wide)
+#   /opt/opencodeforge/OpenCodeForge      (vendor install)
+#   $HOME/.local/bin/OpenCodeForge        (per-user, unexpanded —
+#                                          desktop-file-spec does not
+#                                          support $HOME; use an
+#                                          absolute path)
+#
+# ⚠ linux-setup.sh finds this line by the literal string "Exec=OpenCodeForge"
+# and substitutes the absolute path.  Keep the bare binary name here.
+Exec=OpenCodeForge
+
+# Icon name (preferred — looked up in the icon theme via XDG_DATA_DIRS),
+# or an absolute path to a PNG / SVG.
+#
+# Per-user install paths the icon name "opencodeforge" resolves to:
+#   ~/.local/share/icons/hicolor/256x256/apps/opencodeforge.png
+#   ~/.local/share/icons/hicolor/scalable/apps/opencodeforge.svg
+#
+# After dropping the icons in place, refresh the cache:
+#   gtk-update-icon-cache ~/.local/share/icons/hicolor/
+Icon=opencodeforge
+
+# StartupWMClass MUST match the Wayland app_id / X11 WM_CLASS that
+# Avalonia sets — derived from the entry-assembly name.  For this build
+# that is literally "OpenCodeForge".  When this matches, the compositor
+# associates the launched window with this .desktop entry, picking up
+# the icon for the dock / taskbar / Alt-Tab.
+StartupWMClass=OpenCodeForge
+StartupNotify=true
+
+Terminal=false
+# Single freedesktop "main" category, matching the sibling app: Settings
+# is the most-fitting top-level menu placement for a config editor, and
+# listing only one main category avoids the desktop-file-validate hint
+# about appearing in multiple top-level menus.  DesktopSettings is an
+# "Additional" category under Settings per the freedesktop spec.
+Categories=Settings;DesktopSettings;
+Keywords=opencode;config;settings;ai;
