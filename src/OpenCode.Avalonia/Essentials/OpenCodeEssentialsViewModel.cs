@@ -40,6 +40,7 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
     private readonly OpenCodeEnvironment _environment;
     private readonly SchemaPageLayout _layout;
     private readonly IDangerClassifier? _danger;
+    private readonly IReadOnlyList<EssentialsAppPreference> _appPreferences;
 
     /// <summary>Construct the page.</summary>
     /// <param name="client">
@@ -61,16 +62,27 @@ public sealed partial class OpenCodeEssentialsViewModel : ObservableObject, INav
     /// This document's danger table. Supplies every card's severity; <see langword="null"/> leaves
     /// them all <see cref="AppSeverity.Neutral"/>, which is what a host with no table should show.
     /// </param>
+    /// <param name="appPreferences">
+    /// App-level booleans the host wants shown alongside the schema-backed cards, or
+    /// <see langword="null"/>/empty for none.
+    /// <para>
+    /// ⚠ These are NOT part of the document being edited — they live in the host's own state and
+    /// the host supplies the accessors and the text. See <see cref="EssentialsAppPreference"/> for
+    /// why they cannot simply be read from here.
+    /// </para>
+    /// </param>
     public OpenCodeEssentialsViewModel(
         AgentConfigClientCore? client,
         OpenCodeEnvironment environment,
         SchemaPageLayout layout,
-        IDangerClassifier? danger = null)
+        IDangerClassifier? danger = null,
+        IReadOnlyList<EssentialsAppPreference>? appPreferences = null)
     {
         _client = client;
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
         _layout = layout ?? throw new ArgumentNullException(nameof(layout));
         _danger = danger;
+        _appPreferences = appPreferences ?? [];
 
         Cards = new ObservableCollection<EssentialsCardViewModel>(BuildCards());
 

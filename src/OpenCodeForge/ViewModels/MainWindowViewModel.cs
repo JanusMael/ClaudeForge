@@ -64,7 +64,7 @@ public sealed record HostedSection(
 /// phases. Adding them now would force those decisions early and out of order.
 /// </para>
 /// </remarks>
-public sealed partial class MainWindowViewModel : ObservableObject
+public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 {
     /// <summary>
     /// Deep-link and persisted-state key for the artifacts page.
@@ -78,6 +78,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Deep-link and persisted-state key for the Essentials page.</summary>
     public const string EssentialsNodeId = "essentials";
+
+    /// <summary>Card id for the auto-update opt-out on the Essentials page.</summary>
+    /// <remarks>
+    /// Public so a test can find that card among the schema-backed ones without matching on its
+    /// display text, which is localized.
+    /// </remarks>
+    public const string EssentialsCheckForUpdatesCardId = "app.checkForUpdatesOnLaunch";
 
     /// <summary>Sections in navigation order.</summary>
     public IReadOnlyList<HostedSection> Sections { get; }
@@ -234,6 +241,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         Sections = [.. sections];
+
+        // Subscribed here rather than at the loop's start: the dismiss can arrive before the
+        // launch check has finished, and the latch it sets is what stops the loop being started
+        // at all.
+        UpdateBanner.Dismissed += OnUpdateBannerDismissed;
 
         Search = new SearchViewModel(
             getNavigationTree: () => Navigation,
@@ -427,7 +439,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 // ⓘ Note this is NOT the malformed-file case: ConfigFileLoader catches
                 // JsonException on purpose and loads an unparseable file as an empty root with
                 // SettingsDocument.LoadFailure set, so a broken file opens successfully.
-                Sections.FirstOrDefault(s => s.Product == OpenCodeProducts.Config)?.Danger),
+                Sections.FirstOrDefault(s => s.Product == OpenCodeProducts.Config)?.Danger,
+
+                // The app's own preferences. Supplied from here because only the app knows where
+                // its state file is — OpenCode.Avalonia sits below this assembly and cannot reach
+                // WindowStateService. The TEXT comes from this app's resx too, so the strings the
+                // card shows are the same ones used anywhere else they appear.
+                appPreferences:
+                [
+                    new EssentialsAppPreference(
+                        Id: EssentialsCheckForUpdatesCardId,
+                        Title: Strings.EssentialsCardCheckForUpdatesTitle,
+                        Body: Strings.EssentialsCardCheckForUpdatesBody,
+                        Get: () => WindowStateService.Load().CheckForUpdatesOnLaunch,
+                        Set: WindowStateService.SaveCheckForUpdatesOnLaunch),
+                ]),
         });
 
         // Detection last: it runs a child process, and a slow or hung binary must not delay the
@@ -489,25 +515,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </remarks>
     public UpdateBannerViewModel UpdateBanner { get; } = new();
 
+    /// <summary>How long between automatic re-checks once the launch check has run.</summary>
+    /// <remarks>
+    /// Four hours, matching the sibling app. Long enough that a machine left open for a week
+    /// makes a handful of requests, short enough that a long-running session still learns about
+    /// a release the day it lands.
+    /// </remarks>
+    private static readonly TimeSpan UpdateRecheckInterval = TimeSpan.FromHours(4);
+
+    /// <summary>Cancels the periodic re-check. Null when no loop is running.</summary>
+    private CancellationTokenSource? _updateRecheckCts;
+
+    /// <summary>Latched once the user dismisses the banner, so the loop does not re-raise it.</summary>
+    private bool _updateBannerDismissed;
+
+    private bool _disposed;
+
     /// <summary>
-    /// Run the once-per-launch update check and let the banner decide whether to surface.
+    /// Run the once-per-launch update check, then start the periodic re-check.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Fire-and-forget: the window is already usable and an update check must never be
-    /// something the user waits behind. Every failure inside the check already collapses to "no
-    /// update", so the <c>catch</c> here is for the genuinely unexpected — and it logs rather
-    /// than surfacing, because a failed update check is not a thing the user can act on.
-    /// </para>
-    /// <para>
-    /// ⛔ <b>There is no periodic re-check, unlike the sibling app, and that is deliberate for
-    /// now.</b> Its 4-hourly loop is owned by a <see cref="CancellationTokenSource"/> that
-    /// <c>Dispose</c> cancels — and this view-model implements no <see cref="IDisposable"/> at
-    /// all. Adding a background loop with nothing to stop it is how a task outlives its window;
-    /// the loop belongs with disposal, in one change, not bolted onto a type that cannot stop
-    /// it. The launch check plus the explicit About-dialog button cover the same ground less
-    /// often.
-    /// </para>
+    /// Fire-and-forget: the window is already usable and an update check must never be something
+    /// the user waits behind. Every failure inside the check already collapses to "no update",
+    /// so the <c>catch</c> is for the genuinely unexpected — and it logs rather than surfacing,
+    /// because a failed update check is not a thing the user can act on.
     /// </remarks>
     private void StartUpdateCheck()
     {
@@ -525,7 +556,114 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 Log.Information(ex, "[UpdateCheck] Launch check threw unexpectedly; no banner.");
             }
+
+            StartUpdateRecheckLoop();
         });
+    }
+
+    /// <summary>
+    /// Re-check every <see cref="UpdateRecheckInterval"/> for the life of the window.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This loop is the reason this view-model is <see cref="IDisposable"/>.</b> It is a
+    /// detached task whose only stop signal is the token below; without disposal it would
+    /// outlive the window that started it, keep waking every four hours, and keep marshalling to
+    /// a dispatcher for a window that has gone. The loop and <see cref="Dispose"/> are one
+    /// feature, not two.
+    /// </para>
+    /// <para>
+    /// Uses <see cref="AppUpdateService.CheckPeriodicAsync"/> — no launch latch, so it fires
+    /// repeatedly, but still gated on the user's opt-out, because a background timer is not
+    /// consent the way a button press is. The banner keeps honouring the persisted per-version
+    /// dismiss list, so only a genuinely newer release surfaces.
+    /// </para>
+    /// <para>
+    /// ⚠ All view-model state is touched on the UI thread; only the network await runs off it.
+    /// </para>
+    /// </remarks>
+    private void StartUpdateRecheckLoop()
+    {
+        if (_disposed || _updateBannerDismissed || _updateRecheckCts is not null)
+        {
+            return;
+        }
+
+        _updateRecheckCts = new CancellationTokenSource();
+        CancellationToken ct = _updateRecheckCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    await Task.Delay(UpdateRecheckInterval, ct).ConfigureAwait(false);
+
+                    UpdateCheckResult result =
+                        await AppUpdateService.CheckPeriodicAsync(ct).ConfigureAwait(false);
+
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        // A dismiss can race in between the delay elapsing and this marshal;
+                        // do not resurrect a banner the user just closed.
+                        if (!_updateBannerDismissed && !_disposed)
+                        {
+                            UpdateBanner.ApplyResult(result);
+                        }
+                    });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on dismiss or dispose — this is how the loop is meant to end.
+            }
+            catch (Exception ex)
+            {
+                Log.Information(
+                    ex,
+                    "[UpdateCheck] Unhandled exception in the periodic re-check; loop ends, banner unchanged.");
+            }
+        }, ct);
+    }
+
+    /// <summary>Stop the periodic re-check. Idempotent.</summary>
+    private void StopUpdateRecheckLoop()
+    {
+        _updateRecheckCts?.Cancel();
+        _updateRecheckCts?.Dispose();
+        _updateRecheckCts = null;
+    }
+
+    /// <summary>The user closed the banner: latch it off and stop re-checking this session.</summary>
+    /// <remarks>
+    /// The persisted dismiss already suppresses this tag on later launches; the latch is what
+    /// stops the loop re-raising it in the session where it was closed.
+    /// </remarks>
+    private void OnUpdateBannerDismissed(object? sender, EventArgs e)
+    {
+        _updateBannerDismissed = true;
+        StopUpdateRecheckLoop();
+    }
+
+    /// <summary>
+    /// Stop the background update re-check.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Called from the window's <c>Closing</c> handler</b>, which is the only place that
+    /// knows the window is going. Idempotent, because <c>Closing</c> can fire more than once on
+    /// some shutdown paths.
+    /// </remarks>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        UpdateBanner.Dismissed -= OnUpdateBannerDismissed;
+        StopUpdateRecheckLoop();
     }
 
     internal static void ApplyProvenanceBadge(

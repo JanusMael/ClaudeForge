@@ -113,10 +113,54 @@ public static class WindowStateService
         }
     }
 
+    /// <summary>
+    /// Persist the window's geometry, leaving every other stored preference alone.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This exists because assembling the record at the call site lost data.</b> The
+    /// window's <c>Closing</c> handler built a fresh three-argument <see cref="WindowState"/>
+    /// from the geometry it had, which was correct while geometry was ALL the record held — and
+    /// silently wrong the moment it also held preferences: they fell back to their constructor
+    /// defaults on every close, re-enabling the update check and emptying the dismissed-tag list.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>So geometry is saved by NAME, not by position.</b> A caller that only knows about
+    /// width, height and maximized state cannot now drop a field it has never heard of, and a
+    /// field added later needs no edit here. Prefer this over
+    /// <see cref="Save(WindowState)"/> for anything that owns only part of the record.
+    /// </para>
+    /// </remarks>
+    public static void SaveGeometry(double width, double height, bool isMaximized)
+    {
+        // Read-modify-write rather than construct: whatever else is in the file survives.
+        Save(Load() with
+        {
+            Width = width,
+            Height = height,
+            IsMaximized = isMaximized,
+        });
+    }
+
+    /// <summary>
+    /// Persist the auto-update opt-out, leaving geometry and everything else alone.
+    /// </summary>
+    /// <remarks>
+    /// The counterpart to <see cref="SaveGeometry"/>, and for the same reason: a caller that owns
+    /// one field must not be able to reset the others by rebuilding the record. Read-modify-write,
+    /// by name.
+    /// </remarks>
+    public static void SaveCheckForUpdatesOnLaunch(bool value) =>
+        Save(Load() with { CheckForUpdatesOnLaunch = value });
+
     /// <summary>Persist <paramref name="state"/>, writing through a temporary file.</summary>
     /// <remarks>
     /// Written to a sibling temp file and moved into place, so an interrupted write cannot leave a
     /// truncated file that the next run has to recover from.
+    /// <para>
+    /// ⚠ Takes the WHOLE record, so a caller that builds one from scratch overwrites every field
+    /// it did not set. Use <see cref="SaveGeometry"/> when you own only the geometry.
+    /// </para>
     /// </remarks>
     public static void Save(WindowState state)
     {

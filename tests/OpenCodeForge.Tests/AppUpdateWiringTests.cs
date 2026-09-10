@@ -1,5 +1,11 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Updates;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.OpenCode.Avalonia.Essentials;
+using Bennewitz.Ninja.OpenCode.Sdk;
+using Bennewitz.Ninja.OpenCodeForge.Adapters;
+using Bennewitz.Ninja.OpenCodeForge.Localization;
 using Bennewitz.Ninja.OpenCodeForge.Services;
 using Bennewitz.Ninja.OpenCodeForge.ViewModels;
 
@@ -28,18 +34,23 @@ public sealed class AppUpdateWiringTests
 {
     private string _sandbox = string.Empty;
 
+    /// <summary>Supplied by MSTest; the Essentials test needs its cancellation token.</summary>
+    public TestContext TestContext { get; set; } = null!;
+
     [TestInitialize]
     public void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "ocf-upd-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
         Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", _sandbox);
+        Environment.SetEnvironmentVariable("OPENCODE_DISABLE_PROJECT_CONFIG", "1");
     }
 
     [TestCleanup]
     public void Cleanup()
     {
         Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", null);
+        Environment.SetEnvironmentVariable("OPENCODE_DISABLE_PROJECT_CONFIG", null);
         try
         {
             if (Directory.Exists(_sandbox))
@@ -188,6 +199,53 @@ public sealed class AppUpdateWiringTests
             "The dismissed-tag list did not persist.");
     }
 
+    /// <summary>
+    /// Saving the window's geometry on close must not disturb the preferences stored beside it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This is a real defect that shipped, and it defeated both new preferences at once.</b>
+    /// The window's <c>Closing</c> handler built a FRESH three-argument
+    /// <see cref="WindowState"/> from the geometry it had — so the two update fields fell back to
+    /// their constructor defaults on every close: the opt-out silently re-enabled itself, and the
+    /// dismissed-tag list emptied, which made the banner return on every launch no matter how
+    /// often it was dismissed.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Nothing else could have caught it.</b> Every other test here drives
+    /// <see cref="WindowStateService"/> directly, where the round-trip is honest. The bug lived
+    /// entirely in a caller that constructed the record itself — which is why the geometry save
+    /// is now a METHOD that reads-then-updates, rather than something each caller assembles.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void SavingGeometryPreservesTheUpdatePreferences()
+    {
+        WindowStateService.Save(WindowState.Default with
+        {
+            CheckForUpdatesOnLaunch = false,
+            DismissedUpdateVersions = ["opencodeforge-v2026.4.100"],
+        });
+
+        // What the window does when it closes.
+        WindowStateService.SaveGeometry(width: 1024, height: 768, isMaximized: true);
+
+        WindowState reloaded = WindowStateService.Load();
+
+        Assert.AreEqual(1024, reloaded.Width, "Premise: the new geometry must actually be saved.");
+        Assert.IsTrue(reloaded.IsMaximized, "Premise: the maximized flag must be saved.");
+
+        Assert.IsFalse(
+            reloaded.CheckForUpdatesOnLaunch,
+            "Closing the window re-enabled the update check. The opt-out would survive only "
+            + "until the user quit.");
+        CollectionAssert.AreEqual(
+            new[] { "opencodeforge-v2026.4.100" },
+            reloaded.Dismissed.ToArray(),
+            "Closing the window cleared the dismissed-tag list, so the banner returns on every "
+            + "launch however many times it is dismissed.");
+    }
+
     // ── The banner ──────────────────────────────────────────────────────────
 
     /// <summary>An available release the user has not dismissed shows the banner.</summary>
@@ -255,6 +313,154 @@ public sealed class AppUpdateWiringTests
             next.IsVisible,
             "Dismissing one version must not suppress a newer one — otherwise a single dismiss "
             + "silences the app permanently.");
+    }
+
+    // ── The disposal contract ───────────────────────────────────────────────
+
+    /// <summary>
+    /// The view-model is disposable, and the window disposes it on close.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This is the whole reason the periodic re-check could not just be bolted on.</b> That
+    /// loop is a detached task whose only stop signal is a token the view-model owns. If
+    /// <c>MainWindow</c> stops calling <see cref="IDisposable.Dispose"/> — a one-line deletion —
+    /// the task outlives its window, keeps waking every four hours, and keeps marshalling to a
+    /// dispatcher for a window that is gone. Nothing else in this suite would notice: the app
+    /// still builds, still launches, still passes every other test.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The second half is a SOURCE SCAN, deliberately.</b> This project cannot instantiate
+    /// its own views headlessly — the shared harness is stripped of the application resource
+    /// dictionaries — so there is no way to close a real window and observe the effect. Reading
+    /// the call out of the view's source is the available evidence, and it is the evidence that
+    /// matters, because the failure mode is the call being absent.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void TheViewModelIsDisposableAndTheWindowDisposesIt()
+    {
+        Assert.IsTrue(
+            typeof(ViewModels.MainWindowViewModel).IsAssignableTo(typeof(IDisposable)),
+            "MainWindowViewModel is no longer IDisposable, so the periodic update re-check has "
+            + "nothing to stop it.");
+
+        string source = File.ReadAllText(Path.Combine(
+            FindRepoRoot(), "src", "OpenCodeForge", "Views", "MainWindow.axaml.cs"));
+
+        Assert.IsTrue(
+            source.Contains("vm.Dispose()", StringComparison.Ordinal),
+            "MainWindow.axaml.cs no longer disposes its view-model. The background update "
+            + "re-check would keep running after the window closed.");
+
+        Assert.IsTrue(
+            source.Contains("Closing +=", StringComparison.Ordinal),
+            "MainWindow.axaml.cs has no Closing handler, so nothing runs at shutdown at all.");
+    }
+
+    /// <summary>Disposing twice is safe — some shutdown paths raise Closing more than once.</summary>
+    [TestMethod]
+    public void DisposeIsIdempotent()
+    {
+        ViewModels.MainWindowViewModel vm = new(
+            new HostedSection(OpenCodeProducts.Config, new OpenCodeClient(),
+                OpenCodePageLayout.Config, () => Strings.SectionOpenCode));
+
+        // The claim is "does not throw", and MSTest has no Assert.DoesNotThrow — so the throw is
+        // caught and turned into an explicit failure rather than left to surface as an error.
+        try
+        {
+            vm.Dispose();
+            vm.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Assert.Fail(
+                "Dispose must tolerate being called more than once — some shutdown paths raise "
+                + $"Closing twice, and the second call would then take the app down: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// The geometry save the window performs on close does not disturb the update preferences —
+    /// asserted here as well as in <see cref="SavingGeometryPreservesTheUpdatePreferences"/>
+    /// because the window's handler is the caller that got it wrong.
+    /// </summary>
+    [TestMethod]
+    public void TheWindowSavesGeometryByNameRatherThanRebuildingTheRecord()
+    {
+        string path = Path.Combine(
+            FindRepoRoot(), "src", "OpenCodeForge", "Views", "MainWindow.axaml.cs");
+
+        // ⚠ Comment lines are stripped before the negative check. The comment explaining WHY
+        // this must not happen necessarily quotes the shape it is warning about, so scanning the
+        // raw text made the file fail its own guard. Full-line comments only — enough here, and
+        // it does not pretend to parse C#.
+        string code = string.Join(
+            '\n',
+            File.ReadAllLines(path)
+                .Where(l => !l.TrimStart().StartsWith("//", StringComparison.Ordinal)));
+
+        Assert.IsTrue(
+            code.Contains("WindowStateService.SaveGeometry(", StringComparison.Ordinal),
+            "MainWindow no longer saves geometry through SaveGeometry.");
+
+        Assert.IsFalse(
+            code.Contains("new SavedWindowState(", StringComparison.Ordinal),
+            "MainWindow constructs a SavedWindowState again. Building the record from geometry "
+            + "alone drops every other field to its default — which silently re-enabled the "
+            + "update check and emptied the dismissed-banner list on every close.");
+    }
+
+    /// <summary>
+    /// The app actually puts the update opt-out on the Essentials page, and it round-trips the
+    /// real persisted preference.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>The card mechanism working proves nothing on its own</b> — that is tested in
+    /// OpenCode.Avalonia, against a fake preference. What this asserts is that the app SUPPLIES
+    /// one: delete the <c>appPreferences</c> argument and the mechanism tests all still pass while
+    /// the setting disappears from the UI entirely.
+    /// </remarks>
+    [TestMethod]
+    public async Task TheUpdateOptOutIsOnTheEssentialsPageAndRoundTrips()
+    {
+        ViewModels.MainWindowViewModel vm = new(
+            new HostedSection(OpenCodeProducts.Config, new OpenCodeClient(),
+                OpenCodePageLayout.Config, () => Strings.SectionOpenCode));
+
+        await vm.InitializeAsync(TestContext.CancellationTokenSource.Token);
+
+        object? editor = vm.Navigation
+            .FirstOrDefault(n => n.NodeId == ViewModels.MainWindowViewModel.EssentialsNodeId)?
+            .Editor;
+
+        OpenCodeEssentialsViewModel? essentials = editor as OpenCodeEssentialsViewModel;
+        Assert.IsNotNull(essentials, "The Essentials node is not an OpenCodeEssentialsViewModel.");
+
+        EssentialsCardViewModel? card = essentials.GetCardById(
+            ViewModels.MainWindowViewModel.EssentialsCheckForUpdatesCardId);
+
+        Assert.IsNotNull(
+            card,
+            "The Essentials page has no update opt-out card, so the preference exists with no way "
+            + "to change it.");
+
+        Assert.AreEqual(
+            true,
+            card.BoolValue,
+            "Premise: a fresh state file defaults the check to ON, and the card must show that.");
+
+        // Toggle it off through the card, exactly as the user would.
+        card.BoolValue = false;
+        await card.WriteAsync();
+
+        Assert.IsFalse(
+            WindowStateService.Load().CheckForUpdatesOnLaunch,
+            "Toggling the card did not persist. The setting would revert the moment the page was "
+            + "re-read.");
+
+        vm.Dispose();
     }
 
     /// <summary>A result with no update available hides the banner.</summary>

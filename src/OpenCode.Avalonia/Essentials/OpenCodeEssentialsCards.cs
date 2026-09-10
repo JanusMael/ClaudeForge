@@ -181,7 +181,57 @@ public sealed partial class OpenCodeEssentialsViewModel
         yield return BuildDefaultAgentCard();
         yield return BuildRulesCard();
         yield return BuildActiveConfigCard();
+
+        // The host's own preferences, LAST. They are about this app rather than about the
+        // configuration being edited, so they sit below everything that is.
+        foreach (EssentialsAppPreference preference in _appPreferences)
+        {
+            yield return BuildAppPreferenceCard(preference);
+        }
     }
+
+    /// <summary>
+    /// A card over one of the host app's own boolean preferences.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>No <c>JsonPathFilter</c>, no severity, no "View in …" link</b>, and each omission is
+    /// deliberate: this value is not in the document, so there is no path to filter by, no danger
+    /// table entry to look up, and no settings page to deep-link to. A card claiming otherwise
+    /// would send the user looking for a key that does not exist.
+    /// </para>
+    /// <para>
+    /// The tri-state <see cref="EssentialsCardKind.Bool"/> is reused rather than adding a
+    /// two-state kind, but an app preference has no "inherit" tier — so a cleared value collapses
+    /// to <see langword="true"/> on write, matching the documented default. From the user's side
+    /// the control stays a plain on/off.
+    /// </para>
+    /// </remarks>
+    private EssentialsCardViewModel BuildAppPreferenceCard(EssentialsAppPreference preference) =>
+        new(new EssentialsCardOptions
+        {
+            Id = preference.Id,
+            Title = preference.Title,
+            Body = preference.Body,
+            Kind = EssentialsCardKind.Bool,
+
+            // Neutral, and required to be stated. An app preference carries no risk to the
+            // configuration being edited — tiering it alongside keys that can auto-approve tool
+            // execution would dilute what a severity dot means on this page.
+            Severity = AppSeverity.Neutral,
+            ReadAsync = card =>
+            {
+                // Read through on every refresh: the same preference is reachable from other
+                // surfaces, and a cached value would show the page's copy rather than the truth.
+                card.BoolValue = preference.Get();
+                return Task.CompletedTask;
+            },
+            WriteAsync = card =>
+            {
+                preference.Set(card.BoolValue ?? true);
+                return Task.CompletedTask;
+            },
+        });
 
     // ── Access ────────────────────────────────────────────────────────
 
