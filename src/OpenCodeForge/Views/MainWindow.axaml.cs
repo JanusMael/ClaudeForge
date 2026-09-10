@@ -33,8 +33,22 @@ public partial class MainWindow : Window
             WindowState = AvWindowState.Maximized;
         }
 
-        Closing += (_, _) => WindowStateService.Save(
-            new SavedWindowState(Width, Height, WindowState == AvWindowState.Maximized));
+        // ⛔ SaveGeometry, not Save(new SavedWindowState(...)). Constructing the record here was
+        // correct while it held geometry and nothing else — and silently destructive once it also
+        // held preferences, because the omitted fields fell back to their defaults on every
+        // close: the update opt-out re-enabled itself and the dismissed-banner list emptied.
+        // Saving by name means a field added later cannot be dropped by this call.
+        Closing += (_, _) => WindowStateService.SaveGeometry(
+            Width, Height, WindowState == AvWindowState.Maximized);
+
+        // The view-model owns a background update re-check; closing the window must stop it.
+        Closing += (_, _) =>
+        {
+            if (DataContext is ViewModels.MainWindowViewModel vm)
+            {
+                vm.Dispose();
+            }
+        };
     }
 
     /// <summary>

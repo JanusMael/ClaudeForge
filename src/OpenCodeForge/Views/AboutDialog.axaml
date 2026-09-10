@@ -51,20 +51,11 @@
                     IsVisible="{Binding UpdateCheckHasReleaseUrl}"
                     ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerOpenRelease}"
                     AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
-
-            <!-- The opt-out for the AUTOMATIC check, which is a different thing from the
-                 button above: unticking this silences the launch check and its banner, and
-                 does not disable the button, because pressing that is consent on its own.
-                 ⓘ The sibling app puts this on an Essentials card. Here it sits beside the
-                 action it governs, because this app's Essentials cards are all schema-backed
-                 and read through the config client — an app preference has no JSON path, and
-                 giving the card builder a second kind of source would be a wider change than
-                 the toggle is worth. -->
-            <CheckBox Content="{x:Static loc:Strings.EssentialsCardCheckForUpdatesTitle}"
-                      IsChecked="{Binding CheckForUpdatesOnLaunch}"
-                      Margin="0,4,0,0"
-                      ToolTip.Tip="{x:Static loc:Strings.EssentialsCardCheckForUpdatesBody}"
-                      AutomationProperties.Name="{x:Static loc:Strings.EssentialsCardCheckForUpdatesTitle}" />
+            <!-- ⓘ The opt-out for the AUTOMATIC check is NOT here — it is an Essentials card,
+                 matching the sibling app. One preference, one control: a checkbox here as well
+                 would be a second place to change the same setting, and the two would disagree
+                 on screen the moment one was changed with the other open. The button above is
+                 unaffected by that preference either way, because pressing it is consent. -->
         </StackPanel>
 
         <!-- Schema-update check. Hidden when the dialog was opened without a main window

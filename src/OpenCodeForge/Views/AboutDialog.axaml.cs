@@ -124,36 +124,6 @@ public partial class AboutDialog : Window, INotifyPropertyChanged
         private set => SetField(ref _updateCheckReleaseUrl, value);
     }
 
-    /// <summary>
-    /// Whether the app may check for updates automatically at launch.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Reads and writes <see cref="WindowState"/> directly rather than caching: the setter
-    /// persists immediately, so closing the dialog — or the app — cannot lose the choice, and
-    /// <see cref="AppUpdateService"/> re-reads it on every automatic check, so the change takes
-    /// effect without a restart.
-    /// </para>
-    /// <para>
-    /// ⚠ This governs the AUTOMATIC check only. The button above it deliberately ignores this,
-    /// because clicking it is consent regardless of the preference.
-    /// </para>
-    /// </remarks>
-    public bool CheckForUpdatesOnLaunch
-    {
-        get => WindowStateService.Load().CheckForUpdatesOnLaunch;
-        set
-        {
-            SavedWindowState state = WindowStateService.Load();
-            if (state.CheckForUpdatesOnLaunch == value)
-            {
-                return;
-            }
-
-            WindowStateService.Save(state with { CheckForUpdatesOnLaunch = value });
-            OnPropertyChanged();
-        }
-    }
 
     /// <param name="schemaCheck">
     /// Runs the schema check and returns the localized line to display.
