@@ -21,16 +21,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// from success. That is the one case a live probe cannot produce on a working machine.
 /// </para>
 /// <para>
-/// ⛔⛔ <b>Nothing here touches <c>SchemaRegistry.ProcessSourceOverride</c>, deliberately.</b> That
-/// property is process-GLOBAL and this assembly runs test methods in PARALLEL, so a test which set
-/// it would not merely be flaky — it would make every registry another test constructs
-/// concurrently load bundled. Measured: an earlier version of this file exercised the process
-/// default, passed in isolation, and failed in the full suite. Every test below pins its branch
-/// through the CONSTRUCTOR, which is precisely why the constructor argument outranks the process
-/// default. That the flag reaches the several registries a launch builds is verified end-to-end
-/// against the running app, where process-global is the right scope for a process-wide switch.
+/// ⛔⛔ <b>This class is <c>[DoNotParallelize]</c> because two of its tests mutate
+/// <c>SchemaRegistry.ProcessSourceOverride</c>, which is process-GLOBAL.</b> This assembly is
+/// <c>[assembly: Parallelize(MethodLevel)]</c>, and measured: without the attribute those two
+/// passed in isolation and failed in the full suite — and worse than failing, they would make
+/// every registry another test constructed concurrently load bundled.
+/// </para>
+/// <para>
+/// Same treatment, for the same reason, as <c>PlatformInfoTests</c> and
+/// <c>PlatformPathsCacheTests</c> in this assembly: a class that mutates process-wide state by
+/// design runs serially, isolated from the parallelized rest.
 /// </para>
 /// </remarks>
+[DoNotParallelize]
 [TestClass]
 public sealed class SchemaSourceOverrideTests
 {
@@ -135,4 +138,61 @@ public sealed class SchemaSourceOverrideTests
 
         Assert.AreEqual(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
     }
+
+    /// <summary>
+    /// The process-wide default reaches a registry that was given no explicit override.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>This is the path the flag actually uses.</b> A launch builds several registries — the
+    /// window's and one per client — and only a process-wide value reaches all of them. A flag
+    /// landing on the first alone would leave the pages on one source while save-validation used
+    /// another, which is why the override is not a constructor argument alone.
+    /// </remarks>
+    [TestMethod]
+    public async Task TheProcessDefault_ReachesARegistryWithNoExplicitOverride()
+    {
+        SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Bundled;
+        try
+        {
+            ServingHandler handler = new();
+            using SchemaRegistry registry = new(new HttpClient(handler));
+
+            _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+
+            Assert.AreEqual(0, handler.Calls,
+                "The process-wide override did not reach a registry constructed without one, so "
+                + "the flag would only affect whichever registry happened to be passed it.");
+            Assert.AreEqual(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
+        }
+        finally
+        {
+            SchemaRegistry.ProcessSourceOverride = null;
+        }
+    }
+
+    /// <summary>⭐ An explicit override beats the process default.</summary>
+    /// <remarks>
+    /// Which is what lets the other tests here pin a branch through the constructor and stay
+    /// independent of whatever the process default happens to be.
+    /// </remarks>
+    [TestMethod]
+    public async Task AnExplicitOverride_BeatsTheProcessDefault()
+    {
+        SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Bundled;
+        try
+        {
+            ServingHandler handler = new();
+            using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
+
+            _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+
+            Assert.AreEqual(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source,
+                "The constructor argument lost to the process default.");
+        }
+        finally
+        {
+            SchemaRegistry.ProcessSourceOverride = null;
+        }
+    }
+
 }
