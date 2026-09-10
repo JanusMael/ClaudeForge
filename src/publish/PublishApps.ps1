@@ -55,6 +55,12 @@
 #                 code. Empty means unprefixed — reserved for the app that
 #                 published this repo's releases before it hosted two. See
 #                 AgentForge.Core/Updates/ReleaseTagScheme.cs.
+# WingetPackageId The winget catalog identity, and the STEM of this app's manifest
+#                 files under packaging/winget/. It lives here rather than in a
+#                 second table because the submission also needs TagPrefix (to
+#                 build the release URL) and AssemblyName (to name the assets and
+#                 the signed .exe) — splitting those across two tables is how a
+#                 manifest ends up pointing at a URL no release publishes.
 # IconSvg         Repo-relative SVG staged beside the Linux binary, or $null when
 #                 the app has no icon yet.
 # DesktopFile     Repo-relative .desktop template, or $null.
@@ -67,6 +73,7 @@ $script:PublishAppTable = @(
         StartupLogToken = 'Starting ClaudeForge'
         LogFilePattern  = 'app-*.txt'
         TagPrefix       = ''
+        WingetPackageId = 'Bennewitz.Ninja.ClaudeForge'
         IconSvg         = 'src/ClaudeForge/Resources/ClaudeForge.svg'
         DesktopFile     = 'assets/linux/claudeforge.desktop'
         LinuxSetup      = 'assets/linux/linux-setup.sh'
@@ -78,6 +85,7 @@ $script:PublishAppTable = @(
         StartupLogToken = 'Starting OpenCodeForge'
         LogFilePattern  = 'opencodeforge-*.log'
         TagPrefix       = 'opencodeforge-'
+        WingetPackageId = 'Bennewitz.Ninja.OpenCodeForge'
         # ⚠ The icon is PLACEHOLDER artwork — see the comment inside the SVG.
         # linux-setup.sh is the SAME FILE both apps ship: it identifies the app
         # from the single .desktop staged beside it, so there is one script

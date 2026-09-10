@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+#
+# Default-locale manifest (template). Publisher is the author's name; the
+# PackageIdentifier prefix (Bennewitz.Ninja) is the author's namespace — the two
+# do not have to match.
+#
+# ⚠ PackageUrl / LicenseUrl / issues point at JanusMael/ClaudeForge on purpose:
+# the repository keeps its original name while hosting both apps [plan decision
+# 14]. Only ReleaseNotesUrl carries this app's tag prefix, because only it
+# addresses a specific release.
+PackageIdentifier: Bennewitz.Ninja.OpenCodeForge
+PackageVersion: "<PACKAGE_VERSION>"
+PackageLocale: en-US
+Publisher: Brian Bennewitz
+PublisherUrl: https://github.com/JanusMael
+PublisherSupportUrl: https://github.com/JanusMael/ClaudeForge/issues
+Author: Brian Bennewitz
+PackageName: OpenCodeForge
+PackageUrl: https://github.com/JanusMael/ClaudeForge
+License: MIT
+LicenseUrl: https://github.com/JanusMael/ClaudeForge/blob/main/LICENSE
+Copyright: Copyright (c) 2024-2026 ClaudeForge Contributors
+CopyrightUrl: https://github.com/JanusMael/ClaudeForge/blob/main/LICENSE
+ShortDescription: A cross-platform desktop editor for OpenCode configuration files.
+Description: >-
+  OpenCodeForge is a cross-platform desktop editor for OpenCode configuration.
+  It provides schema-validated, guided editors for opencode.json and the TUI's
+  tui.json — permissions, MCP servers, agents, commands, keybinds, providers and
+  models — alongside an effective-value view that shows which layer each setting
+  actually comes from, and pages for agents, commands, skills, rules and plugins.
+Moniker: opencodeforge
+Tags:
+  - opencode
+  - ai
+  - configuration
+  - settings
+  - editor
+  - developer-tools
+  - avalonia
+  - dotnet
+ReleaseNotesUrl: https://github.com/JanusMael/ClaudeForge/releases/tag/opencodeforge-v<PACKAGE_VERSION>
+# `wingetcreate submit` builds the manifest ONLY from this template — unlike
+# `update`, it does not inherit fields from a published version — so anything
+# omitted here is silently dropped from the catalog entry. That is how the
+# sibling package lost its Documentations block in 2026.3.810.
+Documentations:
+  - DocumentLabel: Wiki
+    DocumentUrl: https://github.com/JanusMael/ClaudeForge/wiki
+# `ReleaseNotes` (the release body) is injected at submission time by
+# .github/workflows/winget-submit.yml from the GitHub release — kept out of this
+# static template because it is per-version. `ReleaseDate` is likewise injected
+# into the installer manifest.
+#
+# Icons: winget's own clients render an icon from the manifest, but UniGetUI uses
+# its OWN icon/screenshot database, not this field — contribute those at
+# https://www.marticliment.com/wingetui/help/icons-and-screenshots/.
+# ⚠ This app's icon is currently PLACEHOLDER artwork (see
+# src/OpenCodeForge/Resources/OpenCodeForge.svg), so publishing an icon here
+# should wait for the real mark.
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0

@@ -1,25 +1,64 @@
 # winget packaging
 
-`winget install Bennewitz.Ninja.ClaudeForge`
+```
+winget install Bennewitz.Ninja.ClaudeForge
+winget install Bennewitz.Ninja.OpenCodeForge
+```
 
 This folder holds the [Windows Package Manager](https://learn.microsoft.com/windows/package-manager/)
-manifest **templates** for ClaudeForge and documents how they reach the
-community repository, [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs).
+manifest **templates** for **both** apps in this repository, and documents how
+they reach the community repository,
+[`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs).
 
 ## Identity
 
-| Field | Value |
-|-------|-------|
-| `PackageIdentifier` | `Bennewitz.Ninja.ClaudeForge` |
-| `Publisher` (display) | `Brian Bennewitz` |
-| `Moniker` | `claudeforge` |
-| Installer | the release `ClaudeForge-win-<arch>.zip`, installed **portable** (nested `ClaudeForge.exe`) |
+One manifest set per app, three files each, named by package id:
+
+| Field | ClaudeForge | OpenCodeForge |
+|-------|-------------|---------------|
+| `PackageIdentifier` | `Bennewitz.Ninja.ClaudeForge` | `Bennewitz.Ninja.OpenCodeForge` |
+| `Publisher` (display) | `Brian Bennewitz` | `Brian Bennewitz` |
+| `Moniker` | `claudeforge` | `opencodeforge` |
+| Release tag | `v<version>` | `opencodeforge-v<version>` |
+| Installer | `ClaudeForge-win-<arch>.zip`, **portable** (nested `ClaudeForge.exe`) | `OpenCodeForge-win-<arch>.zip`, **portable** (nested `OpenCodeForge.exe`) |
 
 The identifier prefix is the author's namespace (`Bennewitz.Ninja`, matching the
 NuGet convention); the `Publisher` display field is the author's name. winget
 does not require those to match, nor to match the GitHub account (`JanusMael`)
 that hosts the releases. The identifier is effectively permanent once accepted —
 keep the exact casing everywhere.
+
+⛔ **The release tags differ in SHAPE, and the installer manifests hardcode them.**
+GitHub releases are repository-level, so a repository hosting two apps tells
+their releases apart by tag prefix. ClaudeForge keeps bare tags because releases
+already exist in that shape and every installed copy looks for exactly it;
+OpenCodeForge, shipping second, takes a prefix. Copying one app's installer
+manifest to seed another's therefore produces a download URL that **404s at
+winget validation**, hours after the release, reading as a missing asset rather
+than a wrong tag. `WingetManifestTests` asserts each set against its app's
+`TagPrefix` in `src/publish/PublishApps.ps1`.
+
+⚠ **The repository is still named `ClaudeForge` and that is deliberate** — every
+`PackageUrl` here points at it. Published manifests cannot be retroactively
+repointed, which is precisely why the repo keeps a name that no longer describes
+it.
+
+## Submitting one app
+
+Both submission paths take the app by name and read everything else — package
+id, tag prefix, asset names — from `src/publish/PublishApps.ps1`:
+
+```powershell
+pwsh packaging/Submit-Winget.ps1 -App OpenCodeForge -Version 2026.4.100
+```
+
+or dispatch `.github/workflows/winget-submit.yml` and pick the app from its
+`app` input.
+
+⛔ **Each submission stages only its own app's manifests.** Both paths used to
+glob `*.yaml`, which was correct while this folder held one set — and would have
+carried both packages into a single winget-pkgs PR the moment it held two,
+publishing a version bump for an app that had not released.
 
 ## What "portable" means here
 
