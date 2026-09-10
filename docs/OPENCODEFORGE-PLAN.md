@@ -737,7 +737,7 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
 | 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
 | 14 | Backup / Restore + footprint | archive + prune, `auth.json` excluded | none | — |
-| 15 | Packaging — 🔶 **7 slices shipped 2026-09-10; see below for what remains** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · app-update check · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
+| 15 | Packaging — 🔶 **8 slices shipped 2026-09-10; only artwork + docs remain** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · full app-update parity · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
 | 16 | Re-validate against a used install | re-checks the 11 spike findings measured on an install that had never run a session | none | — |
 
 ⚠ **Phase 16 is a real phase, promoted from a checkpoint on 2026-09-09**, and it is *blocked on
@@ -5105,10 +5105,11 @@ precedence the way you meant.
 
 ### Phase 15 — Packaging and release
 
-> 🔶 **PHASE 15 — SEVEN SLICES SHIPPED 2026-09-10.** `46b5dd5` publish-script app descriptor ·
+> 🔶 **PHASE 15 — EIGHT SLICES SHIPPED 2026-09-10.** `46b5dd5` publish-script app descriptor ·
 > `d98845f` icon + Linux integration · `60c1011` real artifact + failed-RID exit · `2c95379`
-> release workflow + guards · `c9bff28` winget · `cad1c28` app-update check · `AssemblyProduct`.
-> Suite **4,162 · 0 · 11**, green at every commit; both apps publish trimmed, single-file, zero
+> release workflow + guards · `c9bff28` winget · `cad1c28` app-update check · `600fcb7`
+> `AssemblyProduct` + this block · `86570fd` both parity gaps closed.
+> Suite **4,172 · 0 · 11**, green at every commit; both apps publish trimmed, single-file, zero
 > ILLink warnings.
 >
 > ⛔⛔ **TWO CLAIMS IN THIS DOCUMENT WERE WRONG, and the repo had already ruled against one.**
@@ -5151,19 +5152,33 @@ precedence the way you meant.
 > `AppUpdateCoordinator` and both apps are thin statics over it. ClaudeForge's public surface is
 > unchanged and its **12 existing tests pass unmodified** — the faithfulness proof.
 >
+> ✅ **THE TWO PARITY GAPS ARE CLOSED (`86570fd`)**, and closing them exposed a seventh defect.
+>
+> ⛔⛔ **`cad1c28` SHIPPED A DEFECT THAT DEFEATED BOTH NEW PREFERENCES.** `MainWindow`'s
+> `Closing` handler built a **fresh three-argument** `WindowState` from the geometry it had —
+> correct while the record held geometry and nothing else, silently destructive once it also held
+> preferences: both update fields fell back to their constructor defaults on **every close**. The
+> opt-out re-enabled itself and the dismissed-tag list emptied, so the banner returned on every
+> launch however many times it was dismissed. ⭐ **Nothing could have caught it** — every test for
+> those fields drives `WindowStateService` directly, where the round-trip is honest; the bug lived
+> entirely in a caller that assembled the record itself. Geometry is now saved **BY NAME**
+> (`SaveGeometry`, `SaveCheckForUpdatesOnLaunch`, both read-modify-write), so a caller that owns
+> part of the record cannot drop the parts it has never heard of.
+>
+> - **The periodic re-check landed WITH disposal**, which is why it was held back.
+>   `MainWindowViewModel` is now `IDisposable` and `MainWindow` disposes it on `Closing`. The loop
+>   and the disposal are one feature: a detached 4-hourly task with nothing to stop it outlives
+>   its window and keeps marshalling to a dispatcher for a window that is gone.
+> - **The Essentials card inverted the dependency instead of fighting it.** The host hands the
+>   page an `EssentialsAppPreference` (id, title, body, getter, setter) — the text included, so the
+>   card shows the app's own resx string rather than a duplicate in the library. The card claims no
+>   JSON path, no severity above `Neutral` and no "View in …" link, and each omission is tested: a
+>   path would surface it under a filter for an unrelated key, and a danger dot would dilute what
+>   one means beside keys that auto-approve tool execution. The About dialog's checkbox is gone —
+>   one preference, one control.
+>
 > **⛔ WHAT REMAINS IN PHASE 15**
 >
-> - **The 4-hourly periodic re-check** for OpenCodeForge. ClaudeForge's loop is owned by a
->   `CancellationTokenSource` that `Dispose` cancels, and `OpenCodeForge.MainWindowViewModel`
->   implements **no `IDisposable` at all**. A background loop with nothing to stop it is how a
->   task outlives its window, and this repository has already paid for one dispose race. It
->   belongs with disposal, in one change. The launch check and the About-dialog button cover the
->   same ground less often.
-> - **An Essentials card for the update opt-out.** Every card in this app is schema-backed
->   through a `JsonPathFilter` and reads via the config client, and the builder lives in
->   `OpenCode.Avalonia`, which cannot reference the app's `WindowStateService`. The preference
->   sits beside the button it governs in the About dialog instead — arguably its better home, but
->   it is not where the sibling puts it.
 > - **The icon is PLACEHOLDER artwork** (`src/OpenCodeForge/Resources/OpenCodeForge.svg`).
 >   Replacing it means regenerating the `.png` and the six-size `.ico` by hand; nothing does that
 >   automatically, and `AppIconTests` fails deliberately when the placeholder marker is removed.
