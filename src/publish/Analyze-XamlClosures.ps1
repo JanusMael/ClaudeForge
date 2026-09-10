@@ -47,9 +47,13 @@
     `System.Reflection.Metadata`, so it never actually *loads* the assembly —
     safe to run against trimmed / self-contained builds without side effects.
 
+.PARAMETER App
+    Which app's obj/ tree to search when -Path is omitted — a Name from
+    PublishApps.ps1. Defaults to ClaudeForge. Ignored when -Path is given.
+
 .PARAMETER Path
     One or more paths to `.dll` files to analyse. If omitted, defaults to the
-    usual post-publish win-x64 output location:
+    -App app's post-publish win-x64 output location, e.g. for ClaudeForge:
 
         src/ClaudeForge/obj/Release/net10.0/win-x64/linked/*.dll
         src/ClaudeForge/obj/Release/net10.0/win-x64/*.dll
@@ -94,6 +98,9 @@ param(
     [string[]] $Path,
 
     [Parameter()]
+    [string] $App = 'ClaudeForge',
+
+    [Parameter()]
     [string] $WarningsPath,
 
     [Parameter()]
@@ -103,27 +110,38 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# --- Resolve default input paths relative to the script location --------------
-# The script lives in src/publish/, so two Split-Path -Parent calls reach the
-# repo root:  src/publish/ → src/ → repo root.
-$srcRoot  = Split-Path -Parent $PSScriptRoot           # src/publish/ → src/
-$repoRoot = if ($srcRoot) { Split-Path -Parent $srcRoot } else { (Get-Location).Path }
-if (-not $repoRoot) { $repoRoot = (Get-Location).Path }
-$appObjRoot = Join-Path $repoRoot 'src/ClaudeForge/obj/Release/net10.0'
+# --- Resolve default input paths from the app descriptor ----------------------
+# $appInfo, never $app — PowerShell variable names are case-insensitive.
+. (Join-Path $PSScriptRoot 'PublishApps.ps1')
+$appInfo = Get-PublishApp -Name $App
+
+$appProjectDir = Split-Path $appInfo.ProjectPath -Parent
+$appObjRoot    = Join-Path (Resolve-PublishAppPath -RelativePath $appProjectDir) 'obj/Release/net10.0'
+$appDllName    = $appInfo.AssemblyName + '.dll'
 
 if (-not $Path -or $Path.Count -eq 0) {
     $candidates = @()
     if (Test-Path $appObjRoot) {
+        # ⚠ [\\/] not \\ — this filter matched only on Windows for the whole of its
+        # life. `'\\linked\\'` is the regex \linked\, and a Linux runner's paths use
+        # forward slashes, so on the one OS where the release pipeline builds four of
+        # the six RIDs the analyzer silently found no candidate and threw "no default
+        # input path found" instead of analysing anything.
+        $linkedPattern = '[\\/]linked[\\/]'
+        $winPattern    = 'net10\.0[\\/]win-x64[\\/]' + [regex]::Escape($appDllName) + '$'
+
         # Prefer the linked (post-trim) assembly because its metadata reflects
         # what ILLink actually analysed when it produced the warnings. Fall back
         # to the pre-link assembly if the linked one isn't built.
-        $candidates = Get-ChildItem -Path $appObjRoot -Recurse -File -Filter 'ClaudeForge.dll' `
+        $candidates = Get-ChildItem -Path $appObjRoot -Recurse -File -Filter $appDllName `
             -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match '\\linked\\' -or $_.FullName -match 'net10\.0\\win-x64\\ClaudeForge\.dll$' } |
+            Where-Object { $_.FullName -match $linkedPattern -or $_.FullName -match $winPattern } |
             Select-Object -First 1 -ExpandProperty FullName
     }
     if (-not $candidates) {
-        throw "No default input path found. Build Release once (e.g. via src/publish.ps1) or pass -Path explicitly."
+        throw ("No default input path found for " + $appInfo.Name +
+            ". Build Release once (e.g. via src/publish/publish.ps1 -App " + $appInfo.Name +
+            ") or pass -Path explicitly.")
     }
     $Path = @($candidates)
 }

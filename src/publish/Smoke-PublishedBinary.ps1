@@ -23,9 +23,19 @@
          - The process did NOT exit on its own before the timeout
            (early exit = boot-time crash).
          - A log file was created in the deploy's `logs/` directory.
-         - The log contains the expected "Starting ClaudeForge" line.
+         - The log contains the app's expected startup line.
          - The log contains NO `[FTL]` / `[ERR]` lines from the unhandled
            exception bridge or fatal-shutdown path.
+
+    ⚠ THE LAST TWO ASSERTIONS ARE PER-APP AND NEITHER IS DERIVABLE FROM THE
+    ASSEMBLY NAME, which is why they come from PublishApps.ps1:
+
+      - the log FILENAME differs (ClaudeForge's bucketed rolling sink writes
+        `app-<yyyyMMdd>-<HH>.txt`; OpenCodeForge writes `opencodeforge-<date>.log`),
+      - and so does the startup TOKEN.
+
+    Hardcoding either one means this gate fails a perfectly healthy publish of
+    the other app, reporting a boot crash that did not happen.
 
     Returns 0 on success, non-zero on any failure.  Designed for ad-hoc
     pre-release verification on the developer's machine; the structure
@@ -36,6 +46,9 @@
     to initialise its X11/Wayland backend and the binary will exit with
     a non-zero code.  Either run with Xvfb or skip Linux smoke until
     a CI display layer is provisioned.
+
+.PARAMETER App
+    Which app to smoke — a Name from PublishApps.ps1. Defaults to ClaudeForge.
 
 .PARAMETER Rid
     .NET runtime identifier to smoke.  Defaults to host RID auto-detect
@@ -55,8 +68,8 @@
     # Auto-detects host RID, publishes, smokes, exits 0 on success.
 
 .EXAMPLE
-    pwsh src/publish/Smoke-PublishedBinary.ps1 -Rid win-x64 -TimeoutSeconds 20
-    # Explicit RID, longer timeout for cold caches.
+    pwsh src/publish/Smoke-PublishedBinary.ps1 -App OpenCodeForge -Rid win-x64 -TimeoutSeconds 20
+    # Explicit app and RID, longer timeout for cold caches.
 
 .EXAMPLE
     pwsh src/publish/Smoke-PublishedBinary.ps1 -SkipPublish
@@ -69,12 +82,17 @@
 
 [CmdletBinding()]
 param(
+    [string] $App             = 'ClaudeForge',
     [string] $Rid             = $null,
     [int]    $TimeoutSeconds  = 10,
     [switch] $SkipPublish
 )
 
 $ErrorActionPreference = 'Stop'
+
+# $appInfo, never $app — PowerShell variable names are case-insensitive.
+. (Join-Path $PSScriptRoot 'PublishApps.ps1')
+$appInfo = Get-PublishApp -Name $App
 
 # ─── 1. Resolve RID ───────────────────────────────────────────────────────
 if (-not $Rid) {
@@ -95,15 +113,17 @@ if (-not $Rid) {
 }
 
 # ─── 2. Publish ───────────────────────────────────────────────────────────
-$repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
-$pubDir   = Join-Path $repoRoot "src/ClaudeForge/bin/Release/net10.0/$Rid/publish"
+$projectPath = Resolve-PublishAppPath -RelativePath $appInfo.ProjectPath
+$projectDir  = Split-Path $appInfo.ProjectPath -Parent
+$pubDir      = Join-Path (Resolve-PublishAppPath -RelativePath $projectDir) `
+    "bin/Release/net10.0/$Rid/publish"
 
 if (-not $SkipPublish) {
-    Write-Host "[smoke] publishing $Rid..."
+    Write-Host "[smoke] publishing $($appInfo.Name) $Rid..."
     # -p:RunResxKeyGuard=false skips the dev/CI unused-resx-key guard during publish
     # (see Publish-Rid.ps1 / Directory.Build.targets) — the inline guard task can flake
     # under concurrent-build / temp-dir contention and isn't needed for the binary.
-    & dotnet publish (Join-Path $repoRoot 'src/ClaudeForge/ClaudeForge.csproj') `
+    & dotnet publish $projectPath `
         -c Release -r $Rid --nologo -v minimal `
         -p:RunResxKeyGuard=false
     if ($LASTEXITCODE -ne 0) {
@@ -115,7 +135,7 @@ if (-not $SkipPublish) {
 }
 
 # ─── 3. Locate the binary ────────────────────────────────────────────────
-$exeName = if ($Rid.StartsWith('win-')) { 'ClaudeForge.exe' } else { 'ClaudeForge' }
+$exeName = if ($Rid.StartsWith('win-')) { $appInfo.AssemblyName + '.exe' } else { $appInfo.AssemblyName }
 $exePath = Join-Path $pubDir $exeName
 if (-not (Test-Path $exePath)) {
     Write-Error "[smoke] expected binary not found at $exePath"
@@ -134,7 +154,7 @@ Write-Host "[smoke] binary: $exePath"
 $logsDir = Join-Path $pubDir 'logs'
 if (Test-Path $logsDir) {
     # Clean prior smoke runs' logs so we only inspect this run's output.
-    Get-ChildItem $logsDir -Filter 'app-*.txt' -ErrorAction SilentlyContinue |
+    Get-ChildItem $logsDir -Filter $appInfo.LogFilePattern -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
 }
 
@@ -145,7 +165,7 @@ $earlyExit = $proc.WaitForExit([int]($TimeoutSeconds * 1000))
 if ($earlyExit) {
     Write-Error "[smoke] process exited on its own before timeout (exit code $($proc.ExitCode)) — boot crash"
     if (Test-Path $logsDir) {
-        $latest = Get-ChildItem $logsDir -Filter 'app-*.txt' -ErrorAction SilentlyContinue |
+        $latest = Get-ChildItem $logsDir -Filter $appInfo.LogFilePattern -ErrorAction SilentlyContinue |
                   Sort-Object LastWriteTime -Descending | Select-Object -First 1
         if ($latest) {
             Write-Host "[smoke] last log lines:`n"
@@ -169,18 +189,24 @@ if (-not (Test-Path $logsDir)) {
     exit 3
 }
 
-$latest = Get-ChildItem $logsDir -Filter 'app-*.txt' -ErrorAction SilentlyContinue |
+$latest = Get-ChildItem $logsDir -Filter $appInfo.LogFilePattern -ErrorAction SilentlyContinue |
           Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $latest) {
-    Write-Error "[smoke] no app-*.txt log file found in $logsDir"
+    Write-Error "[smoke] no $($appInfo.LogFilePattern) log file found in $logsDir"
     exit 3
 }
 Write-Host "[smoke] log: $($latest.FullName)"
 $logContent = Get-Content $latest.FullName
 
 # Required: the startup line must appear.
-if (-not ($logContent -match 'Starting ClaudeForge')) {
-    Write-Error "[smoke] log missing 'Starting ClaudeForge' line — boot didn't reach Program.Main's startup log"
+# -match against a string ARRAY filters it, so this is "did any line contain the
+# token", not a single-line test. The token is a literal, but -match is a regex
+# operator — [regex]::Escape keeps a future token with a '.' or '(' in it from
+# quietly matching more (or less) than it says.
+$startupPattern = [regex]::Escape($appInfo.StartupLogToken)
+if (-not ($logContent -match $startupPattern)) {
+    Write-Error ("[smoke] log missing '" + $appInfo.StartupLogToken +
+        "' line — boot didn't reach Program.Main's startup log")
     exit 4
 }
 

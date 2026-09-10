@@ -125,6 +125,12 @@ jobs:
   # the Windows maui-windows workload preflight, calls Publish-Rid.ps1 per
   # RID, scans IL warnings, and runs the closure analyzer when warnings hit.
   #
+  # ⚠ -App is passed EXPLICITLY even though ClaudeForge is its default. The
+  # script builds whichever app it is told to, and this is the one caller whose
+  # output is attached to a public release — relying on a default here means a
+  # change to that default silently reships the wrong binaries under this app's
+  # tag. See src/publish/PublishApps.ps1 for the table.
+  #
   # One job per OS so each RID builds on its native host:
   #
   #   windows-latest  → win-x64, win-arm64   (Windows TFM + maui-windows workload)
@@ -163,7 +169,7 @@ jobs:
         # (no RID literally named "win-x64,win-arm64" exists).  Calling
         # the script directly lets pwsh's expression parser handle the
         # comma-array natively: -Rids win-x64,win-arm64 → @('win-x64','win-arm64').
-        run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids win-x64,win-arm64
 
       # Windows binaries are signed locally, after the release is published and
       # before the winget submission (the signing cert can't be automated on
@@ -198,7 +204,7 @@ jobs:
         shell: pwsh
         # See the comment on the corresponding Windows step for why we call
         # the script directly instead of via an inner `pwsh` invocation.
-        run: ./src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids linux-x64,linux-arm64
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v7
@@ -230,7 +236,7 @@ jobs:
         shell: pwsh
         # See the comment on the Windows publish step for why we call the
         # script directly instead of via an inner `pwsh` invocation.
-        run: ./src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids osx-x64,osx-arm64
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v7
