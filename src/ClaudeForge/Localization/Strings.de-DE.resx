@@ -2864,4 +2864,40 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>Einstellungsansichten</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>mitgeliefert</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>abgerufen {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>Die Einstellungen dieses Abschnitts werden durch das in dieser App mitgelieferte Schema beschrieben (Fingerabdruck {0}). Die App hat versucht, eine neuere Kopie abzurufen, und konnte es nicht — meist kein Netzwerk oder der Download war zu langsam.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>Die Einstellungen dieses Abschnitts werden durch ein um {0} heruntergeladenes Schema beschrieben (Fingerabdruck {1}). Die in dieser App mitgelieferte Kopie wird stattdessen verwendet, wenn der Download nicht verfügbar ist.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>Die Einstellungen dieses Abschnitts werden durch das in dieser App mitgelieferte Schema beschrieben (Fingerabdruck {0}). Dieses Produkt veröffentlicht kein Schema zum Herunterladen, daher ist diese Kopie die einzige.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Nach Schema-Updates suchen</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Die Definitionen neu herunterladen, auf denen diese Editoren beruhen. Wird nach einem Neuladen wirksam.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Wird geprüft…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Die Schemas sind aktuell.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Aktualisiert: {0}. Fenster neu laden, um es anzuwenden — die Editoren zeigen noch die vorherige Version.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Der Schema-Server war nicht erreichbar. Es wird die in dieser App mitgelieferte Kopie verwendet.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Das Schema für {0} konnte nicht geladen werden. Details im Protokoll.</value>
+  </data>
 </root>

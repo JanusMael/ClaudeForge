@@ -664,6 +664,15 @@
                             <Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
                                 <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
 
+                                <!-- Where the provenance badge's detail goes for a screen
+                                     reader, and why it is not on the badge itself:
+                                     AutomationProperties.Name is IGNORED on a TextBlock — its
+                                     Text always wins — so a Name there would be dead markup.
+                                     UIA announces name then help text, so focusing a section
+                                     reads "Claude Code" and then which copy built it. Empty on
+                                     rows with no badge, which UIA treats as absent. -->
+                                <Setter Property="AutomationProperties.HelpText" Value="{Binding BadgeTooltip}" />
+
                                 <!-- Dividers are decorative, and naming them is worse than leaving
                                      them silent — their Title is thirteen box-drawing characters
                                      that the template never renders. Raw drops them out of the
@@ -757,6 +766,29 @@
                                                        VerticalAlignment="Center"
                                                        Padding="0,2,4,2"
                                                        ToolTip.Tip="{Binding Description, FallbackValue={x:Static loc:Strings.TipNavigationDefault}, TargetNullValue={x:Static loc:Strings.TipNavigationDefault}}" />
+
+                                            <!-- Schema-provenance badge — which copy of this
+                                                 section's schema built the pages beneath it.
+                                                 Only the two product headers carry one; every
+                                                 other row leaves Badge null and collapses.
+
+                                                 Its OWN tooltip, not the row's: Avalonia
+                                                 tooltips don't propagate child→parent, and the
+                                                 badge answers a different question from the
+                                                 row ("which copy is this?" vs "what is this
+                                                 section for?"), so overloading one tooltip
+                                                 would lose whichever text came second.
+
+                                                 Secondary text via Opacity rather than a
+                                                 colour token — the convention in this nav, and
+                                                 it stays legible in both theme variants
+                                                 without declaring a brush per variant. -->
+                                            <TextBlock Text="{Binding Badge}"
+                                                       IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontSize="10"
+                                                       Opacity="0.65"
+                                                       VerticalAlignment="Center"
+                                                       ToolTip.Tip="{Binding BadgeTooltip}" />
                                         </StackPanel>
                                     </Border>
                                 </Panel>

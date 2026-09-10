@@ -2916,4 +2916,40 @@ Some paths inside config files may need manual edits afterward. Continue?</value
     <value>Settings views</value>
     <comment>Screen-reader name for the per-group tab strip (Properties / Effective / JSON).</comment>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>bundled</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>fetched {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>This section's settings are described by the schema built into this app (fingerprint {0}). The app tried to fetch a newer copy and could not — usually no network, or the download was too slow.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>This section's settings are described by a schema downloaded at {0} (fingerprint {1}). The copy built into this app is used instead when the download is unavailable.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>This section's settings are described by the schema built into this app (fingerprint {0}). This product publishes no schema to download, so this copy is the only one.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Check for schema updates</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Re-download the setting definitions these editors are built from. Takes effect after a reload.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Schemas are up to date.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Updated: {0}. Reload the window to apply — the editors still show the previous version.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Couldn't reach the schema server. Using the copy built into this app.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Couldn't load the schema for {0}. See the log for details.</value>
+  </data>
 </root>

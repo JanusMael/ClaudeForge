@@ -143,8 +143,72 @@ public partial class AboutDialog : Window, INotifyPropertyChanged
     /// </summary>
     private readonly CancellationTokenSource _lifecycleCts = new();
 
-    public AboutDialog()
+    // ── Schema-update check ──────────────────────────────────────────────
+
+    private readonly Func<CancellationToken, Task<string>>? _schemaCheck;
+    private bool _isCheckingSchemas;
+    private string _schemaCheckResultText = string.Empty;
+    private bool _hasSchemaCheckResult;
+
+    /// <summary>
+    /// <see langword="true"/> when this dialog was given something to run, i.e. it was
+    /// opened from the main window rather than standalone. Drives the row's visibility.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Hidden rather than disabled when absent. A disabled button invites the reader to
+    /// work out what would enable it, and nothing they can do here would — the answer is
+    /// "this dialog has no main window behind it", which is not a state a user is ever in.
+    /// </remarks>
+    public bool CanCheckSchemas => _schemaCheck is not null;
+
+    /// <summary><see langword="true"/> while the schema check is in flight.</summary>
+    public bool IsCheckingSchemas
     {
+        get => _isCheckingSchemas;
+        private set => SetField(ref _isCheckingSchemas, value);
+    }
+
+    /// <summary>The one-line outcome, composed by the view-model that ran the check.</summary>
+    public string SchemaCheckResultText
+    {
+        get => _schemaCheckResultText;
+        private set => SetField(ref _schemaCheckResultText, value);
+    }
+
+    /// <summary>Whether the result row has anything to show yet.</summary>
+    public bool HasSchemaCheckResult
+    {
+        get => _hasSchemaCheckResult;
+        private set => SetField(ref _hasSchemaCheckResult, value);
+    }
+
+    /// <param name="schemaCheck">
+    /// Runs the schema check and returns the localized line to display.
+    /// <see langword="null"/> hides the whole row.
+    /// <para>
+    /// ⚠ A delegate rather than a view-model reference. This dialog is deliberately its own
+    /// DataContext so it can be shown standalone from a test harness or any surface that does
+    /// not own <c>MainWindowViewModel</c> — taking the VM as a dependency would end that, and
+    /// the only thing needed from it is "run this and give me a sentence".
+    /// </para>
+    /// </param>
+    /// <summary>
+    /// Parameterless overload, kept because Avalonia's runtime XAML loader requires one.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>An optional parameter is not a parameterless constructor</b> as far as that loader
+    /// is concerned. Collapsing the two into
+    /// <c>AboutDialog(Func&lt;…&gt;? schemaCheck = null)</c> compiles, runs, and passes every
+    /// test — and emits <c>AVLN3001</c> saying the XAML resource "won't be reachable via
+    /// runtime loader". Found by the Release publish, not by the Debug suite.
+    /// </remarks>
+    public AboutDialog() : this(null)
+    {
+    }
+
+    public AboutDialog(Func<CancellationToken, Task<string>>? schemaCheck)
+    {
+        _schemaCheck = schemaCheck;
         AppVersion = BackupConstants.AppVersion;
         AppCopyright = ReadAssemblyCopyright();
         DataContext = this;
@@ -188,6 +252,54 @@ public partial class AboutDialog : Window, INotifyPropertyChanged
     private void OnReportIssueClick(object? sender, RoutedEventArgs e)
     {
         OpenUrl(ReportIssueUrl);
+    }
+
+    /// <summary>
+    /// User clicked "Check for schema updates" — re-fetch the setting definitions the
+    /// editors are built from and report what upstream had.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Distinct from the app-update check above it, and the two are only neighbours
+    /// because both answer "am I running something stale?". This one reaches
+    /// schemastore.org and opencode.ai, not GitHub releases, and what it refreshes is the
+    /// shape of the editors rather than the binary.
+    /// </remarks>
+    private async void OnCheckForSchemaUpdatesClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsCheckingSchemas || _schemaCheck is null)
+        {
+            return;
+        }
+
+        IsCheckingSchemas = true;
+        SchemaCheckResultText = Strings.SchemaCheckChecking;
+        HasSchemaCheckResult = true;
+
+        string result;
+        try
+        {
+            result = await _schemaCheck(_lifecycleCts.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            // Dialog closed mid-check. Nothing to surface.
+            return;
+        }
+        catch (Exception ex)
+        {
+            // Defensive: SchemaRefresher walls off the failures it can name, but an
+            // unhandled escape must show as a failure rather than leave the row stuck on
+            // "Checking…" forever — which is indistinguishable from a hung network.
+            Log.Error(ex, "[SchemaCheck] Manual schema check threw unexpectedly.");
+            result = string.Format(
+                CultureInfo.CurrentCulture, Strings.SchemaCheckFailedFmt, ex.GetType().Name);
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            SchemaCheckResultText = result;
+            IsCheckingSchemas = false;
+        });
     }
 
     /// <summary>

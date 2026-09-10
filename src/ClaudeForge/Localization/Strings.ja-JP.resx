@@ -2875,4 +2875,40 @@
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>設定ビュー</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>内蔵</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>取得 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>このセクションの設定は、このアプリに内蔵されたスキーマ (フィンガープリント {0}) で定義されています。より新しいコピーの取得を試みましたが失敗しました — 通常はネットワークがない、またはダウンロードが遅すぎる場合です。</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>このセクションの設定は、{0} にダウンロードされたスキーマ (フィンガープリント {1}) で定義されています。ダウンロードが利用できない場合は、このアプリに内蔵されたコピーが代わりに使用されます。</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>このセクションの設定は、このアプリに内蔵されたスキーマ (フィンガープリント {0}) で定義されています。この製品はダウンロード可能なスキーマを公開していないため、このコピーが唯一のものです。</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>スキーマの更新を確認</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>これらのエディターの基になっている定義を再ダウンロードします。再読み込み後に反映されます。</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>確認中…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>スキーマは最新です。</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>更新しました: {0}。適用するにはウィンドウを再読み込みしてください — エディターにはまだ以前のバージョンが表示されています。</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>スキーマサーバーに接続できませんでした。このアプリに内蔵されたコピーを使用します。</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>{0} のスキーマを読み込めませんでした。詳細はログを確認してください。</value>
+  </data>
 </root>

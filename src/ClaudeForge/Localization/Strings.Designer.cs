@@ -735,6 +735,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Check for schema updates.
+        /// </summary>
+        public static string ButtonCheckForSchemaUpdates {
+            get {
+                return ResourceManager.GetString("ButtonCheckForSchemaUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Check for updates.
         /// </summary>
         public static string ButtonCheckForUpdates {
@@ -4025,6 +4034,96 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to bundled.
+        /// </summary>
+        public static string SchemaBadgeBundled {
+            get {
+                return ResourceManager.GetString("SchemaBadgeBundled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to fetched {0}.
+        /// </summary>
+        public static string SchemaBadgeFetchedFmt {
+            get {
+                return ResourceManager.GetString("SchemaBadgeFetchedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This section's settings are described by the schema built into this app (fingerprint {0}). The app tried to fetch a newer copy and could not — usually no network, or the download was too slow.
+        /// </summary>
+        public static string SchemaBadgeTooltipBundledFmt {
+            get {
+                return ResourceManager.GetString("SchemaBadgeTooltipBundledFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This section's settings are described by a schema downloaded at {0} (fingerprint {1}). The copy built into this app is used instead when the download is unavailable.
+        /// </summary>
+        public static string SchemaBadgeTooltipFetchedFmt {
+            get {
+                return ResourceManager.GetString("SchemaBadgeTooltipFetchedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This section's settings are described by the schema built into this app (fingerprint {0}). This product publishes no schema to download, so this copy is the only one.
+        /// </summary>
+        public static string SchemaBadgeTooltipNoUpstreamFmt {
+            get {
+                return ResourceManager.GetString("SchemaBadgeTooltipNoUpstreamFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checking….
+        /// </summary>
+        public static string SchemaCheckChecking {
+            get {
+                return ResourceManager.GetString("SchemaCheckChecking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't load the schema for {0}. See the log for details.
+        /// </summary>
+        public static string SchemaCheckFailedFmt {
+            get {
+                return ResourceManager.GetString("SchemaCheckFailedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't reach the schema server. Using the copy built into this app.
+        /// </summary>
+        public static string SchemaCheckUnavailable {
+            get {
+                return ResourceManager.GetString("SchemaCheckUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Schemas are up to date.
+        /// </summary>
+        public static string SchemaCheckUpToDate {
+            get {
+                return ResourceManager.GetString("SchemaCheckUpToDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Updated: {0}. Reload the window to apply — the editors still show the previous version.
+        /// </summary>
+        public static string SchemaCheckUpdatedFmt {
+            get {
+                return ResourceManager.GetString("SchemaCheckUpdatedFmt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Writes to the Claude Code env dict (saved with the main Save button)..
         /// </summary>
         public static string ScopeNoteClaude {
@@ -5845,6 +5944,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         public static string TipCheckboxShowDialog {
             get {
                 return ResourceManager.GetString("TipCheckboxShowDialog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Re-download the setting definitions these editors are built from. Takes effect after a reload.
+        /// </summary>
+        public static string TipCheckForSchemaUpdates {
+            get {
+                return ResourceManager.GetString("TipCheckForSchemaUpdates", resourceCulture);
             }
         }
         

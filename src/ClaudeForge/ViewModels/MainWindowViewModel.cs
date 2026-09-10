@@ -4073,6 +4073,154 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             paths);
     }
 
+    /// <summary>
+    /// Label a section header with which copy of its schema the pages beneath it were built
+    /// from. Mirrors <c>OpenCodeForge</c>'s applier of the same name.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Network-first made this necessary, and in this app it says more than it does in
+    /// OpenCodeForge.</b> ClaudeForge builds ONE registry and hands it to both SDK clients, so
+    /// the copy this badge reports is also the copy save-validation evaluates against. In
+    /// OpenCodeForge the two are separate instances that merely agree, and its badge is
+    /// careful to claim only the former.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>A product with no upstream gets a different tooltip, and this is not cosmetic.</b>
+    /// Claude Desktop's schema is hand-maintained — its <c>$id</c> is a bare token, so
+    /// <see cref="ProductDescriptor.SchemaUrl"/> is <c>bundled://…</c> and no fetch is ever
+    /// attempted. The ordinary bundled tooltip says the app "tried to fetch a newer copy and
+    /// could not", which for that section would be a plain untruth pointing the reader at a
+    /// network problem they do not have.
+    /// </para>
+    /// <para>
+    /// ⓘ The null-provenance early return is defensive. By the time the nav is built,
+    /// <c>LoadAllWorkspacesCoreAsync</c> has awaited both schemas or thrown; it stays because
+    /// <c>ProvenanceFor</c> is genuinely nullable and no badge is the honest rendering of
+    /// "not loaded", which is a different fact from "loaded from the binary".
+    /// </para>
+    /// </remarks>
+    internal static void ApplyProvenanceBadge(
+        NavigationNodeViewModel header, SchemaRegistry registry, ProductDescriptor product)
+    {
+        ArgumentNullException.ThrowIfNull(header);
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(product);
+
+        SchemaProvenance? provenance = registry.ProvenanceFor(product.SchemaFileName);
+        if (provenance is null)
+        {
+            return;
+        }
+
+        if (provenance.Source == SchemaSource.Bundled)
+        {
+            // Fetchability is read off the descriptor rather than listed here: a product
+            // gaining a published schema is then one URL edit, not a URL edit plus a branch
+            // somebody has to remember exists.
+            bool hasUpstream = product.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+
+            header.Badge = Strings.SchemaBadgeBundled;
+            header.BadgeTooltip = string.Format(
+                CultureInfo.CurrentCulture,
+                hasUpstream ? Strings.SchemaBadgeTooltipBundledFmt : Strings.SchemaBadgeTooltipNoUpstreamFmt,
+                provenance.ShortSha);
+            return;
+        }
+
+        // Local time, not UTC: the badge is read by a human looking at a clock, and the
+        // tooltip carries the digest for anything that needs comparing across machines.
+        string when = provenance.FetchedUtc is { } utc
+            ? utc.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)
+            : string.Empty;
+
+        header.Badge = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeFetchedFmt, when);
+        header.BadgeTooltip = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipFetchedFmt, when, provenance.ShortSha);
+    }
+
+    /// <summary>
+    /// Re-fetch every product schema that has an upstream, re-label the nav badges, and
+    /// return a localized one-line summary for the caller to show. Backs the About dialog's
+    /// <em>Check for schema updates</em> button.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This is what makes <c>NavigationNodeViewModel.Badge</c> observable rather than
+    /// <c>init</c>.</b> The nav nodes were built at load time; re-badging them in place is the
+    /// only way a mid-session check can be visible without discarding the tree — and
+    /// discarding the tree would throw away expansion state, selection and any editor the
+    /// user is part-way through.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>It deliberately does NOT reload.</b> The pages on screen were built from the
+    /// previous copy, so an <c>Updated</c> result means badge and tree now disagree — which
+    /// is why the summary says to reload rather than implying the change already took effect.
+    /// Reloading automatically would interrupt or discard unsaved edits from a button whose
+    /// label says "check", and the schema is picked up on the next launch regardless.
+    /// </para>
+    /// </remarks>
+    internal async Task<string> CheckForSchemaUpdatesAsync(CancellationToken ct = default)
+    {
+        IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher
+            .RefreshAsync(_schemaRegistry, _sections.Select(s => s.Product), ct)
+            .ConfigureAwait(true);
+
+        // Every section, not only the checked ones: a product with no upstream still has a
+        // badge, and leaving it alone here is what keeps this method's effect equal to
+        // "re-read provenance" rather than "re-read the products I happened to fetch".
+        foreach (ProductSection section in _sections)
+        {
+            NavigationNodeViewModel? header = NavigationTree
+                .FirstOrDefault(n => string.Equals(n.Title, section.NavTitle, StringComparison.Ordinal));
+
+            if (header is not null)
+            {
+                ApplyProvenanceBadge(header, _schemaRegistry, section.Product);
+            }
+        }
+
+        return SummariseSchemaCheck(results);
+    }
+
+    /// <summary>
+    /// Turn per-product results into the one line the dialog shows.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Severity order, not concatenation:</b> Failed, then Updated, then Unavailable,
+    /// then up-to-date. A mixed run reports its most actionable outcome, because the row this
+    /// lands in is one line and a sentence per product would overflow it. The per-product
+    /// detail is in the log and in each section's own badge, which this method's caller has
+    /// just refreshed.
+    /// </remarks>
+    internal static string SummariseSchemaCheck(IReadOnlyList<SchemaRefreshResult> results)
+    {
+        ArgumentNullException.ThrowIfNull(results);
+
+        static string Names(IEnumerable<SchemaRefreshResult> subset) =>
+            string.Join(", ", subset.Select(r => r.Product.DisplayName));
+
+        List<SchemaRefreshResult> failed = [.. results.Where(r => r.Status == SchemaRefreshStatus.Failed)];
+        if (failed.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckFailedFmt, Names(failed));
+        }
+
+        List<SchemaRefreshResult> updated = [.. results.Where(r => r.Status == SchemaRefreshStatus.Updated)];
+        if (updated.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckUpdatedFmt, Names(updated));
+        }
+
+        if (results.Any(r => r.Status == SchemaRefreshStatus.Unavailable))
+        {
+            return Strings.SchemaCheckUnavailable;
+        }
+
+        return Strings.SchemaCheckUpToDate;
+    }
+
     private async Task BuildNavigationTreeAsync(
         IReadOnlyList<SchemaNode> ccNodes,
         IReadOnlyList<SchemaNode> dtNodes)
@@ -4246,6 +4394,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutCodeVm,
         });
 
+        ApplyProvenanceBadge(ccHeader, _schemaRegistry, SchemaRegistry.ClaudeCodeProduct);
         NavigationTree.Add(ccHeader);
 
         // --- Claude Desktop section ---
@@ -4284,6 +4433,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutDesktopVm,
         });
 
+        ApplyProvenanceBadge(dtHeader, _schemaRegistry, SchemaRegistry.ClaudeDesktopProduct);
         NavigationTree.Add(dtHeader);
 
         // One-time aggregated LOG entry if any setting in either section has no
