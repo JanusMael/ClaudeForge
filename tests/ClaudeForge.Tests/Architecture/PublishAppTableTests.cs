@@ -155,6 +155,64 @@ public sealed class PublishAppTableTests
     }
 
     /// <summary>
+    /// Every app csproj declares its own <c>&lt;AssemblyProduct&gt;</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>The repo-wide default is the neutral library family, not either app.</b> It used to
+    /// be <c>ClaudeForge</c>, which stamped that name into every shared assembly — a library
+    /// consumed by both apps reporting itself as one of them, in file properties, crash dumps
+    /// and any support bundle listing loaded modules.
+    /// </para>
+    /// <para>
+    /// Now that the default is neutral, an app that forgets the override ships reporting itself
+    /// as <c>AgentForge</c>. That is a quiet, cosmetic-looking wrongness nobody would think to
+    /// test for — which is why this does.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void EveryAppDeclaresItsOwnAssemblyProduct()
+    {
+        string repoRoot = FindRepoRoot();
+        List<PublishAppTable.Row> apps = ReadTable(repoRoot);
+
+        Assert.IsTrue(apps.Count > 0, "No apps parsed; this test would check nothing.");
+
+        List<string> problems = [];
+        foreach (PublishAppTable.Row app in apps)
+        {
+            string csproj = Path.Combine(
+                repoRoot, app.ProjectPath.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(csproj))
+            {
+                continue; // EveryPublishAppRowNamesAProjectThatExists reports this.
+            }
+
+            string? declared = XDocument
+                .Load(csproj)
+                .Descendants("AssemblyProduct")
+                .Select(e => e.Value.Trim())
+                .FirstOrDefault();
+
+            if (declared is null)
+            {
+                problems.Add(
+                    $"{app.Name}: {app.ProjectPath} declares no <AssemblyProduct>, so it inherits "
+                    + "the neutral repo-wide default and ships reporting itself as the library "
+                    + "family rather than as itself.");
+            }
+            else if (!string.Equals(declared, app.Name, StringComparison.Ordinal))
+            {
+                problems.Add(
+                    $"{app.Name}: declares <AssemblyProduct>{declared}</AssemblyProduct>, which "
+                    + "is not this app's name.");
+            }
+        }
+
+        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+    }
+
+    /// <summary>
     /// Each row's <c>StartupLogToken</c> is a prefix of the line that app's <c>Program.cs</c>
     /// actually logs at startup.
     /// </summary>

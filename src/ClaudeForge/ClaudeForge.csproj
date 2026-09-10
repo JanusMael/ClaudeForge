@@ -3,6 +3,10 @@
         <OutputType>WinExe</OutputType>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge</RootNamespace>
         <AssemblyName>ClaudeForge</AssemblyName>
+        <!-- Per-app, matching the sibling. The repo-wide default in Directory.Build.props is the
+             neutral library family, so an app that omits this would ship reporting itself as
+             AgentForge. -->
+        <AssemblyProduct>ClaudeForge</AssemblyProduct>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Version>1.0.0</Version>
         <!-- Static Windows app/taskbar icon embedded in the apphost exe so the
