@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+#
+# Installer manifest (template).
+#
+# OpenCodeForge's Windows release asset is a .zip whose single meaningful entry is
+# the self-contained `OpenCodeForge.exe` (PublishSingleFile). winget therefore
+# installs it as a PORTABLE app extracted from the zip:
+#   InstallerType: zip  +  NestedInstallerType: portable
+# winget places the exe under its packages dir and registers an `opencodeforge`
+# alias on PATH. There is no Start Menu shortcut (portable installs don't create
+# one) and no separate Add/Remove Programs entry beyond winget's own tracking —
+# an installer (Inno/WiX) would be needed for those; see ./README.md.
+#
+# ⚠ THE RELEASE TAG IS PREFIXED, and the InstallerUrls below encode it.
+# This repository hosts two apps and tells their releases apart by tag prefix, so
+# OpenCodeForge publishes `opencodeforge-v<version>` where ClaudeForge publishes a
+# bare `v<version>`. Dropping the prefix here produces a URL that 404s at winget
+# validation time. The prefix must stay equal to this app's TagPrefix in
+# src/publish/PublishApps.ps1 and its ReleaseTagScheme in
+# AgentForge.Core/Updates — WingetManifestTests asserts exactly that.
+#
+# ⚠ The REPOSITORY is still JanusMael/ClaudeForge, and that is not a typo.
+# The repo keeps its original name while hosting both apps [plan decision 14];
+# published winget manifests cannot be retroactively repointed, so renaming it
+# would break the sibling app's already-published PackageUrl values.
+#
+# `<PACKAGE_VERSION>`, `<SHA256_X64>`, `<SHA256_ARM64>` are placeholders filled at
+# submission time (wingetcreate computes the hashes from the InstallerUrls).
+PackageIdentifier: Bennewitz.Ninja.OpenCodeForge
+PackageVersion: "<PACKAGE_VERSION>"
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: OpenCodeForge.exe
+    PortableCommandAlias: opencodeforge
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/JanusMael/ClaudeForge/releases/download/opencodeforge-v<PACKAGE_VERSION>/OpenCodeForge-win-x64.zip
+    InstallerSha256: <SHA256_X64>
+  - Architecture: arm64
+    InstallerUrl: https://github.com/JanusMael/ClaudeForge/releases/download/opencodeforge-v<PACKAGE_VERSION>/OpenCodeForge-win-arm64.zip
+    InstallerSha256: <SHA256_ARM64>
+ManifestType: installer
+ManifestVersion: 1.12.0

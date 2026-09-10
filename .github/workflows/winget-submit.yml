@@ -1,6 +1,14 @@
 name: Submit to winget
 
-# Manually-dispatched winget submission for Bennewitz.Ninja.ClaudeForge.
+# Manually-dispatched winget submission for ONE of this repository's apps.
+#
+# Pick the app with the `app` input. Everything app-shaped — the winget package
+# id, the release-tag prefix, the assembly the assets and signed .exe are named
+# after — comes from src/publish/PublishApps.ps1, the same table the publish
+# scripts read. ⛔ Do not hardcode any of it here: the two apps' release tags have
+# different SHAPES (ClaudeForge publishes a bare v<version>, later apps a
+# prefixed one), so a hardcoded tag builds a download URL that 404s at winget
+# validation for every app but the first.
 #
 # Run this AFTER the release's Windows zips have been SIGNED and re-uploaded.
 # winget records a SHA256 computed from the live release asset, so submitting
@@ -30,6 +38,14 @@ name: Submit to winget
 on:
   workflow_dispatch:
     inputs:
+      app:
+        description: "Which app to submit."
+        required: true
+        type: choice
+        default: ClaudeForge
+        options:
+          - ClaudeForge
+          - OpenCodeForge
       version:
         description: "Release version to submit (no leading 'v'), e.g. 2026.3.701."
         required: true
@@ -46,6 +62,7 @@ jobs:
       # Passed via env (not inline ${{ }}) so untrusted input can't be injected
       # into the script body.
       VERSION_INPUT: ${{ github.event.inputs.version }}
+      APP_INPUT: ${{ github.event.inputs.app }}
       REPO: ${{ github.repository }}
       WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
       GH_TOKEN: ${{ github.token }}
@@ -72,24 +89,36 @@ jobs:
           $ver = $env:VERSION_INPUT -replace '^v', ''
           if (-not $ver) { Write-Error "A version input is required."; exit 1 }
 
+          # Everything app-shaped comes from the publish table, so this workflow and
+          # packaging/Submit-Winget.ps1 cannot disagree about what an app IS.
+          # $appInfo, never $app — PowerShell variable names are case-insensitive.
+          . ./src/publish/PublishApps.ps1
+          $appName   = if ($env:APP_INPUT) { $env:APP_INPUT } else { 'ClaudeForge' }
+          $appInfo   = Get-PublishApp -Name $appName
+          $packageId = $appInfo.WingetPackageId
+          $assetStem = $appInfo.AssemblyName
+          $tagPrefix = $appInfo.TagPrefix
+          Write-Host "App: $appName  package: $packageId  assets: $assetStem-win-*.zip"
+
           # Duplicate guard. Three paths can submit: this workflow (manually), this
           # workflow dispatched automatically by packaging/sign-release.ps1 (unless
           # -SkipWinget), and packaging/Submit-Winget.ps1 locally. Two of them firing
           # for one release opens two PRs against the same manifest, which winget-pkgs
           # asks contributors not to do — 2026.3.810 shipped exactly that.
-          $existing = gh api "search/issues?q=repo:microsoft/winget-pkgs+author:JanusMael+type:pr+state:open+in:title+Bennewitz.Ninja.ClaudeForge" `
+          $existing = gh api "search/issues?q=repo:microsoft/winget-pkgs+author:JanusMael+type:pr+state:open+in:title+$packageId" `
             --jq ".items[] | select(.title | contains(`"$ver`")) | `"#\(.number) \(.title)`"" 2>$null
           if ($LASTEXITCODE -eq 0 -and $existing) {
-            Write-Error ("An open winget-pkgs PR already exists for Bennewitz.Ninja.ClaudeForge ${ver}:`n  $existing`n" +
+            Write-Error ("An open winget-pkgs PR already exists for $packageId ${ver}:`n  $existing`n" +
                          "Close it first, or let that submission finish. Note sign-release.ps1 dispatches this workflow automatically unless -SkipWinget is passed.")
             exit 1
           }
 
-          $tag      = "v$ver"
+          # ⚠ Prefixed for every app but the first — see this workflow's header.
+          $tag      = "$tagPrefix" + "v$ver"
           $base     = "https://github.com/$($env:REPO)/releases/download/$tag"
-          $x64Url   = "$base/ClaudeForge-win-x64.zip"
-          $arm64Url = "$base/ClaudeForge-win-arm64.zip"
-          Write-Host "Submitting Bennewitz.Ninja.ClaudeForge $ver"
+          $x64Url   = "$base/$assetStem-win-x64.zip"
+          $arm64Url = "$base/$assetStem-win-arm64.zip"
+          Write-Host "Submitting $packageId $ver"
 
           # 1. Download the (signed) release assets and compute their SHA256.
           #    winget-pkgs validation recomputes these from the same URLs, so the
@@ -107,20 +136,21 @@ jobs:
           #     unsigned asset and publish it to the winget catalog permanently.
           #
           #     Rather than trusting the caller, verify the precondition itself: crack
-          #     each zip and require a VALID Authenticode signature on ClaudeForge.exe.
+          #     each zip and require a VALID Authenticode signature on the app's .exe.
           #     This holds however the workflow was triggered.
           foreach ($arch in 'x64', 'arm64') {
             $ex = "dl/extract-$arch"
             Expand-Archive -Path "dl/$arch.zip" -DestinationPath $ex -Force
-            $exe = Get-ChildItem $ex -Filter ClaudeForge.exe -Recurse | Select-Object -First 1
+            $exeName = "$assetStem.exe"
+            $exe = Get-ChildItem $ex -Filter $exeName -Recurse | Select-Object -First 1
             if (-not $exe) {
-              Write-Error "$arch zip does not contain ClaudeForge.exe — cannot verify signing."
+              Write-Error "$arch zip does not contain $exeName — cannot verify signing."
               exit 1
             }
             $sig = Get-AuthenticodeSignature $exe.FullName
             Write-Host "$arch Authenticode: $($sig.Status) — $($sig.SignerCertificate.Subject)"
             if ($sig.Status -ne 'Valid') {
-              Write-Error ("$arch ClaudeForge.exe is not validly signed (status: $($sig.Status)). " +
+              Write-Error ("$arch $exeName is not validly signed (status: $($sig.Status)). " +
                            'The release assets have not been signed and re-uploaded yet. Run ' +
                            'packaging/sign-release.ps1 (it signs, re-uploads, then dispatches this ' +
                            'workflow) instead of dispatching this workflow directly.')
@@ -140,15 +170,32 @@ jobs:
           $stage = Join-Path $env:RUNNER_TEMP 'wingetmanifests'
           if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Get-ChildItem packaging/winget/*.yaml | ForEach-Object {
+          # ⛔ THIS APP'S MANIFESTS ONLY. packaging/winget/ holds a set per app, and
+          # this used to glob '*.yaml' — correct with one app, silently wrong with
+          # two: wingetcreate would carry BOTH packages' manifests into one
+          # winget-pkgs PR, publishing a version bump for an app that had not
+          # released. Matched by exact name rather than "$packageId*" so an id that
+          # merely starts with another cannot absorb its sibling's files.
+          # Kept in sync with packaging/Submit-Winget.ps1.
+          $ownManifests = @(Get-ChildItem packaging/winget/*.yaml | Where-Object {
+            $_.Name -eq "$packageId.yaml" -or
+            $_.Name -eq "$packageId.installer.yaml" -or
+            $_.Name -like "$packageId.locale.*.yaml"
+          })
+          if ($ownManifests.Count -eq 0) {
+            Write-Error "No manifest templates for $packageId in packaging/winget/."
+            exit 1
+          }
+          Write-Host "Staging $($ownManifests.Count) manifest(s) for $packageId"
+          $ownManifests | ForEach-Object {
             $text = (Get-Content $_.FullName -Raw).
               Replace('<PACKAGE_VERSION>', $ver).
               Replace('<SHA256_X64>',   $sha64).
               Replace('<SHA256_ARM64>', $shaArm)
             Set-Content -Path (Join-Path $stage $_.Name) -Value $text -Encoding utf8
           }
-          $localeFile    = Join-Path $stage 'Bennewitz.Ninja.ClaudeForge.locale.en-US.yaml'
-          $installerFile = Join-Path $stage 'Bennewitz.Ninja.ClaudeForge.installer.yaml'
+          $localeFile    = Join-Path $stage "$packageId.locale.en-US.yaml"
+          $installerFile = Join-Path $stage "$packageId.installer.yaml"
 
           # 3. Best-effort enrichment from the GitHub release: ReleaseDate (installer
           #    manifest) and ReleaseNotes (locale manifest). Any failure here degrades
@@ -193,6 +240,6 @@ jobs:
           #    manifests, and opens the PR (non-interactive: --token + --no-open).
           Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
           .\wingetcreate.exe submit $stage `
-            --prtitle "New version: Bennewitz.Ninja.ClaudeForge version $ver" `
+            --prtitle "New version: $packageId version $ver" `
             --token $env:WINGET_TOKEN `
             --no-open

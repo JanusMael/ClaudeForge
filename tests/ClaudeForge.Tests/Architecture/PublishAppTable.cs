@@ -32,7 +32,8 @@ internal static class PublishAppTable
         string ProjectPath,
         string AssemblyName,
         string StartupLogToken,
-        string TagPrefix);
+        string TagPrefix,
+        string WingetPackageId);
 
     /// <summary>Splits the table into <c>[pscustomobject]@{ … }</c> blocks.</summary>
     private static readonly Regex RowRegex = new(
@@ -47,9 +48,9 @@ internal static class PublishAppTable
         @"(?<key>[A-Za-z]+)\s*=\s*(?:'(?<value>[^']*)'|(?<null>\$null))",
         RegexOptions.Compiled);
 
-    /// <summary>The five fields every row must carry; every publish script reads all of them.</summary>
+    /// <summary>The fields every row must carry; the publish and packaging paths read all of them.</summary>
     private static readonly string[] Required =
-        ["Name", "ProjectPath", "AssemblyName", "StartupLogToken", "TagPrefix"];
+        ["Name", "ProjectPath", "AssemblyName", "StartupLogToken", "TagPrefix", "WingetPackageId"];
 
     /// <summary>The repo root, by walking up from the test assembly.</summary>
     /// <remarks>Matches <c>BuildFilePathIntegrityTests.FindRepoRoot()</c>.</remarks>
@@ -116,7 +117,8 @@ internal static class PublishAppTable
                 fields["ProjectPath"]!,
                 fields["AssemblyName"]!,
                 fields["StartupLogToken"]!,
-                fields["TagPrefix"]!));
+                fields["TagPrefix"]!,
+                fields["WingetPackageId"]!));
         }
 
         return rows;

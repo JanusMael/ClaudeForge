@@ -1,7 +1,7 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Submit the ClaudeForge winget manifest to microsoft/winget-pkgs (local, interactive).
+    Submit one app's winget manifest to microsoft/winget-pkgs (local, interactive).
 
 .DESCRIPTION
     Local counterpart to .github/workflows/winget-submit.yml. Builds the COMPLETE
@@ -20,6 +20,13 @@
 
     Keep in sync with .github/workflows/winget-submit.yml.
 
+.PARAMETER App
+    Which app to submit — a Name from src/publish/PublishApps.ps1. Defaults to
+    ClaudeForge. The descriptor supplies the winget package id, the release-tag
+    prefix, and the assembly name the assets and signed .exe are named after;
+    keeping all three in one table is what stops a manifest pointing at a URL no
+    release publishes.
+
 .PARAMETER Version
     Release version, no leading 'v' (e.g. 2026.3.725). Prompted if omitted.
 
@@ -31,9 +38,11 @@
 .EXAMPLE
     .\Submit-Winget.ps1
     .\Submit-Winget.ps1 -Version 2026.3.725
+    .\Submit-Winget.ps1 -App OpenCodeForge -Version 2026.4.100
 #>
 [CmdletBinding()]
 param(
+    [string]$App = 'ClaudeForge',
     [string]$Version,
     [string]$Token = $env:WINGET_TOKEN
 )
@@ -46,8 +55,18 @@ $ErrorActionPreference = 'Stop'
 # bytes E2 80 94) lands as "ΓÇö". Shipped that way in 2026.3.810; don't again.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# $appInfo, never $app — PowerShell variable names are case-insensitive, so a
+# local named $app IS the $App parameter.
+. (Join-Path $PSScriptRoot '..' 'src' 'publish' 'PublishApps.ps1')
+$appInfo = Get-PublishApp -Name $App
+
+# The repository keeps its original name while hosting both apps [decision 14]:
+# published winget manifests cannot be retroactively repointed, so this is the
+# release host for BOTH, and only the tag prefix distinguishes them.
 $Repo        = 'JanusMael/ClaudeForge'
-$PackageId   = 'Bennewitz.Ninja.ClaudeForge'
+$PackageId   = $appInfo.WingetPackageId
+$AssetStem   = $appInfo.AssemblyName
+$TagPrefix   = $appInfo.TagPrefix
 $TemplateDir = Join-Path $PSScriptRoot 'winget'
 
 if (-not $Version) {
@@ -69,10 +88,14 @@ if ($LASTEXITCODE -eq 0 -and $existing) {
            'Note sign-release.ps1 already dispatches winget-submit.yml unless -SkipWinget is passed.')
 }
 
-$tag      = "v$Version"
+# ⚠ The tag carries this app's prefix. ClaudeForge's is empty (it published this
+# repository's releases before it hosted two and cannot change shape without
+# blinding every installed copy); a later app's is not. Building the URL from a
+# bare "v$Version" here would 404 for anything but the first app.
+$tag      = "$TagPrefix" + "v$Version"
 $base     = "https://github.com/$Repo/releases/download/$tag"
-$x64Url   = "$base/ClaudeForge-win-x64.zip"
-$arm64Url = "$base/ClaudeForge-win-arm64.zip"
+$x64Url   = "$base/$AssetStem-win-x64.zip"
+$arm64Url = "$base/$AssetStem-win-arm64.zip"
 
 Write-Host "Submitting $PackageId $Version" -ForegroundColor Cyan
 
@@ -95,12 +118,13 @@ Invoke-WebRequest -Uri $arm64Url -OutFile (Join-Path $dl 'arm64.zip')
 foreach ($arch in 'x64', 'arm64') {
     $ex = Join-Path $dl "extract-$arch"
     Expand-Archive -Path (Join-Path $dl "$arch.zip") -DestinationPath $ex -Force
-    $exe = Get-ChildItem $ex -Filter ClaudeForge.exe -Recurse | Select-Object -First 1
-    if (-not $exe) { throw "$arch zip does not contain ClaudeForge.exe — cannot verify signing." }
+    $exeName = "$AssetStem.exe"
+    $exe = Get-ChildItem $ex -Filter $exeName -Recurse | Select-Object -First 1
+    if (-not $exe) { throw "$arch zip does not contain $exeName — cannot verify signing." }
     $sig = Get-AuthenticodeSignature $exe.FullName
     Write-Host "  $arch Authenticode: $($sig.Status)"
     if ($sig.Status -ne 'Valid') {
-        throw ("$arch ClaudeForge.exe is not validly signed (status: $($sig.Status)). " +
+        throw ("$arch $exeName is not validly signed (status: $($sig.Status)). " +
                'Sign and re-upload the release assets first — run packaging/sign-release.ps1.')
     }
 }
@@ -112,7 +136,30 @@ Write-Host "  x64   SHA256 $sha64"
 Write-Host "  arm64 SHA256 $shaArm"
 
 # 2. Stage the templates with version + hashes substituted in.
-Get-ChildItem (Join-Path $TemplateDir '*.yaml') | ForEach-Object {
+#
+# ⛔ THIS APP'S MANIFESTS ONLY. `packaging/winget/` holds a set per app, and this
+# used to glob '*.yaml' — correct while there was one app, and silently wrong the
+# moment there were two: `wingetcreate submit` would have carried BOTH packages'
+# manifests into one winget-pkgs PR, publishing a version bump for an app that
+# had not released.
+#
+# Matched by exact name rather than "$PackageId*" so a future id that merely
+# starts with another ("…ClaudeForge" vs a hypothetical "…ClaudeForgePro") cannot
+# absorb its sibling's files.
+$ownManifests = @(Get-ChildItem (Join-Path $TemplateDir '*.yaml') | Where-Object {
+    $_.Name -eq "$PackageId.yaml" -or
+    $_.Name -eq "$PackageId.installer.yaml" -or
+    $_.Name -like "$PackageId.locale.*.yaml"
+})
+
+if ($ownManifests.Count -eq 0) {
+    throw "No manifest templates for $PackageId in $TemplateDir. Expected " +
+          "$PackageId.yaml, $PackageId.installer.yaml and at least one " +
+          "$PackageId.locale.<tag>.yaml."
+}
+
+Write-Host ("  Staging {0} manifest(s) for {1}" -f $ownManifests.Count, $PackageId)
+$ownManifests | ForEach-Object {
     $text = (Get-Content $_.FullName -Raw).
         Replace('<PACKAGE_VERSION>', $Version).
         Replace('<SHA256_X64>',   $sha64).
