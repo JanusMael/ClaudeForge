@@ -171,6 +171,7 @@ They configure the app and then it starts normally.
 | `--simulate-update` | Pretend an update is available |
 | `--deep-link <path>` | Navigate to a dotted settings path on launch |
 | `--writer <legacy\|jsonc>` | Choose the config writer; `legacy` is a one-release escape hatch |
+| `--schema-source <bundled\|fetched>` | Force one branch of the load chain. ⚠ `fetched` is FATAL if the fetch fails — it does not fall back, because a run that silently used bundled would prove nothing |
 | `--debug-help`, `--help-debug` | Print the recognised flags and exit |
 
 ⚠ **Two-token flags** (`--culture`, `--deep-link`, `--writer`) must advance the loop index

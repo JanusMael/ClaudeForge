@@ -4884,9 +4884,18 @@ delegate block.
 > `SchemaRefreshDriftTests` pins the property counts and the nav-map keys. Full write-up, with
 > the two things the plan's table omitted, is in **CI changes** above.
 >
-> **Remaining: the in-app half only** — `SchemaProvenance`, the *Check for schema updates*
-> action, the per-product opt-in promotion, the provenance badge, and the `--schema-source`
-> debug flag.
+> **In-app half: three of four landed 2026-09-09.**
+>
+> | Item | State |
+> |---|---|
+> | Network-first loading | ✅ `6260636` — memory → HTTPS (+ strip, + overlay) → bundled (+ strip, + overlay). No disk cache, no empty fallback. |
+> | `SchemaProvenance` | ✅ `e47773d` — source, UTC timestamp, short digest, per schema file. |
+> | Provenance badge | ✅ `6e0051b` — on the nav section header, following ClaudeForge’s nav layout. |
+> | `--schema-source <bundled\|fetched>` | ✅ `839e3be` — `fetched` is FATAL on failure, not a fallback. |
+> | *Check for schema updates* action | ⬜ **the one remaining item.** `RefreshAsync` is the working primitive and needs a surface, plus a re-run of `ApplyProvenanceBadge` so the badge updates live — which is why `NavigationNodeViewModel.Badge` is observable rather than `init`. |
+>
+> ⛔ **The per-product opt-in promotion is obsolete, not pending.** It existed to let a fetched
+> copy outrank bundled; network-first makes that the default, so there is nothing to opt into.
 
 > ⛔⛔ **RE-SCOPED 2026-09-09, because network-first landed and this section was written for a
 > bundled-first world.** Read this before building any of it — three of its items are obsolete
