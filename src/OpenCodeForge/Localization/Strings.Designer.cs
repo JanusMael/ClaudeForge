@@ -117,4 +117,48 @@ public static class Strings
     /// <summary>No source could supply a schema. {0} = comma-joined product names.</summary>
     public static string SchemaCheckFailedFmt => Get(nameof(SchemaCheckFailedFmt));
 
+    /// <summary>The About dialog's app-update button.</summary>
+    public static string ButtonCheckForUpdates => Get(nameof(ButtonCheckForUpdates));
+
+    /// <summary>Why the button works regardless of the Essentials toggle.</summary>
+    public static string TipCheckForUpdates => Get(nameof(TipCheckForUpdates));
+
+    /// <summary>Shown while the check is in flight.</summary>
+    public static string LabelCheckForUpdatesChecking => Get(nameof(LabelCheckForUpdatesChecking));
+
+    /// <summary>No newer release was found.</summary>
+    public static string LabelCheckForUpdatesUpToDate => Get(nameof(LabelCheckForUpdatesUpToDate));
+
+    /// <summary>A newer release exists. {0} = its tag.</summary>
+    public static string LabelCheckForUpdatesAvailableFmt => Get(nameof(LabelCheckForUpdatesAvailableFmt));
+
+    /// <summary>The check failed. Deliberately not alarming — a failed check is not a problem.</summary>
+    public static string LabelCheckForUpdatesFailed => Get(nameof(LabelCheckForUpdatesFailed));
+
+    /// <summary>Opens the release page for the version just found.</summary>
+    public static string ButtonUpdateBannerOpenRelease => Get(nameof(ButtonUpdateBannerOpenRelease));
+
+    /// <summary>Tooltip for the view-release button.</summary>
+    public static string TipButtonUpdateBannerOpenRelease => Get(nameof(TipButtonUpdateBannerOpenRelease));
+
+    /// <summary>Banner headline. {0} = the new version's tag.</summary>
+    public static string LabelUpdateBannerTitleFmt => Get(nameof(LabelUpdateBannerTitleFmt));
+
+    /// <summary>Banner body.</summary>
+    public static string LabelUpdateBannerDesc => Get(nameof(LabelUpdateBannerDesc));
+
+    /// <summary>Banner close glyph. AutomationProperties.Name carries the real label — a screen reader announcing a multiplication sign is why.</summary>
+    public static string ButtonUpdateBannerDismiss => Get(nameof(ButtonUpdateBannerDismiss));
+
+    /// <summary>Says that dismissal is per-version, not forever.</summary>
+    public static string TipButtonUpdateBannerDismiss => Get(nameof(TipButtonUpdateBannerDismiss));
+
+    /// <summary>Accessible name for the glyph-only dismiss button.</summary>
+    public static string AutoNameButtonUpdateBannerDismiss => Get(nameof(AutoNameButtonUpdateBannerDismiss));
+
+    /// <summary>Essentials card title for the auto-check opt-out.</summary>
+    public static string EssentialsCardCheckForUpdatesTitle => Get(nameof(EssentialsCardCheckForUpdatesTitle));
+
+    /// <summary>Essentials card body for the auto-check opt-out.</summary>
+    public static string EssentialsCardCheckForUpdatesBody => Get(nameof(EssentialsCardCheckForUpdatesBody));
 }

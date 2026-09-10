@@ -4,14 +4,54 @@ using Serilog;
 
 namespace Bennewitz.Ninja.OpenCodeForge.Services;
 
-/// <summary>Remembered window geometry, persisted between runs.</summary>
+/// <summary>Remembered window geometry and app-level preferences, persisted between runs.</summary>
+/// <remarks>
+/// ⚠ <b>This record is a PERSISTED FORMAT.</b> Every property is written to and read back from
+/// <c>OpenCodeForge-gui-state.json</c>, so adding one has to stay readable by a copy of the app
+/// that predates it and vice versa. The two update-related properties below were added after the
+/// geometry ones; both carry defaults that make an older file — which has neither — behave the
+/// way the app behaved before they existed.
+/// </remarks>
 /// <param name="Width">Window width in device-independent pixels.</param>
 /// <param name="Height">Window height.</param>
 /// <param name="IsMaximized">Whether the window was maximized when last closed.</param>
-public sealed record WindowState(double Width, double Height, bool IsMaximized)
+/// <param name="CheckForUpdatesOnLaunch">
+/// Whether the app may check GitHub for a newer release at launch and periodically after.
+/// <para>
+/// ⭐ <b>Defaults to <see langword="true"/>, and the default is what an absent field
+/// deserialises to</b> — so a state file written before this property existed opts IN. That is
+/// the deliberate choice: the check is silent unless it finds something, and a user who never
+/// saw the toggle is better served by being told an update exists. Clearing it stops the launch
+/// and periodic checks; it never stops the explicit About-dialog button, because clicking that
+/// is consent on its own.
+/// </para>
+/// </param>
+/// <param name="DismissedUpdateVersions">
+/// Release tags the user has already dismissed the banner for, so it does not return for the
+/// same version on every launch.
+/// <para>
+/// Tags rather than versions, because the tag is what the release is addressed by and what the
+/// banner links to. Empty by default; an older state file therefore has dismissed nothing, which
+/// is correct — it could not have.
+/// </para>
+/// </param>
+public sealed record WindowState(
+    double Width,
+    double Height,
+    bool IsMaximized,
+    bool CheckForUpdatesOnLaunch = true,
+    IReadOnlyList<string>? DismissedUpdateVersions = null)
 {
     /// <summary>The size a first run opens at.</summary>
     public static WindowState Default { get; } = new(1280, 860, IsMaximized: false);
+
+    /// <summary>Dismissed tags, never <see langword="null"/>.</summary>
+    /// <remarks>
+    /// A separate accessor rather than a non-null parameter default: records cannot default a
+    /// parameter to a new collection, and JSON deserialisation of an absent array yields null
+    /// whatever the constructor says. Normalising on read means no caller has to remember.
+    /// </remarks>
+    public IReadOnlyList<string> Dismissed => DismissedUpdateVersions ?? [];
 }
 
 /// <summary>

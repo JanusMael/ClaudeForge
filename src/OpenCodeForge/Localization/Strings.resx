@@ -130,4 +130,49 @@
   <data name="SchemaCheckFailedFmt" xml:space="preserve">
     <value>Couldn't load the schema for {0}. See the log for details.</value>
   </data>
+  <data name="ButtonCheckForUpdates" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="TipCheckForUpdates" xml:space="preserve">
+    <value>Query GitHub for the latest release. Works even when the auto-check on launch is disabled.</value>
+  </data>
+  <data name="LabelCheckForUpdatesChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="LabelCheckForUpdatesUpToDate" xml:space="preserve">
+    <value>You're on the latest version.</value>
+  </data>
+  <data name="LabelCheckForUpdatesAvailableFmt" xml:space="preserve">
+    <value>Update available: {0}</value>
+  </data>
+  <data name="LabelCheckForUpdatesFailed" xml:space="preserve">
+    <value>Couldn't reach GitHub. Try again in a moment.</value>
+  </data>
+  <data name="ButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>View release</value>
+  </data>
+  <data name="TipButtonUpdateBannerOpenRelease" xml:space="preserve">
+    <value>Open the GitHub release page for this version</value>
+  </data>
+  <data name="LabelUpdateBannerTitleFmt" xml:space="preserve">
+    <value>Update available: {0}</value>
+  </data>
+  <data name="LabelUpdateBannerDesc" xml:space="preserve">
+    <value>A newer release of OpenCodeForge is available on GitHub.</value>
+  </data>
+  <data name="ButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>✕</value>
+  </data>
+  <data name="TipButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Hide this banner for this version. The banner will reappear when a newer release is published.</value>
+  </data>
+  <data name="AutoNameButtonUpdateBannerDismiss" xml:space="preserve">
+    <value>Dismiss update-available banner</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesTitle" xml:space="preserve">
+    <value>Check for updates on launch</value>
+  </data>
+  <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
+    <value>When enabled, OpenCodeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again.</value>
+  </data>
 </root>

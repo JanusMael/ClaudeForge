@@ -7,7 +7,9 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Avalonia.Threading;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
@@ -435,6 +437,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         IsLoading = false;
 
+        StartUpdateCheck();
+
         // ⚠ Explicitly the Essentials node, not Navigation[0].Children[0]. That expression used to
         // mean "the first section's first page"; inserting a childless top-level node at the front
         // silently turned it into null, leaving the window with a populated tree and an empty page
@@ -475,6 +479,55 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// that covers it.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// The "Update available" banner's view-model, bound by <c>MainWindow.axaml</c>.
+    /// </summary>
+    /// <remarks>
+    /// The banner's markup sets its own <c>DataContext</c> to this, so its bindings are
+    /// unprefixed and it owns its own commands — no ancestor binding back to this view-model,
+    /// which would resolve by reflection and trip trim analysis.
+    /// </remarks>
+    public UpdateBannerViewModel UpdateBanner { get; } = new();
+
+    /// <summary>
+    /// Run the once-per-launch update check and let the banner decide whether to surface.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Fire-and-forget: the window is already usable and an update check must never be
+    /// something the user waits behind. Every failure inside the check already collapses to "no
+    /// update", so the <c>catch</c> here is for the genuinely unexpected — and it logs rather
+    /// than surfacing, because a failed update check is not a thing the user can act on.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>There is no periodic re-check, unlike the sibling app, and that is deliberate for
+    /// now.</b> Its 4-hourly loop is owned by a <see cref="CancellationTokenSource"/> that
+    /// <c>Dispose</c> cancels — and this view-model implements no <see cref="IDisposable"/> at
+    /// all. Adding a background loop with nothing to stop it is how a task outlives its window;
+    /// the loop belongs with disposal, in one change, not bolted onto a type that cannot stop
+    /// it. The launch check plus the explicit About-dialog button cover the same ground less
+    /// often.
+    /// </para>
+    /// </remarks>
+    private void StartUpdateCheck()
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                UpdateCheckResult result =
+                    await AppUpdateService.CheckOncePerLaunchAsync().ConfigureAwait(false);
+
+                // Marshal before touching bound state: ApplyResult writes observable properties.
+                await Dispatcher.UIThread.InvokeAsync(() => UpdateBanner.ApplyResult(result));
+            }
+            catch (Exception ex)
+            {
+                Log.Information(ex, "[UpdateCheck] Launch check threw unexpectedly; no banner.");
+            }
+        });
+    }
+
     internal static void ApplyProvenanceBadge(
         NavigationNodeViewModel header, SchemaRegistry registry, HostedSection section)
     {

@@ -21,9 +21,58 @@
     </Window.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
+      <!-- Both banners share row 0 in a StackPanel rather than taking a row each: each Border
+           carries its own IsVisible, so the panel collapses to nothing when neither applies,
+           and the rest of the window keeps its existing row numbers. -->
+      <StackPanel Grid.Row="0">
+
+        <!-- Update banner. Dismissal is PER VERSION — see UpdateBannerViewModel. Bound to the
+             nested view-model rather than the window's, so the paths stay short. -->
+        <Border Padding="12,8"
+                Background="#FF263238"
+                BorderBrush="#FFF59E0B"
+                BorderThickness="0,0,0,2"
+                DataContext="{Binding UpdateBanner}"
+                x:DataType="vm:UpdateBannerViewModel"
+                IsVisible="{Binding IsVisible}">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Foreground="#FFF59E0B" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Text="{Binding LatestTagName, StringFormat={x:Static loc:Strings.LabelUpdateBannerTitleFmt}}"
+                               AutomationProperties.Name="{x:Static loc:Strings.LabelUpdateBannerDesc}" />
+                    <TextBlock Text="{x:Static loc:Strings.LabelUpdateBannerDesc}"
+                               Foreground="#FFB0BEC5" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- The command lives on the banner's own view-model, deliberately. An
+                     ancestor binding ($parent[...]) resolves by reflection and is exactly what
+                     trips IL2026 under PublishTrimmed — the repository bans them for that
+                     reason, and "it is only in an app view" is not an exemption when the app
+                     is the thing being trimmed. -->
+                <Button Grid.Column="1"
+                        Content="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}"
+                        Command="{Binding OpenReleaseCommand}"
+                        Padding="10,4" Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding HasReleaseUrl}"
+                        ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerOpenRelease}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
+
+                <!-- Glyph-only, so the accessible name carries the real label: a screen reader
+                     announcing a multiplication sign tells the user nothing. -->
+                <Button Grid.Column="2"
+                        Content="{x:Static loc:Strings.ButtonUpdateBannerDismiss}"
+                        Command="{Binding DismissCommand}"
+                        Padding="8,4" Margin="6,0,0,0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerDismiss}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameButtonUpdateBannerDismiss}" />
+            </Grid>
+        </Border>
+
         <!-- Install banner. Informational only: editing a config for a not-yet-installed agent
              is legitimate, so this never blocks. -->
-        <Border Grid.Row="0" Padding="12,8" Background="#FF37474F"
+        <Border Padding="12,8" Background="#FF37474F"
                 IsVisible="{Binding ShowInstallBanner}">
             <StackPanel Spacing="6">
                 <TextBlock Text="{Binding InstallBannerText}" Foreground="White" TextWrapping="Wrap"
@@ -47,6 +96,8 @@
                 </ItemsControl>
             </StackPanel>
         </Border>
+
+      </StackPanel>
 
         <!-- Search. Results replace the page area while a query is present. -->
         <Grid Grid.Row="1" Margin="8" ColumnDefinitions="*,Auto">
