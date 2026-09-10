@@ -241,7 +241,7 @@ public sealed class HooksEditorLoadPathMutationTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
 
@@ -276,7 +276,7 @@ public sealed class HooksEditorLoadPathMutationTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // Snapshot BEFORE editor construction.
         JsonObject before = (JsonObject)doc.Root.DeepClone();
@@ -318,7 +318,7 @@ public sealed class HooksEditorLoadPathMutationTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
@@ -356,7 +356,7 @@ public sealed class HooksEditorLoadPathMutationTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);

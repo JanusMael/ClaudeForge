@@ -165,7 +165,7 @@ public sealed class ExportArchiveTests
             async () =>
             {
                 MainWindowViewModel vm = new(
-                    new SchemaRegistry(new HttpClient()), new ExportingDialogService(destination));
+                    new SchemaRegistry(), new ExportingDialogService(destination));
                 await vm.LoadAllWorkspacesAsync();
 
                 Assert.AreEqual(2, vm.Sections.Count(s => s.Client is not null),

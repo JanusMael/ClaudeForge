@@ -24,7 +24,7 @@ public sealed class PermissionsAutoModeGatingTests
         SettingsDocument doc = new(scope, "settings.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, scope, new SchemaRegistry(new HttpClient()));
+            ws, scope, new SchemaRegistry());
 
         PermissionsEditorViewModel vm = new(
             new SchemaNode("permissions", "permissions") { ValueType = SchemaValueType.Complex },

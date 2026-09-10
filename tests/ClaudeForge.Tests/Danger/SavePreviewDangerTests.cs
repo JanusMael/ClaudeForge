@@ -287,7 +287,7 @@ public sealed class SavePreviewDangerTests
     [TestMethod]
     public void EachProductSectionCarriesItsOwnPolicy_StatedOnce()
     {
-        MainWindowViewModel vm = new(new SchemaRegistry(new HttpClient()), new NullDialogService());
+        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
 
         ProductSection code = vm.Sections.Single(
             s => s.Product.Id == SchemaRegistry.ClaudeCodeProduct.Id);

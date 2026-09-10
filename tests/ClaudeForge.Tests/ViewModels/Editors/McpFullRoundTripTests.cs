@@ -38,7 +38,7 @@ public class McpFullRoundTripTests
             SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
             ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
                 ws, ConfigScope.User,
-                new SchemaRegistry(new HttpClient()));
+                new SchemaRegistry());
             McpFixture fx = new(doc, ws, client);
             fx.RebuildEditor();
             return fx;

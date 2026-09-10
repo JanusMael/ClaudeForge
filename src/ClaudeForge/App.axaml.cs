@@ -49,7 +49,22 @@ public class App : Application
             Dispatcher.UIThread.UnhandledException += OnUiThreadUnhandledException;
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-            SchemaRegistry schemaRegistry = new();
+            // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design, and this
+            // line said `new()` from the initial commit. That was harmless while the chain
+            // was bundled-first — bundled won for every product, so an HttpClient would
+            // never have been reached. Network-first inverted it, and the parameterless
+            // constructor became the difference between fetching and not. ClaudeForge kept
+            // building its pages, and validating its saves, against bundled schemas.
+            //
+            // ONE registry serves the whole app: it is handed to both SDK clients in
+            // MainWindowViewModel, so a schema is fetched once per launch rather than once
+            // per consumer. Disposal stays with MainWindowViewModel, which now also disposes
+            // the HttpClient this creates.
+            //
+            // The --schema-source override reaches this without being passed: Program.cs
+            // sets SchemaRegistry.ProcessSourceOverride in step 1, and the constructor falls
+            // back to it.
+            SchemaRegistry schemaRegistry = SchemaRegistry.CreateWithNetwork();
             AvaloniaDialogService dialogService = new();
             // The DialogAppIcon assignment below uses SmallInstance (64-px
             // render of the simplified small SVG) instead of Instance (256-px

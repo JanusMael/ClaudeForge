@@ -43,7 +43,7 @@ public sealed class HooksAccessorRoundTripTests
     private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)
     {
         return ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
     }
 
     private static JsonObject Cmd(string command)
