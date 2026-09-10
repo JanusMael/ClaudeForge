@@ -157,6 +157,7 @@
                                                 <SelectableTextBlock.ContextFlyout>
                                                     <MenuFlyout>
                                                         <MenuItem Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                  AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
                                                                   Click="OnCopyEffectiveValue" />
                                                     </MenuFlyout>
                                                 </SelectableTextBlock.ContextFlyout>

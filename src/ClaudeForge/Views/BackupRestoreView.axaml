@@ -341,6 +341,7 @@
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="{x:Static loc:Strings.MenuOpenFileLocation}"
+                                          AutomationProperties.Name="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           Command="{Binding OpenFileLocationCommand}"
                                           CommandParameter="{Binding SelectedBackup}" />
                             </ContextMenu>

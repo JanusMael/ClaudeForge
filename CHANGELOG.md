@@ -97,8 +97,16 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Changed
 
-- `model` / `effortLevel` / `permissions.defaultMode` option lists are now
-  catalog-driven and inter-aware rather than hardcoded.
+- **The accessibility coverage guard now sees the whole app.** It scanned
+  `src/ClaudeForge/Views/*.axaml` flat, which left 16 of the repository's 43
+  AXAML files — everything under `Controls/`, all of `ClaudeForge.Avalonia`,
+  all of `LayeredEditors.Avalonia` — never examined, and did not count
+  `MenuItem` or `RepeatButton` at all. It now walks the three view-bearing
+  assemblies recursively. Five controls that were missing a screen-reader name
+  gained one, each reusing the string key its own label or tooltip already
+  used: the copy items in the Save Changes dialog and Effective Settings, Open
+  File Location in Backup & Restore, and the model picker's `▾` button, whose
+  content is a glyph a screen reader would otherwise announce as "▾".
 - Fixed 'missing files' that originate in the 'selected project' tree during backup scenarios
 - Newly available localizations
 
