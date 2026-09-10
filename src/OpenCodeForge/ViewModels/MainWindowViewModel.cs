@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Core;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
@@ -84,6 +85,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Window title.</summary>
     public string Title => Strings.AppTitle;
+
+    /// <summary>This build's version, for the status-bar button and the About dialog.</summary>
+    public static string AppVersion => BackupConstants.AppVersion;
+
+    /// <summary>
+    /// The registry the pages were built from, kept so a mid-session schema check re-fetches
+    /// into the same instance the badges report on.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Assigned by <see cref="InitializeAsync"/>, so it is null until then — a check
+    /// triggered before the window has loaded has nothing to refresh, and says so rather than
+    /// quietly building a second registry whose results no badge would reflect.
+    /// </remarks>
+    private SchemaRegistry? _registry;
 
     /// <summary>The page whose editor is showing.</summary>
     [ObservableProperty] private NavigationNodeViewModel? _selectedNode;
@@ -334,6 +349,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design.
         SchemaRegistry registry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork();
+        _registry = registry;
         List<string> failures = [];
         IsLoading = true;
 
@@ -486,6 +502,89 @@ public sealed partial class MainWindowViewModel : ObservableObject
             CultureInfo.CurrentCulture, Strings.SchemaBadgeFetchedFmt, when);
         header.BadgeTooltip = string.Format(
             CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipFetchedFmt, when, provenance.ShortSha);
+    }
+
+    /// <summary>
+    /// Re-fetch every hosted schema, re-label the nav badges, and return a localized one-line
+    /// summary. Backs the About dialog's <em>Check for schema updates</em> button.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This is what makes <see cref="NavigationNodeViewModel.Badge"/> observable rather
+    /// than <c>init</c>.</b> The nodes were built at load time; re-badging them in place is
+    /// the only way a mid-session check shows without discarding the tree, and discarding it
+    /// would throw away expansion state, selection, and any editor mid-edit.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>It does not reload.</b> An <c>Updated</c> result means the badge and the pages
+    /// now disagree, which is why the summary says to reload rather than implying the new
+    /// shape is already on screen.
+    /// </para>
+    /// <para>
+    /// ⓘ Unlike ClaudeForge, this app's SDK clients hold their OWN registries, so a check here
+    /// moves the pages' copy and leaves save-validation on whatever each client fetched at
+    /// startup. That divergence predates this action — see the badge's remarks — and sharing
+    /// one registry is the fix for both.
+    /// </para>
+    /// </remarks>
+    public async Task<string> CheckForSchemaUpdatesAsync(CancellationToken ct = default)
+    {
+        if (_registry is null)
+        {
+            return Strings.SchemaCheckUnavailable;
+        }
+
+        IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher
+            .RefreshAsync(_registry, Sections.Select(s => s.Product), ct)
+            .ConfigureAwait(true);
+
+        foreach (HostedSection section in Sections)
+        {
+            NavigationNodeViewModel? header = Navigation
+                .FirstOrDefault(n => string.Equals(n.Title, section.HeaderText(), StringComparison.Ordinal));
+
+            if (header is not null)
+            {
+                ApplyProvenanceBadge(header, _registry, section);
+            }
+        }
+
+        return SummariseSchemaCheck(results);
+    }
+
+    /// <summary>
+    /// Turn per-product results into the one line the dialog shows.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Severity order, not concatenation:</b> Failed, then Updated, then Unavailable,
+    /// then up to date. The row is one line, and the per-product detail is in each section's
+    /// own badge — which the caller has just refreshed.
+    /// </remarks>
+    internal static string SummariseSchemaCheck(IReadOnlyList<SchemaRefreshResult> results)
+    {
+        ArgumentNullException.ThrowIfNull(results);
+
+        static string Names(IEnumerable<SchemaRefreshResult> subset) =>
+            string.Join(", ", subset.Select(r => r.Product.DisplayName));
+
+        List<SchemaRefreshResult> failed = [.. results.Where(r => r.Status == SchemaRefreshStatus.Failed)];
+        if (failed.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckFailedFmt, Names(failed));
+        }
+
+        List<SchemaRefreshResult> updated = [.. results.Where(r => r.Status == SchemaRefreshStatus.Updated)];
+        if (updated.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckUpdatedFmt, Names(updated));
+        }
+
+        if (results.Any(r => r.Status == SchemaRefreshStatus.Unavailable))
+        {
+            return Strings.SchemaCheckUnavailable;
+        }
+
+        return Strings.SchemaCheckUpToDate;
     }
 
     private async Task<IReadOnlyList<NavigationNodeViewModel>> BuildPagesAsync(

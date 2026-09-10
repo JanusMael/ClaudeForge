@@ -87,4 +87,34 @@ public static class Strings
     /// <summary>Badge hover text for a fetched schema. {0} = local time, {1} = short digest.</summary>
     public static string SchemaBadgeTooltipFetchedFmt => Get(nameof(SchemaBadgeTooltipFetchedFmt));
 
+    /// <summary>About-dialog title, and the accessible name of the status-bar version button.</summary>
+    public static string MenuAbout => Get(nameof(MenuAbout));
+
+    /// <summary>Dismisses the About dialog.</summary>
+    public static string ButtonClose => Get(nameof(ButtonClose));
+
+    /// <summary>App version line in the About dialog. {0} = version string.</summary>
+    public static string LabelVersionFmt => Get(nameof(LabelVersionFmt));
+
+    /// <summary>Re-fetches every hosted schema.</summary>
+    public static string ButtonCheckForSchemaUpdates => Get(nameof(ButtonCheckForSchemaUpdates));
+
+    /// <summary>Hover text for the schema-update button.</summary>
+    public static string TipCheckForSchemaUpdates => Get(nameof(TipCheckForSchemaUpdates));
+
+    /// <summary>Shown while the schema check is in flight.</summary>
+    public static string SchemaCheckChecking => Get(nameof(SchemaCheckChecking));
+
+    /// <summary>Every checked schema hashed to what was already loaded.</summary>
+    public static string SchemaCheckUpToDate => Get(nameof(SchemaCheckUpToDate));
+
+    /// <summary>At least one schema changed. {0} = comma-joined product names.</summary>
+    public static string SchemaCheckUpdatedFmt => Get(nameof(SchemaCheckUpdatedFmt));
+
+    /// <summary>Upstream did not answer, so the bundled copy is in use.</summary>
+    public static string SchemaCheckUnavailable => Get(nameof(SchemaCheckUnavailable));
+
+    /// <summary>No source could supply a schema. {0} = comma-joined product names.</summary>
+    public static string SchemaCheckFailedFmt => Get(nameof(SchemaCheckFailedFmt));
+
 }
