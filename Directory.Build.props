@@ -27,7 +27,19 @@
 
         <!-- Company and product names; consumed by the source generator at build time -->
         <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
-        <AssemblyProduct>ClaudeForge</AssemblyProduct>
+        <!--
+          The DEFAULT product, which is now the shared library family rather than either app.
+
+          ⚠ This used to be `ClaudeForge`, which stamped that name into every assembly in the
+          repository — including AgentForge.* and LayeredEditors.*, which are product-neutral by
+          design and are consumed by both apps. A shared library reporting itself as one of its
+          two consumers is wrong in a file properties dialog, in a crash dump, and in any
+          support bundle that lists loaded modules.
+
+          Each app OVERRIDES this in its own csproj with its own name. Adding a third app means
+          adding the same one-line override there, not editing this.
+        -->
+        <AssemblyProduct>AgentForge</AssemblyProduct>
         <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
 
         <!-- Map CI environment variables to the MSBuild properties the generator reads.

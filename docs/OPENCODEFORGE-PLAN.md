@@ -731,13 +731,13 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 7 | `OpenCode.Sdk` | nothing user-visible | none | — |
 | 8 | **OpenCodeForge v0** | settings · effective view · install banner · update check — *first runnable* | none | **D** |
 | 9 | Compound editors | mcp · permission · agent · command · plugin · keybinds · references | none | — |
-| 10 | `AgentForge.Artifacts` — **10a shipped (engine); 10b/10c remain** | nothing user-visible | ⚠ Memory page | — |
+| 10 | `AgentForge.Artifacts` — ✅ **DONE (10a–10c)** | nothing user-visible | ⚠ Memory page | — |
 | 11 | Agents / Commands / Skills / **Rules** / Plugins | the headline feature | none | **E** |
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
 | 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
 | 14 | Backup / Restore + footprint | archive + prune, `auth.json` excluded | none | — |
-| 15 | Packaging | winget `Bennewitz.Ninja.OpenCodeForge` | ⚠ release workflow | **F** |
+| 15 | Packaging — 🔶 **7 slices shipped 2026-09-10; see below for what remains** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · app-update check · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
 | 16 | Re-validate against a used install | re-checks the 11 spike findings measured on an install that had never run a session | none | — |
 
 ⚠ **Phase 16 is a real phase, promoted from a checkpoint on 2026-09-09**, and it is *blocked on
@@ -5104,6 +5104,74 @@ precedence the way you meant.
   > **third** persisted-format concern — version them as one migration, not three.
 
 ### Phase 15 — Packaging and release
+
+> 🔶 **PHASE 15 — SEVEN SLICES SHIPPED 2026-09-10.** `46b5dd5` publish-script app descriptor ·
+> `d98845f` icon + Linux integration · `60c1011` real artifact + failed-RID exit · `2c95379`
+> release workflow + guards · `c9bff28` winget · `cad1c28` app-update check · `AssemblyProduct`.
+> Suite **4,162 · 0 · 11**, green at every commit; both apps publish trimmed, single-file, zero
+> ILLink warnings.
+>
+> ⛔⛔ **TWO CLAIMS IN THIS DOCUMENT WERE WRONG, and the repo had already ruled against one.**
+>
+> **"`release.yml`'s matrix gains an app dimension — 12 publish jobs" is not what happened, and
+> must not.** A workflow is selected by its TAG TRIGGER, and the two apps' tag shapes are
+> disjoint by construction (`v*.*.*` versus `opencodeforge-v*.*.*`). Widening one to catch both
+> would attach ClaudeForge binaries to what users see as an OpenCodeForge release. `release.yml`'s
+> own header said exactly this back in Phase 8 — *"A second app needs its own release workflow,
+> not another trigger on this one"* — so the plan line was already stale when it was read.
+> `release-opencodeforge.yml` is a separate workflow, and `ReleaseWorkflowTests` now enforces the
+> disjointness by BUILDING each app's tag and asserting exactly one workflow accepts it.
+>
+> **"`AssemblyProduct` moves out of `Directory.Build.props` into the per-app csproj" was half
+> done and half wrong.** OpenCodeForge already overrode it; the global default remained
+> `ClaudeForge`, stamping that name into every shared `AgentForge.*` and `LayeredEditors.*`
+> assembly. The default is now the neutral `AgentForge` and each app overrides it — measured out
+> of the built assemblies, not assumed.
+>
+> ⚠ **`release.yml`'s header also claims `publish.ps1` "reads `$env:PublicVersion` … and embeds
+> the version in archive filenames".** The filename half is false — archives are unversioned, as
+> the workflow's own release-notes body says. `PublicVersion` appears in NO repo-owned file; it
+> may still reach the external AutoVersioning generator through MSBuild's
+> environment-variable-to-property mapping, which is **not verified**.
+>
+> **⛔ SIX DEFECTS FOUND, none of them anticipated here.** Recorded because the way each was
+> invisible is the reusable part:
+>
+> | | Defect | Why nothing caught it |
+> |---|---|---|
+> | 1 | `publish.ps1` **always exited 0**, printing "Publish Complete!" in green, even when a RID's publish failed | `Publish-Rid.ps1` reports failure in a result object rather than throwing — right for an orchestrator, but nothing downstream read it. In CI a failed architecture gave a partial artifact set and a green step; `if-no-files-found: error` only fires when EVERY archive is missing, so it surfaced two jobs later at `gh release create` |
+> | 2 | `Analyze-XamlClosures.ps1` filtered candidates with the regex `\linked\` | Windows-only by construction, on the one OS where four of the six RIDs build |
+> | 3 | Publish logs were `publish-<rid>.log` while `dist/` is shared | The second app silently overwrote the first's — and that log is the input to the trim-warning scan |
+> | 4 | The "did the suppression XML reach ILLink?" check **has never been able to succeed** | `dotnet publish` runs at minimal verbosity, where ILLink's command line is filtered out entirely. Measured on both apps: a clean publish is 31 lines with no ILLink mention. It printed a red "the csproj wiring is broken" for that |
+> | 5 | Both winget paths staged `packaging/winget/*.yaml` | Correct with one app; the moment there were two it would have carried BOTH packages into one winget-pkgs PR |
+> | 6 | The sibling's pre-release rule `[[ $GITHUB_REF_NAME == *-* ]]` | Marks **every stable OpenCodeForge release** as a pre-release, because the tag prefix itself contains a hyphen. Ported blindly it would have shipped that way |
+>
+> ⭐ **The app-update service is now SHARED, not copied.** Only five things in ClaudeForge's
+> 278-line `AppUpdateService` were ever product-specific; the rest is `AgentForge.Core`'s
+> `AppUpdateCoordinator` and both apps are thin statics over it. ClaudeForge's public surface is
+> unchanged and its **12 existing tests pass unmodified** — the faithfulness proof.
+>
+> **⛔ WHAT REMAINS IN PHASE 15**
+>
+> - **The 4-hourly periodic re-check** for OpenCodeForge. ClaudeForge's loop is owned by a
+>   `CancellationTokenSource` that `Dispose` cancels, and `OpenCodeForge.MainWindowViewModel`
+>   implements **no `IDisposable` at all**. A background loop with nothing to stop it is how a
+>   task outlives its window, and this repository has already paid for one dispose race. It
+>   belongs with disposal, in one change. The launch check and the About-dialog button cover the
+>   same ground less often.
+> - **An Essentials card for the update opt-out.** Every card in this app is schema-backed
+>   through a `JsonPathFilter` and reads via the config client, and the builder lives in
+>   `OpenCode.Avalonia`, which cannot reference the app's `WindowStateService`. The preference
+>   sits beside the button it governs in the About dialog instead — arguably its better home, but
+>   it is not where the sibling puts it.
+> - **The icon is PLACEHOLDER artwork** (`src/OpenCodeForge/Resources/OpenCodeForge.svg`).
+>   Replacing it means regenerating the `.png` and the six-size `.ico` by hand; nothing does that
+>   automatically, and `AppIconTests` fails deliberately when the placeholder marker is removed.
+> - **Per-app `README.md` + screenshot galleries, `TRIMMING.md` baselines, and the two-app
+>   signing procedure.** The signing script is still not in the repository.
+> - ⚠ **Winget is not submittable-verified and cannot be from this machine**: it needs a signed
+>   binary from a real release and would open a public PR. The derivation is verified — both apps
+>   resolve to the right package id, tag, URLs and exe name, and each stages 3 manifests, not 6.
 
 Full detail in **Deployment** above — it is considerably more than draft 10's one
 paragraph. Summary of what lands here:
