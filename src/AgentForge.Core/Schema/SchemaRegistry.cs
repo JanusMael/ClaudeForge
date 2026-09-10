@@ -122,11 +122,12 @@ public sealed class SchemaRegistry : IDisposable
     /// would have made the flag half-effective in a way nobody would notice.
     /// </para>
     /// <para>
-    /// ⛔⛔ <b>The constructor parameter wins over this, and A TEST MUST NEVER SET THIS.</b> The
-    /// Core test assembly runs methods in PARALLEL, so setting it is not merely flaky — it makes
-    /// every registry another test constructs concurrently load bundled. Measured: a test that
-    /// exercised this passed in isolation and failed in the full suite. Pin a branch through the
-    /// constructor instead, which is why that argument takes precedence.
+    /// ⛔⛔ <b>The constructor parameter wins over this, and a test that SETS this must live in a
+    /// <c>[DoNotParallelize]</c> class.</b> <c>AgentForge.Core.Tests</c> is
+    /// <c>[assembly: Parallelize(MethodLevel)]</c>, so setting it from a parallelized test is not
+    /// merely flaky — it makes every registry another test constructs concurrently load bundled.
+    /// Measured: it passed in isolation and failed in the full suite. Prefer pinning a branch
+    /// through the constructor, which is why that argument takes precedence.
     /// </para>
     /// <para>
     /// ⚠ It cannot reach here from <c>DebugFlags</c> directly: that class lives in the ClaudeForge
