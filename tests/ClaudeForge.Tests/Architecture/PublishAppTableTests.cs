@@ -36,35 +36,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 [TestClass]
 public sealed class PublishAppTableTests
 {
-    private const string TableRelativePath = "src/publish/PublishApps.ps1";
-
-    /// <summary>One row of the PowerShell table, reduced to the fields worth asserting on.</summary>
-    private sealed record PublishAppRow(
-        string Name,
-        string ProjectPath,
-        string AssemblyName,
-        string StartupLogToken);
-
-    /// <summary>
-    /// Splits the table into <c>[pscustomobject]@{ … }</c> blocks.
-    /// </summary>
-    /// <remarks>
-    /// A source scan rather than an invocation of <c>pwsh</c>: the same choice
-    /// <c>ProductionSchemaRegistryTests</c> makes, and for a related reason — running the script
-    /// would prove the table evaluates, not that it says the right things, and it would make a
-    /// unit test depend on a shell being installed on every machine that clones this repo.
-    /// </remarks>
-    private static readonly Regex RowRegex = new(
-        @"\[pscustomobject\]@\{(?<body>.*?)\r?\n    \}",
-        RegexOptions.Compiled | RegexOptions.Singleline);
-
-    /// <summary>
-    /// One <c>Key = 'value'</c> assignment. <c>$null</c> is matched so an unset optional field is
-    /// recognised as "deliberately absent" rather than skipped as unparseable.
-    /// </summary>
-    private static readonly Regex FieldRegex = new(
-        @"(?<key>[A-Za-z]+)\s*=\s*(?:'(?<value>[^']*)'|(?<null>\$null))",
-        RegexOptions.Compiled);
+    private const string TableRelativePath = PublishAppTable.RelativePath;
 
     /// <summary>
     /// The startup line an app's <c>Program.cs</c> writes. Captures the message template only —
@@ -79,62 +51,11 @@ public sealed class PublishAppTableTests
         @"\{(?<name>[A-Za-z][A-Za-z0-9]*)\}",
         RegexOptions.Compiled);
 
-    /// <summary>Matches <c>BuildFilePathIntegrityTests.FindRepoRoot()</c>.</summary>
-    private static string FindRepoRoot()
-    {
-        string? dir = AppContext.BaseDirectory;
-        for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
-        {
-            if (Directory.Exists(Path.Combine(dir, "src")) && Directory.Exists(Path.Combine(dir, "tests")))
-            {
-                return dir;
-            }
+    /// <summary>Delegates to the shared reader; see <see cref="PublishAppTable"/>.</summary>
+    private static string FindRepoRoot() => PublishAppTable.FindRepoRoot();
 
-            dir = Path.GetDirectoryName(dir);
-        }
-
-        throw new InvalidOperationException(
-            $"Could not locate the repo root by walking up from '{AppContext.BaseDirectory}'.");
-    }
-
-    private static List<PublishAppRow> ReadTable(string repoRoot)
-    {
-        string tablePath = Path.Combine(
-            repoRoot, TableRelativePath.Replace('/', Path.DirectorySeparatorChar));
-
-        Assert.IsTrue(
-            File.Exists(tablePath),
-            $"'{TableRelativePath}' not found. Every script under src/publish/ dot-sources it, so "
-            + "its absence breaks publishing entirely — and nothing else in this suite would say so.");
-
-        string text = File.ReadAllText(tablePath);
-        List<PublishAppRow> rows = [];
-
-        foreach (Match row in RowRegex.Matches(text))
-        {
-            Dictionary<string, string?> fields = [];
-            foreach (Match field in FieldRegex.Matches(row.Groups["body"].Value))
-            {
-                fields[field.Groups["key"].Value] =
-                    field.Groups["null"].Success ? null : field.Groups["value"].Value;
-            }
-
-            // A row missing one of the four required fields is a malformed row, not a row to
-            // skip: skipping would let a typo'd key silently shrink the table this test counts.
-            foreach (string required in new[] { "Name", "ProjectPath", "AssemblyName", "StartupLogToken" })
-            {
-                Assert.IsTrue(
-                    fields.TryGetValue(required, out string? present) && present is not null,
-                    $"A row in {TableRelativePath} has no '{required}'. Every publish script reads "
-                    + $"that field:\n{row.Value}");
-            }
-
-            rows.Add(new PublishAppRow(
-                fields["Name"]!, fields["ProjectPath"]!, fields["AssemblyName"]!, fields["StartupLogToken"]!));
-        }
-
-        return rows;
-    }
+    private static List<PublishAppTable.Row> ReadTable(string repoRoot) =>
+        PublishAppTable.Read(repoRoot);
 
     /// <summary>Every <c>src/</c> project that produces an app rather than a library.</summary>
     /// <remarks>
@@ -175,7 +96,7 @@ public sealed class PublishAppTableTests
     [TestMethod]
     public void TableParses_SoThisTestIsNotVacuous()
     {
-        List<PublishAppRow> rows = ReadTable(FindRepoRoot());
+        List<PublishAppTable.Row> rows = ReadTable(FindRepoRoot());
 
         Assert.IsTrue(
             rows.Count >= 2,
@@ -189,7 +110,7 @@ public sealed class PublishAppTableTests
     public void EveryShippingAppHasAPublishAppRow()
     {
         string repoRoot = FindRepoRoot();
-        List<PublishAppRow> rows = ReadTable(repoRoot);
+        List<PublishAppTable.Row> rows = ReadTable(repoRoot);
         List<string> apps = ShippingAppProjects(repoRoot);
 
         Assert.IsTrue(
@@ -214,10 +135,10 @@ public sealed class PublishAppTableTests
     public void EveryPublishAppRowNamesAProjectThatExists()
     {
         string repoRoot = FindRepoRoot();
-        List<PublishAppRow> rows = ReadTable(repoRoot);
+        List<PublishAppTable.Row> rows = ReadTable(repoRoot);
 
         List<string> broken = [];
-        foreach (PublishAppRow row in rows)
+        foreach (PublishAppTable.Row row in rows)
         {
             string absolute = Path.Combine(
                 repoRoot, row.ProjectPath.Replace('/', Path.DirectorySeparatorChar));
@@ -255,12 +176,12 @@ public sealed class PublishAppTableTests
     public void EveryRowsStartupTokenIsWhatTheAppActuallyLogs()
     {
         string repoRoot = FindRepoRoot();
-        List<PublishAppRow> rows = ReadTable(repoRoot);
+        List<PublishAppTable.Row> rows = ReadTable(repoRoot);
 
         List<string> mismatches = [];
         int checkedCount = 0;
 
-        foreach (PublishAppRow row in rows)
+        foreach (PublishAppTable.Row row in rows)
         {
             string projectDir = Path.GetDirectoryName(
                 Path.Combine(repoRoot, row.ProjectPath.Replace('/', Path.DirectorySeparatorChar)))!;
