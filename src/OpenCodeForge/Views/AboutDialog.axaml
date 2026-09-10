@@ -24,6 +24,49 @@
                    FontSize="12"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 
+        <!-- App-update check. Always available — unlike the schema check below it needs
+             nothing from the main window, and unlike the launch check it ignores the
+             Essentials opt-out, because clicking it is consent. -->
+        <StackPanel Spacing="4">
+            <Button Content="{x:Static loc:Strings.ButtonCheckForUpdates}"
+                    Click="OnCheckForUpdatesClick"
+                    IsEnabled="{Binding !IsCheckingForUpdate}"
+                    Padding="10,4"
+                    HorizontalAlignment="Left"
+                    ToolTip.Tip="{x:Static loc:Strings.TipCheckForUpdates}"
+                    AutomationProperties.Name="{x:Static loc:Strings.ButtonCheckForUpdates}" />
+            <TextBlock FontSize="11"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="{Binding HasUpdateCheckResult}"
+                       Text="{Binding UpdateCheckResultText}" />
+            <!-- Only when the found release actually carries a page. A result synthesised by
+                 the simulate-update debug flag has a URL that 404s, which is intended.
+                 (The flag is not spelled with its leading hyphens here: an XML comment may
+                 not contain two consecutive hyphens.) -->
+            <Button Content="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}"
+                    Click="OnViewUpdateReleaseClick"
+                    Padding="10,4"
+                    HorizontalAlignment="Left"
+                    IsVisible="{Binding UpdateCheckHasReleaseUrl}"
+                    ToolTip.Tip="{x:Static loc:Strings.TipButtonUpdateBannerOpenRelease}"
+                    AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
+
+            <!-- The opt-out for the AUTOMATIC check, which is a different thing from the
+                 button above: unticking this silences the launch check and its banner, and
+                 does not disable the button, because pressing that is consent on its own.
+                 ⓘ The sibling app puts this on an Essentials card. Here it sits beside the
+                 action it governs, because this app's Essentials cards are all schema-backed
+                 and read through the config client — an app preference has no JSON path, and
+                 giving the card builder a second kind of source would be a wider change than
+                 the toggle is worth. -->
+            <CheckBox Content="{x:Static loc:Strings.EssentialsCardCheckForUpdatesTitle}"
+                      IsChecked="{Binding CheckForUpdatesOnLaunch}"
+                      Margin="0,4,0,0"
+                      ToolTip.Tip="{x:Static loc:Strings.EssentialsCardCheckForUpdatesBody}"
+                      AutomationProperties.Name="{x:Static loc:Strings.EssentialsCardCheckForUpdatesTitle}" />
+        </StackPanel>
+
         <!-- Schema-update check. Hidden when the dialog was opened without a main window
              behind it, because there is then nothing to refresh. -->
         <StackPanel Spacing="4" IsVisible="{Binding CanCheckSchemas}">
