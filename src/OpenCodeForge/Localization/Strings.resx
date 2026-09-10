@@ -100,4 +100,34 @@
   <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
     <value>This section's settings are described by a schema downloaded at {0} (fingerprint {1}). The copy built into this app is used instead when the download is unavailable.</value>
   </data>
+  <data name="MenuAbout" xml:space="preserve">
+    <value>About OpenCodeForge</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="LabelVersionFmt" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Check for schema updates</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Re-download the setting definitions these editors are built from. Takes effect after a reload.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Schemas are up to date.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Updated: {0}. Reload the window to apply — the editors still show the previous version.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Couldn't reach the schema server. Using the copy built into this app.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Couldn't load the schema for {0}. See the log for details.</value>
+  </data>
 </root>

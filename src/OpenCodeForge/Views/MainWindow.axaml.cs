@@ -29,4 +29,21 @@ public partial class MainWindow : Window
         Closing += (_, _) => WindowStateService.Save(
             new SavedWindowState(Width, Height, WindowState == AvWindowState.Maximized));
     }
+
+    /// <summary>
+    /// Opens the About dialog from the status-bar version button.
+    /// </summary>
+    /// <remarks>
+    /// The view-model owns the registry and the nav tree, so it — not the dialog — runs the
+    /// schema check and re-badges. A null DataContext (design-time, or a harness showing the
+    /// window without a view-model) simply hides that row.
+    /// </remarks>
+    private async void OnVersionLabelClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        AboutDialog about = DataContext is ViewModels.MainWindowViewModel vm
+            ? new AboutDialog(vm.CheckForSchemaUpdatesAsync)
+            : new AboutDialog();
+
+        await about.ShowDialog(this);
+    }
 }

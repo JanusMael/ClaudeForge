@@ -6,6 +6,7 @@
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:services="using:Bennewitz.Ninja.OpenCodeForge.Services"
         xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+        xmlns:loc="using:Bennewitz.Ninja.OpenCodeForge.Localization"
         x:Class="Bennewitz.Ninja.OpenCodeForge.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
@@ -179,11 +180,38 @@
             </Panel>
         </Grid>
 
-        <!-- Only visible when something failed to load; an empty status must not reserve space. -->
-        <Border Grid.Row="3" Padding="10,6" Background="#FFB71C1C"
-                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-            <TextBlock Text="{Binding Status}" Foreground="White" TextWrapping="Wrap"
-                       AutomationProperties.Name="Load status" />
-        </Border>
+        <!-- Status bar, following ClaudeForge: transient status on the left, a permanent
+             version button on the right that opens the About dialog.
+
+             ⚠ The row now reserves space where it previously did not. That is the cost of
+             giving this app a version anywhere on screen at all — it had none — and the
+             failure Border still collapses on its own, so an untroubled window shows a thin
+             strip with a version in it rather than a red bar. -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+            <Border Grid.Column="0" Padding="10,6" Background="#FFB71C1C"
+                    IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding Status}" Foreground="White" TextWrapping="Wrap"
+                           AutomationProperties.Name="Load status" />
+            </Border>
+
+            <!-- A Button, not a TextBlock, so the whole rectangle is the click target and the
+                 cursor changes on hover. Styled flat to read as status-bar text. -->
+            <Button Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="8,2"
+                    Cursor="Hand"
+                    Click="OnVersionLabelClick"
+                    ToolTip.Tip="{x:Static loc:Strings.MenuAbout}"
+                    AutomationProperties.Name="{x:Static loc:Strings.MenuAbout}">
+                <TextBlock Text="{Binding AppVersion, StringFormat='v{0}', Mode=OneTime}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center" />
+            </Button>
+        </Grid>
     </Grid>
 </Window>

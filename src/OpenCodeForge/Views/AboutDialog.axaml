@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
+        xmlns:loc="using:Bennewitz.Ninja.OpenCodeForge.Localization"
+        x:Class="Bennewitz.Ninja.OpenCodeForge.Views.AboutDialog"
+        x:DataType="views:AboutDialog"
+        Title="{x:Static loc:Strings.MenuAbout}"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!-- Follows ClaudeForge's About dialog: identity at the top, the "am I running something
+         stale?" actions under it, a single dismiss at the bottom right. The dialog is its own
+         DataContext, so it can be shown without MainWindowViewModel — the schema-check row is
+         the only part that needs the window behind it, and it hides when that is absent. -->
+    <StackPanel Margin="20" Spacing="14">
+
+        <TextBlock Text="{x:Static loc:Strings.AppTitle}"
+                   FontSize="18"
+                   FontWeight="SemiBold" />
+
+        <TextBlock Text="{Binding VersionText, Mode=OneTime}"
+                   FontSize="12"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+        <!-- Schema-update check. Hidden when the dialog was opened without a main window
+             behind it, because there is then nothing to refresh. -->
+        <StackPanel Spacing="4" IsVisible="{Binding CanCheckSchemas}">
+            <Button Content="{x:Static loc:Strings.ButtonCheckForSchemaUpdates}"
+                    Click="OnCheckForSchemaUpdatesClick"
+                    IsEnabled="{Binding !IsCheckingSchemas}"
+                    Padding="10,4"
+                    HorizontalAlignment="Left"
+                    ToolTip.Tip="{x:Static loc:Strings.TipCheckForSchemaUpdates}"
+                    AutomationProperties.Name="{x:Static loc:Strings.ButtonCheckForSchemaUpdates}" />
+            <TextBlock FontSize="11"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="{Binding HasSchemaCheckResult}"
+                       Text="{Binding SchemaCheckResultText}" />
+        </StackPanel>
+
+        <Button Content="{x:Static loc:Strings.ButtonClose}"
+                Click="OnCloseClick"
+                Padding="16,4"
+                IsCancel="True"
+                IsDefault="True"
+                HorizontalAlignment="Right"
+                AutomationProperties.Name="{x:Static loc:Strings.ButtonClose}" />
+    </StackPanel>
+</Window>
