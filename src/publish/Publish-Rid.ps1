@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Publishes the ClaudeForge self-contained binary for a single RID.
+    Publishes one app's self-contained binary for a single RID.
 
 .DESCRIPTION
     The single-RID worker behind the split publish workflow:
@@ -14,20 +14,29 @@
             ├── publish-osx-x64.ps1
             └── publish-osx-arm64.ps1
 
-    All scripts live under src/publish/.
+    All scripts live under src/publish/. Everything app-shaped — project path,
+    assembly name, Linux desktop assets — comes from PublishApps.ps1 rather than
+    being written here; see that file for why it is a table.
 
     Each invocation:
       1. Optionally wipes bin/obj across the src tree (see -Clean).
       2. Runs `dotnet publish -c Release -r <rid> --self-contained true`
          with output tee'd to a per-RID log under dist/logs/.
       3. Scans the log for `warning IL\d+` lines (ILLink diagnostics).
-      4. Zips the published folder into dist/<project>-<rid>.zip.
+      4. Zips the published folder into dist/<assembly>-<rid>.zip.
       5. Emits a structured PSCustomObject to the pipeline so orchestrators
          can aggregate warnings across RIDs without re-parsing the log.
 
+.PARAMETER App
+    Which app to publish — a Name from PublishApps.ps1. Defaults to ClaudeForge,
+    which is what every caller meant back when this script could only build one
+    app. The default preserves those callers rather than reinterpreting them;
+    release.yml passes it explicitly anyway, because the one place a silent
+    default would be expensive is the one that attaches binaries to a release.
+
 .PARAMETER Rid
     The .NET runtime identifier to publish for. Must be one of the RIDs
-    declared in ClaudeForge.csproj's <RuntimeIdentifiers>.
+    declared in the target app's <RuntimeIdentifiers>.
 
 .PARAMETER Clean
     When specified, wipes every bin/ and obj/ directory under the src tree
@@ -46,6 +55,7 @@
 
 .OUTPUTS
     PSCustomObject with properties:
+      App          — the app that was built
       Rid          — the RID that was built
       ExitCode     — the exit code of `dotnet publish` (0 on success)
       LogPath      — absolute path to the per-RID publish log
@@ -57,7 +67,7 @@
     pwsh src/publish/Publish-Rid.ps1 -Rid win-x64 -Clean
 
 .EXAMPLE
-    pwsh src/publish/Publish-Rid.ps1 -Rid linux-arm64 -Clean:$false
+    pwsh src/publish/Publish-Rid.ps1 -App OpenCodeForge -Rid linux-arm64 -Clean:$false
 #>
 
 [CmdletBinding()]
@@ -65,6 +75,8 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidateSet("win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64")]
     [string] $Rid,
+
+    [string] $App = 'ClaudeForge',
 
     [switch] $Clean,
 
@@ -81,10 +93,15 @@ $ErrorActionPreference = 'Stop'
 # silent lets the build log scroll naturally in any host.
 $ProgressPreference = 'SilentlyContinue'
 
-# $PSScriptRoot is src/publish/ — the src/ root (where the csproj lives) is one level up.
-$srcRoot     = Split-Path $PSScriptRoot -Parent
-$projectName = "./ClaudeForge/ClaudeForge.csproj"
-$projectPath = Join-Path $srcRoot $projectName
+# $PSScriptRoot is src/publish/ — the src/ root (where the csprojs live) is one level up.
+$srcRoot = Split-Path $PSScriptRoot -Parent
+
+# NOTE: $appInfo, not $app. PowerShell variable names are case-INSENSITIVE, so a
+# local named $app would silently be the same variable as the $App parameter and
+# overwrite the caller's app name with the descriptor object.
+. (Join-Path $PSScriptRoot 'PublishApps.ps1')
+$appInfo     = Get-PublishApp -Name $App
+$projectPath = Resolve-PublishAppPath -RelativePath $appInfo.ProjectPath
 
 # Default dist/log folders under src/ so repeated runs accumulate in one place.
 if (-not $DistFolder) { $DistFolder = Join-Path $srcRoot "dist" }
@@ -107,17 +124,20 @@ if ($Clean) {
         Remove-Item -Recurse -Force -LiteralPath $dir -ErrorAction SilentlyContinue
     }
 
-    $projectNameOnly = [System.IO.Path]::GetFileNameWithoutExtension($projectName)
-    $priorZip = Join-Path $DistFolder "$projectNameOnly-$Rid.zip"
+    $priorZip = Join-Path $DistFolder ($appInfo.AssemblyName + "-$Rid.zip")
     if (Test-Path $priorZip) { Remove-Item -Force -LiteralPath $priorZip }
     $priorStaging = Join-Path $DistFolder $Rid
     if (Test-Path $priorStaging) { Remove-Item -Recurse -Force -LiteralPath $priorStaging }
 }
 
 # --- Publish ----------------------------------------------------------------
-Write-Host "`n>>> Publishing for $Rid..." -ForegroundColor Yellow
+Write-Host "`n>>> Publishing $($appInfo.Name) for $Rid..." -ForegroundColor Yellow
 $ridFolder = Join-Path $DistFolder $Rid
-$logPath   = Join-Path $logFolder "publish-$Rid.log"
+# App-qualified: dist/ is shared by both apps (their archives are already
+# app-named), so a bare publish-<rid>.log would have the second app silently
+# overwrite the first app's log for the same RID — and that log is the input to
+# the trim-warning scan and the closure analyzer.
+$logPath   = Join-Path $logFolder ('publish-' + $appInfo.AssemblyName + "-$Rid.log")
 
 # Always wipe the staging folder before publishing so that leftover files
 # from previous runs (e.g. the app's own logs/ directory written if the binary
@@ -174,7 +194,7 @@ if ($warningCount -gt 0) {
 $archivePath = $null
 if ($publishExit -eq 0) {
     # ── macOS: bundle the Gatekeeper quarantine remover script ───────────────
-    # ClaudeForge v1 ships UNSIGNED and UNNOTARIZED (no Apple Developer
+    # Both apps ship UNSIGNED and UNNOTARIZED (no Apple Developer
     # Program membership for the open-source release).  On first launch,
     # macOS Gatekeeper refuses to run the binary AND every .dylib next to
     # it because of the `com.apple.quarantine` xattr the OS attaches to
@@ -194,8 +214,10 @@ if ($publishExit -eq 0) {
     # alongside the binary; the existing $execMode = rwxr-xr-x branch
     # below applies to every staged file, so the script is marked
     # executable in the archive automatically.
+    # Not per-app: the script strips the quarantine xattr from whatever directory
+    # it is run in and names no binary, so both apps ship the same copy.
     if ($Rid -like 'osx-*') {
-        $allowScript = Join-Path $PSScriptRoot '../../assets/macos/allow-app-to-run.sh'
+        $allowScript = Resolve-PublishAppPath -RelativePath 'assets/macos/allow-app-to-run.sh'
         if (Test-Path $allowScript) {
             Copy-Item -Path $allowScript -Destination $ridFolder
             Write-Host "[$Rid] Bundled allow-app-to-run.sh into staging" -ForegroundColor DarkGray
@@ -223,33 +245,51 @@ if ($publishExit -eq 0) {
     # file, so the script ships executable and the .desktop / .svg files
     # ship with harmless rwxr-xr-x (mode bits are immaterial for read-only
     # consumers like update-desktop-database).
+    #
+    # ⚠ The staged NAMES are derived from the assembly name, not copied from the
+    # source filenames, because linux-setup.sh looks its siblings up by an exact
+    # name: "$SCRIPT_DIR/<app>.desktop" and "$SCRIPT_DIR/<app>.svg". Renaming the
+    # source files without renaming these would leave a setup script that exits
+    # with "template not found" on the user's machine and nowhere else.
     if ($Rid -like 'linux-*') {
+        $lowerName   = $appInfo.AssemblyName.ToLowerInvariant()
         $linuxAssets = @(
-            @{ Src = '../../assets/linux/linux-setup.sh';                Name = 'linux-setup.sh' }
-            @{ Src = '../../assets/linux/claudeforge.desktop';           Name = 'claudeforge.desktop' }
-            @{ Src = '../ClaudeForge/Resources/ClaudeForge.svg';         Name = 'claudeforge.svg' }
+            @{ Rel = $appInfo.LinuxSetup;  Name = 'linux-setup.sh' }
+            @{ Rel = $appInfo.DesktopFile; Name = $lowerName + '.desktop' }
+            @{ Rel = $appInfo.IconSvg;     Name = $lowerName + '.svg' }
         )
-        $missing = @()
-        foreach ($asset in $linuxAssets) {
-            $srcPath = Join-Path $PSScriptRoot $asset.Src
-            if (Test-Path $srcPath) {
-                Copy-Item -Path $srcPath -Destination (Join-Path $ridFolder $asset.Name)
-            } else {
-                $missing += $srcPath
-            }
+
+        # An app with no desktop assets declared is not an error — it is an app
+        # that has not been given an icon yet. Say so once, plainly, instead of
+        # warning three times about paths nobody wrote.
+        $declared = @($linuxAssets | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Rel) })
+        if ($declared.Count -eq 0) {
+            Write-Host ("[$Rid] " + $appInfo.Name +
+                " declares no Linux desktop assets — archive ships without .desktop integration.") `
+                -ForegroundColor DarkYellow
         }
-        if ($missing.Count -gt 0) {
-            Write-Warning "[$Rid] Linux desktop-integration assets missing: $($missing -join ', ')"
-        } else {
-            Write-Host "[$Rid] Bundled linux-setup.sh + .desktop + .svg into staging" -ForegroundColor DarkGray
+        else {
+            $missing = @()
+            foreach ($asset in $declared) {
+                $srcPath = Resolve-PublishAppPath -RelativePath $asset.Rel
+                if (Test-Path $srcPath) {
+                    Copy-Item -Path $srcPath -Destination (Join-Path $ridFolder $asset.Name)
+                } else {
+                    $missing += $srcPath
+                }
+            }
+            if ($missing.Count -gt 0) {
+                Write-Warning "[$Rid] Linux desktop-integration assets missing: $($missing -join ', ')"
+            } else {
+                Write-Host "[$Rid] Bundled linux-setup.sh + .desktop + .svg into staging" -ForegroundColor DarkGray
+            }
         }
     }
 
     $isWindowsRid = $Rid -like 'win-*'
     $archiveExt   = if ($isWindowsRid) { '.zip' } else { '.tar.gz' }
 
-    $projectNameOnly = [System.IO.Path]::GetFileNameWithoutExtension($projectName)
-    $archivePath     = Join-Path $DistFolder "$projectNameOnly-$Rid$archiveExt"
+    $archivePath  = Join-Path $DistFolder ($appInfo.AssemblyName + "-$Rid$archiveExt")
 
     Write-Host ("[$Rid] Creating $archiveExt archive...") -ForegroundColor Gray
 
@@ -331,6 +371,7 @@ else {
 
 # Emit a structured result so orchestrators can aggregate without re-parsing.
 [pscustomobject]@{
+    App          = $appInfo.Name
     Rid          = $Rid
     ExitCode     = $publishExit
     LogPath      = $logPath

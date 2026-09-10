@@ -85,9 +85,22 @@ public sealed class BuildFilePathIntegrityTests
         // that PROMPTED this test deleted. Its PowerShell twin was fixed at the time; the shell
         // copy was not, because nothing looked at it. Add an extension here whenever a new kind
         // of build script appears, or it inherits exactly that blind spot.
-        string scripts = Path.Combine(repoRoot, "scripts");
-        if (Directory.Exists(scripts))
+        //
+        // ⛔ THREE script roots, not one. `scripts/` was the only one scanned until Phase 15,
+        // and the two that were missing are the ones that run at release time: `src/publish/`
+        // (the publish orchestrator, its per-RID worker, the smoke gate, the closure analyzer)
+        // and `packaging/` (the winget submission). Those hold the app-identity paths a rename
+        // breaks, and nothing outside a release cut executes them — so a stale path there is
+        // found by the person cutting the release, at the moment they can least afford it.
+        foreach (string scriptRoot in new[] { "scripts", "src/publish", "packaging" })
         {
+            string scripts = Path.Combine(
+                repoRoot, scriptRoot.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(scripts))
+            {
+                continue;
+            }
+
             foreach (string pattern in new[] { "*.ps1", "*.sh" })
             {
                 foreach (string f in Directory.GetFiles(scripts, pattern, SearchOption.AllDirectories))

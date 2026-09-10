@@ -1,12 +1,17 @@
 <#
 .SYNOPSIS
-    Multi-RID publish orchestrator for ClaudeForge.
+    Multi-RID publish orchestrator for one app.
 
 .DESCRIPTION
     Drives Publish-Rid.ps1 across every supported RID, prompting the user
     before each one so a developer can cherry-pick the architectures they
     actually need (or quit partway through). Pass -All to skip prompts and
     build every RID unattended — this is the CI / release-cut mode.
+
+    One app per invocation. The repository ships two, and they release on
+    separate tags and separate workflows (see .github/workflows/release.yml's
+    header and AgentForge.Core/Updates/ReleaseTagScheme.cs), so publishing both
+    in one run would produce a set of archives no single release consumes.
 
     Script layout (all scripts live under src/publish/):
 
@@ -31,6 +36,10 @@
         pwsh src/publish/publish.ps1 -All
         pwsh src/publish/publish.ps1 -Rids win-x64,win-arm64
 
+.PARAMETER App
+    Which app to publish — a Name from PublishApps.ps1. Defaults to ClaudeForge
+    so every pre-existing caller keeps meaning what it meant.
+
 .PARAMETER All
     Build every RID in $Rids without prompting. Typical CI usage:
       `pwsh src/publish/publish.ps1 -All`
@@ -48,12 +57,18 @@
     pwsh src/publish/publish.ps1 -All
 
 .EXAMPLE
+    # The other app, unattended.
+    pwsh src/publish/publish.ps1 -App OpenCodeForge -All
+
+.EXAMPLE
     # Interactive, but only offer the two Windows RIDs.
     pwsh src/publish/publish.ps1 -Rids win-x64,win-arm64
 #>
 
 [CmdletBinding()]
 param(
+    [string] $App = 'ClaudeForge',
+
     [switch] $All,
 
     [ValidateSet("win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64")]
@@ -77,6 +92,12 @@ $logFolder       = Join-Path $distFolder "logs"
 # All helper scripts live alongside this script in the publish/ directory.
 $worker          = Join-Path $PSScriptRoot "Publish-Rid.ps1"
 $closureAnalyzer = Join-Path $PSScriptRoot "Analyze-XamlClosures.ps1"
+
+# $appInfo, never $app — PowerShell variable names are case-insensitive, so a
+# local named $app IS the $App parameter.
+. (Join-Path $PSScriptRoot 'PublishApps.ps1')
+$appInfo = Get-PublishApp -Name $App
+Write-Host ("Publishing app: " + $appInfo.Name) -ForegroundColor Magenta
 
 Set-Location $srcRoot
 
@@ -143,6 +164,12 @@ if ($buildingWindows)
 
 # ── 1. Global pre-clean ─────────────────────────────────────────────────────
 # Wipe dist/ (all prior zips, logs, staging) and every bin/obj under src/.
+#
+# ⚠ dist/ IS SHARED BY BOTH APPS, so this wipe removes the other app's archives
+# too. That is fine for CI — each workflow run gets a fresh runner, and the two
+# apps release from separate workflows on separate tags — but publishing both
+# apps locally means the second run deletes the first run's zips. Publish one,
+# copy its output elsewhere, then publish the other.
 #
 # We use a manual bin/obj wipe rather than `dotnet clean` because the Release
 # config sets <SelfContained>true</SelfContained>, which makes the SDK
@@ -237,7 +264,7 @@ foreach ($rid in $Rids) {
     # selective clean would NOT do, but the full wipe the orchestrator does
     # WOULD). Call the worker with -DistFolder so sibling logs and zips all
     # land in the same orchestrator-owned folder.
-    $result = & $worker -Rid $rid -DistFolder $distFolder
+    $result = & $worker -App $App -Rid $rid -DistFolder $distFolder
     $results.Add($result)
 }
 
@@ -258,9 +285,14 @@ if ($ridsWithWarnings.Count -gt 0) {
         # almost always RID-invariant (the same Semi.Avalonia closures appear
         # across all platforms), so one log is representative.
         $primaryRid = $ridsWithWarnings[0]
-        $primaryLog = Join-Path $logFolder "publish-$primaryRid.log"
-        $linkedPath = Join-Path $srcRoot `
-            ("ClaudeForge/obj/Release/net10.0/{0}/linked/ClaudeForge.dll" -f $primaryRid)
+        $primaryLog = Join-Path $logFolder `
+            ('publish-' + $appInfo.AssemblyName + "-$primaryRid.log")
+        # The obj/ tree is named by the PROJECT DIRECTORY, which is not always the
+        # assembly name; take the directory from the descriptor's project path and
+        # the dll name from its assembly name rather than assuming they match.
+        $projectDir = Split-Path $appInfo.ProjectPath -Parent
+        $linkedPath = Join-Path (Resolve-PublishAppPath -RelativePath $projectDir) `
+            ("obj/Release/net10.0/{0}/linked/{1}.dll" -f $primaryRid, $appInfo.AssemblyName)
 
         # Quick confirmation diagnostic per TRIMMING.md step 1: did the
         # suppression XML actually reach ILLink?
@@ -278,8 +310,9 @@ if ($ridsWithWarnings.Count -gt 0) {
         else {
             # Fallback: let the analyzer auto-discover a linked assembly (it
             # defaults to win-x64; log-vs-RID mismatch is rare but harmless).
+            # -App still matters here — auto-discovery searches THAT app's obj tree.
             Write-Host ("Linked assembly not found at {0}; falling back to analyzer defaults." -f $linkedPath) -ForegroundColor DarkYellow
-            & $closureAnalyzer -WarningsPath $primaryLog -IncludeReferences
+            & $closureAnalyzer -App $App -WarningsPath $primaryLog -IncludeReferences
         }
     }
 
@@ -294,7 +327,7 @@ elseif ($results.Count -gt 0) {
 # built, which failed, and whether anything was skipped via the prompt.
 if ($results.Count -gt 0) {
     Write-Host "`nResults:" -ForegroundColor Green
-    $results | Format-Table Rid, ExitCode, WarningCount, @{
+    $results | Format-Table App, Rid, ExitCode, WarningCount, @{
         Name       = 'Archive'
         Expression = { if ($_.ArchivePath) { Split-Path $_.ArchivePath -Leaf } else { '(none)' } }
     } | Out-Host
