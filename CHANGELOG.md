@@ -97,6 +97,13 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Changed
 
+- **The status pills' contrast contract is now a test.** `App.axaml` stated in
+  prose that every pair clears 4.5:1 on its pill and 7.3:1 on the page, and asked
+  whoever retints one to recheck both numbers by hand. `StatusPaletteContrastTests`
+  reads those very brush values and does the recheck on every build. The margin is
+  thinner than the prose suggests — the worst pill pair clears by 0.07 and the
+  worst page pair by 0.05 — so the palette was one careless retint from a
+  regression nothing would have caught.
 - `model` / `effortLevel` / `permissions.defaultMode` option lists are now
   catalog-driven and inter-aware rather than hardcoded.
 - Fixed 'missing files' that originate in the 'selected project' tree during backup scenarios
