@@ -1,54 +1,43 @@
-using System.ComponentModel;
-using System.Reflection;
-using Avalonia.Headless;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
 
 /// <summary>
-/// locks <see cref="StatusController"/>'s lifecycle rules.
-/// Replaces the prior "bare <c>string? StatusMessage</c> property that
-/// never auto-cleared".  The five kinds (None / Active / Success /
-/// Warning / Failure / State) have different auto-clear behaviours and
-/// the View renders different per-kind icons / colours; these tests pin
-/// each contract so a future refactor doesn't quietly regress one.
+/// Locks <see cref="StatusController"/>'s lifecycle rules.  The five kinds
+/// (Active / Success / Warning / Failure / State) have different auto-clear
+/// behaviours and the View renders different per-kind icons / colours; these
+/// tests pin each contract so a future refactor doesn't quietly regress one.
 /// </summary>
 /// <remarks>
-/// All auto-clear tests use the <see cref="StatusController.DelayOverride"/>
-/// test seam so timing is deterministic.  Two patterns:
-/// <list type="bullet">
-///   <item>Replace the delay with one that completes <em>immediately</em>
-///         (used for "auto-clear fires" assertions).</item>
-///   <item>Replace the delay with one that hangs on a TaskCompletionSource
-///         until the test releases it (used for "auto-clear is cancelled
-///         by a subsequent Set" assertions).</item>
-/// </list>
-/// Each test resets <see cref="StatusController.DelayOverride"/> in
-/// TestCleanup to avoid cross-test contamination.
+/// <para>
+/// Every test drives a <see cref="FakeTimeProvider"/> the test advances by
+/// hand, and passes <c>action =&gt; action()</c> as the controller's dispatch so
+/// the clear runs inline.  Nothing sleeps, nothing polls, no dispatcher is
+/// pumped, and no static seam has to be reset between tests — the clock and
+/// the dispatch are per instance.
+/// </para>
+/// <para>
+/// This replaces the prior <c>DelayOverride</c> static seam, which could only
+/// make a delay complete immediately or hang on a
+/// <c>TaskCompletionSource</c>; because it could not distinguish
+/// <em>which</em> delay had been asked for, no test could assert that a
+/// warning stays longer than a success.  <see cref="SetWarning_StaysLongerThanASuccess"/>
+/// is that assertion.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class StatusControllerTests
 {
-    // The auto-clear marshals its clear onto the Avalonia UI thread
-    // (Dispatcher.UIThread.Post). A plain [TestMethod] has no pumped dispatcher,
-    // so a posted ApplyClear never runs and the "auto-clear fires" assertions
-    // hang until the watchdog (immune to timeout bumps — it never fires, it isn't
-    // slow). Tests that assert the clear FIRES therefore run on the shared
-    // headless session's pumped UI thread via Session.Dispatch(...).
-    private static HeadlessUnitTestSession Session =>
-        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
-
-    [TestCleanup]
-    public void Cleanup()
-    {
-        StatusController.ResetForTesting();
-    }
+    private static StatusController NewController(FakeTimeProvider time) => new(time, action => action());
 
     [TestMethod]
-    public void Set_PutsTextAndKindOnTheController()
+    public void SetSuccess_PutsTextAndKindOnTheController()
     {
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success);
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
+
+        sc.SetSuccess("Saved.");
 
         Assert.AreEqual("Saved.", sc.Text);
         Assert.AreEqual(StatusKind.Success, sc.Kind);
@@ -58,14 +47,15 @@ public sealed class StatusControllerTests
     }
 
     [TestMethod]
-    public void Set_EmptyText_ForcesKindNoneEvenWhenCallerPassedAKind()
+    public void SetAnything_WithEmptyText_ForcesKindNone()
     {
-        // Empty text always means "nothing on screen" — the kind enum is
-        // irrelevant in that case.  Caller passing a non-None kind alongside
-        // a null/empty text would otherwise produce a visible coloured pill
-        // with no message in it.
-        StatusController sc = new();
-        sc.Set(null, StatusKind.Failure);
+        // Empty text always means "nothing on screen" — the kind is irrelevant in
+        // that case.  A caller passing a non-None kind alongside a null/empty text
+        // would otherwise produce a visible coloured pill with no message in it.
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
+
+        sc.SetFailure(null);
 
         Assert.AreEqual(StatusKind.None, sc.Kind);
         Assert.IsFalse(sc.HasText);
@@ -75,11 +65,14 @@ public sealed class StatusControllerTests
     [TestMethod]
     public void Dismiss_ClearsTextAndResetsKindToNone()
     {
-        StatusController sc = new();
-        sc.Set("Save failed: ...", StatusKind.Failure);
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
+
+        sc.SetFailure("Save failed: ...");
         Assert.IsTrue(sc.IsFailure);
 
         sc.Dismiss();
+
         Assert.IsNull(sc.Text);
         Assert.AreEqual(StatusKind.None, sc.Kind);
         Assert.IsFalse(sc.IsDismissible);
@@ -88,298 +81,198 @@ public sealed class StatusControllerTests
     [TestMethod]
     public void IsDismissible_OnlyTrueForFailureKind()
     {
-        StatusController sc = new();
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
+
         // Success / Warning auto-clear instead, so no × button.
-        sc.Set("Saved.", StatusKind.Success);
+        sc.SetSuccess("Saved.");
         Assert.IsFalse(sc.IsDismissible);
 
-        sc.Set("Nothing to save", StatusKind.Warning);
+        sc.SetWarning("Nothing to save");
         Assert.IsFalse(sc.IsDismissible);
 
         // Active is operation-tied, gets cleared by the next status emit.
-        sc.Set("Reloading…", StatusKind.Active);
+        sc.SetActive("Reloading…");
         Assert.IsFalse(sc.IsDismissible);
 
         // State is long-lived identity text.
-        sc.Set("Ready", StatusKind.State);
+        sc.SetState("Ready");
         Assert.IsFalse(sc.IsDismissible);
 
         // Only Failure surfaces the manual × button.
-        sc.Set("Save failed: ...", StatusKind.Failure);
+        sc.SetFailure("Save failed: ...");
         Assert.IsTrue(sc.IsDismissible);
     }
 
     [TestMethod]
-    public Task Set_SuccessKind_AutoClearsAfterDelay() => Session.Dispatch(async () =>
+    public void SetSuccess_AutoClearsAfterItsDelay()
     {
-        // Inject a delay function that completes immediately so the
-        // auto-clear path fires without us actually sleeping.
-        StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success);
+        sc.SetSuccess("Saved.");
 
-        // Auto-clear marshals ApplyClear onto the UI thread; running inside the
-        // headless session means the dispatcher is pumped, so the clear actually
-        // fires (a plain [TestMethod] has no pumped dispatcher → never clears).
-        await WaitForClearAsync(sc);
+        time.Advance(StatusController.DefaultSuccessAutoClearDelay - TimeSpan.FromMilliseconds(1));
+        Assert.AreEqual("Saved.", sc.Text, "The success must still be on screen a millisecond early.");
 
-        Assert.IsNull(sc.Text, "Success status should auto-clear after the delay.");
+        time.Advance(TimeSpan.FromMilliseconds(2));
+        Assert.IsNull(sc.Text, "Success status should auto-clear after its delay.");
         Assert.AreEqual(StatusKind.None, sc.Kind);
-    }, CancellationToken.None);
+    }
 
     [TestMethod]
-    public Task Set_WarningKind_AlsoAutoClears() => Session.Dispatch(async () =>
+    public void SetWarning_StaysLongerThanASuccess()
     {
-        StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
+        // The delay a warning gets is its own, and longer. The previous static
+        // DelayOverride seam could not express this: it replaced every delay with
+        // the same immediately-completing task, so the two were indistinguishable.
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Nothing to save", StatusKind.Warning);
+        sc.SetWarning("Nothing to save");
 
-        await WaitForClearAsync(sc);
+        time.Advance(StatusController.DefaultSuccessAutoClearDelay);
+        Assert.AreEqual("Nothing to save", sc.Text,
+            "A warning must outlast the success delay — it has its own, longer one.");
 
-        Assert.IsNull(sc.Text, "Warning status should auto-clear after the delay.");
+        time.Advance(StatusController.DefaultWarningAutoClearDelay
+                     - StatusController.DefaultSuccessAutoClearDelay
+                     + TimeSpan.FromMilliseconds(1));
+        Assert.IsNull(sc.Text, "Warning status should auto-clear after its own delay.");
         Assert.AreEqual(StatusKind.None, sc.Kind);
-    }, CancellationToken.None);
+    }
 
     [TestMethod]
-    public async Task Set_FailureKind_DoesNotAutoClear()
+    public void SetFailure_DoesNotAutoClear()
     {
-        // Even with an immediate-completion delay function, a Failure status
-        // must NOT auto-clear — the controller doesn't schedule an auto-clear
-        // for that kind at all.  Tests that the delay function isn't even
-        // wired in for Failure.
-        bool delayCalled = false;
-        StatusController.DelayOverride = (d, ct) =>
-        {
-            delayCalled = true;
-            return Task.CompletedTask;
-        };
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Save failed: ...", StatusKind.Failure);
+        sc.SetFailure("Save failed: ...");
+        time.Advance(TimeSpan.FromHours(1));
 
-        // Give any wayward task a moment to run.
-        await Task.Delay(50);
-
-        Assert.IsFalse(delayCalled,
-            "Failure status must not schedule any auto-clear delay.");
         Assert.AreEqual("Save failed: ...", sc.Text);
         Assert.AreEqual(StatusKind.Failure, sc.Kind);
         Assert.IsTrue(sc.IsDismissible);
     }
 
     [TestMethod]
-    public async Task Set_ActiveKind_DoesNotAutoClear()
+    public void SetActive_DoesNotAutoClear()
     {
-        // Active statuses are tied to the lifetime of the emitting
-        // operation; the caller is responsible for replacing them with
-        // a terminal state.  No auto-clear timer should fire.
-        bool delayCalled = false;
-        StatusController.DelayOverride = (d, ct) =>
-        {
-            delayCalled = true;
-            return Task.CompletedTask;
-        };
+        // Active statuses are tied to the lifetime of the emitting operation; the
+        // caller is responsible for replacing them with a terminal state.
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Reloading…", StatusKind.Active);
-        await Task.Delay(50);
+        sc.SetActive("Reloading…");
+        time.Advance(TimeSpan.FromHours(1));
 
-        Assert.IsFalse(delayCalled,
-            "Active status must not schedule any auto-clear delay.");
         Assert.AreEqual("Reloading…", sc.Text);
         Assert.AreEqual(StatusKind.Active, sc.Kind);
     }
 
     [TestMethod]
-    public async Task Set_StateKind_DoesNotAutoClear()
+    public void SetState_DoesNotAutoClear()
     {
-        bool delayCalled = false;
-        StatusController.DelayOverride = (d, ct) =>
-        {
-            delayCalled = true;
-            return Task.CompletedTask;
-        };
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Ready", StatusKind.State);
-        await Task.Delay(50);
+        sc.SetState("Ready");
+        time.Advance(TimeSpan.FromHours(1));
 
-        Assert.IsFalse(delayCalled,
-            "State status must not schedule any auto-clear delay.");
         Assert.AreEqual("Ready", sc.Text);
+        Assert.AreEqual(StatusKind.State, sc.Kind);
     }
 
     [TestMethod]
-    public async Task Set_ReplacingPendingSuccessWithFailure_CancelsAutoClear()
+    public void ReplacingAPendingSuccessWithAFailure_CancelsTheAutoClear()
     {
-        // Sequence: Set Success (starts timer hanging on TCS) → Set Failure
-        // before the timer fires.  The Success timer must NOT race ahead
-        // and wipe the now-Failure status when finally released.
-        TaskCompletionSource releaseFirstDelay = new();
-        int delayCount = 0;
-        StatusController.DelayOverride = (d, ct) =>
-        {
-            delayCount++;
-            if (delayCount == 1)
-            {
-                return releaseFirstDelay.Task.WaitAsync(ct);
-            }
+        // Sequence: SetSuccess (schedules a clear) → SetFailure before it comes
+        // due.  The success's clear must not wipe the now-Failure status.
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-            // Second call (which shouldn't happen for Failure) — fail-fast.
-            return Task.CompletedTask;
-        };
+        sc.SetSuccess("Saved.");
+        sc.SetFailure("Save failed: ...");
 
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success); // schedule #1
-        sc.Set("Save failed: ...", StatusKind.Failure); // cancels #1
-
-        // Release the hung first delay; its post-await body checks the CTS
-        // and bails because the controller cancelled it.
-        releaseFirstDelay.SetResult();
-        await Task.Delay(50);
+        time.Advance(TimeSpan.FromHours(1));
 
         Assert.AreEqual("Save failed: ...", sc.Text,
-            "The Failure status must survive a late-firing Success auto-clear.");
+            "The failure must survive the success's cancelled auto-clear.");
         Assert.AreEqual(StatusKind.Failure, sc.Kind);
     }
 
     [TestMethod]
-    public async Task Dismiss_CancelsPendingAutoClear()
+    public void Dismiss_CancelsThePendingAutoClear()
     {
-        // After Dismiss(), the previously-scheduled auto-clear must NOT
-        // fire and wipe the next Set() call.
-        TaskCompletionSource releaseDelay = new();
-        StatusController.DelayOverride = (d, ct) => releaseDelay.Task.WaitAsync(ct);
+        // After Dismiss(), the previously-scheduled auto-clear must not fire and
+        // wipe the next Set* call.
+        FakeTimeProvider time = new();
+        using StatusController sc = NewController(time);
 
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success); // schedules an auto-clear
-        sc.Dismiss(); // cancels it
-        sc.Set("New active op…", StatusKind.Active);
+        sc.SetSuccess("Saved.");
+        sc.Dismiss();
+        sc.SetActive("New active op…");
 
-        releaseDelay.SetResult();
-        await Task.Delay(50);
+        time.Advance(TimeSpan.FromHours(1));
 
         Assert.AreEqual("New active op…", sc.Text,
-            "Dismiss() must cancel the pending auto-clear so a subsequent Set isn't wiped by it.");
+            "Dismiss() must cancel the pending auto-clear so a subsequent emit isn't wiped by it.");
         Assert.AreEqual(StatusKind.Active, sc.Kind);
     }
 
-    /// <summary>
-    /// Event-driven wait for the controller's text to drain to null.
-    /// Subscribes to <see cref="System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/>
-    /// and completes the moment <c>Text</c> transitions to null;
-    /// applies a 1 s watchdog via <see cref="Task.WhenAny"/> so a stuck
-    /// auto-clear still surfaces as a test failure (not a hang).
-    /// </summary>
-    /// <remarks>
-    /// Replaces the prior 10 ms polling spin which
-    /// could flake under loaded CI schedulers.
-    /// </remarks>
-    private static async Task WaitForClearAsync(StatusController sc,
-                                                int maxWaitMs = 5000)
+    [TestMethod]
+    public void AClearThatCameDueBeforeTheNextMessage_DoesNotClearIt()
     {
-        if (sc.Text is null)
+        // Production marshals the clear with Dispatcher.UIThread.Post, so a timer
+        // can come due and queue its clear moments before the UI thread emits the
+        // next message.  That in-flight clear belongs to the message that
+        // scheduled it and must not take the new one with it.
+        FakeTimeProvider time = new();
+        Queue<Action> posted = new();
+        using StatusController sc = new(time, posted.Enqueue);
+
+        sc.SetSuccess("first");
+
+        time.Advance(StatusController.DefaultSuccessAutoClearDelay);
+        Assert.AreEqual(1, posted.Count, "The due timer should have queued exactly one clear.");
+        Assert.AreEqual("first", sc.Text, "Nothing is cleared until the post is drained.");
+
+        sc.SetWarning("second");
+
+        while (posted.Count > 0)
         {
-            return; // already clear, nothing to wait for
+            posted.Dequeue()();
         }
 
-        TaskCompletionSource tcs = new();
-
-        sc.PropertyChanged += Handler;
-        try
-        {
-            // Re-check after subscribing in case Text drained between the
-            // initial guard and the subscription registering.
-            if (sc.Text is null)
-            {
-                tcs.TrySetResult();
-            }
-
-            Task watchdog = Task.Delay(maxWaitMs);
-            await Task.WhenAny(tcs.Task, watchdog);
-        }
-        finally
-        {
-            sc.PropertyChanged -= Handler;
-        }
-
-        return;
-
-        void Handler(object? _, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(StatusController.Text) && sc.Text is null)
-            {
-                tcs.TrySetResult();
-            }
-        }
+        Assert.AreEqual("second", sc.Text, "The in-flight clear belonged to the first message.");
+        Assert.AreEqual(StatusKind.Warning, sc.Kind);
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    //  H2 — Dispose
-    // ─────────────────────────────────────────────────────────────────
-
     [TestMethod]
-    public async Task Dispose_CancelsPendingAutoClear_AndDoesNotThrow()
+    public void Dispose_CancelsThePendingAutoClear_AndDoesNotThrow()
     {
-        // Schedule a long-pending Success auto-clear (delay hangs until
-        // released), then Dispose the controller.  The pending timer
-        // must be cancelled cleanly — no unhandled exception, no
-        // post-dispose text re-mutation.
-        TaskCompletionSource release = new();
-        StatusController.DelayOverride = (d, ct) => release.Task.WaitAsync(ct);
+        FakeTimeProvider time = new();
+        StatusController sc = NewController(time);
+        sc.SetSuccess("Saved.");
 
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success);
+        sc.Dispose();
+        time.Advance(TimeSpan.FromHours(1));
 
-        sc.Dispose(); // must not throw
-
-        // Now release the hung delay; the post-await body checks
-        // _disposed / CTS state and bails without touching Text/Kind.
-        release.SetResult();
-        await Task.Delay(50);
-
-        Assert.IsNull(sc.Text,
-            "Disposed controller must end up with Text=null (Dispose clears it).");
+        Assert.IsNull(sc.Text, "Disposed controller must end up with Text=null (Dispose clears it).");
         Assert.AreEqual(StatusKind.None, sc.Kind);
     }
 
     [TestMethod]
     public void Dispose_IsIdempotent()
     {
-        StatusController sc = new();
-        sc.Set("Saved.", StatusKind.Success);
+        FakeTimeProvider time = new();
+        StatusController sc = NewController(time);
+        sc.SetSuccess("Saved.");
 
         sc.Dispose();
-        sc.Dispose(); // second call must be a no-op, not throw
+        sc.Dispose();
 
         Assert.IsNull(sc.Text);
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    //  H3 — ResetForTesting
-    // ─────────────────────────────────────────────────────────────────
-
-    [TestMethod]
-    public void ResetForTesting_RestoresAllSeamsToDeclaredDefaults()
-    {
-        // Mutate every internal test seam, then call ResetForTesting()
-        // and assert each is back to its declared default.  Locks the
-        // contract that future seam additions get a line in the reset
-        // method — a missed seam would silently leak across tests,
-        // which is exactly the bug H3 fixes.
-        StatusController.SuccessAutoClearDelay = TimeSpan.FromMilliseconds(1);
-        StatusController.WarningAutoClearDelay = TimeSpan.FromMilliseconds(2);
-        StatusController.DelayOverride = (d, ct) => Task.CompletedTask;
-
-        StatusController.ResetForTesting();
-
-        Assert.AreEqual(TimeSpan.FromSeconds(6), StatusController.SuccessAutoClearDelay,
-            "SuccessAutoClearDelay must reset to the 6-second production default.");
-        Assert.AreEqual(TimeSpan.FromSeconds(10), StatusController.WarningAutoClearDelay,
-            "WarningAutoClearDelay must reset to the 10-second production default.");
-        Assert.IsNull(StatusController.DelayOverride,
-            "DelayOverride must reset to null (production uses Task.Delay).");
     }
 }
