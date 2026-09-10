@@ -735,9 +735,14 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 11 | Agents / Commands / Skills / **Rules** / Plugins | the headline feature | none | **E** |
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
-| 13 | Schema refresh (app + CI) | in-app update + provenance badge | benefits both | — |
+| 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
 | 14 | Backup / Restore + footprint | archive + prune, `auth.json` excluded | none | — |
 | 15 | Packaging | winget `Bennewitz.Ninja.OpenCodeForge` | ⚠ release workflow | **F** |
+| 16 | Re-validate against a used install | re-checks the 11 spike findings measured on an install that had never run a session | none | — |
+
+⚠ **Phase 16 is a real phase, promoted from a checkpoint on 2026-09-09**, and it is *blocked on
+data, not effort*: every Phase-0 measurement was taken against an OpenCode install that had never
+run a real session. It waits until usage accumulates.
 
 **Phase 8 is the first point anything is usable.** Phases 1–7 are all foundation, and every
 one of them can regress ClaudeForge — which is why each ends on a fully green suite plus,
