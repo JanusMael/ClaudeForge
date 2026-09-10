@@ -135,11 +135,24 @@ one of them would otherwise make live outbound calls and resolve schemas against
 upstream is serving that day. A production site that forgets simply behaves as the app did
 before network-first, which is why this is the safe default.
 
+⛔⛔ **ClaudeForge was that site, for the whole of Phase 13.** `App.axaml.cs` wrote
+`SchemaRegistry schemaRegistry = new()` from the initial commit — correct while bundled won
+anyway — and network-first updated OpenCodeForge's composition root without touching it. The
+shipped app built its pages *and* validated its saves against bundled schemas while this
+document described a fetch it never made. Nothing failed, because there was nothing to fail.
+`ProductionSchemaRegistryTests` now scans both app assemblies' source for a bare registry;
+it is a source scan because a registry deliberately does not expose whether it holds an
+`HttpClient`, so reflection cannot tell the two apart.
+
 ⚠ **Startup blocks on this chain** — it is awaited from `AgentConfigClientCore.OpenAsync`. A
 `FetchTimeout` of 3s bounds it (the `HttpClient`'s own timeout is 15s, five times too long to
 sit in front of a launch), and a per-instance latch stops probing after one connectivity
-failure. ⓘ Measured: a launch builds **two** registries — the window's and each client's — so
-each schema is fetched twice and an offline launch pays two timeouts, not one.
+failure. ⓘ **The two apps pay different prices, and the difference is whether the window's
+registry is shared.** OpenCodeForge builds **three** — its own, plus one inside each of the two
+clients it constructs without passing one — so each of its schemas is fetched twice and an
+offline launch pays two timeouts per schema. ClaudeForge builds **one** and hands it to both
+SDK clients, so each schema is fetched once. Sharing is the better shape and is what makes the
+nav provenance badge speak for save-validation too; OpenCodeForge does not do it yet.
 
 ⚠ **This order was bundled-first until 2026-09-09, and the prose said so in four places** —
 twice as the stated reason for a test's design, because nothing asserted it. The reversal is
@@ -156,6 +169,24 @@ that script does which are not obvious:
 - **It strips external `$ref`s** — the same rule the loader applies, for the same reason.
 - **It compares line-ending-normalised content.** `.gitattributes` sets `* text=auto`, so a
   Windows checkout is CRLF while every download is LF.
+
+ⓘ **There is an in-app check, and it MUTATES.** Both apps' About dialogs carry *Check for schema
+updates*; `SchemaRefresher` re-fetches every product whose `SchemaUrl` is `https://` and re-labels
+the nav badges in place. Two things it deliberately does not do, both visible in its result line:
+
+- **It does not rebuild the pages.** An `Updated` result means the badge and the tree disagree
+  until a reload, because the tree was built from the previous copy. Reloading automatically
+  would interrupt unsaved edits from a button whose label says *check*, and the next launch picks
+  the new copy up anyway. ⚠ In ClaudeForge, where one registry is shared with both SDK clients,
+  save-validation switches immediately even though the tree has not.
+- ⛔ **It can move a session backwards.** `RefreshAsync` drops the cached copy *before*
+  re-fetching, so a failed retry leaves a previously-fetched registry on bundled. That is
+  reported as `Unavailable` and never as "up to date" — the distinction is the point.
+
+A product with no upstream (Claude Desktop: `$id` is a bare token, so its descriptor URL is
+`bundled://…`) is **omitted from the results**, not reported unchanged, and carries its own badge
+tooltip. Saying "the app tried to fetch a newer copy and could not" about a section where no
+request was ever made sends the reader after a network fault they do not have.
 
 ## Debug flags
 
