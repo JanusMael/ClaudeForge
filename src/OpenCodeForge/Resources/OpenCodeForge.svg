@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="OpenCodeForge">
+    <!--
+      PLACEHOLDER ICON - replace before release.
+
+      Drawn as a terminal prompt (chevron + underscore) on a rounded tile. It is
+      original geometry rather than a variant of ClaudeForge's icon, so the two
+      apps are distinguishable in a dock, but it is a stand-in for a real mark.
+
+      Replacing it means regenerating OpenCodeForge.png (256x256) and
+      OpenCodeForge.ico (256/128/64/48/32/16) from the new artwork - the .ico is
+      what <ApplicationIcon> embeds in the Windows apphost, and nothing rebuilds
+      it from this file automatically.
+    -->
+    <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill="#1E293B"/>
+    <polyline points="80,86 132,128 80,170" fill="none" stroke="#F59E0B" stroke-width="24"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="146" y="150" width="52" height="22" rx="11"
+          ry="11" fill="#F59E0B"/>
+</svg>
