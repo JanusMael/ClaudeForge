@@ -4892,10 +4892,96 @@ delegate block.
 > | `SchemaProvenance` | ✅ `e47773d` — source, UTC timestamp, short digest, per schema file. |
 > | Provenance badge | ✅ `6e0051b` — on the nav section header, following ClaudeForge’s nav layout. |
 > | `--schema-source <bundled\|fetched>` | ✅ `839e3be` — `fetched` is FATAL on failure, not a fallback. |
-> | *Check for schema updates* action | ⬜ **the one remaining item.** `RefreshAsync` is the working primitive and needs a surface, plus a re-run of `ApplyProvenanceBadge` so the badge updates live — which is why `NavigationNodeViewModel.Badge` is observable rather than `init`. |
+> | *Check for schema updates* action | ✅ — About dialog in both apps. OpenCodeForge had no such dialog and now has one, plus the status-bar version button that opens it. |
 >
 > ⛔ **The per-product opt-in promotion is obsolete, not pending.** It existed to let a fetched
 > copy outrank bundled; network-first makes that the default, so there is nothing to opt into.
+
+> ✅ **PHASE 13 COMPLETE 2026-09-10.** The last item landed, and finishing it turned up two
+> defects that had made the phase's earlier half less true than it read.
+>
+> ### ⛔⛔ ClaudeForge had never fetched a schema
+>
+> `App.axaml.cs` wrote `SchemaRegistry schemaRegistry = new()` from the **initial commit**.
+> That was correct while the chain was bundled-first — bundled won for every product, so the
+> `HttpClient` would never have been reached — and network-first (`6260636`) updated
+> OpenCodeForge's composition root without touching ClaudeForge's. Its own commit message
+> anticipated the shape of this ("a production site that forgets behaves as the app did before
+> this change") without noticing that a site had.
+>
+> So for the whole of Phase 13 the **shipped** app built its pages *and* validated its saves
+> against bundled schemas, while `CLAUDE.md` described a fetch it never made. Nothing failed;
+> there was nothing to fail. Fixed, and guarded by `ProductionSchemaRegistryTests`.
+>
+> ⭐ One consequence is worth keeping: **ClaudeForge builds ONE registry and hands it to both
+> SDK clients**, so its badge reports the copy save-validation uses too. OpenCodeForge builds
+> three — its own plus one inside each client it constructs without passing one — so its badge
+> is careful to speak only for the pages. Sharing is the better shape; OpenCodeForge does not
+> do it yet.
+>
+> ### ⛔⛔ 26 test sites were resolving schemas over the live internet
+>
+> `new SchemaRegistry(new HttpClient())` across 21 files, written when an `HttpClient` here was
+> inert. Network-first turned each into a live call to schemastore.org or opencode.ai.
+> **Measured, not inferred:** a probe registry built the same way reported `Source=Fetched`.
+> The suite's assertions therefore depended on what upstream served that day — which can redden
+> a run for reasons outside this repo, or keep one green over a real regression by supplying a
+> shape the bundled copy no longer has. All 26 moved to the offline default, which is what those
+> sites meant before the default inverted.
+>
+> ⚠ **The guard's first draft missed two of them**, and the miss is the reusable lesson: it
+> matched `new SchemaRegistry(new HttpClient())` and walked past
+> `SchemaRegistry x = new(new HttpClient())`. Target-typed `new` puts the type on the left of
+> the assignment, where a constructor-shaped pattern cannot see it — in the same file whose
+> sibling regex already carried a comment about exactly that trap.
+>
+> ### What the action does, and three decisions inside it
+>
+> `SchemaRefresher` (in `AgentForge.Core`, not the Avalonia shell — it is registry logic with
+> no UI) re-fetches each checkable product and reports per product: `Unchanged`, `Updated`,
+> `Unavailable`, `Failed`.
+>
+> 1. **`Unavailable` is not `Unchanged`.** `RefreshAsync` drops the cached copy *before*
+>    re-fetching, so a session that had a fetched schema and then fails to reach the network is
+>    left on the bundled one. Pressing the button can move a registry **backwards**, and
+>    collapsing that into "no updates" would report a downgrade as good news.
+> 2. **A product with no upstream is omitted from the results, not reported up to date.** Claude
+>    Desktop's schema is hand-maintained (`$id` is a bare token, descriptor URL `bundled://…`),
+>    so no request is ever made for it. It also gets its own badge tooltip —
+>    `SchemaBadgeTooltipNoUpstreamFmt` — because the ordinary bundled one says the app "tried to
+>    fetch a newer copy and could not", which on that section points the reader at a network
+>    problem they do not have.
+> 3. **It refreshes but does not reload.** An `Updated` result means the badge and the pages now
+>    disagree: the tree on screen was built from the previous copy. The summary says to reload
+>    rather than implying otherwise. Reloading automatically would interrupt or discard unsaved
+>    edits from a button whose label says *check*, and network-first picks the new copy up on
+>    the next launch regardless. ⚠ In ClaudeForge, where one registry is shared, save-validation
+>    *does* switch immediately — a tightened upstream constraint can fail a save against a rule
+>    the visible tree never showed. It surfaces as a validation error, not silently.
+>
+> ### Deviation from this section's stated placement
+>
+> The spec says "on the About / Version page (next to the existing update check)". Three facts
+> made that untransferable: ClaudeForge's existing update check is in the About **dialog**, not
+> the Version Info page (the Essentials "Check for updates" card is a launch-time preference,
+> not an action); the Version Info page is **per product**, and this action is global; and
+> OpenCodeForge had neither surface. Resolved by putting it in ClaudeForge's About dialog
+> directly under the app-update check — the literal neighbour intended — and giving
+> OpenCodeForge an About dialog of its own.
+>
+> ⓘ **OpenCodeForge's dialog is deliberately not a mirror.** No app-update check, no copyright,
+> no repository links: it has no release pipeline and sets no copyright attribute, so those rows
+> would render blank or offer an action that does not exist. They belong with Phase 15. Its
+> status-bar row now reserves space where it previously collapsed when empty — the cost of the
+> app having a version visible anywhere at all, which it did not before.
+>
+> ⓘ `SummariseSchemaCheck` is duplicated in both apps' view-models. That is the same rule as the
+> badge appliers: each formats from its own resx, and `NavigationNodeViewModel.Badge` is a plain
+> string precisely so the shared library never learns what a schema is.
+>
+> **Verification:** suite **4,138 · 0 · 11** (+27). Nine canaries, every prediction exact —
+> including two deliberately checking both arms of the no-upstream tooltip branch, which is the
+> kind of test that passes for the wrong reason when only one arm is pinned.
 
 > ⛔⛔ **RE-SCOPED 2026-09-09, because network-first landed and this section was written for a
 > bundled-first world.** Read this before building any of it — three of its items are obsolete
