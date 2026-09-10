@@ -736,13 +736,15 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
 | 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
-| 14 | Backup / Restore + footprint | archive + prune, `auth.json` excluded | none | — |
+| 14 | Backup / Restore + footprint — ⛔ **"`auth.json` excluded" is NOT ENOUGH; see Phase 16** | archive + prune. ⛔ Secrets live in **`opencode.db`** (`account`/`control_account` access+refresh tokens, `credential.value`, `session_share.secret`), and this machine has no `auth.json` at all | none | — |
 | 15 | Packaging — 🔶 **8 slices shipped 2026-09-10; only artwork + docs remain** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · full app-update parity · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
-| 16 | Re-validate against a used install | re-checks the 11 spike findings measured on an install that had never run a session | none | — |
+| 16 | Re-validate against a used install — 🔶 **PROBED 2026-09-10: 6 of 10 answered, 3 against the record** | `scripts/probe-opencode.ps1` + a committed snapshot. ⛔ Still **not a used install** — every session table is empty, so 14 stays blocked | none | — |
 
 ⚠ **Phase 16 is a real phase, promoted from a checkpoint on 2026-09-09**, and it is *blocked on
 data, not effort*: every Phase-0 measurement was taken against an OpenCode install that had never
-run a real session. It waits until usage accumulates.
+run a real session. It waits until usage accumulates. ✅ **The waiting is now instrumented** —
+`scripts/probe-opencode.ps1` writes a committed snapshot whose `usage.isUsedInstall` flips from
+`false` the moment there is history worth measuring, so nobody has to re-derive the answer.
 
 **Phase 8 is the first point anything is usable.** Phases 1–7 are all foundation, and every
 one of them can regress ClaudeForge — which is why each ends on a fully green suite plus,
@@ -5223,6 +5225,74 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 
 ### Phase 16 — Re-validate against a used install **[promoted from a checkpoint, 2026-09-09]**
 
+> 🔶 **PHASE 16 — PROBED 2026-09-10. THREE ITEMS FULLY ANSWERED, FOUR IN PART, ONE GATE CLEARED,
+> TWO STILL OPEN — AND PHASE 14 STAYS BLOCKED.** Three of the answers contradict what this
+> document recorded. The split matters more than a single total, so it is stated rather than
+> rounded: **fully** 4, 6, 11 · **in part** 1, 2, 3, 5 — the structure, layout and mechanism are
+> known, the *growth* is not · **gate cleared** 9 · **open** 7, 10.
+>
+> ⚠ **"In part" is not modesty.** Every partial has the same cause: shape can be read off an idle
+> install, and rate cannot. That is the distinction Phase 14 turns on, so collapsing these into
+> "answered" would hand the next reader a phase that looks finished and a Phase 14 that is not
+> actually unblocked.
+>
+> `scripts/probe-opencode.ps1` measures all of it and writes
+> [`opencode-install-probe.json`](./opencode-install-probe.json), committed, so the next re-check
+> is a `git diff` rather than a re-investigation. It is also the field diagnostic when a user
+> reports something the app got wrong.
+>
+> ⛔⛔ **THE HEADLINE IS A NEGATIVE RESULT, and the note carried into this session got it wrong.**
+> That note read a 250 KB `opencode.db` beside a 260 KB `-wal` as *"sessions ARE in SQLite,
+> confirming Phase 14's corruption risk"*. The **tables** exist; **every user-content table is
+> empty.** `session`, `message`, `part`, `todo`, `credential`, `permission`, `event` — all **0
+> rows**. Only `migration` (35, OpenCode's own schema bookkeeping) and `project` (1) hold
+> anything, and that one `project` row's `worktree` points at **a deleted agent scratchpad from an
+> earlier session of this project**. It is our own synthetic probing, not usage. The 250 KB is 61
+> pages of schema, and `page_count` × `page_size` accounts for the file exactly.
+>
+> **So the install still has no accumulated session history, and every quantitative probe — growth
+> rates, prune ordering, what a footprint page should show — remains unanswerable.** The snapshot
+> computes that verdict itself (`usage.isUsedInstall`, `usage.blocksPhase14`) rather than leaving
+> it to be re-formed from a wall of numbers: the next run flips one boolean, and that is the signal
+> Phase 14 is waiting on.
+>
+> ⭐ **The `-wal` was measured, not reasoned about.** A WAL larger than its own database looks
+> alarming. Counting rows twice — once with the `-wal` alongside, once from a copy of the database
+> alone — returns identical counts, so here the WAL is migration churn that was never
+> checkpointed and carries no user data (`walCarriedRows: false`). ⚠ **That is a fact about this
+> install, not a general result.** A WAL *can* hold committed transactions, so
+> "copy `opencode.db`" is still the wrong shape for a backup. The probe keeps the control so the
+> claim never has to be re-argued from two file sizes.
+>
+> | # | Recorded here | Measured 2026-09-10 | |
+> |---|---|---|---|
+> | 1 | `data`, `state`, `cache` all **0 bytes**; populated layout unknown | `data` 564,236 B / 4 files · `state` 141 B / 2 files · `cache` 4,332,470 B / **1 file** · `config` 55,076,208 B / 3,464 files, each broken down per child in the snapshot | ✅ layout **ANSWERED**; growth still not |
+> | 2 | *"if sessions live in SQLite, backup of `~/.config/opencode/` misses them entirely"* | ⭐ **Confirmed structurally, and wider than recorded: the database holds SECRETS.** `account` and `control_account` each carry `access_token` + `refresh_token`; `credential` is a store with a `value text NOT NULL`; `session_share` has `secret`. 20 tables, all user rows 0 | ⭐ structure **ANSWERED**; growth ⛔ |
+> | 3 | `locks/` empty; *"a lock held during our save is a real failure mode on Windows"* | ⭐⭐ **The lock is a DIRECTORY**, not a file: `<sha1>.lock/` holding `heartbeat` and `meta.json` (token, pid, hostname, createdAt) — one per project, keyed by a 40-hex digest. A mkdir mutex is **advisory**: it acquires no OS lock, so it cannot block a config write. ⚠ **That is the mechanism, not a live test.** And it says nothing about `opencode.db`, which SQLite locks by its own means — the hazard for a Phase 14 backup reading that file is real and separate | ⭐ *what takes locks* **ANSWERED**; blocking untested |
+> | 4 | `bin/` is *"the likeliest prune target and its size is unmeasured"* | ⛔ **The premise is inverted.** `bin/` is **empty** — 0 bytes, 0 files, confirmed twice. The whole cache is **one file**: `models.json`, 4,332,470 B. `packages/` is two empty directories left by this project's own synthetic plugin tests | ⛔ **ANSWERED — inverted** |
+> | 5 | node_modules **60 MB** with one plugin | 55,058,354 B (**52.5 MiB**), **3,458 files**, 26 top-level entries, for the single declared dependency `@opencode-ai/plugin@1.17.9` — **99.97 % of the config root** | ✅ one-plugin baseline **ANSWERED** |
+> | 6 | only the synthetic `global` entry existed | **Unchanged.** One project, `id=global`, `sandboxes: []`, worktree a deleted agent scratchpad | ✅ **ANSWERED — unchanged** |
+> | 7 | permission merge proven on synthetic layers only | ⛔ **Nothing to answer with.** The global `opencode.jsonc` is **50 bytes — a `$schema` line and nothing else**. No `permission` block exists in any layer, and the `permission` table has 0 rows | ⛔ **STILL OPEN** |
+> | 9 | S9 established from docs at the tag, not observed; `ProductVersionProbe` must gate it | Installed OpenCode is **1.17.9** — the tag S9 was established at, so the gate passes and the documented semantics still apply. The `~/.claude/CLAUDE.md` fallback actually firing is still **unobserved** | ⚠ **gate PASSES**, behaviour not |
+> | 10 | install commands sourced, never executed | ⛔ Not runnable from here; it needs a clean machine or VM | ⛔ **STILL OPEN** |
+> | 11 | version-matched; a bump may silently change the spec | **1.17.9 — the tag this plan is built on.** No drift, no re-extract this cycle. The probe records the version, so a bump shows up in the diff | ✅ **ANSWERED — no drift** |
+>
+> ⭐ **A finding that was not on the list: this app writes into the directory Phase 14 would back
+> up.** `~/.config/opencode/cache/OpenCodeForge-gui-state.json` is OpenCodeForge's own window
+> geometry, and `WindowStateService` puts it there deliberately — state belongs beside the config
+> the app edits, and it honours `$OPENCODE_CONFIG_DIR` for the same reason. It is 64 bytes, so the
+> footprint cost is nil. But a backup of `~/.config/opencode/` captures it and a **restore rolls
+> the user's window back**, which is a support call nobody will connect to a restore.
+>
+> ⛔ **THE PROBE IS READ-ONLY BY CONSTRUCTION, and one of those reasons is not obvious.** Opening
+> a SQLite database whose `-wal` is present **checkpoints it**, rewriting the user's file — so the
+> three files are copied out and every query runs against the copy, and the sizes are read
+> *before* the copy, because sqlite deletes the `-wal` the moment it touches one. The only
+> statements issued are `COUNT(*)`, `PRAGMA`, and reads of `sqlite_master`: nothing selects a row,
+> which is what makes it safe to commit the output of a database that has a `credential` table.
+> Paths render as `~` and `<temp>`, and lock metadata contributes **key names only** — its values
+> are a token, a pid and a hostname.
+
 **Was the ⏱ Deferred re-checkpoint.** Promoted to a phase at the maintainer's direction because
 treating it as a gate did not work: it was supposed to clear before Phase 10, and Phase 10
 shipped without it. A gate nobody can satisfy is not a gate — the install still has no
@@ -5725,9 +5795,17 @@ install and diff against what is recorded here.
 | 10 | **S10 install commands** | **Sourced, never executed.** Each must run on a clean machine/VM. | Phase 8 |
 | 11 | **Re-extract `customize-opencode`** | It is version-matched; a version bump may silently change the spec this plan is built on. | every phase |
 
-**Cheap insurance:** script these as `scripts/probe-opencode.ps1` emitting a JSON snapshot,
-and commit the snapshot. Then a re-check is a diff, not a re-investigation — and the same
-script becomes the field-diagnostic when a user reports something the app got wrong.
+✅ **The cheap insurance EXISTS as of 2026-09-10.** `scripts/probe-opencode.ps1` measures every
+scriptable item above and writes [`opencode-install-probe.json`](./opencode-install-probe.json),
+committed, so a re-check is a diff rather than a re-investigation — and the same script is the
+field diagnostic when a user reports something the app got wrong.
+
+⛔ **The table above is the record of what was BELIEVED, and three rows of it are now known to be
+wrong.** Read Phase 16's status block for what was measured; do not "confirm" a row here without
+re-running the probe. **Fully answered: 4, 6, 11** — row 4's premise inverted outright.
+**Answered in part: 1, 2, 3, 5**, every one of them because shape reads off an idle install and
+growth does not. **Gate cleared: 9.** **Still open: 7 and 10** — this install has no session
+history and no clean VM.
 
 ---
 

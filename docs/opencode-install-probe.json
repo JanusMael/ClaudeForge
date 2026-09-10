@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUtc": "2026-09-10T20:49:58.7428226Z",
+  "tooling": {
+    "opencode": {
+      "available": true,
+      "version": "1.17.9"
+    },
+    "sqlite3": {
+      "available": true,
+      "version": "3.53.4 2026-07-24 19:02:57 <sha> (64-bit)"
+    },
+    "powershell": "7.6.5",
+    "platform": "Windows"
+  },
+  "reportedPaths": {
+    "home": "~",
+    "data": "~/.local/share/opencode",
+    "bin": "~/.cache/opencode/bin",
+    "log": "~/.local/share/opencode/log",
+    "repos": "~/.local/share/opencode/repos",
+    "cache": "~/.cache/opencode",
+    "config": "~/.config/opencode",
+    "state": "~/.local/state/opencode",
+    "tmp": "<temp>/opencode"
+  },
+  "roots": {
+    "config": {
+      "exists": true,
+      "bytes": 55076208,
+      "files": 3464,
+      "dirs": 230,
+      "newestWriteUtc": "2026-09-10T15:10:55.1839077Z",
+      "path": "~/.config/opencode",
+      "children": [
+        {
+          "name": ".gitignore",
+          "kind": "file",
+          "bytes": 63,
+          "files": 1
+        },
+        {
+          "name": "cache",
+          "kind": "dir",
+          "bytes": 64,
+          "files": 1
+        },
+        {
+          "name": "node_modules",
+          "kind": "dir",
+          "bytes": 55058354,
+          "files": 3458
+        },
+        {
+          "name": "opencode.jsonc",
+          "kind": "file",
+          "bytes": 50,
+          "files": 1
+        },
+        {
+          "name": "package-lock.json",
+          "kind": "file",
+          "bytes": 13852,
+          "files": 1
+        },
+        {
+          "name": "package.json",
+          "kind": "file",
+          "bytes": 64,
+          "files": 1
+        },
+        {
+          "name": "plugins",
+          "kind": "dir",
+          "bytes": 3761,
+          "files": 1
+        }
+      ]
+    },
+    "data": {
+      "exists": true,
+      "bytes": 564236,
+      "files": 4,
+      "dirs": 2,
+      "newestWriteUtc": "2026-09-10T20:43:23.4938100Z",
+      "path": "~/.local/share/opencode",
+      "children": [
+        {
+          "name": "log",
+          "kind": "dir",
+          "bytes": 22020,
+          "files": 1
+        },
+        {
+          "name": "opencode.db",
+          "kind": "file",
+          "bytes": 249856,
+          "files": 1
+        },
+        {
+          "name": "opencode.db-shm",
+          "kind": "file",
+          "bytes": 32768,
+          "files": 1
+        },
+        {
+          "name": "opencode.db-wal",
+          "kind": "file",
+          "bytes": 259592,
+          "files": 1
+        },
+        {
+          "name": "repos",
+          "kind": "dir",
+          "bytes": 0,
+          "files": 0
+        }
+      ]
+    },
+    "state": {
+      "exists": true,
+      "bytes": 141,
+      "files": 2,
+      "dirs": 2,
+      "newestWriteUtc": "2026-08-27T12:59:04.2346242Z",
+      "path": "~/.local/state/opencode",
+      "children": [
+        {
+          "name": "locks",
+          "kind": "dir",
+          "bytes": 141,
+          "files": 2
+        }
+      ]
+    },
+    "cache": {
+      "exists": true,
+      "bytes": 4332470,
+      "files": 1,
+      "dirs": 4,
+      "newestWriteUtc": "2026-08-26T22:11:38.9454774Z",
+      "path": "~/.cache/opencode",
+      "children": [
+        {
+          "name": "bin",
+          "kind": "dir",
+          "bytes": 0,
+          "files": 0
+        },
+        {
+          "name": "models.json",
+          "kind": "file",
+          "bytes": 4332470,
+          "files": 1
+        },
+        {
+          "name": "packages",
+          "kind": "dir",
+          "bytes": 0,
+          "files": 0
+        }
+      ]
+    }
+  },
+  "database": {
+    "present": true,
+    "bytes": 249856,
+    "walBytes": 259592,
+    "shmBytes": 32768,
+    "lastWriteUtc": "2026-09-10T20:43:23.4938100Z",
+    "inspected": true,
+    "journalMode": "wal",
+    "pageSize": 4096,
+    "pageCount": 61,
+    "freelistCount": 0,
+    "integrityCheck": "ok",
+    "tableCount": 20,
+    "rowsByTable": {
+      "account": 0,
+      "account_state": 0,
+      "control_account": 0,
+      "credential": 0,
+      "data_migration": 0,
+      "event": 0,
+      "event_sequence": 0,
+      "message": 0,
+      "migration": 35,
+      "part": 0,
+      "permission": 0,
+      "project": 1,
+      "project_directory": 0,
+      "session": 0,
+      "session_context_epoch": 0,
+      "session_input": 0,
+      "session_message": 0,
+      "session_share": 0,
+      "todo": 0,
+      "workspace": 0
+    },
+    "walCarriedRows": false,
+    "walCarriedRowsIn": [],
+    "secretBearingTables": [
+      {
+        "table": "account",
+        "matchedOn": [
+          "column:access_token",
+          "column:refresh_token"
+        ],
+        "columns": [
+          "id",
+          "email",
+          "url",
+          "access_token",
+          "refresh_token",
+          "token_expiry",
+          "time_created",
+          "time_updated"
+        ]
+      },
+      {
+        "table": "control_account",
+        "matchedOn": [
+          "column:access_token",
+          "column:refresh_token"
+        ],
+        "columns": [
+          "email",
+          "url",
+          "access_token",
+          "refresh_token",
+          "token_expiry",
+          "active",
+          "time_created",
+          "time_updated"
+        ]
+      },
+      {
+        "table": "credential",
+        "matchedOn": [
+          "table-name"
+        ],
+        "columns": [
+          "id",
+          "integration_id",
+          "label",
+          "value",
+          "connector_id",
+          "method_id",
+          "active",
+          "time_created",
+          "time_updated"
+        ]
+      },
+      {
+        "table": "session_share",
+        "matchedOn": [
+          "column:secret"
+        ],
+        "columns": [
+          "session_id",
+          "id",
+          "secret",
+          "url",
+          "time_created",
+          "time_updated"
+        ]
+      }
+    ]
+  },
+  "locks": {
+    "present": true,
+    "count": 1,
+    "entries": [
+      {
+        "nameShape": "<sha1>.lock",
+        "isDirectory": true,
+        "contains": [
+          "heartbeat",
+          "meta.json"
+        ],
+        "metaKeys": [
+          "createdAt",
+          "hostname",
+          "pid",
+          "token"
+        ],
+        "createdAtUtc": "2026-08-27T12:59:04.2230000Z"
+      }
+    ]
+  },
+  "plugins": {
+    "pluginFiles": [
+      {
+        "name": "gk-hooks.js",
+        "bytes": 3761
+      }
+    ],
+    "pluginFileCount": 1,
+    "declaredDependencies": {
+      "@opencode-ai/plugin": "1.17.9"
+    },
+    "nodeModules": {
+      "exists": true,
+      "bytes": 55058354,
+      "files": 3458,
+      "dirs": 227,
+      "newestWriteUtc": "2026-08-17T17:37:07.2933380Z"
+    },
+    "nodeModulesTopLevel": 26
+  },
+  "scrap": {
+    "available": true,
+    "projectCount": 1,
+    "projects": [
+      {
+        "id": "global",
+        "vcs": "git",
+        "worktree": "<temp>/claude/C--c-cl-JanusMael-ClaudeForge/<guid>/scratchpad/sbx/proj",
+        "sandboxCount": 0
+      }
+    ]
+  },
+  "usage": {
+    "isUsedInstall": false,
+    "blocksPhase14": true,
+    "evidence": [
+      "session rows = 0",
+      "message rows = 0",
+      "part rows = 0",
+      "todo rows = 0"
+    ]
+  }
+}
