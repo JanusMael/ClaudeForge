@@ -81,20 +81,43 @@
       hypothetical: the check was blind to a real IL2026 in AgentForge.Sdk's
       McpServersAccessor for as long as OpenCodeForge existed.
 
-      Scope note: unlike ClaudeForge this app deliberately does NOT set
-      SelfContained / PublishSingleFile / RuntimeIdentifiers here. OpenCodeForge
-      has no release.yml pipeline of its own yet — its only Release publish is
-      the CI trim check, which passes the RID and the self-contained flag on the
-      command line. Adding packaging properties would change artifacts nothing
-      currently consumes. Add them alongside a real release workflow, not before.
+      ⓘ The packaging properties below were deliberately absent until Phase 15,
+      on the grounds that "adding packaging properties would change artifacts
+      nothing currently consumes. Add them alongside a real release workflow, not
+      before." Phase 15 is that point: this app now has a publish path
+      (src/publish/PublishApps.ps1) and a release workflow of its own.
     -->
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <SelfContained>false</SelfContained>
+        <PublishSingleFile>false</PublishSingleFile>
         <PublishTrimmed>false</PublishTrimmed>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <PublishTrimmed>true</PublishTrimmed>
         <TrimMode>link</TrimMode>
+
+        <!--
+          PACKAGING. Mirrors ClaudeForge so both apps produce the same shape of
+          artifact: one self-contained executable with the runtime inside it, so
+          a user needs no .NET install.
+
+          Measured before this landed: without PublishSingleFile the win-x64
+          archive held 103 files against ClaudeForge's 1.
+        -->
+        <SelfContained>true</SelfContained>
+        <PublishSingleFile>true</PublishSingleFile>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <DebuggerSupport>false</DebuggerSupport>
+
+        <!-- The RIDs this app publishes for. Same six as ClaudeForge; the
+             per-RID wrappers under src/publish/ validate against exactly this
+             set. ⚠ The plural form makes MSBuild auto-pick the host RID at
+             build time and demand RID-qualified assets, which is why the test
+             gates in ci.yml and release.yml build -c Debug — see the comment on
+             release.yml's test job. -->
+        <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
 
         <!-- Keep per-warning detail instead of ILLink's default collapsing, which
              reduces every hit inside a type to one file/line-less IL2104. For
@@ -106,6 +129,21 @@
         <DebugType>embedded</DebugType>
         <DebugSymbols>true</DebugSymbols>
         <AvaloniaXamlIlVerboseExceptions>true</AvaloniaXamlIlVerboseExceptions>
+
+        <!-- ILLink's own verbose flag, matching ClaudeForge. Not cosmetic here:
+             publish.ps1 greps the publish log for the `[dashdash]link-attributes`
+             argument to confirm the suppressions XML actually reached the linker,
+             and prints a red "the csproj wiring is broken" when it finds none.
+             ILLink only prints its command line under this flag, so without it
+             that shared check would report a broken wiring for this app that is
+             not broken. The long-form explanation of the extension point is in
+             ClaudeForge.csproj.
+
+             ⚠ `[dashdash]` is spelled out because an XML comment may not contain
+             two consecutive hyphens — the same reason ClaudeForge's copy writes
+             it that way. Putting the real flag here fails the build with MSB4025,
+             which is how this comment was first written. -->
+        <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --verbose</_ExtraTrimmerArgs>
     </PropertyGroup>
 
     <!--

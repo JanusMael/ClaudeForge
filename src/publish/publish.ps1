@@ -296,12 +296,21 @@ if ($ridsWithWarnings.Count -gt 0) {
 
         # Quick confirmation diagnostic per TRIMMING.md step 1: did the
         # suppression XML actually reach ILLink?
-        $linkAttrHits = Select-String -Path $primaryLog -Pattern '--link-attributes' -ErrorAction SilentlyContinue
+        #
+        # ⚠ ABSENCE PROVES NOTHING HERE, and this used to claim it did. ILLink
+        # prints its command line only under its own verbose flag AND only at
+        # MSBuild verbosities above the default `minimal` that Publish-Rid.ps1
+        # uses — so a clean publish of EITHER app produces a 31-line log with no
+        # ILLink mention at all. Measured on both. The old message read "the
+        # csproj wiring is broken" in red for that, which is a false accusation
+        # every time it fires, aimed at the wiring rather than at the verbosity.
+        $linkAttrHits = Select-String -Path $primaryLog -Pattern 'link-attributes' -ErrorAction SilentlyContinue
         if ($linkAttrHits) {
-            Write-Host ("[check] ILLink received {0} --link-attributes arg(s) — suppression XML did reach the linker." -f $linkAttrHits.Count) -ForegroundColor Gray
+            Write-Host ("[check] ILLink received {0} link-attributes arg(s) — suppression XML did reach the linker." -f $linkAttrHits.Count) -ForegroundColor Gray
         }
         else {
-            Write-Host "[check] NO --link-attributes in ILLink command line — the csproj wiring is broken. See TRIMMING.md (the four-row comparison table)." -ForegroundColor Red
+            Write-Host "[check] ILLink's command line is not in this log — expected, since the publish runs at default verbosity." -ForegroundColor DarkGray
+            Write-Host "        To confirm the suppression XML reaches the linker, re-publish with -v detailed and grep for link-attributes. See TRIMMING.md (the four-row comparison table)." -ForegroundColor DarkGray
         }
 
         if (Test-Path $linkedPath) {
@@ -333,8 +342,35 @@ if ($results.Count -gt 0) {
     } | Out-Host
     Write-Host "Output zips: $distFolder" -ForegroundColor Green
     Write-Host "Publish logs: $logFolder" -ForegroundColor Gray
-    Write-Host "Publish Complete!" -ForegroundColor Green
 }
 else {
     Write-Host "`nNo RIDs were built." -ForegroundColor DarkYellow
+}
+
+# ── 5. Propagate failure ────────────────────────────────────────────────────
+# ⛔ Until Phase 15 this script ALWAYS exited 0 and printed "Publish Complete!"
+# in green even when a RID's `dotnet publish` had failed. Publish-Rid.ps1
+# reports the failure in its result object rather than throwing — which is right
+# for the orchestrator, since one bad RID should not abandon the others — but
+# nothing downstream read it.
+#
+# In CI that meant a failed RID produced a PARTIAL artifact set and a green step.
+# `if-no-files-found: error` on the upload only fires when EVERY archive is
+# missing, so a single failed architecture sailed through to the release job and
+# surfaced as `gh release create` complaining about a missing file — several
+# minutes and two jobs away from the compiler error that caused it.
+#
+# Exit codes: the count of failed RIDs, capped at 125 to stay clear of the
+# shell's reserved range (126/127 = not-executable / not-found, 128+n = signal).
+$failed = @($results | Where-Object { $_.ExitCode -ne 0 })
+if ($failed.Count -gt 0) {
+    Write-Host ("`n{0} of {1} RID(s) FAILED to publish: {2}" -f `
+            $failed.Count, $results.Count, (($failed | ForEach-Object { $_.Rid }) -join ', ')) `
+        -ForegroundColor Red
+    Write-Host "See the per-RID logs in $logFolder for the failing output." -ForegroundColor Red
+    exit ([Math]::Min($failed.Count, 125))
+}
+
+if ($results.Count -gt 0) {
+    Write-Host "Publish Complete!" -ForegroundColor Green
 }
