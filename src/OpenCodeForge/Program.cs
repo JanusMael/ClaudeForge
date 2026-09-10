@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Avalonia;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
@@ -8,12 +9,66 @@ namespace Bennewitz.Ninja.OpenCodeForge;
 /// <summary>Process entry point.</summary>
 public static class Program
 {
+    /// <summary>
+    /// Honour <c>--schema-source &lt;bundled|fetched&gt;</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>One flag, deliberately not a flag framework.</b> ClaudeForge has a whole
+    /// <c>DebugFlags</c> class with deferred warnings, a <c>--debug-help</c> listing and a reset
+    /// hook; this app has no flags at all, and building that machinery to carry a single switch
+    /// would be the larger mistake. When a second flag arrives, extract it then — and the shape
+    /// to copy is ClaudeForge's, not this.
+    /// </para>
+    /// <para>
+    /// PEEK rather than consume, matching the sibling: the value set is closed, so a rejected
+    /// token may itself be a valid argument and must reach Avalonia rather than be swallowed.
+    /// </para>
+    /// <para>
+    /// ⚠ Runs AFTER ConfigureLogging, unlike ClaudeForge's equivalent — nothing here affects
+    /// logging or culture, so there is no reason to parse before the log exists, and every
+    /// reason to want the rejection visible in it.
+    /// </para>
+    /// </remarks>
+    private static void ApplySchemaSourceOverride(string[] args)
+    {
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (!string.Equals(args[i], "--schema-source", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string value = args[i + 1];
+            if (string.Equals(value, "bundled", StringComparison.OrdinalIgnoreCase))
+            {
+                SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Bundled;
+                Log.Information("[DebugFlags] --schema-source bundled: the network will not be used");
+            }
+            else if (string.Equals(value, "fetched", StringComparison.OrdinalIgnoreCase))
+            {
+                SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Fetched;
+                Log.Information(
+                    "[DebugFlags] --schema-source fetched: a failed fetch will be FATAL, not fall back");
+            }
+            else
+            {
+                Log.Warning(
+                    "[DebugFlags] --schema-source {Value} rejected: expected bundled or fetched. "
+                    + "Using the normal loading chain.", value);
+            }
+
+            return;
+        }
+    }
+
     /// <summary>Start the app.</summary>
     [STAThread]
     public static void Main(string[] args)
     {
         ConfigureLogging();
         WireWrapperLocalization();
+        ApplySchemaSourceOverride(args);
 
         try
         {

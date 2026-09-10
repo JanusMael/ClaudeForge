@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
@@ -22,6 +23,18 @@ internal sealed class Program
         //    isn't configured yet); deferred warnings + the active-flags
         //    summary are flushed by LogActiveFlags() in Step 4 below.
         DebugFlags.Initialize(args);
+
+        // Map the parsed flag onto the registry's enum. Process-wide because a launch builds
+        // SEVERAL registries -- the window's and one per client -- and a flag reaching only the
+        // first would leave the pages on one source while save-validation used another.
+        // DebugFlags cannot do this itself: SchemaRegistry is upstream of this app, and the
+        // dependency only runs in this direction.
+        SchemaRegistry.ProcessSourceOverride = DebugFlags.SchemaSourceName switch
+        {
+            "bundled" => SchemaSourceOverride.Bundled,
+            "fetched" => SchemaSourceOverride.Fetched,
+            _ => null,
+        };
 
         // 1b. A rejected --deep-link is the one parse failure the USER needs to see
         //     on their terminal, not just in the rolling log.  This binary is a

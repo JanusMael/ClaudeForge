@@ -95,10 +95,46 @@ public sealed class SchemaRegistry : IDisposable
     /// app did before network-first, which is why this default is the safe one.
     /// </para>
     /// </param>
-    public SchemaRegistry(HttpClient? httpClient = null)
+    /// <param name="sourceOverride">
+    /// Force the load down one branch, for diagnosis. <see langword="null"/> falls back to
+    /// <see cref="ProcessSourceOverride"/>, and then to the normal chain.
+    /// <para>
+    /// ⚠ Explicit here, not read from the process default only, so a TEST can pin a branch
+    /// without touching global state that another test would then see.
+    /// </para>
+    /// </param>
+    public SchemaRegistry(HttpClient? httpClient = null, SchemaSourceOverride? sourceOverride = null)
     {
         _http = httpClient;
+        _sourceOverride = sourceOverride ?? ProcessSourceOverride;
     }
+
+    private readonly SchemaSourceOverride? _sourceOverride;
+
+    /// <summary>
+    /// Process-wide source override, set once at startup from a debug flag.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Process-wide because a CLI flag genuinely is.</b> A launch builds several registries
+    /// — the window's, and one per client — and a flag that only reached the first would leave
+    /// the pages bundled while save-validation still fetched. Modelling it as a parameter alone
+    /// would have made the flag half-effective in a way nobody would notice.
+    /// </para>
+    /// <para>
+    /// ⛔⛔ <b>The constructor parameter wins over this, and A TEST MUST NEVER SET THIS.</b> The
+    /// Core test assembly runs methods in PARALLEL, so setting it is not merely flaky — it makes
+    /// every registry another test constructs concurrently load bundled. Measured: a test that
+    /// exercised this passed in isolation and failed in the full suite. Pin a branch through the
+    /// constructor instead, which is why that argument takes precedence.
+    /// </para>
+    /// <para>
+    /// ⚠ It cannot reach here from <c>DebugFlags</c> directly: that class lives in the ClaudeForge
+    /// APP, and this assembly is upstream of it. The app sets this; the shared code never reads
+    /// the app.
+    /// </para>
+    /// </remarks>
+    public static SchemaSourceOverride? ProcessSourceOverride { get; set; }
 
     /// <summary>
     /// A registry allowed to fetch schemas over HTTPS. <b>The production composition root.</b>
@@ -107,8 +143,8 @@ public sealed class SchemaRegistry : IDisposable
     /// The client's own 15s timeout is a backstop only; <see cref="FetchTimeout"/> is what
     /// actually bounds a load, because this runs on the startup path.
     /// </remarks>
-    public static SchemaRegistry CreateWithNetwork()
-        => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) });
+    public static SchemaRegistry CreateWithNetwork(SchemaSourceOverride? sourceOverride = null)
+        => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sourceOverride);
 
     /// <summary>
     /// Get the Claude Code settings schema root node.
@@ -491,6 +527,7 @@ public sealed class SchemaRegistry : IDisposable
         // considers valid. https or nothing.
         if (_http is not null
             && !_networkUnavailable
+            && _sourceOverride != SchemaSourceOverride.Bundled
             && url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             try
@@ -536,6 +573,14 @@ public sealed class SchemaRegistry : IDisposable
             Log.Warning(
                 "[Schema] Refused to fetch over plain HTTP: {Url}. Use https:// or bundled://",
                 url);
+        }
+
+        // ⛔ --schema-source fetched means the fetched copy or nothing. Falling back here would
+        // produce a run that LOOKS like it exercised the network path and did not, which is
+        // worse than a failure because the screenshot is indistinguishable from success.
+        if (_sourceOverride == SchemaSourceOverride.Fetched)
+        {
+            throw new SchemaUnavailableException(url, cacheFileName);
         }
 
         // 3. Bundled resource. Always present for every product this repo ships, so in

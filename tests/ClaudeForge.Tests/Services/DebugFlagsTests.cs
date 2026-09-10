@@ -642,4 +642,77 @@ public sealed class DebugFlagsTests
             + ". Either it is a CLI-bypass tool — which belongs in its own list, not this one, "
             + "per AGENTS.md — or the flag was renamed and the help text was not.");
     }
+    // ── --schema-source ───────────────────────────────────────────────
+
+    [TestMethod]
+    [DataRow("bundled")]
+    [DataRow("fetched")]
+    [DataRow("BUNDLED")]
+    public void SchemaSource_AcceptsEitherValue_CaseInsensitively(string value)
+    {
+        DebugFlags.Initialize(["--schema-source", value]);
+
+        Assert.AreEqual(value.ToLowerInvariant(), DebugFlags.SchemaSourceName,
+            "The value is normalised to lower case so the Program.cs switch can match literals.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_RejectsAnUnknownValue()
+    {
+        DebugFlags.Initialize(["--schema-source", "disk"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName,
+            "An unrecognised source must leave the normal loading chain in place rather than "
+            + "guessing which branch the user meant.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_WithNoValue_IsIgnored()
+    {
+        DebugFlags.Initialize(["--schema-source"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName);
+    }
+
+    /// <summary>
+    /// ⭐ A rejected value must not SWALLOW the next flag.
+    /// </summary>
+    /// <remarks>
+    /// The two-token flags split into two families and this one is in the PEEK family, like
+    /// <c>--writer</c>: because the value set is closed, a token that is not a valid value may
+    /// still be a valid flag in its own right. Consuming positionally — correct for
+    /// <c>--deep-link</c>, where any string is a plausible path — would silently discard it.
+    /// </remarks>
+    [TestMethod]
+    public void SchemaSource_WithAFlagAsItsValue_RejectsTheValueAndHonoursTheFlag()
+    {
+        DebugFlags.Initialize(["--schema-source", "--linux"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName, "'--linux' is not a schema source.");
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "--linux was swallowed as --schema-source's value instead of being honoured.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_AppearsInTheActiveFlagList()
+    {
+        DebugFlags.Initialize(["--schema-source", "bundled"]);
+
+        DebugFlags.LogActiveFlags();
+
+        Assert.AreEqual("bundled", DebugFlags.SchemaSourceName,
+            "Premise: the flag must be set for the listing to have anything to report.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_IsClearedByResetForTesting()
+    {
+        DebugFlags.Initialize(["--schema-source", "fetched"]);
+        Assert.AreEqual("fetched", DebugFlags.SchemaSourceName, "Premise: it must be set first.");
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsNull(DebugFlags.SchemaSourceName,
+            "A flag left set after a reset leaks into whatever test runs next.");
+    }
 }

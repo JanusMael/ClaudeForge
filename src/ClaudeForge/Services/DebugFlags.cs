@@ -188,6 +188,24 @@ public static class DebugFlags
     public static string? ConfigWriterName { get; private set; }
 
     /// <summary>
+    /// Forced schema source: <c>"bundled"</c>, <c>"fetched"</c>, or <see langword="null"/> for
+    /// the normal chain.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ Exists because network-first made the bundled path unreachable on a healthy machine.
+    /// Every offline, throttled or firewalled user gets that path and a developer never sees it;
+    /// the alternative to this flag is unplugging the network, which disables everything else too.
+    /// </para>
+    /// <para>
+    /// ⚠ A <see langword="string"/>, not <c>SchemaSourceOverride?</c>, so this class keeps its
+    /// shape: every flag here is a primitive, and <c>Program.cs</c> maps this one onto the enum at
+    /// the point it configures the registry. Same treatment as <see cref="ConfigWriterName"/>.
+    /// </para>
+    /// </remarks>
+    public static string? SchemaSourceName { get; private set; }
+
+    /// <summary>
     /// Why a supplied <c>--deep-link</c> value was rejected, or
     /// <see langword="null"/> when none was supplied or it parsed cleanly.
     /// <para>
@@ -359,6 +377,38 @@ public static class DebugFlags
 
                     break;
 
+                case "--schema-source":
+                    if (i + 1 >= args.Length)
+                    {
+                        _deferredWarnings.Add(
+                            "[DebugFlags] --schema-source flag requires a value "
+                            + "(--schema-source bundled or --schema-source fetched); ignoring.");
+                        break;
+                    }
+
+                    // PEEK, don't consume -- same reasoning as --writer: the value set is
+                    // closed, so a rejected token may itself be a valid flag and must not be
+                    // swallowed.
+                    string requestedSource = args[i + 1];
+                    if (string.Equals(requestedSource, "bundled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SchemaSourceName = "bundled";
+                        i++;
+                    }
+                    else if (string.Equals(requestedSource, "fetched", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SchemaSourceName = "fetched";
+                        i++;
+                    }
+                    else
+                    {
+                        _deferredWarnings.Add(
+                            $"[DebugFlags] --schema-source '{requestedSource}' rejected: expected "
+                            + "'bundled' or 'fetched'. Using the normal loading chain.");
+                    }
+
+                    break;
+
                 // Help / discovery: defer the help message so it surfaces in the log
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
@@ -377,6 +427,7 @@ public static class DebugFlags
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
                         "--simulate-update, --deep-link <path>, --writer <legacy|jsonc>, " +
+                        "--schema-source <bundled|fetched>, " +
                         "--debug-help");
                     _deferredWarnings.Add(
                         "[DebugFlags] CLI-bypass tools (run and exit, no window): " +
@@ -461,6 +512,7 @@ public static class DebugFlags
         DeepLinkPath = null;
         DeepLinkPathError = null;
         ConfigWriterName = null;
+        SchemaSourceName = null;
         _deferredWarnings.Clear();
         PlatformInfo.ResetForTesting();
     }
@@ -495,6 +547,11 @@ public static class DebugFlags
         if (DeepLinkPath != null)
         {
             yield return "--deep-link " + DeepLinkPath;
+        }
+
+        if (SchemaSourceName != null)
+        {
+            yield return "--schema-source " + SchemaSourceName;
         }
 
         if (ConfigWriterName != null)
