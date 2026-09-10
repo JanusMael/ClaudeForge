@@ -83,7 +83,7 @@ public sealed class DeepPathReloadTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(new HttpClient()), new NullDialogService());
+        return new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
     }
 
     private static async Task<AgentsSkillsEditorViewModel> OpenAgentsSkillsAsync(MainWindowViewModel vm)

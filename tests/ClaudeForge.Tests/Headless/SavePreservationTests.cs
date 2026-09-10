@@ -257,7 +257,7 @@ public sealed class SavePreservationTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(new HttpClient()), new ConfirmingDialogService());
+        return new MainWindowViewModel(new SchemaRegistry(), new ConfirmingDialogService());
     }
 
     private static JsonDocumentOptions ReadOpts() => new()

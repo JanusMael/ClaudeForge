@@ -123,7 +123,7 @@ public sealed class ReloadHardeningTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(new HttpClient()), new NullDialogService());
+        return new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
     }
 
     // ── H-1 recovery: malformed reload must not break subsequent reloads ──

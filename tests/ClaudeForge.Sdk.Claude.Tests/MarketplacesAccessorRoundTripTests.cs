@@ -25,7 +25,7 @@ public sealed class MarketplacesAccessorRoundTripTests
     private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)
     {
         return ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
     }
 
     [TestMethod]

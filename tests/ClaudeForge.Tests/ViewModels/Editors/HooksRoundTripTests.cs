@@ -289,7 +289,7 @@ public class HooksRoundTripTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // First editor — populate with a URL hook + header + allowedEnvVar.
         HooksEditorViewModel vm1 = new(HooksSchema(), ConfigScope.User, client);

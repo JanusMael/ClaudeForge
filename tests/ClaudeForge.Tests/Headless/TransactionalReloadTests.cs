@@ -100,7 +100,7 @@ public sealed class TransactionalReloadTests
     /// </summary>
     private static MainWindowViewModel BuildViewModel()
     {
-        SchemaRegistry schemaRegistry = new(new HttpClient());
+        SchemaRegistry schemaRegistry = new();
         NullDialogService dialog = new();
         return new MainWindowViewModel(schemaRegistry, dialog);
     }

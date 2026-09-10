@@ -40,7 +40,7 @@ public sealed class McpServersAccessorRoundTripTests
     private static TestConfigClient MakeClient(SettingsWorkspace ws)
     {
         return TestConfigClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
     }
 
     [TestMethod]

@@ -58,7 +58,7 @@ public sealed class McpServersEditorRoundTripTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // Editor LOAD via SDK path.
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);
@@ -130,7 +130,7 @@ public sealed class McpServersEditorRoundTripTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
@@ -169,7 +169,7 @@ public sealed class McpServersEditorRoundTripTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // Construct editor WITH the SDK client (production path).
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);

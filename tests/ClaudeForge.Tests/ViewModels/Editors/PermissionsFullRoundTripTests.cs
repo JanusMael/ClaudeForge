@@ -39,7 +39,7 @@ public class PermissionsFullRoundTripTests
             SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
             ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
                 ws, ConfigScope.User,
-                new SchemaRegistry(new HttpClient()));
+                new SchemaRegistry());
             PermsFixture fx = new(doc, ws, client);
             fx.RebuildEditor();
             return fx;
