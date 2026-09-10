@@ -263,7 +263,13 @@ public partial class MainWindow : Window
     /// </summary>
     private async void OnVersionLabelClick(object? sender, RoutedEventArgs e)
     {
-        AboutDialog about = new();
+        // The view-model owns the registry and the nav tree, so it — not the dialog — runs
+        // the schema check and re-badges. A null DataContext (design-time, or a harness that
+        // shows the window without a VM) simply hides that row.
+        AboutDialog about = DataContext is MainWindowViewModel vm
+            ? new AboutDialog(vm.CheckForSchemaUpdatesAsync)
+            : new AboutDialog();
+
         await about.ShowDialog(this);
     }
 

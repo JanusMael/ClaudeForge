@@ -2864,4 +2864,40 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>Vistas de ajustes</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>incluido</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>descargado {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante el esquema incluido en esta aplicación (huella {0}). La aplicación intentó descargar una copia más reciente y no pudo: normalmente por falta de red o porque la descarga fue demasiado lenta.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante un esquema descargado a las {0} (huella {1}). La copia incluida en esta aplicación se usa en su lugar cuando la descarga no está disponible.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante el esquema incluido en esta aplicación (huella {0}). Este producto no publica ningún esquema descargable, por lo que esta copia es la única.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Buscar actualizaciones de esquema</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Vuelve a descargar las definiciones en las que se basan estos editores. Se aplica tras volver a cargar.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Comprobando…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Los esquemas están actualizados.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Actualizado: {0}. Vuelve a cargar la ventana para aplicarlo: los editores siguen mostrando la versión anterior.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>No se pudo conectar con el servidor de esquemas. Se usa la copia incluida en esta aplicación.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>No se pudo cargar el esquema de {0}. Consulta el registro para más detalles.</value>
+  </data>
 </root>

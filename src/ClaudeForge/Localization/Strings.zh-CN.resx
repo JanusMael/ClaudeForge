@@ -2855,4 +2855,40 @@
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>设置视图</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>内置</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>已获取 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>本节的设置由此应用内置的架构（指纹 {0}）描述。应用尝试获取更新的副本但未成功——通常是没有网络，或下载过慢。</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>本节的设置由在 {0} 下载的架构（指纹 {1}）描述。下载不可用时，将改用此应用内置的副本。</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>本节的设置由此应用内置的架构（指纹 {0}）描述。该产品未发布可下载的架构，因此此副本是唯一的副本。</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>检查架构更新</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>重新下载这些编辑器所依据的定义。重新加载后生效。</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>正在检查…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>架构已是最新。</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>已更新：{0}。请重新加载窗口以应用——编辑器仍显示先前的版本。</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>无法连接架构服务器。将使用此应用内置的副本。</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>无法加载 {0} 的架构。详情请查看日志。</value>
+  </data>
 </root>

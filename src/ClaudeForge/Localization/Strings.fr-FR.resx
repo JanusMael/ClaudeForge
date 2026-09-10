@@ -2876,4 +2876,40 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>Vues des paramètres</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>intégré</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>téléchargé {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>Les paramètres de cette section sont décrits par le schéma intégré à cette application (empreinte {0}). L'application a tenté de télécharger une copie plus récente sans y parvenir — généralement absence de réseau, ou téléchargement trop lent.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>Les paramètres de cette section sont décrits par un schéma téléchargé à {0} (empreinte {1}). La copie intégrée à cette application est utilisée à la place lorsque le téléchargement est indisponible.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>Les paramètres de cette section sont décrits par le schéma intégré à cette application (empreinte {0}). Ce produit ne publie aucun schéma à télécharger, cette copie est donc la seule.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Rechercher des mises à jour de schéma</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Retélécharger les définitions sur lesquelles reposent ces éditeurs. Prend effet après un rechargement.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Vérification…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Les schémas sont à jour.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Mis à jour : {0}. Rechargez la fenêtre pour l'appliquer — les éditeurs affichent encore la version précédente.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Impossible de joindre le serveur de schémas. La copie intégrée à cette application est utilisée.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Impossible de charger le schéma de {0}. Consultez le journal pour plus de détails.</value>
+  </data>
 </root>

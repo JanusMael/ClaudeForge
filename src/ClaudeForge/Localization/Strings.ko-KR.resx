@@ -2876,4 +2876,40 @@
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>설정 보기</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>내장</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>가져옴 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 이 앱에 내장된 스키마(지문 {0})로 정의됩니다. 더 새로운 사본을 가져오려 했지만 실패했습니다 — 보통 네트워크가 없거나 다운로드가 너무 느린 경우입니다.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 {0}에 다운로드된 스키마(지문 {1})로 정의됩니다. 다운로드를 사용할 수 없을 때는 이 앱에 내장된 사본이 대신 사용됩니다.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 이 앱에 내장된 스키마(지문 {0})로 정의됩니다. 이 제품은 다운로드할 수 있는 스키마를 게시하지 않으므로 이 사본이 유일합니다.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>스키마 업데이트 확인</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>이 편집기의 기반이 되는 정의를 다시 다운로드합니다. 다시 불러온 후 적용됩니다.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>확인 중…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>스키마가 최신입니다.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>업데이트됨: {0}. 적용하려면 창을 다시 불러오세요 — 편집기에는 아직 이전 버전이 표시됩니다.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>스키마 서버에 연결할 수 없습니다. 이 앱에 내장된 사본을 사용합니다.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>{0}의 스키마를 불러올 수 없습니다. 자세한 내용은 로그를 확인하세요.</value>
+  </data>
 </root>

@@ -2876,4 +2876,40 @@
   <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
     <value>Представления настроек</value>
   </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>встроенная</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>загружено {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, встроенной в это приложение (отпечаток {0}). Приложение попыталось загрузить более новую копию и не смогло — обычно из-за отсутствия сети или слишком медленной загрузки.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, загруженной в {0} (отпечаток {1}). Если загрузка недоступна, вместо неё используется копия, встроенная в это приложение.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, встроенной в это приложение (отпечаток {0}). Этот продукт не публикует схему для загрузки, поэтому эта копия — единственная.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Проверить обновления схем</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Повторно загрузить определения, на которых основаны эти редакторы. Вступает в силу после перезагрузки.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Проверка…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Схемы актуальны.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Обновлено: {0}. Перезагрузите окно, чтобы применить — редакторы всё ещё показывают предыдущую версию.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Не удалось связаться с сервером схем. Используется копия, встроенная в это приложение.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Не удалось загрузить схему для {0}. Подробности в журнале.</value>
+  </data>
 </root>

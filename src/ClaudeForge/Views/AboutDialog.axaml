@@ -121,6 +121,32 @@
                             ToolTip.Tip="{Binding UpdateCheckReleaseUrl}"
                             AutomationProperties.Name="{x:Static loc:Strings.ButtonUpdateBannerOpenRelease}" />
                 </StackPanel>
+
+                <!-- "Check for schema updates" — the sibling of the app-update check above,
+                     and placed here for that reason: both answer "am I running something
+                     stale?", and a user who came to this dialog to check one is the user who
+                     wants the other.
+
+                     They are NOT the same check. This one re-fetches the JSON Schemas the
+                     editors are built from (schemastore.org, opencode.ai); the one above
+                     asks GitHub about the binary.
+
+                     The whole row hides when the dialog was opened without a main window
+                     behind it, because there is then nothing to refresh. -->
+                <StackPanel Spacing="4" Margin="0,8,0,0" IsVisible="{Binding CanCheckSchemas}">
+                    <Button Content="{x:Static loc:Strings.ButtonCheckForSchemaUpdates}"
+                            Click="OnCheckForSchemaUpdatesClick"
+                            IsEnabled="{Binding !IsCheckingSchemas}"
+                            Padding="10,4"
+                            HorizontalAlignment="Left"
+                            ToolTip.Tip="{x:Static loc:Strings.TipCheckForSchemaUpdates}"
+                            AutomationProperties.Name="{x:Static loc:Strings.ButtonCheckForSchemaUpdates}" />
+                    <TextBlock FontSize="11"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               IsVisible="{Binding HasSchemaCheckResult}"
+                               Text="{Binding SchemaCheckResultText}" />
+                </StackPanel>
             </StackPanel>
 
             <!-- Vertical separator -->
