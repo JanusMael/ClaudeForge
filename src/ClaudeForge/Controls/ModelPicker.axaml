@@ -31,10 +31,13 @@
             </ctrl:FuzzyModelAutoCompleteBox.ItemTemplate>
         </ctrl:FuzzyModelAutoCompleteBox>
 
+        <!-- The content is a glyph, which a screen reader would announce as "▾";
+             the tooltip's text is the announcement that means something. -->
         <Button Content="▾"
                 Padding="8,4"
                 VerticalAlignment="Center"
                 ToolTip.Tip="{x:Static loc:Strings.TipShowSuggestions}"
+                AutomationProperties.Name="{x:Static loc:Strings.TipShowSuggestions}"
                 Click="OnDropdownClick" />
     </StackPanel>
 </UserControl>
