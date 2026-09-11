@@ -252,6 +252,17 @@ implementation: `AgentsSkillsEditorViewModel`.
 - [ ] **The trim gate names its apps explicitly** in `.github/workflows/ci.yml`. A new *library* needs nothing there, but it is only trim-checked once an app references it — so a library added ahead of its consumers is **not** yet covered by that gate. Say so rather than assuming green.
 - [ ] Line endings **CRLF** and **no BOM** for `.cs`/`.csproj` — match the siblings, and check with `head -c3 <file> | od -An -tx1`. ⚠ Python's `encoding="utf-8-sig"` **adds** a BOM on write; it silently changed six files' first bytes in session 10.
 
+### X = Hand-porting a fix between this branch and `main`
+
+A cherry-pick is impossible across the Phase-1 renames — `ClaudeForge.Core` → `AgentForge.Core`, `ClaudeForge.Sdk` → `ClaudeForge.Sdk.Claude`. The feature branch's paths do not exist on `main`, and a pick drags the whole rename across. So ports are hand-authored, and that is where things go wrong.
+
+- [ ] **Confirm the source file is otherwise identical to the destination's**, before the fix, modulo namespace. If it is not, you are porting a fix *and* a divergence and should stop.
+- [ ] ⛔ **Move the bytes, never the decoded text.** `git format-patch` + `git am`, `git cherry-pick`, or a shell-redirected `git show ref:path > file` are byte-exact. A script that captures `git show` output into a variable is **not** — see [Capturing child-process output](#capturing-child-process-output-that-may-contain-non-ascii). This corrupted 41 sequences across four files in 2026-09.
+- [ ] **Verify byte-exactness, not just a green build.** `grep -c '—'` on source and destination must match, and `grep -rlP '\xce\x93[\xc2-\xc3]'` must print nothing. The suite cannot see this class of damage.
+- [ ] **Check line endings and BOM survived**: `head -c3 <file> | od -An -tx1` (no `ef bb bf`) and CRLF counts matching the destination's siblings.
+- [ ] **Build and test on the destination's own layout**, in a worktree off `origin/main` — not on the feature branch and not by assumption.
+- [ ] **One PR per concern, not per port run.** Two fixes with different risk profiles get two PRs, so the riskier one cannot ride in on the safer one's back.
+
 ### X = `OpenCodeDatabaseSchemaTests` went red (OpenCode's database schema moved)
 
 **This is the alarm working, not a chore.** A Phase-14 `Full` backup includes `opencode.db` behind an opt-in with an advisory that the archive **contains credentials**, and `Sanitized` mode excludes it. Both rest on a claim about what that file holds, and `OpenCodeSecretColumns` is a snapshot of **upstream's** schema — so a stale one means the app is telling the user something untrue about their own backup.
@@ -522,6 +533,49 @@ catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or J
 
 What breaks: real bugs become invisible. Existing convention in CLAUDE.md "Key conventions". Pattern visible in `WindowStateService.Load/Save/Delete`.
 
+### Capturing child-process output that may contain non-ASCII
+
+```powershell
+# WRONG — PowerShell decodes the child's stdout through [Console]::OutputEncoding,
+# which on a Windows console is OEM CP437. UTF-8 E2 80 94 (—) comes back as the
+# three chars Γ Ç ö, and writing that out as UTF-8 DOUBLE-ENCODES it.
+$text = & git show "$ref`:$path"
+Set-Content -LiteralPath $dest -Value $text -Encoding utf8NoBOM
+```
+
+```powershell
+# RIGHT — read raw bytes; never let a console code page see them.
+$psi = [System.Diagnostics.ProcessStartInfo]::new('git')
+$psi.ArgumentList.Add('show'); $psi.ArgumentList.Add("$ref`:$path")
+$psi.RedirectStandardOutput = $true; $psi.UseShellExecute = $false
+$proc = [System.Diagnostics.Process]::Start($psi)
+$buf = [System.IO.MemoryStream]::new()
+$proc.StandardOutput.BaseStream.CopyTo($buf); $proc.WaitForExit()
+# Strict UTF-8: a bad decode THROWS instead of silently substituting U+FFFD.
+$text = [System.Text.UTF8Encoding]::new($false, $true).GetString($buf.ToArray())
+```
+
+```powershell
+# ACCEPTABLE when you must capture — the line already in packaging/Submit-Winget.ps1.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+```
+
+⛔ **What breaks: nothing you can see.** Mojibake inside an XML doc comment compiles cleanly, no analyzer objects, and the whole suite stays green — **a passing suite is not evidence here.** It only becomes visible when a corrupted literal reaches a user, such as a Serilog message or a manifest field.
+
+⚠ **This repo has been bitten twice, in two different surfaces.** `packaging/Submit-Winget.ps1` line 55 carries the fix and the note *"Shipped that way in 2026.3.810; don't again"* — mangled em dashes reached a **published winget manifest**. It happened again in 2026-09 when a script hand-ported files between branches and double-encoded **41 sequences across four files**, which reached `main` through two merged PRs before a reviewer caught it.
+
+⭐ **Filing it under "winget" is why it recurred** — the precedent did not fire for someone whose task was "port a file". It is a **console-decoding** defect, not a packaging one.
+
+**Detect it** — a leading `Γ` on a run of Latin-1 punctuation is the signature. Expect zero:
+
+```bash
+grep -rlP '\xce\x93[\xc2-\xc3]' --include=*.cs src/ tests/
+```
+
+⚠ `packaging/Submit-Winget.ps1` and `.github/workflows/winget-submit.yml` legitimately contain `ΓÇö` because they *document* it. Do not "fix" those.
+
+**Verify a port byte-for-byte** rather than trusting a build: count a distinctive non-ASCII character on both sides — `grep -c '—' <file>` — and require equal counts plus zero `Γ`.
+
 ---
 
 ## 5. Verify-before-shipping checklist
@@ -578,6 +632,7 @@ pwsh src/publish/publish.ps1 -All -Rids win-x64
 | Localized-string workflow (`Strings.resx` + Designer + `{x:Static}`) | [`LOCALIZATION.md`](./LOCALIZATION.md) |
 | Build / test / PR workflow, contributor setup | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
 | CI / release workflow reference, publish.ps1 wiring | [`.github/WORKFLOWS.md`](./.github/WORKFLOWS.md) |
+| **Text corruption when a script captures process output** (UTF-8 double-encoded via OEM CP437 — `—` becomes `ΓÇö`); hand-porting files between branches | §4 *Capturing child-process output*, §2 *Hand-porting a fix* — **both in this file**. ⚠ Listed here by MECHANISM on purpose: the fix already existed in `packaging/Submit-Winget.ps1`, filed under winget, and did not fire for someone whose task was "port a file" |
 | Public-facing description, install instructions, feature list | [`README.md`](./README.md) |
 | Compound-editor contract: force-fire, `_isLoading`, child subs, parity table | [`src/ClaudeForge/ViewModels/Editors/AGENTS.md`](./src/ClaudeForge/ViewModels/Editors/AGENTS.md) |
 | Workspace / scope semantics: `ConfigScope` order, `IsDirty` vs `HasActualChanges`, merge rules | [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) |
