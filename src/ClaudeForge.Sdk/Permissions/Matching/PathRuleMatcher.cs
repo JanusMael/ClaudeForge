@@ -11,7 +11,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 /// <para>
 /// <b>Spec.</b>
 /// <see href="https://code.claude.com/docs/en/permissions">code.claude.com/docs/en/permissions</see>
-/// §"Read and Edit". Path rules follow the
+/// ┬º"Read and Edit". Path rules follow the
 /// <see href="https://git-scm.com/docs/gitignore">gitignore specification</see>
 /// with four anchor types:
 /// </para>
@@ -23,20 +23,20 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 /// </list>
 /// <para>
 /// Gitignore semantics: a pattern with no <c>/</c> matches at any depth
-/// (<c>Read(.env)</c> ≡ <c>Read(**/.env)</c>); a pattern containing <c>/</c> is
+/// (<c>Read(.env)</c> Γëí <c>Read(**/.env)</c>); a pattern containing <c>/</c> is
 /// anchored to its base. <c>*</c> matches within one path segment; <c>**</c>
 /// matches across segments. Windows paths are normalized to POSIX form
-/// (<c>C:\Users</c> → <c>/c/Users</c>) before matching.
+/// (<c>C:\Users</c> ΓåÆ <c>/c/Users</c>) before matching.
 /// </para>
 /// <para>
-/// The glob→regex conversion is adapted from
+/// The globΓåÆregex conversion is adapted from
 /// <c>src/ClaudeForge.Core/Backup/GitignoreReader.cs</c> (that type is internal,
 /// disk-oriented, and backup-specific, so the algorithm is reimplemented here
 /// rather than referenced).
 /// </para>
 /// <para>
 /// <b>Not replicated:</b> symlink dual-path resolution (allow needs both
-/// symlink+target; deny needs either) — the dry-run tester evaluates the path as
+/// symlink+target; deny needs either) ΓÇö the dry-run tester evaluates the path as
 /// given. This is a teaching tool, not the enforcement path.
 /// </para>
 /// </remarks>
@@ -105,9 +105,9 @@ public static class PathRuleMatcher
     {
         string spec = specifier.Replace('\\', '/');
 
-        // Windows absolute path (e.g. C:\b\d\e → C:/b/d/e). Map to the POSIX drive
-        // form (/c/b/d/e) — the same normalization ToPosix applies to candidate
-        // paths — and treat it as absolute from the filesystem root. Without this,
+        // Windows absolute path (e.g. C:\b\d\e ΓåÆ C:/b/d/e). Map to the POSIX drive
+        // form (/c/b/d/e) ΓÇö the same normalization ToPosix applies to candidate
+        // paths ΓÇö and treat it as absolute from the filesystem root. Without this,
         // a drive-letter path falls through to the bare-pattern branch and is
         // wrongly resolved relative to the current directory.
         if (spec.Length >= 2 && char.IsLetter(spec[0]) && spec[1] == ':')
@@ -118,8 +118,8 @@ public static class PathRuleMatcher
         if (spec.StartsWith("//", StringComparison.Ordinal))
         {
             // Absolute from filesystem root. The remainder may ITSELF be a Windows
-            // drive path (//C:/c/cl → /c/c/cl), so run it through ToPosix — the same
-            // drive→/c normalization candidate paths receive — before rooting at "/".
+            // drive path (//C:/c/cl ΓåÆ /c/c/cl), so run it through ToPosix ΓÇö the same
+            // driveΓåÆ/c normalization candidate paths receive ΓÇö before rooting at "/".
             // Without this the drive letter ("C:") leaks into the sub-pattern verbatim
             // and never matches a candidate whose drive was normalized to "/c"; the
             // rule then silently matches nothing (which also makes its globs look inert).
@@ -163,6 +163,17 @@ public static class PathRuleMatcher
 
     // Adapted from GitignoreReader.PatternToRegex: `**` = any depth (consuming an
     // optional adjoining slash), `*` = within one segment, `?` = one non-slash.
+    //
+    // Γ¢ö THAT ADAPTATION COPIED A DEFECT, AND THE COPY WAS INVISIBLE TO THE ORIGINAL'S TESTS.
+    // `**/` emitted `.*` and swallowed the slash, so `**/foo` compiled to `^.*foo$` and matched
+    // `barfoo` ΓÇö a partial SEGMENT. GitignoreReader's twenty tests could never have caught it,
+    // because they do not exercise this file. Both were fixed the same way; see
+    // GitignoreReader.PatternToRegex, and keep them in step.
+    //
+    // ΓÜá Here the consequence is not cosmetic: this decides PERMISSIONS. An over-broad `allow`
+    // granted more than written, and the correction makes matching STRICTER ΓÇö so a path a
+    // `deny` rule used to catch is no longer caught by that rule. That direction is fail-open
+    // and was accepted deliberately rather than discovered.
     private static string GlobBody(string pattern)
     {
         StringBuilder sb = new();
@@ -171,11 +182,19 @@ public static class PathRuleMatcher
         {
             if (i + 1 < pattern.Length && pattern[i] == '*' && pattern[i + 1] == '*')
             {
-                sb.Append(".*");
                 i += 2;
+
+                // `**/` is a WHOLE-SEGMENT rule: any number of complete segments, or none.
+                // `(?:.*/)?` matches `a/b/` and the empty string, never a bare `bar`.
                 if (i < pattern.Length && pattern[i] == '/')
                 {
                     i++;
+                    sb.Append("(?:.*/)?");
+                }
+                else
+                {
+                    // A trailing or bare `**` (`secrets/**`) really is "any characters".
+                    sb.Append(".*");
                 }
             }
             else if (pattern[i] == '*')
@@ -254,7 +273,7 @@ public static class PathRuleMatcher
     {
         string p = path.Replace('\\', '/');
 
-        // Drive-letter form: C:/Users → /c/Users
+        // Drive-letter form: C:/Users ΓåÆ /c/Users
         if (p.Length >= 2 && char.IsLetter(p[0]) && p[1] == ':')
         {
             string rest = p.Length > 2 ? p[2..] : string.Empty;
