@@ -5387,11 +5387,16 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 
 ### Phase 16 — Re-validate against a used install **[promoted from a checkpoint, 2026-09-09]**
 
-> 🔶 **PHASE 16 — PROBED 2026-09-10. THREE ITEMS FULLY ANSWERED, FOUR IN PART, ONE GATE CLEARED,
-> TWO STILL OPEN — AND PHASE 14 STAYS BLOCKED.** Three of the answers contradict what this
-> document recorded. The split matters more than a single total, so it is stated rather than
-> rounded: **fully** 4, 6, 11 · **in part** 1, 2, 3, 5 — the structure, layout and mechanism are
-> known, the *growth* is not · **gate cleared** 9 · **open** 7, 10.
+> 🔶 **PHASE 16 — PROBED 2026-09-10, AMENDED 2026-09-11. TWO ITEMS FULLY ANSWERED, FOUR IN PART,
+> ONE RE-OPENED, ONE GATE CLEARED, TWO STILL OPEN — AND PHASE 14 STAYS BLOCKED.** Three of the
+> answers contradict what this document recorded. The split matters more than a single total, so
+> it is stated rather than rounded: **fully** 6, 11 · **in part** 1, 2, 3, 5 — the structure,
+> layout and mechanism are known, the *growth* is not · **re-opened** 4, on a second machine ·
+> **gate cleared** 9 · **open** 7, 10.
+>
+> ⛔ **Item 4 moved BACKWARDS, and that is the finding.** It was the one item marked answered
+> outright; a second machine falsified it. An item can leave this table in either direction, and
+> a phase that only ever ratchets forward is not measuring.
 >
 > ⚠ **"In part" is not modesty.** Every partial has the same cause: shape can be read off an idle
 > install, and rate cannot. That is the distinction Phase 14 turns on, so collapsing these into
@@ -5431,7 +5436,7 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 > | 1 | `data`, `state`, `cache` all **0 bytes**; populated layout unknown | `data` 564,236 B / 4 files · `state` 141 B / 2 files · `cache` 4,332,470 B / **1 file** · `config` 55,076,208 B / 3,464 files, each broken down per child in the snapshot | ✅ layout **ANSWERED**; growth still not |
 > | 2 | *"if sessions live in SQLite, backup of `~/.config/opencode/` misses them entirely"* | ⭐ **Confirmed structurally, and wider than recorded: the database holds SECRETS.** `account` and `control_account` each carry `access_token` + `refresh_token`; `credential` is a store with a `value text NOT NULL`; `session_share` has `secret`. 20 tables, all user rows 0 | ⭐ structure **ANSWERED**; growth ⛔ |
 > | 3 | `locks/` empty; *"a lock held during our save is a real failure mode on Windows"* | ⭐⭐ **The lock is a DIRECTORY**, not a file: `<sha1>.lock/` holding `heartbeat` and `meta.json` (token, pid, hostname, createdAt) — one per project, keyed by a 40-hex digest. A mkdir mutex is **advisory**: it acquires no OS lock, so it cannot block a config write. ⚠ **That is the mechanism, not a live test.** And it says nothing about `opencode.db`, which SQLite locks by its own means — the hazard for a Phase 14 backup reading that file is real and separate | ⭐ *what takes locks* **ANSWERED**; blocking untested |
-> | 4 | `bin/` is *"the likeliest prune target and its size is unmeasured"* | ⛔ **The premise is inverted.** `bin/` is **empty** — 0 bytes, 0 files, confirmed twice. The whole cache is **one file**: `models.json`, 4,332,470 B. `packages/` is two empty directories left by this project's own synthetic plugin tests | ⛔ **ANSWERED — inverted** |
+> | 4 | `bin/` is *"the likeliest prune target and its size is unmeasured"* | ⛔ **The premise is inverted.** `bin/` is **empty** — 0 bytes, 0 files, confirmed twice. The whole cache is **one file**: `models.json`, 4,332,470 B. `packages/` is two empty directories left by this project's own synthetic plugin tests | ⛔⛔ **RE-OPENED 2026-09-11** — `bin/` holds **1.8 MB** on a second machine, and the cache holds a **second** 4.6 MB `models.json` as an orphaned download temp. See the `debug v2` block below: `bin/` is empty only until something reaches for ripgrep |
 > | 5 | node_modules **60 MB** with one plugin | 55,058,354 B (**52.5 MiB**), **3,458 files**, 26 top-level entries, for the single declared dependency `@opencode-ai/plugin@1.17.9` — **99.97 % of the config root** | ✅ one-plugin baseline **ANSWERED** |
 > | 6 | only the synthetic `global` entry existed | **Unchanged.** One project, `id=global`, `sandboxes: []`, worktree a deleted agent scratchpad | ✅ **ANSWERED — unchanged** |
 > | 7 | permission merge proven on synthetic layers only | ⛔ **Nothing to answer with.** The global `opencode.jsonc` is **50 bytes — a `$schema` line and nothing else**. No `permission` block exists in any layer, and the `permission` table has 0 rows | ⛔ **STILL OPEN** |
@@ -5488,10 +5493,33 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 > ⓘ **`migration` went 35 → 38 rows.** The schema did evolve between the versions; it simply did
 > not evolve in any table this project reads or redacts.
 >
-> ⭐ **NEW SUBCOMMAND, UNEXAMINED: `opencode debug v2`** — *"debug v2 catalog and built-in
-> plugins"*. Decision 15 gates v1-vs-v2 rules on `ProductVersionProbe`, so a first-class `v2`
-> debug surface is the most likely place for that distinction to have become concrete. Worth a
-> look before any more v1/v2 work.
+> ⭐ **`opencode debug v2` — EXAMINED 2026-09-11, AND IT IS NOT THE v1/v2 SURFACE.** Its help
+> reads *"debug v2 catalog and built-in plugins"*, and the guess recorded here was that Decision
+> 15's v1-vs-v2 rule distinction had become concrete there. ⛔ **It has not.** This subcommand's
+> "v2" is OpenCode's **provider-catalog** machinery; Decision 15's is `AGENTS.md`
+> **rule-resolution** semantics — the `~/.claude/CLAUDE.md` fallback and nested-file discovery of
+> S9. They are unrelated subsystems that share a numeral. **Nothing here informs the resolver, and
+> `ProductVersionProbe` remains the only gate.** Closing the guess is the result; it cost three
+> runs and it stops the next reader re-forming it.
+>
+> **What it actually prints — three keys, measured at 1.18.18:**
+>
+> | Key | Content |
+> |---|---|
+> | `providers` | ⚠ **The user's own resolved provider config, not a catalog** — all four here trace to `~/.config/opencode/opencode.json` (three custom + the built-in `opencode` zen entry) |
+> | `default` | ⛔ **A serialized Effect fiber, leaking into JSON**: `{"_id":"Effect","op":"OnSuccess","args":{"_id":"Effect","op":"WithFiber"}}`. Not a default model id — an unresolved lazy computation. **Do not build on this key**; a consumer reading it gets an opaque internal object with no stable meaning |
+> | `small` | ✅ 160 entries, provider id → small-model id. **The only genuine catalog in the output**, and the one thing here worth a second look if `small_model` ever needs a picker |
+>
+> ⛔ **The "built-in plugins" half prints NOTHING, and `--pure` is the proof.** This machine has an
+> auto-discovered external plugin — `~/.config/opencode/plugins/gk-hooks.js`, 3,763 B, present via
+> the directory convention with **no `plugin` key in any config layer**. `opencode debug v2 --pure`
+> ("run without external plugins") returns output **byte-identical** to the plain run, 8,634 B
+> both. So plugins neither appear in the output nor change it. Whatever that half of the help text
+> refers to is not observable from here.
+>
+> ⛔ **DO NOT COMMIT THIS OUTPUT.** Unlike `debug paths` and `debug scrap`, the payload is the
+> maintainer's provider configuration — private base URLs and `{env:…}` key references. That is
+> why the measurements above are shapes and counts rather than a captured snapshot.
 >
 > ⛔ **WHAT WAS NOT RE-MEASURED, and why it is not cheap.** Artifact scopes, the project walk
 > ("every ancestor contributes"), skill discovery, theme discovery, artifact inventory and
@@ -5499,6 +5527,58 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 > is what put the synthetic `global` entry into `debug scrap` in the first place, and it is still
 > there, pointing at a deleted agent scratchpad. Creating more fixtures pollutes the same table
 > this phase measures. Do it deliberately, in one pass, with a plan for what to leave behind.
+
+> ⛔⛔ **AND `debug v2` WRITES — AND FETCHES OVER THE NETWORK. `debug --help` DOES NOT.**
+> Isolated by snapshotting all four roots between invocations, because "it is a debug command"
+> is exactly the assumption `242c0f9` already cost this project once:
+>
+> | Invocation | Effect on disk |
+> |---|---|
+> | `opencode debug --help` | ✅ **NO CHANGE** — inert, all four roots identical |
+> | `opencode debug v2` | ⛔ opens `opencode.db` — `-shm` mtime bumps, which is the checkpoint hazard · appends to `log/opencode.log` (498 → 996 B) · **re-downloads `ripgrep-15.1.0-x86_64-pc-windows-msvc.zip`, 1,810,687 B, on every run** · leaves an empty extraction temp dir `cache/bin/ripgrep-XXXXXX/` behind each time · on the first run also fetched `models.json`, 4,611,576 B |
+>
+> ⭐ **So "read-only" is a property of `--help`, not of `debug`.** Any future probe that shells an
+> OpenCode subcommand must re-establish this per subcommand rather than inheriting it from the
+> word.
+
+> ⛔ **ITEM 4 IS FALSIFIED ON THIS MACHINE: `bin/` IS NOT EMPTY.** The table above records it as
+> *"**empty** — 0 bytes, 0 files, confirmed twice"*, and concludes that this **inverts** its
+> billing as the largest prune candidate. Measured here: **1.8 MB** — the ripgrep zip plus two
+> empty `ripgrep-*` extraction temps.
+>
+> ⭐ **The correction is not "the measurement was wrong" — it is that `bin/` is empty *until
+> something needs ripgrep*, and a `debug` subcommand is enough to trigger it.** The original
+> billing as a prune target was never wrong; it was unobserved, on an install that had never
+> reached for the tool. An absent-on-an-idle-install category is not an absent category, which is
+> the same lesson `snapshot/` and `tool-output/` are already flagged for.
+>
+> ⚠ **And part of this is OUR contamination, recorded rather than hidden.** This session's three
+> `debug v2` runs are what fetched ripgrep and `models.json` onto this machine. Same discipline as
+> `createdByThisProbe`: the probe says what it caused.
+
+> ⭐ **A FOOTPRINT ITEM NOTHING ON THE LIST COVERS: ORPHANED DOWNLOAD TEMPS.**
+> `cache/models.json.<pid>.<ts>.tmp` — **4,594,251 B**, pre-dating this session — sits beside a
+> complete `models.json` of 4,611,576 B. An interrupted download leaves a **full-size** orphan and
+> nothing ever cleans it, so the cache silently holds two copies of a 4.6 MB file for one useful
+> one.
+>
+> ⛔ **A footprint page that lists `models.json` by name misses this entirely** — and it is the
+> second-largest single item on the install after `node_modules/`. The page needs a `*.tmp` sweep
+> of the cache root, and unlike every other prune candidate this one is **unambiguously safe**:
+> a temp whose final file already exists cannot be needed. `cache/bin/ripgrep-*/` is the same
+> shape at negligible size.
+
+> ✅ **PHASE 14's `.gitignore` PREMISE RE-VALIDATES — second machine, 1.18.18.** 63 bytes, five
+> entries — `node_modules`, `package.json`, `package-lock.json`, `bun.lock`, `.gitignore` — and
+> **still no trailing newline**: `wc -l` reports **4**, and the last byte of the file is `e`.
+> `GitignoreReader` (`199c811`) is correct for this install too, and the unterminated-final-line
+> hazard is a property of how OpenCode writes the file rather than of one machine.
+>
+> ⚠ **But `plugins/` is IRREPLACEABLE and appears in no exclusion list — nor in any inclusion
+> one.** `plugins/gk-hooks.js` is user-authored, discovered by directory convention with no config
+> key naming it, and named by neither the `.gitignore` nor Phase 14's bullets, which enumerate
+> what a backup *excludes* and leave what it *includes* implicit. A backup that loses it loses
+> work the user cannot regenerate.
 
 **Was the ⏱ Deferred re-checkpoint.** Promoted to a phase at the maintainer's direction because
 treating it as a gate did not work: it was supposed to clear before Phase 10, and Phase 10
