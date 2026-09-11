@@ -2857,7 +2857,7 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
     <value>Type de source</value>
   </data>
   <data name="WatermarkMcpMatchPayload" xml:space="preserve">
-    <value>valeur à comparer</value>
+    <value>charge utile à comparer</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
     <value>Formater</value>

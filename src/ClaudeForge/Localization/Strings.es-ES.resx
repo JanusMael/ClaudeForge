@@ -2845,7 +2845,7 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
     <value>Tipo de origen</value>
   </data>
   <data name="WatermarkMcpMatchPayload" xml:space="preserve">
-    <value>valor de coincidencia</value>
+    <value>carga útil de coincidencia</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
     <value>Formatear</value>

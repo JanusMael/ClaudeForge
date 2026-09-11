@@ -2857,7 +2857,7 @@
     <value>Тип источника</value>
   </data>
   <data name="WatermarkMcpMatchPayload" xml:space="preserve">
-    <value>значение для сопоставления</value>
+    <value>полезная нагрузка для сопоставления</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
     <value>Форматировать</value>

@@ -2859,7 +2859,7 @@
     <value>照合するペイロード</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
-    <value>整形</value>
+    <value>フォーマット</value>
   </data>
   <data name="TipFormatJson" xml:space="preserve">
     <value>JSON を再インデントします (解析して整形表示)。</value>

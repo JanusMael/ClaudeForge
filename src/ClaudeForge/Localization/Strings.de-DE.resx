@@ -2845,7 +2845,7 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
     <value>Quelltyp</value>
   </data>
   <data name="WatermarkMcpMatchPayload" xml:space="preserve">
-    <value>Vergleichswert</value>
+    <value>Payload zum Abgleich</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
     <value>Formatieren</value>
