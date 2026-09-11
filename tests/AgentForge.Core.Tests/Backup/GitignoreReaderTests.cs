@@ -168,6 +168,109 @@ public sealed class GitignoreReaderTests
     }
 
     // -----------------------------------------------------------------------
+    // IsIgnored — anchoring and ** depth
+    //
+    // ⛔ Both of these shipped wrong, and both failed SILENTLY in the direction that
+    // matters for a backup: a root-anchored pattern matched NOTHING, so `/node_modules`
+    // was archived anyway; and `**/` matched partial segments, so files nobody excluded
+    // were dropped from the archive. Over-inclusion bloats a backup; over-exclusion
+    // loses data. Neither raised anything.
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void IsIgnored_RootAnchoredDirectory_MatchesAtRoot()
+    {
+        // `/node_modules` is the single most common root-anchored pattern in the wild.
+        string path = WriteGitignore("/node_modules");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        // ⚠ ZipArchiveWriter passes directories with a TRAILING SLASH (relDirPath + "/"),
+        // so a fix that only handles the bare form still misses every directory.
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("node_modules", "node_modules/", isDirectory: true, patterns),
+            "A root-anchored directory pattern must match at the root.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_RootAnchoredFile_MatchesAtRoot()
+    {
+        string path = WriteGitignore("/secrets.env");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("secrets.env", "secrets.env", isDirectory: false, patterns),
+            "A root-anchored file pattern must match at the root.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_RootAnchoredPattern_DoesNotMatchNested()
+    {
+        // The whole point of the leading slash: anchored to the .gitignore's own directory.
+        string path = WriteGitignore("/node_modules");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsFalse(
+            GitignoreReader.IsIgnored("node_modules", "packages/app/node_modules/", isDirectory: true, patterns),
+            "A root-anchored pattern must NOT match the same name nested deeper.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_UnanchoredPattern_StillMatchesAtAnyDepth()
+    {
+        // The contrast that gives the anchored case its meaning - and a regression guard,
+        // since anchoring is implemented by suppressing the bare-name match.
+        string path = WriteGitignore("node_modules");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("node_modules", "packages/app/node_modules/", isDirectory: true, patterns),
+            "An UNanchored pattern must still match at any depth.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_DoubleStarSlash_DoesNotMatchPartialSegment()
+    {
+        // `**/` means "any number of whole path segments", never "any characters".
+        string path = WriteGitignore("**/foo");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsFalse(
+            GitignoreReader.IsIgnored("barfoo", "barfoo", isDirectory: false, patterns),
+            "`**/foo` must not match `barfoo` - that is a segment boundary, not a character run.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_DoubleStarSlash_MatchesAtZeroAndAnyDepth()
+    {
+        string path = WriteGitignore("**/foo");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("foo", "foo", isDirectory: false, patterns),
+            "`**/foo` must match at zero depth.");
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("foo", "a/b/foo", isDirectory: false, patterns),
+            "`**/foo` must match at any depth.");
+    }
+
+    [TestMethod]
+    public void IsIgnored_DoubleStarInMiddle_SpansWholeSegmentsOnly()
+    {
+        string path = WriteGitignore("a/**/b");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("b", "a/b", isDirectory: false, patterns),
+            "`a/**/b` must match with zero intervening segments.");
+        Assert.IsTrue(
+            GitignoreReader.IsIgnored("b", "a/x/y/b", isDirectory: false, patterns),
+            "`a/**/b` must match across several segments.");
+        Assert.IsFalse(
+            GitignoreReader.IsIgnored("xb", "a/xb", isDirectory: false, patterns),
+            "`a/**/b` must not match `a/xb` - again a segment boundary.");
+    }
+
+    // -----------------------------------------------------------------------
     // MergePatterns
     // -----------------------------------------------------------------------
 
