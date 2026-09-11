@@ -21,19 +21,19 @@ internal sealed class GitignorePattern
     /// <summary>The raw pattern text (without leading <c>!</c>, leading <c>/</c> or trailing <c>/</c>).</summary>
     public string RawPattern { get; }
 
-    /// <summary>True when the original line started with <c>!</c> ΓÇö this pattern re-includes matched items.</summary>
+    /// <summary>True when the original line started with <c>!</c> — this pattern re-includes matched items.</summary>
     public bool Negated { get; }
 
-    /// <summary>True when the original line ended with <c>/</c> ΓÇö this pattern matches directories only.</summary>
+    /// <summary>True when the original line ended with <c>/</c> — this pattern matches directories only.</summary>
     public bool DirOnly { get; }
 
     /// <summary>
-    /// True when the original line started with <c>/</c> ΓÇö the pattern is anchored to the
+    /// True when the original line started with <c>/</c> — the pattern is anchored to the
     /// directory holding the <c>.gitignore</c> and must not match the same name nested deeper.
     /// </summary>
     /// <remarks>
-    /// Γ¢ö <b>Before this existed, <c>/foo</c> matched NOTHING.</b> The leading slash went
-    /// straight into the regex as <c>^/foo$</c>, which never matches a relative path ΓÇö so the
+    /// ⛔ <b>Before this existed, <c>/foo</c> matched NOTHING.</b> The leading slash went
+    /// straight into the regex as <c>^/foo$</c>, which never matches a relative path — so the
     /// commonest anchored patterns in the wild (<c>/node_modules</c>, <c>/dist</c>,
     /// <c>/build</c>) were silently inert and those directories were archived anyway. Silent,
     /// because an ignore rule that matches nothing raises nothing.
@@ -49,11 +49,11 @@ internal sealed class GitignorePattern
 /// directories.  Supports the patterns commonly found in real projects:
 /// <list type="bullet">
 /// <item><description><c>#</c> comments and blank lines are skipped.</description></item>
-/// <item><description>Leading <c>!</c> ΓÇö negation (re-includes a previously-ignored item).</description></item>
-/// <item><description>Trailing <c>/</c> ΓÇö directory-only pattern.</description></item>
-/// <item><description><c>**</c> ΓÇö matches any path depth (converted to <c>.*</c>).</description></item>
-/// <item><description><c>*</c> ΓÇö matches within one path segment (converted to <c>[^/]*</c>).</description></item>
-/// <item><description><c>?</c> ΓÇö matches a single non-<c>/</c> character.</description></item>
+/// <item><description>Leading <c>!</c> — negation (re-includes a previously-ignored item).</description></item>
+/// <item><description>Trailing <c>/</c> — directory-only pattern.</description></item>
+/// <item><description><c>**</c> — matches any path depth (converted to <c>.*</c>).</description></item>
+/// <item><description><c>*</c> — matches within one path segment (converted to <c>[^/]*</c>).</description></item>
+/// <item><description><c>?</c> — matches a single non-<c>/</c> character.</description></item>
 /// <item><description>All other characters are regex-escaped.</description></item>
 /// </list>
 /// Patterns are evaluated in declaration order; <b>the last matching pattern wins</b>
@@ -99,7 +99,7 @@ internal static class GitignoreReader
                 }
             }
 
-            // ΓÜá Leading slash BEFORE the trailing-slash check, because `/dist/` is both
+            // ⚠ Leading slash BEFORE the trailing-slash check, because `/dist/` is both
             // anchored and directory-only and the two must not cancel each other out.
             if (line[0] == '/')
             {
@@ -154,10 +154,10 @@ internal static class GitignoreReader
 
         bool ignored = false;
 
-        // ΓÜá Directories arrive with a TRAILING SLASH ΓÇö ZipArchiveWriter passes
+        // ⚠ Directories arrive with a TRAILING SLASH — ZipArchiveWriter passes
         // `relDirPath + "/"`. An anchored pattern compiles to `^node_modules$`, which never
         // matches `node_modules/`, so trimming here is what makes anchoring work for
-        // directories at all ΓÇö and directories are most of what anchored patterns target.
+        // directories at all — and directories are most of what anchored patterns target.
         string relPath = relativePathFromRoot.TrimEnd('/');
 
         foreach (GitignorePattern p in patterns)
@@ -172,9 +172,9 @@ internal static class GitignoreReader
             // a pattern like `*.log` matches `subdir/foo.log` and a pattern like
             // `dist/` matches the `dist` subdirectory at any depth.
             //
-            // Γ¢ö EXCEPT when anchored. The bare-name match is exactly what makes a pattern
+            // ⛔ EXCEPT when anchored. The bare-name match is exactly what makes a pattern
             // depth-independent, so an anchored pattern must skip it and be judged on the
-            // path alone ΓÇö otherwise `/node_modules` would match a nested one via its name
+            // path alone — otherwise `/node_modules` would match a nested one via its name
             // and the leading slash would mean nothing.
             bool nameMatch, pathMatch;
             try
@@ -185,7 +185,7 @@ internal static class GitignoreReader
             catch (RegexMatchTimeoutException)
             {
                 Log.Warning(
-                    "[GitignoreReader] Regex match timed out for pattern {Pattern} on input {Input} ΓÇö treating as no-match",
+                    "[GitignoreReader] Regex match timed out for pattern {Pattern} on input {Input} — treating as no-match",
                     p.RawPattern, name);
                 continue;
             }
@@ -216,9 +216,9 @@ internal static class GitignoreReader
             {
                 i += 2;
 
-                // Γ¢ö `**/` IS A SEGMENT RULE, NOT A CHARACTER RUN. Emitting `.*` and then
+                // ⛔ `**/` IS A SEGMENT RULE, NOT A CHARACTER RUN. Emitting `.*` and then
                 // swallowing the `/` made `**/foo` compile to `^.*foo$`, which matches
-                // `barfoo` ΓÇö so files nobody excluded were dropped from the archive. For a
+                // `barfoo` — so files nobody excluded were dropped from the archive. For a
                 // backup that is the worse direction of the two: over-inclusion bloats an
                 // archive, over-exclusion loses data, and both were silent.
                 //
@@ -237,13 +237,13 @@ internal static class GitignoreReader
             }
             else if (pattern[i] == '*')
             {
-                // Single `*` ΓÇö match within one path segment only
+                // Single `*` — match within one path segment only
                 sb.Append("[^/]*");
                 i++;
             }
             else if (pattern[i] == '?')
             {
-                // `?` ΓÇö one non-separator character
+                // `?` — one non-separator character
                 sb.Append("[^/]");
                 i++;
             }
@@ -261,7 +261,7 @@ internal static class GitignoreReader
         // Using IgnoreCase keeps things consistent and avoids false-negatives on
         // case-mismatched Windows repos.
         // matchTimeout: guard against pathological patterns (e.g. "a*a*a*a*") that
-        // can cause catastrophic backtracking ΓÇö IsIgnored catches the timeout and
+        // can cause catastrophic backtracking — IsIgnored catches the timeout and
         // treats the pattern as a non-match (safe default).
         return new Regex(sb.ToString(),
             RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant,
