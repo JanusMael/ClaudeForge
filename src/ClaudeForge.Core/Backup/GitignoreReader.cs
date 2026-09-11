@@ -9,15 +9,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Backup;
 /// </summary>
 internal sealed class GitignorePattern
 {
-    public GitignorePattern(string rawPattern, bool negated, bool dirOnly, Regex regex)
+    public GitignorePattern(string rawPattern, bool negated, bool dirOnly, bool anchored, Regex regex)
     {
         RawPattern = rawPattern;
         Negated = negated;
         DirOnly = dirOnly;
+        Anchored = anchored;
         Regex = regex;
     }
 
-    /// <summary>The raw pattern text (without leading <c>!</c> or trailing <c>/</c>).</summary>
+    /// <summary>The raw pattern text (without leading <c>!</c>, leading <c>/</c> or trailing <c>/</c>).</summary>
     public string RawPattern { get; }
 
     /// <summary>True when the original line started with <c>!</c> — this pattern re-includes matched items.</summary>
@@ -25,6 +26,19 @@ internal sealed class GitignorePattern
 
     /// <summary>True when the original line ended with <c>/</c> — this pattern matches directories only.</summary>
     public bool DirOnly { get; }
+
+    /// <summary>
+    /// True when the original line started with <c>/</c> — the pattern is anchored to the
+    /// directory holding the <c>.gitignore</c> and must not match the same name nested deeper.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Before this existed, <c>/foo</c> matched NOTHING.</b> The leading slash went
+    /// straight into the regex as <c>^/foo$</c>, which never matches a relative path — so the
+    /// commonest anchored patterns in the wild (<c>/node_modules</c>, <c>/dist</c>,
+    /// <c>/build</c>) were silently inert and those directories were archived anyway. Silent,
+    /// because an ignore rule that matches nothing raises nothing.
+    /// </remarks>
+    public bool Anchored { get; }
 
     /// <summary>Pre-compiled regex for fast matching.</summary>
     public Regex Regex { get; }
@@ -73,11 +87,24 @@ internal static class GitignoreReader
 
             bool negated = false;
             bool dirOnly = false;
+            bool anchored = false;
 
             if (line[0] == '!')
             {
                 negated = true;
                 line = line[1..].Trim();
+                if (line.Length == 0)
+                {
+                    continue;
+                }
+            }
+
+            // ⚠ Leading slash BEFORE the trailing-slash check, because `/dist/` is both
+            // anchored and directory-only and the two must not cancel each other out.
+            if (line[0] == '/')
+            {
+                anchored = true;
+                line = line.TrimStart('/');
                 if (line.Length == 0)
                 {
                     continue;
@@ -95,7 +122,7 @@ internal static class GitignoreReader
             }
 
             Regex regex = PatternToRegex(line);
-            patterns.Add(new GitignorePattern(line, negated, dirOnly, regex));
+            patterns.Add(new GitignorePattern(line, negated, dirOnly, anchored, regex));
         }
 
         return patterns;
@@ -127,6 +154,12 @@ internal static class GitignoreReader
 
         bool ignored = false;
 
+        // ⚠ Directories arrive with a TRAILING SLASH — ZipArchiveWriter passes
+        // `relDirPath + "/"`. An anchored pattern compiles to `^node_modules$`, which never
+        // matches `node_modules/`, so trimming here is what makes anchoring work for
+        // directories at all — and directories are most of what anchored patterns target.
+        string relPath = relativePathFromRoot.TrimEnd('/');
+
         foreach (GitignorePattern p in patterns)
         {
             // Directory-only patterns do not match files.
@@ -138,11 +171,16 @@ internal static class GitignoreReader
             // Try matching against both the bare name and the relative path, so
             // a pattern like `*.log` matches `subdir/foo.log` and a pattern like
             // `dist/` matches the `dist` subdirectory at any depth.
+            //
+            // ⛔ EXCEPT when anchored. The bare-name match is exactly what makes a pattern
+            // depth-independent, so an anchored pattern must skip it and be judged on the
+            // path alone — otherwise `/node_modules` would match a nested one via its name
+            // and the leading slash would mean nothing.
             bool nameMatch, pathMatch;
             try
             {
-                nameMatch = p.Regex.IsMatch(name);
-                pathMatch = !nameMatch && p.Regex.IsMatch(relativePathFromRoot);
+                nameMatch = !p.Anchored && p.Regex.IsMatch(name);
+                pathMatch = !nameMatch && p.Regex.IsMatch(relPath);
             }
             catch (RegexMatchTimeoutException)
             {
@@ -176,13 +214,25 @@ internal static class GitignoreReader
         {
             if (i + 1 < pattern.Length && pattern[i] == '*' && pattern[i + 1] == '*')
             {
-                // `**` — match any depth (including zero path separators)
-                sb.Append(".*");
                 i += 2;
-                // Consume an optional surrounding `/` so `**/foo` and `foo/**` work.
+
+                // ⛔ `**/` IS A SEGMENT RULE, NOT A CHARACTER RUN. Emitting `.*` and then
+                // swallowing the `/` made `**/foo` compile to `^.*foo$`, which matches
+                // `barfoo` — so files nobody excluded were dropped from the archive. For a
+                // backup that is the worse direction of the two: over-inclusion bloats an
+                // archive, over-exclusion loses data, and both were silent.
+                //
+                // `(?:.*/)?` is "any number of WHOLE segments, or none": it matches `a/b/`
+                // and the empty string, but never a bare `bar` with no separator.
                 if (i < pattern.Length && pattern[i] == '/')
                 {
                     i++;
+                    sb.Append("(?:.*/)?");
+                }
+                else
+                {
+                    // A trailing or bare `**` (e.g. `foo/**`) really is "any characters".
+                    sb.Append(".*");
                 }
             }
             else if (pattern[i] == '*')
