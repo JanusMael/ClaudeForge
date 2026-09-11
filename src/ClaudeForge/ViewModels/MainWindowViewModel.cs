@@ -153,7 +153,39 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // A future cleanup is to keep long-running tool VMs (Backup,
     // Profiles) alive across reloads so spurious reloads can't kill
     // their work.
-    private DateTime _suppressWatcherUntilUtc;
+    private DateTimeOffset _suppressWatcherUntilUtc;
+
+    /// <summary>
+    /// How long after a self-inflicted write the file watcher's reaction stays suppressed.
+    /// Named rather than inline so a test can express "just inside" and "just outside" the
+    /// window without restating the number.
+    /// </summary>
+    internal static readonly TimeSpan SelfWriteSuppressionWindow = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Clock for every wall-clock dependency in this class: the self-write suppression window,
+    /// the backup-state debounce, and the update-recheck poll loop. Injected so tests can
+    /// advance it instead of sleeping; production passes <see cref="TimeProvider.System"/>.
+    /// Same shape as <c>StatusController</c>, which moved first.
+    /// </summary>
+    private readonly TimeProvider _timeProvider;
+
+    /// <summary>
+    /// Opens the post-save suppression window. Called from the save path while
+    /// <c>IsLoading</c> is still true, so a watcher event arriving before the atomic write
+    /// completes already sees a future deadline.
+    /// </summary>
+    internal void StampSelfWriteSuppressionWindow()
+        => _suppressWatcherUntilUtc = _timeProvider.GetUtcNow() + SelfWriteSuppressionWindow;
+
+    /// <summary>
+    /// <see langword="true"/> while a watcher event should be treated as the echo of our own
+    /// write rather than an external edit. Single source of truth for that decision, and the
+    /// seam the suppression-window tests drive — reading it needs no dispatcher, which is why
+    /// the behaviour is assertable at all.
+    /// </summary>
+    internal bool IsWithinSelfWriteSuppressionWindow()
+        => _timeProvider.GetUtcNow() < _suppressWatcherUntilUtc;
 
     // covers the dialog-open phase of SaveCoreAsync.
     //
@@ -355,8 +387,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         "Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch.";
 
     public MainWindowViewModel(SchemaRegistry schemaRegistry, IDialogService dialogService,
-                               IShareService? shareService = null)
+                               IShareService? shareService = null,
+                               TimeProvider? timeProvider = null)
     {
+        _timeProvider = timeProvider ?? TimeProvider.System;
         _schemaRegistry = schemaRegistry;
         DialogServiceForViewAccess = dialogService;
         _shareService = shareService;
@@ -1358,6 +1392,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private static readonly TimeSpan UpdateRecheckInterval = TimeSpan.FromHours(4);
 
     /// <summary>
+    /// Quiet window before the debounced backup-state disk write runs, so chatty
+    /// multi-property updates collapse to one write. Only the WRITE is debounced — the
+    /// in-memory cache mutation is synchronous, for the reason recorded at the call site.
+    /// </summary>
+    internal static readonly TimeSpan BackupStateSaveDebounce = TimeSpan.FromMilliseconds(150);
+
+    /// <summary>
     /// Cancels the periodic update re-check loop.  Non-null only while the loop
     /// is running; nulled when never started, on user dismiss, or on dispose.
     /// </summary>
@@ -1396,7 +1437,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    await Task.Delay(UpdateRecheckInterval, ct).ConfigureAwait(false);
+                    await Task.Delay(UpdateRecheckInterval, _timeProvider, ct).ConfigureAwait(false);
 
                     Core.Updates.UpdateCheckResult result =
                         await AppUpdateService.CheckPeriodicAsync(ct).ConfigureAwait(false);
@@ -1917,7 +1958,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // Stamped INSIDE the IsLoading=true block so a watcher event
                 // arriving even before SDK.SaveAsync's atomic-write completes
                 // sees the future deadline and skips the reload.
-                _suppressWatcherUntilUtc = DateTime.UtcNow.AddSeconds(2);
+                StampSelfWriteSuppressionWindow();
 
                 HasUnsavedChanges = false;
                 SetStatusSuccess(Strings.StatusSaved);
@@ -3484,7 +3525,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             try
             {
-                await Task.Delay(150, ct).ConfigureAwait(false);
+                await Task.Delay(BackupStateSaveDebounce, _timeProvider, ct).ConfigureAwait(false);
                 if (ct.IsCancellationRequested)
                 {
                     return;
@@ -4624,7 +4665,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // trigger a reload, because the reload rebuilds the navigation
             // tree and disposes long-running tool VMs (Backup, Profiles)
             // mid-operation. See _suppressWatcherUntilUtc field comment.
-            if (DateTime.UtcNow < _suppressWatcherUntilUtc)
+            if (IsWithinSelfWriteSuppressionWindow())
             {
                 EnqueueWatcherEvent(filePath, "self-write, reload suppressed (post-save window)");
                 Log.Debug("[FileWatcher] Suppressed reload for {File} (within post-save window)",
