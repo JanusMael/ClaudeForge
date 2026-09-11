@@ -426,6 +426,13 @@ public sealed class BackupEngineTests
         Directory.CreateDirectory(localDir);
         await File.WriteAllTextAsync(Path.Combine(localDir, "claude.exe"), "MZ");
 
+        // cache/ — schema / app cache, regenerated on demand. ⚠ Added when the eight skip `if`s
+        // became ClaudeHomeSkipRules: it was the one rule of the seven with no test, so a typo in
+        // its row would have shipped an app-cache directory into every user's archive silently.
+        string cacheDir = Path.Combine(claudeDir, "cache");
+        Directory.CreateDirectory(cacheDir);
+        await File.WriteAllTextAsync(Path.Combine(cacheDir, "schema.json"), """{"cached":true}""");
+
         string dest = Path.Combine(_fakeHome, "no-runtime.zip");
         BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
         {
@@ -445,6 +452,8 @@ public sealed class BackupEngineTests
             "shell-snapshots/ must be excluded (runtime snapshots are not config data).");
         Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/local/", StringComparison.Ordinal)),
             "local/ must be excluded (binary install directory is not config data).");
+        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/cache/", StringComparison.Ordinal)),
+            "cache/ must be excluded (regenerated on demand; not config data).");
 
         // Sanity: the regular settings file should still be present.
         Assert.IsTrue(entries.Any(e => e.Contains("claude-dir/settings.json", StringComparison.Ordinal)),

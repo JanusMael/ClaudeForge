@@ -5097,6 +5097,60 @@ precedence the way you meant.
   > against a **pre-change archive fixture** committed to the repo; a format change that only
   > round-trips with itself is how backup tools lose people's data.
   >
+  > ✅ **RESTORE DISPATCH DONE 2026-09-11 (`9767c27`).** `BackupEngine` always wrote archive paths
+  > from `ProductDescriptor.ArchiveFolder`, and `RestoreEngine.ValidatableConfigs` always read them
+  > back that way. **The restore path itself did not** — five hand-written blocks and two
+  > manifest-driven walks spelled `"ClaudeCode"` and `"ClaudeDesktop"` out. They are now
+  > `RestoreEngine.ArchiveSections` rows: product · archive sub-path · destination ·
+  > file-or-directory · progress label. `applySections` stops being `const int applySections = 7`
+  > beside a comment naming the seven, and is derived from the table.
+  >
+  > ⛔ **Destinations are `Func<string>`, not `string`.** Every one is a `PlatformPaths` property
+  > honouring `TestUserProfileOverride`; a static table of resolved strings captures whichever
+  > profile was current when the type initialiser ran, which in a sequential suite sharing a
+  > process is another test's sandbox. That failure writes real files into a real home directory
+  > and reads as flakiness.
+  >
+  > ✅ **And `BackupMode`'s meaning became data in the same pass.** `ShouldSkipHomeSubdir` was eight
+  > `if`s comparing hardcoded `~/.claude` directory names — `statsig`, `shell-snapshots`, `local` —
+  > i.e. Claude Code policy inside a product-neutral engine. Now `BackupEngine.ClaudeHomeSkipRules`:
+  > name · reason · the one mode that includes it anyway. ⚠ The mode **stays an enum** because it is
+  > serialised as a string into `manifest.json` and those three names are a persisted vocabulary;
+  > what varies per product is what each one MEANS, which is the table.
+  >
+  > ⚠ **One of those seven rules had no test** — `cache` — so a typo in its row would have shipped
+  > an app-cache directory into every archive silently. Covered now.
+  >
+  > ⛔⛔ **THE MANIFEST WAS DELIBERATELY *NOT* BUMPED, and this contradicts the instruction above.**
+  > The recommendation says to bump and extend `TryRead` in the same commit as the layout change.
+  > **Nothing about the on-disk shape changed**: Claude's `ArchiveFolder` values are identical, the
+  > frozen fixture restores unchanged, and entry paths are byte-for-byte what they were. A bump
+  > today would make archives written by this build **rejected by every shipped build** — that is
+  > what `BackupManifest`'s own contract promises for an unknown version — buying nothing, and
+  > costing anyone who rolls back or runs two machines on different versions.
+  >
+  > ⭐ **The bump's real trigger is narrower than "the layout changed": it is the first archive that
+  > can contain a NON-CLAUDE product folder.** That is the point an old reader starts silently
+  > under-restoring — ignoring a prefix it does not know and reporting success — which is exactly
+  > what a version gate exists to turn into a clear refusal. It needs the `BackupEngine` work to
+  > archive an arbitrary product root, which is not in this slice. **Bump it there, with
+  > `ExportManifest` v2→v3, as one migration.**
+  >
+  > ⛔ **THE REMAINING BLOCKER IS ONE QUESTION, AND IT HAS NOW COME UP THREE TIMES.**
+  > `ArchiveSections`, `ClaudeHomeSkipRules` and `ValidatableConfigs` are all tables in
+  > `AgentForge.Core` that name Claude descriptors — and **`OpenCodeProducts` lives in
+  > `OpenCode.Sdk`, which `AgentForge.Core` must not reference.** Each conversion removed a
+  > decision tree and none of them can yet accept a second product's rows. The shape is right; the
+  > *source* of the data is undecided. Options, none taken:
+  >
+  > | Option | Cost |
+  > |---|---|
+  > | Put the layout on `BackupRequest` | ⭐ The caller **already passes `Products`** as descriptors from whichever assembly, so the write side needs no new concept. ⛔ Restore has only `manifest.Clients` — folder *names*, no descriptors — so the reader still needs somewhere to look them up |
+  > | Widen `ProductDescriptor` | Carries filesystem destinations into `AgentForge.Abstractions`, and they must be lazy (`Func<string>`) for the `PlatformPaths` seam — heavy for a record that is currently five strings |
+  > | A mutable static registry | ⛔ Trades one problem for a worse one: this suite is sequential precisely because of global-static seams, and a registry populated at startup is invisible cross-test state |
+  >
+  > **Decide this before adding a fourth table.**
+
   > ⚠ **Half of that is now spent: 4e (`636fb34`) already took `ExportManifest` to schema v2.**
   > So Phase 10 changes the archive layout against a manifest that is *already* at v2 — bump
   > it again and extend `ExportManifest.TryRead` in the same commit. 4e's own tests cover both

@@ -562,52 +562,73 @@ public sealed class BackupEngine
         return false;
     }
 
+    /// <summary>
+    /// A subdirectory of a product's home that a backup skips, and the one mode — if any — that
+    /// includes it anyway.
+    /// </summary>
+    /// <param name="Name">Directory name, compared case-insensitively.</param>
+    /// <param name="Reason">Why it is skipped. Documentation, and the answer when a user asks.</param>
+    /// <param name="IncludedInMode">
+    /// The mode that includes this directory despite the rule, or <see langword="null"/> when no
+    /// mode does. Only <c>projects</c> uses it today, and only for <see cref="BackupMode.Full"/>.
+    /// </param>
+    private sealed record SkippedSubdir(string Name, string Reason, BackupMode? IncludedInMode = null);
+
+    /// <summary>
+    /// Claude Code's skip policy for <c>~/.claude</c>, as data.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This was eight <c>if</c> statements comparing hardcoded directory names.</b> Every one of
+    /// them is <i>Claude Code policy</i> — <c>statsig</c>, <c>shell-snapshots</c>, <c>local</c> and
+    /// the rest are that product's layout — sitting in a product-neutral engine, which is the same
+    /// shape as the closed <c>FootprintCategory</c> enum. What a mode INCLUDES is per-product, and
+    /// the plan's Phase 14 says so: <c>SettingsOnly</c>'s meaning is currently written entirely in
+    /// Claude paths.
+    /// </para>
+    /// <para>
+    /// ⛔ <b><see cref="BackupMode"/> is serialised as a string into <c>manifest.json</c></b>, so
+    /// the three names are a persisted vocabulary and cannot be renamed. What each one MEANS is
+    /// what varies per product — which is why the mode stays an enum and the meaning became this
+    /// table rather than the other way round.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>projects</c> is mirrored in <c>FootprintCatalog.Default</c></b> as the one category
+    /// with <c>IsInStandardBackup: false</c>, so the Memory page's badge agrees with what a
+    /// Standard backup actually does. <c>FootprintCatalogTests</c> asserts it is the only one. Add
+    /// a mode-gated row here and that test is the tripwire.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Same assembly limit as <c>RestoreEngine.ArchiveSections</c>:</b> a second product's
+    /// rules cannot be added here, because its descriptor lives in an assembly this one must not
+    /// reference. The policy is data now and no longer a decision tree, which is the half that was
+    /// blocking; where the data comes FROM is the seam Phase 14 still has to choose.
+    /// </para>
+    /// </remarks>
+    private static readonly SkippedSubdir[] ClaudeHomeSkipRules =
+    [
+        new("backups", "Our own backup output — skipped so backups never nest."),
+        new("projects", "Session transcripts; large. Standard skips them, Full keeps them.",
+            IncludedInMode: BackupMode.Full),
+        new("cache", "Schema / app cache — regenerated on demand; not config data."),
+        new("downloads", "Downloaded update binaries: large, platform-specific, replaced by the updater."),
+        new("statsig", "Telemetry / feature-flag state, regenerated on next launch; never user-authored."),
+        new("shell-snapshots", "Ephemeral shell-command snapshots, not config data."),
+        new("local", "The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),
+    ];
+
     private static bool ShouldSkipHomeSubdir(string dirName, BackupRequest request)
     {
-        // Skip our own backup output so backups never nest.
-        if (dirName.Equals("backups", StringComparison.OrdinalIgnoreCase))
+        foreach (SkippedSubdir rule in ClaudeHomeSkipRules)
         {
-            return true;
-        }
+            if (!dirName.Equals(rule.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
 
-        // Skip the big projects/ directory unless Full mode was requested.
-        if (dirName.Equals("projects", StringComparison.OrdinalIgnoreCase))
-        {
-            return request.Mode != BackupMode.Full;
-        }
-
-        // Skip the schema / app cache — regenerated on demand; not config data.
-        if (dirName.Equals("cache", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // Skip downloaded update binaries (e.g. claude-2.0.0-win32-x64.exe).
-        // These are large, platform-specific, and restored automatically by the updater.
-        if (dirName.Equals("downloads", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // Skip Statsig telemetry/feature-flag data — runtime state regenerated
-        // on next launch; never user-authored config.
-        if (dirName.Equals("statsig", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // Skip shell-command snapshots — ephemeral runtime state, not config data.
-        if (dirName.Equals("shell-snapshots", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        // Skip the Claude Code binary install directory (~/.claude/local/).
-        // It may contain the claude / claude.exe binary: large, platform-specific,
-        // and reinstalled automatically by the updater on next run.
-        if (dirName.Equals("local", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
+            // A rule with no including mode skips unconditionally; one with a mode skips unless
+            // that mode was requested.
+            return rule.IncludedInMode is not { } mode || request.Mode != mode;
         }
 
         return false;
