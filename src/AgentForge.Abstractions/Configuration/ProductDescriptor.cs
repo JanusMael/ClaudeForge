@@ -34,6 +34,22 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// or a second set of literals, from having to exist somewhere else.
 /// </para>
 /// </param>
+/// <param name="BackupLayout">
+/// What this product contributes to a backup archive, and what a backup skips.
+/// <see langword="null"/> for a product with no backup support yet — the engines treat that as
+/// contributing nothing rather than as an error, so a product can be schema-editable long before
+/// it is backup-able.
+/// <para>
+/// ⭐ <b>This is the sixth positional parameter, which is the documented ceiling.</b> The backup
+/// data is grouped into one <see cref="ProductBackupLayout"/> rather than added as three more
+/// parameters for exactly that reason. A seventh concern takes an options record instead.
+/// </para>
+/// <para>
+/// ⚠ <b>Not persisted, unlike <paramref name="ArchiveFolder"/>.</b> The layout describes how to
+/// build and read an archive; only the folder name it yields ends up on disk. Changing a section's
+/// destination changes where a restore puts files — which matters — but it orphans nothing.
+/// </para>
+/// </param>
 /// <remarks>
 /// <para>
 /// Replaces <c>AgentConfigClientCore.IsClaudeCode</c>, a <see langword="bool"/> that meant
@@ -53,4 +69,15 @@ public sealed record ProductDescriptor(
     string DisplayName,
     string SchemaUrl,
     string SchemaFileName,
-    string ArchiveFolder);
+    string ArchiveFolder,
+    ProductBackupLayout? BackupLayout = null)
+{
+    /// <summary>
+    /// This product's backup layout, or <see cref="ProductBackupLayout.Empty"/> when it has none.
+    /// </summary>
+    /// <remarks>
+    /// Saves every caller a null check, and makes "no backup support" behave as "contributes
+    /// nothing" rather than as a crash on the first product that lacks one.
+    /// </remarks>
+    public ProductBackupLayout Backup => BackupLayout ?? ProductBackupLayout.Empty;
+}

@@ -165,12 +165,48 @@ public sealed class SchemaRegistry : IDisposable
     /// </remarks>
     public static readonly ProductDescriptor ClaudeCodeProduct =
         new("claude-code", "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",
-            ArchiveFolder: "ClaudeCode");
+            ArchiveFolder: "ClaudeCode",
+            BackupLayout: new ProductBackupLayout(
+                Sections:
+                [
+                    ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,
+                        "Restoring claude.json…"),
+                    ProductArchiveSection.Directory("claude-dir", () => PlatformPaths.ClaudeHome,
+                        "Restoring ~/.claude/…"),
+                ],
+                SkippedSubdirs:
+                [
+                    new("backups", "Our own backup output — skipped so backups never nest."),
+                    new("projects", "Session transcripts; large. Standard skips them, Full keeps them.",
+                        IncludedInFullBackup: true),
+                    new("cache", "Schema / app cache — regenerated on demand; not config data."),
+                    new("downloads",
+                        "Downloaded update binaries: large, platform-specific, replaced by the updater."),
+                    new("statsig",
+                        "Telemetry / feature-flag state, regenerated on next launch; never user-authored."),
+                    new("shell-snapshots", "Ephemeral shell-command snapshots, not config data."),
+                    new("local",
+                        "The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),
+                ]));
 
     /// <inheritdoc cref="ClaudeCodeProduct"/>
     public static readonly ProductDescriptor ClaudeDesktopProduct =
         new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",
-            ArchiveFolder: "ClaudeDesktop");
+            ArchiveFolder: "ClaudeDesktop",
+            BackupLayout: new ProductBackupLayout(
+                Sections:
+                [
+                    ProductArchiveSection.File("claude_desktop_config.json", () => PlatformPaths.DesktopConfigPath,
+                        "Restoring Desktop config…"),
+                    ProductArchiveSection.Directory("profiles", () => PlatformPaths.DesktopProfilesDirectory,
+                        "Restoring Desktop profiles…"),
+                    ProductArchiveSection.File(".desktop-current",
+                        () => PlatformPaths.DesktopCurrentProfileFilePath, "Restoring Desktop active profile…"),
+                ],
+                // Desktop's config is a flat file plus a profiles directory; it has no home tree to
+                // walk, so there is nothing to skip. An empty list is the honest answer — not an
+                // oversight.
+                SkippedSubdirs: []));
 
     /// <summary>
     /// Get the settings schema root node for <paramref name="product"/>.

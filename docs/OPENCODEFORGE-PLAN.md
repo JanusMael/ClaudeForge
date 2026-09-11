@@ -5146,10 +5146,45 @@ precedence the way you meant.
   > | Option | Cost |
   > |---|---|
   > | Put the layout on `BackupRequest` | ⭐ The caller **already passes `Products`** as descriptors from whichever assembly, so the write side needs no new concept. ⛔ Restore has only `manifest.Clients` — folder *names*, no descriptors — so the reader still needs somewhere to look them up |
-  > | Widen `ProductDescriptor` | Carries filesystem destinations into `AgentForge.Abstractions`, and they must be lazy (`Func<string>`) for the `PlatformPaths` seam — heavy for a record that is currently five strings |
+  > | **Widen `ProductDescriptor`** | ✅ **TAKEN 2026-09-11 at the maintainer's direction.** Carries filesystem destinations into `AgentForge.Abstractions`, lazily — see below |
   > | A mutable static registry | ⛔ Trades one problem for a worse one: this suite is sequential precisely because of global-static seams, and a registry populated at startup is invisible cross-test state |
   >
-  > **Decide this before adding a fourth table.**
+  > ✅ **RESOLVED — the layout hangs off the descriptor.** `ProductBackupLayout` ·
+  > `ProductArchiveSection` · `ProductSkippedSubdir`, all in `AgentForge.Abstractions`;
+  > `ProductDescriptor` gains an optional `BackupLayout` as its **sixth** positional parameter,
+  > which is the documented ceiling — the three concerns are grouped into one record for exactly
+  > that reason. `SchemaRegistry`'s two Claude descriptors now declare their own sections and skip
+  > rules, and both engines read them instead of holding tables.
+  >
+  > ⛔ **`BackupMode` could NOT come along, and the workaround is deliberate.**
+  > `AgentForge.Abstractions` is BCL-only by design — its own csproj description says *no
+  > serialization, no product knowledge* — and the mode lives in `AgentForge.Core.Backup`, so
+  > importing it would invert the layering. `ProductSkippedSubdir.IncludedInFullBackup` is a
+  > **bool**, not a mode name: a string would restore generality at the cost of compile-time
+  > safety, and a typo would silently mean *never included* — the exact failure this conversion
+  > exists to remove. It loses nothing today because there are only two cases: the sharing-targeted
+  > mode is defined as the *same file scope* as the standard one, so it can never include something
+  > the standard mode skips.
+  >
+  > ⭐ **The write side is now fully general** — `BackupEngine` takes its products from
+  > `BackupRequest.Products`, which the caller already supplies from any assembly.
+  > ⚠ **Restore keeps ONE list**, `RestoreEngine.RestorableProducts`, and that residue is a real
+  > constraint rather than an oversight: a restore is driven by an archive, and `manifest.json`
+  > records only archive **folder names**. Turning those back into descriptors needs a lookup. A
+  > third product is now **one entry there plus its own layout**, not edits to three tables.
+  >
+  > ⚠ **`OpenCodeProducts` deliberately declares NO layout yet**, and
+  > `CrossAssemblyBackupLayoutTests` asserts that absence so it stays deliberate. Archiving an
+  > arbitrary product root is separate `BackupEngine` work; a descriptor advertising sections
+  > nothing writes would be a name-level claim of exactly the kind this document keeps retracting.
+  > What that suite *does* prove is the mechanism: a product declared in `OpenCode.Sdk` can supply
+  > a layout `AgentForge.Core` consumes, with the dependency pointing the right way.
+  >
+  > ⚠ **Progress labels moved as unlocalised English literals.** They were literals inside the
+  > restore engine before; putting them on the descriptor makes them more visible, not more wrong.
+  > The repo's rule is that user-visible text comes from a resx, so a later pass should key them by
+  > section id the way footprint labels are keyed by `FootprintCategory.Id`. Flagged at the
+  > declaration.
 
   > ⚠ **Half of that is now spent: 4e (`636fb34`) already took `ExportManifest` to schema v2.**
   > So Phase 10 changes the archive layout against a manifest that is *already* at v2 — bump
