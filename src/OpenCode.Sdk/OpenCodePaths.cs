@@ -42,6 +42,28 @@ public static class OpenCodePaths
         => Path.Combine(PlatformPaths.UserProfile, ".config", "opencode");
 
     /// <summary>
+    /// The data directory OpenCode keeps its database and logs in —
+    /// <c>~/.local/share/opencode</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ✅ <b>Measured, not assumed</b> — <c>opencode debug paths</c> returns this XDG-shaped layout
+    /// on Windows too, re-confirmed at v1.18.18 (<c>docs/opencode-install-probe.json</c>). It is
+    /// NOT <c>%LOCALAPPDATA%</c> on Windows, which is the obvious wrong guess.
+    /// </para>
+    /// <para>
+    /// ⛔ <b><c>$OPENCODE_DATA_DIR</c> is deliberately NOT honoured here.</b> The plan records a
+    /// claim that it overrides this root and accepts a comma-separated list; that claim is
+    /// <b>unverified</b> — it is not one of the four variables <see cref="OpenCodeEnvironment"/>
+    /// models, and the install probe did not test it. Honouring a variable we have not measured
+    /// would send a backup reading and a restore writing to a directory OpenCode may not use.
+    /// Measure it before wiring it.
+    /// </para>
+    /// </remarks>
+    public static string DataDirectory()
+        => Path.Combine(PlatformPaths.UserProfile, ".local", "share", "opencode");
+
+    /// <summary>
     /// The global config directory — <c>$OPENCODE_CONFIG_DIR</c> when set, otherwise
     /// <see cref="DefaultGlobalDirectory"/>.
     /// </summary>

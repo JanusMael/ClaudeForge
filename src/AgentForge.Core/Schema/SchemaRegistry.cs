@@ -171,7 +171,8 @@ public sealed class SchemaRegistry : IDisposable
                 [
                     ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,
                         "Restoring claude.json…"),
-                    ProductArchiveSection.Directory("claude-dir", () => PlatformPaths.ClaudeHome,
+                    // Home, not Directory: this walk honours SkippedSubdirs below.
+                    ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome,
                         "Restoring ~/.claude/…"),
                 ],
                 SkippedSubdirs:
@@ -187,7 +188,8 @@ public sealed class SchemaRegistry : IDisposable
                     new("shell-snapshots", "Ephemeral shell-command snapshots, not config data."),
                     new("local",
                         "The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),
-                ]));
+                ],
+                CredentialFileName: ".credentials.json"));
 
     /// <inheritdoc cref="ClaudeCodeProduct"/>
     public static readonly ProductDescriptor ClaudeDesktopProduct =

@@ -39,6 +39,7 @@ public sealed class BackupEngine
 
     private readonly WorktreeProbe _worktreeProbe;
     private readonly IBackupFileSystem _fs;
+    private readonly IReadOnlyList<ProductDescriptor>? _restorableProducts;
 
     /// <summary>
     /// Construct with custom collaborators (used by tests).
@@ -49,10 +50,30 @@ public sealed class BackupEngine
     /// <see cref="RealBackupFileSystem.Instance"/> for production. Tests inject an
     /// in-memory implementation to exercise retention, discovery, and similar
     /// purely-file-system code paths without real disk I/O.</param>
-    public BackupEngine(WorktreeProbe? worktreeProbe = null, IBackupFileSystem? fileSystem = null)
+    /// <param name="restorableProducts">
+    /// The products whose archive sections a restore applies. Defaults to Claude Code and Claude
+    /// Desktop.
+    /// <para>
+    /// ⛔ <b>This is how a host that edits a different product restores ITS archives.</b> A backup
+    /// takes its products from <see cref="BackupRequest.Products"/>, but a restore is driven by an
+    /// archive whose manifest records only archive folder names — so the descriptors have to come
+    /// from somewhere, and <c>AgentForge.Core</c> must never reference a product assembly to find
+    /// them. Supply them here.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A host that writes archives for a product it cannot restore has a one-way backup.</b>
+    /// Whatever set a host passes to <see cref="BackupRequest.Products"/> should be the set it
+    /// passes here.
+    /// </para>
+    /// </param>
+    public BackupEngine(
+        WorktreeProbe? worktreeProbe = null,
+        IBackupFileSystem? fileSystem = null,
+        IReadOnlyList<ProductDescriptor>? restorableProducts = null)
     {
         _worktreeProbe = worktreeProbe ?? new WorktreeProbe();
         _fs = fileSystem ?? RealBackupFileSystem.Instance;
+        _restorableProducts = restorableProducts;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -239,19 +260,67 @@ public sealed class BackupEngine
 
         try
         {
-            // --- Claude Code ---
+            // --- Every requested product's declared sections ---
+            //
+            // ⭐ The five blocks this replaces (claude.json, the ~/.claude tree, the Desktop
+            // config, its profiles directory and its active-profile pointer) were exactly the five
+            // sections each product now declares on its descriptor. The pairing a section holds —
+            // archive sub-path ↔ live path — reads in BOTH directions, so the writer and the
+            // restorer consume one table instead of agreeing by hand. That agreement is what used
+            // to be able to drift silently: a section written under one name and read under
+            // another restores nothing and reports success.
+            //
+            // ⚠ Products are taken from request.Products, so this side is product-neutral: a
+            // product supplies its sections from its own assembly and needs no code here.
+            foreach (ProductDescriptor product in request.Products)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                foreach (ProductArchiveSection section in product.Backup.Sections)
+                {
+                    // ⛔ Credential-bearing sections need the same gate as a credential file found
+                    // inside a home walk: an explicit opt-in, and never in the sharing-targeted
+                    // mode. Sanitized cannot strip these — OpenCode's are SQLite rows, not JSON
+                    // values — so excluding them is the only honest answer.
+                    if (section.RequiresCredentialOptIn
+                        && (!request.IncludeCredentials || request.Mode == BackupMode.Sanitized))
+                    {
+                        continue;
+                    }
+
+                    string live = section.Destination();
+                    string entryPath = $"{product.ArchiveFolder}/{string.Join('/', section.SubPath)}";
+
+                    if (!section.IsDirectory)
+                    {
+                        if (File.Exists(live))
+                        {
+                            writer.AddFile(live, entryPath);
+                        }
+                    }
+                    else if (section.IsProductHome)
+                    {
+                        // The home tree is the only walk that consults the product's skip rules.
+                        if (Directory.Exists(live))
+                        {
+                            AddProductHome(writer, request, product, live, entryPath);
+                        }
+                    }
+                    else if (Directory.Exists(live))
+                    {
+                        writer.AddDirectory(live, entryPath);
+                    }
+                }
+            }
+
+            // --- Claude Code's per-project and worktree data ---
+            //
+            // ⚠ Still product-specific, and not from a lack of trying: these are driven by the
+            // manifest's project list and by git worktree discovery, not by a fixed archive path,
+            // so there is no section that describes them. OpenCode's equivalent — if it has one —
+            // will not be a directory-per-project either.
             if (request.Includes(SchemaRegistry.ClaudeCodeProduct))
             {
-                if (File.Exists(PlatformPaths.ClaudeJsonPath))
-                {
-                    writer.AddFile(PlatformPaths.ClaudeJsonPath, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude.json");
-                }
-
-                if (Directory.Exists(PlatformPaths.ClaudeHome))
-                {
-                    AddClaudeHome(writer, request);
-                }
-
                 foreach (string projectRoot in projects)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -283,33 +352,10 @@ public sealed class BackupEngine
                 }
             }
 
-            // --- Claude Desktop ---
-            // Backs up: the live config file, any named Desktop profiles, and the
-            // .desktop-current active-profile pointer. Log files are excluded — they
-            // are runtime-only artefacts, can't be meaningfully restored, and may be
-            // locked by a running Claude Desktop process.
-            if (request.Includes(SchemaRegistry.ClaudeDesktopProduct))
-            {
-                if (File.Exists(PlatformPaths.DesktopConfigPath))
-                {
-                    writer.AddFile(PlatformPaths.DesktopConfigPath,
-                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/claude_desktop_config.json");
-                }
-
-                // Desktop profiles directory (parallel to CLI's ~/.claude/profiles/).
-                if (Directory.Exists(PlatformPaths.DesktopProfilesDirectory))
-                {
-                    writer.AddDirectory(PlatformPaths.DesktopProfilesDirectory,
-                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/profiles");
-                }
-
-                // Active-profile pointer so the restore reinstates which profile was live.
-                if (File.Exists(PlatformPaths.DesktopCurrentProfileFilePath))
-                {
-                    writer.AddFile(PlatformPaths.DesktopCurrentProfileFilePath,
-                        $"{SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder}/.desktop-current");
-                }
-            }
+            // ⓘ Claude Desktop's three sections — config, profiles, active-profile pointer — are
+            // written by the section loop above. Its log files are deliberately absent from that
+            // list: runtime-only artefacts that cannot be meaningfully restored and may be locked
+            // by a running Claude Desktop process.
 
             // Sanitized-mode parallel precompute.  Runs the
             // RedactFileForSharing transformer in parallel across multiple
@@ -501,34 +547,49 @@ public sealed class BackupEngine
             BackupJsonContext.Default.SanitizationErrorPlaceholder);
     }
 
-    private static void AddClaudeHome(ZipArchiveWriter writer, BackupRequest request)
+    /// <summary>
+    /// Walk a product's home tree, honouring its declared skip rules.
+    /// </summary>
+    /// <remarks>
+    /// <b>Was <c>AddClaudeHome</c>, which named <c>PlatformPaths.ClaudeHome</c> and Claude's
+    /// archive folder directly.</b> Both now arrive from the section being written, so the walk
+    /// works for any product that declares a home section — the rules it consults are that
+    /// product's own.
+    /// </remarks>
+    private static void AddProductHome(
+        ZipArchiveWriter writer,
+        BackupRequest request,
+        ProductDescriptor product,
+        string homePath,
+        string entryPrefix)
     {
-        // Walk ~/.claude top-level, deciding per-entry whether to include.
-        foreach (string file in Directory.EnumerateFiles(PlatformPaths.ClaudeHome))
+        // Walk the home root top-level, deciding per-entry whether to include.
+        foreach (string file in Directory.EnumerateFiles(homePath))
         {
-            if (ShouldSkipHomeFile(file, request))
+            if (ShouldSkipHomeFile(file, request, product))
             {
                 continue;
             }
 
-            writer.AddFile(file, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude-dir/{Path.GetFileName(file)}");
+            writer.AddFile(file, $"{entryPrefix}/{Path.GetFileName(file)}");
         }
 
-        foreach (string sub in Directory.EnumerateDirectories(PlatformPaths.ClaudeHome))
+        foreach (string sub in Directory.EnumerateDirectories(homePath))
         {
             string name = Path.GetFileName(sub);
-            if (ShouldSkipHomeSubdir(name, request))
+            if (ShouldSkipHomeSubdir(name, request, product))
             {
                 continue;
             }
 
-            writer.AddDirectory(sub, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/claude-dir/{name}");
+            writer.AddDirectory(sub, $"{entryPrefix}/{name}");
         }
     }
 
-    private static bool ShouldSkipHomeFile(string filePath, BackupRequest request)
+    private static bool ShouldSkipHomeFile(string filePath, BackupRequest request, ProductDescriptor product)
     {
         string name = Path.GetFileName(filePath);
+
         // Credentials: only include when explicitly opted in.
         // Sanitized backups always drop credentials — the file is opaque
         // bytes (Anthropic / OAuth tokens) that the JsonRedactor would
@@ -536,7 +597,13 @@ public sealed class BackupEngine
         // sensitive-keyed values inside, but skipping it entirely is the
         // safer default for sharing-targeted archives.  Mirror of the
         // IncludedCredentials manifest-flag gating in CreateAsync.
-        if (name.Equals(".credentials.json", StringComparison.OrdinalIgnoreCase))
+        //
+        // ⭐ The NAME comes from the product's layout, because the semantics are general and only
+        // the file name is Claude's: OpenCode's auth.json is the same thing and wants the same
+        // treatment. ⚠ A product with no credential file declares null and this rule never fires —
+        // which must not be confused with "its credentials are safe to archive".
+        if (product.Backup.CredentialFileName is { } credentialFile
+            && name.Equals(credentialFile, StringComparison.OrdinalIgnoreCase))
         {
             return !request.IncludeCredentials || request.Mode == BackupMode.Sanitized;
         }
@@ -581,9 +648,9 @@ public sealed class BackupEngine
     /// mark a second rule <c>IncludedInFullBackup</c> and that test is the tripwire.
     /// </para>
     /// </remarks>
-    private static bool ShouldSkipHomeSubdir(string dirName, BackupRequest request)
+    private static bool ShouldSkipHomeSubdir(string dirName, BackupRequest request, ProductDescriptor product)
     {
-        foreach (ProductSkippedSubdir rule in SchemaRegistry.ClaudeCodeProduct.Backup.SkippedSubdirs)
+        foreach (ProductSkippedSubdir rule in product.Backup.SkippedSubdirs)
         {
             if (!dirName.Equals(rule.Name, StringComparison.OrdinalIgnoreCase))
             {
@@ -982,7 +1049,7 @@ public sealed class BackupEngine
         IProgress<BackupProgress>? progress = null,
         CancellationToken ct = default)
     {
-        return RestoreEngine.RestoreAsync(entry, progress, ct);
+        return RestoreEngine.RestoreAsync(entry, _restorableProducts, progress, ct);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

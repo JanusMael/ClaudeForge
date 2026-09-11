@@ -32,7 +32,51 @@ public static class OpenCodeProducts
     /// </remarks>
     public static readonly ProductDescriptor Config =
         new("opencode", "OpenCode", "https://opencode.ai/config.json", "opencode-config.json",
-            ArchiveFolder: "OpenCode");
+            ArchiveFolder: "OpenCode",
+            BackupLayout: new ProductBackupLayout(
+                Sections:
+                [
+                    // ⭐ The whole config root as ONE directory section, NOT a Home walk with a
+                    // skip list. ZipArchiveWriter reads the `.gitignore` in the directory it is
+                    // handed, and OpenCode maintains one there listing exactly the regenerable
+                    // files — node_modules (52.5 MiB, 99.97% of the root), package.json,
+                    // package-lock.json, bun.lock and the .gitignore itself. Honouring that file
+                    // is self-maintaining; transcribing its five entries into a skip list here is
+                    // what made the earlier plan draft wrong, twice.
+                    //
+                    // ⚠ This also carries `plugins/`, which is user-authored and irreplaceable and
+                    // is named by no exclusion list.
+                    ProductArchiveSection.Directory("config", () => OpenCodePaths.DefaultGlobalDirectory(),
+                        "Restoring opencode config…"),
+
+                    // ⛔ The database and BOTH its sidecars, or none of them. A copy of
+                    // opencode.db without its -wal is a stale snapshot by construction
+                    // (journal_mode=wal), and merely OPENING a -wal database checkpoints it —
+                    // a write. These are byte copies; nothing here opens SQLite.
+                    //
+                    // ⛔ Credential-bearing: account and control_account hold access_token and
+                    // refresh_token, credential holds `value`, session_share holds `secret`.
+                    // OpenCodeSecretColumns pins that claim and OpenCodeDatabaseSchemaTests
+                    // reddens if upstream's schema drifts from it. Sanitized cannot strip SQLite
+                    // rows, so these are excluded there outright rather than pretended over.
+                    ProductArchiveSection.CredentialFile("data/opencode.db",
+                        () => Path.Combine(OpenCodePaths.DataDirectory(), "opencode.db"),
+                        "Restoring opencode.db…"),
+                    ProductArchiveSection.CredentialFile("data/opencode.db-wal",
+                        () => Path.Combine(OpenCodePaths.DataDirectory(), "opencode.db-wal"),
+                        "Restoring opencode.db-wal…"),
+                    ProductArchiveSection.CredentialFile("data/opencode.db-shm",
+                        () => Path.Combine(OpenCodePaths.DataDirectory(), "opencode.db-shm"),
+                        "Restoring opencode.db-shm…"),
+                ],
+                // Empty: the `.gitignore` in the config root does this work, and reading it is the
+                // decision — see the section comment above.
+                SkippedSubdirs: [],
+                // ⛔ NOT auth.json. It is absent from an install that has never signed in, which is
+                // not evidence it has gone away, so it stays excluded entirely rather than being
+                // declared as an opt-in section. It lives in the data root, outside the config
+                // directory this layout archives, so nothing picks it up by accident either.
+                CredentialFileName: null));
 
     /// <summary>
     /// OpenCode's terminal-UI configuration — <c>tui.json</c>. Theme, 184 keybind actions,

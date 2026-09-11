@@ -15,7 +15,28 @@ namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 public sealed class BackupManifest
 {
     /// <summary>Current on-disk schema version. Written by every new backup.</summary>
-    public const int CurrentSchemaVersion = 1;
+    /// <remarks>
+    /// <para>
+    /// <b>2 since an archive can contain a product other than Claude Code and Claude Desktop.</b>
+    /// That — not "the layout changed" — is the trigger: until a non-Claude folder could appear,
+    /// nothing about the on-disk shape differed and a bump would only have made archives written
+    /// here unreadable by shipped builds for no gain.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>What the bump buys is a clear refusal instead of a silent partial restore.</b> A v1
+    /// reader handed a v2 archive would find the folders it knows, restore those, ignore the
+    /// <c>OpenCode/</c> entries it has no sections for, and report success — losing exactly the
+    /// data the user was restoring. The gate below turns that into "this backup was made by a
+    /// newer version".
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Reading stays backward-compatible, and that is tested.</b> The gate rejects only
+    /// versions ABOVE this one, so every v1 archive already on disk still restores — pinned by the
+    /// frozen fixture in <c>BackupArchiveCompatibilityTests</c>, which is a v1 manifest and must
+    /// never be re-minted to match this constant.
+    /// </para>
+    /// </remarks>
+    public const int CurrentSchemaVersion = 2;
 
     [JsonPropertyName("kind")] public string Kind { get; set; } = "backup";
     [JsonPropertyName("schemaVersion")] public int SchemaVersion { get; set; } = CurrentSchemaVersion;

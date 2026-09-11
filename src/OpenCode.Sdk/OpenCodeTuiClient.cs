@@ -69,6 +69,10 @@ public sealed class OpenCodeTuiClient : AgentConfigClientCore
     protected override ScopeLadder Scopes => OpenCodeScopes.Ladder;
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// ⛔ <inheritdoc cref="OpenCodeBackup.Engine" path="/summary"/> See
+    /// <see cref="OpenCodeBackup"/> for why the default engine is the wrong one here.
+    /// </remarks>
     protected override IBackupClient CreateBackupClient()
-        => new BackupClient(BackupEngine.Default, [Product]);
+        => new BackupClient(OpenCodeBackup.Engine, [Product]);
 }

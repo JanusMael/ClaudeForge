@@ -45,10 +45,12 @@ internal static class RestoreEngine
     /// </summary>
     internal static async Task<RestoreResult> RestoreAsync(
         BackupEntry entry,
+        IReadOnlyList<ProductDescriptor>? restorableProducts = null,
         IProgress<BackupProgress>? progress = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(entry);
+        IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProducts;
         if (entry.IsCorrupt || entry.Manifest == null)
         {
             return new RestoreResult(false, "Backup is corrupt or missing a manifest.", 0);
@@ -163,7 +165,7 @@ internal static class RestoreEngine
             // shows up as a progress bar that stops short or never fills.
             // We use a rolling applyStep counter to give the progress bar visible
             // movement during the apply phase (extraction is done; bar would stall).
-            int applySections = ArchiveSectionCount + 2;
+            int applySections = products.Sum(p => p.Backup.Sections.Count) + 2;
             int applyStep = 0;
             progress?.Report(new BackupProgress(0, applySections, "Applying restore…", totalExtracted));
 
@@ -173,7 +175,7 @@ internal static class RestoreEngine
             List<string> skipped = new();
             List<string> fileFailures = new();
 
-            foreach (ProductDescriptor product in RestorableProducts)
+            foreach (ProductDescriptor product in products)
             {
                 foreach (ProductArchiveSection section in product.Backup.Sections)
                 {
@@ -952,38 +954,28 @@ internal static class RestoreEngine
     }
 
     /// <summary>
-    /// The products whose archive sections a restore applies, in order.
+    /// The products a restore knows how to apply when the caller names none — Claude's two.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Each product's sections now come from its own
-    /// <see cref="ProductDescriptor.BackupLayout"/></b>, so this is a list of PRODUCTS rather than
-    /// a table of their sub-paths — the five hand-written blocks that named <c>"ClaudeCode"</c> and
-    /// <c>"ClaudeDesktop"</c> as literals are gone, and so is the per-section table that briefly
-    /// replaced them.
+    /// ⛔ <b>A DEFAULT, not the list.</b> A restore is driven by an archive, and
+    /// <c>manifest.json</c> records only archive FOLDER NAMES — turning those back into descriptors
+    /// needs a lookup, and a host that edits a different product supplies its own via
+    /// <see cref="BackupEngine(WorktreeProbe, IBackupFileSystem, IReadOnlyList{ProductDescriptor})"/>.
+    /// This assembly must never reference <c>OpenCode.Sdk</c>, so it could not name that product
+    /// even if it wanted to.
     /// </para>
     /// <para>
-    /// ⛔ <b>This is the ONE remaining place a product must be named to be restorable</b>, and it is
-    /// the residue of a real constraint rather than an oversight: the write side takes its products
-    /// from <c>BackupRequest.Products</c>, which the caller supplies from any assembly, but a
-    /// restore is driven by an archive, and <c>manifest.json</c> records only archive FOLDER NAMES.
-    /// Turning those back into descriptors needs a lookup, and this list is it. A third product
-    /// becomes one entry here plus its own layout — not edits to three tables in this assembly.
-    /// </para>
-    /// <para>
-    /// ⚠ <b>Order is user-visible.</b> Sections apply in sequence and each reports a progress step,
-    /// so reordering products reorders the labels a user watches.
+    /// ⚠ <b>Claude's two stay the default deliberately.</b> Every existing caller —
+    /// <c>BackupEngine.Default</c> included — keeps restoring exactly what it restored before,
+    /// which is what makes the frozen v1 fixture still pass.
     /// </para>
     /// </remarks>
-    private static readonly ProductDescriptor[] RestorableProducts =
+    internal static readonly IReadOnlyList<ProductDescriptor> DefaultRestorableProducts =
     [
         SchemaRegistry.ClaudeCodeProduct,
         SchemaRegistry.ClaudeDesktopProduct,
     ];
-
-    /// <summary>Total archive sections across every restorable product.</summary>
-    private static int ArchiveSectionCount =>
-        RestorableProducts.Sum(p => p.Backup.Sections.Count);
 
     /// <summary>
     /// Which config files a backup archive can contain, as data: each row pairs the product

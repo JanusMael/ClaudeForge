@@ -26,9 +26,25 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// <param name="SkippedSubdirs">
 /// Subdirectories of the product's home that a backup does not archive.
 /// </param>
+/// <param name="CredentialFileName">
+/// The file in the product's home holding live credentials — <c>.credentials.json</c> for Claude
+/// Code — or <see langword="null"/> when the product keeps none there.
+/// <para>
+/// ⛔ <b>Archived only when the user explicitly opts in, and NEVER in the sharing-targeted mode.</b>
+/// The file is opaque token bytes: a JSON redactor would technically "redact" it because the
+/// extension is <c>.json</c> and the keys look sensitive, but dropping it outright is the only safe
+/// default for an archive meant to be shared.
+/// </para>
+/// <para>
+/// ⭐ <b>Data rather than a hardcoded name because the semantics are general, not Claude's.</b>
+/// OpenCode's <c>auth.json</c> is the same thing under a different name and wants exactly the same
+/// treatment, so naming it here is what stops that being a second branch later.
+/// </para>
+/// </param>
 public sealed record ProductBackupLayout(
     IReadOnlyList<ProductArchiveSection> Sections,
-    IReadOnlyList<ProductSkippedSubdir> SkippedSubdirs)
+    IReadOnlyList<ProductSkippedSubdir> SkippedSubdirs,
+    string? CredentialFileName = null)
 {
     /// <summary>A layout that contributes nothing — the default for a product with no backup support.</summary>
     public static ProductBackupLayout Empty { get; } = new([], []);

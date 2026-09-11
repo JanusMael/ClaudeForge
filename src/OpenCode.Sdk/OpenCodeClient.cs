@@ -77,6 +77,11 @@ public sealed class OpenCodeClient : AgentConfigClientCore
     protected override ScopeLadder Scopes => OpenCodeScopes.Ladder;
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// ⛔ <see cref="OpenCodeBackup.Engine"/>, never <c>BackupEngine.Default</c> — the default
+    /// engine writes OpenCode archives quite happily and restores nothing from them. See that
+    /// type's remarks.
+    /// </remarks>
     protected override IBackupClient CreateBackupClient()
-        => new BackupClient(BackupEngine.Default, [Product]);
+        => new BackupClient(OpenCodeBackup.Engine, [Product]);
 }
