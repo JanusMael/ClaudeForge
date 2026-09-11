@@ -35,6 +35,17 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!--
+            The captured shape of OpenCode's opencode.db, produced by
+            scripts/refresh-opencode-db-schema.ps1. Embedded rather than left as a test fixture
+            so the backup redactor can compare a LIVE database against it and refuse, instead of
+            silently under-redacting when upstream adds a secret column. A guard that only runs
+            in CI protects the project; one that ships protects the user.
+        -->
+        <EmbeddedResource Include="Assets\**\*.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="OpenCode.Sdk.Tests"/>
     </ItemGroup>
 </Project>
