@@ -53,7 +53,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:SnapshotSchemaVersion = 1
+# 2 added database.existedBeforeProbe / .createdByThisProbe, and moved the CLI calls ahead of
+# the filesystem measurement so a v1 snapshot's root sizes cannot be compared with a v2's.
+$script:SnapshotSchemaVersion = 2
 
 # ---------------------------------------------------------------- redaction
 
@@ -517,6 +519,13 @@ function Get-ProbeUsageVerdict {
     $evidence = @()
     $used = $false
 
+    # A database this probe just created is decisive evidence of NO usage, not weak evidence of
+    # some. Stating it explicitly keeps a reader from mistaking a freshly-initialised schema for
+    # an install that has been worked in.
+    if ($Database.Contains('createdByThisProbe') -and $Database.createdByThisProbe) {
+        $evidence += 'opencode.db did not exist until THIS PROBE created it (opencode debug paths initialises it)'
+    }
+
     if (-not $Database.present) {
         $evidence += 'opencode.db is absent'
     }
@@ -569,6 +578,25 @@ function New-ProbeSnapshot {
     $stateDir = Join-Path (Join-Path (Join-Path $HOME '.local') 'state') 'opencode'
     $cacheDir = Join-Path (Join-Path $HOME '.cache') 'opencode'
 
+    # ⛔⛔ THE CLI CALLS RUN FIRST, AND THAT ORDERING IS A FIX FOR A REAL DEFECT.
+    #
+    # `opencode debug paths` CREATES opencode.db as a side effect. The first version of this
+    # script measured the roots and THEN called the CLI from inside its return block, so on a
+    # machine with no database yet it reported `data: 0 bytes, 0 files` and `present: false`
+    # while leaving a freshly-created database behind — a probe that manufactures the state it
+    # is measuring and then reports the state from before it did. It was invisible on the one
+    # machine that had a database already, and on the machine that did not it produced the
+    # headline conclusion "not a used install" about a directory it had just populated.
+    #
+    # So: note whether the database exists BEFORE anything invokes the CLI, make the calls, and
+    # only then measure. The numbers are consistent with each other afterwards, and
+    # `createdByThisProbe` makes the contamination a recorded fact instead of a silent one.
+    $databasePath = Join-Path $dataDir 'opencode.db'
+    $databaseExistedBefore = Test-Path -LiteralPath $databasePath
+
+    $reportedPaths = Get-ProbePaths -OpenCodePath $openCodePath
+    $scrap = Get-ProbeScrap -OpenCodePath $openCodePath
+
     $roots = [ordered]@{}
     foreach ($pair in @(
             @{ Role = 'config'; Path = $configDir }
@@ -586,6 +614,8 @@ function New-ProbeSnapshot {
     }
 
     $database = Get-ProbeDatabase -Sqlite3Path $sqlitePath -DataDirectory $dataDir
+    $database['existedBeforeProbe'] = $databaseExistedBefore
+    $database['createdByThisProbe'] = ([bool]$database.present -and -not $databaseExistedBefore)
 
     return [ordered]@{
         schemaVersion   = $script:SnapshotSchemaVersion
@@ -596,12 +626,12 @@ function New-ProbeSnapshot {
             powershell    = $PSVersionTable.PSVersion.ToString()
             platform      = if ($IsWindows) { 'Windows' } elseif ($IsMacOS) { 'macOS' } else { 'Linux' }
         }
-        reportedPaths   = Get-ProbePaths -OpenCodePath $openCodePath
+        reportedPaths   = $reportedPaths
         roots           = $roots
         database        = $database
         locks           = Get-ProbeLocks -StateDirectory $stateDir
         plugins         = Get-ProbePlugins -ConfigDirectory $configDir
-        scrap           = Get-ProbeScrap -OpenCodePath $openCodePath
+        scrap           = $scrap
         usage           = Get-ProbeUsageVerdict -Database $database
     }
 }
@@ -628,6 +658,11 @@ function Write-ProbeSummary {
         $nonEmptyText = if ($nonEmpty.Count -gt 0) { $nonEmpty -join ', ' } else { '(none)' }
         Write-Host ('  database      : {0} tables, non-empty: {1}' -f `
                 $Snapshot.database.tableCount, $nonEmptyText)
+    }
+
+    if ($Snapshot.database.Contains('createdByThisProbe') -and $Snapshot.database.createdByThisProbe) {
+        Write-Host '  [!] opencode.db did not exist until this probe ran - `opencode debug paths`' -ForegroundColor Yellow
+        Write-Host '      initialises it. The database below is this probe''s own footprint.' -ForegroundColor Yellow
     }
 
     $verdict = if ($Snapshot.usage.isUsedInstall) { 'YES' } else { 'NO' }
