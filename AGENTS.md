@@ -252,6 +252,21 @@ implementation: `AgentsSkillsEditorViewModel`.
 - [ ] **The trim gate names its apps explicitly** in `.github/workflows/ci.yml`. A new *library* needs nothing there, but it is only trim-checked once an app references it — so a library added ahead of its consumers is **not** yet covered by that gate. Say so rather than assuming green.
 - [ ] Line endings **CRLF** and **no BOM** for `.cs`/`.csproj` — match the siblings, and check with `head -c3 <file> | od -An -tx1`. ⚠ Python's `encoding="utf-8-sig"` **adds** a BOM on write; it silently changed six files' first bytes in session 10.
 
+### X = `OpenCodeDatabaseSchemaTests` went red (OpenCode's database schema moved)
+
+**This is the alarm working, not a chore.** The Phase-14 backup redactor strips secrets from a *copy* of `opencode.db` rather than excluding the file, so a restore still returns session history. The price is that `OpenCodeSecretColumns` is a snapshot of **upstream's** schema — and a stale one ships **plaintext tokens** while every other test stays green.
+
+- [ ] `pwsh -NoProfile -File scripts/refresh-opencode-db-schema.ps1` — captures from the live install. Needs `sqlite3` (`winget install SQLite.SQLite`) and an existing `opencode.db`.
+- [ ] `git diff src/OpenCode.Sdk/Assets/OpenCodeDatabaseSchema.json` — **read it.** This diff is the review the guard exists to force; everything else here is bookkeeping.
+- [ ] Decide, per new column, whether it carries secret material. ⚠ **The name is not enough** — the most sensitive column in the database is `credential.value`.
+- [ ] Add a genuine new secret to `OpenCodeSecretColumns.ByTable`. Add a false alarm to `KnownNonSecrets` in the test **with a stated reason** (`session.tokens_input` is an LLM usage counter; `account.token_expiry` is a timestamp whose blanking would corrupt the record).
+- [ ] **Only then** update `OpenCodeSecretColumns.ExpectedTableColumnDigest`. ⛔ Bumping that constant to get to green is the single way to defeat this whole mechanism.
+- [ ] Re-run; confirm green.
+
+⚠ **The digest test fires on ANY table or column change**, including ones with nothing to do with secrets. That is deliberate and not a defect to narrow: it has to fire on a column nobody has classified yet, so it cannot be filtered by a name pattern of its own.
+
+ⓘ No test reads a live database — CI has no OpenCode install, and a guard that skips is a guard that never fires. Capture happens on a maintainer's machine; the suite guards invariants over the committed artifact.
+
 ---
 
 ## 3. Test seam quick-reference
