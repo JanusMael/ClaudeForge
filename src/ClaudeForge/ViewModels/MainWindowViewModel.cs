@@ -479,7 +479,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // Keep the legacy setter for the small number of test sites that
         // still assign directly — they get a State-kind entry (no auto-
         // clear) since the caller didn't classify severity.
-        set => Status.Set(value, StatusKind.State);
+        set => Status.SetState(value);
     }
 
     /// <summary>
@@ -491,25 +491,25 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private void SetStatusActive(string text)
     {
-        Status.Set(text, StatusKind.Active);
+        Status.SetActive(text);
     }
 
     /// <summary>Terminal positive outcome.  Auto-clears after ~6 s.</summary>
     private void SetStatusSuccess(string text)
     {
-        Status.Set(text, StatusKind.Success);
+        Status.SetSuccess(text);
     }
 
     /// <summary>Informational "nothing to act on" notice.  Auto-clears after ~10 s.</summary>
     private void SetStatusWarning(string text)
     {
-        Status.Set(text, StatusKind.Warning);
+        Status.SetWarning(text);
     }
 
     /// <summary>Terminal negative outcome.  Sticks until <see cref="DismissStatusCommand"/> fires.</summary>
     private void SetStatusFailure(string text)
     {
-        Status.Set(text, StatusKind.Failure);
+        Status.SetFailure(text);
     }
 
     /// <summary>
@@ -590,7 +590,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private void SetStatusState(string text)
     {
-        Status.Set(text, StatusKind.State);
+        Status.SetState(text);
     }
 
     /// <summary>
