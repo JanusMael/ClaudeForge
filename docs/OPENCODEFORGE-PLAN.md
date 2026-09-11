@@ -5102,6 +5102,28 @@ precedence the way you meant.
   > it again and extend `ExportManifest.TryRead` in the same commit. 4e's own tests cover both
   > of its versions but there is **still no committed pre-change archive fixture**; that part
   > of this recommendation is unspent and belongs with the layout change.
+  >
+  > ✅ **SPENT 2026-09-11, and deliberately BEFORE the layout change.**
+  > `tests/AgentForge.Core.Tests/Fixtures/backup-v1-claudeforge.zip` — minted by the shipped
+  > engine, not hand-assembled, so it pins the format rather than an author's idea of it:
+  > `manifest.json` at `schemaVersion 1`, entries under `ClaudeCode/` and `ClaudeDesktop/`,
+  > schemas under `Schemas/`. `BackupArchiveCompatibilityTests` restores it and asserts each
+  > file lands at its real path.
+  >
+  > ⛔ **The ordering is the point.** Every round-trip test in this project creates its archive
+  > with the same build that reads it, so **not one of them would notice** a layout change that
+  > stopped reading archives already on users' disks. Written after the change, this fixture
+  > would have been minted from the new writer and round-tripped with itself. Same discipline as
+  > `e8d2b4f` — the guard before the thing it protects.
+  >
+  > ⭐ **Verified by mutation, not by going green.** Pointing the restore at `ClaudeCodeXX/`
+  > reddens `AShippedArchive_StillRestoresEveryFileToItsRealPath` and leaves the other four
+  > passing, so the suite discriminates rather than failing wholesale.
+  >
+  > ⛔⛔ **The fixture must NEVER be regenerated to make a test pass.** Re-minting it against a
+  > changed layout deletes the only evidence of what users hold. If a change genuinely cannot
+  > restore it, that is the finding: add a migration, or add a SECOND fixture beside it and keep
+  > this one.
 
   > ⚠ **Draft 10 claimed `AdditionalDirectoriesResolver` and `BackupEngine` "already model
   > extra dirs — configuration, not new mechanism". That is wrong.**

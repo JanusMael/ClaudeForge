@@ -7,4 +7,16 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
     </ItemGroup>
+
+    <!--
+        Frozen backup archives, restored by BackupArchiveCompatibilityTests.
+
+        ⛔ These are BINARY FIXTURES and must never be regenerated to make a test pass. Each one
+        was minted by the shipped engine at a known layout; regenerating one against a changed
+        layout makes it round-trip with itself and proves nothing, which is exactly how a backup
+        tool loses people's data.
+    -->
+    <ItemGroup>
+        <Content Include="Fixtures\**\*.zip" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
 </Project>
