@@ -2875,4 +2875,40 @@ Some paths inside config files may need manual edits afterward. Continue?</value
     <value>Couldn't open the deep link '{0}' — no such page or item.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Remove</value>
+    <comment>Screen-reader name for the per-row × remove button in the property editors. The visible content is a glyph, so this is the only identifiable announcement.</comment>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Entry key</value>
+    <comment>Screen-reader name for the key box of a generic string-map row, which has no watermark of its own.</comment>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Entry value</value>
+    <comment>Screen-reader name for the value box of a generic string-map row, which has no watermark of its own.</comment>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Server kind</value>
+    <comment>Screen-reader name for the MCP server-entry kind selector (stdio / http / sse).</comment>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Source type</value>
+    <comment>Screen-reader name for the marketplace source-type selector.</comment>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>match payload</value>
+    <comment>Placeholder for the MCP server-list entry's payload box. Was a hardcoded English literal.</comment>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Format</value>
+    <comment>Label for the raw-JSON editor's re-indent button. Was a hardcoded English literal.</comment>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Re-indent the JSON (parse and pretty-print).</value>
+    <comment>Tooltip for the raw-JSON editor's re-indent button. Was a hardcoded English literal.</comment>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>Raw JSON</value>
+    <comment>Screen-reader name for the raw-JSON text area in the fallback property editor.</comment>
+  </data>
 </root>
