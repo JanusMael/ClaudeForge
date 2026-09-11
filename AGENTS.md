@@ -432,6 +432,33 @@ there is nothing to await. `WhenDiskCacheIdleAsync` returns a snapshot and never
 covers; it is best-effort and warns rather than throwing. Live example:
 `tests/ClaudeForge.Tests/ViewModels/AvailableProfileEntriesTests.cs`.
 
+### Injected `TimeProvider` instead of a static clock seam
+
+Two classes take a `TimeProvider` so a test advances a clock rather than sleeping. Both keep a
+parameterless-equivalent overload that supplies `TimeProvider.System`, so no production callsite
+passes one.
+
+| Class | Constructor | What becomes assertable |
+|---|---|---|
+| `StatusController` | `StatusController(TimeProvider, Action<Action>? dispatch = null)` | Auto-clear dwell per severity — a warning's dwell is *longer* than a success's, which the old `DelayOverride` seam made indistinguishable |
+| `MainWindowViewModel` | `MainWindowViewModel(SchemaRegistry, IDialogService, IShareService? = null, TimeProvider? = null)` | The post-save watcher-suppression window, both halves |
+
+For the window, drive the pair of seams rather than the watcher: `StampSelfWriteSuppressionWindow()`
+opens it and `IsWithinSelfWriteSuppressionWindow()` reads it, so no dispatcher is needed — the
+watcher callback itself posts to `Dispatcher.UIThread` and is not reachable from a plain unit test.
+`SelfWriteSuppressionWindow` is the named duration; assert against it rather than restating the
+number. The comparison is strict, so the deadline instant is already *outside* the window.
+
+`FakeTimeProvider` comes from `Microsoft.Extensions.TimeProvider.Testing`, referenced in
+`tests/Directory.Build.props` for every test project. Live examples:
+`tests/ClaudeForge.Tests/ViewModels/SelfWriteSuppressionWindowTests.cs` and
+`tests/ClaudeForge.Tests/ViewModels/Status/StatusControllerTests.cs`.
+
+**A `FakeTimeProvider` does not advance on its own**, so any `Task.Delay` routed through it — the
+backup-state debounce (`BackupStateSaveDebounce`) and the update-recheck poll — stays pending for
+the whole test unless the test advances past it. Both are fire-and-forget and cancelled on
+`Dispose`, so leaving them pending is fine; expecting them to fire without an `Advance` is not.
+
 ### `LayeredWithXxx(scope, jsonObj)` builder helpers
 
 Most editor tests need a `LayeredValue` with one or two scope entries. The convention is a private helper:
