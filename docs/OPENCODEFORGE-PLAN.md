@@ -5139,13 +5139,41 @@ precedence the way you meant.
   > here and every existing test still passes. That is the shape of a mandatory security
   > control that silently does not run.
   >
-  > ⭐ **So the decision to make is a policy one, before any code.** Either **exclude
-  > `opencode.db` from the archive entirely** — simple, verifiable, and it costs the user
-  > their session history on restore — or **redact within the database**, which means opening
-  > it, rewriting four tables, and owning a schema that upstream changes without telling us.
-  > The first is the honest default; the second is a feature nobody has asked for yet.
-  > ⚠ Whichever is chosen, `credential.value` proves a **column-name classifier is not enough
-  > either**: the sensitive column is called `value`.
+  > ✅ **DECIDED 2026-09-11 — REDACT WITHIN THE DATABASE.** The alternative was to exclude
+  > `opencode.db` outright, which is simpler and unmistakable but costs the user their session
+  > history on restore. Session history is the thing a backup exists to protect, so it is kept
+  > and the secrets are removed from the copy. ⛔ **This is the harder half of the choice, and
+  > it is only safe with the guard below** — taking the feature without the guard is strictly
+  > worse than excluding the file.
+  >
+  > **What it means mechanically:**
+  >
+  > 1. **Copy first, then rewrite the copy.** Never touch the user's database. ⛔ Merely
+  >    *opening* a `-wal` database **checkpoints it**, which is a write — so copy
+  >    `opencode.db`, `-wal` and `-shm` together, and redact the copy. A backup is a read; it
+  >    must not leave a write behind. (`scripts/probe-opencode.ps1` already does exactly this
+  >    and is the working reference.)
+  > 2. **Redact by an explicit `(table, column)` allow-list, not by name matching.**
+  >    `credential.value` settles it: the sensitive column is called `value`, so any
+  >    name-based classifier either misses it or redacts half the database. The list is four
+  >    tables today — `account`, `control_account` (`access_token`, `refresh_token`),
+  >    `credential` (`value`), `session_share` (`secret`).
+  > 3. ⛔⛔ **THE GUARD IS THE WHOLE BARGAIN: a test that FAILS when the schema drifts.**
+  >    An allow-list is a snapshot of someone else's schema. When OpenCode adds a secret
+  >    column in a later version, a redactor built on today's list ships **plaintext tokens**
+  >    and every existing test still passes — the same silent-non-execution failure this
+  >    bullet already identified in the JSON classifier. So the guard asserts the live
+  >    `sqlite_master` table-and-column set still matches a committed snapshot, and **a new or
+  >    renamed column anywhere in the database reddens it**. Broad on purpose: it must fire on
+  >    a column we have not classified yet, which means it cannot itself be filtered by a
+  >    name pattern.
+  > 4. **Restore must state what it carries.** A redacted database restores session history
+  >    with dead credentials — the user is signed out, not broken. Say so at restore time
+  >    rather than letting them discover it.
+  >
+  > ⚠ **Revisit if the guard becomes noisy.** If upstream churns the schema every release,
+  > the cost of this option is a test that reddens on unrelated changes; exclusion is still
+  > there as the fallback and this decision is reversible.
   >
   > ⚠ **Keep the `auth` classifier work anyway.** `SensitiveKeys` / `JsonRedactor` parity is
   > still right for the JSON layers — `opencode.json` can carry provider keys — and
