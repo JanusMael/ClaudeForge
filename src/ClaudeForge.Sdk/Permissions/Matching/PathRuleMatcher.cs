@@ -163,6 +163,17 @@ public static class PathRuleMatcher
 
     // Adapted from GitignoreReader.PatternToRegex: `**` = any depth (consuming an
     // optional adjoining slash), `*` = within one segment, `?` = one non-slash.
+    //
+    // ⛔ THAT ADAPTATION COPIED A DEFECT, AND THE COPY WAS INVISIBLE TO THE ORIGINAL'S TESTS.
+    // `**/` emitted `.*` and swallowed the slash, so `**/foo` compiled to `^.*foo$` and matched
+    // `barfoo` — a partial SEGMENT. GitignoreReader's twenty tests could never have caught it,
+    // because they do not exercise this file. Both were fixed the same way; see
+    // GitignoreReader.PatternToRegex, and keep them in step.
+    //
+    // ⚠ Here the consequence is not cosmetic: this decides PERMISSIONS. An over-broad `allow`
+    // granted more than written, and the correction makes matching STRICTER — so a path a
+    // `deny` rule used to catch is no longer caught by that rule. That direction is fail-open
+    // and was accepted deliberately rather than discovered.
     private static string GlobBody(string pattern)
     {
         StringBuilder sb = new();
@@ -171,11 +182,19 @@ public static class PathRuleMatcher
         {
             if (i + 1 < pattern.Length && pattern[i] == '*' && pattern[i + 1] == '*')
             {
-                sb.Append(".*");
                 i += 2;
+
+                // `**/` is a WHOLE-SEGMENT rule: any number of complete segments, or none.
+                // `(?:.*/)?` matches `a/b/` and the empty string, never a bare `bar`.
                 if (i < pattern.Length && pattern[i] == '/')
                 {
                     i++;
+                    sb.Append("(?:.*/)?");
+                }
+                else
+                {
+                    // A trailing or bare `**` (`secrets/**`) really is "any characters".
+                    sb.Append(".*");
                 }
             }
             else if (pattern[i] == '*')
