@@ -5031,11 +5031,42 @@ precedence the way you meant.
 
 ### Phase 14 — Backup / Restore + data footprint
 
-> 🔶 **PHASE 14 — NOT STARTED, AND THREE OF ITS PREMISES WERE CORRECTED 2026-09-10.** Measured
-> against a real install by `scripts/probe-opencode.ps1`; the evidence is
+> 🔶 **PHASE 14 — BACKUP/RESTORE AND FOOTPRINT LANDED 2026-09-11. THREE OF ITS PREMISES WERE
+> CORRECTED 2026-09-10 FIRST, WHICH IS WHY IT WORKS.**
+>
+> | Piece | State |
+> |---|---|
+> | Per-product archive layout on `ProductDescriptor` | ✅ `6d2d030` |
+> | Write side generalized — sections drive writer AND restorer | ✅ |
+> | OpenCode layout: config root whole (its own `.gitignore` excludes 52 MiB), `opencode.db` + both sidecars behind the opt-in, `auth.json` never | ✅ |
+> | Restore products supplied by the host (`OpenCodeBackup.Engine`) | ✅ — without it the clients had a **one-way backup** |
+> | `BackupManifest` schema v1 → **v2** | ✅ — trigger met: an archive can now hold a non-Claude folder |
+> | Footprint catalog for OpenCode, measured | ✅ `OpenCodeFootprint` |
+> | Restore advisory for an archive taken without the opt-in | ✅ |
+> | Footprint **page** (UI) | ⛔ not built — the catalog is the data half |
+> | Growth / retention / prune *rates* | ⛔ still blocked on a used install (Phase 16) |
+>
+> ⛔ **A defect this work introduced, caught by its own test and fixed in the same commit.**
+> `IncludedCredentials` was computed as `File.Exists(PlatformPaths.CredentialsPath)` — Claude's
+> credentials file, by name. Correct while Claude was the only product with credentials; wrong the
+> moment another had some. An OpenCode backup taken **with** the opt-in archived the session
+> database and then stamped `includedCredentials: false`, so the manifest lied about its own
+> contents and the restore advisory told the user their history was missing while it sat in the
+> archive. Now computed from what the layouts actually contributed. ⚠ It is checked against
+> **disk**, not just the request flag: opting in on a machine with no credentials anywhere must
+> still stamp `false`, or the advisory goes silent on an archive that genuinely carries nothing.
+>
+> ⭐ **The `.gitignore` decision paid off exactly as argued.** OpenCode's config root is archived
+> **whole** rather than walked with a skip list, because `ZipArchiveWriter` reads the `.gitignore`
+> in the directory it is handed and OpenCode maintains one there. No entry count to keep in step —
+> which is what made two earlier drafts of this section wrong.
+>
+> **The three corrected premises**, measured against a real install by
+> `scripts/probe-opencode.ps1`; the evidence is
 > [`opencode-install-probe.json`](./opencode-install-probe.json) and the reasoning sits in the
-> callouts below. **Read those before implementing any of this.** All three are premises that
-> get built on long before anyone thinks to recheck them.
+> callouts below. **Read those before changing any of this.** All three are premises that
+> get built on long before anyone thinks to recheck them — and all three are now encoded in code
+> that tests pin, rather than in prose.
 >
 > | Premise as written | Status |
 > |---|---|

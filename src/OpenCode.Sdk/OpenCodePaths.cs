@@ -64,6 +64,30 @@ public static class OpenCodePaths
         => Path.Combine(PlatformPaths.UserProfile, ".local", "share", "opencode");
 
     /// <summary>
+    /// The state directory — <c>~/.local/state/opencode</c>. Holds <c>locks/</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>A lock here is a DIRECTORY, not a file</b> — <c>&lt;sha1&gt;.lock/</c> holding
+    /// <c>heartbeat</c> and <c>meta.json</c>, one per project, keyed by a 40-hex digest. A mkdir
+    /// mutex is advisory: it takes no OS lock and cannot block a config write. Measured; see
+    /// <c>docs/opencode-install-probe.json</c>.
+    /// </remarks>
+    public static string StateDirectory()
+        => Path.Combine(PlatformPaths.UserProfile, ".local", "state", "opencode");
+
+    /// <summary>
+    /// The cache directory — <c>~/.cache/opencode</c>. Holds <c>models.json</c> and <c>bin/</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Everything here is regenerable, and that is the whole point of the category.</b> It is
+    /// also where interrupted downloads leave full-size orphans — a <c>models.json.*.tmp</c> beside
+    /// a complete <c>models.json</c> means two copies of a ~4.6 MB file for one useful one, and
+    /// nothing cleans them up.
+    /// </remarks>
+    public static string CacheDirectory()
+        => Path.Combine(PlatformPaths.UserProfile, ".cache", "opencode");
+
+    /// <summary>
     /// The global config directory — <c>$OPENCODE_CONFIG_DIR</c> when set, otherwise
     /// <see cref="DefaultGlobalDirectory"/>.
     /// </summary>

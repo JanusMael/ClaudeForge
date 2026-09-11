@@ -221,6 +221,36 @@ internal static class RestoreEngine
                            + (skipped.Count > 5 ? $" … (+{skipped.Count - 5} more)" : "");
             }
 
+            // ⛔ Say what the archive did NOT carry, not just what it did.
+            //
+            // A product can declare credential-gated sections — OpenCode's session database is
+            // one — and an archive taken without the opt-in simply has no such entry. The restore
+            // then succeeds, reports a healthy item count, and the user's entire session history
+            // is missing with nothing anywhere saying why. "Restored 42 items" is a true statement
+            // that leaves someone hunting a bug that does not exist.
+            //
+            // ⚠ Driven by the MANIFEST's flag rather than by what was found in the archive: an
+            // archive with the opt-in whose database happened not to exist is a different
+            // situation from one taken without it, and only the manifest distinguishes them.
+            if (!entry.Manifest.IncludedCredentials)
+            {
+                string[] omitted =
+                [
+                    .. products
+                        .Where(p => p.Backup.Sections.Any(s => s.RequiresCredentialOptIn))
+                        .Select(p => p.DisplayName)
+                ];
+
+                if (omitted.Length > 0)
+                {
+                    message += " This backup was taken without the credentials opt-in, so it does not"
+                               + " contain the credential-bearing data for "
+                               + string.Join(", ", omitted)
+                               + " — including saved session history. That data was never in the"
+                               + " archive; it has not been lost from this machine.";
+                }
+            }
+
             return new RestoreResult(
                 Succeeded: true,
                 Message: message,

@@ -224,7 +224,7 @@ public sealed class BackupEngine
             // be redacted, but skipping it entirely is the safer default.
             IncludedCredentials = request.IncludeCredentials
                                   && request.Mode != BackupMode.Sanitized
-                                  && File.Exists(PlatformPaths.CredentialsPath),
+                                  && AnyCredentialDataPresent(request),
             Warnings = warnings,
         };
 
@@ -545,6 +545,57 @@ public sealed class BackupEngine
             File: name);
         return JsonSerializer.Serialize(record,
             BackupJsonContext.Default.SanitizationErrorPlaceholder);
+    }
+
+    /// <summary>
+    /// Whether any requested product actually has credential-bearing data on disk for this backup
+    /// to carry.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This read <c>File.Exists(PlatformPaths.CredentialsPath)</c> — Claude Code's credentials
+    /// file, by name.</b> Correct while Claude was the only product with credentials, and quietly
+    /// wrong the moment another one had some: an OpenCode backup taken WITH the opt-in archived the
+    /// session database and then stamped <c>includedCredentials: false</c>, because Claude's file
+    /// was not on that machine. The manifest lied about what the archive held, and the restore
+    /// advisory that reads it told the user their session history was missing while it sat in the
+    /// archive.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>"Requested was true" is not the same as "something was archived", which is why this
+    /// checks the disk.</b> A user who opts in on a machine with no credentials anywhere should get
+    /// an archive stamped <c>false</c> — otherwise the restore advisory stays silent about an
+    /// archive that genuinely carries nothing.
+    /// </para>
+    /// </remarks>
+    private static bool AnyCredentialDataPresent(BackupRequest request)
+    {
+        foreach (ProductDescriptor product in request.Products)
+        {
+            // A credential file found by walking the product's home tree.
+            if (product.Backup.CredentialFileName is { } credentialFile)
+            {
+                foreach (ProductArchiveSection home in product.Backup.Sections.Where(s => s.IsProductHome))
+                {
+                    if (File.Exists(Path.Combine(home.Destination(), credentialFile)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // A credential-bearing section the product declares outright.
+            foreach (ProductArchiveSection section in product.Backup.Sections.Where(s => s.RequiresCredentialOptIn))
+            {
+                string path = section.Destination();
+                if (section.IsDirectory ? Directory.Exists(path) : File.Exists(path))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

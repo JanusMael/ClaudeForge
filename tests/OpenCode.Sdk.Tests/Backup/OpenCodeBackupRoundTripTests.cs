@@ -169,6 +169,54 @@ public sealed class OpenCodeBackupRoundTripTests
     }
 
     [TestMethod]
+    public async Task RestoringAnArchiveTakenWithoutTheOptIn_SaysSoInsteadOfLeavingAGap()
+    {
+        // ⛔ "Restored 3 items" is a TRUE statement that sends someone hunting a bug that does not
+        // exist. An archive taken without the opt-in has no session database, so the restore
+        // succeeds with a healthy count and the user's entire history is simply absent, with
+        // nothing anywhere explaining why.
+        Write(Path.Combine(_configDir, "opencode.json"), "{}");
+        WriteDatabaseTriple();
+
+        string dest = Path.Combine(_fakeHome, "backup-noopt.zip");
+        await Engine.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Products = [OpenCodeProducts.Config],
+        });
+
+        RestoreResult restore = await Engine.RestoreAsync(Single(dest));
+
+        Assert.IsTrue(restore.Succeeded, restore.Message);
+        StringAssert.Contains(restore.Message, "without the credentials opt-in");
+        StringAssert.Contains(restore.Message, "session history");
+        StringAssert.Contains(restore.Message, "has not been lost from this machine",
+            "The message must distinguish 'never archived' from 'destroyed by this restore'.");
+    }
+
+    [TestMethod]
+    public async Task RestoringAnArchiveTakenWithTheOptIn_CarriesNoSuchAdvisory()
+    {
+        // The mirror: an advisory that always fires is noise, and teaches people to ignore it.
+        Write(Path.Combine(_configDir, "opencode.json"), "{}");
+        WriteDatabaseTriple();
+
+        string dest = Path.Combine(_fakeHome, "backup-opt.zip");
+        await Engine.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Products = [OpenCodeProducts.Config],
+            IncludeCredentials = true,
+        });
+
+        RestoreResult restore = await Engine.RestoreAsync(Single(dest));
+
+        Assert.IsTrue(restore.Succeeded, restore.Message);
+        Assert.IsFalse(restore.Message.Contains("opt-in", StringComparison.Ordinal),
+            "This archive DOES carry the database; warning about it would be false.");
+    }
+
+    [TestMethod]
     public async Task TheBackupIsARead_AndLeavesTheDatabaseFilesUntouched()
     {
         // ⛔ Merely OPENING a -wal database checkpoints it, which rewrites the user's file. The
