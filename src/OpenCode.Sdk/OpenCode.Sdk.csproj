@@ -38,9 +38,10 @@
         <!--
             The captured shape of OpenCode's opencode.db, produced by
             scripts/refresh-opencode-db-schema.ps1. Embedded rather than left as a test fixture
-            so the backup redactor can compare a LIVE database against it and refuse, instead of
-            silently under-redacting when upstream adds a secret column. A guard that only runs
-            in CI protects the project; one that ships protects the user.
+            so the running app can compare a LIVE database against it — the backup's "this
+            archive contains credentials" advisory is a claim about that file, and a claim worth
+            making is worth being able to check where it is made. A guard that only runs in CI
+            protects the project; one that ships protects the user.
         -->
         <EmbeddedResource Include="Assets\**\*.json"/>
     </ItemGroup>

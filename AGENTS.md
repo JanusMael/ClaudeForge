@@ -254,12 +254,13 @@ implementation: `AgentsSkillsEditorViewModel`.
 
 ### X = `OpenCodeDatabaseSchemaTests` went red (OpenCode's database schema moved)
 
-**This is the alarm working, not a chore.** The Phase-14 backup redactor strips secrets from a *copy* of `opencode.db` rather than excluding the file, so a restore still returns session history. The price is that `OpenCodeSecretColumns` is a snapshot of **upstream's** schema — and a stale one ships **plaintext tokens** while every other test stays green.
+**This is the alarm working, not a chore.** A Phase-14 `Full` backup includes `opencode.db` behind an opt-in with an advisory that the archive **contains credentials**, and `Sanitized` mode excludes it. Both rest on a claim about what that file holds, and `OpenCodeSecretColumns` is a snapshot of **upstream's** schema — so a stale one means the app is telling the user something untrue about their own backup.
 
 - [ ] `pwsh -NoProfile -File scripts/refresh-opencode-db-schema.ps1` — captures from the live install. Needs `sqlite3` (`winget install SQLite.SQLite`) and an existing `opencode.db`.
 - [ ] `git diff src/OpenCode.Sdk/Assets/OpenCodeDatabaseSchema.json` — **read it.** This diff is the review the guard exists to force; everything else here is bookkeeping.
 - [ ] Decide, per new column, whether it carries secret material. ⚠ **The name is not enough** — the most sensitive column in the database is `credential.value`.
-- [ ] Add a genuine new secret to `OpenCodeSecretColumns.ByTable`. Add a false alarm to `KnownNonSecrets` in the test **with a stated reason** (`session.tokens_input` is an LLM usage counter; `account.token_expiry` is a timestamp whose blanking would corrupt the record).
+- [ ] Add a genuine new secret to `OpenCodeSecretColumns.ByTable`. Add a false alarm to `KnownNonSecrets` in the test **with a stated reason** (`session.tokens_input` is an LLM usage counter; `account.token_expiry` is a timestamp, not a credential).
+- [ ] ⚠ **If the credential tables ever go away entirely**, that is the other direction and matters just as much: the backup would be warning about a file that no longer holds secrets. Revisit the advisory and the `Sanitized` exclusion rather than only the constant.
 - [ ] **Only then** update `OpenCodeSecretColumns.ExpectedTableColumnDigest`. ⛔ Bumping that constant to get to green is the single way to defeat this whole mechanism.
 - [ ] Re-run; confirm green.
 

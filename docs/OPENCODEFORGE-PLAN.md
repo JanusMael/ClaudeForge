@@ -5039,7 +5039,7 @@ precedence the way you meant.
 >
 > | Premise as written | Status |
 > |---|---|
-> | Redaction target is `auth.json` | ⛔ **WIDENS.** Secrets are also four tables in `opencode.db` — and the planned `SensitiveKeys`/`JsonRedactor` work is a **JSON-key** classifier that cannot reach a SQLite table at all. A mandatory control that silently does not run |
+> | Redaction target is `auth.json` | ⛔ **WIDENS.** Secrets are also four tables in `opencode.db`, and the planned `SensitiveKeys`/`JsonRedactor` work is a **JSON-key** classifier that cannot reach a SQLite table at all. ✅ **Resolved** below: the database is opt-in with a credentials advisory and excluded from `Sanitized`, so nothing claims to redact it. The JSON classifier work stays right for the JSON layers |
 > | Footprint categories: `storage/` · `log/` · `snapshot/` · `tool-output/` · `bin/` · `repos/` | ⛔ **Three do not exist, two are empty**, and the list omits every large item actually on disk — `node_modules/` included, at 11× the rest combined |
 > | Exclusions: `node_modules/`, `package-lock.json`, `bun.lock` | ⛔ **Short by two.** Read the `.gitignore` instead — and note it has no trailing newline |
 >
@@ -5139,41 +5139,60 @@ precedence the way you meant.
   > here and every existing test still passes. That is the shape of a mandatory security
   > control that silently does not run.
   >
-  > ✅ **DECIDED 2026-09-11 — REDACT WITHIN THE DATABASE.** The alternative was to exclude
-  > `opencode.db` outright, which is simpler and unmistakable but costs the user their session
-  > history on restore. Session history is the thing a backup exists to protect, so it is kept
-  > and the secrets are removed from the copy. ⛔ **This is the harder half of the choice, and
-  > it is only safe with the guard below** — taking the feature without the guard is strictly
-  > worse than excluding the file.
+  > ✅ **DECIDED 2026-09-11 — INCLUDE `opencode.db` BY OPT-IN, WITH AN ADVISORY. NO REDACTION,
+  > NO SQLITE DEPENDENCY.** ⚠ This **supersedes** an earlier same-day decision to redact within
+  > the database; that one was taken before the cost of redacting had been measured.
   >
-  > **What it means mechanically:**
+  > The shape is the one this product already ships for Claude credentials, so it needs no new
+  > vocabulary from the user:
   >
-  > 1. **Copy first, then rewrite the copy.** Never touch the user's database. ⛔ Merely
-  >    *opening* a `-wal` database **checkpoints it**, which is a write — so copy
-  >    `opencode.db`, `-wal` and `-shm` together, and redact the copy. A backup is a read; it
-  >    must not leave a write behind. (`scripts/probe-opencode.ps1` already does exactly this
-  >    and is the working reference.)
-  > 2. **Redact by an explicit `(table, column)` allow-list, not by name matching.**
-  >    `credential.value` settles it: the sensitive column is called `value`, so any
-  >    name-based classifier either misses it or redacts half the database. The list is four
-  >    tables today — `account`, `control_account` (`access_token`, `refresh_token`),
-  >    `credential` (`value`), `session_share` (`secret`).
-  > 3. ⛔⛔ **THE GUARD IS THE WHOLE BARGAIN: a test that FAILS when the schema drifts.**
-  >    An allow-list is a snapshot of someone else's schema. When OpenCode adds a secret
-  >    column in a later version, a redactor built on today's list ships **plaintext tokens**
-  >    and every existing test still passes — the same silent-non-execution failure this
-  >    bullet already identified in the JSON classifier. So the guard asserts the live
-  >    `sqlite_master` table-and-column set still matches a committed snapshot, and **a new or
-  >    renamed column anywhere in the database reddens it**. Broad on purpose: it must fire on
-  >    a column we have not classified yet, which means it cannot itself be filtered by a
-  >    name pattern.
-  > 4. **Restore must state what it carries.** A redacted database restores session history
-  >    with dead credentials — the user is signed out, not broken. Say so at restore time
-  >    rather than letting them discover it.
+  > - **`Full` backup** — includes `opencode.db` (with `-wal`/`-shm`) behind an explicit
+  >   opt-in, carrying a plain advisory that the archive **contains credentials**. Restorable,
+  >   and honest about what it holds. This is exactly how `Full` already treats
+  >   `.credentials.json`, which stores secrets in plaintext *because it has to be restorable*.
+  > - **`Sanitized` mode** — **excludes the database entirely**. Sanitized exists to be
+  >   shareable, and a file whose secrets cannot be stripped without a SQL engine cannot be
+  >   made shareable. Excluding it is the only honest answer, and it matches Sanitized already
+  >   dropping `.credentials.json` regardless of the toggle.
   >
-  > ⚠ **Revisit if the guard becomes noisy.** If upstream churns the schema every release,
-  > the cost of this option is a test that reddens on unrelated changes; exclusion is still
-  > there as the fallback and this decision is reversible.
+  > ⛔ **Session history is preserved, which was the whole objection to plain exclusion** — a
+  > user who opts in gets it back on restore, credentials and all.
+  >
+  > ### Why not redact — measured, not assumed
+  >
+  > | | Measured 2026-09-11 |
+  > |---|---|
+  > | Managed size | **+706 KB** on a Release `linux-x64` single-file publish (24,115,087 → 24,821,389 B) — and a **floor**, since nothing called the API yet so the trimmer removed most of the surface |
+  > | Native payload | **~1.8 MB per RID**, times six RIDs |
+  > | Single file | ⛔ **Broke, 1 file → 2.** ⚠ Partly a crude pin (`SQLitePCLRaw.lib.e_sqlite3` ships a static `.a`); `bundle_e_sqlite3` may bundle correctly, and that was not chased |
+  > | Trim gate | ✅ **Clean, no ILLink warnings.** Trimming was never the blocker |
+  > | Supply chain | ⛔ The default transitive `SQLitePCLRaw.lib.e_sqlite3` **2.1.11 carries a known high-severity advisory**, and this repo escalates NuGet audit warnings to errors, so it does not even restore. Any future attempt needs a deliberate, commented pin |
+  >
+  > ⚠ **DEFERRED, NOT RULED OUT.** Redaction stays a live option — if the native packaging is
+  > solved cleanly, or upstream moves credentials out of the database, revisit it starting from
+  > the numbers above rather than re-deriving them.
+  >
+  > ⛔ **REJECTED: loading SQLite from a dynamically-loaded DLL.** It reintroduces the exact
+  > failure the guard exists to prevent — a redactor whose assembly is absent does not run, and
+  > the backup ships plaintext tokens silently. The only safe form fails closed and refuses to
+  > back up, at which point the assembly is not optional and the complexity buys nothing. It
+  > also breaks single-file (Phase 15 took win-x64 from 103 files to 1) and puts reflection into
+  > a publish that carries zero ILLink warnings.
+  >
+  > ### What still has to be true
+  >
+  > 1. **The advisory must be honest, and that is now the guard's job.** `OpenCodeSecretColumns`
+  >    no longer drives a redactor; it records *why* the file is credential-bearing —
+  >    `account` and `control_account` (`access_token`, `refresh_token`), `credential`
+  >    (`value`), `session_share` (`secret`). If upstream adds a credential table the advisory
+  >    must still be true; if upstream ever *stops* storing credentials there, we would be
+  >    over-warning. `OpenCodeDatabaseSchemaTests` reddens on either.
+  > 2. **Copy `-wal` and `-shm` with the database.** ⛔ Merely *opening* a `-wal` database
+  >    **checkpoints it**, which is a write, so the archive step must copy the files rather than
+  >    open them. A backup is a read; it must not leave a write behind.
+  >    `scripts/probe-opencode.ps1` is the working reference.
+  > 3. **Restore must say what it carries** — including that an archive taken without the
+  >    opt-in has no session history, so the user is not left wondering where it went.
   >
   > ⚠ **Keep the `auth` classifier work anyway.** `SensitiveKeys` / `JsonRedactor` parity is
   > still right for the JSON layers — `opencode.json` can carry provider keys — and

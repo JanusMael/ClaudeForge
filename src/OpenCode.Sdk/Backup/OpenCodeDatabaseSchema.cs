@@ -8,27 +8,31 @@ namespace Bennewitz.Ninja.OpenCode.Sdk.Backup;
 
 /// <summary>
 /// The table-and-column shape of OpenCode's <c>opencode.db</c>, captured from a real install
-/// and embedded so the backup redactor can be checked — and can check itself — against it.
+/// and embedded so what the backup tells the user about that file can be checked against it.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Phase 14 redacts secrets from a <b>copy</b> of the database rather than excluding the file,
-/// which is what lets a restore return the user's session history. That choice is only safe
-/// while the set of secret-bearing columns is known, and the schema belongs to upstream:
-/// it changes on their schedule, without announcement, and a redactor built on a stale list
-/// ships <b>plaintext tokens</b> while every existing test still passes.
+/// Phase 14 includes <c>opencode.db</c> in a <c>Full</c> backup behind an explicit opt-in, with
+/// an advisory that the archive contains credentials, and excludes it from <c>Sanitized</c>
+/// mode. Both of those rest on a claim about what the file holds — and the schema belongs to
+/// upstream, changing on their schedule without announcement.
 /// </para>
 /// <para>
-/// ⛔ <b>That is the same silent-non-execution failure that ruled out the JSON-key classifier
-/// for this job.</b> <c>SensitiveKeys</c> matches a property path in a document; a SQLite table
-/// has no property path, so adding <c>auth</c> to it would have redacted nothing here and gone
-/// green. The guard below exists so the database version of that mistake cannot be quiet.
+/// ⛔ <b>So the thing being guarded is the honesty of that claim.</b> If OpenCode adds a
+/// credential table, "this archive contains your credentials" has to still be true; if it ever
+/// <i>stops</i> storing them here, the warning becomes noise. Either way someone has to look,
+/// and a schema change is the only signal that it is time to.
+/// </para>
+/// <para>
+/// ⚠ <b>Redacting in place is deferred, not ruled out</b> — it needs a SQL engine, and the
+/// measured cost is recorded in the Phase 14 decision block. This snapshot is what a revisit
+/// would build on, which is the second reason it is worth keeping current.
 /// </para>
 /// <para>
 /// Refresh with <c>scripts/refresh-opencode-db-schema.ps1</c>. A refresh that changes the shape
 /// is <b>supposed</b> to redden <c>OpenCodeDatabaseSchemaTests</c> until someone updates
-/// <see cref="OpenCodeSecretColumns.ExpectedTableColumnDigest"/> deliberately — reviewing the
-/// diff for newly-arrived secret columns is the entire point of the alarm.
+/// <see cref="OpenCodeSecretColumns.ExpectedTableColumnDigest"/> deliberately — reviewing that
+/// diff is the entire point of the alarm.
 /// </para>
 /// <para>
 /// ⚠ Parsed with <see cref="JsonDocument"/> rather than <c>JsonSerializer.Deserialize</c>.
