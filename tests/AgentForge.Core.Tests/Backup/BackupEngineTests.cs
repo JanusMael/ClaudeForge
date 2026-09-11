@@ -535,6 +535,52 @@ public sealed class BackupEngineTests
     }
 
     [TestMethod]
+    public async Task RoundTrip_DesktopProfilesAndPointer_RestoreToTheirRealPaths()
+    {
+        // ⚠ The sibling above covers only the WRITE side. Restoring these two sections was
+        // uncovered — the frozen archive in BackupArchiveCompatibilityTests carries neither — so
+        // when the five hand-written restore blocks became rows in RestoreEngine.ArchiveSections,
+        // two of the five rows had no test at all. A row with a wrong sub-path restores nothing
+        // and still reports success, which is the failure mode that needs a test rather than a
+        // reading.
+        string desktopDir = PlatformPaths.DesktopConfigDir;
+        Directory.CreateDirectory(desktopDir);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
+
+        string profilesDir = PlatformPaths.DesktopProfilesDirectory;
+        Directory.CreateDirectory(Path.Combine(profilesDir, "work"));
+        string profileConfig = Path.Combine(profilesDir, "work", "claude_desktop_config.json");
+        await File.WriteAllTextAsync(profileConfig, """{"profile":"work"}""");
+        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "work");
+
+        string dest = Path.Combine(_fakeHome, "backup-desktop-roundtrip.zip");
+        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        {
+            DestinationZipPath = dest,
+            Mode = BackupMode.SettingsOnly,
+            Products = [SchemaRegistry.ClaudeDesktopProduct],
+        });
+        Assert.IsTrue(create.Succeeded, create.Message);
+
+        // Mutate both so a no-op restore cannot pass.
+        await File.WriteAllTextAsync(profileConfig, """{"profile":"CLOBBERED"}""");
+        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "clobbered");
+
+        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        Assert.AreEqual(1, entries.Count);
+
+        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        Assert.IsTrue(restore.Succeeded, restore.Message);
+
+        StringAssert.Contains(await File.ReadAllTextAsync(profileConfig), "\"work\"",
+            "The profiles subtree must restore, not just the top-level Desktop config.");
+        Assert.AreEqual("work",
+            await File.ReadAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath),
+            "The .desktop-current pointer is a single file, not a directory — a row that gets that "
+            + "wrong restores nothing and still succeeds.");
+    }
+
+    [TestMethod]
     public async Task CreateAsync_NoOnDiskData_ProducesArchiveWithJustManifestAndSchemas()
     {
         // Wipe everything Setup() seeded so the engine has nothing to

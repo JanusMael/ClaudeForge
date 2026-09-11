@@ -156,11 +156,14 @@ internal static class RestoreEngine
                 await ValidateExtractedConfigsAsync(tempRoot, ct).ConfigureAwait(false);
 
             // Signal start of the apply phase.
-            // applySections counts: claude.json, claude-dir, desktop config, desktop
-            // profiles dir, desktop-current pointer, projects dir, worktrees dir.
+            // applySections counts every row of ArchiveSections plus the two manifest-driven
+            // sections below (projects, worktrees). ⚠ Derived, not a constant: it was `const int
+            // applySections = 7` with a comment listing the seven by name, so adding a section
+            // meant remembering to bump a number in a different place — and getting it wrong only
+            // shows up as a progress bar that stops short or never fills.
             // We use a rolling applyStep counter to give the progress bar visible
             // movement during the apply phase (extraction is done; bar would stall).
-            const int applySections = 7;
+            int applySections = ArchiveSections.Length + 2;
             int applyStep = 0;
             progress?.Report(new BackupProgress(0, applySections, "Applying restore…", totalExtracted));
 
@@ -170,58 +173,29 @@ internal static class RestoreEngine
             List<string> skipped = new();
             List<string> fileFailures = new();
 
+            foreach (ArchiveSection section in ArchiveSections)
             {
-                (int r, string? f) = RestoreSection(Path.Combine(tempRoot, "ClaudeCode", "claude.json"),
-                    PlatformPaths.ClaudeJsonPath, stamp);
-                restored += r;
-                if (f != null)
+                string source = Path.Combine([tempRoot, section.Product.ArchiveFolder, .. section.SubPath]);
+
+                if (section.IsDirectory)
                 {
-                    fileFailures.Add(f);
+                    (int r, List<string> errs) = RestoreDirectory(source, section.Destination(), stamp);
+                    restored += r;
+                    fileFailures.AddRange(errs);
                 }
-            }
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring claude.json…", totalExtracted));
-
-            {
-                (int r, List<string> errs) = RestoreDirectory(Path.Combine(tempRoot, "ClaudeCode", "claude-dir"),
-                    PlatformPaths.ClaudeHome, stamp);
-                restored += r;
-                fileFailures.AddRange(errs);
-            }
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring ~/.claude/…", totalExtracted));
-
-            {
-                (int r, string? f) = RestoreSection(
-                    Path.Combine(tempRoot, "ClaudeDesktop", "claude_desktop_config.json"),
-                    PlatformPaths.DesktopConfigPath, stamp);
-                restored += r;
-                if (f != null)
+                else
                 {
-                    fileFailures.Add(f);
+                    (int r, string? f) = RestoreSection(source, section.Destination(), stamp);
+                    restored += r;
+                    if (f != null)
+                    {
+                        fileFailures.Add(f);
+                    }
                 }
-            }
-            progress?.Report(
-                new BackupProgress(++applyStep, applySections, "Restoring Desktop config…", totalExtracted));
 
-            {
-                (int r, List<string> errs) = RestoreDirectory(Path.Combine(tempRoot, "ClaudeDesktop", "profiles"),
-                    PlatformPaths.DesktopProfilesDirectory, stamp);
-                restored += r;
-                fileFailures.AddRange(errs);
+                progress?.Report(
+                    new BackupProgress(++applyStep, applySections, section.ProgressLabel, totalExtracted));
             }
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring Desktop profiles…",
-                totalExtracted));
-
-            {
-                (int r, string? f) = RestoreSection(Path.Combine(tempRoot, "ClaudeDesktop", ".desktop-current"),
-                    PlatformPaths.DesktopCurrentProfileFilePath, stamp);
-                restored += r;
-                if (f != null)
-                {
-                    fileFailures.Add(f);
-                }
-            }
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring Desktop active profile…",
-                totalExtracted));
 
             // Per-project restore: look at the manifest to know where each project lives.
             restored += RestoreProjects(tempRoot, entry.Manifest, stamp, skipped, fileFailures);
@@ -629,7 +603,9 @@ internal static class RestoreEngine
     internal static int RestoreProjects(string tempRoot, BackupManifest manifest, string stamp,
                                         List<string> skipped, List<string> fileFailures)
     {
-        string projectsDir = Path.Combine(tempRoot, "ClaudeCode", "projects");
+        // Folder from the descriptor, not a literal — the write side has always used it, and a
+        // rename on one side only would silently stop matching rather than erroring.
+        string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "projects");
         if (!Directory.Exists(projectsDir))
         {
             return 0;
@@ -668,7 +644,7 @@ internal static class RestoreEngine
     internal static int RestoreWorktrees(string tempRoot, string stamp,
                                          List<string> skipped, List<string> fileFailures)
     {
-        string wtDir = Path.Combine(tempRoot, "ClaudeCode", "worktrees");
+        string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "worktrees");
         if (!Directory.Exists(wtDir))
         {
             return 0;
@@ -971,6 +947,82 @@ internal static class RestoreEngine
 
         return warnings;
     }
+
+    /// <summary>
+    /// One restorable section of an archive: where it lives inside the archive, and where its
+    /// contents belong on disk.
+    /// </summary>
+    /// <param name="Product">
+    /// The product that owns the section. Supplies the archive's top-level folder via
+    /// <see cref="ProductDescriptor.ArchiveFolder"/> — never a literal.
+    /// </param>
+    /// <param name="SubPath">Archive-relative path beneath the product folder.</param>
+    /// <param name="Destination">
+    /// Where the section restores to.
+    /// <para>
+    /// ⛔ <b>A factory, not a string.</b> Every destination is a <c>PlatformPaths</c> property that
+    /// honours the <c>TestUserProfileOverride</c> seam. A static table of resolved strings would
+    /// capture whichever profile was current when the type initialiser ran — which, in a
+    /// sequential suite sharing a process, is another test's sandbox. That failure writes real
+    /// files into a real home directory and reads as flakiness.
+    /// </para>
+    /// </param>
+    /// <param name="IsDirectory">Whether the section is a directory subtree or a single file.</param>
+    /// <param name="ProgressLabel">Text shown on the progress bar while this section applies.</param>
+    private sealed record ArchiveSection(
+        ProductDescriptor Product,
+        string[] SubPath,
+        Func<string> Destination,
+        bool IsDirectory,
+        string ProgressLabel);
+
+    /// <summary>
+    /// Every section a backup archive can contain, as data — the restore-side sibling of
+    /// <see cref="ValidatableConfigs"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This replaces five hand-written blocks that named <c>"ClaudeCode"</c> and
+    /// <c>"ClaudeDesktop"</c> as literals.</b> The write side (<see cref="BackupEngine"/>) and the
+    /// validation side (<see cref="ValidatableConfigs"/>) both already took the folder from
+    /// <see cref="ProductDescriptor.ArchiveFolder"/>; the restore side was the last place the two
+    /// vocabularies could drift. That hazard is named in <see cref="ValidatableConfigs"/>'
+    /// own remarks — <i>a folder renamed on one side only does not error, it silently stops
+    /// matching</i> — and restore is where it costs the most: a section that stops being found
+    /// restores nothing and reports success.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Order is user-visible.</b> The rows apply in sequence and each reports a progress
+    /// step, so reordering them reorders the progress labels a user watches.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>What this does NOT yet solve: a product whose descriptor this assembly cannot see.</b>
+    /// <c>OpenCodeProducts</c> lives in <c>OpenCode.Sdk</c>, which <c>AgentForge.Core</c> must not
+    /// reference, so its rows cannot simply be added here. The literals are gone and the shape is
+    /// right, but registering sections from outside this assembly still needs a seam — and
+    /// inventing a mutable static registry for it would trade one problem for a worse one, given
+    /// how much of this suite depends on there being no cross-test global state. Backing up an
+    /// arbitrary product root is separately new <see cref="BackupEngine"/> work, so neither half
+    /// is blocked on the other.
+    /// </para>
+    /// </remarks>
+    private static readonly ArchiveSection[] ArchiveSections =
+    [
+        new(SchemaRegistry.ClaudeCodeProduct, ["claude.json"], () => PlatformPaths.ClaudeJsonPath, false,
+            "Restoring claude.json…"),
+
+        new(SchemaRegistry.ClaudeCodeProduct, ["claude-dir"], () => PlatformPaths.ClaudeHome, true,
+            "Restoring ~/.claude/…"),
+
+        new(SchemaRegistry.ClaudeDesktopProduct, ["claude_desktop_config.json"],
+            () => PlatformPaths.DesktopConfigPath, false, "Restoring Desktop config…"),
+
+        new(SchemaRegistry.ClaudeDesktopProduct, ["profiles"], () => PlatformPaths.DesktopProfilesDirectory,
+            true, "Restoring Desktop profiles…"),
+
+        new(SchemaRegistry.ClaudeDesktopProduct, [".desktop-current"],
+            () => PlatformPaths.DesktopCurrentProfileFilePath, false, "Restoring Desktop active profile…"),
+    ];
 
     /// <summary>
     /// Which config files a backup archive can contain, as data: each row pairs the product
