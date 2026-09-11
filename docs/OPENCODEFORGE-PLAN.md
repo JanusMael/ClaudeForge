@@ -1,4 +1,4 @@
-﻿# Plan — OpenCodeForge: a sibling app on a shared AgentForge foundation
+# Plan — OpenCodeForge: a sibling app on a shared AgentForge foundation
 
 > **APPROVED 2026-08-17.** Thirteen adversarial review passes applied. Fact-shaped per the
 > repo's `AGENTS.md`: every claim cites a file, type, or member — never a line number.
@@ -5435,6 +5435,51 @@ signing precondition (CI publishes unsigned; `sign-release.ps1` signs then submi
 > which is what makes it safe to commit the output of a database that has a `credential` table.
 > Paths render as `~` and `<temp>`, and lock metadata contributes **key names only** — its values
 > are a token, a pid and a hostname.
+>
+> ⛔⛔ **AND THE PROBE HAD A DEFECT OF EXACTLY THE KIND IT EXISTS TO CATCH** (fixed, `242c0f9`).
+> `opencode debug paths` **creates `opencode.db`**, and the first version called it from inside
+> its return block — after it had measured the roots. On a machine with no database yet it
+> therefore reported `data: 0 bytes` and `present: false` while leaving a freshly-created
+> database behind, and pronounced *"not a used install"* over a directory it had just populated.
+> Invisible on the machine whose database already existed. CLI calls now run before the
+> measurement, and `createdByThisProbe` records the contamination instead of hiding it.
+> ⚠ Snapshot `schemaVersion` is **2**; a v1 capture measured its roots *before* its own CLI
+> calls, so a v1→v2 diff must not be read as growth.
+
+> ⭐ **ITEM 11 FIRED — 2026-09-11, A SECOND MACHINE RUNS 1.18.18.** This is the version gate
+> working as designed rather than a problem found by looking. The plan and **28 "Measured
+> against v1.17.9" claims across 13 files** were taken on a machine running 1.17.9; a second
+> maintainer machine runs **1.18.18**, so every one of those claims became unverified at once.
+> What follows is what was re-measured against the newer binary, and what was not.
+>
+> ⛔ **Only ONE thing actually drifted, and it was the schema.** `opencode-config` moved:
+> `chunkTimeout` widened from `integer` to `anyOf[integer, false]`, matching the shape
+> `headersTimeout` already had, plus two description changes. Refreshed in `be2cc8a`. No new
+> keys, so nothing needed classifying — no Essentials card, no danger row, no schema-table entry.
+>
+> | Claim, measured at 1.17.9 | Re-measured at 1.18.18 |
+> |---|---|
+> | `debug paths` returns the XDG-shaped layout, 9 roots, **on Windows too** | ✅ **Identical.** `OpenCodePaths`' assumptions hold; no move to platform-native dirs |
+> | **S2** — both config spellings can exist at once, and `opencode.json` wins | ✅ **Holds.** A machine with BOTH present resolves to the `.json`. ⚠ Its `.jsonc` is 50 bytes of `$schema`, so this proves the `.json` *loads*, not that the `.jsonc` is *ignored* — the stronger claim is still unmeasured |
+> | `opencode.db` has 20 tables | ✅ **Identical set** |
+> | **Four secret-bearing tables** — `account`, `control_account` (`access_token`, `refresh_token`), `credential` (`value`), `session_share` (`secret`) | ✅ **Identical.** ⭐ This is the allow-list Phase 14's redaction decision rests on, and it survived a minor-version bump intact — the first evidence that the drift guard is a workable design rather than a hopeful one |
+> | **Item 8** — `build`/`plan` primary, `general`/`explore` subagent, `summary`/`compaction` primary-but-hidden, `title` absent from the binary | ✅ **Identical, all seven.** `default_agent`'s two-built-in picker remains correct |
+> | Bundled schema covers the config surface | ✅ `$defs/Config` carries **36 properties** and defines every key `debug config` resolves. `plugin_origins` appears in resolved output only and in no config file on disk — runtime-derived, not a coverage gap |
+>
+> ⓘ **`migration` went 35 → 38 rows.** The schema did evolve between the versions; it simply did
+> not evolve in any table this project reads or redacts.
+>
+> ⭐ **NEW SUBCOMMAND, UNEXAMINED: `opencode debug v2`** — *"debug v2 catalog and built-in
+> plugins"*. Decision 15 gates v1-vs-v2 rules on `ProductVersionProbe`, so a first-class `v2`
+> debug surface is the most likely place for that distinction to have become concrete. Worth a
+> look before any more v1/v2 work.
+>
+> ⛔ **WHAT WAS NOT RE-MEASURED, and why it is not cheap.** Artifact scopes, the project walk
+> ("every ancestor contributes"), skill discovery, theme discovery, artifact inventory and
+> semantics all need a **fixture** — a project tree with configs at several levels. Building one
+> is what put the synthetic `global` entry into `debug scrap` in the first place, and it is still
+> there, pointing at a deleted agent scratchpad. Creating more fixtures pollutes the same table
+> this phase measures. Do it deliberately, in one pass, with a plan for what to leave behind.
 
 **Was the ⏱ Deferred re-checkpoint.** Promoted to a phase at the maintainer's direction because
 treating it as a gate did not work: it was supposed to clear before Phase 10, and Phase 10
