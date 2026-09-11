@@ -235,6 +235,7 @@ one-shot maintenance task would show a window nobody asked for and hold file loc
 | Trim-warning baselines and what they mean | [`TRIMMING.md`](./TRIMMING.md) |
 | Localization and the resx parity contracts | [`LOCALIZATION.md`](./LOCALIZATION.md) |
 | Platform conditionals and path handling | [`PLATFORM.md`](./PLATFORM.md) |
+| **Where the work stands right now, and what to do next** | [`PROGRESS.md`](./PROGRESS.md) — the resume anchor. Read it first in a fresh session, and reconcile it against `git` rather than trusting it |
 | The two-app plan, phase status, and every spike measurement | [`docs/OPENCODEFORGE-PLAN.md`](./docs/OPENCODEFORGE-PLAN.md) |
 
 Area-specific `AGENTS.md` sidecars sit next to the code they describe — the editor one under

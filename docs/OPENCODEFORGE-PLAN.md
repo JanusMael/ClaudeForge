@@ -5043,6 +5043,8 @@ precedence the way you meant.
 > | `BackupManifest` schema v1 → **v2** | ✅ — trigger met: an archive can now hold a non-Claude folder |
 > | Footprint catalog for OpenCode, measured | ✅ `OpenCodeFootprint` |
 > | Restore advisory for an archive taken without the opt-in | ✅ |
+> | Backup/Restore **page** extracted to the shell | ✅ `4ee8da8` — measured first: **18 Claude references in 1,405 lines**, host supplies wording/products/engine via `BackupPageOptions` |
+> | OpenCodeForge's Backup **page** (UI) | ⛔ **not built** — the shared page exists, nothing constructs it |
 > | Footprint **page** (UI) | ⛔ not built — the catalog is the data half |
 > | Growth / retention / prune *rates* | ⛔ still blocked on a used install (Phase 16) |
 >
