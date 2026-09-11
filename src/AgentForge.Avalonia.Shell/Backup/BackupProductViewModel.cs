@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 
 /// <summary>
 /// One product the user can include in a backup — a checkbox row on the Backup tab.

@@ -40,6 +40,15 @@
              rule permits it, and that project references only AgentForge.Abstractions
              so there is no cycle back into the shell. -->
         <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
+
+        <!-- BytesToHumanReadableConverter.Format: the Backup page renders archive sizes, and
+             that formatter is the one already used for every other size in the apps. Permitted
+             by AssemblyLayeringTests (LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*)
+             and no cycle: LayeredEditors.Avalonia references only LayeredEditors.Abstractions
+             and LayeredEditors.ViewModels, never back into the shell.
+             ⚠ Re-implementing the formatter here instead would put a second byte-rounding rule
+             in the codebase, and the two would drift in the decimal place nobody checks. -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
     </ItemGroup>
 
     <ItemGroup>

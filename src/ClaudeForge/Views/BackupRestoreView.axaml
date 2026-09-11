@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
              xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Backup"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"

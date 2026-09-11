@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -101,7 +102,7 @@ public class BackupShareCommandTests
     public async Task ShareBackup_NullRow_DoesNotCallService()
     {
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
 
         // Execute with null — must be a no-op.
         await vm.ShareBackupCommand.ExecuteAsync(null);
@@ -114,7 +115,7 @@ public class BackupShareCommandTests
     public async Task ShareBackup_NullService_IsNoOp()
     {
         // No share service wired up — command must complete silently.
-        BackupRestoreViewModel vm = new(new NullDialogService(), shareService: null);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create());
         BackupRowViewModel row = MakeRow();
 
         // Should not throw.
@@ -126,7 +127,7 @@ public class BackupShareCommandTests
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
@@ -142,7 +143,7 @@ public class BackupShareCommandTests
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
 
         await vm.ShareBackupCommand.ExecuteAsync(row);

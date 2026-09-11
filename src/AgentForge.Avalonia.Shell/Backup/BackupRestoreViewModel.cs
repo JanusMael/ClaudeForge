@@ -9,8 +9,6 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -18,7 +16,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 
-namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 
 /// <summary>
 /// Top-level ViewModel for the "Backup / Restore" navigation section.
@@ -164,8 +162,8 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// </summary>
     public string BackupIncludesProjectLabel =>
         string.IsNullOrEmpty(OpenProjectName)
-            ? Strings.LabelBackupNoProjectOpen
-            : string.Format(CultureInfo.CurrentCulture, Strings.LabelBackupIncludesProject, OpenProjectName);
+            ? _text.LabelBackupNoProjectOpen
+            : string.Format(CultureInfo.CurrentCulture, _text.LabelBackupIncludesProject, OpenProjectName);
 
     /// <summary>Raised when either persisted value changes so the host can flush state.</summary>
     public event EventHandler? PersistentStateChanged;
@@ -181,46 +179,50 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// this VM keep working; the shell passes its own section list, which is authoritative.
     /// Defaults to the two products this app hosts.
     /// </param>
+    /// <param name="dialogService">Host dialog surface.</param>
+    /// <param name="options">
+    /// What this host backs up, through which engine, and in whose words.
+    /// <para>
+    /// ⛔ <b>Required, where the products used to default to Claude's two.</b> A default product set
+    /// in a product-neutral page is the same defect as the closed <c>FootprintCategory</c> enum:
+    /// nothing fails, the wrong product's data is simply offered.
+    /// </para>
+    /// </param>
+    /// <param name="shareService">Optional share surface for handing an archive to another app.</param>
     public BackupRestoreViewModel(
         IDialogService dialogService,
-        IShareService? shareService = null,
-        IReadOnlyList<ProductDescriptor>? products = null)
+        BackupPageOptions options,
+        IShareService? shareService = null)
     {
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _text = options.Text;
+        _engine = options.Engine;
         _shareService = shareService;
         Backups = new ObservableCollection<BackupRowViewModel>();
         _backupDirectory = string.Empty; // deliberately no default — user must choose
         _restoreDirectory = string.Empty;
         _mode = BackupMode.SettingsOnly;
         SelectableProducts = new ObservableCollection<BackupProductViewModel>(
-            (products ?? [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct])
-            .Select(p => new BackupProductViewModel(p, CheckboxLabelFor(p), isSelected: true)));
+            options.Products.Select(p => new BackupProductViewModel(p, CheckboxLabelFor(p), isSelected: true)));
         _keepLast = 7;
     }
+
+    private readonly BackupPageOptions _options;
+    private readonly BackupPageText _text;
+    private readonly BackupEngine _engine;
 
     /// <summary>
     /// Localized label for a product's include-in-backup checkbox.
     /// </summary>
     /// <remarks>
-    /// A lookup, not a branch per product: an unrecognised product falls back to its own
-    /// display name, so adding one shows an untranslated label rather than failing to
-    /// render. The two entries exist because these labels are translated into nine locales
-    /// and <see cref="ProductDescriptor.DisplayName"/> is not.
+    /// <b>Was a two-branch lookup naming Claude's products</b>, with a fallback to
+    /// <see cref="ProductDescriptor.DisplayName"/> for anything else. The branches were the right
+    /// shape for the wrong layer: the labels are translated in the host's resx and the set of
+    /// products is the host's to decide, so the host supplies the lookup and keeps the fallback.
     /// </remarks>
-    private static string CheckboxLabelFor(ProductDescriptor product)
-    {
-        if (string.Equals(product.Id, SchemaRegistry.ClaudeCodeProduct.Id, StringComparison.Ordinal))
-        {
-            return Strings.CheckboxClaudeCode;
-        }
-
-        if (string.Equals(product.Id, SchemaRegistry.ClaudeDesktopProduct.Id, StringComparison.Ordinal))
-        {
-            return Strings.CheckboxClaudeDesktop;
-        }
-
-        return product.DisplayName;
-    }
+    private string CheckboxLabelFor(ProductDescriptor product) =>
+        _options.ProductCheckboxLabel(product);
 
     // -----------------------------------------------------------------------
     //  Observable state
@@ -313,7 +315,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// <summary>"Last backup: N days ago" style string for the banner.</summary>
     public string LastBackupLabel =>
         LastBackupUtc is null
-            ? Strings.LabelLastBackupNever
+            ? _text.LabelLastBackupNever
             : FormatAgo(DateTime.UtcNow - LastBackupUtc.Value);
 
     /// <summary>True when the user has never run a backup; drives the descriptive hint in the banner.</summary>
@@ -357,7 +359,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
     private void RebuildBackupList()
     {
-        // BackupEngine.Default.List opens every backup zip
+        // _engine.List opens every backup zip
         // in the directory and parses each manifest.json synchronously.
         // For users with many backups, this surfaced as a UI freeze on
         // every profile switch (Refresh() is called during BuildNavigationTree
@@ -388,7 +390,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             // Off-UI-thread: scan + parse manifests.
             IReadOnlyList<BackupEntry> entries = await Task.Run(() =>
-                BackupEngine.Default.List(restoreDirectory));
+                _engine.List(restoreDirectory));
 
             // Marshal back to UI thread before touching the collection.
             await Dispatcher.UIThread.InvokeAsync(() =>
@@ -515,13 +517,13 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
         if (string.IsNullOrEmpty(BackupDirectory))
         {
-            StatusMessage = Strings.StatusChooseBackupFolder;
+            StatusMessage = _text.StatusChooseBackupFolder;
             return;
         }
 
         IsBusy = true;
         ProgressPercent = 0;
-        ProgressMessage = Strings.ProgressPreparing;
+        ProgressMessage = _text.ProgressPreparing;
         StatusMessage = null;
 
         try
@@ -538,10 +540,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             // copy is "continue without saving" rather than "discard".
             if (IsAnyWorkspaceDirty?.Invoke() == true)
             {
-                DialogMessage saveFirstMsg = DialogMessage.Plain(Strings.TextSaveBeforeBackupPrompt);
+                DialogMessage saveFirstMsg = DialogMessage.Plain(_text.TextSaveBeforeBackupPrompt);
                 bool? saveFirst = await _dialogService.ShowConfirmAsync(
-                    Strings.DialogTitleUnsavedChanges, saveFirstMsg,
-                    confirmLabel: Strings.ButtonSaveDialog);
+                    _text.DialogTitleUnsavedChanges, saveFirstMsg,
+                    confirmLabel: _text.ButtonSaveDialog);
                 // three-valued: null (X close) aborts the
                 // whole backup; false (cancel = "don't save first") falls
                 // through to the proceed-without-saving prompt.
@@ -562,10 +564,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                 }
                 else
                 {
-                    DialogMessage proceedMsg = DialogMessage.Plain(Strings.TextProceedWithoutSavingBackup);
+                    DialogMessage proceedMsg = DialogMessage.Plain(_text.TextProceedWithoutSavingBackup);
                     bool? proceedAnyway = await _dialogService.ShowConfirmAsync(
-                        Strings.DialogTitleBackupWithoutSaving, proceedMsg,
-                        confirmLabel: Strings.ButtonContinueWithoutSaving);
+                        _text.DialogTitleBackupWithoutSaving, proceedMsg,
+                        confirmLabel: _text.ButtonContinueWithoutSaving);
                     // Both Cancel (false) and X (null) abort the backup at
                     // this stage — the only "proceed" answer is the explicit
                     // confirm button.
@@ -590,12 +592,12 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             {
                 DialogMessage credMsg = DialogMessage.Builder()
                                                      .Path("~/.claude/.credentials.json")
-                                                     .Text(Strings.TextCredentialsExplainer)
+                                                     .Text(_text.TextCredentialsExplainer)
                                                      .Build();
                 bool? include = await _dialogService.ShowConfirmAsync(
-                    Strings.DialogTitleIncludeCredentials, credMsg,
-                    confirmLabel: Strings.ButtonIncludeCredentialsConfirm,
-                    cancelLabel: Strings.ButtonOmitCredentials);
+                    _text.DialogTitleIncludeCredentials, credMsg,
+                    confirmLabel: _text.ButtonIncludeCredentialsConfirm,
+                    cancelLabel: _text.ButtonOmitCredentials);
                 // trinary prompt: Include / Omit / X-to-abort.
                 // null = X close means "I don't want this backup at all" —
                 // abort entirely.  The pre-fix bug was that X collapsed to
@@ -630,7 +632,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                                                     .Text(":\n\n")
                                                     .Text(ex.Message)
                                                     .Build();
-                await _dialogService.ShowAlertAsync(Strings.DialogTitleBackupFailed, errMsg, DialogCategory.Error);
+                await _dialogService.ShowAlertAsync(_text.DialogTitleBackupFailed, errMsg, DialogCategory.Error);
                 return;
             }
 
@@ -640,7 +642,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             BackupRequest request = BuildBackupRequest(destPath);
 
-            ProgressMessage = Strings.ProgressStarting;
+            ProgressMessage = _text.ProgressStarting;
             Progress<BackupProgress> progress = new(p =>
             {
                 ProgressMessage = SanitiseProgressItem(p.CurrentItem);
@@ -649,13 +651,13 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             using CancellationTokenSource cts = new();
             _operationCts = cts;
-            BackupResult result = await BackupEngine.Default.CreateAsync(request, progress, cts.Token);
+            BackupResult result = await _engine.CreateAsync(request, progress, cts.Token);
             if (result.Succeeded)
             {
                 StatusMessage = result.Message;
                 if (result.Manifest?.Warnings.Count > 0)
                 {
-                    StatusMessage += string.Format(Strings.StatusBackupWarningsFmt, result.Manifest.Warnings.Count);
+                    StatusMessage += string.Format(_text.StatusBackupWarningsFmt, result.Manifest.Warnings.Count);
                 }
 
                 LastBackupUtc = DateTime.UtcNow;
@@ -674,7 +676,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                 // Failure path: surface via the modal dialog AND the centre
                 // status bar pill (sticky until dismissed).
                 OnTerminalStatus?.Invoke(result.Message, /* isFailure: */ true);
-                await _dialogService.ShowAlertAsync(Strings.DialogTitleBackupFailed,
+                await _dialogService.ShowAlertAsync(_text.DialogTitleBackupFailed,
                     DialogMessage.Plain(result.Message), DialogCategory.Error);
             }
         }
@@ -752,7 +754,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         // Set IsBusy FIRST so later confirm dialogs cannot be raced past by a second click.
         IsBusy = true;
         ProgressPercent = 0;
-        ProgressMessage = Strings.ProgressPreparing;
+        ProgressMessage = _text.ProgressPreparing;
         StatusMessage = null;
 
         try
@@ -761,9 +763,9 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             if (IsAnyWorkspaceDirty?.Invoke() == true)
             {
                 bool? saveFirst = await _dialogService.ShowConfirmAsync(
-                    Strings.DialogTitleUnsavedChanges,
-                    DialogMessage.Plain(Strings.TextSaveBeforeRestorePrompt),
-                    confirmLabel: Strings.ButtonSaveDialog);
+                    _text.DialogTitleUnsavedChanges,
+                    DialogMessage.Plain(_text.TextSaveBeforeRestorePrompt),
+                    confirmLabel: _text.ButtonSaveDialog);
                 // trinary: null (X) aborts the restore;
                 // false (Cancel = "don't save first") falls through to the
                 // discard prompt.
@@ -783,10 +785,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                 }
                 else
                 {
-                    DialogMessage discardMsg = DialogMessage.Plain(Strings.TextDiscardUnsavedForRestore);
+                    DialogMessage discardMsg = DialogMessage.Plain(_text.TextDiscardUnsavedForRestore);
                     bool? discard = await _dialogService.ShowConfirmAsync(
-                        Strings.DialogTitleDiscardUnsavedEdits, discardMsg, DialogCategory.Destructive,
-                        confirmLabel: Strings.ButtonDiscardAndRestore);
+                        _text.DialogTitleDiscardUnsavedEdits, discardMsg, DialogCategory.Destructive,
+                        confirmLabel: _text.ButtonDiscardAndRestore);
                     if (discard != true)
                     {
                         return;
@@ -799,14 +801,14 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             {
                 string srcPlatform = row.Entry.Manifest?.Platform ?? "unknown";
                 DialogMessage crossMsg = DialogMessage.Builder()
-                                                      .Text(Strings.TextCrossPlatformRestorePrefix).Bold(srcPlatform)
-                                                      .Text(Strings.TextCrossPlatformRestoreMiddle)
+                                                      .Text(_text.TextCrossPlatformRestorePrefix).Bold(srcPlatform)
+                                                      .Text(_text.TextCrossPlatformRestoreMiddle)
                                                       .Bold(PlatformPaths.PlatformId)
-                                                      .Text(Strings.TextCrossPlatformRestoreSuffix)
+                                                      .Text(_text.TextCrossPlatformRestoreSuffix)
                                                       .Build();
                 bool? proceed = await _dialogService.ShowConfirmAsync(
-                    Strings.DialogTitleCrossPlatformRestore, crossMsg,
-                    confirmLabel: Strings.ButtonRestoreAnyway);
+                    _text.DialogTitleCrossPlatformRestore, crossMsg,
+                    confirmLabel: _text.ButtonRestoreAnyway);
                 if (proceed != true)
                 {
                     return;
@@ -816,7 +818,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             // Non-blocking pre-restore warning if Claude is running — files may be locked.
             CheckForRunningClaudeProcesses();
 
-            ProgressMessage = Strings.ProgressRestoring;
+            ProgressMessage = _text.ProgressRestoring;
             Progress<BackupProgress> progress = new(p =>
             {
                 ProgressMessage = SanitiseProgressItem(p.CurrentItem);
@@ -825,7 +827,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             using CancellationTokenSource cts = new();
             _operationCts = cts;
-            RestoreResult result = await BackupEngine.Default.RestoreAsync(row.Entry, progress, cts.Token);
+            RestoreResult result = await _engine.RestoreAsync(row.Entry, progress, cts.Token);
             if (result.Succeeded)
             {
                 StatusMessage = result.Message;
@@ -847,14 +849,14 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                     const int maxShown = 10;
                     string listed = string.Join("\n", fileFailures.Take(maxShown).Select(f => $"  • {f}"));
                     string trailer = fileFailures.Count > maxShown
-                        ? string.Format(Strings.TextRestoreSkippedTrailerFmt, fileFailures.Count - maxShown)
+                        ? string.Format(_text.TextRestoreSkippedTrailerFmt, fileFailures.Count - maxShown)
                         : string.Empty;
                     DialogMessage skippedMsg = DialogMessage.Builder()
-                                                            .Text(Strings.TextRestoreSkippedExplainer)
+                                                            .Text(_text.TextRestoreSkippedExplainer)
                                                             .Text(listed).Text(trailer)
                                                             .Build();
                     await _dialogService.ShowAlertAsync(
-                        string.Format(Strings.DialogTitleRestoreCompletedSkippedFmt, fileFailures.Count),
+                        string.Format(_text.DialogTitleRestoreCompletedSkippedFmt, fileFailures.Count),
                         skippedMsg);
                 }
 
@@ -883,7 +885,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             else if (result.Message != "Restore cancelled.")
             {
                 StatusMessage = null;
-                await _dialogService.ShowAlertAsync(Strings.DialogTitleRestoreFailed,
+                await _dialogService.ShowAlertAsync(_text.DialogTitleRestoreFailed,
                     DialogMessage.Plain(result.Message), DialogCategory.Error);
             }
         }
@@ -953,33 +955,33 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         if (!archivePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             await _dialogService.ShowAlertAsync(
-                Strings.DialogTitleDropRestoreInvalid,
-                DialogMessage.Plain(Strings.TextDropRestoreNotZip),
+                _text.DialogTitleDropRestoreInvalid,
+                DialogMessage.Plain(_text.TextDropRestoreNotZip),
                 DialogCategory.Error);
             return;
         }
 
-        BackupEntry? entry = BackupEngine.Default.TryReadEntry(archivePath);
+        BackupEntry? entry = _engine.TryReadEntry(archivePath);
         if (entry is null || entry.IsCorrupt)
         {
             await _dialogService.ShowAlertAsync(
-                Strings.DialogTitleDropRestoreInvalid,
-                DialogMessage.Plain(Strings.TextDropRestoreNotABackup),
+                _text.DialogTitleDropRestoreInvalid,
+                DialogMessage.Plain(_text.TextDropRestoreNotABackup),
                 DialogCategory.Error);
             return;
         }
 
         string fileName = entry.FileName;
         DialogMessage promptMsg = DialogMessage.Builder()
-                                               .Text(Strings.TextDropRestorePromptPrefix)
+                                               .Text(_text.TextDropRestorePromptPrefix)
                                                .Path(fileName)
-                                               .Text(Strings.TextDropRestorePromptSuffix)
+                                               .Text(_text.TextDropRestorePromptSuffix)
                                                .Build();
 
         bool? confirmed = await _dialogService.ShowConfirmAsync(
-            Strings.DialogTitleDropRestore,
+            _text.DialogTitleDropRestore,
             promptMsg,
-            confirmLabel: Strings.ButtonRestore);
+            confirmLabel: _text.ButtonRestore);
         // Trinary: null (X) and false (Cancel) both abort; only explicit
         // Restore click proceeds.  Matches the universal X-dismiss contract.
         if (confirmed != true)
@@ -1024,14 +1026,14 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                 return;
             }
 
-            if (BackupEngine.Default.Delete(row.Entry))
+            if (_engine.Delete(row.Entry))
             {
                 Backups.Remove(row);
-                StatusMessage = string.Format(Strings.StatusBackupDeletedFmt, row.Entry.FileName);
+                StatusMessage = string.Format(_text.StatusBackupDeletedFmt, row.Entry.FileName);
             }
             else
             {
-                StatusMessage = string.Format(Strings.StatusBackupDeleteFailedFmt, row.Entry.FileName);
+                StatusMessage = string.Format(_text.StatusBackupDeleteFailedFmt, row.Entry.FileName);
             }
         }
         finally
@@ -1111,7 +1113,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         }
 
         IsBusy = true;
-        ProgressMessage = Strings.ProgressCreatingJunction;
+        ProgressMessage = _text.ProgressCreatingJunction;
         try
         {
             MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();
@@ -1167,8 +1169,12 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         List<Process> all = new();
         try
         {
-            all.AddRange(Process.GetProcessesByName("claude"));
-            all.AddRange(Process.GetProcessesByName("claude-desktop"));
+            // ⚠ Was the literals "claude" and "claude-desktop". The processes worth warning about
+            // are the host's, and a host that names none simply gets no warning.
+            foreach (string processName in _options.AgentProcessNames)
+            {
+                all.AddRange(Process.GetProcessesByName(processName));
+            }
 
             int runningCount = 0;
             foreach (Process p in all)
@@ -1192,7 +1198,8 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             if (runningCount > 0)
             {
-                StatusMessage = string.Format(Strings.StatusClaudeRunningFmt, runningCount);
+                StatusMessage = string.Format(
+                    CultureInfo.CurrentCulture, _text.StatusAgentRunningFmt, runningCount);
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException
@@ -1213,24 +1220,29 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         }
     }
 
-    private static string FormatAgo(TimeSpan span)
+    // ⚠ Was `static`. The wording now comes from the host's text record, which is per-instance —
+    // and a static that reached for one would have to find it through a global, which is the shape
+    // this whole extraction exists to remove.
+    private string FormatAgo(TimeSpan span)
     {
         if (span.TotalMinutes < 1)
         {
-            return Strings.LabelLastBackupJustNow;
+            return _text.LabelLastBackupJustNow;
         }
 
         if (span.TotalHours < 1)
         {
-            return string.Format(Strings.LabelLastBackupMinutesFmt, (int)span.TotalMinutes);
+            return string.Format(
+                CultureInfo.CurrentCulture, _text.LabelLastBackupMinutesFmt, (int)span.TotalMinutes);
         }
 
         if (span.TotalDays < 1)
         {
-            return string.Format(Strings.LabelLastBackupHoursFmt, (int)span.TotalHours);
+            return string.Format(
+                CultureInfo.CurrentCulture, _text.LabelLastBackupHoursFmt, (int)span.TotalHours);
         }
 
-        return string.Format(Strings.LabelLastBackupDaysFmt, (int)span.TotalDays);
+        return string.Format(CultureInfo.CurrentCulture, _text.LabelLastBackupDaysFmt, (int)span.TotalDays);
     }
 
     public void Dispose()

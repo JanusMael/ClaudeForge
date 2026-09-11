@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;

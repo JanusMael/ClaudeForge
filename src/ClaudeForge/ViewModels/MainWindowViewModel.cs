@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.ComponentModel;
 using System.Globalization;
@@ -4606,8 +4607,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // user can back up.
             _backupVm = new BackupRestoreViewModel(
                 DialogServiceForViewAccess,
-                _shareService,
-                _sections.Select(s => s.Product).ToList())
+                ClaudeBackupPage.Options(_sections.Select(s => s.Product).ToList()),
+                _shareService)
             {
                 CredentialsPreference = _cachedState.IncludeCredentialsInBackup,
                 LastBackupUtc = _cachedState.LastBackupUtc,

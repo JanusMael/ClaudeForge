@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -9,6 +10,23 @@ using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+
+/// <summary>
+/// Options the tests construct the page with.
+/// </summary>
+/// <remarks>
+/// ⭐ <b>ClaudeForge's REAL options, not a stub.</b> The page moved to
+/// <c>AgentForge.Avalonia.Shell.Backup</c> and the host now supplies its wording, products, engine
+/// and process names; a hand-rolled set here would let this suite pass while the app wired
+/// something else. Running these 1,675 lines against the real options is what makes them evidence
+/// that the extraction preserved behaviour rather than merely compiled.
+/// </remarks>
+internal static class BackupPageTestOptions
+{
+    internal static AgentForge.Avalonia.Shell.Backup.BackupPageOptions Create(
+        IReadOnlyList<ProductDescriptor>? products = null) =>
+        ClaudeBackupPage.Options(products ?? ClaudeBackupPage.DefaultProducts);
+}
 
 /// <summary>
 /// Behaviour tests for <see cref="BackupRestoreViewModel"/>. Uses a stub dialog
@@ -20,7 +38,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void Refresh_AppliesCredentialsPreference()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService())
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
         {
             CredentialsPreference = true,
         };
@@ -32,7 +50,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void Refresh_NullPreferenceLeavesCheckboxUnchecked()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService())
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
         {
             CredentialsPreference = null,
         };
@@ -49,7 +67,7 @@ public sealed class BackupRestoreViewModelTests
         // test pins the new contract: a backup with no prior credentials
         // answer raises the prompt, AND a second backup raises it again.
         StubDialogService dialog = new() { ConfirmReturns = true };
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             CredentialsPreference = null,
             BackupDirectory = Path.Combine(Path.GetTempPath(),
@@ -116,7 +134,7 @@ public sealed class BackupRestoreViewModelTests
             // override below.
             ConfirmDismissesViaX = true,
         };
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             CredentialsPreference = null,
             BackupDirectory = Path.Combine(Path.GetTempPath(),
@@ -178,7 +196,7 @@ public sealed class BackupRestoreViewModelTests
         // Sanitized mode hard-drops credentials (BackupEngine.ShouldSkipHomeFile)
         // so the prompt would be a no-op decision.  Suppress it.
         StubDialogService dialog = new() { ConfirmReturns = true };
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             CredentialsPreference = null,
             BackupDirectory = Path.Combine(Path.GetTempPath(),
@@ -233,7 +251,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task RestoreCommand_DirtyGuard_PromptsInOrder()
     {
         StubDialogService dialog = new() { ConfirmReturns = false }; // user always declines
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             IsAnyWorkspaceDirty = () => true,
             SaveAllWorkspaces = _ => Task.CompletedTask,
@@ -271,7 +289,7 @@ public sealed class BackupRestoreViewModelTests
     {
         bool? capturedContext = null;
         StubDialogService dialog = new() { ConfirmReturns = true }; // accept "Save first"
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             CredentialsPreference = false, // already answered, no prompt
             BackupDirectory = Path.Combine(Path.GetTempPath(),
@@ -339,7 +357,7 @@ public sealed class BackupRestoreViewModelTests
     {
         bool? capturedContext = null;
         StubDialogService dialog = new() { ConfirmReturns = true }; // accept "Save first"
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             IsAnyWorkspaceDirty = () => true,
             SaveAllWorkspaces = isRestoreContext =>
@@ -373,7 +391,7 @@ public sealed class BackupRestoreViewModelTests
     {
         bool isBusyDuringDialog = false;
         StubDialogService dialog = new() { ConfirmReturns = false };
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
         dialog.TargetVm = vm;
         dialog.OnConfirmCalled = v => isBusyDuringDialog = v.IsBusy;
 
@@ -400,7 +418,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void Dispose_UnsubscribesPersistentStateChanged()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         int callCount = 0;
         vm.PersistentStateChanged += (_, _) => callCount++;
 
@@ -446,7 +464,7 @@ public sealed class BackupRestoreViewModelTests
         try
         {
             AlertCountingDialogService alertDialog = new();
-            BackupRestoreViewModel vm = new(alertDialog)
+            BackupRestoreViewModel vm = new(alertDialog, BackupPageTestOptions.Create())
             {
                 BackupDirectory = tempFile, // file path → Directory.CreateDirectory throws IOException
                 CredentialsPreference = false, // skip the credentials prompt
@@ -482,7 +500,7 @@ public sealed class BackupRestoreViewModelTests
         // the callback — this test also confirms IsBusy resets on failure.)
         StubDialogService dialog = new() { ConfirmReturns = true };
         bool callbackFired = false;
-        BackupRestoreViewModel vm = new(dialog)
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
         {
             OnRestoreCompleted = () =>
             {
@@ -519,7 +537,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task BrowseBackupDirectoryAsync_FirstSet_MirrorsToRestore()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/backups" };
-        BackupRestoreViewModel vm = new(dlg);
+        BackupRestoreViewModel vm = new(dlg, BackupPageTestOptions.Create());
         vm.Refresh();
 
         // Both empty → "first set" branch fires; the picked folder mirrors
@@ -536,7 +554,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task BrowseBackupDirectoryAsync_AlreadyConfigured_NoMirror()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/new-backup-dir" };
-        BackupRestoreViewModel vm = new(dlg)
+        BackupRestoreViewModel vm = new(dlg, BackupPageTestOptions.Create())
         {
             InitialBackupDirectory = "/tmp/old-backup-dir",
             InitialRestoreDirectory = "/tmp/old-restore-dir",
@@ -554,7 +572,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task BrowseBackupDirectoryAsync_UserCancels_NoStateChange()
     {
         StubDialogService dlg = new() { PickFolderReturns = null };
-        BackupRestoreViewModel vm = new(dlg) { InitialBackupDirectory = "/tmp/x" };
+        BackupRestoreViewModel vm = new(dlg, BackupPageTestOptions.Create()) { InitialBackupDirectory = "/tmp/x" };
         vm.Refresh();
 
         await vm.BrowseBackupDirectoryCommand.ExecuteAsync(null);
@@ -567,7 +585,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task BrowseRestoreDirectoryAsync_FirstSet_MirrorsToBackup()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/restore" };
-        BackupRestoreViewModel vm = new(dlg);
+        BackupRestoreViewModel vm = new(dlg, BackupPageTestOptions.Create());
         vm.Refresh();
 
         await vm.BrowseRestoreDirectoryCommand.ExecuteAsync(null);
@@ -581,7 +599,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task BrowseRestoreDirectoryAsync_UserCancels_NoStateChange()
     {
         StubDialogService dlg = new() { PickFolderReturns = null };
-        BackupRestoreViewModel vm = new(dlg) { InitialRestoreDirectory = "/tmp/x" };
+        BackupRestoreViewModel vm = new(dlg, BackupPageTestOptions.Create()) { InitialRestoreDirectory = "/tmp/x" };
         vm.Refresh();
 
         await vm.BrowseRestoreDirectoryCommand.ExecuteAsync(null);
@@ -592,7 +610,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void OnBackupDirectoryChanged_AfterInit_FiresPersistentStateChanged()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         vm.Refresh(); // _initialized = true after this
 
         int fired = 0;
@@ -608,7 +626,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void OnRestoreDirectoryChanged_AfterInit_FiresPersistentStateChanged()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         vm.Refresh();
 
         int fired = 0;
@@ -626,7 +644,7 @@ public sealed class BackupRestoreViewModelTests
         // then sets _initialized=true.  Side-effect partial methods must
         // not fire during the seed window or every reload would write the
         // gui-state file unnecessarily.
-        BackupRestoreViewModel vm = new(new StubDialogService())
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
         {
             InitialBackupDirectory = "/tmp/seed-backup",
             InitialRestoreDirectory = "/tmp/seed-restore",
@@ -645,7 +663,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void HasRestoreDirectory_TracksRestoreDirectoryEmptiness()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         Assert.IsFalse(vm.HasRestoreDirectory);
 
         vm.RestoreDirectory = "/tmp/x";
@@ -658,7 +676,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void HasNeverBackedUp_TracksLastBackupUtcNullness()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         // Default null → never backed up.
         Assert.IsTrue(vm.HasNeverBackedUp);
 
@@ -673,7 +691,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void LastBackupLabel_NullUtc_RendersNeverString()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         Assert.AreEqual(
             Strings.LabelLastBackupNever,
             vm.LastBackupLabel);
@@ -682,7 +700,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void CanCreateBackup_FalseWhenNoDirectory()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         Assert.IsFalse(vm.CanCreateBackup,
             "Without a backup directory the Create command must be disabled.");
     }
@@ -690,7 +708,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void ShowMsixTab_FalseWhenStatusIsNull()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         Assert.IsFalse(vm.ShowMsixTab,
             "MsixStatus is null by default → ShowMsixTab must be false on every platform.");
     }
@@ -702,7 +720,7 @@ public sealed class BackupRestoreViewModelTests
     {
         // Construct WITHOUT a share service.  The command must short-circuit
         // gracefully — no NullReferenceException.
-        BackupRestoreViewModel vm = new(new StubDialogService(), shareService: null);
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         await vm.ShareBackupCommand.ExecuteAsync(null);
         // Pass = no exception thrown.
     }
@@ -711,7 +729,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task ShareBackupAsync_NullRow_NoOp()
     {
         RecordingShareService share = new();
-        BackupRestoreViewModel vm = new(new StubDialogService(), share);
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create(), share);
         await vm.ShareBackupCommand.ExecuteAsync(null);
         Assert.AreEqual(0, share.ShareFileCalls,
             "Null row must short-circuit without invoking the share service.");
@@ -726,7 +744,7 @@ public sealed class BackupRestoreViewModelTests
         // the archive path to ShareFileAsync.  Exercises the success
         // branch beyond the two existing null-safety tests.
         RecordingShareService share = new();
-        BackupRestoreViewModel vm = new(new StubDialogService(), share);
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create(), share);
         BackupRowViewModel row = new(new BackupEntry
         {
             ArchivePath = "/tmp/example.zip",
@@ -753,7 +771,7 @@ public sealed class BackupRestoreViewModelTests
         // The command must catch share-service exceptions internally so a
         // misbehaving share provider can't crash the app.
         RecordingShareService share = new() { ShouldThrow = true };
-        BackupRestoreViewModel vm = new(new StubDialogService(), share);
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create(), share);
         BackupRowViewModel row = new(new BackupEntry
         {
             ArchivePath = "/tmp/example.zip",
@@ -778,7 +796,7 @@ public sealed class BackupRestoreViewModelTests
         // Sync command — null row must short-circuit before reaching
         // ShellLauncher.  Verifies the null guard at the top of the
         // method (line 653 of BackupRestoreViewModel).
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         vm.OpenFileLocationCommand.Execute(null);
         // Pass = no NullReferenceException trying to deref row.Entry.
     }
@@ -791,7 +809,7 @@ public sealed class BackupRestoreViewModelTests
         // the second guard fires immediately and the command returns
         // without touching IsBusy.
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         await vm.FixMsixCommand.ExecuteAsync(null);
 
@@ -806,7 +824,7 @@ public sealed class BackupRestoreViewModelTests
         // CancelOperation = _operationCts?.Cancel() — must be a no-op
         // when nothing is in flight.  Guards a real race:
         // user clicks cancel before / after a backup is running.
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         vm.CancelOperationCommand.Execute(null);
         // Pass = no NullReferenceException on the null _operationCts.
     }
@@ -819,7 +837,7 @@ public sealed class BackupRestoreViewModelTests
     public async Task RestoreFromDroppedArchive_NullOrEmptyPath_NoOp()
     {
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         await vm.RestoreFromDroppedArchiveAsync(null!);
         await vm.RestoreFromDroppedArchiveAsync(string.Empty);
@@ -839,7 +857,7 @@ public sealed class BackupRestoreViewModelTests
         // paths so a programmatic invocation (CLI / future automation hook)
         // can't bypass the extension check.
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         string tmp = Path.Combine(Path.GetTempPath(), "drop-" + Guid.NewGuid().ToString("N") + ".txt");
         await File.WriteAllTextAsync(tmp, "not a zip");
@@ -875,7 +893,7 @@ public sealed class BackupRestoreViewModelTests
         // restore rather than route to RestoreCommand which would then fail
         // with a less-clear "manifest missing" error.
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         string tmp = Path.Combine(Path.GetTempPath(), "drop-" + Guid.NewGuid().ToString("N") + ".zip");
         File.WriteAllBytes(tmp, [0xDE, 0xAD, 0xBE, 0xEF]);
@@ -907,7 +925,7 @@ public sealed class BackupRestoreViewModelTests
         // A .zip path that doesn't exist on disk — TryReadEntry returns
         // null, which the VM treats as "invalid" (same alert as corrupt).
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         string missing = Path.Combine(Path.GetTempPath(),
             "drop-missing-" + Guid.NewGuid().ToString("N") + ".zip");
@@ -943,7 +961,7 @@ public sealed class BackupRestoreViewModelTests
             Assert.IsTrue(created.Succeeded, "Test prerequisite: backup must create.");
 
             StubDialogService dialog = new() { ConfirmReturns = false }; // user cancels
-            BackupRestoreViewModel vm = new(dialog);
+            BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
             await vm.RestoreFromDroppedArchiveAsync(zipPath);
 
@@ -997,7 +1015,7 @@ public sealed class BackupRestoreViewModelTests
             // warning would fire next, bumping ConfirmCalls.  Asserting
             // exactly ONE confirm call locks the abort-on-X contract.
             StubDialogService dialog = new() { ConfirmDismissesViaX = true };
-            BackupRestoreViewModel vm = new(dialog)
+            BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create())
             {
                 IsAnyWorkspaceDirty = () => true, // would fire a 2nd prompt if we proceeded
             };
@@ -1033,7 +1051,7 @@ public sealed class BackupRestoreViewModelTests
         // Re-entrancy guard — same shape as RestoreCommand's IsBusy check.
         // We set IsBusy via reflection because the property is internal-set.
         StubDialogService dialog = new();
-        BackupRestoreViewModel vm = new(dialog);
+        BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         typeof(BackupRestoreViewModel)
             .GetProperty(nameof(vm.IsBusy))!
@@ -1385,7 +1403,7 @@ public sealed class BackupRestoreViewModelTests
     public void CreateBackup_PropagatesInitialProjectRoot_AsExplicitProjectDir()
     {
         const string projectRoot = @"C:/repos/MyApp";
-        BackupRestoreViewModel vm = new(new StubDialogService())
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
         {
             InitialProjectRoot = projectRoot,
         };
@@ -1412,7 +1430,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void SelectableProducts_DefaultToEveryHostedProduct_Selected()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
 
         Assert.AreEqual(2, vm.SelectableProducts.Count,
             "Both hosted products must be offered.");
@@ -1428,7 +1446,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void BuildBackupRequest_CarriesOnlyTheSelectedProducts()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
 
         // Deselect the FIRST product, so a request that ignored selection and listed
         // everything, and one that stopped at the first entry, both fail.
@@ -1449,7 +1467,7 @@ public sealed class BackupRestoreViewModelTests
     {
         // Legal and deliberately not gated: the engine produces a valid empty archive
         // (manifest + bundled schemas) rather than rejecting the request.
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         foreach (BackupProductViewModel product in vm.SelectableProducts)
         {
             product.IsSelected = false;
@@ -1469,7 +1487,7 @@ public sealed class BackupRestoreViewModelTests
         ProductDescriptor other = new(
             "other-agent", "Other Agent", "bundled://other", "other.json", ArchiveFolder: "OtherAgent");
 
-        BackupRestoreViewModel vm = new(new StubDialogService(), shareService: null, products: [other]);
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create([other]));
 
         Assert.AreEqual(1, vm.SelectableProducts.Count);
         Assert.AreEqual("Other Agent", vm.SelectableProducts[0].DisplayName,
@@ -1482,7 +1500,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void CreateBackup_WithNullProjectRoot_PassesEmptyExplicitProjectDirs()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService())
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
         {
             InitialProjectRoot = null,
         };
@@ -1499,7 +1517,7 @@ public sealed class BackupRestoreViewModelTests
     [TestMethod]
     public void BackupIncludesProjectLabel_RendersBothShapes()
     {
-        BackupRestoreViewModel vm = new(new StubDialogService());
+        BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
 
         // Shape 1: no project open.
         Assert.IsNull(vm.OpenProjectName,

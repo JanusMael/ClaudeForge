@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Views;
