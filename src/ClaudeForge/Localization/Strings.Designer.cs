@@ -7179,5 +7179,86 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("WorkspaceNameClaudeDesktop", resourceCulture);
             }
         }
+            
+        /// <summary>
+        ///   Looks up a localized string similar to Remove.
+        /// </summary>
+        public static string AutoNameRemoveEntry {
+            get {
+                return ResourceManager.GetString("AutoNameRemoveEntry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entry key.
+        /// </summary>
+        public static string AutoNameMapKey {
+            get {
+                return ResourceManager.GetString("AutoNameMapKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entry value.
+        /// </summary>
+        public static string AutoNameMapValue {
+            get {
+                return ResourceManager.GetString("AutoNameMapValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Server kind.
+        /// </summary>
+        public static string AutoNameMcpServerKind {
+            get {
+                return ResourceManager.GetString("AutoNameMcpServerKind", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Source type.
+        /// </summary>
+        public static string AutoNameMarketplaceSourceType {
+            get {
+                return ResourceManager.GetString("AutoNameMarketplaceSourceType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to match payload.
+        /// </summary>
+        public static string WatermarkMcpMatchPayload {
+            get {
+                return ResourceManager.GetString("WatermarkMcpMatchPayload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Format.
+        /// </summary>
+        public static string ButtonFormatJson {
+            get {
+                return ResourceManager.GetString("ButtonFormatJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Re-indent the JSON (parse and pretty-print)..
+        /// </summary>
+        public static string TipFormatJson {
+            get {
+                return ResourceManager.GetString("TipFormatJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Raw JSON.
+        /// </summary>
+        public static string AutoNameRawJsonEditor {
+            get {
+                return ResourceManager.GetString("AutoNameRawJsonEditor", resourceCulture);
+            }
+        }
     }
 }

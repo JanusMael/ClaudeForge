@@ -2841,4 +2841,31 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
     <value>Impossible d'ouvrir le lien direct « {0} » — page ou élément introuvable.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Clé de l'entrée</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Valeur de l'entrée</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Type de serveur</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Type de source</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>valeur à comparer</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formater</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Réindenter le JSON (analyser et mettre en forme).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>JSON brut</value>
+  </data>
 </root>

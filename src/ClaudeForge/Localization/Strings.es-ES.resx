@@ -2829,4 +2829,31 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
     <value>No se pudo abrir el enlace directo «{0}»: no existe esa página ni ese elemento.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Quitar</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Clave de entrada</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Valor de entrada</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Tipo de servidor</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Tipo de origen</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>valor de coincidencia</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formatear</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Volver a sangrar el JSON (analizar e imprimir con formato).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>JSON sin formato</value>
+  </data>
 </root>

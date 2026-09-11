@@ -2820,4 +2820,31 @@
     <value>无法打开深层链接“{0}”——没有该页面或项。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>条目键</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>条目值</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>服务器类型</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>来源类型</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>匹配负载</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>格式化</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>重新缩进 JSON（解析并美化输出）。</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>原始 JSON</value>
+  </data>
 </root>

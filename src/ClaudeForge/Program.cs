@@ -52,13 +52,14 @@ internal sealed class Program
 
         // 2b. Wire the library-side PropertyEditorWrapper's chrome strings
         //     (Reset button label / tooltip, lock-icon tooltip, etc.) to the
-        //     App's localised resx.  The library wrapper is rarely rendered
-        //     in ClaudeForge — the App-side wrapper at Controls/PropertyEditorWrapper.axaml
-        //     handles the primary editor surface — but the library wrapper
-        //     ships as a fallback and its 7 chrome strings need to localise
-        //     when it DOES render (e.g. via external library consumers, or
-        //     via the deferred LEAF-EDITORS-4.2 consolidation).  Must run
-        //     before any wrapper XAML is parsed (the {x:Static} markup
+        //     App's localised resx.  The library wrapper is never rendered by
+        //     ClaudeForge: every PropertyEditorWrapper instantiated in this app
+        //     resolves to Controls/PropertyEditorWrapper.axaml, including the
+        //     recursive ones inside it.  The wiring matters anyway, because
+        //     LayeredEditors.Avalonia ships as a package and its wrapper is the
+        //     default surface an external consumer gets — and because the
+        //     deferred LEAF-EDITORS-4.2 consolidation would make it render here.
+        //     Must run before any wrapper XAML is parsed (the {x:Static} markup
         //     extension dereferences at parse time and caches the value).
         WrapperStrings.Resolver = key => key switch
         {
@@ -69,6 +70,9 @@ internal sealed class Program
             nameof(WrapperStrings.TipNewSetting) => Strings.TipNewSetting,
             nameof(WrapperStrings.LabelOverridden) => Strings.TextOverridden,
             nameof(WrapperStrings.LabelReset) => Strings.ButtonReset,
+            nameof(WrapperStrings.LabelBrowse) => Strings.ButtonBrowse,
+            nameof(WrapperStrings.LabelAdd) => Strings.ButtonAdd,
+            nameof(WrapperStrings.LabelRemove) => Strings.AutoNameRemoveEntry,
             var _ => key,
         };
 

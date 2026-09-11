@@ -2841,4 +2841,31 @@
     <value>딥 링크 '{0}'을(를) 열 수 없습니다 — 해당 페이지나 항목이 없습니다.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>제거</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>항목 키</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>항목 값</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>서버 종류</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>소스 유형</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>일치시킬 페이로드</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>서식</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>JSON을 다시 들여씁니다(구문 분석 후 보기 좋게 출력).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>원시 JSON</value>
+  </data>
 </root>

@@ -53,6 +53,9 @@ public static class WrapperStrings
             nameof(TipNewSetting) => "New setting — added since your last session",
             nameof(LabelOverridden) => "(overridden)",
             nameof(LabelReset) => "Reset",
+            nameof(LabelBrowse) => "Browse...",
+            nameof(LabelAdd) => "Add",
+            nameof(LabelRemove) => "Remove",
             var _ => key,
         };
     }
@@ -77,6 +80,19 @@ public static class WrapperStrings
 
     /// <summary>Label for the Reset-to-inherited button.</summary>
     public static string LabelReset => Resolver(nameof(LabelReset));
+
+    /// <summary>Label for the path editor's folder-picker button.</summary>
+    public static string LabelBrowse => Resolver(nameof(LabelBrowse));
+
+    /// <summary>Label for the string-array editor's add-item button.</summary>
+    public static string LabelAdd => Resolver(nameof(LabelAdd));
+
+    /// <summary>
+    /// Screen-reader name for the per-row remove button. Its visible content is the ×
+    /// glyph, which assistive technology would otherwise announce literally, so this is
+    /// the only thing that makes the control identifiable.
+    /// </summary>
+    public static string LabelRemove => Resolver(nameof(LabelRemove));
 
     /// <summary>
     /// Restore <see cref="Resolver"/> to the default-English implementation.
