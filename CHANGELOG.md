@@ -101,6 +101,16 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   catalog-driven and inter-aware rather than hardcoded.
 - Fixed 'missing files' that originate in the 'selected project' tree during backup scenarios
 - Newly available localizations
+- **The status bar's auto-clear runs on an injected `TimeProvider`**, and
+  `StatusController` emits only through the typed `SetActive` / `SetSuccess` /
+  `SetWarning` / `SetFailure` / `SetState` methods — the kind can no longer be
+  passed as a parameter, so it cannot be passed wrongly. Three mutable statics
+  (`DelayOverride` and the two delay properties) and their `ResetForTesting`
+  companion are gone with it; the delays are per instance. The tests advance a
+  fake clock instead of overriding a delay, so none of them sleeps, polls, or
+  needs a pumped dispatcher, and a warning's longer dwell time is now actually
+  asserted rather than assumed. A clear that comes due just before the next
+  message is posted no longer clears that message.
 
 ## [2026.2.527] - [2026.2.528]
 
