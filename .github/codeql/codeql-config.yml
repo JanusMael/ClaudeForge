@@ -1,0 +1,41 @@
+name: "ClaudeForge CodeQL config"
+
+# Query suite is still selected in the workflow (security-and-quality); this file
+# only removes individual queries that are structurally wrong for this codebase.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# cs/path-combine accounted for 941 of the open alerts on main, against 86 for the
+# next-largest rule. It fires on essentially every Path.Combine call in the tree,
+# which is the API this repo mandates: CLAUDE.md and the portability guidance both
+# require the language's path API over string concatenation, so the rule is firing
+# on the correct code and the "fix" it suggests is not one we want everywhere.
+#
+# The rule is only a real finding when a LATER argument to Path.Combine can be
+# rooted, because a rooted later argument silently discards the earlier ones. Every
+# call site reviewed here passes either a string literal or a value that cannot be
+# rooted by construction (a GUID in "N" format, a file name from Path.GetFileName,
+# a fixed directory segment). Three separate alerts from this rule were vetted
+# individually on PRs #39 and #51 and all three were false positives.
+#
+# At 941 alerts the practical cost is not the rule itself but what it buries: the
+# 86 cs/catch-of-all-exceptions findings and everything below them are unreadable
+# in the Security tab while this one rule dominates the list.
+#
+# WHAT THIS DOES NOT DO
+# ---------------------
+# Every other security-and-quality query still runs. This is a single-query
+# exclusion, not a reduction of the suite, and deleting the two lines below
+# restores the rule.
+#
+# IF THE UNDERLYING RISK MATTERS LATER
+# ------------------------------------
+# The honest alternative is Path.Join, which CodeQL itself recommends: it
+# concatenates without the discard-on-rooted behaviour, so the risk disappears
+# rather than being filtered. That is a wide mechanical diff across production and
+# test code and was deliberately not taken here; revisit it if a real defect of
+# this shape ever lands.
+
+query-filters:
+  - exclude:
+      id: cs/path-combine
