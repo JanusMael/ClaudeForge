@@ -97,6 +97,16 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 ### Changed
 
+- **The accessibility coverage guard now sees the whole app.** It scanned
+  `src/ClaudeForge/Views/*.axaml` flat, which left 16 of the repository's 43
+  AXAML files — everything under `Controls/`, all of `ClaudeForge.Avalonia`,
+  all of `LayeredEditors.Avalonia` — never examined, and did not count
+  `MenuItem` or `RepeatButton` at all. It now walks the three view-bearing
+  assemblies recursively. Five controls that were missing a screen-reader name
+  gained one, each reusing the string key its own label or tooltip already
+  used: the copy items in the Save Changes dialog and Effective Settings, Open
+  File Location in Backup & Restore, and the model picker's `▾` button, whose
+  content is a glyph a screen reader would otherwise announce as "▾".
 - **The status pills' contrast contract is now a test.** `App.axaml` stated in
   prose that every pair clears 4.5:1 on its pill and 7.3:1 on the page, and asked
   whoever retints one to recheck both numbers by hand. `StatusPaletteContrastTests`
@@ -108,6 +118,16 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   catalog-driven and inter-aware rather than hardcoded.
 - Fixed 'missing files' that originate in the 'selected project' tree during backup scenarios
 - Newly available localizations
+- **The status bar's auto-clear runs on an injected `TimeProvider`**, and
+  `StatusController` emits only through the typed `SetActive` / `SetSuccess` /
+  `SetWarning` / `SetFailure` / `SetState` methods — the kind can no longer be
+  passed as a parameter, so it cannot be passed wrongly. Three mutable statics
+  (`DelayOverride` and the two delay properties) and their `ResetForTesting`
+  companion are gone with it; the delays are per instance. The tests advance a
+  fake clock instead of overriding a delay, so none of them sleeps, polls, or
+  needs a pumped dispatcher, and a warning's longer dwell time is now actually
+  asserted rather than assumed. A clear that comes due just before the next
+  message is posted no longer clears that message.
 
 ## [2026.2.527] - [2026.2.528]
 

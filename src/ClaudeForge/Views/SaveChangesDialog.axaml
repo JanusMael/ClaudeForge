@@ -228,6 +228,7 @@
                                                                 <MenuFlyout>
                                                                     <MenuItem
                                                                         Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
                                                                         Tag="FullOld"
                                                                         Click="OnCopyCellValue" />
                                                                 </MenuFlyout>
@@ -248,6 +249,7 @@
                                                                 <MenuFlyout>
                                                                     <MenuItem
                                                                         Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
                                                                         Tag="FullNew"
                                                                         Click="OnCopyCellValue" />
                                                                 </MenuFlyout>
