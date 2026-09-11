@@ -2841,4 +2841,31 @@
     <value>Не удалось открыть прямую ссылку «{0}» — такой страницы или элемента нет.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Ключ записи</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Значение записи</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Тип сервера</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Тип источника</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>полезная нагрузка для сопоставления</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Форматировать</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Переформатировать JSON (разобрать и вывести с отступами).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>Необработанный JSON</value>
+  </data>
 </root>

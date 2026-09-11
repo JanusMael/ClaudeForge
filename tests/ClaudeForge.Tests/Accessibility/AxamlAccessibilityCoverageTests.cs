@@ -122,17 +122,22 @@ public sealed class AxamlAccessibilityCoverageTests
     /// </para>
     /// </summary>
     /// <remarks>
-    /// The two entries below are pre-existing debt that the previous flat
-    /// <c>Views/</c>-only scan could not see; the backfill is tracked in
-    /// <see href="https://github.com/JanusMael/ClaudeForge/issues/45"/>.
-    /// Everything else in all three assemblies is at zero.
+    /// <b>Empty, and that is the point.</b> The two entries this dictionary was
+    /// created to hold — 48 unnamed controls in the app's
+    /// <c>PropertyEditorWrapper.axaml</c> and 6 in the library's — were backfilled in
+    /// <see href="https://github.com/JanusMael/ClaudeForge/issues/45"/>, so every AXAML
+    /// file in all three assemblies now sits at zero and the per-file default is the
+    /// strict rule everywhere.
+    /// <para>
+    /// Leave the dictionary in place rather than deleting it with its last entry. It is
+    /// the declared escape hatch for a future bulk import that cannot be named in the
+    /// same change, and an empty baseline states "nothing is exempt" more legibly than
+    /// its absence. Adding an entry is a deliberate act that shows up in review; the
+    /// companion tracker below reports the total either way.
+    /// </para>
     /// </remarks>
     private static readonly IReadOnlyDictionary<string, int> Baseline =
-        new Dictionary<string, int>(StringComparer.Ordinal)
-        {
-            ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 48,
-            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 6,
-        };
+        new Dictionary<string, int>(StringComparer.Ordinal);
 
     [TestMethod]
     public void EveryAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount()

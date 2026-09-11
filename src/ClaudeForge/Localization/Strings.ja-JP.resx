@@ -2840,4 +2840,31 @@
     <value>ディープリンク「{0}」を開けませんでした — 該当するページまたは項目がありません。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>エントリのキー</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>エントリの値</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>サーバーの種類</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>ソースの種類</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>照合するペイロード</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>フォーマット</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>JSON を再インデントします (解析して整形表示)。</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>生の JSON</value>
+  </data>
 </root>

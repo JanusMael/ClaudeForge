@@ -2829,4 +2829,31 @@ Einige Pfade in den Konfigurationsdateien benötigen anschließend möglicherwei
     <value>Deep-Link „{0}“ konnte nicht geöffnet werden – Seite oder Element existiert nicht.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Eintragsschlüssel</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Eintragswert</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Servertyp</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Quelltyp</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>Payload zum Abgleich</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formatieren</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>JSON neu einrücken (einlesen und formatiert ausgeben).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>Roh-JSON</value>
+  </data>
 </root>

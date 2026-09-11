@@ -26,6 +26,7 @@
             <!-- Row 1: Property name + scope badge + reset button -->
             <DockPanel>
                 <Button DockPanel.Dock="Right"
+                        AutomationProperties.Name="{x:Static loc:WrapperStrings.LabelReset}"
                         Command="{Binding ResetToInheritedCommand}"
                         IsVisible="{Binding CanReset}"
                         Content="{x:Static loc:WrapperStrings.LabelReset}"
@@ -171,7 +172,8 @@
                                      Width="360"
                                      AutomationProperties.Name="{Binding DisplayName}"
                                      AutomationProperties.HelpText="{Binding Description}" />
-                            <Button Content="Browse..."
+                            <Button Content="{x:Static loc:WrapperStrings.LabelBrowse}"
+                                    AutomationProperties.Name="{x:Static loc:WrapperStrings.LabelBrowse}"
                                     Command="{Binding BrowseCommand}" />
                         </StackPanel>
                     </DataTemplate>
@@ -216,6 +218,7 @@
                                     </AutoCompleteBox.ItemTemplate>
                                 </AutoCompleteBox>
                                 <Button Content="▾" Padding="8,4"
+                                        AutomationProperties.Name="{x:Static loc:WrapperStrings.TipShowSuggestions}"
                                         ToolTip.Tip="{x:Static loc:WrapperStrings.TipShowSuggestions}"
                                         Click="OnEnumDropdownToggleClick" />
                             </StackPanel>
@@ -252,6 +255,8 @@
                                                        VerticalAlignment="Center"
                                                        MinWidth="200" />
                                             <Button Content="×"
+                                                    AutomationProperties.Name="{x:Static loc:WrapperStrings.LabelRemove}"
+                                                    AutomationProperties.HelpText="{Binding}"
                                                     Padding="6,2"
                                                     FontSize="12"
                                                     Click="OnRemoveItem" />
@@ -261,9 +266,11 @@
                             </ItemsControl>
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <TextBox Text="{Binding NewItemText}"
+                                         AutomationProperties.Name="{Binding AddItemWatermark}"
                                          PlaceholderText="{Binding AddItemWatermark}"
                                          Width="300" />
-                                <Button Content="Add"
+                                <Button Content="{x:Static loc:WrapperStrings.LabelAdd}"
+                                        AutomationProperties.Name="{x:Static loc:WrapperStrings.LabelAdd}"
                                         Command="{Binding AddItemCommand}" />
                             </StackPanel>
                         </StackPanel>

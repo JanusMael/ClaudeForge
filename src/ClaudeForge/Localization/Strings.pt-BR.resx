@@ -2829,4 +2829,31 @@ Alguns caminhos dentro de arquivos de configuração podem precisar de edições
     <value>Não foi possível abrir o link direto '{0}' — página ou item inexistente.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Chave da entrada</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Valor da entrada</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Tipo de servidor</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Tipo de origem</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>carga útil a corresponder</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formatar</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Recuar novamente o JSON (analisar e formatar).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>JSON bruto</value>
+  </data>
 </root>

@@ -332,8 +332,10 @@
     <!--
         Application-level DataTemplates for the three Claude-specific specialized editors.
         These are not known by LayeredEditors.Avalonia, so they're registered here and
-        resolved by fall-through when the library's PropertyEditorWrapper.ContentControl
-        encounters a type it doesn't recognise.
+        resolved by fall-through when the APP's Controls/PropertyEditorWrapper.axaml
+        ContentControl encounters a type it doesn't recognise.  (Not the library's
+        wrapper: nothing in this app instantiates that one — every PropertyEditorWrapper
+        here resolves to ClaudeForge.Controls, including the recursive ones.)
     -->
     <Application.DataTemplates>
 
