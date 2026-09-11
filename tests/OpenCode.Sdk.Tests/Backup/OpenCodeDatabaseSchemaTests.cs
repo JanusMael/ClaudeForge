@@ -3,15 +3,22 @@ using Bennewitz.Ninja.OpenCode.Sdk.Backup;
 namespace Bennewitz.Ninja.OpenCode.Sdk.Tests.Backup;
 
 /// <summary>
-/// Guards the backup redactor's allow-list against the captured shape of <c>opencode.db</c>.
+/// Guards what the backup claims about <c>opencode.db</c> against the captured shape of the
+/// database itself.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Phase 14 keeps the user's session history by redacting a <b>copy</b> of the database rather
-/// than excluding the file. The cost of that choice is that this project now owns a snapshot of
-/// someone else's schema — and when OpenCode adds a secret column, a redactor built on the old
-/// list ships <b>plaintext tokens</b> while every test still passes. These tests are the price
-/// that makes the choice survivable, and they were written before the redactor for that reason.
+/// Phase 14 keeps the user's session history by including <c>opencode.db</c> in a <c>Full</c>
+/// backup behind an opt-in, with an advisory that the archive contains credentials, and by
+/// excluding it from <c>Sanitized</c> mode. Both rest on a claim about what the file holds, and
+/// the schema behind that claim belongs to upstream. When OpenCode adds a credential table the
+/// advisory must still be true; when it stops storing credentials there, the warning becomes
+/// noise. These tests are what make either one visible.
+/// </para>
+/// <para>
+/// ⚠ Redacting in place is <b>deferred, not ruled out</b> — the measured cost is in the Phase 14
+/// decision block. If it is revisited, this snapshot is what it builds on, so keeping it current
+/// serves both the present design and the one that might replace it.
 /// </para>
 /// <para>
 /// ⛔ <b>Why none of this reads a live database.</b> CI has no OpenCode install, so a test that
@@ -85,8 +92,8 @@ public sealed class OpenCodeDatabaseSchemaTests
     }
 
     /// <summary>
-    /// A redaction entry naming a column that does not exist silently redacts nothing, and
-    /// nothing else in the system would notice.
+    /// An entry naming a column that does not exist means the stated reason this file is
+    /// credential-bearing is no longer true of the file, and nothing else would notice.
     /// </summary>
     [TestMethod]
     public void EverySecretColumnActuallyExistsInTheSchema()
@@ -114,8 +121,9 @@ public sealed class OpenCodeDatabaseSchemaTests
         Assert.AreEqual(
             0,
             missing.Count,
-            "OpenCodeSecretColumns names columns that do not exist, so those entries redact "
-            + "NOTHING while looking like protection:\n  " + string.Join("\n  ", missing));
+            "OpenCodeSecretColumns names columns that are not in the database, so the recorded "
+            + "reason this file is treated as credential-bearing no longer matches it:\n  "
+            + string.Join("\n  ", missing));
     }
 
     /// <summary>
