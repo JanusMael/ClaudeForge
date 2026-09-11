@@ -186,4 +186,45 @@ public sealed class PathRuleMatcherTests
             new PermissionMatchContext("/proj", "/proj", "/home/alice").CaseInsensitivePaths);
         Assert.IsTrue(Match("Read(/src/app.ts)", "/proj/src/app.ts"));
     }
+
+    // -----------------------------------------------------------------------
+    // `**/` spans WHOLE SEGMENTS
+    //
+    // ⛔ This shipped wrong, inherited from GitignoreReader.PatternToRegex, which this
+    // file's own comment says it was adapted from. `**/` emitted `.*`, so `**/foo`
+    // compiled to `^.*foo$` and matched `barfoo`. On a permission surface that meant an
+    // `allow` rule granting more than it said.
+    // -----------------------------------------------------------------------
+
+    [TestMethod]
+    public void DoubleStar_DoesNotMatchPartialSegment()
+    {
+        // `secrets` is a whole segment. `notsecrets` is not, and never was.
+        Assert.IsFalse(
+            Match("Read(**/secrets/key.txt)", "/proj/notsecrets/key.txt"),
+            "`**/` is a segment boundary, not a character run.");
+        Assert.IsFalse(
+            Match("Edit(/src/**/app.ts)", "/proj/src/notapp.ts"),
+            "A mid-pattern `**/` must not swallow part of the following segment.");
+    }
+
+    [TestMethod]
+    public void DoubleStar_StillMatchesAtZeroAndAnyDepth()
+    {
+        // The behaviour the fix must NOT break: `**/` includes the zero-segment case.
+        Assert.IsTrue(Match("Read(**/secrets/key.txt)", "/proj/secrets/key.txt"));
+        Assert.IsTrue(Match("Read(**/secrets/key.txt)", "/proj/a/b/secrets/key.txt"));
+        Assert.IsTrue(Match("Edit(/src/**/app.ts)", "/proj/src/app.ts"));
+        Assert.IsTrue(Match("Edit(/src/**/app.ts)", "/proj/src/x/y/app.ts"));
+    }
+
+    [TestMethod]
+    public void TrailingDoubleStar_IsStillAnyCharacters()
+    {
+        // ⚠ A trailing `**` is NOT the segment rule — `secrets/**` means everything
+        // beneath, and the fix deliberately keeps emitting `.*` for it. Without this
+        // distinction the correction would break every prefix rule in the suite above.
+        Assert.IsTrue(Match("Read(secrets/**)", "/proj/secrets/x.txt"));
+        Assert.IsTrue(Match("Read(secrets/**)", "/proj/secrets/a/b.txt"));
+    }
 }
