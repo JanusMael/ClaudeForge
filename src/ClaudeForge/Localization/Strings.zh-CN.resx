@@ -2836,7 +2836,7 @@
     <value>来源类型</value>
   </data>
   <data name="WatermarkMcpMatchPayload" xml:space="preserve">
-    <value>匹配负载</value>
+    <value>要匹配的有效负载</value>
   </data>
   <data name="ButtonFormatJson" xml:space="preserve">
     <value>格式化</value>
