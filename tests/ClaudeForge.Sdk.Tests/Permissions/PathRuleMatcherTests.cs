@@ -4,7 +4,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Tests.Permissions;
 
 /// <summary>
-/// File-path matching for Read/Edit/Write rules ΓÇö the four gitignore anchor
+/// File-path matching for Read/Edit/Write rules — the four gitignore anchor
 /// types and the <c>*</c> vs <c>**</c> depth semantics.
 /// </summary>
 [TestClass]
@@ -19,7 +19,7 @@ public sealed class PathRuleMatcherTests
     [TestMethod]
     public void BareName_MatchesAtAnyDepth()
     {
-        // Read(.env) Γëí Read(**/.env): any .env at or under cwd.
+        // Read(.env) ≡ Read(**/.env): any .env at or under cwd.
         Assert.IsTrue(Match("Read(.env)", "/proj/.env"));
         Assert.IsTrue(Match("Read(.env)", "/proj/sub/deeper/.env"));
         Assert.IsFalse(Match("Read(.env)", "/other/.env"));
@@ -43,7 +43,7 @@ public sealed class PathRuleMatcherTests
     public void BackslashCandidate_MatchesForwardSlashRule()
     {
         // A Windows-style candidate path (backslashes) matches a forward-slash
-        // rule ΓÇö the matcher normalizes separators on both sides, so the add-time
+        // rule — the matcher normalizes separators on both sides, so the add-time
         // rule normalization and matching agree.
         Assert.IsTrue(Match("Read(src/**)", @"/proj\src\app\main.ts"));
         Assert.IsTrue(Match("Read(src/app/main.ts)", @"/proj\src\app\main.ts"));
@@ -120,7 +120,7 @@ public sealed class PathRuleMatcherTests
     [TestMethod]
     public void AbsoluteDoubleSlash_WithBackslashDrive_Matches()
     {
-        // As a Windows user actually types it: //C:\c\cl\** ΓÇö double-slash anchor
+        // As a Windows user actually types it: //C:\c\cl\** — double-slash anchor
         // plus a backslash drive path. Backslashes normalize to forward, drive to /c.
         Assert.IsTrue(Match(@"Read(//C:\c\cl\**)", @"C:\c\cl\deep\nested\x.txt"));
         Assert.IsTrue(Match(@"Read(//C:\c\cl\**)", "/c/c/cl/x.txt"));
@@ -129,7 +129,7 @@ public sealed class PathRuleMatcherTests
     [TestMethod]
     public void AbsoluteDoubleSlash_WindowsDrive_SingleStarVsDoubleStarVsQuestion()
     {
-        // * stays within one segment; ** is recursive; ? is one non-slash char ΓÇö
+        // * stays within one segment; ** is recursive; ? is one non-slash char —
         // all under a //drive base. Locks the "wildcards behave as globs" contract.
         Assert.IsTrue(Match("Read(//C:/c/cl/*)", @"C:\c\cl\foo.txt"));
         Assert.IsFalse(Match("Read(//C:/c/cl/*)", @"C:\c\cl\sub\foo.txt"));
@@ -151,9 +151,9 @@ public sealed class PathRuleMatcherTests
         Assert.IsTrue(Match("Read(/src/a.ts)", "src/a.ts"));
     }
 
-    // ΓöÇΓöÇ Case sensitivity is driven by the target filesystem (the context), NOT
+    // ── Case sensitivity is driven by the target filesystem (the context), NOT
     //    the host OS. Both contexts below behave identically regardless of where
-    //    the test executes, proving the host-OS static was removed. ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    //    the test executes, proving the host-OS static was removed. ───────────
     private static bool MatchWithCase(string rule, string path, bool caseInsensitive)
     {
         PermissionMatchContext ctx = Ctx with { CaseInsensitivePaths = caseInsensitive };
@@ -190,7 +190,7 @@ public sealed class PathRuleMatcherTests
     // -----------------------------------------------------------------------
     // `**/` spans WHOLE SEGMENTS
     //
-    // Γ¢ö This shipped wrong, inherited from GitignoreReader.PatternToRegex, which this
+    // ⛔ This shipped wrong, inherited from GitignoreReader.PatternToRegex, which this
     // file's own comment says it was adapted from. `**/` emitted `.*`, so `**/foo`
     // compiled to `^.*foo$` and matched `barfoo`. On a permission surface that meant an
     // `allow` rule granting more than it said.
@@ -221,7 +221,7 @@ public sealed class PathRuleMatcherTests
     [TestMethod]
     public void TrailingDoubleStar_IsStillAnyCharacters()
     {
-        // ΓÜá A trailing `**` is NOT the segment rule ΓÇö `secrets/**` means everything
+        // ⚠ A trailing `**` is NOT the segment rule — `secrets/**` means everything
         // beneath, and the fix deliberately keeps emitting `.*` for it. Without this
         // distinction the correction would break every prefix rule in the suite above.
         Assert.IsTrue(Match("Read(secrets/**)", "/proj/secrets/x.txt"));
