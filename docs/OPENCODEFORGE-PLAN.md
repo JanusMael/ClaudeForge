@@ -736,9 +736,9 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
 | 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
-| 14 | Backup / Restore + footprint — ⛔ **"`auth.json` excluded" is NOT ENOUGH; see Phase 16** | archive + prune. ⛔ Secrets live in **`opencode.db`** (`account`/`control_account` access+refresh tokens, `credential.value`, `session_share.secret`), and this machine has no `auth.json` at all | none | — |
+| 14 | Backup / Restore + footprint — ⛔ **"`auth.json` excluded" is NOT ENOUGH; see Phase 16** | archive + prune. ⛔ Secrets also live in **`opencode.db`** (`account`/`control_account` access+refresh tokens, `credential.value`, `session_share.secret`), which the planned JSON-key classifier **cannot reach**. ⚠ `auth.json` is absent here only because nobody has authenticated on this install — **keep excluding it** | none | — |
 | 15 | Packaging — 🔶 **8 slices shipped 2026-09-10; only artwork + docs remain** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · full app-update parity · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
-| 16 | Re-validate against a used install — 🔶 **PROBED 2026-09-10: 6 of 10 answered, 3 against the record** | `scripts/probe-opencode.ps1` + a committed snapshot. ⛔ Still **not a used install** — every session table is empty, so 14 stays blocked | none | — |
+| 16 | Re-validate against a used install — 🔶 **PROBED 2026-09-10: 3 fully · 4 in part · 1 gate cleared · 2 open** | `scripts/probe-opencode.ps1` + a committed snapshot. ⛔ Still **not a used install** — every session table is empty, so 14's *quantitative* half stays blocked | none | — |
 
 ⚠ **Phase 16 is a real phase, promoted from a checkpoint on 2026-09-09**, and it is *blocked on
 data, not effort*: every Phase-0 measurement was taken against an OpenCode install that had never
@@ -5031,21 +5031,61 @@ precedence the way you meant.
 
 ### Phase 14 — Backup / Restore + data footprint
 
+> 🔶 **PHASE 14 — NOT STARTED, AND THREE OF ITS PREMISES WERE CORRECTED 2026-09-10.** Measured
+> against a real install by `scripts/probe-opencode.ps1`; the evidence is
+> [`opencode-install-probe.json`](./opencode-install-probe.json) and the reasoning sits in the
+> callouts below. **Read those before implementing any of this.** All three are premises that
+> get built on long before anyone thinks to recheck them.
+>
+> | Premise as written | Status |
+> |---|---|
+> | Redaction target is `auth.json` | ⛔ **WIDENS.** Secrets are also four tables in `opencode.db` — and the planned `SensitiveKeys`/`JsonRedactor` work is a **JSON-key** classifier that cannot reach a SQLite table at all. A mandatory control that silently does not run |
+> | Footprint categories: `storage/` · `log/` · `snapshot/` · `tool-output/` · `bin/` · `repos/` | ⛔ **Three do not exist, two are empty**, and the list omits every large item actually on disk — `node_modules/` included, at 11× the rest combined |
+> | Exclusions: `node_modules/`, `package-lock.json`, `bun.lock` | ⛔ **Short by two.** Read the `.gitignore` instead — and note it has no trailing newline |
+>
+> ⛔ **The STRUCTURAL half is answerable now; the QUANTITATIVE half is not.** Every figure below
+> comes from an install with **zero sessions**, so these sizes are *structure, not scale*.
+> Growth, retention and prune ordering still need real usage —
+> `usage.isUsedInstall` in the probe snapshot is the gate, and it currently reads `false`.
+
 - **Backup** archives `~/.config/opencode/` — ⛔ **but not verbatim.**
 
-  > ⛔ **A naïve archive of that directory is ~60 MB of regenerable dependencies.**
-  > Measured: OpenCode materializes `node_modules/` (~60 MB, 24 packages),
-  > `package.json`, and `package-lock.json` there to resolve plugin imports, alongside the
-  > `opencode.jsonc` it auto-creates. **Exclude `node_modules/`, `package-lock.json`, and
-  > `bun.lock`** — OpenCode maintains a `.gitignore` in that directory listing exactly
-  > those, so honouring it is both correct and self-maintaining. Same list drives the
-  > Phase 14 footprint page's largest prune candidate.
+  > ⛔ **A naïve archive of that directory is ~52 MB of regenerable dependencies.**
+  > ✅ **Re-measured 2026-09-10** (`docs/opencode-install-probe.json`): `node_modules/` is
+  > **55,058,354 B (52.5 MiB) across 3,458 files and 26 top-level entries** — **99.97 % of the
+  > whole config root** — materialized to resolve plugin imports for a *single* declared
+  > dependency, `@opencode-ai/plugin@1.17.9`. The earlier "~60 MB, 24 packages" was close
+  > enough to act on and wrong enough not to quote.
   >
-  > ⚠ **And `~/.config/opencode/` is no longer the whole story.** State lives in
+  > ⛔ **The exclusion list in this plan is SHORT BY TWO, and the `.gitignore` claim is why.**
+  > This document says OpenCode "maintains a `.gitignore` in that directory listing exactly
+  > those" and then names three: `node_modules/`, `package-lock.json`, `bun.lock`. The real
+  > file has **five entries** — `node_modules`, **`package.json`**, `package-lock.json`,
+  > `bun.lock`, **`.gitignore`**. `package.json` is named in this plan's own prose as
+  > something OpenCode materializes, and then omitted from the list that excludes it.
+  >
+  > ⭐ **So do not hardcode the list — read the `.gitignore`.** "Honouring it is correct and
+  > self-maintaining" was the right instinct; transcribing a snapshot of it into a plan is
+  > what made it wrong. Parse the file at backup time and the count stops mattering.
+  >
+  > ⛔ **And parse it properly: the file has NO TRAILING NEWLINE.** `wc -l` reports **4** for
+  > those five entries, because the last one — `.gitignore` itself — is unterminated. A reader
+  > that only accepts newline-terminated lines silently drops the final entry, and which entry
+  > that is depends on whatever order OpenCode wrote them in. Nothing about this fails loudly:
+  > the backup simply includes a file the user was told it would exclude.
+  >
+  > ⚠ **And `~/.config/opencode/` is not the whole story.** State lives in
   > `~/.local/share/opencode/opencode.db` (SQLite + `-wal`/`-shm`), with additional roots at
-  > `~/.local/state/opencode/` and `~/.cache/opencode/`. Decide explicitly what a backup
-  > means for a live SQLite database — a naïve file copy of a `-wal` database can restore
-  > corrupt. **Re-checkpoint item 2 gates this.**
+  > `~/.local/state/opencode/` and `~/.cache/opencode/`.
+  >
+  > ✅ **Re-checkpoint item 2 no longer gates the STRUCTURE of this decision** — it still gates
+  > the sizes. What is settled: the database is `journal_mode=wal`, and a copy of
+  > `opencode.db` **without** its `-wal` is a stale snapshot by construction. Measured on this
+  > install the WAL happened to carry no rows, but that is a property of an unused install and
+  > must not be designed against. **A backup must either checkpoint first or copy all three
+  > files together** — and the probe demonstrates the cost of getting it wrong the other way:
+  > merely *opening* a `-wal` database checkpoints it, mutating the user's file. A backup is a
+  > read; it must not leave a write behind.
 
   > ⚠ **The archive format embeds product names in entry paths.** `BackupEngine` writes
   > entries as `"ClaudeCode/claude-dir/{name}"` — so the archive's internal layout is
@@ -5072,16 +5112,91 @@ precedence the way you meant.
   > `BackupEngine` work**, not configuration: a product-supplied root set, per-product skip
   > rules (`ShouldSkipHomeSubdir` is Claude-shaped), and a per-product exclusion list for
   > `auth.json`. Budget it accordingly.
-- **Redaction is mandatory.** `~/.local/share/opencode/auth.json` holds **plaintext API
-  keys and OAuth tokens**. Exclude it by default and add `auth` to the sensitive-key
-  classifiers. Per the `AGENTS.md` parity invariant that means editing **both**
-  `SensitiveKeys._segmentExact` (Sdk) and `JsonRedactor.SegmentExact` (Core) with an
-  identical `RedactedMarker` — `SensitiveKeysParityTests` enforces it.
-- **Footprint page** mirrors the Memory page's Tier-2 view over
-  `~/.local/share/opencode/` (override `OPENCODE_DATA_DIR`, which accepts a
-  comma-separated list): `storage/` (`message` · `part` · `project` · `session` ·
-  `session_diff`) · `log/` · `snapshot/` · `tool-output/` · `bin/` · `repos/`.
-  Treat the documented layout as unverified (Spike S3).
+- **Redaction is mandatory** — ⛔⛔ **and the file this plan named is not the whole target.**
+
+  > **`~/.local/share/opencode/auth.json` is absent on this install — but that is NOT evidence
+  > it has gone away, and the distinction matters.** Every account and credential table is at
+  > **0 rows**, which means *nobody has ever authenticated here*. A file that only appears on
+  > sign-in cannot be declared extinct by an install that has never signed in. **Keep
+  > excluding it.**
+  >
+  > ⭐ **What IS machine-independent is the SCHEMA**, and it says secrets go to SQLite by
+  > design. `opencode.db` carries four secret-bearing tables whether or not they hold rows
+  > today, so the requirement **widens** — the database *in addition to* `auth.json`, never
+  > instead of it:
+  >
+  > | Table | Secret-bearing columns |
+  > |---|---|
+  > | `account` | `access_token`, `refresh_token` |
+  > | `control_account` | `access_token`, `refresh_token` |
+  > | `credential` | `value` (`text NOT NULL`) — a generic store, so the column name gives nothing away |
+  > | `session_share` | `secret` |
+  >
+  > ⛔⛔ **THE PLANNED MECHANISM CANNOT REACH THEM, and that is the real gap.**
+  > `SensitiveKeys._segmentExact` and `JsonRedactor.SegmentExact` are **JSON key**
+  > classifiers. They match a property path in a document. A SQLite table has no JSON path,
+  > so adding `auth` to both — the whole of what this bullet asked for — redacts **nothing**
+  > here and every existing test still passes. That is the shape of a mandatory security
+  > control that silently does not run.
+  >
+  > ⭐ **So the decision to make is a policy one, before any code.** Either **exclude
+  > `opencode.db` from the archive entirely** — simple, verifiable, and it costs the user
+  > their session history on restore — or **redact within the database**, which means opening
+  > it, rewriting four tables, and owning a schema that upstream changes without telling us.
+  > The first is the honest default; the second is a feature nobody has asked for yet.
+  > ⚠ Whichever is chosen, `credential.value` proves a **column-name classifier is not enough
+  > either**: the sensitive column is called `value`.
+  >
+  > ⚠ **Keep the `auth` classifier work anyway.** `SensitiveKeys` / `JsonRedactor` parity is
+  > still right for the JSON layers — `opencode.json` can carry provider keys — and
+  > `SensitiveKeysParityTests` still enforces the `RedactedMarker` match. It is simply not
+  > the answer to *this* bullet, and the two must stop being conflated.
+- **Footprint page** mirrors the Memory page's Tier-2 view — ⛔⛔ **but the category list
+  below was documentation, and measuring it broke most of it.**
+
+  > This plan listed, over `~/.local/share/opencode/` alone: `storage/` (`message` · `part` ·
+  > `project` · `session` · `session_diff`) · `log/` · `snapshot/` · `tool-output/` · `bin/` ·
+  > `repos/`, flagged *"treat the documented layout as unverified (Spike S3)"*. It is now
+  > verified, and **a page built to that list would show three categories that do not exist,
+  > two that are empty, and would miss every large item on disk.**
+  >
+  > | Planned | Measured 2026-09-10 |
+  > |---|---|
+  > | `storage/` + its five children | ⛔ **DOES NOT EXIST.** Superseded by SQLite — `session`, `message`, `part` are *tables*. This is the substitution the plan feared, confirmed |
+  > | `log/` | ✅ exists — 22,020 B, 1 file |
+  > | `snapshot/` | ⛔ absent |
+  > | `tool-output/` | ⛔ absent |
+  > | `bin/` | ⚠ exists **under `cache`, not `data`** — and **EMPTY**, inverting its billing as the largest prune candidate |
+  > | `repos/` | ⚠ exists, **EMPTY** |
+  >
+  > ⚠ `snapshot/` and `tool-output/` may simply be usage-created; absence on an unused install
+  > is not proof they never appear. `storage/` is different — its contents are demonstrably
+  > elsewhere, so that one is a permanent correction rather than a pending one.
+  >
+  > ⭐ **What the page must actually show, and none of it was on the list:**
+  >
+  > | Item | Root | Measured |
+  > |---|---|---|
+  > | `node_modules/` | config | **55,058,354 B** — **11.2× everything else on this list combined**, and the one real prune target |
+  > | `models.json` | cache | 4,332,470 B — the entire cache is this one file |
+  > | `opencode.db` (+ `-wal`, `-shm`) | data | 542,216 B combined, and **the only irreplaceable item** |
+  > | `log/` | data | 22,020 B |
+  > | `locks/` | state | 141 B |
+  >
+  > ⛔ **The prune ordering and the backup ordering are OPPOSITE, and the page has to say so.**
+  > The biggest item is the most disposable (`node_modules` regenerates from `package.json`)
+  > and the smallest meaningful one is the only thing a user cannot get back. A footprint page
+  > sorted by size alone puts the irreplaceable database at the bottom and invites exactly the
+  > wrong click.
+  >
+  > ⚠ **Still unverified:** the claim that `OPENCODE_DATA_DIR` overrides the data root and
+  > accepts a comma-separated list. It is not one of the four variables `OpenCodeEnvironment`
+  > models, and the probe did not test it. Do not build a multi-root walker on it without
+  > measuring first.
+  >
+  > ⛔ **Sizes here are STRUCTURE, not scale.** Every figure is from an install with zero
+  > sessions. Growth rates, retention and what is worth surfacing still need a used install —
+  > that half of Phase 16 is genuinely open.
 
   > ⚠ **"Reuses `FootprintService` + `MemoryArtifactDeleter`" was another name-level claim.**
   > `FootprintService.GetStatsAsync` iterates `Enum.GetValues<FootprintCategory>()` — a
