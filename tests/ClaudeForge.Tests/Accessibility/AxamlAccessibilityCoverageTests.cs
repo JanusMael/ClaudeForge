@@ -4,18 +4,24 @@ using System.Xml.Linq;
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 
 /// <summary>
-/// Enforces invariant <b>I20</b> — every interactive control in
-/// <c>src/ClaudeForge/Views/*.axaml</c> MUST have
-/// <c>AutomationProperties.Name</c> so screen readers (Windows Narrator /
-/// NVDA / JAWS, macOS VoiceOver, Linux Orca) can announce the control to
-/// blind and low-vision users.
+/// Enforces invariant <b>I20</b> — every interactive control in the app's AXAML
+/// MUST have <c>AutomationProperties.Name</c> so screen readers (Windows
+/// Narrator / NVDA / JAWS, macOS VoiceOver, Linux Orca) can announce the
+/// control to blind and low-vision users.
 ///
 /// <para>
-/// <b>Operating principle: incremental backfill via baseline.</b> Adding
-/// <c>AutomationProperties.Name</c> to ~140 existing controls is a
-/// substantial mechanical change.  Rather than block all other work
-/// behind that backfill, this test asserts the per-file unnamed-control
-/// count is at or BELOW a snapshot baseline taken 2026-05-15.  PRs that:
+/// <b>Scope: every AXAML file in the three view-bearing assemblies</b>, walked
+/// recursively — <c>src/ClaudeForge</c>, <c>src/ClaudeForge.Avalonia</c> and
+/// <c>src/LayeredEditors.Avalonia</c>.  This previously scanned
+/// <c>src/ClaudeForge/Views</c> alone, flat, which left 16 of the repository's
+/// 43 AXAML files unexamined — including everything under <c>Controls/</c>,
+/// where the great majority of the remaining debt turned out to live.
+/// </para>
+///
+/// <para>
+/// <b>Operating principle: incremental backfill via baseline.</b> This test
+/// asserts the per-file unnamed-control count is at or BELOW a snapshot
+/// baseline.  PRs that:
 /// </para>
 /// <list type="bullet">
 ///   <item>Add a NEW unnamed control to a file → test fails (count grew).</item>
@@ -52,10 +58,18 @@ public sealed class AxamlAccessibilityCoverageTests
     /// click handler, Image) are intentionally NOT in this set — their
     /// accessibility story is the surrounding control they live inside.
     /// </summary>
+    /// <remarks>
+    /// <c>MenuItem</c> and <c>RepeatButton</c> were added when the scan
+    /// widened.  A menu is a primary interactive surface and a context-menu
+    /// entry is exactly the kind of control a screen-reader user reaches for,
+    /// so leaving it out meant every <c>MenuFlyout</c> in the app was
+    /// unasserted.
+    /// </remarks>
     private static readonly HashSet<string> InteractiveControlElements = new(StringComparer.Ordinal)
     {
         "Button",
         "ToggleButton",
+        "RepeatButton",
         "TextBox",
         "ComboBox",
         "CheckBox",
@@ -69,90 +83,88 @@ public sealed class AxamlAccessibilityCoverageTests
         "DatePicker",
         "TimePicker",
         "CalendarDatePicker",
+        "MenuItem",
     };
 
+    /// <summary>The assemblies that carry AXAML, relative to the repo root.</summary>
+    private static readonly string[] ScannedRoots =
+    [
+        Path.Combine("src", "ClaudeForge"),
+        Path.Combine("src", "ClaudeForge.Avalonia"),
+        Path.Combine("src", "LayeredEditors.Avalonia"),
+    ];
+
     /// <summary>
-    /// Snapshot baseline taken 2026-05-15 when invariant I20 landed.  Each
-    /// entry is the count of interactive controls in that file that did NOT
-    /// have <c>AutomationProperties.Name</c> at that moment.  Backfill PRs
-    /// MUST decrement these toward zero; new unnamed controls FAIL the
-    /// test.
+    /// Generated resource dictionaries — carried verbatim from Fluent / Simple
+    /// by `theme-audit compat` and never hand-edited.  They define brushes, not
+    /// controls, so they have nothing to name.
+    /// </summary>
+    private static readonly string[] ExcludedFragments =
+    [
+        Path.Combine("Resources", "Compat") + Path.DirectorySeparatorChar,
+    ];
+
+    /// <summary>
+    /// Each entry is the count of interactive controls in that file that do NOT
+    /// have <c>AutomationProperties.Name</c>.  Backfill PRs MUST decrement these
+    /// toward zero; new unnamed controls FAIL the test.
     ///
     /// <para>
-    /// A missing entry means "the file should be at zero" — so a NEW
-    /// AXAML file added to <c>Views/</c> automatically gets the strict
-    /// rule (no unnamed controls allowed).  This is the desired ratchet
-    /// behaviour.
+    /// A missing entry means "the file should be at zero" — so a NEW AXAML file
+    /// automatically gets the strict rule.  This is the desired ratchet.
+    /// </para>
+    ///
+    /// <para>
+    /// Keys are repo-relative paths with forward slashes, because the widened
+    /// scan is recursive and a bare filename is no longer unique —
+    /// <c>PropertyEditorWrapper.axaml</c> exists in two assemblies (see
+    /// <see href="https://github.com/JanusMael/ClaudeForge/issues/46"/>).
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// The two entries below are pre-existing debt that the previous flat
+    /// <c>Views/</c>-only scan could not see; the backfill is tracked in
+    /// <see href="https://github.com/JanusMael/ClaudeForge/issues/45"/>.
+    /// Everything else in all three assemblies is at zero.
+    /// </remarks>
     private static readonly IReadOnlyDictionary<string, int> Baseline =
         new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            // Snapshot taken via XDocument scan 2026-05-15.  Sorted alphabetically.
-            // Decrement each entry as backfill PRs land.  Set to 0 when a file is
-            // fully named; entries at 0 can stay in the baseline for self-
-            // documentation or be removed (missing entry → strict 0 default).
-            ["AboutDialog.axaml"] = 0, 
-            ["AboutEditorView.axaml"] = 0, 
-            ["BackupRestoreView.axaml"] = 0,
-            ["EffectiveSettingsView.axaml"] = 0,
-            ["EnabledPluginsEditorView.axaml"] = 0, 
-            ["EnvironmentEditorView.axaml"] = 0,
-            ["EssentialsView.axaml"] = 0, 
-            ["HooksEditorView.axaml"] = 0,
-            ["MainWindow.axaml"] = 0, 
-            ["MarketplacesEditorView.axaml"] = 0,
-            ["McpServersEditorView.axaml"] = 0,
-            ["MemoryEditorView.axaml"] = 0,
-            ["PermissionsEditorView.axaml"] = 0,
-            ["ProfilesView.axaml"] = 0,
-            ["SaveChangesDialog.axaml"] = 0, 
-            ["SettingsGroupEditorView.axaml"] = 0, 
-            // WelcomeView.axaml has no interactive controls, so no entry needed.
+            ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 48,
+            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 6,
         };
 
     [TestMethod]
-    public void EveryViewsAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount()
+    public void EveryAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount()
     {
-        string viewsDir = FindViewsDirectory();
-        string[] axamlFiles = Directory.GetFiles(viewsDir, "*.axaml");
+        Dictionary<string, int> actual = ScanAll();
 
-        Assert.IsTrue(axamlFiles.Length >= 10,
-            $"Expected to find at least 10 AXAML files under {viewsDir}, got {axamlFiles.Length}. " +
-            "FindViewsDirectory likely resolved the wrong path.");
+        Assert.IsTrue(actual.Count >= 30,
+            $"Expected to find at least 30 AXAML files across {string.Join(", ", ScannedRoots)}, " +
+            $"got {actual.Count}. FindRepoRoot likely resolved the wrong path.");
 
-        Dictionary<string, int> actual = new(StringComparer.Ordinal);
-        foreach (string path in axamlFiles)
-        {
-            string fileName = Path.GetFileName(path);
-            actual[fileName] = CountUnnamedInteractiveControls(path);
-        }
-
-        List<string> failures = new();
+        List<string> failures = [];
 
         // (1) Existing files: count must be ≤ baseline.
-        foreach ((string file, int count) in actual)
+        foreach ((string file, int count) in actual.OrderBy(kv => kv.Key, StringComparer.Ordinal))
         {
-            int expected = Baseline.TryGetValue(file, out int b) ? b : 0;
+            int expected = Baseline.GetValueOrDefault(file, 0);
             if (count > expected)
             {
                 failures.Add(
                     $"  • {file}: {count} unnamed interactive controls (baseline = {expected}). " +
-                    $"Add AutomationProperties.Name to the new control(s), OR if a control genuinely " +
-                    $"cannot have a Name, raise the baseline (and explain why in a comment).");
+                    "Add AutomationProperties.Name to the new control(s), OR if a control genuinely " +
+                    "cannot have a Name, raise the baseline (and explain why in a comment).");
             }
         }
 
         // (2) Baseline entries that no longer exist on disk: author renamed
         // or deleted the file and forgot to update the dictionary.
-        foreach (string file in Baseline.Keys)
+        foreach (string file in Baseline.Keys.Where(f => !actual.ContainsKey(f)))
         {
-            if (!actual.ContainsKey(file))
-            {
-                failures.Add(
-                    $"  • Baseline entry '{file}' no longer exists on disk. " +
-                    $"Remove from Baseline dictionary in AxamlAccessibilityCoverageTests.cs.");
-            }
+            failures.Add(
+                $"  • Baseline entry '{file}' no longer exists on disk. " +
+                "Remove it from the Baseline dictionary in AxamlAccessibilityCoverageTests.cs.");
         }
 
         if (failures.Count > 0)
@@ -163,7 +175,7 @@ public sealed class AxamlAccessibilityCoverageTests
                 "\n\nFix:\n" +
                 "  1. Add AutomationProperties.Name=\"{x:Static loc:Strings.AutoNameXxx}\" to the " +
                 "control, with a matching resx key in Strings.resx + Strings.zh-CN.resx + Designer.cs.\n" +
-                "  2. Reuse an existing button-label key when the visible label is itself a good " +
+                "  2. Reuse an existing label key when the visible label is itself a good " +
                 "screen-reader announcement.\n" +
                 "  3. See CLAUDE.md \"Accessibility — screen-reader names\" and AGENTS.md invariant I20.\n");
         }
@@ -178,12 +190,14 @@ public sealed class AxamlAccessibilityCoverageTests
         // one test-run away.  When the total reaches zero, delete this test
         // and the Baseline dictionary; the per-file zero default in the
         // companion test becomes the strict rule everywhere.
-        string viewsDir = FindViewsDirectory();
         int total = 0;
-        foreach (string path in Directory.GetFiles(viewsDir, "*.axaml").OrderBy(p => p))
+        foreach ((string file, int count) in ScanAll().OrderBy(kv => kv.Key, StringComparer.Ordinal))
         {
-            int count = CountUnnamedInteractiveControls(path);
-            Console.WriteLine($"[AxamlAccessibilityCoverage]   {Path.GetFileName(path),-40} {count,4} unnamed");
+            if (count > 0)
+            {
+                Console.WriteLine($"[AxamlAccessibilityCoverage]   {file,-70} {count,4} unnamed");
+            }
+
             total += count;
         }
 
@@ -194,6 +208,50 @@ public sealed class AxamlAccessibilityCoverageTests
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Every AXAML file under <see cref="ScannedRoots"/>, keyed by repo-relative
+    /// path with forward slashes, mapped to its unnamed-interactive-control count.
+    /// </summary>
+    private static Dictionary<string, int> ScanAll()
+    {
+        string root = FindRepoRoot();
+        Dictionary<string, int> actual = new(StringComparer.Ordinal);
+
+        foreach (string relativeRoot in ScannedRoots)
+        {
+            string directory = Path.Combine(root, relativeRoot);
+            if (!Directory.Exists(directory))
+            {
+                continue;
+            }
+
+            foreach (string path in Directory.EnumerateFiles(directory, "*.axaml", SearchOption.AllDirectories))
+            {
+                if (IsExcluded(path))
+                {
+                    continue;
+                }
+
+                string key = Path.GetRelativePath(root, path).Replace('\\', '/');
+                actual[key] = CountUnnamedInteractiveControls(path);
+            }
+        }
+
+        return actual;
+    }
+
+    private static bool IsExcluded(string path)
+    {
+        string obj = Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar;
+        string bin = Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar;
+        if (path.Contains(obj, StringComparison.Ordinal) || path.Contains(bin, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return ExcludedFragments.Any(fragment => path.Contains(fragment, StringComparison.Ordinal));
+    }
 
     /// <summary>
     /// Counts interactive controls in <paramref name="axamlPath"/> that do
@@ -241,27 +299,26 @@ public sealed class AxamlAccessibilityCoverageTests
     }
 
     /// <summary>
-    /// Walks up from the test's runtime base directory to the repo root,
-    /// then down to <c>src/ClaudeForge/Views</c>.  Necessary because the
-    /// AXAML sources aren't bundled in the test assembly and are accessed
-    /// via filesystem path during test execution.
+    /// Walks up from the test's runtime base directory to the repo root — the
+    /// directory holding <c>ClaudeForge.slnx</c>.  Necessary because the AXAML
+    /// sources aren't bundled in the test assembly and are accessed via
+    /// filesystem path during test execution.
     /// </summary>
-    private static string FindViewsDirectory()
+    private static string FindRepoRoot()
     {
         string? dir = AppContext.BaseDirectory;
         for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
         {
-            string candidate = Path.Combine(dir, "src", "ClaudeForge", "Views");
-            if (Directory.Exists(candidate))
+            if (File.Exists(Path.Combine(dir, "ClaudeForge.slnx")))
             {
-                return candidate;
+                return dir;
             }
 
             dir = Path.GetDirectoryName(dir);
         }
 
         throw new InvalidOperationException(
-            "Could not locate src/ClaudeForge/Views/ by walking up from " +
-            $"AppContext.BaseDirectory = '{AppContext.BaseDirectory}'.");
+            "Could not locate the repo root (the directory holding ClaudeForge.slnx) by walking up " +
+            $"from AppContext.BaseDirectory = '{AppContext.BaseDirectory}'.");
     }
 }
