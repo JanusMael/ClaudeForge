@@ -583,7 +583,12 @@ public sealed class MemoryEditorViewModelTests
     public void EveryFootprintCategory_HasNonEmptyTooltip()
     {
         // Same regression lock for FootprintRowViewModel.Tooltip.
-        foreach (FootprintCategory cat in Enum.GetValues(typeof(FootprintCategory)))
+        //
+        // ⚠ This said `Enum.GetValues(typeof(FootprintCategory))` until the category set moved into
+        // product data. That is a REFLECTION call, so it kept compiling after the type stopped
+        // being an enum and failed at run time with "Type provided must be an Enum" — the one call
+        // site in this conversion the compiler could not point at. `.All` is the replacement.
+        foreach (FootprintCategory cat in FootprintCategory.All)
         {
             FootprintCategoryStats stats = new(
                 Category: cat,

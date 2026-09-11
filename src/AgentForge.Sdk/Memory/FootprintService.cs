@@ -4,39 +4,74 @@ using Bennewitz.Ninja.AgentForge.Core.Backup;
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
-/// Tier 2 footprint stats + per-category deletion. Walks the on-disk paths
-/// described by each <see cref="FootprintCategory"/> and reports aggregate
-/// file count / byte size; <see cref="DeleteAsync"/> wipes the whole
-/// category in one call (with confirmation handled by the GUI layer).
+/// Tier 2 footprint stats + per-category deletion. Walks the on-disk locations each
+/// <see cref="FootprintCategory"/> declares and reports aggregate file count / byte size;
+/// <see cref="DeleteAsync"/> wipes the whole category in one call (with confirmation handled by
+/// the GUI layer).
 /// </summary>
 /// <remarks>
 /// <para>
-/// File-system access goes through <see cref="IBackupFileSystem"/> so tests
-/// can inject an in-memory fake with deterministic IO failures. Production
-/// callers pass <see cref="RealBackupFileSystem.Instance"/>.
+/// <b>The category set is product data.</b> This service used to iterate
+/// <c>Enum.GetValues&lt;FootprintCategory&gt;()</c> and hand-dispatch each of Claude's seven
+/// members to a <c>~/.claude</c> subpath. It now walks whatever <see cref="FootprintCatalog"/> and
+/// <see cref="FootprintRoots"/> it was handed, so a product whose footprint spans four unrelated
+/// roots is a table rather than a rewrite.
 /// </para>
 /// <para>
-/// All operations are tolerant of missing directories — a category whose
-/// directory does not exist returns <c>FileCount = 0, TotalBytes = 0</c>
-/// and <see cref="DeleteAsync"/> is a no-op. Per-file IO failures during
-/// enumeration are silently skipped (the partially-deleted state is
-/// surfaced via the rerun-after-delete <see cref="GetStatsAsync"/> call).
+/// File-system access goes through <see cref="IBackupFileSystem"/> so tests can inject an
+/// in-memory fake with deterministic IO failures. Production callers pass
+/// <see cref="RealBackupFileSystem.Instance"/>.
+/// </para>
+/// <para>
+/// All operations are tolerant of missing directories — a category whose directory does not exist
+/// returns <c>FileCount = 0, TotalBytes = 0</c> and <see cref="DeleteAsync"/> is a no-op. Per-file
+/// IO failures during enumeration are silently skipped (the partially-deleted state is surfaced
+/// via the rerun-after-delete <see cref="GetStatsAsync"/> call).
+/// </para>
+/// <para>
+/// ⚠ <b>The per-project transcript methods below are still Claude-shaped</b> — the mangled-name
+/// decode and the <c>projects/</c> walk are Claude Code's layout, not a general one. They are left
+/// as residue rather than forced into the catalog: OpenCode's equivalent is SQLite rows, and a
+/// shared abstraction over a directory walk and a database query would be a name, not a
+/// mechanism.
 /// </para>
 /// </remarks>
 public sealed class FootprintService
 {
     private readonly IBackupFileSystem _fs;
     private readonly ClaudeArtifactPaths? _paths;
+    private readonly FootprintCatalog _catalog;
+    private readonly Func<FootprintRoots>? _roots;
 
     /// <param name="fs">File-system seam; defaults to the real one.</param>
     /// <param name="paths">
     /// Where this profile's Claude files live. Defaults to
     /// <see cref="ClaudeArtifactPaths.Default"/>, resolved per use rather than captured here.
     /// </param>
-    public FootprintService(IBackupFileSystem? fs = null, ClaudeArtifactPaths? paths = null)
+    /// <param name="catalog">
+    /// The product's category set. Defaults to <see cref="FootprintCatalog.Default"/> — Claude's
+    /// seven — so every existing call site keeps its behaviour.
+    /// </param>
+    /// <param name="roots">
+    /// Factory for the named roots the catalog is expressed against. Defaults to the single
+    /// <c>"home"</c> root taken from <paramref name="paths"/>.
+    /// <para>
+    /// ⛔ <b>A factory, not an instance.</b> The roots derive from <c>PlatformPaths.UserProfile</c>,
+    /// which honours an <c>AsyncLocal</c> test override; capturing them would pin whichever
+    /// sandbox was current when the client was first built. Same reason
+    /// <see cref="Paths"/> resolves lazily.
+    /// </para>
+    /// </param>
+    public FootprintService(
+        IBackupFileSystem? fs = null,
+        ClaudeArtifactPaths? paths = null,
+        FootprintCatalog? catalog = null,
+        Func<FootprintRoots>? roots = null)
     {
         _fs = fs ?? RealBackupFileSystem.Instance;
         _paths = paths;
+        _catalog = catalog ?? FootprintCatalog.Default;
+        _roots = roots;
     }
 
     /// <summary>
@@ -53,10 +88,16 @@ public sealed class FootprintService
     /// </remarks>
     private ClaudeArtifactPaths Paths => _paths ?? ClaudeArtifactPaths.Default;
 
+    /// <summary>The named roots, resolved per use for the reason the constructor documents.</summary>
+    private FootprintRoots Roots =>
+        _roots is not null
+            ? _roots()
+            : FootprintRoots.Single(FootprintRoots.Home, Paths.ClaudeHome);
+
     /// <summary>
-    /// Compute stats for every <see cref="FootprintCategory"/> in one pass.
-    /// Returns one row per enum value, in declaration order. Cancellable —
-    /// honoured between categories AND between files within a category.
+    /// Compute stats for every category in this service's catalog, in one pass. Returns one row
+    /// per category, in catalog order. Cancellable — honoured between categories AND between
+    /// files within a category.
     /// </summary>
     public async Task<IReadOnlyList<FootprintCategoryStats>> GetStatsAsync(CancellationToken ct)
     {
@@ -64,11 +105,13 @@ public sealed class FootprintService
         // UI thread; per-file enumeration is synchronous via IBackupFileSystem.
         return await Task.Run(() =>
         {
-            List<FootprintCategoryStats> rows = new(Enum.GetValues<FootprintCategory>().Length);
-            foreach (FootprintCategory category in Enum.GetValues<FootprintCategory>())
+            FootprintRoots roots = Roots;
+            IReadOnlyList<FootprintCategory> categories = _catalog.All;
+            List<FootprintCategoryStats> rows = new(categories.Count);
+            foreach (FootprintCategory category in categories)
             {
                 ct.ThrowIfCancellationRequested();
-                rows.Add(ComputeStatsFor(category, ct));
+                rows.Add(ComputeStatsFor(category, roots, ct));
             }
 
             return (IReadOnlyList<FootprintCategoryStats>)rows;
@@ -88,9 +131,10 @@ public sealed class FootprintService
     /// </remarks>
     public async Task DeleteAsync(FootprintCategory category, CancellationToken ct)
     {
+        FootprintRoots roots = Roots;
         await Task.Run(() =>
         {
-            foreach (string path in EnumerateCategoryFiles(category))
+            foreach (string path in EnumerateCategoryFiles(category, roots))
             {
                 ct.ThrowIfCancellationRequested();
                 _fs.DeleteFile(path);
@@ -309,13 +353,16 @@ public sealed class FootprintService
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private FootprintCategoryStats ComputeStatsFor(FootprintCategory category, CancellationToken ct)
+    private FootprintCategoryStats ComputeStatsFor(
+        FootprintCategory category,
+        FootprintRoots roots,
+        CancellationToken ct)
     {
-        string path = ResolveCategoryPath(Paths, category);
+        string path = ResolveCategoryPath(roots, category);
         int fileCount = 0;
         long totalBytes = 0;
 
-        foreach (string file in EnumerateCategoryFiles(category))
+        foreach (string file in EnumerateCategoryFiles(category, roots))
         {
             ct.ThrowIfCancellationRequested();
             try
@@ -340,62 +387,31 @@ public sealed class FootprintService
             AbsolutePath: path,
             FileCount: fileCount,
             TotalBytes: totalBytes,
-            IsInStandardBackup: IsInStandardBackup(category));
+            IsInStandardBackup: category.IsInStandardBackup);
     }
 
     /// <summary>
-    /// Enumerate every concrete file for a category. The returned paths are
-    /// always absolute. Missing directories yield zero results.
+    /// Enumerate every concrete file for a category, across all of its declared sources. The
+    /// returned paths are always absolute. Missing directories and unknown roots yield nothing.
     /// </summary>
-    private IEnumerable<string> EnumerateCategoryFiles(FootprintCategory category)
+    private IEnumerable<string> EnumerateCategoryFiles(FootprintCategory category, FootprintRoots roots)
     {
-        string home = Paths.ClaudeHome;
+        IEnumerable<string> all = Array.Empty<string>();
 
-        switch (category)
+        foreach (FootprintSource source in category.Definition.Sources)
         {
-            case FootprintCategory.SessionTranscripts:
+            string? resolved = source.Resolve(roots);
+            if (resolved is null)
             {
-                string dir = Path.Combine(home, "projects");
-                return SafeEnumerate(dir, "*.jsonl", recursive: true);
+                continue;
             }
 
-            case FootprintCategory.SessionMetadata:
-            {
-                // Three sibling directories — concatenate their walks.
-                IEnumerable<string> sessions = SafeEnumerate(Path.Combine(home, "sessions"), "*", recursive: true);
-                IEnumerable<string> sessionData =
-                    SafeEnumerate(Path.Combine(home, "session-data"), "*", recursive: true);
-                IEnumerable<string> sessionEnv = SafeEnumerate(Path.Combine(home, "session-env"), "*", recursive: true);
-                return sessions.Concat(sessionData).Concat(sessionEnv);
-            }
-
-            case FootprintCategory.PromptHistory:
-            {
-                string file = Path.Combine(home, "history.jsonl");
-                return _fs.FileExists(file) ? new[] { file } : Array.Empty<string>();
-            }
-
-            case FootprintCategory.BashCommandLog:
-            {
-                string file = Path.Combine(home, "bash-commands.log");
-                return _fs.FileExists(file) ? new[] { file } : Array.Empty<string>();
-            }
-
-            case FootprintCategory.CostTrackerLog:
-            {
-                string file = Path.Combine(home, "cost-tracker.log");
-                return _fs.FileExists(file) ? new[] { file } : Array.Empty<string>();
-            }
-
-            case FootprintCategory.Todos:
-                return SafeEnumerate(Path.Combine(home, "todos"), "*", recursive: true);
-
-            case FootprintCategory.FileEditHistory:
-                return SafeEnumerate(Path.Combine(home, "file-history"), "*", recursive: true);
-
-            default:
-                return Array.Empty<string>();
+            all = source.IsFile
+                ? all.Concat(_fs.FileExists(resolved) ? new[] { resolved } : Array.Empty<string>())
+                : all.Concat(SafeEnumerate(resolved, source.Pattern, source.Recursive));
         }
+
+        return all;
     }
 
     private IEnumerable<string> SafeEnumerate(string dir, string searchPattern, bool recursive)
@@ -422,7 +438,7 @@ public sealed class FootprintService
     /// Resolve the canonical anchor path for the category — used as the
     /// "click-to-copy" / "Reveal in Explorer" destination on the row.
     /// For multi-directory categories like
-    /// <see cref="FootprintCategory.SessionMetadata"/>, returns the parent
+    /// <see cref="FootprintCategory.SessionMetadata"/>, this is the parent
     /// (<c>~/.claude</c>) so the user can see all three siblings at once.
     /// </summary>
     public static string ResolveCategoryPath(FootprintCategory category)
@@ -431,50 +447,64 @@ public sealed class FootprintService
     }
 
     /// <summary>
-    /// The same resolution against an explicitly supplied set of paths.
+    /// The same resolution against an explicitly supplied set of Claude paths.
     /// </summary>
     /// <remarks>
-    /// ⚠ The category sub-paths (<c>projects</c>, <c>todos</c>, <c>history.jsonl</c>, …) stay here
-    /// rather than moving onto <see cref="ClaudeArtifactPaths"/>: they are what a
-    /// <see cref="FootprintCategory"/> MEANS, and a path provider that enumerated them would have
-    /// to be widened every time a category is added.
+    /// ⚠ Convenience for Claude call sites: wraps the single <c>"home"</c> root and delegates. A
+    /// product with more than one root calls the <see cref="FootprintRoots"/> overload.
     /// </remarks>
     public static string ResolveCategoryPath(ClaudeArtifactPaths paths, FootprintCategory category)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        return ResolveCategoryPath(FootprintRoots.Single(FootprintRoots.Home, paths.ClaudeHome), category);
+    }
 
-        string home = paths.ClaudeHome;
-        return category switch
+    /// <summary>
+    /// The anchor path for a category against an arbitrary root set.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>The sub-paths are no longer here.</b> They used to be a hand-written <c>switch</c> in
+    /// this file, on the reasoning that they are what a category MEANS. That is still true — they
+    /// just live on <see cref="FootprintCategoryDefinition"/> now, where a second product can
+    /// supply its own without editing this assembly.
+    /// <para>
+    /// Falls back to the category's first root when the anchor names a root the product does not
+    /// supply, and to the empty string when it supplies none — a reveal button with no target is
+    /// better than a throw inside the stats walk.
+    /// </para>
+    /// </remarks>
+    public static string ResolveCategoryPath(FootprintRoots roots, FootprintCategory category)
+    {
+        ArgumentNullException.ThrowIfNull(roots);
+
+        FootprintCategoryDefinition definition = category.Definition;
+        string? anchor = definition.Anchor.Resolve(roots);
+        if (anchor is not null)
         {
-            FootprintCategory.SessionTranscripts => Path.Combine(home, "projects"),
-            FootprintCategory.SessionMetadata => home, // sessions / session-data / session-env all live here
-            FootprintCategory.PromptHistory => Path.Combine(home, "history.jsonl"),
-            FootprintCategory.BashCommandLog => Path.Combine(home, "bash-commands.log"),
-            FootprintCategory.CostTrackerLog => Path.Combine(home, "cost-tracker.log"),
-            FootprintCategory.Todos => Path.Combine(home, "todos"),
-            FootprintCategory.FileEditHistory => Path.Combine(home, "file-history"),
-            var _ => home,
-        };
+            return anchor;
+        }
+
+        foreach (FootprintSource source in definition.Sources)
+        {
+            if (source.Resolve(roots) is { } fallback)
+            {
+                return fallback;
+            }
+        }
+
+        return string.Empty;
     }
 
     /// <summary>
     /// Whether the Standard backup mode preserves this category. Mirrors the
-    /// decisions in <c>BackupEngine.ShouldSkipHomeSubdir</c> so the Memory
-    /// page's "In Standard backup?" badge stays in lockstep with the
-    /// Backup/Restore page.
+    /// product's backup skip rules so the Memory page's "In Standard backup?"
+    /// badge stays in lockstep with the Backup/Restore page.
     /// </summary>
     /// <remarks>
-    /// Currently <c>BackupEngine</c> only skips <c>projects</c> from
-    /// Standard mode (Full mode includes it). Every other footprint category
-    /// IS preserved by Standard. If new skip rules are added there, this
-    /// switch must be updated in lockstep.
+    /// ⛔ Now read from <see cref="FootprintCategoryDefinition.IsInStandardBackup"/> rather than a
+    /// <c>switch</c> here. For Claude that still means: <c>~/.claude/projects</c> is the one
+    /// subdirectory Standard skips, and every other category is preserved. If new skip rules are
+    /// added to <c>BackupEngine.ShouldSkipHomeSubdir</c>, the catalog must change in lockstep.
     /// </remarks>
-    public static bool IsInStandardBackup(FootprintCategory category)
-    {
-        return category switch
-        {
-            FootprintCategory.SessionTranscripts => false, // ~/.claude/projects skipped from Standard.
-            var _ => true,
-        };
-    }
+    public static bool IsInStandardBackup(FootprintCategory category) => category.IsInStandardBackup;
 }

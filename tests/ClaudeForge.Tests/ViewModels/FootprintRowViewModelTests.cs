@@ -43,52 +43,73 @@ public sealed class FootprintRowViewModelTests
 
     // ── HumanLabel switch (lines 25-35) ─────────────────────────────
 
+    // ⚠ These were seven [DataRow(FootprintCategory.X)] attributes each. FootprintCategory became
+    // a struct when the category set moved into product data, and a struct is not a constant
+    // expression, so it cannot be an attribute argument. Enumerating the catalog is the better
+    // shape anyway: adding a category to the catalog now extends the test automatically, where
+    // seven hand-written rows would have silently kept covering six of seven.
     [TestMethod]
-    [DataRow(FootprintCategory.SessionTranscripts)]
-    [DataRow(FootprintCategory.SessionMetadata)]
-    [DataRow(FootprintCategory.PromptHistory)]
-    [DataRow(FootprintCategory.BashCommandLog)]
-    [DataRow(FootprintCategory.CostTrackerLog)]
-    [DataRow(FootprintCategory.Todos)]
-    [DataRow(FootprintCategory.FileEditHistory)]
-    public void HumanLabel_EveryCategory_ReturnsNonEmptyLocalisedLabel(FootprintCategory category)
+    public void HumanLabel_EveryCategory_ReturnsNonEmptyLocalisedLabel()
     {
-        FootprintRowViewModel row = new(Stats(category));
-        Assert.IsFalse(string.IsNullOrEmpty(row.HumanLabel),
-            $"Category {category} must have a localised HumanLabel.");
+        Assert.AreEqual(7, FootprintCategory.All.Count, "Claude's catalog is seven categories.");
+
+        foreach (FootprintCategory category in FootprintCategory.All)
+        {
+            FootprintRowViewModel row = new(Stats(category));
+            Assert.IsFalse(string.IsNullOrEmpty(row.HumanLabel),
+                $"Category {category} must have a localised HumanLabel.");
+        }
     }
 
     [TestMethod]
-    public void HumanLabel_UnknownCategory_FallsBackToEnumToString()
+    public void HumanLabel_CategoryFromAnotherProductsCatalog_FallsBackToToString()
     {
-        // Cast an out-of-range int to the enum to hit the default branch.
-        FootprintRowViewModel row = new(Stats((FootprintCategory)999));
-        Assert.AreEqual("999", row.HumanLabel,
-            "Default branch must fall back to enum ToString.");
+        // ⭐ This replaces a `(FootprintCategory)999` cast, and it is a better test than the one it
+        // replaces. An out-of-range enum value was never a state the app could reach; a category
+        // from a DIFFERENT product's catalog is exactly the state this conversion introduces, and
+        // it is what the fallback arm is now for.
+        FootprintRowViewModel row = new(Stats(OtherProductCategory()));
+
+        Assert.AreEqual("SomethingElse", row.HumanLabel,
+            "A category this app has no resx label for must fall back to its name, not crash.");
     }
 
     // ── Tooltip switch (line 58 default) ────────────────────────────
 
     [TestMethod]
-    [DataRow(FootprintCategory.SessionTranscripts)]
-    [DataRow(FootprintCategory.SessionMetadata)]
-    [DataRow(FootprintCategory.PromptHistory)]
-    [DataRow(FootprintCategory.BashCommandLog)]
-    [DataRow(FootprintCategory.CostTrackerLog)]
-    [DataRow(FootprintCategory.Todos)]
-    [DataRow(FootprintCategory.FileEditHistory)]
-    public void Tooltip_EveryCategory_ReturnsNonEmptyDescription(FootprintCategory category)
+    public void Tooltip_EveryCategory_ReturnsNonEmptyDescription()
     {
-        FootprintRowViewModel row = new(Stats(category));
-        Assert.IsFalse(string.IsNullOrEmpty(row.Tooltip),
-            $"Category {category} must have a localised Tooltip.");
+        foreach (FootprintCategory category in FootprintCategory.All)
+        {
+            FootprintRowViewModel row = new(Stats(category));
+            Assert.IsFalse(string.IsNullOrEmpty(row.Tooltip),
+                $"Category {category} must have a localised Tooltip.");
+        }
     }
 
     [TestMethod]
-    public void Tooltip_UnknownCategory_ReturnsEmpty()
+    public void Tooltip_CategoryFromAnotherProductsCatalog_ReturnsEmpty()
     {
-        FootprintRowViewModel row = new(Stats((FootprintCategory)999));
+        FootprintRowViewModel row = new(Stats(OtherProductCategory()));
         Assert.AreEqual(string.Empty, row.Tooltip);
+    }
+
+    /// <summary>
+    /// A category from a catalog that is not <see cref="FootprintCatalog.Default"/> — the stand-in
+    /// for a second product whose footprint this app has no labels for.
+    /// </summary>
+    private static FootprintCategory OtherProductCategory()
+    {
+        FootprintCatalog catalog = new(
+        [
+            new FootprintCategoryDefinition(
+                Id: "something-else",
+                Sources: [FootprintSource.Directory("data", "somewhere")],
+                Anchor: FootprintSource.Directory("data", "somewhere"),
+                IsInStandardBackup: true),
+        ]);
+
+        return catalog.CategoryAt(0);
     }
 
     // ── InStandardBackupLabel (line 42) ─────────────────────────────

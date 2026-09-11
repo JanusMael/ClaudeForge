@@ -5259,6 +5259,37 @@ precedence the way you meant.
   > delete per category — transfers; the code does not. Fold this into the Phase 10
   > static→instance conversion, which is already doing exactly this to the sibling services.
   >
+  > ✅ **DONE 2026-09-11.** `FootprintCatalog` (the product's ordered set) ·
+  > `FootprintCategoryDefinition` (id, sources, anchor, in-standard-backup) · `FootprintSource`
+  > (root key + relative path + glob) · `FootprintRoots` (named roots). `FootprintCategory` is now
+  > a `readonly record struct` over a catalog ordinal, following `ConfigScope` exactly — including
+  > the **`null`-encoded default**, without which `default(FootprintCategory)` stops being
+  > `SessionTranscripts` and every call site naming a static compares unequal to what the service
+  > hands out.
+  >
+  > ⛔ **Three deviations from the bullet above, each for a measured reason:**
+  >
+  > | Written | Built |
+  > |---|---|
+  > | "display name" on the definition | ⛔ **No.** Every user-visible string here comes from a resx and this assembly is product-neutral — a display name would be both unlocalised and Claude-shaped. The definition carries `Id`; the app maps `Id` → `Strings.LabelFootprintCategory*`, exactly as AXAML brushes are keyed by `ConfigScope.Id` |
+  > | "root, glob" — one of each | ⛔ **A category is a LIST of sources.** `SessionMetadata` spans three sibling directories and three other categories are single files, not directories. One-root-one-glob would have needed a special case on day one |
+  > | anchor = the category's root | ⛔ **Anchor is separate from sources.** `SessionMetadata` walks three directories and *reveals their parent*, so the user sees all three at once. Deriving it from `Sources[0]` silently opens one third of the category |
+  >
+  > ⚠ **The conversion's one invisible call site was reflection.** `Enum.GetValues(typeof(FootprintCategory))`
+  > in a test kept compiling after the type stopped being an enum and failed at run time with
+  > *"Type provided must be an Enum"*. Every other break — 14 constant patterns, 14 `[DataRow]`
+  > arguments — was a compile error, which is what made the bulk edit safe. **A struct cannot be an
+  > attribute argument**, so the seven-row `[DataRow]` tests became loops over the catalog; that is
+  > strictly better, since a new category now extends them instead of being silently uncovered.
+  >
+  > ⚠ **Still Claude-shaped, deliberately left as residue:** `GetProjectTranscriptStatsAsync`,
+  > `DeleteProjectTranscriptsAsync` and the mangled-name decode. OpenCode's equivalent is SQLite
+  > rows, and an abstraction spanning a directory walk and a database query would be a name rather
+  > than a mechanism. ⛔ **`AgentConfigClientCore.FootprintService` also still does
+  > `new FootprintService()`** — the neutral core defaulting to Claude's catalog, the same shape as
+  > the `SchemaRegistry schemaRegistry = new()` defect. Harmless while only ClaudeForge reads
+  > footprints; it becomes wrong the moment OpenCodeForge does.
+  >
   > **`BackupMode` is the same problem with a persistence twist.** Its three values survive,
   > but their *meanings* are written in Claude paths — `SettingsOnly` is defined as
   > "`~/.claude.json`, settings/hooks/agents/commands, per-project `.claude` folders,

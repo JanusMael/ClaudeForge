@@ -22,15 +22,27 @@ public sealed class FootprintRowViewModel
     public bool IsInStandardBackup => _stats.IsInStandardBackup;
 
     /// <summary>Localised human label per category.</summary>
-    public string HumanLabel => Category switch
+    /// <remarks>
+    /// ⚠ <b>Keyed by <see cref="FootprintCategory.Id"/>, not by the category value.</b>
+    /// <c>FootprintCategory</c> became a struct when the category set moved into product data, and
+    /// a struct cannot appear in a constant pattern — but its id is a string, so the switch stays a
+    /// switch. This is also the honest shape: the id is the machine key the resx lookup is keyed
+    /// by, exactly as AXAML brush lookups are keyed by <c>ConfigScope.Id</c>.
+    /// <para>
+    /// The fallback matters more than it used to. These seven arms are Claude's catalog; a product
+    /// with its own catalog lands on <c>ToString()</c> until it supplies its own label map, which
+    /// is a visibly-unlocalised row rather than a crash or a wrong label.
+    /// </para>
+    /// </remarks>
+    public string HumanLabel => Category.Id switch
     {
-        FootprintCategory.SessionTranscripts => Strings.LabelFootprintCategoryTranscripts,
-        FootprintCategory.SessionMetadata => Strings.LabelFootprintCategorySessions,
-        FootprintCategory.PromptHistory => Strings.LabelFootprintCategoryHistory,
-        FootprintCategory.BashCommandLog => Strings.LabelFootprintCategoryBashLog,
-        FootprintCategory.CostTrackerLog => Strings.LabelFootprintCategoryCostLog,
-        FootprintCategory.Todos => Strings.LabelFootprintCategoryTodos,
-        FootprintCategory.FileEditHistory => Strings.LabelFootprintCategoryFileHistory,
+        "session-transcripts" => Strings.LabelFootprintCategoryTranscripts,
+        "session-metadata" => Strings.LabelFootprintCategorySessions,
+        "prompt-history" => Strings.LabelFootprintCategoryHistory,
+        "bash-command-log" => Strings.LabelFootprintCategoryBashLog,
+        "cost-tracker-log" => Strings.LabelFootprintCategoryCostLog,
+        "todos" => Strings.LabelFootprintCategoryTodos,
+        "file-edit-history" => Strings.LabelFootprintCategoryFileHistory,
         var _ => Category.ToString(),
     };
 
@@ -46,15 +58,15 @@ public sealed class FootprintRowViewModel
     /// human label.  Surfaces what the category contains and how Claude
     /// uses it — useful context before deciding to delete a category.
     /// </summary>
-    public string Tooltip => Category switch
+    public string Tooltip => Category.Id switch
     {
-        FootprintCategory.SessionTranscripts => Strings.TipFootprintCategoryTranscripts,
-        FootprintCategory.SessionMetadata => Strings.TipFootprintCategorySessions,
-        FootprintCategory.PromptHistory => Strings.TipFootprintCategoryHistory,
-        FootprintCategory.BashCommandLog => Strings.TipFootprintCategoryBashLog,
-        FootprintCategory.CostTrackerLog => Strings.TipFootprintCategoryCostLog,
-        FootprintCategory.Todos => Strings.TipFootprintCategoryTodos,
-        FootprintCategory.FileEditHistory => Strings.TipFootprintCategoryFileHistory,
+        "session-transcripts" => Strings.TipFootprintCategoryTranscripts,
+        "session-metadata" => Strings.TipFootprintCategorySessions,
+        "prompt-history" => Strings.TipFootprintCategoryHistory,
+        "bash-command-log" => Strings.TipFootprintCategoryBashLog,
+        "cost-tracker-log" => Strings.TipFootprintCategoryCostLog,
+        "todos" => Strings.TipFootprintCategoryTodos,
+        "file-edit-history" => Strings.TipFootprintCategoryFileHistory,
         var _ => string.Empty,
     };
 
