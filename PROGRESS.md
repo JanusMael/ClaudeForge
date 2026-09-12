@@ -19,7 +19,7 @@
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
 | Working tree | clean |
-| Unpushed | **16 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed, no PR opened |
+| Unpushed | **17 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed, no PR opened |
 | Bisectable | ✅ each of the last three builds alone; `040d26b` runs the pre-change suite green (4,227), the +12 arrive with the page |
 | Suite | **4,243 passed · 0 failed · 11 skipped**, Debug (was 4,227 at the start of this work) |
 | Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
@@ -27,12 +27,20 @@
 
 ---
 
-## ▶ RESUME HERE — the Footprint/Memory page
+## ▶ RESUME HERE — the Footprint/Memory page, but settle its config root first
 
-The redirected-config defect that stood here is fixed and committed; it survives in *Known issues*
-as a record of the shape.
+⛔ **`OpenCodeFootprint.Roots()` has the same defect the backup just had.** Its `ConfigRoot` entry
+is `OpenCodePaths.DefaultGlobalDirectory()`, so with `$OPENCODE_CONFIG_DIR` set the page would
+measure a directory the user does not use — reporting a near-empty config footprint while the real
+one goes uncounted. Found by searching for the twin of the backup bug, not by a test.
 
-**The Footprint/Memory page.** Same shape as the page just built and the last item of
+**Settle it before rendering anything**, because the answer shapes the page: `FootprintRoots` is a
+dictionary keyed by root name, so "archive both roots" translates here into either repointing
+`ConfigRoot` at `GlobalDirectory(env)` (simple; stops counting the default root's plugins) or
+adding a fifth root (honest; the catalog, the category table and the page's layout all learn about
+it). The backup chose the second shape for its own reasons — that is a precedent, not a decision.
+
+**Then the page itself.** Same shape as the page just built and the last item of
 Phase 14 — `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders
 them. The
 Backup page is now the worked example to copy: a host options record in
@@ -131,6 +139,15 @@ Newest first.
   therefore changes only the archive's `manifest.clients` and which schema is bundled. Listing it
   is still the right call — it starts doing real work the day the product gains a layout — but the
   checkbox currently promises more than it delivers.
+- ⓘ **The two-roots survey, for whoever touches this next.** Searching `src/` for
+  `DefaultGlobalDirectory()` after fixing the backup turned up five call sites: one is the fallback
+  inside `GlobalDirectory` itself; two — `OpenCodeArtifactSources.AddGlobalSources` and
+  `OpenCodeEssentialsViewModel.HasShadowedGlobalRules` — already handle both roots deliberately and
+  correctly, and are the precedent the backup fix followed; one is `OpenCodeFootprint.Roots()`,
+  which is the outstanding twin above. ⚠ Both correct sites compare paths with an unconditional
+  `OrdinalIgnoreCase`, where the backup's new `SameDirectory` asks the real OS. On Linux two roots
+  differing only in case would read as identical there and the second source would be dropped —
+  vanishingly unlikely, listed rather than fixed so the inconsistency is at least on the record.
 - ✅ **FIXED 2026-09-12 — a redirected config used to back up to an empty archive.** Kept here as
   the record of what it was, because the shape recurs: the section's destination was
   `DefaultGlobalDirectory()` while every read path in the SDK resolved through
