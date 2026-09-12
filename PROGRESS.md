@@ -18,88 +18,94 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
+| HEAD | the `docs: handoff` commit carrying this file — `git log -1`. The last **functional** commit is `15af56a`, *fix(memory): the footprint's config root follows the config that loads* |
 | Working tree | clean |
-| Unpushed | **17 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed, no PR opened |
-| Bisectable | ✅ each of the last three builds alone; `040d26b` runs the pre-change suite green (4,227), the +12 arrive with the page |
-| Suite | **4,245 passed · 0 failed · 11 skipped**, Debug (was 4,227 at the start of this work) |
+| Unpushed | **19 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
+| Suite | **4,245 passed · 0 failed · 11 skipped**, Debug |
 | Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
-| Observed | OpenCodeForge launches, builds its tree, writes the new persisted fields. ⚠ The Backup page itself has **not been seen rendered** — see *Verification gap* |
+| ⚠ Unverified | **The Backup page has never been seen rendered.** See *Verification gap* — this is the one soft spot in the work below |
 
 ---
 
-## ▶ RESUME HERE — build the Footprint/Memory page
+## ▶ RESUME HERE — the Footprint/Memory page
 
-Its config root was the backup bug's twin and is now fixed (see *Known issues*), so the data layer
-underneath the page is sound. ⓘ **Settled while fixing it**, in case it comes up again: the root
-was repointed rather than doubled. The backup carries *both* config roots because both hold
-user-authored config that cannot be regenerated; the only footprint category expressed against this
-root is `node-modules`, a cache OpenCode materialises and regenerates on demand, which belongs to
-whichever root actually loads. Whether a redirected install also grows a `node_modules` under the
-default root is unmeasured — a fifth root plus a category for it would be a guess that may render a
-permanently-zero row.
+The last item of Phase 14. `OpenCodeFootprint.Catalog` and `.Roots()` are built, tested and now
+*correct* (see below); nothing renders them.
 
-**The page.** Same shape as the page just built and the last item of
-Phase 14 — `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders
-them. The
-Backup page is now the worked example to copy: a host options record in
-`src/OpenCodeForge/ViewModels/`, a view in `src/OpenCodeForge/Views/`, a `DataTemplate` in
-`App.axaml`, a node from `MainWindowViewModel.InitializeAsync`, and a wiring test beside
-`OpenCodeBackupWiringTests`.
+**The Backup page is the worked example — copy its five pieces:**
 
-⛔ **Phase 16's quantitative half still gates the Footprint page's numbers** — see *Known issues*.
-The page can list categories and roots without them; it cannot show growth or retention rates.
+1. A host options record in `src/OpenCodeForge/ViewModels/` — see
+   [`OpenCodeBackupPage.cs`](src/OpenCodeForge/ViewModels/OpenCodeBackupPage.cs).
+2. A view in `src/OpenCodeForge/Views/` — see
+   [`BackupRestoreView.axaml`](src/OpenCodeForge/Views/BackupRestoreView.axaml). Theme tokens and
+   `Opacity` only, never hex; `x:DataType` on every template.
+3. A `DataTemplate` in [`src/OpenCodeForge/App.axaml`](src/OpenCodeForge/App.axaml) — **not**
+   `MainWindow.axaml`; the window binds `SelectedNode.Editor` into a `ContentControl` and the
+   templates live at application level. A missing one renders the type name and logs nothing.
+4. A node from `MainWindowViewModel.InitializeAsync`, with a `NodeId` constant beside
+   `BackupNodeId`. Cache the VM in a field if it holds state worth surviving a rebuild.
+5. A wiring test beside
+   [`OpenCodeBackupWiringTests.cs`](tests/OpenCodeForge.Tests/OpenCodeBackupWiringTests.cs).
+
+**Resx:** OpenCodeForge's `Strings.resx` is hand-maintained alongside `Strings.Designer.cs` — both
+files, same keys, or the build fails. Every key must be referenced as the literal token
+`Strings.<Key>` somewhere in the project or under `tests/`; the dead-string guard in
+`Directory.Build.targets` is a **build error**, not a warning.
+
+⛔ **Phase 16's quantitative half gates the page's NUMBERS, not the page.** `usage.isUsedInstall` in
+`docs/opencode-install-probe.json` still reads `false`, so growth, retention and prune *rates* are
+unmeasurable. The page can list categories, roots and current sizes without them.
+
+### Two things worth doing alongside it
+
+- ⭐ **Add a `--deep-link <nodeId>` flag to OpenCodeForge.** ClaudeForge has one; this app does not,
+  which is precisely why the Backup page could never be driven to and looked at. One flag closes the
+  standing verification gap for *both* pages. `src/OpenCodeForge/Services/DebugFlags.cs` — ⚠ it is a
+  two-token flag, so it must advance the loop index explicitly and validate before assigning.
+- The `Tui` checkbox and the restore-reload gap under *Known issues* are both small and both real.
 
 ---
 
-## Done this session — 2026-09-11
+## Done — 2026-09-12
 
-Uncommitted. The goal was PROGRESS's own steps 1–4: give OpenCodeForge a Backup page.
+Eight commits, all on `feat/agentforge-opencodeforge`, none pushed. In order:
 
-| Area | What |
+| Commit | What |
 |---|---|
-| **The page** | `OpenCodeBackupPage.Options` (the host half), `Views/BackupRestoreView.axaml` + code-behind, the `App.axaml` `DataTemplate`, and a top-level nav node built in `InitializeAsync` |
-| **Strings** | 104 keys added to OpenCodeForge's `Strings.resx` and its hand-maintained `Strings.Designer.cs`. Generated from ClaudeForge's resx by script, with 17 rewritten for OpenCode and 10 dropped |
-| **Persistence** | `WindowState` gains `BackupDirectory`, `RestoreDirectory`, `IncludeCredentialsInBackup`, `LastBackupUtc`; `WindowStateService.SaveBackupState` writes all four read-modify-write |
-| **`OpenCodeBackup`** | `internal` → `public`. The host assembly is the one place the wrong engine would be supplied, so the right one has to be reachable from it |
-| **`TipCell`** | Moved `ClaudeForge.Controls` → `LayeredEditors.Avalonia.Controls`; six ClaudeForge views follow it. The two products cannot reference each other, so the alternative was a second copy |
-| **Defect fixed** | The shared credentials prompt hardcoded `~/.claude/.credentials.json`. Now `BackupPageOptions.CredentialsPathDisplay`, `required` like its siblings |
-| **Trim** | `ILLink.Suppressions.xml` gains IL2026 + IL2075 for `Avalonia.Controls.DataGrid` — this page is the app's first real DataGrid, and the file's previous safety argument said in so many words that it would lapse the day one arrived |
-| **Tests** | `OpenCodeBackupWiringTests`, 12 tests. Canaried: flipping the engine to `BackupEngine.Default` reddens two of them |
+| `6968ae1` | `TipCell` moves `ClaudeForge.Controls` → `LayeredEditors.Avalonia.Controls`; six ClaudeForge views follow it. The two products cannot reference each other, so the alternative was a second copy |
+| `040d26b` | ⛔ **Defect:** the shared credentials prompt hardcoded `~/.claude/.credentials.json`. Now `BackupPageOptions.CredentialsPathDisplay`, `required` like its siblings, so a third host is a compile error until it answers |
+| `1634a4d` | ⭐ **OpenCodeForge's Backup / Restore page** — host options record, view + code-behind, `App.axaml` template, nav node, persisted state, 104 resx keys, 12 wiring tests. `OpenCodeBackup` went `internal` → `public` |
+| `24fc550` | docs: the anchor catches up with its own commits |
+| `820a098` | docs: the redirected-config defect, measured with a throwaway canary |
+| `86bee98` | ⛔⛔ **Defect:** a redirected config backed up to an EMPTY archive that reported success. Now `config/` ← `GlobalDirectory(env)` plus `config-default/` ← the default root when they differ, gated by a new `ProductArchiveSection.IncludeWhen` |
+| `9883518` | docs: the twin survey — five `DefaultGlobalDirectory()` call sites, one of them a live bug |
+| `15af56a` | ⛔ **Defect:** that twin — `OpenCodeFootprint.Roots()` measured the wrong config root. Fixed and guarded |
 
-### Four decisions taken, with their reasons
+**Three defects, one shape.** All three were *a write path resolving through a different function
+than every read path*. Worth holding as a pattern rather than three incidents: when a product
+exposes `X()` and `DefaultX()`, anything that WRITES or MEASURES must justify which one it uses.
 
-- ⛔ **Two scope radios, not three.** `BackupMode.Full` differs from `SettingsOnly` only by which
-  of a product's `SkippedSubdirs` it lets through, and `OpenCodeProducts.Config` declares none —
-  the config root's own `.gitignore` does that work. Three radios would have put two options on the
-  page producing byte-identical archives, distinguishable only by the label the manifest records
-  and the Restore tab's Mode column then shows as if it meant something. Guard:
-  `TheScopeRadiosOfferBackupAndSanitizedOnly`, which asserts the premise before the conclusion.
-- ⛔ **No MSIX tab.** `MsixPathProbe` scans `%LOCALAPPDATA%\Packages` for a `Claude_*` package, so
-  the shared VM's `ShowMsixTab` goes true on any Windows machine that *also* has Claude Desktop —
-  offering, from inside OpenCodeForge, to repair another vendor's app. The view binds nothing from
-  that surface. Guard: `TheViewBindsNothingFromTheMsixSurface`.
-- ⚠ **Both products on the Clients list**, per the plan, even though `OpenCodeProducts.Tui`
-  archives nothing of its own — see *Known issues*.
-- ⚠ **No literal colours.** ClaudeForge's copy of this page paints its advisory banners with six
-  light-mode hex literals; carried over they are unreadable in Semi Dark, and the repo's no-hex
-  guard is scoped to view-models and would not have said a word. Guard:
-  `TheViewUsesThemeTokensRatherThanLiteralColours`.
+### Bisectability — checked, not assumed
 
-### Verification gap — read this before trusting the page
+`6968ae1`, `040d26b` and `1634a4d` were each rebuilt at their own commit in a detached worktree.
+All three build alone; `040d26b` runs the pre-change suite green at 4,227, so the +12 arrive with
+the page rather than with the defect fix underneath it.
 
-What was observed: the solution builds, 4,239 tests pass, both apps publish trimmed with zero
-ILLink warnings, the published OpenCodeForge launches clean, and the new persisted fields appear in
-a real `OpenCodeForge-gui-state.json` with the pre-existing fields intact — which means the page's
-view-model really was constructed and its `PersistentStateChanged` really did reach disk.
+### Verification gap — read this before trusting the Backup page
 
-⚠ **What was NOT observed: the page on screen.** Nothing drove the app to select the Backup node.
-The headless test app is deliberately stripped of the App's resource dictionaries and so cannot
-instantiate views, and OpenCodeForge has no `--deep-link` flag to navigate with. The standing
-guards for this are `x:DataType` on every template — a mistyped binding is `AVLN2000`, a build
-error, and the build is clean — plus `OpenCodePageTemplateTests`, which walks the real tree and
-would fail if the node's view-model had no `DataTemplate`. **A backup has not been taken or
-restored through the GUI.** The round trip itself is covered by `OpenCodeBackupRoundTripTests` at
-the SDK level; what is unproven is the path from a button to it.
+**Observed:** the solution builds; 4,245 tests pass; both apps publish trimmed with zero ILLink
+warnings; the published OpenCodeForge launches clean; and the new persisted fields appear in a real
+`OpenCodeForge-gui-state.json` with the pre-existing fields intact — so the page's view-model really
+was constructed and its `PersistentStateChanged` really did reach disk.
+
+⚠ **NOT observed: the page on screen.** Nothing drove the app to select the Backup node. The
+headless test app is deliberately stripped of the App's resource dictionaries and cannot instantiate
+views, and this app has no `--deep-link` flag. The standing guards are `x:DataType` on every
+template — a mistyped binding is `AVLN2000`, a build error, and the build is clean — plus
+`OpenCodePageTemplateTests`, which walks the real tree and fails if a node's view-model has no
+`DataTemplate`. **No backup has been taken or restored through the GUI.** The round trip itself is
+covered by `OpenCodeBackupRoundTripTests` and `OpenCodeRedirectedConfigBackupTests` at the SDK
+level; what is unproven is the path from a button to it.
 
 ---
 
@@ -108,22 +114,30 @@ the SDK level; what is unproven is the path from a button to it.
 - **`tests/AgentForge.Core.Tests/Fixtures/*.zip` are frozen.** Never re-mint one to make a test
   pass. A change that cannot restore one needs a migration, or a *second* fixture beside it.
 - **A host that backs up a product must also be able to restore it** — same set to
-  `BackupRequest.Products` and `new BackupEngine(restorableProducts:)`.
+  `BackupRequest.Products` and `new BackupEngine(restorableProducts:)`. OpenCodeForge passes
+  `OpenCodeBackup.Engine`; `BackupEngine.Default` restores Claude's two and nothing else.
+- **`ProductArchiveSection.IncludeWhen` is consulted by the WRITER only.** What a restore may apply
+  is decided by what is in the archive: the machine reading it need not have the environment of the
+  machine that wrote it.
+- **OpenCodeForge's Backup view offers two scope radios and no MSIX tab**, and uses no literal
+  colours. All three are deliberate divergences from ClaudeForge's copy, each guarded by a markup
+  scan in `OpenCodeBackupWiringTests` because an omission cannot be observed from a running VM.
+- **The footprint's config root is ONE root**, unlike the backup's two — the backup carries both
+  because both hold user-authored config, while the only footprint category against that root is a
+  regenerable cache. Re-opening this needs a *measurement* of a redirected install, not an argument.
 - **`BackupMode` stays an enum** and cannot move to `AgentForge.Abstractions` (BCL-only by design).
   That is why `ProductSkippedSubdir.IncludedInFullBackup` is a bool rather than a mode name.
-- **No second resx in the shell.** Each app's `Strings.resx` has a parity test hard-wired to its own
-  directory; a resource set on the shell side would be unguarded. Hosts supply wording via
-  `BackupPageText`.
+- **No second resx in the shell.** Hosts supply wording via `BackupPageText`.
 - **OpenCodeForge's resx is English-only and declared so** — `ResxLedger` in
   `LocalizationParityTests` carries `("OpenCodeForge", false, …)`, and contracts #1–#4 run only
-  against `src/ClaudeForge/Localization`. The 104 keys added this session therefore redden nothing.
-  ⚠ Declaring this project *localized* is what would force #1–#4 to be generalised first.
+  against `src/ClaudeForge/Localization`. ⚠ Declaring this project *localized* is what would force
+  #1–#4 to be generalised first.
 - **OpenCode's config root is archived whole**, letting OpenCode's own `.gitignore` exclude the
   52 MiB `node_modules` — never a hardcoded skip list. Two earlier plan drafts got that list wrong.
 - **`opencode.db` is opt-in with an advisory, never redacted**, and excluded from `Sanitized`
   outright. `auth.json` is never archived at all.
-- **The manifest bump's trigger** is the first archive that can hold a non-Claude folder — not "the
-  layout changed". That has now fired (v2).
+- **No AI attribution trailers on commits**, per the global `CLAUDE.md`. That decision outranks a
+  session instruction mandating one; the 18 commits on this branch carry none.
 
 ---
 
@@ -132,61 +146,41 @@ the SDK level; what is unproven is the path from a button to it.
 Newest first.
 
 - ⚠ **The `OpenCode TUI` checkbox archives nothing of its own.** `OpenCodeProducts.Tui` carries no
-  `BackupLayout`, so its sections are `ProductBackupLayout.Empty`; `tui.json` travels anyway
-  because it sits inside the config root that `Config` archives whole. Ticking or clearing the box
-  therefore changes only the archive's `manifest.clients` and which schema is bundled. Listing it
-  is still the right call — it starts doing real work the day the product gains a layout — but the
-  checkbox currently promises more than it delivers.
-- ⓘ **The two-roots survey, for whoever touches this next.** Searching `src/` for
-  `DefaultGlobalDirectory()` after fixing the backup turned up five call sites: one is the fallback
-  inside `GlobalDirectory` itself; two — `OpenCodeArtifactSources.AddGlobalSources` and
-  `OpenCodeEssentialsViewModel.HasShadowedGlobalRules` — already handle both roots deliberately and
-  correctly, and are the precedent the backup fix followed; one is `OpenCodeFootprint.Roots()`,
-  which was the outstanding twin and is now fixed too — `ConfigRoot` resolves through
-  `GlobalDirectory(env)`, guarded by `TheConfigRoot_FollowsARedirect`, whose decoy file in the
-  default root makes the failure message say which root was measured. ⚠ Both correct sites compare
-  paths with an unconditional
-  `OrdinalIgnoreCase`, where the backup's new `SameDirectory` asks the real OS. On Linux two roots
-  differing only in case would read as identical there and the second source would be dropped —
-  vanishingly unlikely, listed rather than fixed so the inconsistency is at least on the record.
-- ✅ **FIXED 2026-09-12 — a redirected config used to back up to an empty archive.** Kept here as
-  the record of what it was, because the shape recurs: the section's destination was
-  `DefaultGlobalDirectory()` while every read path in the SDK resolved through
-  `GlobalDirectory(env)`, so a user with `$OPENCODE_CONFIG_DIR` set got an archive whose complete
-  contents were `Schemas/opencode-config.json` and `manifest.json` — and was told "Backup saved".
-  ⚠ The reason no test saw it is the durable lesson: `OpenCodeBackupRoundTripTests` redirects the
-  *home directory* and then writes into `DefaultGlobalDirectory()`, so the two roots were one
-  folder for its whole run. **A test that never sets the variable cannot fail that way however
-  thorough it is otherwise.** Now `config/` ← `GlobalDirectory(env)` and `config-default/` ←
-  the default root when the two differ; see `AGENTS.md` and `OpenCodeRedirectedConfigBackupTests`.
+  `BackupLayout`; `tui.json` travels anyway inside the config root. Ticking it changes only the
+  archive's `manifest.clients` and which schema is bundled. Listing it is still right — it starts
+  working the day the product gains a layout — but the checkbox promises more than it delivers.
 - ⚠ **A restore does not reload the open documents.** ClaudeForge passes `OnRestoreCompleted`,
   `IsAnyWorkspaceDirty` and `SaveAllWorkspaces` into the shared page; OpenCodeForge's window has no
-  save-all pipeline to wire them to, so they are left unset. The editor keeps showing the
-  pre-restore file until the app is restarted.
+  save-all pipeline to wire them to, so they are unset. The editor keeps showing the pre-restore
+  file until the app is restarted.
+- ⓘ **The two-roots survey.** Five `DefaultGlobalDirectory()` call sites in `src/`: one is the
+  fallback inside `GlobalDirectory` itself; two — `OpenCodeArtifactSources.AddGlobalSources` and
+  `OpenCodeEssentialsViewModel.HasShadowedGlobalRules` — already handle both roots deliberately and
+  are the precedent the backup fix followed; the fifth was the footprint bug, now fixed. ⚠ Both
+  correct sites compare with an unconditional `OrdinalIgnoreCase` where the backup's new
+  `SameDirectory` asks the real OS. On Linux two roots differing only in case would read as one
+  there. Vanishingly unlikely; on the record rather than silently inconsistent.
 - ⚠ **`DisplayClients` does not abbreviate OpenCode's product names.**
-  `BackupRowViewModel.AbbreviateClient` maps `claudecode`/`claudedesktop` to `Code`/`Desktop` and
-  passes anything else through, so the Clients column renders `OpenCode+OpenCodeTui` in a 110 px
-  cell. Verbose rather than wrong — the passthrough was designed for exactly this — and the
-  tooltip carries the full text. The twin of the credentials-path defect, found by searching the
-  shell for Claude-specific literals; left unfixed because the fix is another `BackupPageOptions`
-  member for a cosmetic gain.
+  `BackupRowViewModel.AbbreviateClient` maps `claudecode`/`claudedesktop` and passes anything else
+  through, so the Clients column renders `OpenCode+OpenCodeTui` in a 110 px cell. Verbose rather
+  than wrong — the passthrough was designed for it — and the tooltip carries the full text.
 - ⓘ **Three accessible names on the Backup page are formatted in markup**, not resx —
-  `{Binding DisplayName, StringFormat='{}{0} — Restore'}` and its two siblings. Carried over from
+  `{Binding DisplayName, StringFormat='{}{0} — Restore'}` and two siblings. Carried over from
   ClaudeForge, which has the same three, so the two apps at least agree.
-- ⓘ **ClaudeForge's `BackupRestoreView.axaml` declares a `BytesToHumanReadableConverter` resource
-  it never uses.** Noticed while porting; left alone.
+- ⓘ **ClaudeForge's `BackupRestoreView.axaml` declares a `BytesToHumanReadableConverter` resource it
+  never uses.** Noticed while porting; left alone.
 - ⚠ **Unlocalised strings moved, not introduced.** Progress labels on `ProductArchiveSection` and
   the restore advisory in `RestoreEngine` are English literals. They should be keyed by section id
-  the way footprint labels are keyed by `FootprintCategory.Id`.
-- ⚠ **`WithNoNetwork_BothSectionsSayBundled` flaked once** during a full-solution run on
-  2026-09-11, then passed in isolation, in its own assembly, and in five further full runs.
-  Unrelated to this session's changes; cause unknown. Not reproducible on demand.
-- ⛔ **Phase 16's quantitative half stays blocked.** `usage.isUsedInstall` in
-  `docs/opencode-install-probe.json` still reads `false`, so growth, retention and prune *rates* are
-  unmeasurable — which gates the Footprint page's numbers even once the page exists.
-- ⓘ **The local OpenCode install stays contaminated** from the previous session: three
+  the way footprint labels are keyed by `FootprintCategory.Id`. ⚠ This session added one more:
+  `"Restoring the default opencode config root…"`.
+- ⚠ **`WithNoNetwork_BothSectionsSayBundled` flaked once** on 2026-09-11, then passed in isolation,
+  in its own assembly, and in every full run since. Cause unknown; not reproducible on demand.
+- ⛔ **Phase 16's quantitative half stays blocked.** `usage.isUsedInstall` is still `false`, so
+  growth, retention and prune *rates* are unmeasurable.
+- ⓘ **The local OpenCode install stays contaminated** from an earlier session: three
   `opencode debug v2` runs fetched `models.json` and ripgrep and left two empty
-  `~/.cache/opencode/bin/ripgrep-*` temp dirs. Recorded rather than hidden; deleting them is a user
-  decision.
-- ⓘ `CLAUDE.md` still says `src/publish/publish.ps1` "builds ClaudeForge only". Phase 15 shipped a
-  separate `release-opencodeforge.yml`, so that line may be stale. Unverified.
+  `~/.cache/opencode/bin/ripgrep-*` temp dirs. Deleting them is a user decision.
+- ✅ **RESOLVED 2026-09-12** — `CLAUDE.md`'s "builds ClaudeForge only" line was indeed stale.
+  Verified against `publish.ps1`'s own `-App` parameter (which documents `-App OpenCodeForge`) and
+  against `.github/workflows/`, which carries both `release.yml` and `release-opencodeforge.yml`.
+  The paragraph is corrected and carries a dated note saying what it used to claim.

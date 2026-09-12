@@ -75,9 +75,16 @@ dotnet publish src/OpenCodeForge  -c Release -r linux-x64 --self-contained true
 ILLink eyesight into the shared libraries. Without it, trim warnings in a shared project are
 simply not reported.
 
-Release artifacts for real distribution go through `src/publish/publish.ps1` — which today
-builds **ClaudeForge only**. OpenCodeForge has no release pipeline yet; its only Release publish
-is the CI trim check above, which passes the RID and `--self-contained` on the command line.
+Release artifacts for real distribution go through `src/publish/publish.ps1`, which takes the app
+by name — `-App ClaudeForge` (the default) or `-App OpenCodeForge`, from the table in
+`PublishApps.ps1`. Each app also has its own release workflow: `release.yml` and
+`release-opencodeforge.yml`.
+
+> ⓘ **Corrected 2026-09-12.** This paragraph said the script "builds ClaudeForge only" and that
+> "OpenCodeForge has no release pipeline yet". Phase 15 shipped both, and the line outlived it —
+> verified against the script's own `-App` parameter and `.github/workflows/` rather than
+> re-asserted.
+
 ⚠ **That script deletes every `bin/` and `obj/` under `src/`**, and the apps write their logs
 next to their executable — so run any local diagnosis *before* invoking it.
 
