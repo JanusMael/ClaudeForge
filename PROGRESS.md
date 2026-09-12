@@ -18,22 +18,94 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | the `docs:` commit carrying this file — `git log -1`. The last **functional** commit is `6e5352b`, *feat(14): OpenCodeForge's disk-footprint page, and the flag that proves it renders* |
+| HEAD | `d9128a3` *feat(schema): the disk cache is the resolved artifact, not a tier in a chain* — plus this file's own docs commit on top. `git log -1` wins over this cell |
 | Working tree | clean |
-| Unpushed | **23 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
-| Suite | **4,266 passed · 0 failed · 11 skipped**, Debug (was 4,245 — the 21 new ones are listed below) |
-| Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
-| ✅ Verified | **Both new pages have now been SEEN rendered**, driven by `--deep-link` against the published build. The long-standing verification gap is closed — see *Verification* below |
+| Unpushed | **51 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
+| Merged from `main` | ✅ **`ea6d129`, 2026-09-12 — the branch is level with `main`** (`git rev-list --count HEAD..main` = 0). It was 23 behind |
+| Suite | **4,286 passed · 0 failed · 11 skipped**, Debug |
+| Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings. That matrix had never been run for OpenCodeForge before |
+| ⚠ Awaiting | **A manual retest pass the maintainer has agreed to do.** Work is being BATCHED until then to avoid repeat rounds — see *RESUME HERE* |
 
 ---
 
-## ▶ RESUME HERE — Phase 14 is complete; pick the next phase
+## ▶ RESUME HERE — finish the retest batch
 
-**Phase 14 is done and committed.** Its last item — the disk-footprint page — is built, tested,
-and has been *seen rendered* on the published build.
+**The goal that now drives everything: cut a ClaudeForge release from the split.** The maintainer
+wants the extraction promoted and a release made from it — *without* OpenCodeForge going to `main`.
 
-The open work is Phase 15+ in [`docs/OPENCODEFORGE-PLAN.md`](docs/OPENCODEFORGE-PLAN.md), plus the
-small items under *Known issues*. **Nothing is blocking**, and nothing is half-finished.
+⭐ **The hard part is already true: the ClaudeForge artifact has never contained OpenCode.** Its
+Release build output is 14 assemblies — 6 `AgentForge.*`, 5 `LayeredEditors.*`, 3 `ClaudeForge*` —
+and **zero** OpenCode ones; `release.yml` passes `-App ClaudeForge` explicitly on all three publish
+jobs and its tag pattern excludes `opencodeforge-v*`. Nothing needs carving out.
+
+### The batch — finish these BEFORE asking for the retest
+
+The maintainer is doing a **manual retest pass** and asked that UI-visible work be batched so it is
+retested once rather than repeatedly. Two items remain:
+
+1. **OpenCodeForge builds THREE `SchemaRegistry` instances; make it share one.** Its own, plus one
+   inside each client it constructs without passing one (`AgentConfigClientCore` takes an optional
+   registry; `OpenCodeClient` / `OpenCodeTuiClient` pass `null`). Costs a duplicate fetch per schema
+   and an extra offline timeout each. `CLAUDE.md` already says sharing is the better shape and that
+   ClaudeForge does it. ⚠ Changes launch behaviour, so it belongs in this batch.
+2. **Two UI-visible nits from *Known issues*:** the unlocalised progress labels on
+   `ProductArchiveSection` / the restore advisory in `RestoreEngine`, and `DisplayClients` rendering
+   `OpenCode+OpenCodeTui` unabbreviated in a 110 px cell.
+
+### Then hand over for the retest, naming these four
+
+Ranked by what actually changed and what automation cannot reach:
+
+1. **Theming, BOTH variants** — highest risk. Two theme files merged with colour tokens from both
+   sides. Check the ✨ NEW badge (`AppAccent*`, new from `main`), the severity dots, and the
+   save-dialog change pills. Automation proved the keys exist, never that they look right together.
+2. **The keybinds editor's warning states** — `LE.DangerText` / `LE.DangerBorder` were referenced
+   nine times and defined nowhere; the original bug was invisible because no conflicting keybind was
+   ever seeded. Seed one and confirm red text inside a visible border.
+3. **Save → reload a config, in both apps.** The write path is the one thing no verification this
+   session touched, and this branch changed the save dialog.
+4. **Diagnostics windows (F12)** — `main`'s accessibility pass and live-log fix arrived untested here.
+
+### After the retest — the release path
+
+- ⚠ **`CHANGELOG.md` is stale**: its top entry is `[2026.2.528] - TBD`, older than the shipped
+  `v2026.3.901`, with no Unreleased section. **13 `feat` commits** touching ClaudeForge's UI need
+  writing up — this is a feature release, not a plumbing one (severity indication across rows /
+  search / effective view / save dialog, the schema provenance badge and in-app check,
+  `--schema-source`, the no-raw-hex tripwire).
+- Free, no retest cost: a guard for Claude-shaped defaults in the neutral layer (see
+  [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), roadmap phase markers
+  1–9, and `TRIMMING.md` never mentioning the second app.
+
+### 🔭 Open strategic question — do not start without the maintainer
+
+They are **reconsidering the monorepo**: extracting the shared surface into standalone NuGet
+packages consumed by ClaudeForge, OpenCodeForge and further Avalonia projects they are planning.
+That is also the cleanest answer to "no OpenCodeForge in `main`". Nothing has been decided, and
+nothing has been built toward it.
+
+### ⭐ Capability worth knowing about before anything else
+
+**A page in these apps can be looked at.** `scripts/capture-page.ps1` launches a *published* app,
+deep-links to one node, photographs the window and shuts it down:
+
+```powershell
+pwsh -NoProfile -File scripts/capture-page.ps1 `
+    -ExePath src/OpenCodeForge/bin/Release/net10.0/win-x64/publish/OpenCodeForge.exe `
+    -NodeId footprint -OutFile footprint.png
+```
+
+⛔ **Use it on every new page before calling one done.** The headless test app is stripped of the
+App's resource dictionaries and cannot instantiate views, so a page can pass every test, publish
+trimmed with zero warnings, and still be blank — the exact state the Backup page sat in for a phase.
+⚠ Windows only, and the capture is a *screen* grab: an overlapping window lands in the PNG and reads
+exactly like clipped layout, so check the window rectangle the script prints. `PrintWindow` is not
+the fix and was already tried — see the script's own comment.
+
+⚠ **Python is installed but NOT on PATH** — use the `py` launcher (3.14.7).
+
+⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
+`usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`.
 
 ### ⭐ New capability worth knowing about before anything else
 
@@ -56,6 +128,44 @@ the fix and was already tried — see the script's own comment.
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth, retention
 and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-12, third batch
+
+| Commit | What |
+|---|---|
+| `5d74cd2` | docs: the plan said Phase 14 was open **in four places**, two of which predated this session's work and one of which contradicted a phase that had already shipped |
+| `cc141b9` | ⭐ **[`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md)** — is the split complete, did ClaudeForge regress. Answers up front, then evidence, then an explicit list of what was NOT verified |
+| `b7c202f` | docs: corrected the word *"inert"*, and **measured the app/shell split for the first time** |
+| `ea6d129` | ⭐ **Merge `main`** — 23 commits, 7 conflicts. Five additive (both sides kept); `AGENTS.md` and `SchemaRegistry.cs` took judgment |
+| `d9128a3` | ⭐ **The schema disk cache, redesigned to the maintainer's spec** — see *Locked decisions* |
+
+**Regression verdict: none found.** Baseline was **`v2026.3.901`** (`3c7aaab`), the latest tagged
+public release, which predates every `AgentForge.*` assembly. Both builds were published Release
+`win-x64` and driven to the same ten nav nodes; across twenty runs the **log event sequence is
+identical** except the one flag the verification deliberately passed (the baseline predates
+`--schema-source`). Severity counts match exactly: 0 fatal, 0 error, 10 warnings each — one per run
+of a pre-existing schema notice. The eleven `NavId` constants are byte-identical.
+
+⛔ **A pixel comparison was attempted and is INVALID — do not resurrect its numbers.** The captures
+contain other windows on top of the app, so its 39–61% "differences" measure the desktop. The first
+harness asserted the app was foreground at capture time and would have caught it; local **antivirus
+blocked that script** as an infostealer signature (screenshotting plus window inspection in one
+file), and the fallback had no such assertion. If the visual half is ever redone, the desktop must
+be clear, or the foreground assertion must survive AV.
+
+⭐ **The extraction is 48.7% of what powers ClaudeForge**, up from 11.6% at the tag — 42,217 of
+86,647 lines — and it demonstrably executes (`[Editor.Rebuild]`, twelve lines per run in *both*
+builds' logs, comes from `AgentForge.Avalonia.Shell`). ⚠ But the two halves are in very different
+states: the Core/SDK split is thorough, while `src/ClaudeForge` went 41,371 → 38,301 lines (**net
+−7%**) against a plan estimate implying ~24,000 extractable. It remains the largest assembly in the
+repo. That number had never been measured before.
+
+✅ **The permissions work is complete, as REDESIGNED** — the plan's third revision shrank Phase 6 to
+"a ~50-line shared vocabulary plus two parallel implementations" and rejected `Decision<TRule>` on
+measurement. `PermissionOutcome` is 55 lines (`a453063`); OpenCode's own implementation is ~1,790.
+Nothing outstanding; the roadmap simply marks ✅ only on phases 10, 13 and 14.
 
 ---
 
@@ -146,6 +256,19 @@ pass, not a fix.
 
 ## 🔒 Locked decisions — do not relitigate
 
+- ⭐ **Schema loading: the disk cache is the MATERIALISED RESULT, not a tier in a chain.** Decided
+  by the maintainer on 2026-09-12, three answers given explicitly:
+  1. **A fetched artifact is never overwritten by bundled because a launch is offline** — that
+     would silently downgrade the user. But **a newer bundled copy SHOULD replace a
+     bundled-sourced one**, or upgrading the app strands them on what the old build extracted.
+  2. **Disk holds the RESOLVED and overlaid artifact**, so loading it is a plain parse. The
+     overlay is therefore baked in, which is what `overlaySha256` exists to invalidate.
+  3. **Launch blocks on the fetch, but cheaply** — a conditional GET, so a `304` is one header
+     exchange. (HEAD was considered and rejected: it costs a second round trip whenever there IS
+     an update.)
+  ⛔ `--schema-source bundled` resolves in memory and does **not** touch disk. ⚠ A null cache
+  directory means **no disk**, and is the default, for the same measured reason the `HttpClient`
+  default is OFFLINE.
 - **The footprint page renders CATALOG order and offers no sort.** The order is the page's only
   real guidance and it is the inverse of a size sort: the largest row regenerates from
   `package.json`, the smallest meaningful one is the only irreplaceable thing on the page. A
@@ -199,6 +322,26 @@ Newest first.
   explicitly, so nothing is wrong today. ⚠ It is one careless copy away from being wrong: `--deep-link`
   was added here following this app's rule, not the checklist's. Left alone deliberately —
   `AGENTS.md` rows are guard-test-backed and generalising this one is its own change.
+- ⛔ **The merge of `main` DROPPED `cafe89c` *fix(schema): make the fire-and-forget disk-cache sync
+  awaitable*, and the debt is only partly repaid.** Not because the race was imagined but because
+  the thing that raced was gone: taking `main`'s side did not even compile, since its code reads
+  `PlatformPaths.SchemaCacheDirectory`, which this branch removed. ✅ The *production* half is now
+  back and guarded — `SchemaDiskCache` has a per-path semaphore plus temp-then-rename. ⚠ **The
+  TEST half is not.** `AvailableProfileEntriesTests` carries an explicit marker where its
+  `await registry.WhenDiskCacheIdleAsync()` used to sit; a launch writes to disk again, so that
+  teardown can race a write exactly as `main` found it. Reinstate a drain rather than
+  rediscovering the flake.
+- ⚠ **Seven Claude-named types still live in the "product-neutral" `AgentForge.*` layer**
+  (`ClaudeArtifactPaths`, `ClaudeCodeLocation`, `ClaudeDesktopVersionProbe`, `ClaudeScopes`, and
+  three artifact-source classes), plus Claude-specific members on neutral types. All are
+  unreferenced by OpenCode, so they are residue rather than an active bug — and **not** a blocker
+  for a ClaudeForge-only release, since every one of them is correct for Claude. ⛔ The dangerous
+  class is the one no name search finds: a neutral type whose *default* resolves to Claude data.
+  Two remain (`SchemaSnapshotService`, `RestoreSidecarCleanup`). Full inventory in
+  [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §2.
+- ⓘ **`AssemblyLayeringTests` cannot see any of that** — all three of its methods check assembly
+  *references*, and Claude-shaped code inside a neutral assembly declares none. Not a failure of
+  the guard; it enforces what it claims.
 - ⓘ **The footprint page's *Re-measure* button reads as disabled.** Cosmetic; proven enabled. See
   *Verification*.
 - ⓘ **`FootprintService.GetProjectTranscriptStatsAsync` stays Claude-shaped on an OpenCode client.**
