@@ -3,7 +3,7 @@
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
              xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:local="using:Bennewitz.Ninja.ClaudeForge.Views"
-             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.HooksEditorView"

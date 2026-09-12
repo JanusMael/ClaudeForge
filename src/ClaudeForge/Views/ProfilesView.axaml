@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
@@ -164,10 +163,10 @@
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate x:DataType="vm:ProfileRowViewModel">
-                                            <ctrl:TipCell Tip="{Binding Name}">
+                                            <libctrl:TipCell Tip="{Binding Name}">
                                                 <TextBlock Text="{Binding Name}"
                                                            VerticalAlignment="Center" Margin="4,0" />
-                                            </ctrl:TipCell>
+                                            </libctrl:TipCell>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -308,10 +307,10 @@
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate x:DataType="vm:DesktopProfileRowViewModel">
-                                            <ctrl:TipCell Tip="{Binding Name}">
+                                            <libctrl:TipCell Tip="{Binding Name}">
                                                 <TextBlock Text="{Binding Name}"
                                                            VerticalAlignment="Center" Margin="4,0" />
-                                            </ctrl:TipCell>
+                                            </libctrl:TipCell>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -3,7 +3,6 @@
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
@@ -110,7 +109,7 @@
                               AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}">
                         <DataGrid.Columns>
                             <!--
-                                Cells are wrapped in <controls:TipCell> rather than relying
+                                Cells are wrapped in <lecontrols:TipCell> rather than relying
                                 on bare TextBlock.ToolTip.Tip so the tooltip fires anywhere
                                 inside the cell bounds — not just over the text glyphs.
                                 This matches the pattern already used in EnvironmentEditorView
@@ -151,7 +150,7 @@
                                              The TipCell wrapper makes the whole cell hoverable,
                                              matching every other column on this grid — a one-
                                              character glyph is a very small tooltip target. -->
-                                        <controls:TipCell Tip="{Binding DangerAccessibleText}">
+                                        <lecontrols:TipCell Tip="{Binding DangerAccessibleText}">
                                             <TextBlock IsVisible="{Binding HasDangerSeverity}"
                                                        Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                                        Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
@@ -160,7 +159,7 @@
                                                        VerticalAlignment="Center"
                                                        Margin="12,0"
                                                        AutomationProperties.HelpText="{Binding DangerAccessibleText}" />
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -176,12 +175,12 @@
                                     <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- Tooltip shows the schema description (falls back to the
                                              path) so hovering a property name explains what it does. -->
-                                        <controls:TipCell Tip="{Binding PropertyTooltip}">
+                                        <lecontrols:TipCell Tip="{Binding PropertyTooltip}">
                                             <TextBlock Text="{Binding Property}"
                                                        VerticalAlignment="Center"
                                                        Margin="12,0"
                                                        TextTrimming="CharacterEllipsis" />
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -202,7 +201,7 @@
                                              right-click → Copy copies the FULL DisplayValue so
                                              long JSON blobs are recoverable in one click without
                                              needing to expand the column. -->
-                                        <controls:TipCell
+                                        <lecontrols:TipCell
                                             Tip="{Binding DisplayValue,
                                                 Converter={StaticResource LongValueTooltip}}">
                                             <SelectableTextBlock Text="{Binding DisplayValue}"
@@ -217,7 +216,7 @@
                                                     </MenuFlyout>
                                                 </SelectableTextBlock.ContextFlyout>
                                             </SelectableTextBlock>
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -234,7 +233,7 @@
                                         <!-- Outer TipCell makes the entire cell area hoverable
                                              (not just the colored badge), so users can read the
                                              scope description by pointing anywhere in the cell. -->
-                                        <controls:TipCell
+                                        <lecontrols:TipCell
                                             Tip="{Binding Scope,
                                                 Converter={StaticResource ScopeToTooltip}}">
                                             <Border
@@ -249,7 +248,7 @@
                                                     FontSize="10" FontWeight="Bold"
                                                     HorizontalAlignment="Center" />
                                             </Border>
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -266,7 +265,7 @@
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate x:DataType="shell:EffectivePropertyRow">
-                                        <controls:TipCell
+                                        <lecontrols:TipCell
                                             Tip="{Binding IsOverridden,
                                                 Converter={StaticResource OverriddenTooltip}}">
                                             <CheckBox IsChecked="{Binding IsOverridden}"
@@ -274,7 +273,7 @@
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"
                                                       AutomationProperties.Name="{x:Static loc:Strings.HeaderEffectiveOverridden}" />
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

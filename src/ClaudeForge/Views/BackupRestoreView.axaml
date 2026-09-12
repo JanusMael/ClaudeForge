@@ -3,7 +3,7 @@
              xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
              xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Backup"
-             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.BackupRestoreView"
