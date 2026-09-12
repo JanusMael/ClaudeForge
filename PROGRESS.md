@@ -21,26 +21,24 @@
 | Working tree | clean |
 | Unpushed | **17 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed, no PR opened |
 | Bisectable | ✅ each of the last three builds alone; `040d26b` runs the pre-change suite green (4,227), the +12 arrive with the page |
-| Suite | **4,243 passed · 0 failed · 11 skipped**, Debug (was 4,227 at the start of this work) |
+| Suite | **4,245 passed · 0 failed · 11 skipped**, Debug (was 4,227 at the start of this work) |
 | Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
 | Observed | OpenCodeForge launches, builds its tree, writes the new persisted fields. ⚠ The Backup page itself has **not been seen rendered** — see *Verification gap* |
 
 ---
 
-## ▶ RESUME HERE — the Footprint/Memory page, but settle its config root first
+## ▶ RESUME HERE — build the Footprint/Memory page
 
-⛔ **`OpenCodeFootprint.Roots()` has the same defect the backup just had.** Its `ConfigRoot` entry
-is `OpenCodePaths.DefaultGlobalDirectory()`, so with `$OPENCODE_CONFIG_DIR` set the page would
-measure a directory the user does not use — reporting a near-empty config footprint while the real
-one goes uncounted. Found by searching for the twin of the backup bug, not by a test.
+Its config root was the backup bug's twin and is now fixed (see *Known issues*), so the data layer
+underneath the page is sound. ⓘ **Settled while fixing it**, in case it comes up again: the root
+was repointed rather than doubled. The backup carries *both* config roots because both hold
+user-authored config that cannot be regenerated; the only footprint category expressed against this
+root is `node-modules`, a cache OpenCode materialises and regenerates on demand, which belongs to
+whichever root actually loads. Whether a redirected install also grows a `node_modules` under the
+default root is unmeasured — a fifth root plus a category for it would be a guess that may render a
+permanently-zero row.
 
-**Settle it before rendering anything**, because the answer shapes the page: `FootprintRoots` is a
-dictionary keyed by root name, so "archive both roots" translates here into either repointing
-`ConfigRoot` at `GlobalDirectory(env)` (simple; stops counting the default root's plugins) or
-adding a fifth root (honest; the catalog, the category table and the page's layout all learn about
-it). The backup chose the second shape for its own reasons — that is a precedent, not a decision.
-
-**Then the page itself.** Same shape as the page just built and the last item of
+**The page.** Same shape as the page just built and the last item of
 Phase 14 — `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders
 them. The
 Backup page is now the worked example to copy: a host options record in
@@ -144,7 +142,10 @@ Newest first.
   inside `GlobalDirectory` itself; two — `OpenCodeArtifactSources.AddGlobalSources` and
   `OpenCodeEssentialsViewModel.HasShadowedGlobalRules` — already handle both roots deliberately and
   correctly, and are the precedent the backup fix followed; one is `OpenCodeFootprint.Roots()`,
-  which is the outstanding twin above. ⚠ Both correct sites compare paths with an unconditional
+  which was the outstanding twin and is now fixed too — `ConfigRoot` resolves through
+  `GlobalDirectory(env)`, guarded by `TheConfigRoot_FollowsARedirect`, whose decoy file in the
+  default root makes the failure message say which root was measured. ⚠ Both correct sites compare
+  paths with an unconditional
   `OrdinalIgnoreCase`, where the backup's new `SameDirectory` asks the real OS. On Linux two roots
   differing only in case would read as identical there and the second source would be dropped —
   vanishingly unlikely, listed rather than fixed so the inconsistency is at least on the record.

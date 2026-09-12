@@ -53,7 +53,22 @@ public static class OpenCodeFootprint
     /// </remarks>
     public static FootprintRoots Roots() => new(new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        [ConfigRoot] = OpenCodePaths.DefaultGlobalDirectory(),
+        // ⛔ GlobalDirectory(env), NOT DefaultGlobalDirectory() — the same defect the backup
+        // carried until 2026-09-12, found by searching for its twin rather than by a test. With
+        // $OPENCODE_CONFIG_DIR set this measured a directory OpenCode does not use, so the config
+        // root reported ~0 bytes while the real one went uncounted.
+        //
+        // ⭐ ONE root here, unlike the backup's two, and the difference is the kind of data. The
+        // backup carries both roots because both hold user-authored config that cannot be
+        // regenerated. The only category expressed against this root is `node-modules` — a cache
+        // OpenCode materializes to resolve plugin imports, regenerated on demand. That belongs to
+        // whichever config root actually loads.
+        //
+        // ⚠ Whether a redirected install ALSO accumulates a node_modules under the default root
+        // (whose plugins/ stays live for discovery) is UNMEASURED — the probe install has no
+        // redirect, and Phase 16's quantitative half is blocked. A fifth root plus a category for
+        // it would be a guess that may render a permanently-zero row; measure first.
+        [ConfigRoot] = OpenCodePaths.GlobalDirectory(OpenCodeEnvironment.FromProcess()),
         [DataRoot] = OpenCodePaths.DataDirectory(),
         [StateRoot] = OpenCodePaths.StateDirectory(),
         [CacheRoot] = OpenCodePaths.CacheDirectory(),

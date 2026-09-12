@@ -18,6 +18,7 @@ namespace Bennewitz.Ninja.OpenCode.Sdk.Tests.Memory;
 public sealed class OpenCodeFootprintTests
 {
     private string _home = string.Empty;
+    private string? _redirectOnEntry;
 
     [TestInitialize]
     public void Setup()
@@ -25,11 +26,19 @@ public sealed class OpenCodeFootprintTests
         _home = Path.Combine(Path.GetTempPath(), "ocf-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_home);
         PlatformPaths.TestUserProfileOverride = _home;
+
+        // ⚠ Cleared for every test here, and load-bearing since 2026-09-12: the config root now
+        // resolves through GlobalDirectory(env) and so honours this variable. A developer with it
+        // exported would otherwise see these fail on a perfectly good tree, for a reason none of
+        // them mentions. The redirect tests below set it back deliberately.
+        _redirectOnEntry = Environment.GetEnvironmentVariable("OPENCODE_CONFIG_DIR");
+        Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", null);
     }
 
     [TestCleanup]
     public void Cleanup()
     {
+        Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", _redirectOnEntry);
         PlatformPaths.TestUserProfileOverride = null;
         try
         {
@@ -142,6 +151,58 @@ public sealed class OpenCodeFootprintTests
         IReadOnlyList<FootprintCategoryStats> stats = await service.GetStatsAsync(CancellationToken.None);
 
         Assert.AreEqual(1, stats.Single(s => s.Category.Id == "node-modules").FileCount);
+    }
+
+    /// <summary>
+    /// ⛔ The config root follows the config that LOADS, not the default path.
+    /// </summary>
+    /// <remarks>
+    /// The twin of the backup defect fixed the same day, found by searching for it rather than by
+    /// a failing test. With <c>$OPENCODE_CONFIG_DIR</c> set this measured
+    /// <c>~/.config/opencode</c> — a directory OpenCode does not use — so the page would have
+    /// reported a near-empty config footprint while the real <c>node_modules</c> went uncounted.
+    /// </remarks>
+    [TestMethod]
+    public async Task TheConfigRoot_FollowsARedirect()
+    {
+        string redirected = Path.Combine(_home, "elsewhere", "opencode");
+        Directory.CreateDirectory(redirected);
+        Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", redirected);
+
+        // Premise, asserted rather than assumed: the SDK agrees this is the config that loads.
+        Assert.AreEqual(
+            redirected,
+            OpenCodePaths.GlobalDirectory(OpenCodeEnvironment.FromProcess()),
+            "Premise failed: the SDK does not treat the redirected path as the live config root.");
+
+        // The weight lands in the redirected root, which is where OpenCode materialises it.
+        Directory.CreateDirectory(Path.Combine(redirected, "node_modules", "pkg"));
+        await File.WriteAllTextAsync(
+            Path.Combine(redirected, "node_modules", "pkg", "index.js"), new string('x', 64));
+
+        // …and a decoy in the default root, so a pass cannot come from measuring both.
+        string @default = OpenCodePaths.DefaultGlobalDirectory();
+        Directory.CreateDirectory(Path.Combine(@default, "node_modules", "stale"));
+        await File.WriteAllTextAsync(
+            Path.Combine(@default, "node_modules", "stale", "old.js"), new string('y', 999));
+
+        FootprintService service = new(catalog: OpenCodeFootprint.Catalog, roots: OpenCodeFootprint.Roots);
+        IReadOnlyList<FootprintCategoryStats> stats = await service.GetStatsAsync(CancellationToken.None);
+
+        FootprintCategoryStats nodeModules = stats.Single(s => s.Category.Id == "node-modules");
+        Assert.AreEqual(1, nodeModules.FileCount,
+            "The redirected root's node_modules was not the one measured.");
+        Assert.AreEqual(64, nodeModules.TotalBytes,
+            "⛔ 999 here means the DEFAULT root was measured; 1063 means both were.");
+    }
+
+    /// <summary>With no redirect the root is the default path, exactly as before.</summary>
+    [TestMethod]
+    public void TheConfigRoot_IsTheDefaultPath_WhenNotRedirected()
+    {
+        Assert.AreEqual(
+            OpenCodePaths.DefaultGlobalDirectory(),
+            OpenCodeFootprint.Roots().TryResolve(OpenCodeFootprint.ConfigRoot));
     }
 
     [TestMethod]
