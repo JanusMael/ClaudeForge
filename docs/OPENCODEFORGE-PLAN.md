@@ -736,7 +736,7 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 | 11.5 | **Danger indication systematised** | severity everywhere incl. save-preview · 5 guards · **hex→token migration in both apps** | ⚠ touches shipped Essentials | **E2** |
 | 12 | OpenCode Essentials | 17 pinned cards | none | — |
 | 13 | Schema refresh (app + CI) — ✅ **DONE 2026-09-10** | in-app check + provenance badge, **in both apps**; OpenCodeForge also gained the About dialog and version button it never had | benefits both | — |
-| 14 | Backup / Restore + footprint — 🔶 **backup half SHIPPED 2026-09-12; the footprint PAGE is all that remains.** ⛔ **"`auth.json` excluded" is NOT ENOUGH; see Phase 16** | archive + prune. Shipped: OpenCode archives written and restored, the Backup / Restore page in OpenCodeForge, and the footprint catalog + roots. Remaining: a page that renders them. ⛔ Secrets also live in **`opencode.db`** (`account`/`control_account` access+refresh tokens, `credential.value`, `session_share.secret`), which the planned JSON-key classifier **cannot reach** — handled by making the database an explicit credential opt-in, excluded from `Sanitized` outright. ⚠ `auth.json` is absent here only because nobody has authenticated on this install — **it is now excluded by the layout, not by luck**. ⛔ Two same-shaped defects were found and fixed on the way, both "a write path resolved through `DefaultGlobalDirectory()` while every read path used `GlobalDirectory(env)`": the backup archived nothing for a redirected config, and the footprint measured the wrong root. See `AGENTS.md`. | none | — |
+| 14 | Backup / Restore + footprint — ✅ **DONE 2026-09-12.** ⛔ **"`auth.json` excluded" is NOT ENOUGH; see Phase 16** | archive + prune. OpenCode archives written and restored, the Backup / Restore page, the footprint catalog + roots, and the disk-footprint page that renders them (`6e5352b`). ⛔ Secrets also live in **`opencode.db`** (`account`/`control_account` access+refresh tokens, `credential.value`, `session_share.secret`), which the planned JSON-key classifier **cannot reach** — handled by making the database an explicit credential opt-in, excluded from `Sanitized` outright. ⚠ `auth.json` is absent here only because nobody has authenticated on this install — **it is now excluded by the layout, not by luck**. ⛔ **Four same-shaped defects** were found and fixed on the way. Three were writes resolving through `DefaultGlobalDirectory()` while every read used `GlobalDirectory(env)`: the credentials prompt, the backup (archived nothing for a redirected config), and the footprint's own roots. The fourth (`765648a`) is the same shape on a **read** path and is the one to remember — neither OpenCode client supplied its own `FootprintService`, so both reported **Claude's** seven `~/.claude` categories as their own, and a delete would have hit the other agent. See `AGENTS.md`. | none | — |
 | 15 | Packaging — 🔶 **8 slices shipped 2026-09-10; only artwork + docs remain** | app descriptor for the publish scripts · icon + Linux integration · single-file artifact · own release workflow · winget `Bennewitz.Ninja.OpenCodeForge` · full app-update parity · `AssemblyProduct` | ⚠ release workflow, ⚠ shared update service refactored | **F** |
 | 16 | Re-validate against a used install — 🔶 **PROBED 2026-09-10: 3 fully · 4 in part · 1 gate cleared · 2 open** | `scripts/probe-opencode.ps1` + a committed snapshot. ⛔ Still **not a used install** — every session table is empty, so 14's *quantitative* half stays blocked | none | — |
 
@@ -5031,8 +5031,8 @@ precedence the way you meant.
 
 ### Phase 14 — Backup / Restore + data footprint
 
-> 🔶 **PHASE 14 — BACKUP/RESTORE AND FOOTPRINT LANDED 2026-09-11. THREE OF ITS PREMISES WERE
-> CORRECTED 2026-09-10 FIRST, WHICH IS WHY IT WORKS.**
+> ✅ **PHASE 14 — COMPLETE 2026-09-12. THE ENGINE LANDED 2026-09-11, THE TWO PAGES THE DAY AFTER,
+> AND THREE OF ITS PREMISES WERE CORRECTED 2026-09-10 FIRST, WHICH IS WHY IT WORKS.**
 >
 > | Piece | State |
 > |---|---|
@@ -5044,8 +5044,10 @@ precedence the way you meant.
 > | Footprint catalog for OpenCode, measured | ✅ `OpenCodeFootprint` |
 > | Restore advisory for an archive taken without the opt-in | ✅ |
 > | Backup/Restore **page** extracted to the shell | ✅ `4ee8da8` — measured first: **18 Claude references in 1,405 lines**, host supplies wording/products/engine via `BackupPageOptions` |
-> | OpenCodeForge's Backup **page** (UI) | ⛔ **not built** — the shared page exists, nothing constructs it |
-> | Footprint **page** (UI) | ⛔ not built — the catalog is the data half |
+> | OpenCodeForge's Backup **page** (UI) | ✅ `1634a4d` — host options record, view, `App.axaml` template, nav node, 12 wiring tests |
+> | Footprint **page** (UI) | ✅ `6e5352b` — catalog order with no sort, no delete, a *Cannot be regenerated* badge on the one irreplaceable row, 16 wiring tests |
+> | Every OpenCode client supplies its OWN footprint catalog | ✅ `765648a` — see the roadmap row; without it the page above would have rendered Claude's seven categories under an OpenCode heading |
+> | Both pages SEEN RENDERED on the published build | ✅ `a429603` — `scripts/capture-page.ps1` plus the new `--deep-link <nodeId>` flag. ⛔ Nothing below a running window can instantiate a view in these apps, so before this a page could pass every test, publish trimmed clean, and still be blank |
 > | Growth / retention / prune *rates* | ⛔ still blocked on a used install (Phase 16) |
 >
 > ⛔ **A defect this work introduced, caught by its own test and fixed in the same commit.**
@@ -6239,9 +6241,12 @@ ships, and again before Phase 14" — and **Phase 10 shipped without it**, becau
 still has no accumulated usage and the probes cannot be run. A gate nobody can satisfy gets
 walked past; a phase gets scheduled. Promoted 2026-09-09 at the maintainer's direction.
 
-**Phase 14 remains genuinely blocked on it** — see Phase 16 for why that dependency is real
-rather than procedural. Phase 15 is not blocked. Re-run the probes below against the used
-install and diff against what is recorded here.
+ⓘ **Corrected 2026-09-12.** This said *"Phase 14 remains genuinely blocked on it"*, and Phase 14
+shipped complete while it still said so. What is blocked is **Phase 14's quantitative half — growth,
+retention and prune *rates*** — not the phase: the footprint page lists every category, its roots and
+its current sizes without them, and does so correctly on a real install. The distinction is the whole
+reason the page carries no delete button. Phase 15 is not blocked either. Re-run the probes below
+against the used install and diff against what is recorded here.
 
 | # | Re-check | Why it can't be trusted yet | Blocks |
 |---|---|---|---|
