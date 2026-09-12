@@ -1,0 +1,164 @@
+<!--
+    OpenCodeForge's disk-footprint page.
+
+    Same rules as every other view in this app:
+      * x:DataType everywhere, so bindings are COMPILED and a renamed member is a build error.
+      * No ancestor bindings — they resolve by reflection and trip IL2026. The per-row button
+        reaches its page through a code-behind Click handler, the idiom BackupRestoreView uses.
+      * Theme tokens and Opacity, never literal colours.
+      * All text from Strings.resx, including every AutomationProperties.Name.
+
+    ⛔ NO SORTABLE COLUMNS, and no DataGrid. The row ORDER carries the page's only real guidance —
+    most-disposable first — and the sort a user reaches for on a size table, largest first, is the
+    exact inversion of it: node_modules is ~52 MB and regenerates from package.json, while
+    opencode.db is ~530 KB and is the only thing here that cannot be got back. An ItemsControl
+    cannot be re-sorted by clicking, which is the point.
+
+    ⛔ NO DELETE BUTTON. See the page view-model's remarks: the catalog's regeneration behaviour is
+    unmeasured, one row is in no standard backup, and there is no undo. Reveal hands the folder to
+    the file manager, where the OS asks its own question.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bennewitz.Ninja.OpenCodeForge.ViewModels"
+             xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCodeForge.Localization"
+             x:Class="Bennewitz.Ninja.OpenCodeForge.Views.FootprintView"
+             x:DataType="vm:OpenCodeFootprintViewModel">
+
+    <DockPanel>
+
+        <!-- The page-header idiom this app already uses — plain heading plus an Opacity subtitle.
+             See BackupRestoreView for why there is no accent pill here. -->
+        <Border DockPanel.Dock="Top" Padding="16,12"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="{x:Static loc:Strings.HeadingFootprint}"
+                               FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock Text="{x:Static loc:Strings.TextFootprintSubtitle}"
+                               TextWrapping="Wrap" MaxWidth="700" Opacity="0.8" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Padding="12,6"
+                        Content="{x:Static loc:Strings.ButtonFootprintRefresh}"
+                        AutomationProperties.Name="{x:Static loc:Strings.ButtonFootprintRefresh}"
+                        IsEnabled="{Binding !IsBusy}"
+                        Command="{Binding RefreshCommand}" />
+            </Grid>
+        </Border>
+
+        <!--
+            ⛔ The one thing a user must know before acting, said once rather than as a column of
+            six identical cells: NOTHING on this page is in an ordinary backup. Five of the six
+            categories live outside the archived config root entirely, and the sixth — the session
+            database — travels only behind an explicit credentials opt-in and never in Sanitized
+            mode. See OpenCodeFootprintRowViewModel's remarks.
+        -->
+        <Border DockPanel.Dock="Top" Margin="16,12,16,0"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1" CornerRadius="4" Padding="14,10">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{x:Static loc:Strings.HeadingFootprintNotBackedUp}"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource AppSeverityCautionBrush}" />
+                <TextBlock Text="{x:Static loc:Strings.TextFootprintNotBackedUp}"
+                           TextWrapping="Wrap" MaxWidth="800" Opacity="0.9" />
+            </StackPanel>
+        </Border>
+
+        <!-- Total, below the table's own header row so it reads as a summary of what is above the
+             fold rather than as a heading for it. Held back until the first walk finishes: a
+             "0 B across 0 categories" line during load is a measurement, not a placeholder. -->
+        <Border DockPanel.Dock="Bottom" Padding="16,10"
+                IsVisible="{Binding HasMeasured}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding TotalLine}" FontWeight="SemiBold" />
+        </Border>
+
+        <!-- ⚠ A ScrollViewer, because this app once shipped nine views without one and every
+             MaxHeight in App.axaml clipped instead of scrolling. Six rows fit today; the walk is
+             over a live directory and the catalog is data. -->
+        <ScrollViewer Margin="16,12,16,0"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="0">
+
+                <TextBlock Text="{x:Static loc:Strings.TextFootprintMeasuring}"
+                           IsVisible="{Binding IsBusy}"
+                           Opacity="0.7" Margin="0,4,0,8" />
+
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:OpenCodeFootprintRowViewModel">
+                            <Border Padding="8,8"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                    BorderThickness="0,0,0,1">
+                                <DockPanel LastChildFill="True">
+
+                                    <Button DockPanel.Dock="Right"
+                                            VerticalAlignment="Center"
+                                            Margin="8,0,0,0"
+                                            Padding="10,4"
+                                            Content="{x:Static loc:Strings.ButtonFootprintReveal}"
+                                            AutomationProperties.Name="{Binding HumanLabel, StringFormat='{}{0} — Reveal in file manager'}"
+                                            Click="OnReveal" />
+
+                                    <!-- Fixed-width count and size columns so the numbers line up
+                                         down the page; the label and path take what is left and
+                                         ellipsise, because a home directory is arbitrarily long
+                                         and wrapping a path makes the table jump. -->
+                                    <Grid ColumnDefinitions="*,70,90" RowDefinitions="Auto,Auto">
+
+                                        <StackPanel Grid.Row="0" Grid.Column="0"
+                                                    Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding HumanLabel}"
+                                                       FontWeight="SemiBold"
+                                                       ToolTip.Tip="{Binding Tooltip}" />
+                                            <!-- ⛔ The row that must not be deleted says so, because
+                                                 its size says the opposite. -->
+                                            <Border IsVisible="{Binding IsIrreplaceable}"
+                                                    CornerRadius="3" Padding="6,1"
+                                                    VerticalAlignment="Center"
+                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource AppSeverityCriticalBrush}">
+                                                <TextBlock Text="{Binding IrreplaceableLabel}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource AppSeverityCriticalBrush}" />
+                                            </Border>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                                   Text="{Binding AbsolutePath}"
+                                                   Opacity="0.6" FontSize="11"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip.Tip="{Binding AbsolutePath}"
+                                                   FontFamily="Consolas, Menlo, monospace" />
+
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                   Text="{Binding FileCount}"
+                                                   Opacity="0.8"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right" />
+
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                                   Text="{Binding HumanSize}"
+                                                   Opacity="0.8"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right" />
+                                    </Grid>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

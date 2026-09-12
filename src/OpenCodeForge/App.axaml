@@ -13,6 +13,7 @@
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:backup="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
              xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
+             xmlns:vm="using:Bennewitz.Ninja.OpenCodeForge.ViewModels"
              x:Class="Bennewitz.Ninja.OpenCodeForge.App"
              RequestedThemeVariant="Default">
 
@@ -152,6 +153,13 @@
              two-radio scope live. -->
         <DataTemplate DataType="backup:BackupRestoreViewModel">
             <views:BackupRestoreView />
+        </DataTemplate>
+
+        <!-- The disk-footprint page. Unlike Backup, both halves are this app's own: there is no
+             shared footprint page to host, because the sibling app's is fused to its Tier-1 memory
+             editor and to Claude-only per-project transcripts. -->
+        <DataTemplate DataType="vm:OpenCodeFootprintViewModel">
+            <views:FootprintView />
         </DataTemplate>
 
         <!-- MaxHeight rather than Height so a config with two rules does not leave a tall empty

@@ -84,6 +84,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>Deep-link and persisted-state key for the Backup / Restore page.</summary>
     public const string BackupNodeId = "backup-restore";
 
+    /// <summary>Deep-link and persisted-state key for the disk-footprint page.</summary>
+    public const string FootprintNodeId = "footprint";
+
     /// <summary>Card id for the auto-update opt-out on the Essentials page.</summary>
     /// <remarks>
     /// Public so a test can find that card among the schema-backed ones without matching on its
@@ -105,6 +108,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// the tree.
     /// </remarks>
     private BackupRestoreViewModel? _backupVm;
+
+    /// <summary>
+    /// The disk-footprint page's view-model, once the nav tree has been built.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Cached for a different reason from <see cref="_backupVm"/>.</b> That one is held
+    /// because disposing it aborts an in-flight backup; this one holds no cancellable work and
+    /// nothing to dispose. It is cached because <c>InitializeAsync</c> can run more than once and a
+    /// second page would leave the first subscribed to nothing but still measuring — and because
+    /// the rows already on screen should survive a rebuild rather than blanking while the walk
+    /// re-runs.
+    /// </remarks>
+    private OpenCodeFootprintViewModel? _footprintVm;
 
     /// <summary>
     /// The dialog service the Backup page prompts through.
@@ -453,6 +469,22 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         // failed — a user whose config will not load is exactly the user reaching for a restore.
         Navigation.Add(BuildBackupNode());
 
+        // The disk-footprint page, beside Backup and for the same reasons — plus one of its own:
+        // it reads the filesystem rather than any document, so it is the page most likely to still
+        // be useful on a machine whose config will not parse.
+        //
+        // ⛔ Handed the CONFIG section's client, and it must be a client rather than a locally
+        // built service — see OpenCodeFootprintViewModel's remarks. Taken from `Sections` rather
+        // than from the loop's `essentialsSection`, because that variable is only assigned when the
+        // section OPENED, and this page owes nothing to an opened document.
+        Navigation.Add(new NavigationNodeViewModel(Strings.HeadingFootprint)
+        {
+            NodeId = FootprintNodeId,
+            IsTopLevel = true,
+            Editor = _footprintVm ??= new OpenCodeFootprintViewModel(
+                Sections.First(s => s.Product == OpenCodeProducts.Config).Client),
+        });
+
         // Essentials goes FIRST, and is inserted rather than appended because it is built last:
         // its editable card needs a client that has finished opening. Like the artifacts page it
         // appears even when nothing loaded — its derived cards read the environment and the
@@ -507,9 +539,78 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         SelectedNode =
             Navigation.FirstOrDefault(n => string.Equals(n.NodeId, EssentialsNodeId, StringComparison.Ordinal))
             ?? Navigation.FirstOrDefault(n => n.Children.Count > 0)?.Children.FirstOrDefault();
+
+        // ⚠ AFTER the landing page, never instead of it. An unresolvable --deep-link must leave a
+        // working window on its usual page rather than an empty editor area, and assigning the
+        // landing node first is what guarantees that without a second fallback expression here.
+        ApplyDeepLinkIfRequested();
+
         Status = failures.Count == 0
             ? string.Empty
             : $"Could not load: {string.Join(", ", failures)}. See the log for details.";
+    }
+
+    /// <summary>
+    /// Honour <c>--deep-link &lt;nodeId&gt;</c> by selecting that node, if it resolves.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This is the one thing that makes a page on this window observable.</b> Everything
+    /// below a running window is stripped of the App's resource dictionaries and cannot
+    /// instantiate views, so no test can look at a page; before this flag, looking at one meant
+    /// clicking to it by hand, which is exactly the step that gets skipped.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Searches top-level nodes AND their children, because the tree is two kinds of thing.</b>
+    /// Essentials, Artifacts, Backup and Footprint are top-level and carry ids; the schema pages
+    /// are children of a section header. A search that walked only the top level would silently
+    /// fail to resolve every settings page, which is the larger half of the tree.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Expands the parent of a child node.</b> Selecting a node inside a collapsed header
+    /// shows the right editor beside a tree that does not show the selection — which reads as the
+    /// flag having done nothing.
+    /// </para>
+    /// </remarks>
+    private void ApplyDeepLinkIfRequested()
+    {
+        if (DebugFlags.DeepLinkNodeId is not { } requested)
+        {
+            return;
+        }
+
+        foreach (NavigationNodeViewModel top in Navigation)
+        {
+            if (string.Equals(top.NodeId, requested, StringComparison.Ordinal))
+            {
+                SelectedNode = top;
+                Log.Information("[DeepLink] node={NodeId} resolved=true level=top", requested);
+                return;
+            }
+
+            foreach (NavigationNodeViewModel child in top.Children)
+            {
+                if (!string.Equals(child.NodeId, requested, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                top.IsExpanded = true;
+                SelectedNode = child;
+                Log.Information("[DeepLink] node={NodeId} resolved=true level=child", requested);
+                return;
+            }
+        }
+
+        // Named rather than silent: an id that matches nothing is almost always a typo or a page
+        // that failed to load, and both are things the person who passed the flag needs told.
+        Log.Warning(
+            "[DeepLink] node={NodeId} resolved=false; known ids: {Known}. Landing on {Landed}.",
+            requested,
+            string.Join(", ", Navigation.SelectMany(n => n.Children.Prepend(n))
+                .Select(n => n.NodeId)
+                .Where(id => !string.IsNullOrEmpty(id))),
+            SelectedNode?.NodeId ?? "(nothing)");
     }
 
     /// <summary>

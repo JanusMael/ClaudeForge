@@ -498,4 +498,70 @@ This will overwrite your current settings with the contents of the dropped backu
   <data name="WatermarkRestoreDir" xml:space="preserve">
     <value>No folder chosen — click Browse to locate backups</value>
   </data>
+  <data name="HeadingFootprint" xml:space="preserve">
+    <value>Disk footprint</value>
+    <comment>Page heading and the navigation node's title — one key, so the two cannot disagree.</comment>
+  </data>
+  <data name="TextFootprintSubtitle" xml:space="preserve">
+    <value>What OpenCode has left on this machine, listed most-disposable first rather than largest first. Reveal opens a folder in your file manager; nothing on this page deletes anything.</value>
+  </data>
+  <data name="HeadingFootprintNotBackedUp" xml:space="preserve">
+    <value>None of this is in an ordinary backup</value>
+  </data>
+  <data name="TextFootprintNotBackedUp" xml:space="preserve">
+    <value>Five of these six categories sit outside the config folder a backup archives, and the sixth — the session database — is included only when you explicitly opt in to backing up credentials, and never in a sanitized archive. Anything you clear from here is gone unless you have copied it yourself.</value>
+  </data>
+  <data name="TextFootprintMeasuring" xml:space="preserve">
+    <value>Measuring…</value>
+  </data>
+  <data name="ButtonFootprintRefresh" xml:space="preserve">
+    <value>Re-measure</value>
+  </data>
+  <data name="ButtonFootprintReveal" xml:space="preserve">
+    <value>Reveal</value>
+  </data>
+  <data name="LabelFootprintTotalFmt" xml:space="preserve">
+    <value>{0} across {1} categories</value>
+    <comment>{0} is a humanised size such as "52.6 MB"; {1} is the number of categories measured, including any that found nothing.</comment>
+  </data>
+  <data name="LabelFootprintIrreplaceable" xml:space="preserve">
+    <value>Cannot be regenerated</value>
+    <comment>Badge on the one row whose small size would otherwise imply it is safe to delete.</comment>
+  </data>
+  <data name="LabelFootprintNodeModules" xml:space="preserve">
+    <value>Plugin packages (node_modules)</value>
+  </data>
+  <data name="TipFootprintNodeModules" xml:space="preserve">
+    <value>Packages OpenCode unpacks so it can resolve plugin imports — thousands of files for as little as one declared dependency. Regenerated on demand, and already excluded from backups by OpenCode's own ignore rules. Usually the largest thing here and the safest to clear.</value>
+  </data>
+  <data name="LabelFootprintDownloadTemps" xml:space="preserve">
+    <value>Interrupted downloads</value>
+  </data>
+  <data name="TipFootprintDownloadTemps" xml:space="preserve">
+    <value>Leftovers from downloads that did not finish: an interrupted fetch leaves a full-size .tmp file beside the completed one and nothing ever cleans it up, alongside anything left behind by a search-tool download. A temporary file whose finished version already exists cannot be needed.</value>
+  </data>
+  <data name="LabelFootprintModelCatalog" xml:space="preserve">
+    <value>Model catalogue cache</value>
+  </data>
+  <data name="TipFootprintModelCatalog" xml:space="preserve">
+    <value>The cached list of every model OpenCode knows how to talk to. Re-downloaded automatically the next time it is needed.</value>
+  </data>
+  <data name="LabelFootprintLogs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="TipFootprintLogs" xml:space="preserve">
+    <value>OpenCode's own run logs. Useful when diagnosing a problem, and read by nothing else.</value>
+  </data>
+  <data name="LabelFootprintLocks" xml:space="preserve">
+    <value>Session locks</value>
+  </data>
+  <data name="TipFootprintLocks" xml:space="preserve">
+    <value>One folder per lock OpenCode is holding, each with a heartbeat file. Entries left over from a session that did not exit cleanly are harmless but never cleaned up on their own.</value>
+  </data>
+  <data name="LabelFootprintSessionDatabase" xml:space="preserve">
+    <value>Session database</value>
+  </data>
+  <data name="TipFootprintSessionDatabase" xml:space="preserve">
+    <value>Every session, message and part OpenCode has recorded, plus its stored account tokens — and the two sidecar files without which a copy of it is a stale snapshot. This is the only thing on this page that cannot be regenerated, and an ordinary backup does not contain it.</value>
+  </data>
 </root>

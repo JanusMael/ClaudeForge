@@ -472,4 +472,72 @@ public static class Strings
 
     /// <summary>“No folder chosen — click Browse to locate backups”</summary>
     public static string WatermarkRestoreDir => Get(nameof(WatermarkRestoreDir));
+
+    // ── Disk footprint page ───────────────────────────────────────────────────
+    // The six category labels and their six tooltips are keyed by
+    // FootprintCategory.Id in OpenCodeFootprintRowViewModel, not by position. A category
+    // added to OpenCodeFootprint.Catalog without a pair here renders its PascalCase id.
+
+    /// <summary>“Re-measure”</summary>
+    public static string ButtonFootprintRefresh => Get(nameof(ButtonFootprintRefresh));
+
+    /// <summary>“Reveal”</summary>
+    public static string ButtonFootprintReveal => Get(nameof(ButtonFootprintReveal));
+
+    /// <summary>“Disk footprint” — the page heading AND the navigation node's title.</summary>
+    public static string HeadingFootprint => Get(nameof(HeadingFootprint));
+
+    /// <summary>“None of this is in an ordinary backup”</summary>
+    public static string HeadingFootprintNotBackedUp => Get(nameof(HeadingFootprintNotBackedUp));
+
+    /// <summary>“Interrupted downloads”</summary>
+    public static string LabelFootprintDownloadTemps => Get(nameof(LabelFootprintDownloadTemps));
+
+    /// <summary>“Cannot be regenerated” — badge on the session-database row only.</summary>
+    public static string LabelFootprintIrreplaceable => Get(nameof(LabelFootprintIrreplaceable));
+
+    /// <summary>“Session locks”</summary>
+    public static string LabelFootprintLocks => Get(nameof(LabelFootprintLocks));
+
+    /// <summary>“Logs”</summary>
+    public static string LabelFootprintLogs => Get(nameof(LabelFootprintLogs));
+
+    /// <summary>“Model catalogue cache”</summary>
+    public static string LabelFootprintModelCatalog => Get(nameof(LabelFootprintModelCatalog));
+
+    /// <summary>“Plugin packages (node_modules)”</summary>
+    public static string LabelFootprintNodeModules => Get(nameof(LabelFootprintNodeModules));
+
+    /// <summary>“Session database”</summary>
+    public static string LabelFootprintSessionDatabase => Get(nameof(LabelFootprintSessionDatabase));
+
+    /// <summary>“{0} across {1} categories”</summary>
+    public static string LabelFootprintTotalFmt => Get(nameof(LabelFootprintTotalFmt));
+
+    /// <summary>“Measuring…”</summary>
+    public static string TextFootprintMeasuring => Get(nameof(TextFootprintMeasuring));
+
+    /// <summary>“Five of these six categories sit outside the config folder a backup archives…”</summary>
+    public static string TextFootprintNotBackedUp => Get(nameof(TextFootprintNotBackedUp));
+
+    /// <summary>“What OpenCode has left on this machine, listed most-disposable first…”</summary>
+    public static string TextFootprintSubtitle => Get(nameof(TextFootprintSubtitle));
+
+    /// <summary>“Leftovers from downloads that did not finish…”</summary>
+    public static string TipFootprintDownloadTemps => Get(nameof(TipFootprintDownloadTemps));
+
+    /// <summary>“One folder per lock OpenCode is holding, each with a heartbeat file…”</summary>
+    public static string TipFootprintLocks => Get(nameof(TipFootprintLocks));
+
+    /// <summary>“OpenCode's own run logs…”</summary>
+    public static string TipFootprintLogs => Get(nameof(TipFootprintLogs));
+
+    /// <summary>“The cached list of every model OpenCode knows how to talk to…”</summary>
+    public static string TipFootprintModelCatalog => Get(nameof(TipFootprintModelCatalog));
+
+    /// <summary>“Packages OpenCode unpacks so it can resolve plugin imports…”</summary>
+    public static string TipFootprintNodeModules => Get(nameof(TipFootprintNodeModules));
+
+    /// <summary>“Every session, message and part OpenCode has recorded…”</summary>
+    public static string TipFootprintSessionDatabase => Get(nameof(TipFootprintSessionDatabase));
 }

@@ -43,6 +43,30 @@ internal static class DebugFlags
     /// </remarks>
     internal static bool SimulateUpdate { get; private set; }
 
+    /// <summary>
+    /// The navigation node id supplied via <c>--deep-link &lt;nodeId&gt;</c>, or
+    /// <see langword="null"/> when the app should land on its usual page.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This exists to make pages OBSERVABLE, and that was not a nicety.</b> Two pages shipped
+    /// on this window having never been seen rendered: the headless test app is deliberately
+    /// stripped of the App's resource dictionaries and cannot instantiate views, so nothing below
+    /// a running window can drive navigation. Without a flag, looking at a page meant clicking to
+    /// it by hand and remembering to — which is how the Backup page reached a green suite, a clean
+    /// trimmed publish and a documented verification gap all at once.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A bare node id, NOT ClaudeForge's <c>&lt;page&gt;/&lt;tab&gt;/&lt;item&gt;</c> path.</b>
+    /// That app's <c>NavDeepPath</c> exists because its pages have addressable interiors —
+    /// <c>agents-skills/skills/pdf</c> selects one artifact inside one tab. No page in this window
+    /// has an interior worth addressing yet. Accepting the richer syntax now would mean shipping a
+    /// parser for segments nothing consumes, and it is the segments that carry all the difficulty;
+    /// widening a node id to a path later is additive.
+    /// </para>
+    /// </remarks>
+    internal static string? DeepLinkNodeId { get; private set; }
+
     /// <summary>Whether <see cref="Initialize"/> has run, so <c>--debug-help</c> can report.</summary>
     private static bool _initialized;
 
@@ -56,6 +80,11 @@ internal static class DebugFlags
           --simulate-update                  Pretend a newer release exists, so the update
                                              banner and the About dialog's check can be
                                              exercised without publishing one.
+          --deep-link <nodeId>               Select a navigation node on launch, so a page can
+                                             be looked at without clicking to it. Known ids:
+                                             essentials, artifacts, backup-restore, footprint.
+                                             An id that matches nothing warns and the app
+                                             lands on its usual page.
           --debug-help                       Print this and continue.
         """;
 
@@ -107,7 +136,52 @@ internal static class DebugFlags
                 ApplySchemaSource(args[i + 1]);
                 continue;
             }
+
+            if (string.Equals(arg, "--deep-link", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 >= args.Length)
+                {
+                    Log.Warning(
+                        "[DebugFlags] --deep-link needs a node id (e.g. --deep-link footprint). "
+                        + "Landing on the usual page.");
+                    continue;
+                }
+
+                ApplyDeepLink(args[i + 1]);
+                continue;
+            }
         }
+    }
+
+    /// <summary>Validate and record a <c>--deep-link</c> value.</summary>
+    /// <remarks>
+    /// ⚠ <b>The rejected case that matters is a MISSING value, not a misspelled one.</b>
+    /// <c>--deep-link --simulate-update</c> is what a user types when they forget the id. Under
+    /// this class's peek-don't-consume rule that flag still parses on the next iteration, so the
+    /// damage is not a lost flag — it is that <c>--simulate-update</c> would be recorded as a node
+    /// id and the window would then warn about a node nobody named. A leading <c>--</c> can never
+    /// be a node id (they are bare tokens, declared as constants on the window), so the diagnosis
+    /// belongs here, where the real mistake is still visible.
+    /// <para>
+    /// ⛔ Unknown-but-well-formed ids are NOT rejected here. This class cannot see the navigation
+    /// tree — it parses before any window exists — and the tree is built from whichever sections
+    /// actually load, so the set of valid ids is a runtime fact. The window warns when it cannot
+    /// resolve one; duplicating a guess at the list here would go stale the first time a page is
+    /// added.
+    /// </para>
+    /// </remarks>
+    private static void ApplyDeepLink(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.StartsWith("--", StringComparison.Ordinal))
+        {
+            Log.Warning(
+                "[DebugFlags] --deep-link {Value} rejected: expected a node id such as "
+                + "'footprint'. Landing on the usual page.", value);
+            return;
+        }
+
+        DeepLinkNodeId = value;
+        Log.Information("[DebugFlags] --deep-link {NodeId}: that node will be selected on launch", value);
     }
 
     private static void ApplySchemaSource(string value)
@@ -147,6 +221,11 @@ internal static class DebugFlags
             active.Add($"--schema-source {source.ToString().ToLowerInvariant()}");
         }
 
+        if (DeepLinkNodeId is { } nodeId)
+        {
+            active.Add($"--deep-link {nodeId}");
+        }
+
         return active.Count == 0 ? string.Empty : string.Join(' ', active);
     }
 
@@ -161,6 +240,7 @@ internal static class DebugFlags
     {
         SimulateUpdate = false;
         SchemaRegistry.ProcessSourceOverride = null;
+        DeepLinkNodeId = null;
         _initialized = false;
     }
 
