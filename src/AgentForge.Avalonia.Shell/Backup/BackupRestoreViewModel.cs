@@ -591,7 +591,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             if (Mode != BackupMode.Sanitized)
             {
                 DialogMessage credMsg = DialogMessage.Builder()
-                                                     .Path("~/.claude/.credentials.json")
+                                                     .Path(_options.CredentialsPathDisplay)
                                                      .Text(_text.TextCredentialsExplainer)
                                                      .Build();
                 bool? include = await _dialogService.ShowConfirmAsync(

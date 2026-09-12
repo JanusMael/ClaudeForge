@@ -52,6 +52,20 @@ public sealed record BackupPageOptions
     public required IReadOnlyList<string> AgentProcessNames { get; init; }
 
     /// <summary>
+    /// How to name this host's credential store in the include-credentials prompt — displayed as a
+    /// path, immediately before <see cref="BackupPageText.TextCredentialsExplainer"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Was the literal <c>"~/.claude/.credentials.json"</c>, inside the shared page.</b> It
+    /// survived the page's extraction because nothing about a hardcoded string fails when a second
+    /// host arrives — OpenCodeForge's prompt would simply have asked about a Claude file that its
+    /// archives have never contained, while the data actually at stake is
+    /// <c>opencode.db</c> and its two SQLite sidecars. A prompt that names the wrong file is worse
+    /// than a vague one: the user's "omit" or "include" is a decision about something else.
+    /// </remarks>
+    public required string CredentialsPathDisplay { get; init; }
+
+    /// <summary>
     /// The localized include-in-backup checkbox label for a product.
     /// </summary>
     /// <remarks>

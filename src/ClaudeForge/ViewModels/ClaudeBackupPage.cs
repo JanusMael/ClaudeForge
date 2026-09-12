@@ -59,6 +59,10 @@ internal static class ClaudeBackupPage
         // per-file lock failures individually.
         AgentProcessNames = ["claude", "claude-desktop"],
 
+        // The file the include-credentials prompt asks about. A display string, not a resolved
+        // path: the prompt is about WHICH secrets travel, and "~" reads in every locale.
+        CredentialsPathDisplay = "~/.claude/.credentials.json",
+
         // Translated into nine locales, unlike ProductDescriptor.DisplayName — which is why these
         // are a lookup rather than the descriptor's own name.
         ProductCheckboxLabel = static product =>
