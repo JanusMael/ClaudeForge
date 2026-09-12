@@ -175,4 +175,327 @@
   <data name="EssentialsCardCheckForUpdatesBody" xml:space="preserve">
     <value>When enabled, OpenCodeForge queries GitHub once per launch to see if a newer release is available, and shows a dismissible banner if so. The check is silent on network failure. Each version is dismissed independently — when a newer release appears, the banner fires again.</value>
   </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Backup and restore</value>
+  </data>
+  <data name="AutoNameBackupsGrid" xml:space="preserve">
+    <value>Available backups</value>
+  </data>
+  <data name="AutoNameBrowseBackupFolder" xml:space="preserve">
+    <value>Browse for backup output folder</value>
+  </data>
+  <data name="AutoNameBrowseRestoreFolder" xml:space="preserve">
+    <value>Browse for restore source folder</value>
+  </data>
+  <data name="ButtonBrowse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ButtonContinueWithoutSaving" xml:space="preserve">
+    <value>Continue without saving</value>
+  </data>
+  <data name="ButtonCreateBackup" xml:space="preserve">
+    <value>Create Backup</value>
+  </data>
+  <data name="ButtonDeleteBackup" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ButtonDiscardAndRestore" xml:space="preserve">
+    <value>Discard and restore</value>
+  </data>
+  <data name="ButtonIncludeCredentialsConfirm" xml:space="preserve">
+    <value>Include credentials</value>
+  </data>
+  <data name="ButtonOmitCredentials" xml:space="preserve">
+    <value>Omit credentials</value>
+  </data>
+  <data name="ButtonRestore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="ButtonRestoreAnyway" xml:space="preserve">
+    <value>Restore anyway</value>
+  </data>
+  <data name="ButtonSaveDialog" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="ButtonShareBackup" xml:space="preserve">
+    <value>Share</value>
+  </data>
+  <data name="DialogTitleBackupFailed" xml:space="preserve">
+    <value>Backup Failed</value>
+  </data>
+  <data name="DialogTitleBackupWithoutSaving" xml:space="preserve">
+    <value>Backup Without Saving?</value>
+  </data>
+  <data name="DialogTitleCrossPlatformRestore" xml:space="preserve">
+    <value>Cross-platform restore</value>
+  </data>
+  <data name="DialogTitleDiscardUnsavedEdits" xml:space="preserve">
+    <value>Discard Unsaved Edits?</value>
+  </data>
+  <data name="DialogTitleDropRestore" xml:space="preserve">
+    <value>Restore from dropped backup?</value>
+  </data>
+  <data name="DialogTitleDropRestoreInvalid" xml:space="preserve">
+    <value>Cannot restore from dropped file</value>
+  </data>
+  <data name="DialogTitleIncludeCredentials" xml:space="preserve">
+    <value>Include session history and credentials?</value>
+  </data>
+  <data name="DialogTitleRestoreCompletedSkippedFmt" xml:space="preserve">
+    <value>Restore completed — {0} file(s) skipped</value>
+  </data>
+  <data name="DialogTitleRestoreFailed" xml:space="preserve">
+    <value>Restore Failed</value>
+  </data>
+  <data name="DialogTitleUnsavedChanges" xml:space="preserve">
+    <value>Unsaved Changes</value>
+  </data>
+  <data name="HeaderBackupActions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="HeaderBackupClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="HeaderBackupDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="HeaderBackupFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="HeaderBackupMode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="HeaderBackupPlatform" xml:space="preserve">
+    <value>Platform</value>
+  </data>
+  <data name="HeaderBackupSize" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="HeadingBackupContents" xml:space="preserve">
+    <value>What backups include</value>
+  </data>
+  <data name="HeadingBackupRestore" xml:space="preserve">
+    <value>Backup / Restore</value>
+  </data>
+  <data name="LabelBackupIncludesProject" xml:space="preserve">
+    <value>Includes open project: {0}</value>
+  </data>
+  <data name="LabelBackupNoProjectOpen" xml:space="preserve">
+    <value>User-level config only</value>
+  </data>
+  <data name="LabelClients" xml:space="preserve">
+    <value>Clients</value>
+  </data>
+  <data name="LabelKeepAll" xml:space="preserve">
+    <value>backups (0 = keep all)</value>
+  </data>
+  <data name="LabelKeepLast" xml:space="preserve">
+    <value>Keep last</value>
+  </data>
+  <data name="LabelLastBackupDaysFmt" xml:space="preserve">
+    <value>Last backup: {0} day(s) ago</value>
+  </data>
+  <data name="LabelLastBackupHoursFmt" xml:space="preserve">
+    <value>Last backup: {0} hour(s) ago</value>
+  </data>
+  <data name="LabelLastBackupJustNow" xml:space="preserve">
+    <value>Last backup: just now</value>
+  </data>
+  <data name="LabelLastBackupMinutesFmt" xml:space="preserve">
+    <value>Last backup: {0} minute(s) ago</value>
+  </data>
+  <data name="LabelLastBackupNever" xml:space="preserve">
+    <value>No backup yet</value>
+  </data>
+  <data name="LabelOutputFolder" xml:space="preserve">
+    <value>Output folder</value>
+  </data>
+  <data name="LabelRestoreFolder" xml:space="preserve">
+    <value>Restore folder</value>
+  </data>
+  <data name="LabelRetention" xml:space="preserve">
+    <value>Retention</value>
+  </data>
+  <data name="LabelScope" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="MenuOpenFileLocation" xml:space="preserve">
+    <value>Open file location</value>
+  </data>
+  <data name="ProgressCreatingJunction" xml:space="preserve">
+    <value>Creating junction…</value>
+  </data>
+  <data name="ProgressPreparing" xml:space="preserve">
+    <value>Preparing…</value>
+  </data>
+  <data name="ProgressRestoring" xml:space="preserve">
+    <value>Restoring…</value>
+  </data>
+  <data name="ProgressStarting" xml:space="preserve">
+    <value>Starting…</value>
+  </data>
+  <data name="RadioSanitizedBackup" xml:space="preserve">
+    <value>Sanitized for sharing (secrets redacted — not restorable)</value>
+  </data>
+  <data name="RadioSettingsOnly" xml:space="preserve">
+    <value>Backup — everything OpenCode&apos;s config root holds</value>
+  </data>
+  <data name="StatusBackupDeletedFmt" xml:space="preserve">
+    <value>Deleted {0}.</value>
+  </data>
+  <data name="StatusBackupDeleteFailedFmt" xml:space="preserve">
+    <value>Could not delete {0}.</value>
+  </data>
+  <data name="StatusBackupWarningsFmt" xml:space="preserve">
+    <value>  [!] {0} warning(s) — see manifest.</value>
+  </data>
+  <data name="StatusChooseBackupFolder" xml:space="preserve">
+    <value>Choose an output folder first (click Browse next to the folder path).</value>
+  </data>
+  <data name="StatusOpenCodeRunningFmt" xml:space="preserve">
+    <value>[!] OpenCode is currently running ({0} process(es)). Some files may be locked during restore.</value>
+  </data>
+  <data name="TabBackup" xml:space="preserve">
+    <value>Backup</value>
+  </data>
+  <data name="TabRestore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="TextBackupContentsExcluded" xml:space="preserve">
+    <value>Never archived: auth.json. Cache, state and logs are regenerable and are left out.</value>
+  </data>
+  <data name="TextBackupContentsLine1" xml:space="preserve">
+    <value>All of ~/.config/opencode/ — opencode.json, tui.json, agents, commands, plugins and themes.</value>
+  </data>
+  <data name="TextBackupContentsLine2" xml:space="preserve">
+    <value>OpenCode&apos;s own .gitignore in that folder decides what is skipped, so node_modules/ and the lockfiles beside it stay out.</value>
+  </data>
+  <data name="TextBackupContentsLine3" xml:space="preserve">
+    <value>Optionally opencode.db and its -wal / -shm sidecars — session history, and the access tokens stored alongside it.</value>
+  </data>
+  <data name="TextBackupContentsProjectNote" xml:space="preserve">
+    <value>Per-project .opencode/ directories live with your repositories and are not archived here.</value>
+  </data>
+  <data name="TextBackupDirHint" xml:space="preserve">
+    <value>Backup archives (.zip) are written to this folder. The restore tab can scan a different folder.</value>
+  </data>
+  <data name="TextBackupRestoreSubtitle" xml:space="preserve">
+    <value>Create timestamped backup archives of your OpenCode config and restore from them later. Session history and credentials are opt-in per backup.</value>
+  </data>
+  <data name="TextBackupSecretsWarning" xml:space="preserve">
+    <value>⚠ This mode preserves secrets verbatim. API keys, OAuth tokens, and MCP authorization headers will be stored in plaintext inside the archive. Keep the .zip file private; choose Sanitized mode below if you need to share the backup.</value>
+  </data>
+  <data name="TextChooseRestoreFolder" xml:space="preserve">
+    <value>Choose a folder above to see available backups.</value>
+  </data>
+  <data name="TextCredentialsExplainer" xml:space="preserve">
+    <value> holds your session history and the OAuth tokens that go with it. Anyone with this backup file can log in as you while those tokens remain valid.
+
+Only include it if the backup will stay on trusted storage.
+
+Include session history and credentials in this backup?</value>
+  </data>
+  <data name="TextCrossPlatformRestoreMiddle" xml:space="preserve">
+    <value>&apos; but you are on &apos;</value>
+  </data>
+  <data name="TextCrossPlatformRestorePrefix" xml:space="preserve">
+    <value>This backup was taken on &apos;</value>
+  </data>
+  <data name="TextCrossPlatformRestoreSuffix" xml:space="preserve">
+    <value>&apos;.
+
+Some paths inside config files may need manual edits afterward. Continue?</value>
+  </data>
+  <data name="TextDiscardUnsavedForRestore" xml:space="preserve">
+    <value>Restoring will overwrite your current settings. Discard your unsaved edits and continue with the restore?</value>
+  </data>
+  <data name="TextDropRestoreNotABackup" xml:space="preserve">
+    <value>The dropped file is not a valid OpenCodeForge backup archive. It may be corrupt, from a newer version, or a different kind of zip.</value>
+  </data>
+  <data name="TextDropRestoreNotZip" xml:space="preserve">
+    <value>Only backup .zip files can be dropped here to restore.</value>
+  </data>
+  <data name="TextDropRestorePromptPrefix" xml:space="preserve">
+    <value>Restore from </value>
+  </data>
+  <data name="TextDropRestorePromptSuffix" xml:space="preserve">
+    <value>?
+
+This will overwrite your current settings with the contents of the dropped backup archive.</value>
+  </data>
+  <data name="TextNoBackupDirWarning" xml:space="preserve">
+    <value>⚠ No output folder selected. Click Browse to choose where backup files will be saved.</value>
+  </data>
+  <data name="TextNoBackupYetDescription" xml:space="preserve">
+    <value>Use &apos;Create Backup&apos; to make your first snapshot. Backups are zip files that can be restored from the Restore tab.</value>
+  </data>
+  <data name="TextNoRestoreDirWarning" xml:space="preserve">
+    <value>⚠ No folder selected. Click Browse to choose the folder containing your backup archives.</value>
+  </data>
+  <data name="TextProceedWithoutSavingBackup" xml:space="preserve">
+    <value>Continue with the backup? Your unsaved edits will not be in this backup, but they will remain in memory and you can save them later.</value>
+  </data>
+  <data name="TextRestoreDescription" xml:space="preserve">
+    <value>Select a backup folder and choose a zip file to restore. This will overwrite your current configuration files.</value>
+  </data>
+  <data name="TextRestoreInstructions" xml:space="preserve">
+    <value>Select a backup to restore. Existing files will be moved aside as .pre-restore-*.bak before being overwritten.</value>
+  </data>
+  <data name="TextRestoreSkippedExplainer" xml:space="preserve">
+    <value>The restore finished but the following file(s) could not be written (they may be locked by a running OpenCode process). Close OpenCode and restore again if needed:
+
+</value>
+  </data>
+  <data name="TextRestoreSkippedTrailerFmt" xml:space="preserve">
+    <value>
+  … and {0} more (see the log for the full list)</value>
+  </data>
+  <data name="TextSanitizedModeExplainer" xml:space="preserve">
+    <value>Sanitized backup: secret-bearing values will be replaced with &quot;[redacted]&quot; so the archive is safe to share. The session database is skipped entirely. The result CANNOT be restored — it&apos;s a sharing artefact, not a recovery point.</value>
+  </data>
+  <data name="TextSaveBeforeBackupPrompt" xml:space="preserve">
+    <value>You have unsaved edits in the active workspace. Save them before backing up? Otherwise the backup will only contain what is currently on disk — your unsaved edits will not be included.</value>
+  </data>
+  <data name="TextSaveBeforeRestorePrompt" xml:space="preserve">
+    <value>You have unsaved edits in the active workspace. Save them before restoring?</value>
+  </data>
+  <data name="TipButtonCancel" xml:space="preserve">
+    <value>Cancel the current operation</value>
+  </data>
+  <data name="TipButtonShareBackup" xml:space="preserve">
+    <value>Send this backup archive to another app or device via the OS share panel</value>
+  </data>
+  <data name="TipHeaderBackupActions" xml:space="preserve">
+    <value>Restore overwrites your live settings with this backup (existing files are backed up as .pre-restore-*.bak). Delete permanently removes the archive.</value>
+  </data>
+  <data name="TipHeaderBackupClients" xml:space="preserve">
+    <value>Which OpenCode configs were included: OpenCode and/or OpenCode TUI.</value>
+  </data>
+  <data name="TipHeaderBackupDate" xml:space="preserve">
+    <value>Date and time this backup was created (local time)</value>
+  </data>
+  <data name="TipHeaderBackupFile" xml:space="preserve">
+    <value>Name of the backup archive file on disk</value>
+  </data>
+  <data name="TipHeaderBackupMode" xml:space="preserve">
+    <value>Backup scope — Backup captures everything under ~/.config/opencode/; Sanitized redacts secret-bearing values and cannot be restored.</value>
+  </data>
+  <data name="TipHeaderBackupPlatform" xml:space="preserve">
+    <value>OS platform that created this backup: windows, macos, or linux. Restoring a backup from a different platform may require manual path edits.</value>
+  </data>
+  <data name="TipHeaderBackupSize" xml:space="preserve">
+    <value>Compressed size of the backup archive</value>
+  </data>
+  <data name="TipRadioSanitizedBackup" xml:space="preserve">
+    <value>Same file scope as a normal backup, but every *.json value whose key matches the sensitive-keys classifier (env, headers, credentials, auth, *token, *secret, *password, *apikey, bearer) is replaced with the literal string &quot;[redacted]&quot;. Intended for sharing your configuration shape with support, the community, or a bug report without leaking API keys, MCP auth headers, or OAuth tokens. opencode.db is excluded outright — its secrets are SQLite rows, which the redactor cannot reach. Sanitized archives cannot be restored.</value>
+  </data>
+  <data name="WatermarkBackupDir" xml:space="preserve">
+    <value>No folder chosen — click Browse to set one</value>
+  </data>
+  <data name="WatermarkRestoreDir" xml:space="preserve">
+    <value>No folder chosen — click Browse to locate backups</value>
+  </data>
 </root>

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
@@ -11,6 +12,7 @@ using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Avalonia.Threading;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
 using Bennewitz.Ninja.OpenCode.Avalonia.Artifacts;
@@ -79,6 +81,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>Deep-link and persisted-state key for the Essentials page.</summary>
     public const string EssentialsNodeId = "essentials";
 
+    /// <summary>Deep-link and persisted-state key for the Backup / Restore page.</summary>
+    public const string BackupNodeId = "backup-restore";
+
     /// <summary>Card id for the auto-update opt-out on the Essentials page.</summary>
     /// <remarks>
     /// Public so a test can find that card among the schema-backed ones without matching on its
@@ -88,6 +93,31 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
 
     /// <summary>Sections in navigation order.</summary>
     public IReadOnlyList<HostedSection> Sections { get; }
+
+    /// <summary>
+    /// The Backup / Restore page's view-model, once the nav tree has been built.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Held in a field because <see cref="BackupRestoreViewModel.Dispose"/> cancels an
+    /// in-flight backup.</b> A page rebuilt on every navigation would abort a running backup the
+    /// moment the user clicked elsewhere to wait it out. It is also what lets
+    /// <see cref="OnBackupStateChanged"/> read the page's directories back without going through
+    /// the tree.
+    /// </remarks>
+    private BackupRestoreViewModel? _backupVm;
+
+    /// <summary>
+    /// The dialog service the Backup page prompts through.
+    /// </summary>
+    /// <remarks>
+    /// Constructed here rather than injected, unlike the sibling app: this window has no other
+    /// dialog-bearing page yet, and <see cref="AvaloniaDialogService"/> resolves the owner window
+    /// from the application lifetime on each call, so it needs nothing at construction. ⚠ Its
+    /// <c>RegisterSaveChangesDialog</c> hook is deliberately left unregistered — the only caller is
+    /// <c>ShowSaveChangesDialogAsync</c>, which this app reaches only through the Backup page's
+    /// save-before-backup bridge, and that bridge is not wired (see <c>BuildBackupNode</c>).
+    /// </remarks>
+    private readonly AvaloniaDialogService _dialogService = new();
 
     /// <summary>The navigation tree: one header per section, one child per settings page.</summary>
     public ObservableCollection<NavigationNodeViewModel> Navigation { get; } = [];
@@ -418,6 +448,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = new OpenCodeArtifactsPageViewModel(OpenCodeEnvironment.FromProcess(), null),
         });
 
+        // Backup / Restore, after the artifacts page and outside the loop for the same reasons: no
+        // schema section, no client to open, and it has to appear even when every section above
+        // failed — a user whose config will not load is exactly the user reaching for a restore.
+        Navigation.Add(BuildBackupNode());
+
         // Essentials goes FIRST, and is inserted rather than appended because it is built last:
         // its editable card needs a client that has finished opening. Like the artifacts page it
         // appears even when nothing loaded — its derived cards read the environment and the
@@ -664,6 +699,86 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         _disposed = true;
         UpdateBanner.Dismissed -= OnUpdateBannerDismissed;
         StopUpdateRecheckLoop();
+
+        // ⚠ Unsubscribe BEFORE disposing: Dispose cancels the backup CTS, which can settle
+        // observable properties on the way down and re-enter OnBackupStateChanged — writing the
+        // state file from a window that is already going.
+        if (_backupVm is not null)
+        {
+            _backupVm.PersistentStateChanged -= OnBackupStateChanged;
+            _backupVm.Dispose();
+            _backupVm = null;
+        }
+    }
+
+    /// <summary>
+    /// Build the Backup / Restore nav node, constructing its view-model on first use.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>The products come from <see cref="Sections"/>, not from
+    /// <c>OpenCodeBackupPage.DefaultProducts</c>.</b> A product this window hosts is a product the
+    /// user can back up, and taking both lists from one source is what stops them drifting when a
+    /// third section arrives. The fallback constant exists for callers with no window.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>No save-before-backup bridge, unlike the sibling app.</b> ClaudeForge supplies
+    /// <c>IsAnyWorkspaceDirty</c> / <c>SaveAllWorkspaces</c> / <c>OnRestoreCompleted</c> so a
+    /// backup taken mid-edit can offer to flush first. This window has no save-all pipeline to
+    /// call, so the page's unsaved-edits prompts stay dormant rather than being wired to something
+    /// that cannot honour them. ⛔ The consequence is real and belongs in the follow-up: a restore
+    /// here does NOT reload the open documents, so the editor keeps showing the pre-restore file
+    /// until the app is restarted.
+    /// </para>
+    /// </remarks>
+    private NavigationNodeViewModel BuildBackupNode()
+    {
+        if (_backupVm is null)
+        {
+            WindowState state = WindowStateService.Load();
+
+            _backupVm = new BackupRestoreViewModel(
+                _dialogService,
+                OpenCodeBackupPage.Options([.. Sections.Select(s => s.Product)]))
+            {
+                CredentialsPreference = state.IncludeCredentialsInBackup,
+                LastBackupUtc = state.LastBackupUtc,
+                InitialBackupDirectory = state.BackupDirectory ?? string.Empty,
+                InitialRestoreDirectory = state.RestoreDirectory ?? string.Empty,
+            };
+            _backupVm.PersistentStateChanged += OnBackupStateChanged;
+        }
+
+        _backupVm.Refresh();
+
+        return new NavigationNodeViewModel(Strings.HeadingBackupRestore)
+        {
+            NodeId = BackupNodeId,
+            IsTopLevel = true,
+            Editor = _backupVm,
+        };
+    }
+
+    /// <summary>
+    /// Persist the Backup page's folders, credentials answer and last-backup time.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b><c>Refresh()</c> raises this up to three times in a row</b> — once each as
+    /// BackupDirectory, RestoreDirectory and the credentials preference settle. Every one is a
+    /// read-modify-write of the state file. That is tolerable at this volume and is the reason
+    /// <see cref="WindowStateService.SaveBackupState"/> takes all four at once rather than offering
+    /// a setter per field; if it ever stops being tolerable, debounce here the way the sibling app
+    /// does rather than splitting the save.
+    /// </remarks>
+    private void OnBackupStateChanged(object? sender, EventArgs e)
+    {
+        if (sender is not BackupRestoreViewModel vm)
+        {
+            return;
+        }
+
+        WindowStateService.SaveBackupState(
+            vm.BackupDirectory, vm.RestoreDirectory, vm.CredentialsPreference, vm.LastBackupUtc);
     }
 
     internal static void ApplyProvenanceBadge(

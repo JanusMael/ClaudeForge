@@ -161,4 +161,315 @@ public static class Strings
 
     /// <summary>Essentials card body for the auto-check opt-out.</summary>
     public static string EssentialsCardCheckForUpdatesBody => Get(nameof(EssentialsCardCheckForUpdatesBody));
+    /// <summary>“Backup and restore”</summary>
+    public static string AutoNameBackupRestoreTabs => Get(nameof(AutoNameBackupRestoreTabs));
+
+    /// <summary>“Available backups”</summary>
+    public static string AutoNameBackupsGrid => Get(nameof(AutoNameBackupsGrid));
+
+    /// <summary>“Browse for backup output folder”</summary>
+    public static string AutoNameBrowseBackupFolder => Get(nameof(AutoNameBrowseBackupFolder));
+
+    /// <summary>“Browse for restore source folder”</summary>
+    public static string AutoNameBrowseRestoreFolder => Get(nameof(AutoNameBrowseRestoreFolder));
+
+    /// <summary>“Browse…”</summary>
+    public static string ButtonBrowse => Get(nameof(ButtonBrowse));
+
+    /// <summary>“Cancel”</summary>
+    public static string ButtonCancel => Get(nameof(ButtonCancel));
+
+    /// <summary>“Continue without saving”</summary>
+    public static string ButtonContinueWithoutSaving => Get(nameof(ButtonContinueWithoutSaving));
+
+    /// <summary>“Create Backup”</summary>
+    public static string ButtonCreateBackup => Get(nameof(ButtonCreateBackup));
+
+    /// <summary>“Delete”</summary>
+    public static string ButtonDeleteBackup => Get(nameof(ButtonDeleteBackup));
+
+    /// <summary>“Discard and restore”</summary>
+    public static string ButtonDiscardAndRestore => Get(nameof(ButtonDiscardAndRestore));
+
+    /// <summary>“Include credentials”</summary>
+    public static string ButtonIncludeCredentialsConfirm => Get(nameof(ButtonIncludeCredentialsConfirm));
+
+    /// <summary>“Omit credentials”</summary>
+    public static string ButtonOmitCredentials => Get(nameof(ButtonOmitCredentials));
+
+    /// <summary>“Restore”</summary>
+    public static string ButtonRestore => Get(nameof(ButtonRestore));
+
+    /// <summary>“Restore anyway”</summary>
+    public static string ButtonRestoreAnyway => Get(nameof(ButtonRestoreAnyway));
+
+    /// <summary>“Save”</summary>
+    public static string ButtonSaveDialog => Get(nameof(ButtonSaveDialog));
+
+    /// <summary>“Share”</summary>
+    public static string ButtonShareBackup => Get(nameof(ButtonShareBackup));
+
+    /// <summary>“Backup Failed”</summary>
+    public static string DialogTitleBackupFailed => Get(nameof(DialogTitleBackupFailed));
+
+    /// <summary>“Backup Without Saving?”</summary>
+    public static string DialogTitleBackupWithoutSaving => Get(nameof(DialogTitleBackupWithoutSaving));
+
+    /// <summary>“Cross-platform restore”</summary>
+    public static string DialogTitleCrossPlatformRestore => Get(nameof(DialogTitleCrossPlatformRestore));
+
+    /// <summary>“Discard Unsaved Edits?”</summary>
+    public static string DialogTitleDiscardUnsavedEdits => Get(nameof(DialogTitleDiscardUnsavedEdits));
+
+    /// <summary>“Restore from dropped backup?”</summary>
+    public static string DialogTitleDropRestore => Get(nameof(DialogTitleDropRestore));
+
+    /// <summary>“Cannot restore from dropped file”</summary>
+    public static string DialogTitleDropRestoreInvalid => Get(nameof(DialogTitleDropRestoreInvalid));
+
+    /// <summary>“Include session history and credentials?”</summary>
+    public static string DialogTitleIncludeCredentials => Get(nameof(DialogTitleIncludeCredentials));
+
+    /// <summary>“Restore completed — {0} file(s) skipped”</summary>
+    public static string DialogTitleRestoreCompletedSkippedFmt => Get(nameof(DialogTitleRestoreCompletedSkippedFmt));
+
+    /// <summary>“Restore Failed”</summary>
+    public static string DialogTitleRestoreFailed => Get(nameof(DialogTitleRestoreFailed));
+
+    /// <summary>“Unsaved Changes”</summary>
+    public static string DialogTitleUnsavedChanges => Get(nameof(DialogTitleUnsavedChanges));
+
+    /// <summary>“Actions”</summary>
+    public static string HeaderBackupActions => Get(nameof(HeaderBackupActions));
+
+    /// <summary>“Clients”</summary>
+    public static string HeaderBackupClients => Get(nameof(HeaderBackupClients));
+
+    /// <summary>“Date”</summary>
+    public static string HeaderBackupDate => Get(nameof(HeaderBackupDate));
+
+    /// <summary>“File”</summary>
+    public static string HeaderBackupFile => Get(nameof(HeaderBackupFile));
+
+    /// <summary>“Mode”</summary>
+    public static string HeaderBackupMode => Get(nameof(HeaderBackupMode));
+
+    /// <summary>“Platform”</summary>
+    public static string HeaderBackupPlatform => Get(nameof(HeaderBackupPlatform));
+
+    /// <summary>“Size”</summary>
+    public static string HeaderBackupSize => Get(nameof(HeaderBackupSize));
+
+    /// <summary>“What backups include”</summary>
+    public static string HeadingBackupContents => Get(nameof(HeadingBackupContents));
+
+    /// <summary>“Backup / Restore”</summary>
+    public static string HeadingBackupRestore => Get(nameof(HeadingBackupRestore));
+
+    /// <summary>“Includes open project: {0}”</summary>
+    public static string LabelBackupIncludesProject => Get(nameof(LabelBackupIncludesProject));
+
+    /// <summary>“User-level config only”</summary>
+    public static string LabelBackupNoProjectOpen => Get(nameof(LabelBackupNoProjectOpen));
+
+    /// <summary>“Clients”</summary>
+    public static string LabelClients => Get(nameof(LabelClients));
+
+    /// <summary>“backups (0 = keep all)”</summary>
+    public static string LabelKeepAll => Get(nameof(LabelKeepAll));
+
+    /// <summary>“Keep last”</summary>
+    public static string LabelKeepLast => Get(nameof(LabelKeepLast));
+
+    /// <summary>“Last backup: {0} day(s) ago”</summary>
+    public static string LabelLastBackupDaysFmt => Get(nameof(LabelLastBackupDaysFmt));
+
+    /// <summary>“Last backup: {0} hour(s) ago”</summary>
+    public static string LabelLastBackupHoursFmt => Get(nameof(LabelLastBackupHoursFmt));
+
+    /// <summary>“Last backup: just now”</summary>
+    public static string LabelLastBackupJustNow => Get(nameof(LabelLastBackupJustNow));
+
+    /// <summary>“Last backup: {0} minute(s) ago”</summary>
+    public static string LabelLastBackupMinutesFmt => Get(nameof(LabelLastBackupMinutesFmt));
+
+    /// <summary>“No backup yet”</summary>
+    public static string LabelLastBackupNever => Get(nameof(LabelLastBackupNever));
+
+    /// <summary>“Output folder”</summary>
+    public static string LabelOutputFolder => Get(nameof(LabelOutputFolder));
+
+    /// <summary>“Restore folder”</summary>
+    public static string LabelRestoreFolder => Get(nameof(LabelRestoreFolder));
+
+    /// <summary>“Retention”</summary>
+    public static string LabelRetention => Get(nameof(LabelRetention));
+
+    /// <summary>“Scope”</summary>
+    public static string LabelScope => Get(nameof(LabelScope));
+
+    /// <summary>“Open file location”</summary>
+    public static string MenuOpenFileLocation => Get(nameof(MenuOpenFileLocation));
+
+    /// <summary>“Creating junction…”</summary>
+    public static string ProgressCreatingJunction => Get(nameof(ProgressCreatingJunction));
+
+    /// <summary>“Preparing…”</summary>
+    public static string ProgressPreparing => Get(nameof(ProgressPreparing));
+
+    /// <summary>“Restoring…”</summary>
+    public static string ProgressRestoring => Get(nameof(ProgressRestoring));
+
+    /// <summary>“Starting…”</summary>
+    public static string ProgressStarting => Get(nameof(ProgressStarting));
+
+    /// <summary>“Sanitized for sharing (secrets redacted — not restorable)”</summary>
+    public static string RadioSanitizedBackup => Get(nameof(RadioSanitizedBackup));
+
+    /// <summary>“Backup — everything OpenCode&apos;s config root holds”</summary>
+    public static string RadioSettingsOnly => Get(nameof(RadioSettingsOnly));
+
+    /// <summary>“Deleted {0}.”</summary>
+    public static string StatusBackupDeletedFmt => Get(nameof(StatusBackupDeletedFmt));
+
+    /// <summary>“Could not delete {0}.”</summary>
+    public static string StatusBackupDeleteFailedFmt => Get(nameof(StatusBackupDeleteFailedFmt));
+
+    /// <summary>“[!] {0} warning(s) — see manifest.”</summary>
+    public static string StatusBackupWarningsFmt => Get(nameof(StatusBackupWarningsFmt));
+
+    /// <summary>“Choose an output folder first (click Browse next to the folder path).”</summary>
+    public static string StatusChooseBackupFolder => Get(nameof(StatusChooseBackupFolder));
+
+    /// <summary>“[!] OpenCode is currently running ({0} process(es)). Some files may be locked during…”</summary>
+    public static string StatusOpenCodeRunningFmt => Get(nameof(StatusOpenCodeRunningFmt));
+
+    /// <summary>“Backup”</summary>
+    public static string TabBackup => Get(nameof(TabBackup));
+
+    /// <summary>“Restore”</summary>
+    public static string TabRestore => Get(nameof(TabRestore));
+
+    /// <summary>“Never archived: auth.json. Cache, state and logs are regenerable and are left out.”</summary>
+    public static string TextBackupContentsExcluded => Get(nameof(TextBackupContentsExcluded));
+
+    /// <summary>“All of ~/.config/opencode/ — opencode.json, tui.json, agents, commands, plugins and…”</summary>
+    public static string TextBackupContentsLine1 => Get(nameof(TextBackupContentsLine1));
+
+    /// <summary>“OpenCode&apos;s own .gitignore in that folder decides what is skipped, so node_modules/ a…”</summary>
+    public static string TextBackupContentsLine2 => Get(nameof(TextBackupContentsLine2));
+
+    /// <summary>“Optionally opencode.db and its -wal / -shm sidecars — session history, and the acces…”</summary>
+    public static string TextBackupContentsLine3 => Get(nameof(TextBackupContentsLine3));
+
+    /// <summary>“Per-project .opencode/ directories live with your repositories and are not archived…”</summary>
+    public static string TextBackupContentsProjectNote => Get(nameof(TextBackupContentsProjectNote));
+
+    /// <summary>“Backup archives (.zip) are written to this folder. The restore tab can scan a differ…”</summary>
+    public static string TextBackupDirHint => Get(nameof(TextBackupDirHint));
+
+    /// <summary>“Create timestamped backup archives of your OpenCode config and restore from them lat…”</summary>
+    public static string TextBackupRestoreSubtitle => Get(nameof(TextBackupRestoreSubtitle));
+
+    /// <summary>“⚠ This mode preserves secrets verbatim. API keys, OAuth tokens, and MCP authorizatio…”</summary>
+    public static string TextBackupSecretsWarning => Get(nameof(TextBackupSecretsWarning));
+
+    /// <summary>“Choose a folder above to see available backups.”</summary>
+    public static string TextChooseRestoreFolder => Get(nameof(TextChooseRestoreFolder));
+
+    /// <summary>“holds your session history and the OAuth tokens that go with it. Anyone with this ba…”</summary>
+    public static string TextCredentialsExplainer => Get(nameof(TextCredentialsExplainer));
+
+    /// <summary>“&apos; but you are on &apos;”</summary>
+    public static string TextCrossPlatformRestoreMiddle => Get(nameof(TextCrossPlatformRestoreMiddle));
+
+    /// <summary>“This backup was taken on &apos;”</summary>
+    public static string TextCrossPlatformRestorePrefix => Get(nameof(TextCrossPlatformRestorePrefix));
+
+    /// <summary>“&apos;. Some paths inside config files may need manual edits afterward. Continue?”</summary>
+    public static string TextCrossPlatformRestoreSuffix => Get(nameof(TextCrossPlatformRestoreSuffix));
+
+    /// <summary>“Restoring will overwrite your current settings. Discard your unsaved edits and conti…”</summary>
+    public static string TextDiscardUnsavedForRestore => Get(nameof(TextDiscardUnsavedForRestore));
+
+    /// <summary>“The dropped file is not a valid OpenCodeForge backup archive. It may be corrupt, fro…”</summary>
+    public static string TextDropRestoreNotABackup => Get(nameof(TextDropRestoreNotABackup));
+
+    /// <summary>“Only backup .zip files can be dropped here to restore.”</summary>
+    public static string TextDropRestoreNotZip => Get(nameof(TextDropRestoreNotZip));
+
+    /// <summary>“Restore from”</summary>
+    public static string TextDropRestorePromptPrefix => Get(nameof(TextDropRestorePromptPrefix));
+
+    /// <summary>“? This will overwrite your current settings with the contents of the dropped backup…”</summary>
+    public static string TextDropRestorePromptSuffix => Get(nameof(TextDropRestorePromptSuffix));
+
+    /// <summary>“⚠ No output folder selected. Click Browse to choose where backup files will be saved…”</summary>
+    public static string TextNoBackupDirWarning => Get(nameof(TextNoBackupDirWarning));
+
+    /// <summary>“Use &apos;Create Backup&apos; to make your first snapshot. Backups are zip files that can be r…”</summary>
+    public static string TextNoBackupYetDescription => Get(nameof(TextNoBackupYetDescription));
+
+    /// <summary>“⚠ No folder selected. Click Browse to choose the folder containing your backup archi…”</summary>
+    public static string TextNoRestoreDirWarning => Get(nameof(TextNoRestoreDirWarning));
+
+    /// <summary>“Continue with the backup? Your unsaved edits will not be in this backup, but they wi…”</summary>
+    public static string TextProceedWithoutSavingBackup => Get(nameof(TextProceedWithoutSavingBackup));
+
+    /// <summary>“Select a backup folder and choose a zip file to restore. This will overwrite your cu…”</summary>
+    public static string TextRestoreDescription => Get(nameof(TextRestoreDescription));
+
+    /// <summary>“Select a backup to restore. Existing files will be moved aside as .pre-restore-*.bak…”</summary>
+    public static string TextRestoreInstructions => Get(nameof(TextRestoreInstructions));
+
+    /// <summary>“The restore finished but the following file(s) could not be written (they may be loc…”</summary>
+    public static string TextRestoreSkippedExplainer => Get(nameof(TextRestoreSkippedExplainer));
+
+    /// <summary>“… and {0} more (see the log for the full list)”</summary>
+    public static string TextRestoreSkippedTrailerFmt => Get(nameof(TextRestoreSkippedTrailerFmt));
+
+    /// <summary>“Sanitized backup: secret-bearing values will be replaced with &quot;[redacted]&quot; so the ar…”</summary>
+    public static string TextSanitizedModeExplainer => Get(nameof(TextSanitizedModeExplainer));
+
+    /// <summary>“You have unsaved edits in the active workspace. Save them before backing up? Otherwi…”</summary>
+    public static string TextSaveBeforeBackupPrompt => Get(nameof(TextSaveBeforeBackupPrompt));
+
+    /// <summary>“You have unsaved edits in the active workspace. Save them before restoring?”</summary>
+    public static string TextSaveBeforeRestorePrompt => Get(nameof(TextSaveBeforeRestorePrompt));
+
+    /// <summary>“Cancel the current operation”</summary>
+    public static string TipButtonCancel => Get(nameof(TipButtonCancel));
+
+    /// <summary>“Send this backup archive to another app or device via the OS share panel”</summary>
+    public static string TipButtonShareBackup => Get(nameof(TipButtonShareBackup));
+
+    /// <summary>“Restore overwrites your live settings with this backup (existing files are backed up…”</summary>
+    public static string TipHeaderBackupActions => Get(nameof(TipHeaderBackupActions));
+
+    /// <summary>“Which OpenCode configs were included: OpenCode and/or OpenCode TUI.”</summary>
+    public static string TipHeaderBackupClients => Get(nameof(TipHeaderBackupClients));
+
+    /// <summary>“Date and time this backup was created (local time)”</summary>
+    public static string TipHeaderBackupDate => Get(nameof(TipHeaderBackupDate));
+
+    /// <summary>“Name of the backup archive file on disk”</summary>
+    public static string TipHeaderBackupFile => Get(nameof(TipHeaderBackupFile));
+
+    /// <summary>“Backup scope — Backup captures everything under ~/.config/opencode/; Sanitized redac…”</summary>
+    public static string TipHeaderBackupMode => Get(nameof(TipHeaderBackupMode));
+
+    /// <summary>“OS platform that created this backup: windows, macos, or linux. Restoring a backup f…”</summary>
+    public static string TipHeaderBackupPlatform => Get(nameof(TipHeaderBackupPlatform));
+
+    /// <summary>“Compressed size of the backup archive”</summary>
+    public static string TipHeaderBackupSize => Get(nameof(TipHeaderBackupSize));
+
+    /// <summary>“Same file scope as a normal backup, but every *.json value whose key matches the sen…”</summary>
+    public static string TipRadioSanitizedBackup => Get(nameof(TipRadioSanitizedBackup));
+
+    /// <summary>“No folder chosen — click Browse to set one”</summary>
+    public static string WatermarkBackupDir => Get(nameof(WatermarkBackupDir));
+
+    /// <summary>“No folder chosen — click Browse to locate backups”</summary>
+    public static string WatermarkRestoreDir => Get(nameof(WatermarkRestoreDir));
 }

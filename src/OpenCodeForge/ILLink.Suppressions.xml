@@ -7,6 +7,9 @@
 
   Measured 2026-09-03: after the McpServersAccessor IL2026 was fixed at its call
   site, DataGrid was the only remaining trim complaint in the whole closure.
+  Re-measured 2026-09-11, when the Backup / Restore page introduced this app's
+  first real DataGrid: still the only complaint, but two more codes — see the
+  block below, whose earlier safety argument that comment lapsed on the spot.
 
   What is NOT here, and why (verified by listing the transitive package closure
   with `dotnet list package`, not assumed):
@@ -38,30 +41,56 @@
 <linker>
 
     <!--
-      Avalonia.Controls.DataGrid — 4x IL2070 in
-      Avalonia.Controls.Utils.TypeHelper.GetPropertyOrIndexer(Type, String, Object[]&),
-      which resolves column property paths by string via reflection. Collapses to
-      a single IL2104 when TrimmerSingleWarn is left at its default of true.
+      Avalonia.Controls.DataGrid — reflection-based column, converter and
+      collection-view code paths that upstream has never annotated.
 
-      SAFETY: stronger here than in ClaudeForge. OpenCodeForge instantiates NO
-      DataGrid anywhere — grep the app's .axaml for `<DataGrid`, there are zero
-      hits. The assembly is only in the closure because LayeredEditors.Avalonia
-      package-references it (for DataGridCopyValueBehavior) and its SemiBundle
-      theme carries DataGrid styles. The reflecting code path is therefore
-      unreachable at runtime in this app, so suppressing it cannot mask a real
-      regression.
+      ⛔ THE "NO DATAGRID ANYWHERE" JUSTIFICATION HAS LAPSED, exactly as the
+      previous version of this comment said it would. As of the Backup / Restore
+      page (Views/BackupRestoreView.axaml) this app hosts a real DataGrid: the
+      list of available backup archives. The assembly is no longer merely in the
+      closure via LayeredEditors.Avalonia's SemiBundle theme — its code runs.
 
-      If OpenCodeForge ever does host a DataGrid, this justification lapses and
-      the ClaudeForge reasoning applies instead: column metadata must be rooted
-      by typed/compiled bindings.
+      So ClaudeForge's reasoning applies here now, and it is a claim about the
+      MARKUP rather than about reachability:
 
-      IL2104 is listed alongside IL2070 so the suppression holds whether or not
+        * Every column is a DataGridTemplateColumn whose CellTemplate sets
+          x:DataType="vm:BackupRowViewModel", so each cell binding is COMPILED.
+          Nothing resolves a cell's value through DefaultValueConverter or a
+          string-typed Binding, which is what IL2026 is about.
+        * AutoGenerateColumns="False". GenerateColumn — the IL2026 site — is
+          reachable only from auto-generation, which this grid never asks for.
+        * ⚠ SortMemberPath IS a string resolved by reflection (IL2075, via
+          DataGridDataConnection.UpdateDataProperties and
+          DataGridCollectionView.GetItemType). Every path it names —
+          DisplayDate, DisplayName, DisplayPlatform, DisplayMode,
+          DisplayClients, DisplaySize — is ALSO bound by a compiled binding in
+          the same column's template, so ILLink roots each one and the lookup
+          finds it. ⛔ A future column that sorts on a property no template
+          binds would trim to a silently unsortable column; add the property to
+          a template, or drop its SortMemberPath.
+
+      Codes below are the five actually observed in a trimmed Release publish of
+      THIS app (win-x64, self-contained), not a copy of ClaudeForge's list:
+      IL2026 and IL2075 arrived with the DataGrid above; IL2070 predates it.
+      IL2104 is listed alongside them so the suppression holds whether or not
       TrimmerSingleWarn is on.
     -->
     <assembly fullname="Avalonia.Controls.DataGrid">
         <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
             <argument>Trimming</argument>
+            <argument>IL2026</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
             <argument>IL2070</argument>
+            <property name="Scope">module</property>
+            <property name="Target">Avalonia.Controls.DataGrid</property>
+        </attribute>
+        <attribute fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <argument>Trimming</argument>
+            <argument>IL2075</argument>
             <property name="Scope">module</property>
             <property name="Target">Avalonia.Controls.DataGrid</property>
         </attribute>

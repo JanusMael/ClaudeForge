@@ -35,12 +35,42 @@ namespace Bennewitz.Ninja.OpenCodeForge.Services;
 /// is correct — it could not have.
 /// </para>
 /// </param>
+/// <param name="BackupDirectory">
+/// Where the Backup page writes archives. <see langword="null"/> until the user picks one — there
+/// is deliberately no default, because guessing a folder to write archives into is worse than
+/// asking.
+/// </param>
+/// <param name="RestoreDirectory">
+/// Where the Restore tab scans for archives. Separate from <paramref name="BackupDirectory"/>
+/// because restoring from a different folder than the one being written to is the normal case
+/// when moving between machines.
+/// </param>
+/// <param name="IncludeCredentialsInBackup">
+/// The user's last answer to the include-credentials prompt, used to pre-select it.
+/// <para>
+/// ⚠ <b>A remembered answer, not a standing consent.</b> The prompt fires on every non-Sanitized
+/// backup regardless of what this holds.
+/// </para>
+/// <para>
+/// ⚠ <b>Nullable on purpose, mirroring <c>BackupRestoreViewModel.CredentialsPreference</c>.</b>
+/// <see langword="null"/> means "never answered" and is distinct from an explicit "omit" — which
+/// is exactly what an older state file, and a fresh install, should deserialise to.
+/// </para>
+/// </param>
+/// <param name="LastBackupUtc">
+/// When the last backup completed, for the page's "Last backup: N hours ago" line. UTC, because a
+/// state file can outlive a timezone change.
+/// </param>
 public sealed record WindowState(
     double Width,
     double Height,
     bool IsMaximized,
     bool CheckForUpdatesOnLaunch = true,
-    IReadOnlyList<string>? DismissedUpdateVersions = null)
+    IReadOnlyList<string>? DismissedUpdateVersions = null,
+    string? BackupDirectory = null,
+    string? RestoreDirectory = null,
+    bool? IncludeCredentialsInBackup = null,
+    DateTime? LastBackupUtc = null)
 {
     /// <summary>The size a first run opens at.</summary>
     public static WindowState Default { get; } = new(1280, 860, IsMaximized: false);
@@ -152,6 +182,36 @@ public static class WindowStateService
     /// </remarks>
     public static void SaveCheckForUpdatesOnLaunch(bool value) =>
         Save(Load() with { CheckForUpdatesOnLaunch = value });
+
+    /// <summary>
+    /// Persist everything the Backup / Restore page owns, leaving geometry and the update
+    /// preferences alone.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// One method for all four rather than four read-modify-writes, because the page raises a
+    /// single <c>PersistentStateChanged</c> covering them together — and a <c>Refresh()</c> fires
+    /// it up to three times in quick succession, so each extra call is another file rewrite.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>An empty directory string is stored as <see langword="null"/>.</b> The page uses
+    /// <see cref="string.Empty"/> for "not chosen yet" and the record uses <see langword="null"/>;
+    /// normalising here keeps a state file from carrying <c>""</c>, which round-trips back as a
+    /// configured-but-blank folder.
+    /// </para>
+    /// </remarks>
+    public static void SaveBackupState(
+        string? backupDirectory,
+        string? restoreDirectory,
+        bool? includeCredentials,
+        DateTime? lastBackupUtc) =>
+        Save(Load() with
+        {
+            BackupDirectory = string.IsNullOrWhiteSpace(backupDirectory) ? null : backupDirectory,
+            RestoreDirectory = string.IsNullOrWhiteSpace(restoreDirectory) ? null : restoreDirectory,
+            IncludeCredentialsInBackup = includeCredentials,
+            LastBackupUtc = lastBackupUtc,
+        });
 
     /// <summary>Persist <paramref name="state"/>, writing through a temporary file.</summary>
     /// <remarks>

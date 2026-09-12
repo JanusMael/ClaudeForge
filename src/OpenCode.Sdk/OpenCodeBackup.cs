@@ -22,11 +22,19 @@ namespace Bennewitz.Ninja.OpenCode.Sdk;
 /// restore the other's archives while still listing them as restorable.
 /// </para>
 /// </remarks>
-internal static class OpenCodeBackup
+public static class OpenCodeBackup
 {
     /// <summary>
     /// Shared engine, mirroring <see cref="BackupEngine.Default"/>'s single-instance shape. The
     /// engine holds no per-operation state, so one instance is safe to share.
     /// </summary>
-    internal static readonly BackupEngine Engine = new(restorableProducts: OpenCodeProducts.All);
+    /// <remarks>
+    /// ⚠ <b><c>public</c>, unlike its Claude counterpart's private composition.</b> The host app is
+    /// a separate assembly, and the Backup page's <c>BackupPageOptions.Engine</c> is exactly the
+    /// place the wrong engine would be supplied — so the right one has to be reachable from
+    /// <c>OpenCodeForge</c>. Reaching for <c>new BackupEngine(restorableProducts:)</c> there
+    /// instead would put a second copy of this decision in a second assembly, which is the shape
+    /// the invariant in <c>AGENTS.md</c> exists to prevent.
+    /// </remarks>
+    public static readonly BackupEngine Engine = new(restorableProducts: OpenCodeProducts.All);
 }

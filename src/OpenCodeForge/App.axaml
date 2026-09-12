@@ -11,6 +11,7 @@
              xmlns:art="using:Bennewitz.Ninja.OpenCode.Avalonia.Artifacts"
              xmlns:ess="using:Bennewitz.Ninja.OpenCode.Avalonia.Essentials"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
+             xmlns:backup="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
              xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
              x:Class="Bennewitz.Ninja.OpenCodeForge.App"
              RequestedThemeVariant="Default">
@@ -144,6 +145,13 @@
 
         <DataTemplate DataType="ess:OpenCodeEssentialsViewModel">
             <ess:OpenCodeEssentialsView />
+        </DataTemplate>
+
+        <!-- The Backup / Restore page's view-model is the SHARED one, so the type comes from the
+             shell while the view is this app's own — the view is where the product wording and the
+             two-radio scope live. -->
+        <DataTemplate DataType="backup:BackupRestoreViewModel">
+            <views:BackupRestoreView />
         </DataTemplate>
 
         <!-- MaxHeight rather than Height so a config with two rules does not leave a tall empty
