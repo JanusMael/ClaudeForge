@@ -19,7 +19,7 @@
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
 | Working tree | clean |
-| Unpushed | **14 commits**, this file's included. Nothing pushed, no PR opened |
+| Unpushed | **15 commits**, this file's included (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed, no PR opened |
 | Bisectable | ✅ each of the last three builds alone; `040d26b` runs the pre-change suite green (4,227), the +12 arrive with the page |
 | Suite | **4,239 passed · 0 failed · 11 skipped**, Debug (was 4,227; +12 new) |
 | Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
@@ -29,14 +29,12 @@
 
 ## ▶ RESUME HERE — pick one of two, and the order is a real decision
 
-⛔ **The Backup page ships a button over a layout that misses a redirected config.** See the second
-entry under *Known issues*: `OpenCodeProducts.Config` archives
-`OpenCodePaths.DefaultGlobalDirectory()`, so a user with `$OPENCODE_CONFIG_DIR` set gets an archive
-holding neither their `opencode.json` nor their `tui.json`, and the page reports success. That
-predates this session — but until this session nothing in the GUI invited anyone to rely on it.
-**Weigh fixing that before adding a second page.** The fix is a section over `GlobalDirectory(env)`
-*in addition to* the default root, both of which the product genuinely reads, plus a frozen-fixture
-decision about archives already written.
+⛔⛔ **The Backup page ships a button over a layout that produces an EMPTY archive for a redirected
+config.** Measured, not suspected — see the second entry under *Known issues* for the canary and its
+output. A user with `$OPENCODE_CONFIG_DIR` set clicks Create Backup, is told the backup was saved,
+and gets a zip holding a schema copy and a manifest. That predates this session; what is new is the
+button. **Fix this before adding a second page.** It is the one item here where the work already
+committed makes a pre-existing defect reachable by a user.
 
 **Otherwise: the Footprint/Memory page.** Same shape as the page just built and the last item of
 Phase 14 — `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders
@@ -137,12 +135,25 @@ Newest first.
   therefore changes only the archive's `manifest.clients` and which schema is bundled. Listing it
   is still the right call — it starts doing real work the day the product gains a layout — but the
   checkbox currently promises more than it delivers.
-- ⛔ **A redirected config is not backed up.** `OpenCodeProducts.Config`'s section archives
-  `OpenCodePaths.DefaultGlobalDirectory()`, not `GlobalDirectory(env)`. A user with
-  `$OPENCODE_CONFIG_DIR` set gets an archive containing neither their `opencode.json` nor their
-  `tui.json`, and the backup reports success. The literal is deliberate — plugin discovery reads
-  the default directory regardless — but the backup wants *both* roots, not one. **Not introduced
-  this session; surfaced by it.**
+- ⛔⛔ **A redirected config is not backed up, and the archive comes back EMPTY.** Measured
+  2026-09-12 with a throwaway canary, not reasoned: with `$OPENCODE_CONFIG_DIR` pointed at a
+  populated directory holding `opencode.json` and `tui.json`, and `OpenCodePaths.GlobalConfigPath`
+  asserted first to confirm the SDK agrees that is the live config, a backup of
+  `OpenCodeProducts.Config` reported **"Backup saved to backup-oc.zip"** and produced an archive
+  whose complete contents were `Schemas/opencode-config.json` and `manifest.json`. **Not one
+  configuration file.**
+  - **Cause:** the section's destination is `() => OpenCodePaths.DefaultGlobalDirectory()`, which
+    deliberately ignores the variable, while every read path uses `GlobalDirectory(env)`.
+  - **Why no test caught it:** `OpenCodeBackupRoundTripTests` redirects the *home directory* via
+    `PlatformPaths.TestUserProfileOverride` and then writes into `DefaultGlobalDirectory()`. It
+    never sets `$OPENCODE_CONFIG_DIR`, so the two paths are the same directory throughout and the
+    divergence cannot appear.
+  - **Not introduced this session.** What is new is that the GUI now offers a button for it.
+  - ⚠ **The fix is not a one-liner substitution.** Both roots are genuinely read — the default one
+    by plugin discovery regardless of the variable — so the archive wants both, which means two
+    sections that must not collide on `OpenCode/config/…` when the variable is unset and the two
+    resolve to the same path. That is an archive-layout change, and archive layout is a persisted
+    format with frozen fixtures.
 - ⚠ **A restore does not reload the open documents.** ClaudeForge passes `OnRestoreCompleted`,
   `IsAnyWorkspaceDirty` and `SaveAllWorkspaces` into the shared page; OpenCodeForge's window has no
   save-all pipeline to wire them to, so they are left unset. The editor keeps showing the
