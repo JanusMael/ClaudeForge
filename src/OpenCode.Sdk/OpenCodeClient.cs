@@ -4,6 +4,8 @@ using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.OpenCode.Sdk.Memory;
 
 namespace Bennewitz.Ninja.OpenCode.Sdk;
 
@@ -58,6 +60,31 @@ public sealed class OpenCodeClient : AgentConfigClientCore
     {
         ArgumentNullException.ThrowIfNull(env);
         _env = env;
+
+        // ⛔⛔ WITHOUT THIS LINE AN OPENCODE CLIENT REPORTS CLAUDE'S FOOTPRINT.
+        //
+        // AgentConfigClientCore builds `new FootprintService()`, whose catalog defaults to
+        // FootprintCatalog.Default — Claude's seven ~/.claude categories — so every
+        // GetFootprintStatsAsync / DeleteFootprintCategoryAsync call on this client walked
+        // ~/.claude/projects, history.jsonl and todos/ and called the result OpenCode's. It
+        // never threw and never logged: the rows are real, they are just the wrong product's,
+        // and a delete would have removed the OTHER agent's transcripts.
+        //
+        // FootprintCatalog.All's own docstring names this failure exactly ("Code belonging to
+        // a product must enumerate that product's catalog, or it silently renders Claude's
+        // seven rows for a product whose footprint looks nothing like them"), and the catalog
+        // to enumerate has existed and been tested since Phase 14 — nothing connected it.
+        //
+        // ⭐ The fourth instance of one shape: a path resolving through the neutral default
+        // rather than the product's own data. The other three were writes (the credentials
+        // prompt, the backup's config root, the footprint's config root); this is a READ, which
+        // is why no archive and no measurement caught it.
+        //
+        // ⚠ `roots` is the METHOD GROUP, not `Roots()` — the service calls it per use because
+        // the paths derive from the user profile, which honours an AsyncLocal test override.
+        FootprintService = new FootprintService(
+            catalog: OpenCodeFootprint.Catalog,
+            roots: OpenCodeFootprint.Roots);
     }
 
     /// <summary>The lowest rung, and the one that exists on every installation.</summary>

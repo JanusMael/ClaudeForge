@@ -4,6 +4,8 @@ using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.OpenCode.Sdk.Memory;
 
 namespace Bennewitz.Ninja.OpenCode.Sdk;
 
@@ -41,6 +43,20 @@ public sealed class OpenCodeTuiClient : AgentConfigClientCore
     {
         ArgumentNullException.ThrowIfNull(env);
         _env = env;
+
+        // The twin of the line in OpenCodeClient's constructor, found by searching for it rather
+        // than by a failure. Without it this client's GetFootprintStatsAsync reports Claude's
+        // seven ~/.claude categories — nothing calls it today, which is precisely why it would
+        // have stayed wrong until the first caller believed it.
+        //
+        // ⭐ The SAME catalog as the main client, not a TUI-specific one, and that is the honest
+        // answer rather than a convenient one: tui.json sits inside the config root, so the TUI
+        // leaves nothing on disk of its own. A separate catalog here would be six permanently
+        // duplicated rows, and an empty one would claim the TUI has no footprint when what it
+        // actually has is a shared one.
+        FootprintService = new FootprintService(
+            catalog: OpenCodeFootprint.Catalog,
+            roots: OpenCodeFootprint.Roots);
     }
 
     /// <inheritdoc/>
