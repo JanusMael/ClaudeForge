@@ -288,6 +288,16 @@ public sealed class BackupEngine
                         continue;
                     }
 
+                    // ⚠ A section can decline to be archived on this machine — today, OpenCode's
+                    // default config root when $OPENCODE_CONFIG_DIR leaves it pointing at the same
+                    // directory the live-config section already covers. Write-side only: the
+                    // restorer applies whatever the archive actually holds, because the machine
+                    // restoring need not have the environment of the machine that wrote.
+                    if (section.IncludeWhen is { } gate && !gate())
+                    {
+                        continue;
+                    }
+
                     string live = section.Destination();
                     string entryPath = $"{product.ArchiveFolder}/{string.Join('/', section.SubPath)}";
 

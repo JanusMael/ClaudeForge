@@ -125,7 +125,15 @@ public sealed class CrossAssemblyBackupLayoutTests
     {
         // ⛔ OpenCodeProducts.Config is `static readonly`, so a resolved path would freeze to
         // whichever profile was current when this type initialised.
+        //
+        // ⚠ $OPENCODE_CONFIG_DIR is cleared for the duration, and that became load-bearing on
+        // 2026-09-12 when the `config` section started resolving through GlobalDirectory(env)
+        // rather than DefaultGlobalDirectory(). It now honours the variable — correctly — so a
+        // developer who happens to have it exported would otherwise see this test fail on a
+        // perfectly good tree, for a reason nothing in it mentions.
         string sandbox = Path.Combine(Path.GetTempPath(), "ocbl-" + Guid.NewGuid().ToString("N"));
+        string? redirect = Environment.GetEnvironmentVariable("OPENCODE_CONFIG_DIR");
+        Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", null);
         PlatformPaths.TestUserProfileOverride = sandbox;
         try
         {
@@ -135,6 +143,7 @@ public sealed class CrossAssemblyBackupLayoutTests
         finally
         {
             PlatformPaths.TestUserProfileOverride = null;
+            Environment.SetEnvironmentVariable("OPENCODE_CONFIG_DIR", redirect);
         }
     }
 

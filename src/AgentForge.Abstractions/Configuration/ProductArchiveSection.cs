@@ -62,13 +62,32 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// a file, one policy.
 /// </para>
 /// </param>
+/// <param name="IncludeWhen">
+/// Consulted by the WRITER only: when non-<see langword="null"/> and it returns
+/// <see langword="false"/>, this section is not archived.
+/// <para>
+/// ⛔ <b>Write-side only, and the asymmetry is the point.</b> The restorer never calls this. What a
+/// restore may apply is decided by what is IN the archive, because the machine reading it is not
+/// necessarily the machine that wrote it — gating the restore on the local environment would
+/// silently drop files that are demonstrably present, which is the same class of failure this
+/// predicate exists to fix.
+/// </para>
+/// <para>
+/// ⚠ It exists for OpenCode's two config roots. <c>$OPENCODE_CONFIG_DIR</c> redirects the config
+/// that loads, while the default root stays live for plugin discovery, so both belong in an
+/// archive — but when the variable is unset the two resolve to the same directory and archiving
+/// both would write every file twice under two names. A predicate says "only when they differ"
+/// without the destination having to lie about where the section restores to.
+/// </para>
+/// </param>
 public sealed record ProductArchiveSection(
     IReadOnlyList<string> SubPath,
     Func<string> Destination,
     bool IsDirectory,
     string ProgressLabel,
     bool IsProductHome = false,
-    bool RequiresCredentialOptIn = false)
+    bool RequiresCredentialOptIn = false,
+    Func<bool>? IncludeWhen = null)
 {
     /// <summary>A single file beneath the product's archive folder.</summary>
     public static ProductArchiveSection File(string subPath, Func<string> destination, string progressLabel) =>
@@ -77,6 +96,20 @@ public sealed record ProductArchiveSection(
     /// <summary>A directory subtree beneath the product's archive folder, archived whole.</summary>
     public static ProductArchiveSection Directory(string subPath, Func<string> destination, string progressLabel) =>
         new([subPath], destination, IsDirectory: true, progressLabel);
+
+    /// <summary>
+    /// A directory subtree archived only when <paramref name="includeWhen"/> says so, and restored
+    /// whenever the archive carries it.
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="IncludeWhen"/> for why the predicate is not consulted on the restore side.
+    /// </remarks>
+    public static ProductArchiveSection DirectoryWhen(
+        string subPath,
+        Func<string> destination,
+        string progressLabel,
+        Func<bool> includeWhen) =>
+        new([subPath], destination, IsDirectory: true, progressLabel, IncludeWhen: includeWhen);
 
     /// <summary>
     /// The product's home tree — a directory section whose walk honours
