@@ -86,6 +86,14 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   Backup / Restore retention count; six more on OpenCodeForge's Essentials page. They now
   announce "Increase value" / "Decrease value", translated in all eight locales, named
   once in the shared theme so both apps get it.
+- **Screen readers had nothing to announce in the diagnostics windows.** The crash
+  and notice dialogs, the F12 live-log window, and the live-tail window are built in
+  C#, so the AXAML accessibility guard never saw them: their buttons, text boxes,
+  log list, Copy menu item, and link-styled header text carried no
+  `AutomationProperties.Name`. Every interactive control there now has a clean-text
+  name (and help text where the label alone is ambiguous), the header links announce
+  as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
+  if a control lands without one.
 - **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
   the detail pane but never the row's subtitle, which is what the list renders —
   so editing a `description` and saving kept showing the old text until the next
@@ -95,6 +103,14 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   `HasUnsavedChanges` and nothing warned. The unsaved text now rides across the
   in-process reload in memory and comes back with the editor — the user's actual
   text, not a re-read from disk. It is never written to the UI-state file.
+- **F12 inside the live-log window did nothing.** The window's title promises
+  "F12 to hide", but the toggle lived on the main window's key handler, which never
+  sees a key pressed while the log window has focus. The window now hides itself
+  on plain F12; Shift+F12 stays with the host. Covered by a headless test in
+  `LayeredEditors.Avalonia.Diagnostics.Tests`.
+- **`dotnet pack` of `LayeredEditors.Avalonia.Diagnostics` failed** because the
+  project names a `PackageReadmeFile` it did not ship. The package now carries a
+  README describing the three-call wiring and each piece.
 
 ### Changed
 

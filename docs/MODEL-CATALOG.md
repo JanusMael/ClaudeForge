@@ -137,6 +137,22 @@ the catalog plus two hand-curated overlays. So a schema refresh is *never* the
 mechanism that adds a model — expect it to report "already up to date" (or only
 a line-ending diff) while the real work is the files below. Touch them in order:
 
+**Where to verify the facts first.** Never fill a model row from recall — an
+assistant's model knowledge is stale by construction (a model cannot know what
+shipped after it), and this is the step that gets re-derived every time. The
+authoritative source is the models overview:
+
+    https://platform.claude.com/docs/en/about-claude/models/overview.md
+
+(the `.md` suffix returns clean markdown). It carries the current lineup, the
+exact **Claude API ID** for each model, context window, max output, and default
+effort — and its trailing *"Legacy models (still available)"* line is what tells
+you the outgoing build should be demoted to `legacy: true`. A family can also be
+superseded within its own generation (Fable 5 → Fable 5.1), so read the lineup
+table rather than assuming the next launch is a whole number. With API
+credentials, `GET /v1/models` is the programmatic equivalent (`max_input_tokens`,
+`max_tokens`, and a `capabilities` object per model).
+
 1. **`ModelCatalog/model-catalog.json`** — add the new model row. Copy the
    outgoing build's `supportedEffortLevels` / `defaultEffortLevel` /
    `supports1m` / `supportsAutoMode` unless the docs say a capability changed.

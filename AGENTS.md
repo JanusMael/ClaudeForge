@@ -71,6 +71,7 @@ Two specific anti-patterns this file refuses on principle:
 | **Danger classification: a surface ASKS THE EDITOR *iff* it lacks the inputs, a DIFF surface resolves its value from the DOCUMENT ROOT, and the policy travels PER PRODUCT.** (a) `DangerAssessment` is a function of *path + scope + value*. Search holds only a path, so it delegates via `IDangerAnnotatedEditor` and gets back the very assessment the row renders. An effective row and a pending change hold all three — and the WINNING/TARGET scope and value, not the editing ones — so they call `IDangerClassifier.Classify` themselves. Their dots may legitimately DISAGREE with the editor's (Caution where you edit, Critical once a committed project file wins); do not 'unify' them. (b) `JsonDiff` emits an array change under the ARRAY's path but carries only the changed ELEMENT as its value, so a save-preview row must resolve the key against the document root rather than trusting `PropertyDiff.NewValue`. (c) One app hosts several products: `ProductSection.Danger` and `DirtySource.Danger` carry the table per product, and `ClaudeEditorFactoryConfig.CreateDefault` must NOT default one. | (a) A search hit contradicts the row it navigates to, or an effective row reports the editing scope's severity for a value that came from elsewhere. (b) A rule written for `permissions.allow` is handed one element's string, matches no list pattern, and answers "nothing wrong right now" — a silent false negative on exactly the keys the save dialog exists to catch. (c) Claude DESKTOP's settings and pending writes get labelled with Claude CODE's threat model — blank on most rows since the schemas barely overlap, confidently wrong on any name that collides (`env` is in both). ⛔ And the wiring BETWEEN factory and markup was unguarded until `DangerWiringEndToEndTests`: breaking `MainWindowViewModel`'s `BuildGroups` call reddened NOTHING while every row in the app would have rendered blank. | Contracts: `src/LayeredEditors.Abstractions/IDangerClassifier.cs`, `DangerAssessment.cs`, `src/LayeredEditors.ViewModels/IDangerAnnotatedEditor.cs`. Matcher: `src/AgentForge.Avalonia.Shell/Danger/TableDangerClassifier.cs` (tier is inherited by descendants; the value predicate and scope escalation run ONLY on an exact match). Tables: `ClaudeDangerTable` (142 keys), `OpenCodeDangerTable` (36 + 13). Guards: `DangerSurfaceMarkupTests` (all six render sites), `DangerWiringEndToEndTests` (the real window, both directions), `SavePreviewDangerTests`, `EffectiveRowDangerTests`. Rendering rules: [`docs/UI-STYLE-GUIDE.md`](./docs/UI-STYLE-GUIDE.md) §3b. |
 | **An app composition root builds its `SchemaRegistry` with `CreateWithNetwork()`; a test builds one with no client, or with a stubbed handler — never with a bare `new HttpClient()`.** A null `HttpClient` means OFFLINE, and that is the constructor's default, so both mistakes compile, run, and pass. | **Nothing fails.** ClaudeForge shipped `new SchemaRegistry()` in `App.axaml.cs` from the initial commit and never fetched a schema in production, while this repo's docs described the fetch. In the other direction, 26 test sites passed a real `HttpClient` and resolved their assertions against whatever schemastore.org served that day — measured, not inferred: a probe registry built the same way reported `Source=Fetched`. | Composition: `src/ClaudeForge/App.axaml.cs`, and `InitializeAsync` in `src/OpenCodeForge/ViewModels/MainWindowViewModel.cs`. Guard: `tests/ClaudeForge.Tests/Architecture/ProductionSchemaRegistryTests.cs` — a **source** scan, because a registry deliberately does not expose whether it holds a client. ⛔ It matches **two** spellings; the target-typed `SchemaRegistry x = new(new HttpClient())` escaped the first draft and two live sites survived a pass that reported success. |
 | **A provenance badge must not describe a fetch that was never attempted.** A product whose `SchemaUrl` is not `https://` (Claude Desktop's is `bundled://…`, its schema being hand-maintained) is never fetched, so the ordinary "tried to fetch and could not" tooltip is false there, and `SchemaRefresher` omits it from a check's results rather than reporting it up to date. | A user reads that the app could not reach the network and goes looking for a proxy or firewall problem that does not exist — on the one section where no request was ever made. | Appliers: `MainWindowViewModel.ApplyProvenanceBadge` in **both** apps (each formats from its own resx — the shared `NavigationNodeViewModel.Badge` is a plain string for exactly this reason). Rule: `SchemaRefresher.IsCheckable`. Guards: `SchemaProvenanceBadgeTests` (both apps), `SchemaRefresherTests`. |
+| **A UI built in C# rather than AXAML needs its automation names set IN CODE, and the AXAML scan is structurally blind to it.** `src/LayeredEditors.Avalonia.Diagnostics` builds its windows and menus in C#, so `AxamlAccessibilityCoverageTests` — however wide its file glob reaches — can never see one of its controls. Names go on at construction with `AutomationProperties.SetName` / `SetHelpText`, in English literals: the library is host-agnostic and deliberately has no localization seam (no resx, no `WrapperStrings`-style resolver), so there is no key to reference. Its header links go through `UI/HeaderLink.cs`, which also sets the `Hyperlink` control type. Covers the control types the AXAML rule lists plus `MenuItem`, `SelectableTextBlock`, and a hand-cursor `TextBlock` used as a link. | A blind user reaches the diagnostics window — the one surface a user opens *because* something is already wrong — and the controls announce nothing. The repo-wide AXAML guard reports a clean baseline the whole time, because there is no markup to score. | Guard: `tests/LayeredEditors.Avalonia.Diagnostics.Tests/AccessibilityCoverageTests.cs` builds `FatalErrorDialog`, `NonFatalNoticeDialog`, `LiveLogWindow` (via `LiveLogWindow.RebuildWindowForTesting`) and `LiveTailWindow` (via `WindowForTesting`) on the headless UI thread, walks each logical tree plus attached `ContextMenu`s, and fails any interactive control without a clean-text Name. ⭐ **Each window's interactive-control count is PINNED**, so a control the walker cannot reach is noticed rather than silently skipped — the failure mode that makes a coverage test worthless. |
 
 ---
 
@@ -157,6 +158,7 @@ Two specific anti-patterns this file refuses on principle:
 
 The schema refresh (`scripts/refresh-schema.{ps1,sh}`) does **NOT** carry model names — schemastore.org omits them, so expect it to report "already up to date". The pickers come entirely from the catalog + two hand-curated overlays. When the `opus`/`sonnet`/… alias moves to a new snapshot, edit these four and keep the invariant **one non-legacy row per family alias**:
 
+- [ ] **Verify the facts first** — never from recall: <https://platform.claude.com/docs/en/about-claude/models/overview.md> has the exact Claude API IDs, context/effort, and the "Legacy models" line that tells you whom to demote (a family can supersede itself: Fable 5 → Fable 5.1).
 - [ ] `ModelCatalog/model-catalog.json` — add the new row (copy the outgoing build's effort/`supports1m`/`supportsAutoMode` flags unless docs say otherwise), move the `alias` onto it, repoint the `aliases` map, and **demote the previous holder to `legacy: true`, `alias: null`** (keep the row — still a valid pin).
 - [ ] `Schemas/claude-code-settings.overlay.json` — swap the family's pinned snapshot id in `model.examples` (+ the `model.description` e.g.). This is the AutoCompleteBox list; the refresh never touches the overlay.
 - [ ] `Descriptions/claude-code-settings.enumdescriptions.json` — mirror that swap and update the alias tooltip ("today Opus N"). **Every `model.examples` value needs a key here** or `ModelPropertyPromotionTests` fails (each picker item needs a tooltip). Replace in place, don't accumulate stale rows.
@@ -317,6 +319,28 @@ public void Cleanup()
 
 Live example: `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`.
 
+### `PlatformPaths.TestSuppressClaudeCodeBinaryProbe` switch
+
+`TestUserProfileOverride` does not reach `PlatformPaths.TryFindClaudeCodeBinary`: its PATH
+probe reads the real process environment, and the Unix system-wide entries in
+`CanonicalClaudeCodeCandidates` are absolute paths. A test that needs the "Claude Code not
+detected" state on a machine with the CLI installed (anything asserting on
+`MainWindowViewModel.ShowInstallBanner`, or on `PlatformPaths.IsClaudeCodeInstalled` falling
+through to its `settings.json` check) sets the switch for the duration of the test:
+
+```csharp
+PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+try { /* assertions */ }
+finally { PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false; }
+```
+
+It is checked before the process-lifetime caches, so `InvalidatePathCache()` is not needed
+afterwards. `internal`, `AsyncLocal`-backed, exposed to both test projects via
+`InternalsVisibleTo`. Live example: `InstallBanner_AutoClearsDismissedFlag_WhenProductAppears`
+in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`; the switch's own
+contract test is `TryFindClaudeCodeBinary_ProbeSuppressed_ReportsNotFoundWithoutCachingTheMiss`
+in `tests/AgentForge.Core.Tests/Platform/ClaudeCodeDetectionTests.cs`.
+
 ### `MainWindowViewModel.GetClaudeCodeWorkspaceForTesting()` test seam
 
 For tests that need to mutate the workspace directly without driving the UI:
@@ -355,6 +379,23 @@ finally { PlatformInfo.ResetForTesting(); }
 ```
 
 Source: `src/AgentForge.Core/Platform/PlatformInfo.cs`.
+
+### `LiveLogWindow.RebuildWindowForTesting(...)` / `LiveTailWindow.WindowForTesting`
+
+`LiveLogWindow.Initialize` latches on its first call, and its header links exist only when a
+sink, a logs directory, or a launch action was supplied. A headless test that needs the full
+window rebuilds it explicitly and gets the `Window` back:
+
+```csharp
+Window window = LiveLogWindow.RebuildWindowForTesting(sink, logsDirectory, "Events", () => { });
+```
+
+When the argument-less window is enough, `LiveLogWindow.WindowForTesting` returns whatever
+`Initialize` (or the last rebuild) latched — `LiveLogWindowKeyTests` uses it. `LiveTailWindow`
+is an instance; `tail.WindowForTesting` returns the window it built. All of these are
+UI-thread only — dispatch a synchronous body through `HeadlessUnitTestSession.Dispatch` (an
+awaiting body is inert; see §1). Live example:
+`tests/LayeredEditors.Avalonia.Diagnostics.Tests/AccessibilityCoverageTests.cs`.
 
 ### Force-fire fired-count assertion (the force-fire contract test)
 
@@ -418,6 +459,45 @@ Two `internal static` methods in `src/AgentForge.Core/Schema/SchemaRegistry.cs` 
 | `ApplyMergePatch(target, patch)` | RFC 7396 unit semantics — primitive replace, recursive object merge, null-deletes-key, array wholesale replace, primitive patch replaces object target, null target with object patch, key-order preservation |
 
 Both exercised by `tests/AgentForge.Core.Tests/Schema/SchemaRegistryOverlayTests.cs`. Adding a new bundled schema with hand-curated additions: create the base file + sibling `<name>.overlay.json` under `src/AgentForge.Core/Assets/Schemas/` (the existing `EmbeddedResource Include="Assets\Schemas\**\*.json"` glob picks both up automatically); the loader merges them at load time.
+
+### Draining fire-and-forget work before deleting a sandbox
+
+Two hops of deliberately unawaited work can outlive the test that started them and race
+`[TestCleanup]`'s `Directory.Delete`, which on Windows fails with *"the process cannot access the
+file `claude-code-settings.json`"*. Both are now observable; a fixture that triggers either MUST
+drain it before removing its sandbox.
+
+| Seam | Covers |
+|---|---|
+| `MainWindowViewModel.LastAutomaticReload` | The reload kicked by an automatic trigger — `OnSelectedProfileChanged` (so: any assignment to `SelectedProfile`) and the `ConfigFileWatcher` fire. Both call `ReloadCoreAsync` without awaiting it. |
+| `SchemaRegistry.WhenDiskCacheIdleAsync()` | The disk-cache sync `GetSchemaAsync` starts for a bundled schema. It is a cache warm kept off the startup path, so it is never awaited in production. |
+
+Order matters and is one-directional: the reload is what *starts* the sync, so await the reload
+first or the sync snapshot is taken before the work exists.
+
+```csharp
+[TestCleanup]
+public async Task Cleanup()
+{
+    if (_vm.LastAutomaticReload is { } reload)
+    {
+        // Wait for it to FINISH, not to succeed; reading Exception marks a fault observed.
+        await reload.ContinueWith(static t => _ = t.Exception,
+            CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+    }
+    await _schemaRegistry.WhenDiskCacheIdleAsync();
+    _vm.Dispose();
+    _schemaRegistry.Dispose();
+    PlatformPaths.TestUserProfileOverride = null;
+    TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
+}
+```
+
+Hold the `SchemaRegistry` in a field rather than inlining it into the view-model constructor, or
+there is nothing to await. `WhenDiskCacheIdleAsync` returns a snapshot and never faults.
+`DeleteDirectoryWithRetry` stays as the backstop for the `FileSystemWatcher` handle, which no seam
+covers; it is best-effort and warns rather than throwing. Live example:
+`tests/ClaudeForge.Tests/ViewModels/AvailableProfileEntriesTests.cs`.
 
 ### `LayeredWithXxx(scope, jsonObj)` builder helpers
 
