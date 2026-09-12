@@ -15,7 +15,8 @@
 | Question | Answer |
 |---|---|
 | Did ClaudeForge regress? | **No regression found.** Across ten pages driven in both builds, the log event sequence is identical, and the trim matrix is clean on all six RIDs for both apps. |
-| Is the split complete? | **No — but almost all of what remains is inert and most of it is deliberate.** Seven Claude-named types still live inside the "product-neutral" layer. No OpenCode code path touches any of them. |
+| Is the split complete? | **The Core/SDK half is; the app/shell half is much less far along than planned.** See §2. Seven Claude-named types also remain in the neutral layer — stranded, but unreferenced by OpenCode. |
+| Is the extracted code actually *used*? | **Yes — it is 48.7% of what powers ClaudeForge**, up from 11.6%, and it is provably executing at runtime. See §2.0. |
 | Was the permissions work finished? | **Yes, and as *redesigned*.** Both halves shipped. The roadmap simply never marked it, which is why it reads as open. |
 | What is the real risk? | **Not the Claude-named code — the Claude-shaped *defaults*.** One of them was a live defect until this session. Name-based searching cannot find that class. |
 
@@ -90,7 +91,56 @@ survived the extraction unchanged.
 
 ---
 
-## 2 · Completeness — what is still Claude-shaped inside the neutral layer
+## 2 · Completeness
+
+### 2.0 · How much of ClaudeForge the shared layer actually powers
+
+> ⓘ **Corrected 2026-09-12.** An earlier revision of this document described the leftovers in §2.1
+> as *"inert"*. That word was scoped to **the seven Claude-named types, with respect to OpenCode
+> only** — it never described the shared layer, and read alone it wrongly suggests the extraction
+> is dead code. It is not: it is nearly half of ClaudeForge. Measured below rather than asserted.
+
+Hand-written `.cs` + `.axaml` lines per assembly, excluding build output and generated designer
+files, read out of git at the tag and off disk at HEAD:
+
+| | Baseline `v2026.3.901` | HEAD |
+|---|---|---|
+| Shared (`AgentForge.*` + `LayeredEditors.*`) | 8,629 | **42,217** |
+| Claude-specific (`ClaudeForge`, `.Avalonia`, `.Sdk.Claude`) | 65,716 | 44,430 |
+| **ClaudeForge's whole stack** | 74,345 | 86,647 |
+| **Shared share** | **11.6%** | **48.7%** |
+
+✅ **And it runs.** `[Editor.Rebuild] group=… editors=N`, which appears twelve times per run in
+*both* builds' logs, is emitted by
+`AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs`. Every settings group in
+ClaudeForge is built by the shared shell. `src/ClaudeForge.Core` and `src/ClaudeForge.Sdk` no
+longer exist; `ClaudeForge.csproj` references `AgentForge.Core`, `AgentForge.Sdk`,
+`AgentForge.Avalonia.Shell`, `ClaudeForge.Sdk.Claude` and four `LayeredEditors.*` projects.
+
+### 2.1 · ⚠ The app/shell half is much smaller than the plan assumes
+
+The Core/SDK split is thorough: `ClaudeForge.Core` (11,719) and `ClaudeForge.Sdk` (11,007) are
+gone, re-partitioned into five neutral assemblies plus a Claude-specific SDK.
+
+The **app** barely moved:
+
+| | Baseline | HEAD | Change |
+|---|---|---|---|
+| `src/ClaudeForge` | 41,371 | 38,301 | **−3,070 (−7%)** |
+| `AgentForge.Avalonia.Shell` | — | 7,693 | new |
+
+⛔ The plan carries an unmeasured estimate that *"`src/ClaudeForge` … Roughly 60/40 generic shell
+vs Claude-specific — **an eyeball estimate from the file list, not a measurement**"*, which implies
+roughly 24,000 extractable lines. The extracted shell is 7,693. The plan states the consequence
+itself: *"if the shell share is materially smaller, the extraction is less valuable than this plan
+assumes and the topology decision deserves a second look."*
+
+⚠ **That −3,070 is NET, and gross extraction was larger** — the app also gained features in the
+same window (Essentials, artifacts, schema refresh, backup). Separating the two needs per-file
+history, which this measurement does not do. The direction is solid; the exact gross figure is not
+claimed. `src/ClaudeForge` remains the largest assembly in the repository.
+
+### 2.2 · What is still Claude-shaped inside the neutral layer
 
 `CLAUDE.md` states the rule: *"`AgentForge.*` — product-neutral agent-configuration machinery.
 Anything here must make sense for **both** products."*
@@ -112,11 +162,12 @@ Plus Claude-specific **members on neutral types**: `PlatformPaths.ClaudeHome` / 
 `.ClaudeDesktopConfig`, `SchemaRegistry.ClaudeCodeProduct` / `.ClaudeDesktopProduct`, and
 `EnvVarKey.MaxOutputTokens = "CLAUDE_CODE_MAX_OUTPUT_TOKENS"`.
 
-✅ **All of it is inert for OpenCode.** A search of `src/OpenCode.Sdk`, `src/OpenCode.Avalonia` and
+✅ **Every one of these is live for ClaudeForge and unreachable from OpenCode** — they are residue
+of the extraction, not dead code. A search of `src/OpenCode.Sdk`, `src/OpenCode.Avalonia` and
 `src/OpenCodeForge` for every one of those seven type names returns **zero matches**. This is
 incomplete extraction, not an active bug.
 
-### ⛔ The part that is NOT inert — Claude-shaped defaults
+### ⛔ The part that DOES reach OpenCode — Claude-shaped defaults
 
 **This is the finding that matters, and it is invisible to every search above.** A neutral type
 whose *default* resolves to Claude data couples a second product to Claude without naming Claude
@@ -185,11 +236,10 @@ than none.
   the desktop cleared of other windows, or a foreground assertion that local antivirus permits.
 - ⚠ **Only `win-x64` was run *live*.** The other five RIDs were verified to publish cleanly, not to
   run.
-- ⚠ **The reverse direction was not measured** — whether neutral machinery is still stranded inside
-  `ClaudeForge`. The plan asks for exactly this measurement and has never had it: it estimates the
-  app is *"roughly 60/40 generic shell vs Claude-specific — an eyeball estimate from the file list,
-  not a measurement"*, and notes that if the shell share is materially smaller, the extraction is
-  less valuable than assumed.
+- ⚠ **The size measurement in §2.0–§2.1 is lines, not semantics.** It shows how much code sits in
+  which assembly; it does not show whether what remains in `src/ClaudeForge` is *genuinely*
+  Claude-specific or merely un-extracted. Deciding that needs a read of the app's view-models, not
+  a line count.
 - ⚠ **The branch is 23 commits behind `main`**, including theming, accessibility and schema-race
   fixes. None of this verification says anything about those.
 
@@ -205,4 +255,8 @@ than none.
    are covered rather than assumed.
 3. **Mark phases 1–9 in the roadmap**, so "was the permissions work finished?" has an answer at a
    glance instead of requiring a read of three revisions.
-4. **Measure the 60/40 estimate** the plan has been carrying unmeasured since draft 1.
+4. **Decide what the app/shell number means** — §2.1 measures it for the first time, and it is well
+   short of the plan's estimate. Either more of `src/ClaudeForge` should move into
+   `AgentForge.Avalonia.Shell`, or the estimate should be replaced with the measured figure and the
+   topology re-argued from it. What should not happen is the eyeball estimate continuing to sit in
+   the plan now that a real number exists.
