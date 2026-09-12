@@ -112,15 +112,42 @@ Referenced from `AGENTS.md`; the enforceable statements live there, the reasonin
 
 ## Schema loading priority
 
-Referenced from `AGENTS.md` and from both refresh scripts. **This is the order:**
+Referenced from `AGENTS.md` and from both refresh scripts.
+
+⭐ **The disk cache is the MATERIALISED RESULT, not a tier in a precedence chain.** A launch
+resolves once and writes what it resolved; memory is then loaded from that one file:
 
 ```
-memory cache  ->  HTTPS fetch (+ strip, + overlay)  ->  bundled resource (+ strip, + overlay)
+memory cache
+  ->  conditional GET          304 -> the cached artifact is already current
+                               200 -> strip + overlay -> write artifact + sidecar -> memory
+                              fail -> the cached artifact, else extract bundled -> write -> memory
 ```
 
-**There is no disk cache and no empty fallback.** If neither source answers, the load throws
-`SchemaUnavailableException` — because an empty JSON Schema permits *everything*, so returning
-one would not degrade validation, it would remove it while every surface kept reporting success.
+So there is exactly **one** path into the memory cache and exactly **one** file that says what the
+app validates against — which a user or a bug report can read without re-deriving anything. The
+artifact on disk is the resolved document: already stripped, already overlaid, so loading it is a
+plain parse.
+
+⛔ **A cached FETCHED artifact is never overwritten by bundled because a launch is offline.** That
+would hand the user an *older* schema than the one already on their machine, silently — no error,
+no badge change, just different validation rules. A cached **bundled** artifact *is* refreshed when
+the build ships different bundled bytes, or upgrading the app would strand the user on whatever the
+old build extracted. The sidecar's `source` and `bundledSourceSha256` are what make that
+distinction expressible; `overlaySha256` is what notices an overlay edit, since the overlay is
+baked into the artifact.
+
+⚠ **A `null` cache directory means NO DISK, and that is the constructor's default** — the same
+shape, and the same measured reason, as the `HttpClient` default being OFFLINE. 34 test sites build
+a bare registry; a writing default would put every one of them into a real user profile. Production
+names a directory **per app**: there is no neutral default, because `~/.claude/cache/schemas` is
+Claude's answer and OpenCode's schemas do not belong beneath it. OpenCodeForge's sits beside its
+window-state file, deliberately *outside* the roots the disk-footprint page measures, so the app's
+own cache is never reported to the user as OpenCode's disk usage.
+
+**There is still no empty fallback.** If nothing can supply the schema, the load throws
+`SchemaUnavailableException` — because an empty JSON Schema permits *everything*, so returning one
+would not degrade validation, it would remove it while every surface kept reporting success.
 
 ⭐ **The overlay and the external-`$ref` strip apply to whichever source wins.** That is what
 makes network-first safe, and it is the whole design. `*.overlay.json` siblings carry
@@ -186,9 +213,15 @@ the nav badges in place. Two things it deliberately does not do, both visible in
   would interrupt unsaved edits from a button whose label says *check*, and the next launch picks
   the new copy up anyway. ⚠ In ClaudeForge, where one registry is shared with both SDK clients,
   save-validation switches immediately even though the tree has not.
-- ⛔ **It can move a session backwards.** `RefreshAsync` drops the cached copy *before*
-  re-fetching, so a failed retry leaves a previously-fetched registry on bundled. That is
-  reported as `Unavailable` and never as "up to date" — the distinction is the point.
+- ✅ **It can no longer move a session backwards.** `RefreshAsync` still drops the cached copy
+  before re-fetching, but a failed retry now lands on the previously-**fetched** artifact on disk
+  rather than on bundled, so the session keeps the newer schema.
+- ⛔ **Which is exactly why the refresher asks `NetworkUnavailable` FIRST.** Falling back to a
+  fetched artifact means provenance alone can no longer tell "checked, nothing new" from "never
+  reached the server" — both end up reporting `Fetched` with an unchanged digest. Reading the
+  digest first would report `Unchanged` for a check that never happened, which is the same
+  dishonesty as claiming a fetch failed on a section where no request was made, pointing the other
+  way. A failed retry is still `Unavailable`, never "up to date" — the distinction is the point.
 
 A product with no upstream (Claude Desktop: `$id` is a bare token, so its descriptor URL is
 `bundled://…`) is **omitted from the results**, not reported unchanged, and carries its own badge

@@ -408,7 +408,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
         CancellationToken ct = default, SchemaRegistry? schemaRegistry = null)
     {
         // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design.
-        SchemaRegistry registry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork();
+        //
+        // ⛔ The cache directory is THIS APP'S, not OpenCode's own cache root. Three reasons, and
+        // the first two are the ones that bite: `~/.cache/opencode` is a directory OpenCode
+        // manages and may clear, and it is one of the roots the disk-footprint page MEASURES — so
+        // the app's schema cache would show up as OpenCode's disk usage and invite the user to
+        // delete it. Beside the window-state file instead, which is where this app already keeps
+        // its own things, and which follows $OPENCODE_CONFIG_DIR so a redirected install (and
+        // every test that redirects) stays isolated for free.
+        SchemaRegistry registry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork(
+            cacheDirectory: Path.Combine(
+                OpenCodePaths.GlobalDirectory(OpenCodeEnvironment.FromProcess()), "cache", "schemas"));
         _registry = registry;
         List<string> failures = [];
         IsLoading = true;

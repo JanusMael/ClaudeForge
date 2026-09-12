@@ -140,10 +140,15 @@ public static class SchemaRefresher
                 // break rather than a network outcome, and not something to report as "fine".
                 null => SchemaRefreshStatus.Failed,
 
-                // The fetch step swallows connectivity failures and falls through to bundled,
-                // so a bundled result here IS the "could not reach upstream" case. It cannot
-                // mean anything else: this product was checkable, so bundled was not the
-                // preferred source.
+                // ⛔ ASKED FIRST, and the disk cache is why. A failed fetch now falls back to the
+                // previously-FETCHED artifact on disk rather than to bundled — better for the
+                // user, who keeps the newer schema — but it means provenance alone can no longer
+                // tell "checked, nothing new" from "never reached the server". Reading the sha
+                // first would report Unchanged for a check that never happened.
+                _ when registry.NetworkUnavailable => SchemaRefreshStatus.Unavailable,
+
+                // A bundled result on a checkable product still means upstream was not reached:
+                // bundled is never the preferred source for one of these.
                 { Source: SchemaSource.Bundled } => SchemaRefreshStatus.Unavailable,
 
                 { ShortSha: var sha } when sha == before => SchemaRefreshStatus.Unchanged,

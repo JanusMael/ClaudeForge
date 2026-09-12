@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -15,17 +17,32 @@ namespace Bennewitz.Ninja.AgentForge.Core.Schema;
 /// <summary>
 /// Manages loading and caching of JSON schemas.
 /// <para>
-/// Loading priority: <b>memory cache → HTTPS fetch (+ strip, + overlay) → bundled resource
-/// (+ strip, + overlay)</b>. There is no disk cache and no empty fallback. See
-/// <see cref="GetSchemaAsync"/> for the full rationale, and
-/// <c>SchemaLoadPrecedenceTests</c> for the behavioural guard.
+/// ⭐ <b>The disk cache is the MATERIALISED RESULT, not a tier in a precedence chain.</b> At
+/// launch the registry asks upstream whether anything changed, writes what it resolved as one
+/// stripped-and-overlaid artifact, and loads memory from that:
+/// <code>
+///   memory cache
+///     -&gt; conditional GET (304 = the cached artifact is current)
+///          200  -&gt; strip + overlay -&gt; write artifact + sidecar -&gt; memory
+///          fail -&gt; cached artifact if there is one, else extract bundled -&gt; write -&gt; memory
+/// </code>
+/// So there is exactly ONE path into the memory cache, and exactly one file describing what the
+/// app validates against — inspectable by a user or a bug report without re-deriving anything.
+/// See <see cref="GetSchemaAsync"/> for the rationale and <c>SchemaDiskCacheTests</c> for the
+/// behavioural guard. There is still no empty fallback.
 /// </para>
 /// <para>
-/// ⚠ <b>This used to be bundled-first, and the prose said so in four places — twice as the
-/// stated reason for a test's design.</b> The reversal is deliberate, not drift: the overlay
-/// and the external-<c>$ref</c> strip now apply to whichever source wins, which is what made
-/// bundled-first unnecessary. If you are about to "fix" a comment to match the old order,
-/// read <see cref="GetSchemaAsync"/> first.
+/// ⛔ <b>A cached FETCHED artifact is never overwritten by bundled just because a launch is
+/// offline.</b> That would hand back an older schema than the one already on the machine, with
+/// nothing on screen to say so. A cached BUNDLED artifact <i>is</i> refreshed when the build
+/// ships different bundled bytes, or upgrading the app would strand the user on whatever the old
+/// build happened to extract.
+/// </para>
+/// <para>
+/// ⚠ <b>This has been bundled-first, then network-first with no disk, and now this — and the
+/// prose said so in four places each time, twice as the stated reason for a test's design.</b>
+/// Every change was deliberate. Before "fixing" a comment to match an older order, read
+/// <see cref="GetSchemaAsync"/>.
 /// </para>
 /// </summary>
 public sealed class SchemaRegistry : IDisposable
@@ -103,13 +120,31 @@ public sealed class SchemaRegistry : IDisposable
     /// without touching global state that another test would then see.
     /// </para>
     /// </param>
-    public SchemaRegistry(HttpClient? httpClient = null, SchemaSourceOverride? sourceOverride = null)
+    /// <param name="cacheDirectory">
+    /// Where resolved schema artifacts are stored, or <see langword="null"/> for no disk cache.
+    /// <para>
+    /// ⛔ <b>Null — no disk — is the default for the same measured reason the <c>HttpClient</c>
+    /// default is OFFLINE.</b> 34 test sites construct a registry without one; if the default
+    /// wrote, every one of them would scribble a real user profile. Production names a directory,
+    /// and it names a DIFFERENT one per app: there is no neutral default, because
+    /// <c>~/.claude/cache/schemas</c> is Claude's answer and putting OpenCode's schemas beneath it
+    /// would be wrong.
+    /// </para>
+    /// </param>
+    public SchemaRegistry(
+        HttpClient? httpClient = null,
+        SchemaSourceOverride? sourceOverride = null,
+        string? cacheDirectory = null)
     {
         _http = httpClient;
         _sourceOverride = sourceOverride ?? ProcessSourceOverride;
+        _disk = string.IsNullOrWhiteSpace(cacheDirectory) ? null : new SchemaDiskCache(cacheDirectory);
     }
 
     private readonly SchemaSourceOverride? _sourceOverride;
+
+    /// <summary>The resolved-artifact store, or <see langword="null"/> when this registry has none.</summary>
+    private readonly SchemaDiskCache? _disk;
 
     /// <summary>
     /// Process-wide source override, set once at startup from a debug flag.
@@ -144,8 +179,9 @@ public sealed class SchemaRegistry : IDisposable
     /// The client's own 15s timeout is a backstop only; <see cref="FetchTimeout"/> is what
     /// actually bounds a load, because this runs on the startup path.
     /// </remarks>
-    public static SchemaRegistry CreateWithNetwork(SchemaSourceOverride? sourceOverride = null)
-        => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sourceOverride);
+    public static SchemaRegistry CreateWithNetwork(
+        SchemaSourceOverride? sourceOverride = null, string? cacheDirectory = null)
+        => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sourceOverride, cacheDirectory);
 
     /// <summary>
     /// Get the Claude Code settings schema root node.
@@ -553,20 +589,39 @@ public sealed class SchemaRegistry : IDisposable
     /// </exception>
     public async Task<JsonSchema> GetSchemaAsync(string url, string cacheFileName, CancellationToken ct = default)
     {
-        // 1. Memory cache — one fetch per URL per process, whatever the source.
+        // 1. Memory cache — one resolution per URL per process, whatever the source.
         if (_memoryCache.TryGetValue(url, out JsonSchema? cached))
         {
             return cached;
         }
 
-        // 2. HTTPS fetch.
+        // The overlay is BAKED INTO the cached artifact, so its digest decides whether a cached
+        // copy still describes the rules this build ships. Computed once, used by both branches.
+        string overlaySha = CurrentOverlayDigest(cacheFileName);
+
+        // ⛔ --schema-source bundled resolves in MEMORY ONLY and must not touch disk. A debug flag
+        // has no business mutating durable state, and writing here would clobber a fetched
+        // artifact with the binary's older copy — the exact downgrade the offline rules below
+        // exist to prevent.
+        if (_sourceOverride == SchemaSourceOverride.Bundled)
+        {
+            return MaterialiseBundledOrThrow(url, cacheFileName, writeToDisk: false, overlaySha, ct);
+        }
+
+        // Declared ahead of the call rather than inline: with `_disk` null the short-circuit
+        // leaves inline `out` variables unassigned, and the compiler is right to object.
+        byte[] diskArtifact = [];
+        SchemaCacheSidecar diskSidecar = null!;
+        bool diskHit = _disk is not null
+            && _disk.TryRead(cacheFileName, overlaySha, out diskArtifact, out diskSidecar);
+
+        // 2. HTTPS fetch, conditional on what the cached artifact already is.
         //
-        // Plain http:// is refused outright: this copy now OUTRANKS the bundled one, so a
+        // Plain http:// is refused outright: a fetched copy OUTRANKS the bundled one, so a
         // network intercept serving an attacker-crafted schema would decide what the editor
         // considers valid. https or nothing.
         if (_http is not null
             && !_networkUnavailable
-            && _sourceOverride != SchemaSourceOverride.Bundled
             && url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             try
@@ -574,11 +629,58 @@ public sealed class SchemaRegistry : IDisposable
                 using CancellationTokenSource fetchCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 fetchCts.CancelAfter(FetchTimeout);
 
-                string json = await FetchWithRedirectAsync(url, fetchCts.Token).ConfigureAwait(false);
-                JsonSchema fetched = Materialise(json, cacheFileName, SchemaSource.Fetched);
-                _memoryCache[url] = fetched;
-                Log.Information("[Schema] {File} loaded from {Url}", cacheFileName, url);
-                return fetched;
+                // Replay the ETag only for an artifact that came from the network. Sending the
+                // one recorded against a BUNDLED artifact would invite a 304 whose meaning is
+                // "your cached copy is current" about a copy that never came from this server.
+                string? ifNoneMatch = diskHit && IsFetched(diskSidecar) ? diskSidecar.ETag : null;
+
+                FetchResult result = await FetchWithRedirectAsync(url, ifNoneMatch, fetchCts.Token)
+                    .ConfigureAwait(false);
+
+                if (result.NotModified && diskHit)
+                {
+                    Log.Information("[Schema] {File} unchanged upstream; using the cached copy", cacheFileName);
+                    return Adopt(url, cacheFileName, diskArtifact, diskSidecar);
+                }
+
+                if (result.Json is { } body)
+                {
+                    JsonSchema fetched = Materialise(body, cacheFileName, SchemaSource.Fetched, out byte[] merged);
+                    _memoryCache[url] = fetched;
+                    Log.Information("[Schema] {File} loaded from {Url}", cacheFileName, url);
+
+                    if (_disk is not null)
+                    {
+                        // ⚠ The timestamp and digest come from the provenance Materialise just
+                        // recorded, NOT from fresh calls. Taking DateTimeOffset.UtcNow again here
+                        // wrote a different instant into the file than the badge reports for the
+                        // same fetch — so a later 304, which adopts the file's timestamp, made the
+                        // reported fetch time jump. Caught by
+                        // AMatchingETag_Costs304AndAdoptsTheCachedArtifact.
+                        SchemaProvenance recorded = _provenance[cacheFileName];
+
+                        await _disk.WriteAsync(
+                            cacheFileName,
+                            merged,
+                            new SchemaCacheSidecar(
+                                Source: nameof(SchemaSource.Fetched),
+                                FetchedUtc: recorded.FetchedUtc,
+                                Sha256: recorded.Sha256,
+                                ETag: result.ETag,
+                                OverlaySha256: overlaySha,
+                                BundledSourceSha256: null,
+                                AppVersion: BackupConstants.AppVersion,
+                                WrittenUtc: DateTimeOffset.UtcNow),
+                            ct).ConfigureAwait(false);
+                    }
+
+                    return fetched;
+                }
+
+                // 304 with nothing cached to adopt — the server says "unchanged" about a copy we
+                // do not have. Rare (a cleared cache mid-session), and it falls through to the
+                // offline rules rather than being treated as success.
+                Log.Warning("[Schema] {Url} answered 304 but no cached copy is readable", url);
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
@@ -622,19 +724,152 @@ public sealed class SchemaRegistry : IDisposable
             throw new SchemaUnavailableException(url, cacheFileName);
         }
 
-        // 3. Bundled resource. Always present for every product this repo ships, so in
-        //    practice this is what runs whenever the network is slow, blocked or absent.
-        byte[]? bundledBytes = TryReadBundledBytes(cacheFileName);
-        if (bundledBytes != null)
+        // 3. No usable answer from the network. Decide between the cached artifact and the
+        //    binary's own copy — and this is the decision that can silently downgrade a user.
+        if (diskHit)
         {
-            JsonSchema schema = Materialise(
-                Encoding.UTF8.GetString(bundledBytes), cacheFileName, SchemaSource.Bundled);
-            _memoryCache[url] = schema;
-            return schema;
+            if (IsFetched(diskSidecar))
+            {
+                // ⛔ NEVER overwrite a fetched artifact with bundled just because today's launch
+                // is offline. Doing so would hand back an OLDER schema than the one already
+                // resolved on this machine, and nothing on screen would say so.
+                Log.Information(
+                    "[Schema] Offline; using the copy fetched {When:u} for {File}",
+                    diskSidecar.FetchedUtc, cacheFileName);
+                return Adopt(url, cacheFileName, diskArtifact, diskSidecar);
+            }
+
+            // A bundled-sourced artifact, on the other hand, SHOULD be replaced when this build
+            // ships different bundled bytes — otherwise upgrading the app would leave the user on
+            // the schema their old build happened to extract.
+            string? bundledSha = CurrentBundledDigest(cacheFileName);
+            if (bundledSha is not null
+                && string.Equals(diskSidecar.BundledSourceSha256, bundledSha, StringComparison.OrdinalIgnoreCase))
+            {
+                return Adopt(url, cacheFileName, diskArtifact, diskSidecar);
+            }
+
+            Log.Information(
+                "[Schema] This build ships different bundled bytes for {File}; refreshing the cache",
+                cacheFileName);
         }
 
-        // 4. Nothing could supply it. See the exception's remarks for why this is not "{}".
-        throw new SchemaUnavailableException(url, cacheFileName);
+        // 4. Extract the bundled copy — always present for every product this repo ships, so in
+        //    practice this is what runs whenever the network is slow, blocked or absent.
+        return MaterialiseBundledOrThrow(url, cacheFileName, writeToDisk: true, overlaySha, ct);
+    }
+
+    /// <summary>
+    /// Whether this registry's last fetch attempt failed to reach the network.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Exposed because the disk cache made provenance alone an unreliable answer to "did the
+    /// check work?".</b> Before the cache, a failed fetch fell through to bundled, so a bundled
+    /// result WAS the "could not reach upstream" signal and <c>SchemaRefresher</c> read it that
+    /// way. Now a failed fetch falls back to the previously-FETCHED artifact on disk — correct for
+    /// the user, who keeps the newer schema, but it would let a refresh report "up to date" about
+    /// a server it never reached. That is the same dishonesty as telling a user a fetch failed on
+    /// a section where no request was made, pointing the opposite way.
+    /// </remarks>
+    internal bool NetworkUnavailable => _networkUnavailable;
+
+    /// <summary>Whether a sidecar describes an artifact that came from the network.</summary>
+    /// <remarks>
+    /// Compared as a string because the sidecar persists one — see <see cref="SchemaCacheSidecar"/>
+    /// on why a persisted format does not store an enum member name it can rename later.
+    /// </remarks>
+    private static bool IsFetched(SchemaCacheSidecar sidecar) =>
+        string.Equals(sidecar.Source, nameof(SchemaSource.Fetched), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Take a cached artifact as this registry's answer: parse it, and report the provenance the
+    /// sidecar recorded rather than inventing a new one.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>The provenance is the ORIGIN, not "disk".</b> A user asking where a schema came from
+    /// wants "downloaded on Tuesday" or "shipped in the binary" — "it was on disk" answers a
+    /// question nobody asked and hides the one they did. Which is also why the badge needs no new
+    /// source: disk is where the answer is kept, never where it came from.
+    /// </remarks>
+    private JsonSchema Adopt(string url, string cacheFileName, byte[] artifact, SchemaCacheSidecar sidecar)
+    {
+        _materialisedBytes[cacheFileName] = artifact;
+        _provenance[cacheFileName] = new SchemaProvenance(
+            IsFetched(sidecar) ? SchemaSource.Fetched : SchemaSource.Bundled,
+            sidecar.FetchedUtc,
+            sidecar.Sha256);
+
+        JsonSchema schema = ParseSchema(Encoding.UTF8.GetString(artifact));
+        _memoryCache[url] = schema;
+        return schema;
+    }
+
+    /// <summary>
+    /// Resolve from the bundled resource, optionally materialising it to disk.
+    /// </summary>
+    /// <exception cref="SchemaUnavailableException">
+    /// There is no bundled copy either. See the exception's remarks for why this is not <c>{}</c>.
+    /// </exception>
+    private JsonSchema MaterialiseBundledOrThrow(
+        string url, string cacheFileName, bool writeToDisk, string overlaySha, CancellationToken ct)
+    {
+        byte[]? bundledBytes = TryReadBundledBytes(cacheFileName);
+        if (bundledBytes is null)
+        {
+            throw new SchemaUnavailableException(url, cacheFileName);
+        }
+
+        JsonSchema schema = Materialise(
+            Encoding.UTF8.GetString(bundledBytes), cacheFileName, SchemaSource.Bundled, out byte[] merged);
+        _memoryCache[url] = schema;
+
+        if (writeToDisk && _disk is not null)
+        {
+            // ⚠ Fire-and-forget would reintroduce exactly the race main's cafe89c fixed: a test
+            // deleting its sandbox while a background write is still open on a file inside it.
+            // The write is small and already-resolved work, so awaiting it costs a few
+            // milliseconds and removes a whole class of flake.
+            _disk.WriteAsync(
+                cacheFileName,
+                merged,
+                new SchemaCacheSidecar(
+                    Source: nameof(SchemaSource.Bundled),
+                    FetchedUtc: null,
+                    Sha256: _provenance[cacheFileName].Sha256,
+                    ETag: null,
+                    OverlaySha256: overlaySha,
+                    BundledSourceSha256: SchemaDiskCache.Digest(bundledBytes),
+                    AppVersion: BackupConstants.AppVersion,
+                    WrittenUtc: DateTimeOffset.UtcNow),
+                ct).GetAwaiter().GetResult();
+        }
+
+        return schema;
+    }
+
+    /// <summary>Digest of the overlay source for a schema, or empty when it has none.</summary>
+    /// <remarks>
+    /// Empty rather than null for a schema with no overlay, so "no overlay" compares equal to
+    /// "no overlay" across launches instead of being a second kind of unknown. Only 2 of the 4
+    /// schemas have one.
+    /// </remarks>
+    private static string CurrentOverlayDigest(string cacheFileName)
+    {
+        byte[]? overlay = TryReadBundledBytes(OverlayFileNameFor(cacheFileName));
+        return overlay is null ? string.Empty : SchemaDiskCache.Digest(overlay);
+    }
+
+    /// <summary>Digest of the RAW bundled bytes, before strip and overlay.</summary>
+    /// <remarks>
+    /// The raw bytes, deliberately: this answers "does this build ship a different bundled
+    /// schema than the one the cache was built from", and the overlay is tracked separately.
+    /// Hashing the merged result instead would conflate the two and rebuild the cache whenever
+    /// either moved, without saying which.
+    /// </remarks>
+    private static string? CurrentBundledDigest(string cacheFileName)
+    {
+        byte[]? bundled = TryReadBundledBytes(cacheFileName);
+        return bundled is null ? null : SchemaDiskCache.Digest(bundled);
     }
 
     /// <summary>
@@ -649,7 +884,12 @@ public sealed class SchemaRegistry : IDisposable
     /// right by construction; now that a fetch can win, reading bundled would describe a
     /// different document than the tree was built from.
     /// </remarks>
-    private JsonSchema Materialise(string json, string cacheFileName, SchemaSource source)
+    /// <param name="merged">
+    /// The resolved bytes — stripped, verified and overlaid. Handed back rather than re-read from
+    /// <c>_materialisedBytes</c> because this is exactly what gets written to disk, and a caller
+    /// that had to look it up again could look up a different entry.
+    /// </param>
+    private JsonSchema Materialise(string json, string cacheFileName, SchemaSource source, out byte[] merged)
     {
         string stripped = StripExternalRefs(json);
 
@@ -664,7 +904,7 @@ public sealed class SchemaRegistry : IDisposable
             throw new UnstrippableSchemaRefException(cacheFileName);
         }
 
-        byte[] merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), cacheFileName);
+        merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), cacheFileName);
         _materialisedBytes[cacheFileName] = merged;
 
         // Hash the MERGED bytes, not the raw source — see SchemaProvenance for why. Recorded
@@ -784,12 +1024,47 @@ public sealed class SchemaRegistry : IDisposable
         return JsonSchema.FromText(json, opts);
     }
 
-    private async Task<string> FetchWithRedirectAsync(string url, CancellationToken ct)
+    /// <summary>What a fetch attempt produced.</summary>
+    /// <param name="Json">The body, or <see langword="null"/> when <paramref name="NotModified"/>.</param>
+    /// <param name="ETag">The response ETag, to be replayed on the next launch.</param>
+    /// <param name="NotModified">
+    /// The server answered <c>304</c>: the cached artifact is current.
+    /// </param>
+    private readonly record struct FetchResult(string? Json, string? ETag, bool NotModified);
+
+    /// <summary>
+    /// Fetch <paramref name="url"/>, asking the server to skip the body if nothing changed.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>A conditional GET is the cheap feasibility check, and it is cheaper than a HEAD.</b>
+    /// HEAD answers "is there anything new?" and then costs a second round trip to actually get
+    /// it; <c>If-None-Match</c> answers the same question AND delivers the bytes in one. A
+    /// <c>304</c> costs a header exchange, which is what makes it acceptable to block a launch on
+    /// this at all. A server that ignores ETags simply answers <c>200</c> and we are no worse off
+    /// than an unconditional GET.
+    /// </remarks>
+    private async Task<FetchResult> FetchWithRedirectAsync(string url, string? ifNoneMatch, CancellationToken ct)
     {
         // Only ever reached from the fetch step, which checks _http first.
-        HttpResponseMessage response = await _http!.GetAsync(url, ct);
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
+
+        if (!string.IsNullOrWhiteSpace(ifNoneMatch)
+            && EntityTagHeaderValue.TryParse(ifNoneMatch, out EntityTagHeaderValue? tag))
+        {
+            request.Headers.IfNoneMatch.Add(tag);
+        }
+
+        using HttpResponseMessage response = await _http!.SendAsync(request, ct).ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.NotModified)
+        {
+            // Keep the tag we sent: a 304 is not required to echo one back.
+            return new FetchResult(null, ifNoneMatch, NotModified: true);
+        }
+
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync(ct);
+        string json = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        return new FetchResult(json, response.Headers.ETag?.ToString(), NotModified: false);
     }
 
     /// <summary>

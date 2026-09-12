@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Converters;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
@@ -64,7 +65,12 @@ public class App : Application
             // The --schema-source override reaches this without being passed: Program.cs
             // sets SchemaRegistry.ProcessSourceOverride in step 1, and the constructor falls
             // back to it.
-            SchemaRegistry schemaRegistry = SchemaRegistry.CreateWithNetwork();
+            // ⛔ The cache directory is supplied BY THE APP and there is no neutral default: the
+            // registry writes the resolved schema artifact here, and ~/.claude is Claude's answer
+            // to that question, not OpenCode's. A null directory means no disk cache at all,
+            // which is what keeps every test off a real profile.
+            SchemaRegistry schemaRegistry = SchemaRegistry.CreateWithNetwork(
+                cacheDirectory: Path.Combine(PlatformPaths.ClaudeHome, "cache", "schemas"));
             AvaloniaDialogService dialogService = new();
             // The DialogAppIcon assignment below uses SmallInstance (64-px
             // render of the simplified small SVG) instead of Instance (256-px

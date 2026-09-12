@@ -11,4 +11,5 @@ namespace Bennewitz.Ninja.AgentForge.Core.Schema;
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(ModelCatalogDto))]
+[JsonSerializable(typeof(SchemaCacheSidecar))]
 internal sealed partial class CoreJsonContext : JsonSerializerContext;

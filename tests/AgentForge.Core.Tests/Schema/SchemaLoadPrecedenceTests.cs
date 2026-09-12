@@ -29,6 +29,14 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// longer exists. Green tests describing a departed mechanism are worse than absent ones, which
 /// is why this file was rewritten rather than patched.
 /// </para>
+/// <para>
+/// ⚠ <b>Every registry here is built WITHOUT a cache directory, and that is what these tests are
+/// about.</b> The disk cache came back in 2026-09-12 as the materialised result — resolve once at
+/// launch, write the artifact, load memory from it — but a null directory still means no disk, and
+/// that configuration is what every test site in this repo uses. So this file remains the guard
+/// for the no-disk behaviour; <c>SchemaDiskCacheTests</c> covers the disk-backed one. Neither
+/// file's name should be read as "the" order.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class SchemaLoadPrecedenceTests
