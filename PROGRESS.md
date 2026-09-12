@@ -13,33 +13,34 @@
 
 ---
 
-## Where things stand — 2026-09-11
+## Where things stand — 2026-09-12
 
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| Working tree | **dirty** — the OpenCodeForge Backup page is written and verified but NOT committed |
-| Unpushed | 10 commits, plus the uncommitted work above. Nothing pushed, no PR opened |
+| Working tree | clean |
+| Unpushed | **14 commits**, this file's included. Nothing pushed, no PR opened |
+| Bisectable | ✅ each of the last three builds alone; `040d26b` runs the pre-change suite green (4,227), the +12 arrive with the page |
 | Suite | **4,239 passed · 0 failed · 11 skipped**, Debug (was 4,227; +12 new) |
 | Trim check | Release `win-x64` publish clean for **both** apps, zero ILLink warnings |
 | Observed | OpenCodeForge launches, builds its tree, writes the new persisted fields. ⚠ The Backup page itself has **not been seen rendered** — see *Verification gap* |
 
 ---
 
-## ▶ RESUME HERE — commit, then the Footprint/Memory page
+## ▶ RESUME HERE — pick one of two, and the order is a real decision
 
-**First: commit what is in the working tree.** It is a complete, verified slice and it is large;
-leaving it uncommitted is the main risk on this branch right now. Suggested split, coarse to fine:
+⛔ **The Backup page ships a button over a layout that misses a redirected config.** See the second
+entry under *Known issues*: `OpenCodeProducts.Config` archives
+`OpenCodePaths.DefaultGlobalDirectory()`, so a user with `$OPENCODE_CONFIG_DIR` set gets an archive
+holding neither their `opencode.json` nor their `tui.json`, and the page reports success. That
+predates this session — but until this session nothing in the GUI invited anyone to rely on it.
+**Weigh fixing that before adding a second page.** The fix is a section over `GlobalDirectory(env)`
+*in addition to* the default root, both of which the product genuinely reads, plus a frozen-fixture
+decision about archives already written.
 
-1. `refactor(ui): TipCell moves to LayeredEditors.Avalonia` — the control plus the six ClaudeForge
-   views whose `xmlns` follows it. Self-contained; ClaudeForge builds and its suite passes alone.
-2. `fix(backup): the credentials prompt names the host's own credential store` — the
-   `BackupPageOptions.CredentialsPathDisplay` member, the shell's use of it, ClaudeForge supplying
-   it. A real defect fix, worth its own commit so it can be read on its own.
-3. `feat(14): OpenCodeForge's Backup / Restore page` — everything else.
-
-**Then: the Footprint/Memory page.** Same shape as the page just built and the last item of Phase 14
-— `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders them. The
+**Otherwise: the Footprint/Memory page.** Same shape as the page just built and the last item of
+Phase 14 — `OpenCodeFootprint.Catalog` and `.Roots()` are built and tested, and nothing renders
+them. The
 Backup page is now the worked example to copy: a host options record in
 `src/OpenCodeForge/ViewModels/`, a view in `src/OpenCodeForge/Views/`, a `DataTemplate` in
 `App.axaml`, a node from `MainWindowViewModel.InitializeAsync`, and a wiring test beside
