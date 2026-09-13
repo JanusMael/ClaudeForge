@@ -26,6 +26,18 @@ internal static class BackupPageTestOptions
     internal static AgentForge.Avalonia.Shell.Backup.BackupPageOptions Create(
         IReadOnlyList<ProductDescriptor>? products = null) =>
         ClaudeBackupPage.Options(products ?? ClaudeBackupPage.DefaultProducts);
+
+    /// <summary>
+    /// The Clients-column abbreviations ClaudeForge actually ships.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>Read off the host's own options, never rebuilt here.</b> These two aliases were
+    /// hardcoded inside <c>BackupRowViewModel</c> until the map became host-supplied — which is
+    /// why OpenCode's products rendered unabbreviated. A map hand-rolled in this file would keep
+    /// every assertion below green on the day ClaudeForge stopped supplying one.
+    /// </remarks>
+    internal static IReadOnlyDictionary<string, string> Abbreviations =>
+        Create().Text.ClientAbbreviations;
 }
 
 /// <summary>
@@ -1113,7 +1125,7 @@ public sealed class BackupRestoreViewModelTests
                 Clients = ["ClaudeCode"],
             },
         };
-        BackupRowViewModel row = new(entry);
+        BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
         Assert.AreEqual("backup-2026.zip", row.DisplayName);
         StringAssert.Contains(row.DisplayDate, "2026");
@@ -1171,7 +1183,7 @@ public sealed class BackupRestoreViewModelTests
                 Clients = ["ClaudeCode", "ClaudeDesktop"],
             },
         };
-        BackupRowViewModel row = new(entry);
+        BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
         Assert.AreEqual("Code+Desktop", row.DisplayClients,
             "Both ClaudeCode and ClaudeDesktop must compact to their short forms in the cell.");
@@ -1254,7 +1266,7 @@ public sealed class BackupRestoreViewModelTests
                 Clients = ["ClaudeCode", "ClaudeFutureProduct"],
             },
         };
-        BackupRowViewModel row = new(entry);
+        BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
         // "ClaudeCode" abbreviates to "Code"; "ClaudeFutureProduct" passes through verbatim.
         Assert.AreEqual("Code+ClaudeFutureProduct", row.DisplayClients);
@@ -1287,7 +1299,7 @@ public sealed class BackupRestoreViewModelTests
                 Clients = [manifestValue],
             },
         };
-        BackupRowViewModel row = new(entry);
+        BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
         Assert.AreEqual(expectedAbbrev, row.DisplayClients,
             $"'{manifestValue}' must abbreviate case-insensitively.");

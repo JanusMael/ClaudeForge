@@ -82,6 +82,15 @@ internal static class ClaudeBackupPage
 
         Text = new BackupPageText
         {
+            // Keyed by ArchiveFolder, which is what BackupEngine writes into manifest.clients.
+            // ⚠ These were the shell's own two hardcoded arms until the map moved here; the
+            // values are unchanged, so the cell still reads "Code+Desktop".
+            ClientAbbreviations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [SchemaRegistry.ClaudeCodeProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeCode,
+                [SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeDesktop,
+            },
+
             ButtonContinueWithoutSaving = Strings.ButtonContinueWithoutSaving,
             ButtonDiscardAndRestore = Strings.ButtonDiscardAndRestore,
             ButtonIncludeCredentialsConfirm = Strings.ButtonIncludeCredentialsConfirm,

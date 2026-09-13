@@ -249,6 +249,58 @@ public sealed class OpenCodeBackupWiringTests
             "auth.json is never archived, so asking about it would be asking about nothing.");
     }
 
+    /// <summary>
+    /// The Clients column abbreviates this app's products instead of spelling them out.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>It did not, and the reason was structural rather than a missing entry.</b>
+    /// <c>BackupRowViewModel.AbbreviateClient</c> knew two product names — Claude's — so
+    /// OpenCode's fell through its unknown-product passthrough and the cell rendered
+    /// <c>OpenCode+OpenCodeTui</c>, 19 characters in a column laid out at 110 px. The
+    /// passthrough was doing exactly what it was designed for; the neutral layer simply had no
+    /// way to be told about a product it does not know.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Keyed by <c>ArchiveFolder</c>, not by <c>Id</c> or <c>DisplayName</c>.</b>
+    /// <c>BackupEngine.BuildClientList</c> writes <c>ArchiveFolder</c> into
+    /// <c>manifest.clients</c>, so a map keyed by anything else compiles, ships, and abbreviates
+    /// nothing — the same silent miss this test exists to catch.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void TheClientsColumnAbbreviatesBothOpenCodeProducts()
+    {
+        BackupPageOptions options = OpenCodeBackupPage.Options(OpenCodeProducts.All);
+
+        BackupEntry entry = new()
+        {
+            ArchivePath = "/fake/both.zip",
+            FileName = "both.zip",
+            LastModifiedUtc = DateTime.UtcNow,
+            SizeBytes = 100,
+            Manifest = new BackupManifest
+            {
+                Platform = "Windows",
+                Mode = BackupMode.Full,
+                Clients =
+                [
+                    OpenCodeProducts.Config.ArchiveFolder,
+                    OpenCodeProducts.Tui.ArchiveFolder,
+                ],
+            },
+        };
+
+        BackupRowViewModel row = new(entry, options.Text.ClientAbbreviations);
+
+        Assert.AreEqual("OpenCode+TUI", row.DisplayClients,
+            "Both products must compact for the 110 px Clients cell; the unabbreviated form is "
+            + "'OpenCode+OpenCodeTui'.");
+
+        // The tooltip is what makes abbreviating safe: nothing is lost, it just moves to hover.
+        StringAssert.Contains(row.DisplayClientsTooltip, "OpenCodeTui", StringComparison.Ordinal);
+    }
+
     [TestMethod]
     public void TheProcessAdvisoryNamesOpenCode()
     {

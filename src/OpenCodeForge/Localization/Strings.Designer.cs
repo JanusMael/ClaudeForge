@@ -69,6 +69,15 @@ public static class Strings
     /// <summary>Navigation header for the terminal-UI configuration section.</summary>
     public static string SectionOpenCodeTui => Get(nameof(SectionOpenCodeTui));
 
+    /// <summary>Clients-column short name for the main config product.</summary>
+    public static string LabelClientAbbrevOpenCode => Get(nameof(LabelClientAbbrevOpenCode));
+
+    /// <summary>
+    /// Clients-column short name for the TUI product — the abbreviation that keeps
+    /// <c>OpenCode+TUI</c> inside a 110 px cell where <c>OpenCode+OpenCodeTui</c> did not fit.
+    /// </summary>
+    public static string LabelClientAbbrevOpenCodeTui => Get(nameof(LabelClientAbbrevOpenCodeTui));
+
     /// <summary>Navigation header for the artifacts page.</summary>
     public static string SectionArtifacts => Get(nameof(SectionArtifacts));
 

@@ -406,7 +406,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
                 Backups.Clear(); // re-clear in case anything raced in
                 foreach (BackupEntry entry in entries)
                 {
-                    Backups.Add(new BackupRowViewModel(entry));
+                    Backups.Add(new BackupRowViewModel(entry, _text.ClientAbbreviations));
                 }
 
                 // If the host did not provide a persisted last-backup
@@ -994,7 +994,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         // prompt, cross-platform warning, running-Claude detection, Sanitized
         // refusal at the engine, success / failure status routing) fires
         // unchanged.  Single code path = single mental model for the user.
-        await RestoreAsync(new BackupRowViewModel(entry));
+        await RestoreAsync(new BackupRowViewModel(entry, _text.ClientAbbreviations));
     }
 
     [RelayCommand]
@@ -1320,10 +1320,22 @@ public sealed class BackupModeConverter : IValueConverter
 /// </remarks>
 public sealed class BackupRowViewModel : ObservableObject
 {
-    public BackupRowViewModel(BackupEntry entry)
+    /// <summary>Wrap one archive for display.</summary>
+    /// <param name="entry">The archive and its manifest, as the scanner found them.</param>
+    /// <param name="clientAbbreviations">
+    /// Short product names for the Clients column, from
+    /// <see cref="BackupPageText.ClientAbbreviations"/>. <see langword="null"/> renders every
+    /// product name in full, which is what a caller with no page text should get.
+    /// </param>
+    public BackupRowViewModel(
+        BackupEntry entry, IReadOnlyDictionary<string, string>? clientAbbreviations = null)
     {
         Entry = entry;
+        _clientAbbreviations = clientAbbreviations;
     }
+
+    /// <summary>Host-supplied short names, or <see langword="null"/> for full names.</summary>
+    private readonly IReadOnlyDictionary<string, string>? _clientAbbreviations;
 
     public BackupEntry Entry { get; }
 
@@ -1368,7 +1380,7 @@ public sealed class BackupRowViewModel : ObservableObject
     /// </summary>
     public string DisplayClients => Entry.Manifest is null
         ? "corrupt"
-        : string.Join("+", Entry.Manifest.Clients.Select(AbbreviateClient));
+        : string.Join("+", Entry.Manifest.Clients.Select(c => AbbreviateClient(c, _clientAbbreviations)));
 
     /// <summary>Hover-tooltip variant showing the full product names.</summary>
     public string DisplayClientsTooltip => Entry.Manifest is null
@@ -1381,22 +1393,46 @@ public sealed class BackupRowViewModel : ObservableObject
     /// product names so a new client doesn't render as an empty cell.
     /// </summary>
     /// <remarks>
-    /// case-insensitive matching so a manifest with
-    /// <c>"claudecode"</c> (different case) doesn't fall through to the
-    /// verbose-passthrough branch.  Today the manifest strings are
+    /// <para>
+    /// ⭐ <b>The aliases come from the HOST</b>, via
+    /// <see cref="BackupPageText.ClientAbbreviations"/>. They were two hardcoded arms here —
+    /// Claude's — which is why OpenCode's products rendered as <c>OpenCode+OpenCodeTui</c> in a
+    /// 110 px cell: the passthrough below was doing exactly what it was designed to do for a
+    /// product the neutral layer had never been told about.
+    /// </para>
+    /// <para>
+    /// Case-insensitive matching so a manifest spelling a product differently doesn't fall
+    /// through to the verbose passthrough.  Today the manifest strings are
     /// written by <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine"/> with
     /// exact casing, but a drag-dropped archive from a third-party tool
     /// could supply any casing.  The unknown-name passthrough preserves
     /// the ORIGINAL casing so unfamiliar product names render as-typed.
+    /// </para>
     /// </remarks>
-    internal static string AbbreviateClient(string client)
+    internal static string AbbreviateClient(
+        string client, IReadOnlyDictionary<string, string>? abbreviations)
     {
-        return client.ToLowerInvariant() switch
+        if (abbreviations is null)
         {
-            "claudecode" => "Code",
-            "claudedesktop" => "Desktop",
-            var _ => client,
-        };
+            return client;
+        }
+
+        // Two lookups rather than one: the host may have built an ordinal dictionary, and the
+        // case-insensitivity this method promises is not the host's to opt out of.
+        if (abbreviations.TryGetValue(client, out string? exact))
+        {
+            return exact;
+        }
+
+        foreach (KeyValuePair<string, string> pair in abbreviations)
+        {
+            if (string.Equals(pair.Key, client, StringComparison.OrdinalIgnoreCase))
+            {
+                return pair.Value;
+            }
+        }
+
+        return client;
     }
 
     /// <summary>

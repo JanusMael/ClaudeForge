@@ -87,6 +87,16 @@ internal static class OpenCodeBackupPage
 
         Text = new BackupPageText
         {
+            // ⭐ Why this app needed the seam at all: the shell's map knew Claude's two products
+            // and nothing else, so both of these fell through its passthrough and the Clients
+            // column rendered "OpenCode+OpenCodeTui" in a 110 px cell. Keyed by ArchiveFolder,
+            // which is what BackupEngine writes into manifest.clients.
+            ClientAbbreviations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [OpenCodeProducts.Config.ArchiveFolder] = Strings.LabelClientAbbrevOpenCode,
+                [OpenCodeProducts.Tui.ArchiveFolder] = Strings.LabelClientAbbrevOpenCodeTui,
+            },
+
             ButtonContinueWithoutSaving = Strings.ButtonContinueWithoutSaving,
             ButtonDiscardAndRestore = Strings.ButtonDiscardAndRestore,
             ButtonIncludeCredentialsConfirm = Strings.ButtonIncludeCredentialsConfirm,

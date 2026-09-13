@@ -82,6 +82,12 @@
   <data name="SectionOpenCodeTui" xml:space="preserve">
     <value>OpenCode TUI</value>
   </data>
+  <data name="LabelClientAbbrevOpenCode" xml:space="preserve">
+    <value>OpenCode</value>
+  </data>
+  <data name="LabelClientAbbrevOpenCodeTui" xml:space="preserve">
+    <value>TUI</value>
+  </data>
   <data name="SectionArtifacts" xml:space="preserve">
     <value>Artifacts</value>
   </data>

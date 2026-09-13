@@ -31,6 +31,33 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 /// </remarks>
 public sealed record BackupPageText
 {
+    // ── Product names ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Short names for the Clients column, keyed by the product name a manifest carries.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Supplied by the host because the neutral layer has no business knowing product
+    /// names.</b> This mapping was two hardcoded arms — <c>"claudecode" =&gt; "Code"</c> and
+    /// <c>"claudedesktop" =&gt; "Desktop"</c> — inside <c>BackupRowViewModel</c>, so OpenCode's
+    /// two products fell through to the verbose passthrough and rendered
+    /// <c>OpenCode+OpenCodeTui</c> in a 110 px cell.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A product missing from this map is not an error.</b> An archive can name a product
+    /// this build has never heard of — a newer release, or another app's backup sitting in the
+    /// same folder — and the raw name is then rendered as-typed, preserving its casing.
+    /// Abbreviating is a courtesy to a narrow column, never a correctness requirement, and
+    /// <see cref="BackupRowViewModel.DisplayClientsTooltip"/> carries the full names either way.
+    /// </para>
+    /// <para>
+    /// ⚠ Lookups are case-insensitive regardless of the comparer the host built this with: a
+    /// manifest written by a third-party tool can spell the product any way it likes.
+    /// </para>
+    /// </remarks>
+    public required IReadOnlyDictionary<string, string> ClientAbbreviations { get; init; }
+
     // ── Buttons ────────────────────────────────────────────────────────────
 
     /// <summary>Proceed past the unsaved-changes prompt without saving.</summary>

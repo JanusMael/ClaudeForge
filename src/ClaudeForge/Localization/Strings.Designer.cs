@@ -1256,6 +1256,24 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("CheckboxClaudeDesktop", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Code.
+        /// </summary>
+        public static string LabelClientAbbrevClaudeCode {
+            get {
+                return ResourceManager.GetString("LabelClientAbbrevClaudeCode", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Desktop.
+        /// </summary>
+        public static string LabelClientAbbrevClaudeDesktop {
+            get {
+                return ResourceManager.GetString("LabelClientAbbrevClaudeDesktop", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Show all.
