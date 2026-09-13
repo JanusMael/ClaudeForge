@@ -6,6 +6,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.OpenCode.Sdk.Memory;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.OpenCode.Sdk;
 
@@ -55,8 +56,24 @@ public sealed class OpenCodeClient : AgentConfigClientCore
     /// every discovery permutation without mutating process-global state that would leak into
     /// whatever runs alongside it.
     /// </param>
-    public OpenCodeClient(ConfigScope defaultScope, OpenCodeEnvironment env)
-        : base(defaultScope, schemaRegistry: null)
+    /// <param name="schemaRegistry">
+    /// The registry this client validates against, or <see langword="null"/> to build its own.
+    /// <para>
+    /// ⚠ <b>A host with a window should PASS one.</b> A null here makes
+    /// <see cref="AgentConfigClientCore"/> build a private registry, so an app hosting this
+    /// client beside a <c>OpenCodeTuiClient</c> and a page-building registry fetches every
+    /// schema three times per launch — and pays three timeouts, not one, when the machine is
+    /// offline. OpenCodeForge hands all three the same instance; ClaudeForge has always done
+    /// this, which is why only this app paid.
+    /// </para>
+    /// <para>
+    /// ⛔ Ownership follows the argument: a client that was GIVEN a registry does not dispose
+    /// it. See <c>AgentConfigClientCore._ownsSchemaRegistry</c>.
+    /// </para>
+    /// </param>
+    public OpenCodeClient(
+        ConfigScope defaultScope, OpenCodeEnvironment env, SchemaRegistry? schemaRegistry = null)
+        : base(defaultScope, schemaRegistry)
     {
         ArgumentNullException.ThrowIfNull(env);
         _env = env;

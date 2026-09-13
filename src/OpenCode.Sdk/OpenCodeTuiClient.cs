@@ -6,6 +6,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.OpenCode.Sdk.Memory;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.OpenCode.Sdk;
 
@@ -37,9 +38,10 @@ public sealed class OpenCodeTuiClient : AgentConfigClientCore
     {
     }
 
-    /// <inheritdoc cref="OpenCodeClient(ConfigScope, OpenCodeEnvironment)"/>
-    public OpenCodeTuiClient(ConfigScope defaultScope, OpenCodeEnvironment env)
-        : base(defaultScope, schemaRegistry: null)
+    /// <inheritdoc cref="OpenCodeClient(ConfigScope, OpenCodeEnvironment, SchemaRegistry)"/>
+    public OpenCodeTuiClient(
+        ConfigScope defaultScope, OpenCodeEnvironment env, SchemaRegistry? schemaRegistry = null)
+        : base(defaultScope, schemaRegistry)
     {
         ArgumentNullException.ThrowIfNull(env);
         _env = env;

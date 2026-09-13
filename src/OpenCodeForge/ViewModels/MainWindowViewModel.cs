@@ -149,11 +149,25 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// into the same instance the badges report on.
     /// </summary>
     /// <remarks>
-    /// ⚠ Assigned by <see cref="InitializeAsync"/>, so it is null until then — a check
-    /// triggered before the window has loaded has nothing to refresh, and says so rather than
-    /// quietly building a second registry whose results no badge would reflect.
+    /// ⭐ <b>The SAME instance both clients validate against</b>, on the app's construction path
+    /// — that is the whole point of the three-rung constructor chain above.
+    /// <para>
+    /// ⚠ Still null before <see cref="InitializeAsync"/> on the TEST-SEAM path, where sections
+    /// arrive ready-made and no registry came with them. A check triggered before the window has
+    /// loaded therefore has nothing to refresh, and says so rather than quietly building a
+    /// second registry whose results no badge would reflect.
+    /// </para>
     /// </remarks>
     private SchemaRegistry? _registry;
+
+    /// <summary>
+    /// Whether <see cref="_registry"/> is this view-model's to dispose.
+    /// </summary>
+    /// <remarks>
+    /// False for a registry handed to <see cref="InitializeAsync"/> by a test, which owns it and
+    /// may still be asserting against it after the window has gone.
+    /// </remarks>
+    private bool _ownsRegistry;
 
     /// <summary>The page whose editor is showing.</summary>
     [ObservableProperty] private NavigationNodeViewModel? _selectedNode;
@@ -261,16 +275,89 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </remarks>
     public SearchViewModel Search { get; }
 
-    /// <summary>Construct with this app's two products.</summary>
+    /// <summary>Construct with this app's two products, all sharing ONE schema registry.</summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This app built THREE registries until 2026-09-13</b>: this one, plus a private one
+    /// inside each client, because <see cref="AgentConfigClientCore"/> builds its own when it is
+    /// handed <see langword="null"/>. Every schema was therefore fetched twice — once for the
+    /// pages, once for the client that validates saves against it — and an offline launch paid
+    /// the 3s <c>FetchTimeout</c> once per registry rather than once per schema. ClaudeForge has
+    /// shared one from its composition root since network-first; this is the same shape.
+    /// </para>
+    /// <para>
+    /// ⭐ Sharing is what makes the nav provenance badge speak for save-validation too. With
+    /// three registries a badge could read <c>Fetched</c> while the registry the save path
+    /// actually validated against had fallen back to bundled, and nothing anywhere would say so.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Three chained constructors, because the env and the registry are each needed
+    /// TWICE.</b> A constructor initializer cannot hold a local, so the only way to build one
+    /// <see cref="OpenCodeEnvironment"/> and one registry and hand each to both clients is to
+    /// pass them down the chain. Collapsing this into one constructor silently restores the
+    /// duplicate-fetch behaviour.
+    /// </para>
+    /// </remarks>
     public MainWindowViewModel()
+        : this(OpenCodeEnvironment.FromProcess())
+    {
+    }
+
+    /// <summary>
+    /// Second rung: one environment, read once, and the registry built from it.
+    /// </summary>
+    /// <remarks>
+    /// CreateWithNetwork, not <c>new</c>: a bare registry is OFFLINE by design.
+    /// <para>
+    /// ⛔ The cache directory is THIS APP'S, not OpenCode's own cache root. Three reasons, and
+    /// the first two are the ones that bite: <c>~/.cache/opencode</c> is a directory OpenCode
+    /// manages and may clear, and it is one of the roots the disk-footprint page MEASURES — so
+    /// the app's schema cache would show up as OpenCode's disk usage and invite the user to
+    /// delete it. Beside the window-state file instead, which is where this app already keeps
+    /// its own things, and which follows <c>$OPENCODE_CONFIG_DIR</c> so a redirected install
+    /// (and every test that redirects) stays isolated for free.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Built here rather than in <see cref="InitializeAsync"/>, which is where it used to
+    /// live.</b> The clients are constructed by the rung below this one, so a registry created
+    /// at initialize time is already too late to reach them. <c>--schema-source</c> still
+    /// arrives: <c>Program.Main</c> parses the flags before Avalonia starts, and the
+    /// <c>SchemaRegistry</c> constructor falls back to <c>ProcessSourceOverride</c>.
+    /// </para>
+    /// </remarks>
+    private MainWindowViewModel(OpenCodeEnvironment env)
+        : this(env, CreateAppRegistry(env))
+    {
+    }
+
+    /// <summary>This app's registry: network-capable, cached beside its window-state file.</summary>
+    /// <remarks>
+    /// A static helper rather than an inline expression because a constructor initializer is not
+    /// the only caller — <see cref="InitializeAsync"/> still needs it for the test-seam
+    /// constructor, which takes ready-made sections and no registry.
+    /// </remarks>
+    private static SchemaRegistry CreateAppRegistry(OpenCodeEnvironment env)
+        => SchemaRegistry.CreateWithNetwork(
+            cacheDirectory: Path.Combine(
+                OpenCodePaths.GlobalDirectory(env), "cache", "schemas"));
+
+    /// <summary>Third rung: build both clients against the one registry, then own it.</summary>
+    private MainWindowViewModel(OpenCodeEnvironment env, SchemaRegistry registry)
         : this(
-            new HostedSection(OpenCodeProducts.Config, new OpenCodeClient(),
+            new HostedSection(OpenCodeProducts.Config,
+                new OpenCodeClient(OpenCodeClient.GlobalScope, env, registry),
                 OpenCodePageLayout.Config, () => Strings.SectionOpenCode,
                 OpenCodeDangerTable.Config),
-            new HostedSection(OpenCodeProducts.Tui, new OpenCodeTuiClient(),
+            new HostedSection(OpenCodeProducts.Tui,
+                new OpenCodeTuiClient(OpenCodeClient.GlobalScope, env, registry),
                 OpenCodePageLayout.Tui, () => Strings.SectionOpenCodeTui,
                 OpenCodeDangerTable.Tui))
     {
+        _registry = registry;
+
+        // ⚠ The clients were GIVEN this registry, so neither of them disposes it — see
+        // AgentConfigClientCore._ownsSchemaRegistry. Nobody else will, so this view-model must.
+        _ownsRegistry = true;
     }
 
     /// <summary>Construct with an explicit section list. Test seam.</summary>
@@ -407,18 +494,29 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
     public async Task InitializeAsync(
         CancellationToken ct = default, SchemaRegistry? schemaRegistry = null)
     {
-        // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design.
+        // ⭐ Reuse the registry the CONSTRUCTOR built, rather than building one here as this
+        // method used to. That is what makes the pages, the badges and the save path share one
+        // instance: the clients were handed it before this method could exist.
         //
-        // ⛔ The cache directory is THIS APP'S, not OpenCode's own cache root. Three reasons, and
-        // the first two are the ones that bite: `~/.cache/opencode` is a directory OpenCode
-        // manages and may clear, and it is one of the roots the disk-footprint page MEASURES — so
-        // the app's schema cache would show up as OpenCode's disk usage and invite the user to
-        // delete it. Beside the window-state file instead, which is where this app already keeps
-        // its own things, and which follows $OPENCODE_CONFIG_DIR so a redirected install (and
-        // every test that redirects) stays isolated for free.
-        SchemaRegistry registry = schemaRegistry ?? SchemaRegistry.CreateWithNetwork(
-            cacheDirectory: Path.Combine(
-                OpenCodePaths.GlobalDirectory(OpenCodeEnvironment.FromProcess()), "cache", "schemas"));
+        // The three arms are the three ways this view-model is constructed:
+        //   argument  — a test pinning a schema branch; the test owns it, so we never dispose it
+        //   _registry — the app's own, already handed to both clients by the constructor chain
+        //   neither   — the test-seam constructor took ready-made sections and no registry
+        SchemaRegistry registry;
+        if (schemaRegistry is not null)
+        {
+            registry = schemaRegistry;
+        }
+        else if (_registry is not null)
+        {
+            registry = _registry;
+        }
+        else
+        {
+            registry = CreateAppRegistry(OpenCodeEnvironment.FromProcess());
+            _ownsRegistry = true;
+        }
+
         _registry = registry;
         List<string> failures = [];
         IsLoading = true;
@@ -820,6 +918,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IDisposable
             _backupVm.Dispose();
             _backupVm = null;
         }
+
+        // ⚠ LAST, and only when it is ours. The clients were handed this registry, so
+        // AgentConfigClientCore leaves it alone — nothing else disposes the HttpClient inside it.
+        // A registry a test passed to InitializeAsync belongs to that test, which may still be
+        // asserting against it. Mirrors ClaudeForge, which disposes its registry at the end of
+        // its own Dispose for the same reason.
+        if (_ownsRegistry)
+        {
+            _registry?.Dispose();
+            _ownsRegistry = false;
+        }
+
+        _registry = null;
     }
 
     /// <summary>
