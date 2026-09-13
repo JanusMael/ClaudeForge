@@ -20,7 +20,7 @@
 | Branch | `feat/agentforge-opencodeforge` |
 | HEAD | `d9128a3` *feat(schema): the disk cache is the resolved artifact, not a tier in a chain* — plus this file's own docs commit on top. `git log -1` wins over this cell |
 | Working tree | clean |
-| Unpushed | **51 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
+| Unpushed | **52 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
 | Merged from `main` | ✅ **`ea6d129`, 2026-09-12 — the branch is level with `main`** (`git rev-list --count HEAD..main` = 0). It was 23 behind |
 | Suite | **4,286 passed · 0 failed · 11 skipped**, Debug |
 | Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings. That matrix had never been run for OpenCodeForge before |
