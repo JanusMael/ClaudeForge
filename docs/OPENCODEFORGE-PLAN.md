@@ -719,6 +719,16 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 
 ### Roadmap at a glance
 
+> ⓘ **Added 2026-09-13 — something now sits AHEAD of this roadmap.** The shared libraries are to be
+> published as private NuGet packages *before* the ClaudeForge release, with both apps and all
+> twelve test projects consuming them. That work has its own approved plan —
+> [`plans/00001-shared-libraries-as-private-nuget-packages.md`](../plans/00001-shared-libraries-as-private-nuget-packages.md)
+> — and its item 1 has already deleted a Windows TFM that three projects declared and none ever
+> built. This roadmap is unchanged and still accurate; it is simply no longer the only thing
+> between here and a release. ⛔ Do not re-plan packaging from this file: `plans/00001` is the
+> approved one, and the strategic question it stages toward (whether the shared libraries leave
+> this repository) is explicitly not decided.
+
 | # | Phase | Ships | ClaudeForge risk | Human gate |
 |---|---|---|---|---|
 | 0 | Spikes S1–S11 — **10/11 done; only S5 open** | answers, no code | none | — |
