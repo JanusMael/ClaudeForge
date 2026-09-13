@@ -18,12 +18,13 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `e086733`. ⓘ A hash cannot be written into the commit that produces it, and the last two attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `2f4a7cb`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **62 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **63 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,295 passed · 0 failed · 11 skipped**, Debug — the three new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
-| Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, before the packaging metadata, and has **not** been re-run. That change adds no code — only csproj/props metadata and a markdown file — and a single `ClaudeForge win-x64` Release publish after it is clean with zero ILLink warnings and no `.md` in the publish output. Say "12/12 plus one spot-check", not "12/12" |
+| Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
+| Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies already resolving to those ids. ⚠ All at version **`1.0.0`** — plan 00001 item 3 is the blocked piece and this is what it looks like unfixed |
 | ⚠ Awaiting | **The maintainer's manual retest pass** — see below. Everything that was being batched for it is now done |
 
@@ -61,9 +62,9 @@ them. Ranked by what actually changed and what automation cannot reach:
    tests and a clean 12/12 trim matrix. **Nobody has launched the app and pressed Share.** Expect
    Explorer to open with the file selected, or the default browser for a URI.
 
-✅ **Plan 00001 item 2 adds nothing to that list.** It changes csproj and props metadata plus one
-markdown file — no C#, no AXAML, no resx — so there is no surface to press. The five items above
-are unchanged by it.
+✅ **Plan 00001 items 2 and 4 add nothing to that list.** Between them they change csproj and props
+metadata, one markdown file and the docs — no C#, no AXAML, no resx — so there is no surface to
+press. The five items above are unchanged by both.
 
 ⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
 Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
@@ -82,15 +83,14 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`) and **2** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
+Items **1** (`23f7c4f`), **2** and **4** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
 package version must come from an MSBuild property AutoVersioning is taught to emit, and **that
 package's source is not in this repository** — ask the maintainer where it lives. The plan records
 an interim (`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines
 and the generator provably consumes) if that release slips.
 
-Items 4, 5, 6 and 7 are unblocked and independent of it. **4** (`EnableTrimAnalyzer`) is the
-smallest and the plan already measured its cost at zero under `src/`; **5** is the substantial one
-and the only item that changes how anything builds.
+Items 5, 6 and 7 are unblocked and independent of it. **5** is the substantial one and the only
+item that changes how anything builds; **6** and **7** both want 5 to exist first.
 
 ⚠ **Two questions for the maintainer, both surfaced by item 2 and neither blocking:**
 
@@ -139,8 +139,8 @@ retention and prune rates remain unmeasurable. Current sizes are live and correc
 
 ## Done — 2026-09-13
 
-Six commits of substance, plus docs-only ones not listed. The retest batch, a strategic turn, then
-the packaging plan's first real item.
+Seven commits of substance, plus docs-only ones not listed. The retest batch, a strategic turn,
+then the packaging plan's first two unblocked items.
 
 | Commit | What |
 |---|---|
@@ -149,7 +149,8 @@ the packaging plan's first real item.
 | `131a38c` | ⭐ **All fifteen progress-bar phrases come from resx**, translated into all nine locales. The seam is an id beside the English fallback: `BackupProgress.ItemId`, and `ProductArchiveSection.ProgressLabelId` **derived from `SubPath`** rather than declared, because the sub-path already is the section id. Each app has a guard taking ids from the *descriptors* that asserts both coverage and that each label says what the engine says — presence alone passes two keys swapped between sections. **TWINS:** `BackupEngine`'s `"Discovering projects…"`, the backup side's only phrase, fixed here too |
 | `5f1a0aa` | ⭐ **[`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)** — the approved packaging plan, committed before implementation per the plan workflow |
 | `23f7c4f` | ⛔⛔ **A Windows TFM that was never built, in three projects.** See below |
-| **HEAD** | ⭐ **Plan 00001 item 2 — package metadata.** One block in `src/Directory.Build.props` gives all eleven their identity, licence, repository and readme; every one of the seventeen projects under `src/` now states `<IsPackable>` for itself. Three guards in `PackageMetadataTests`, each canaried. See below |
+| **HEAD** | ⭐ **Plan 00001 item 4 — the libraries analyse themselves.** `EnableTrimAnalyzer` in `src/Directory.Build.props`. See below |
+| `2f4a7cb` | ⭐ **Plan 00001 item 2 — package metadata.** One block in `src/Directory.Build.props` gives all eleven their identity, licence, repository and readme; every one of the seventeen projects under `src/` now states `<IsPackable>` for itself. Three guards in `PackageMetadataTests`, each canaried. See below |
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
 
@@ -217,6 +218,34 @@ inter-package dependencies already use the prefixed ids. **All four canaries fir
 stating no `IsPackable`, a project whose `AssemblyName` diverges from its file name, a packable
 project with no description, and — for both premise assertions at once — deleting `<PackageId>`
 from the shared block.
+
+### The trim analyser moves into the libraries — and one sentence in `CLAUDE.md` stopped being true
+
+`EnableTrimAnalyzer`, one line beside `IsTrimmable` in `src/Directory.Build.props`.
+
+⛔ **Packaging would otherwise have deleted the trim analysis on shared code entirely, silently.**
+The analyser reaches those libraries today only because `dotnet publish -p:PublishTrimmed=true`
+sets a **global** property that flows through the app's build graph — and a packaged library is
+not in that graph. The property would reach nothing, the analyser would stop running on shared
+code, and nothing would fail. ILLink would still analyse the packaged IL, since `IsTrimmable`
+travels in the `.nupkg`, but after the fact and attributed to an assembly the app cannot edit.
+
+✅ **Canaried in BOTH configurations, and the second one is why a doc changed.** Removing the
+`(JsonNode?)` cast in `AgentForge.Sdk/McpServers/McpServersAccessor.cs` now reddens a plain
+`dotnet build` with `IL2026` — in **Debug** as well as Release, on the library project alone, with
+no publish and no app anywhere. `CLAUDE.md` said *"trim analysis only runs on a Release publish"*;
+that is now false and carries a dated correction.
+
+⚠ **The warning it sat inside still stands, and the correction says so.** The two analyses are
+different: Roslyn sees one project's own source, while **ILLink's whole-program pass — the one
+that decides what is actually removed — still runs only on a publish.** A green Debug suite still
+does not mean the apps ship.
+
+**Cost: zero, measured rather than carried over.** A Release build of the whole solution reports
+zero IL diagnostics; so does Debug. ⓘ The plan predicted "224, all under `tests/`" — that figure
+came from setting the property globally. Scoped to `src/`, where it belongs, `tests/` is untouched
+and the number is nought. ⛔ `IsAotCompatible` is deliberately not set alongside it: it implies the
+AOT and single-file analysers too, which is a claim about these libraries nothing has measured.
 
 ### What the plan's adversarial pass caught before any of it was built
 
@@ -427,6 +456,12 @@ pass, not a fix.
   from a `Directory.Build.targets` placed under `src/`, which would silently detach every `src`
   project from the root targets file and its three build-time guards. Decided 2026-09-13 doing plan 00001
   item 2; the reasoning is written into the props file itself.
+- ⭐ **The shared libraries run the trim analyser themselves** (`EnableTrimAnalyzer`, `src/` only),
+  because packaging removes the only route it reaches them by today — a global property flowing
+  through the app's build graph, which a packaged library is not in. Scoped to `src/` deliberately:
+  the plan's "224 diagnostics" figure was a global measurement, and `tests/` is never published.
+  ⛔ **`IsAotCompatible` is NOT set** — it implies the AOT and single-file analysers as well, which
+  is a claim about these libraries nothing has measured. Adding it is a measurement, not a tidy-up.
 - ⛔ **Every project under `src/` states `<IsPackable>` for itself, and no guard says WHICH eleven
   pack.** A test asserting the packable set is exactly a named eleven needs a copy of that list,
   and the copy is what drifts. Asserting that nothing *defaults* is the non-vacuous form — a

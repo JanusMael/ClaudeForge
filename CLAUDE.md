@@ -62,9 +62,9 @@ Tests are **MSTest**, not xUnit. Passing tests' stdout is hidden unless you pass
 `--logger "console;verbosity=detailed"`. The suite is sequential by design — see
 `AGENTS.md` on Avalonia.Headless and the global-static seams.
 
-**A green Debug suite does not mean the apps ship.** Trim analysis only runs on a Release
-publish, and an `IL2026` in a JSON helper once broke the Release publish for three phases while
-thousands of Debug tests passed over it. Every shipping app needs its own publish:
+**A green Debug suite does not mean the apps ship.** An `IL2026` in a JSON helper once broke the
+Release publish for three phases while thousands of Debug tests passed over it. Every shipping app
+needs its own publish:
 
 ```bash
 dotnet publish src/ClaudeForge    -c Release -r linux-x64 --self-contained true
@@ -74,6 +74,19 @@ dotnet publish src/OpenCodeForge  -c Release -r linux-x64 --self-contained true
 `src/Directory.Build.props` sets `IsTrimmable` for everything under `src/`, which is what gives
 ILLink eyesight into the shared libraries. Without it, trim warnings in a shared project are
 simply not reported.
+
+> ⓘ **Corrected 2026-09-13.** This said *"trim analysis only runs on a Release publish"*. It no
+> longer does. `src/Directory.Build.props` now also sets `EnableTrimAnalyzer`, so the **Roslyn**
+> trim analyser runs on every build of every project under `src/`, in **Debug as well as
+> Release** — verified by removing the `McpServersAccessor` cast and watching a plain
+> `dotnet build` redden with `IL2026` in both configurations. ⚠ **The warning above still
+> stands**, because the two analyses are not the same thing: Roslyn sees one project's own
+> source, while **ILLink's whole-program pass — the one that decides what is actually
+> removed — still runs only on a publish**, and it is that pass the six-RID matrix measures.
+> The property exists because packaging would otherwise delete the Roslyn half entirely: it
+> reaches shared code today only because `dotnet publish -p:PublishTrimmed=true` sets a
+> **global** property that flows through the app's build graph, and a packaged library is not
+> in that graph. See `plans/00001`, work item 4.
 
 Release artifacts for real distribution go through `src/publish/publish.ps1`, which takes the app
 by name — `-App ClaudeForge` (the default) or `-App OpenCodeForge`, from the table in

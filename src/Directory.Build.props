@@ -45,6 +45,38 @@
           and is never published or trimmed, so analysing it would be noise.
         -->
         <IsTrimmable>true</IsTrimmable>
+
+        <!--
+          Run the Roslyn trim analyser on the libraries THEMSELVES, at their own build.
+
+          ⛔ Packaging silently removes the analysis the property above describes, and the
+          reason is in that comment: the analyser reaches shared code today only because
+          `dotnet publish -p:PublishTrimmed=true` sets a GLOBAL property that flows into
+          every project IN THE APP'S BUILD GRAPH.  A packaged library is not in that graph.
+          The property would reach nothing, the analyser would never run on shared code
+          again, and — as before — nothing would fail.
+
+          ILLink still analyses the packaged IL, because IsTrimmable is baked into each
+          assembly as metadata and travels in the .nupkg.  But that is after the fact and
+          attributed to an assembly the consuming app cannot edit.  This property moves the
+          check back to the build that can act on it, and makes it independent of whether
+          anyone publishes an app at all: a plain `dotnet build -c Release` now reddens.
+
+          Cost, measured before it was turned on: a Release build of the whole solution
+          produces IL diagnostics ONLY under tests/, which has its own Directory.Build.props
+          and is never published or trimmed.  Zero under src/.
+
+          Verified by canary rather than assumed, and the canary is the same one the
+          property above uses: remove the (JsonNode?) cast in
+          AgentForge.Sdk/McpServers/McpServersAccessor.cs — the one whose comment explains
+          that the uncast overload carries [RequiresUnreferencedCode] — and a plain BUILD
+          reddens with IL2026.  Before this property it took a trimmed publish.
+
+          ⛔ IsAotCompatible is deliberately NOT set alongside it.  That implies the AOT and
+          single-file analysers as well, which is a claim about these libraries that nothing
+          has measured.
+        -->
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     </PropertyGroup>
 
     <!--
