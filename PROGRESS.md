@@ -13,76 +13,83 @@
 
 ---
 
-## Where things stand — 2026-09-12
+## Where things stand — 2026-09-13
 
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | `d9128a3` *feat(schema): the disk cache is the resolved artifact, not a tier in a chain* — plus this file's own docs commit on top. `git log -1` wins over this cell |
+| HEAD | `23f7c4f` *fix(build): delete the Windows TFM that was never built* — plus this file's own docs commit on top. `git log -1` wins over this cell |
 | Working tree | clean |
-| Unpushed | **52 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** (`gh pr list --head feat/agentforge-opencodeforge` is empty) |
-| Merged from `main` | ✅ **`ea6d129`, 2026-09-12 — the branch is level with `main`** (`git rev-list --count HEAD..main` = 0). It was 23 behind |
-| Suite | **4,286 passed · 0 failed · 11 skipped**, Debug |
-| Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings. That matrix had never been run for OpenCodeForge before |
-| ⚠ Awaiting | **A manual retest pass the maintainer has agreed to do.** Work is being BATCHED until then to avoid repeat rounds — see *RESUME HERE* |
+| Unpushed | **59 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
+| Suite | **4,291 passed · 0 failed · 11 skipped**, Debug |
+| Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings, re-run 2026-09-13 after the Windows-TFM deletion |
+| ⚠ Awaiting | **The maintainer's manual retest pass** — see below. Everything that was being batched for it is now done |
 
 ---
 
-## ▶ RESUME HERE — finish the retest batch
+## ▶ RESUME HERE — the retest, then plan 00001
 
-**The goal that now drives everything: cut a ClaudeForge release from the split.** The maintainer
-wants the extraction promoted and a release made from it — *without* OpenCodeForge going to `main`.
+**Two things drive everything: cut a ClaudeForge release from the split, and get the shared
+libraries out as private NuGet packages first.** The second is new as of 2026-09-13 and has an
+approved plan: [`plans/00001-shared-libraries-as-private-nuget-packages.md`](plans/00001-shared-libraries-as-private-nuget-packages.md).
 
-⭐ **The hard part is already true: the ClaudeForge artifact has never contained OpenCode.** Its
-Release build output is 14 assemblies — 6 `AgentForge.*`, 5 `LayeredEditors.*`, 3 `ClaudeForge*` —
-and **zero** OpenCode ones; `release.yml` passes `-App ClaudeForge` explicitly on all three publish
-jobs and its tag pattern excludes `opencodeforge-v*`. Nothing needs carving out.
+⭐ **The hard part of the release is already true: the ClaudeForge artifact has never contained
+OpenCode.** Its Release build output is 14 assemblies — 6 `AgentForge.*`, 5 `LayeredEditors.*`,
+3 `ClaudeForge*` — and **zero** OpenCode ones; `release.yml` passes `-App ClaudeForge` explicitly
+on all three publish jobs and its tag pattern excludes `opencodeforge-v*`. Nothing needs carving out.
 
-### The batch — finish these BEFORE asking for the retest
+### ✅ The retest batch is finished — hand over now
 
-The maintainer is doing a **manual retest pass** and asked that UI-visible work be batched so it is
-retested once rather than repeatedly. Two items remain:
+Both items the previous session was holding work for are done, and one defect surfaced while doing
+them. Ranked by what actually changed and what automation cannot reach:
 
-1. **OpenCodeForge builds THREE `SchemaRegistry` instances; make it share one.** Its own, plus one
-   inside each client it constructs without passing one (`AgentConfigClientCore` takes an optional
-   registry; `OpenCodeClient` / `OpenCodeTuiClient` pass `null`). Costs a duplicate fetch per schema
-   and an extra offline timeout each. `CLAUDE.md` already says sharing is the better shape and that
-   ClaudeForge does it. ⚠ Changes launch behaviour, so it belongs in this batch.
-2. **Two UI-visible nits from *Known issues*:** the unlocalised progress labels on
-   `ProductArchiveSection` / the restore advisory in `RestoreEngine`, and `DisplayClients` rendering
-   `OpenCode+OpenCodeTui` unabbreviated in a 110 px cell.
-
-### Then hand over for the retest, naming these four
-
-Ranked by what actually changed and what automation cannot reach:
-
-1. **Theming, BOTH variants** — highest risk. Two theme files merged with colour tokens from both
-   sides. Check the ✨ NEW badge (`AppAccent*`, new from `main`), the severity dots, and the
-   save-dialog change pills. Automation proved the keys exist, never that they look right together.
+1. **Theming, BOTH variants** — highest risk, unchanged from the previous handoff. Two theme files
+   merged with colour tokens from both sides. Check the ✨ NEW badge (`AppAccent*`, new from
+   `main`), the severity dots, and the save-dialog change pills. Automation proved the keys exist,
+   never that they look right together.
 2. **The keybinds editor's warning states** — `LE.DangerText` / `LE.DangerBorder` were referenced
-   nine times and defined nowhere; the original bug was invisible because no conflicting keybind was
-   ever seeded. Seed one and confirm red text inside a visible border.
-3. **Save → reload a config, in both apps.** The write path is the one thing no verification this
-   session touched, and this branch changed the save dialog.
-4. **Diagnostics windows (F12)** — `main`'s accessibility pass and live-log fix arrived untested here.
+   nine times and defined nowhere; the original bug was invisible because no conflicting keybind
+   was ever seeded. Seed one and confirm red text inside a visible border.
+3. **Save → reload a config, in both apps.** Still the one thing no verification has touched, and
+   this branch changed the save dialog.
+4. **Diagnostics windows (F12)** — `main`'s accessibility pass and live-log fix arrived untested.
+5. ⚠ **Share, from the About and Effective-settings pages, on Windows.** New to this list.
+   `DefaultShareService` lost six `#if` blocks and a constructor parameter in `23f7c4f`. The claim
+   that this changed nothing rests on the TFM never having built — which is measured — plus 4,291
+   tests and a clean 12/12 trim matrix. **Nobody has launched the app and pressed Share.** Expect
+   Explorer to open with the file selected, or the default browser for a URI.
+
+⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
+Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
+but no release has been cut through it since.
 
 ### After the retest — the release path
 
 - ⚠ **`CHANGELOG.md` is stale**: its top entry is `[2026.2.528] - TBD`, older than the shipped
-  `v2026.3.901`, with no Unreleased section. **13 `feat` commits** touching ClaudeForge's UI need
-  writing up — this is a feature release, not a plumbing one (severity indication across rows /
-  search / effective view / save dialog, the schema provenance badge and in-app check,
-  `--schema-source`, the no-raw-hex tripwire).
+  `v2026.3.901`, with no Unreleased section. **13+ `feat` commits** touching ClaudeForge's UI need
+  writing up — a feature release, not a plumbing one (severity indication across rows / search /
+  effective view / save dialog, the schema provenance badge and in-app check, `--schema-source`,
+  the no-raw-hex tripwire, and now the host-supplied backup wording).
 - Free, no retest cost: a guard for Claude-shaped defaults in the neutral layer (see
   [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), roadmap phase markers
   1–9, and `TRIMMING.md` never mentioning the second app.
 
+### Plan 00001 — where it stands
+
+Item 1 is done (`23f7c4f`). ⛔ **Item 3 is blocked and it is the long pole:** the package version
+must come from an MSBuild property AutoVersioning is taught to emit, and **that package's source is
+not in this repository** — ask the maintainer where it lives. The plan records an interim
+(`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines and the
+generator provably consumes) if that release slips.
+
+Items 2, 4, 5, 6 and 7 are unblocked and independent of it.
+
 ### 🔭 Open strategic question — do not start without the maintainer
 
-They are **reconsidering the monorepo**: extracting the shared surface into standalone NuGet
-packages consumed by ClaudeForge, OpenCodeForge and further Avalonia projects they are planning.
-That is also the cleanest answer to "no OpenCodeForge in `main`". Nothing has been decided, and
-nothing has been built toward it.
+Whether the shared libraries eventually leave this repository altogether. Plan 00001 is a staging
+post toward that and says so; nothing has been decided, and the plan's "not in scope" section is
+the current answer.
 
 ### ⭐ Capability worth knowing about before anything else
 
@@ -100,34 +107,74 @@ App's resource dictionaries and cannot instantiate views, so a page can pass eve
 trimmed with zero warnings, and still be blank — the exact state the Backup page sat in for a phase.
 ⚠ Windows only, and the capture is a *screen* grab: an overlapping window lands in the PNG and reads
 exactly like clipped layout, so check the window rectangle the script prints. `PrintWindow` is not
-the fix and was already tried — see the script's own comment.
+the fix and was already tried — see the script's own comment. ⚠ It navigates and photographs; it
+**presses nothing**, which is why items 3 and 5 above are still a human's job.
 
 ⚠ **Python is installed but NOT on PATH** — use the `py` launcher (3.14.7).
 
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
-`usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`.
+`usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
+retention and prune rates remain unmeasurable. Current sizes are live and correct.
 
-### ⭐ New capability worth knowing about before anything else
+---
 
-**A page in these apps can now be looked at.** `scripts/capture-page.ps1` launches a *published*
-app, deep-links to one node, photographs the window and shuts it down:
+## Done — 2026-09-13
 
-```powershell
-pwsh -NoProfile -File scripts/capture-page.ps1 `
-    -ExePath src/OpenCodeForge/bin/Release/net10.0/win-x64/publish/OpenCodeForge.exe `
-    -NodeId footprint -OutFile footprint.png
-```
+Five commits. The retest batch, then a strategic turn.
 
-⛔ **Use it on every new page before calling one done.** The headless test app is stripped of the
-App's resource dictionaries and cannot instantiate views, so a page can pass every test, publish
-trimmed with zero warnings, and still be blank — which is the exact state the Backup page sat in for
-a phase. ⚠ Windows only, and the capture is a *screen* grab: an overlapping window lands in the PNG
-and reads like clipped layout, so check the window rectangle the script prints. `PrintWindow` is not
-the fix and was already tried — see the script's own comment.
+| Commit | What |
+|---|---|
+| `98b74d1` | ⛔ **OpenCodeForge built THREE `SchemaRegistry` instances** — its own inside `InitializeAsync`, plus a private one inside each client, because `AgentConfigClientCore` makes its own when handed `null`. Every schema fetched twice per launch; an offline launch paid the 3s timeout per registry. ⭐ The correctness half is the provenance badge: with three registries it could report `Fetched` for the pages while the registry validating saves had fallen back to bundled. Both clients now take an optional registry; a three-rung constructor chain builds one environment and one registry and hands each to both. `SharedSchemaRegistryTests` pins both halves, canaried by stashing the fix |
+| `4ac7844` | **The Clients column's short names come from the host.** `AbbreviateClient` knew `"claudecode"` and `"claudedesktop"`, hardcoded in the neutral shell, so OpenCode's two fell through its unknown-product passthrough and the cell rendered `OpenCode+OpenCodeTui` in 110 px. `BackupPageText.ClientAbbreviations` is `required`, keyed by `ArchiveFolder` — which is what `BackupEngine.BuildClientList` writes into `manifest.clients`, so a map keyed by `Id` would compile and abbreviate nothing. Now `OpenCode+TUI`; ClaudeForge unchanged |
+| `131a38c` | ⭐ **All fifteen progress-bar phrases come from resx**, translated into all nine locales. The seam is an id beside the English fallback: `BackupProgress.ItemId`, and `ProductArchiveSection.ProgressLabelId` **derived from `SubPath`** rather than declared, because the sub-path already is the section id. Each app has a guard taking ids from the *descriptors* that asserts both coverage and that each label says what the engine says — presence alone passes two keys swapped between sections. **TWINS:** `BackupEngine`'s `"Discovering projects…"`, the backup side's only phrase, fixed here too |
+| `5f1a0aa` | ⭐ **[`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)** — the approved packaging plan, committed before implementation per the plan workflow |
+| `23f7c4f` | ⛔⛔ **A Windows TFM that was never built, in three projects.** See below |
 
-⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
-`usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth, retention
-and prune rates remain unmeasurable. Current sizes are live and correct.
+### ⛔⛔ The Windows TFM, and why nothing ever failed
+
+`src/ClaudeForge`, `src/OpenCodeForge` and `src/LayeredEditors.Avalonia.Services` each declared
+`net10.0-windows10.0.19041.0` so `DefaultShareService` could compile against MAUI Essentials — each
+with a comment asserting the plural `<TargetFrameworks>` took precedence over the root's singular
+`<TargetFramework>`. **It does not.** MSBuild cross-targets only when `TargetFramework` is EMPTY,
+and `Directory.Build.props` sets it.
+
+So the TFM never built, in any configuration, since the day it was added. **No shipped ClaudeForge
+has ever contained the MAUI share path**; the non-Windows fallbacks are what users have always got.
+The build succeeded, the suite stayed green, and `bin/Release/` quietly held one TFM directory
+instead of two.
+
+⭐ **It surfaced only because `dotnet pack` reads `TargetFrameworks` for the nuspec while the build
+honours the singular** — NU5026, for a file no build had ever written. Packaging found a defect a
+year of green builds did not.
+
+What went with it: the three declarations plus `UseMauiEssentials` and the conditional
+`Microsoft.Maui.Essentials` reference; six `#if` blocks and the `hwndProvider` parameter in
+`DefaultShareService`; the `#if` in `App.axaml.cs` whose `#else` was the only branch that compiled;
+`ILLink.Suppressions.Windows.xml`; `EnableWindowsTargeting`; and **sixty lines of `maui-windows`
+workload preflight in `publish.ps1`** that ran on every Windows release publish, could install a
+workload elevated, and aborted the release if that install failed.
+
+`SingleTargetFrameworkTests` guards recurrence — a project may multi-target only by clearing the
+inherited singular first, and the test **fails rather than passes** if the root ever stops setting
+it, since that is its entire premise. Canaried by restoring OpenCodeForge's declaration.
+
+### What the plan's adversarial pass caught before any of it was built
+
+Two faults in the first draft, both of which would have shipped a canary that could not fail:
+
+- ⛔ `ClaudeForge.Tests` references `src/AgentForge.Core` **and** `src/ClaudeForge`. Switching only
+  the apps to `PackageReference` would leave two `AgentForge.Core.dll`s in the test graph with
+  MSBuild preferring the project one — the suite exercising project code under a job named for
+  packages. Apps and all twelve test projects now switch together.
+- ⛔ NuGet extracts by id+version and will not re-extract, so a local feed would have served the
+  previous build's package. The canary now uses a unique per-run version **and** an isolated
+  `NUGET_PACKAGES`.
+
+Two risks the pass **retired** with measurement rather than argument: `AgentForge.Avalonia.Shell`
+carries no AXAML at all and `LayeredEditors.Avalonia` carries its four files as one
+`!AvaloniaResources` resource inside the DLL (and the repo already consumes `Semi.Avalonia` this
+way); and `InternalsVisibleTo` survives packaging, because the assemblies are unsigned and the
+grants compile into attributes that travel in the `.nupkg`.
 
 ---
 
@@ -306,7 +353,21 @@ pass, not a fix.
 - **`opencode.db` is opt-in with an advisory, never redacted**, and excluded from `Sanitized`
   outright. `auth.json` is never archived at all.
 - **No AI attribution trailers on commits**, per the global `CLAUDE.md`. That decision outranks a
-  session instruction mandating one; the 18 commits on this branch carry none.
+  session instruction mandating one; every commit on this branch carries none.
+- ⭐ **The shared libraries become private NuGet packages BEFORE the ClaudeForge release.** Decided
+  2026-09-13; see [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md) for the
+  four sub-decisions (apps and all twelve test projects switch together, the version comes from an
+  MSBuild property AutoVersioning is taught to emit, the Windows TFM is deleted, a release
+  pre-flights the feed). ⛔ **`UseSharedPackages` is a MODE, not a rewrite** — `ProjectReference`
+  for development, `PackageReference` for the per-PR canary and the release publish. Making it
+  unconditional was considered and rejected: it costs the inner loop and makes a clean clone
+  depend on feed credentials.
+- ⛔ **A plural `<TargetFrameworks>` does nothing unless the inherited singular is cleared first.**
+  Three projects declared one and none ever built it. `SingleTargetFrameworkTests` enforces this,
+  and fails rather than passes if the root stops setting the singular form.
+- **The share service opens no share sheet, on any platform**, and reintroducing one is a new
+  feature rather than a revert — its own TFM that actually builds, its own trim pass, its own
+  retest. See `DefaultShareService`'s remarks.
 
 ---
 
@@ -365,19 +426,23 @@ Newest first.
   correct sites compare with an unconditional `OrdinalIgnoreCase` where the backup's new
   `SameDirectory` asks the real OS. On Linux two roots differing only in case would read as one
   there. Vanishingly unlikely; on the record rather than silently inconsistent.
-- ⚠ **`DisplayClients` does not abbreviate OpenCode's product names.**
-  `BackupRowViewModel.AbbreviateClient` maps `claudecode`/`claudedesktop` and passes anything else
-  through, so the Clients column renders `OpenCode+OpenCodeTui` in a 110 px cell. Verbose rather
-  than wrong — the passthrough was designed for it — and the tooltip carries the full text.
+- ✅ **RESOLVED 2026-09-13 (`4ac7844`)** — `DisplayClients` rendering `OpenCode+OpenCodeTui` in a
+  110 px cell. The abbreviation map is host-supplied now (`BackupPageText.ClientAbbreviations`,
+  `required`), so the neutral layer names no products and the cell reads `OpenCode+TUI`.
 - ⓘ **Three accessible names on the Backup page are formatted in markup**, not resx —
   `{Binding DisplayName, StringFormat='{}{0} — Restore'}` and two siblings. Carried over from
   ClaudeForge, which has the same three, so the two apps at least agree.
 - ⓘ **ClaudeForge's `BackupRestoreView.axaml` declares a `BytesToHumanReadableConverter` resource it
   never uses.** Noticed while porting; left alone.
-- ⚠ **Unlocalised strings moved, not introduced.** Progress labels on `ProductArchiveSection` and
-  the restore advisory in `RestoreEngine` are English literals. They should be keyed by section id
-  the way footprint labels are keyed by `FootprintCategory.Id`. ⚠ This session added one more:
-  `"Restoring the default opencode config root…"`.
+- ⚠ **`RestoreResult.Message` is still English, and it is the last of the unlocalised strings.**
+  ✅ The progress labels are done (`131a38c`) — keyed by section id exactly as this entry asked,
+  with `"Restoring the default opencode config root…"` among them. ⛔ The result message was left
+  out **deliberately, not forgotten**: localising it means decomposing a multi-sentence status line
+  (item count, the `.pre-restore-*.bak` advisory, the skipped-paths list, the credentials-omitted
+  note) into structured fields on `RestoreResult`, and it also changes two English string
+  comparisons in the shell (`!= "Restore cancelled."`, `!= "Backup cancelled."`). That is a
+  coherent change of its own, and worse if half-done — a status line mixing a translated first
+  sentence with English remainder.
 - ⚠ **`WithNoNetwork_BothSectionsSayBundled` flaked once** on 2026-09-11, then passed in isolation,
   in its own assembly, and in every full run since. Cause unknown; not reproducible on demand.
 - ⛔ **Phase 16's quantitative half stays blocked.** `usage.isUsedInstall` is still `false`, so
