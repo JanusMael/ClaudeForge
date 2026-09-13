@@ -18,12 +18,13 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | `537493a` *docs: handoff — the AI-facing docs catch up with the packaging turn*, plus this cell's own correction on top. `git log -1` wins over this cell |
+| HEAD | The commit that writes this cell, sitting on `e086733`. ⓘ A hash cannot be written into the commit that produces it, and the last two attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **61 commits**, counting the commit that writes this cell (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **62 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,291 passed · 0 failed · 11 skipped**, Debug |
-| Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings, re-run 2026-09-13 after the Windows-TFM deletion |
+| Suite | **4,295 passed · 0 failed · 11 skipped**, Debug — the three new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
+| Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, before the packaging metadata, and has **not** been re-run. That change adds no code — only csproj/props metadata and a markdown file — and a single `ClaudeForge win-x64` Release publish after it is clean with zero ILLink warnings and no `.md` in the publish output. Say "12/12 plus one spot-check", not "12/12" |
+| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies already resolving to those ids. ⚠ All at version **`1.0.0`** — plan 00001 item 3 is the blocked piece and this is what it looks like unfixed |
 | ⚠ Awaiting | **The maintainer's manual retest pass** — see below. Everything that was being batched for it is now done |
 
 ---
@@ -60,6 +61,10 @@ them. Ranked by what actually changed and what automation cannot reach:
    tests and a clean 12/12 trim matrix. **Nobody has launched the app and pressed Share.** Expect
    Explorer to open with the file selected, or the default browser for a URI.
 
+✅ **Plan 00001 item 2 adds nothing to that list.** It changes csproj and props metadata plus one
+markdown file — no C#, no AXAML, no resx — so there is no surface to press. The five items above
+are unchanged by it.
+
 ⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
 Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
 but no release has been cut through it since.
@@ -77,13 +82,27 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Item 1 is done (`23f7c4f`). ⛔ **Item 3 is blocked and it is the long pole:** the package version
-must come from an MSBuild property AutoVersioning is taught to emit, and **that package's source is
-not in this repository** — ask the maintainer where it lives. The plan records an interim
-(`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines and the
-generator provably consumes) if that release slips.
+Items **1** (`23f7c4f`) and **2** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
+package version must come from an MSBuild property AutoVersioning is taught to emit, and **that
+package's source is not in this repository** — ask the maintainer where it lives. The plan records
+an interim (`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines
+and the generator provably consumes) if that release slips.
 
-Items 2, 4, 5, 6 and 7 are unblocked and independent of it.
+Items 4, 5, 6 and 7 are unblocked and independent of it. **4** (`EnableTrimAnalyzer`) is the
+smallest and the plan already measured its cost at zero under `src/`; **5** is the substantial one
+and the only item that changes how anything builds.
+
+⚠ **Two questions for the maintainer, both surfaced by item 2 and neither blocking:**
+
+1. **`LICENSE` and `CopyrightHolder` name different holders** — the file says *"Copyright (c)
+   2024-2026 ClaudeForge Contributors"*, the root `Directory.Build.props` says *Brian Bennewitz*.
+   The packages therefore carry `<Authors>Brian Bennewitz</Authors>` and **no `<Copyright>` at
+   all**, because inventing one that contradicts `LICENSE` is worse than omitting it. One of the
+   two is the answer; a package page showing neither is the current state.
+2. **`<Description>` is now read by a second audience.** This repo writes it as internal design
+   rationale — `AgentForge.Core`'s says *"Invariant: AgentForge.\* must never reference
+   ClaudeForge.\*"* — and that text is now the nuspec description on the feed page. Fine while the
+   feed is private; it is a decision to revisit before anything goes public.
 
 ### 🔭 Open strategic question — do not start without the maintainer
 
@@ -120,7 +139,8 @@ retention and prune rates remain unmeasurable. Current sizes are live and correc
 
 ## Done — 2026-09-13
 
-Five commits. The retest batch, then a strategic turn.
+Six commits of substance, plus docs-only ones not listed. The retest batch, a strategic turn, then
+the packaging plan's first real item.
 
 | Commit | What |
 |---|---|
@@ -129,6 +149,7 @@ Five commits. The retest batch, then a strategic turn.
 | `131a38c` | ⭐ **All fifteen progress-bar phrases come from resx**, translated into all nine locales. The seam is an id beside the English fallback: `BackupProgress.ItemId`, and `ProductArchiveSection.ProgressLabelId` **derived from `SubPath`** rather than declared, because the sub-path already is the section id. Each app has a guard taking ids from the *descriptors* that asserts both coverage and that each label says what the engine says — presence alone passes two keys swapped between sections. **TWINS:** `BackupEngine`'s `"Discovering projects…"`, the backup side's only phrase, fixed here too |
 | `5f1a0aa` | ⭐ **[`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)** — the approved packaging plan, committed before implementation per the plan workflow |
 | `23f7c4f` | ⛔⛔ **A Windows TFM that was never built, in three projects.** See below |
+| **HEAD** | ⭐ **Plan 00001 item 2 — package metadata.** One block in `src/Directory.Build.props` gives all eleven their identity, licence, repository and readme; every one of the seventeen projects under `src/` now states `<IsPackable>` for itself. Three guards in `PackageMetadataTests`, each canaried. See below |
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
 
@@ -157,6 +178,45 @@ workload elevated, and aborted the release if that install failed.
 `SingleTargetFrameworkTests` guards recurrence — a project may multi-target only by clearing the
 inherited singular first, and the test **fails rather than passes** if the root ever stops setting
 it, since that is its entire premise. Canaried by restoring OpenCodeForge's declaration.
+
+### Package metadata — where it lives, and the placeholders it caught
+
+`src/Directory.Build.props` carries the whole block: id, authors, company, repository, project URL,
+MIT licence expression, readme. Eleven packages, one statement.
+
+⭐ **`<PackageId>` is `Bennewitz.Ninja.$(MSBuildProjectName)`, and `$(AssemblyName)` would have
+failed SILENTLY.** `Directory.Build.props` is imported at the *top* of every csproj, before that
+file assigns `AssemblyName` — so the property evaluates empty and all eleven packages collide on
+the id `Bennewitz.Ninja.`. Not an error; a collision.
+
+⛔ **A `Directory.Build.targets` under `src/` — imported after the csproj body, where
+`$(AssemblyName)` is real — was considered and rejected**, which is why no such file exists.
+MSBuild imports only the CLOSEST `Directory.Build.targets`,
+so adding one under `src/` detaches every `src` project from the ROOT one: the publish strip, the
+dead-resx guard and the raw-hex guard all stop running, and nothing fails. That is the same shape
+as the Windows TFM above, and a worse trap than the drift the file-name form accepts — which is
+closed by a guard instead.
+
+⛔ **Two sets of placeholders were one release away from being immutable.**
+
+- `LayeredEditors.Avalonia.Diagnostics` already carried `<PackageId>LayeredEditors.Avalonia.Diagnostics</PackageId>`
+  — **without the `Bennewitz.Ninja.` prefix** — and `<Authors>LayeredEditors contributors</Authors>`,
+  under a comment reading *"placeholders, filled in before first publish"*. Both are gone; its own
+  `README.md` and its tags stay.
+- `AgentForge.Core` and `AgentForge.Sdk` had no `<Description>`, and the SDK's default is the
+  literal string **`Package Description`** — measured in the nuspec, not inferred. Both now
+  describe themselves.
+
+ⓘ **The readme is shared but not mandatory.** `src/PACKAGE-README.md` packs for the ten projects
+that have no readme of their own; the one that does keeps it. GitHub Packages will not let a
+published version be replaced, which is why each of these is worth a guard rather than a review.
+
+**Measured, not asserted:** `dotnet pack ClaudeForge.slnx -c Release` yields exactly eleven
+`.nupkg`, zero warnings, each holding `lib/net10.0/<assembly>.dll`, `README.md` and a nuspec whose
+inter-package dependencies already use the prefixed ids. **All four canaries fired:** a project
+stating no `IsPackable`, a project whose `AssemblyName` diverges from its file name, a packable
+project with no description, and — for both premise assertions at once — deleting `<PackageId>`
+from the shared block.
 
 ### What the plan's adversarial pass caught before any of it was built
 
@@ -362,6 +422,16 @@ pass, not a fix.
   for development, `PackageReference` for the per-PR canary and the release publish. Making it
   unconditional was considered and rejected: it costs the inner loop and makes a clean clone
   depend on feed credentials.
+- ⭐ **Package identity is declared once, in `src/Directory.Build.props`, and derived from
+  `$(MSBuildProjectName)`** — never from `$(AssemblyName)`, which is empty at that point, and never
+  from a `Directory.Build.targets` placed under `src/`, which would silently detach every `src`
+  project from the root targets file and its three build-time guards. Decided 2026-09-13 doing plan 00001
+  item 2; the reasoning is written into the props file itself.
+- ⛔ **Every project under `src/` states `<IsPackable>` for itself, and no guard says WHICH eleven
+  pack.** A test asserting the packable set is exactly a named eleven needs a copy of that list,
+  and the copy is what drifts. Asserting that nothing *defaults* is the non-vacuous form — a
+  library that says nothing defaults to packable and gets pushed to a feed that will not let the
+  version be replaced. `PackageMetadataTests`, three methods, all four canaries fired.
 - ⛔ **A plural `<TargetFrameworks>` does nothing unless the inherited singular is cleared first.**
   Three projects declared one and none ever built it. `SingleTargetFrameworkTests` enforces this,
   and fails rather than passes if the root stops setting the singular form.

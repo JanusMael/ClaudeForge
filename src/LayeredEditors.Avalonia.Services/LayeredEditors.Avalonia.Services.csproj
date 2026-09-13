@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Services</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Services</AssemblyName>
         <Description>

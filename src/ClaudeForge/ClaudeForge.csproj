@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
+        <IsPackable>false</IsPackable>  <!-- an app, not a library -->
         <RootNamespace>Bennewitz.Ninja.ClaudeForge</RootNamespace>
         <AssemblyName>ClaudeForge</AssemblyName>
         <!-- Per-app, matching the sibling. The repo-wide default in Directory.Build.props is the

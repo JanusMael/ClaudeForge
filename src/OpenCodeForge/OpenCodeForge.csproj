@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
+        <IsPackable>false</IsPackable>  <!-- an app, not a library -->
         <RootNamespace>Bennewitz.Ninja.OpenCodeForge</RootNamespace>
         <AssemblyName>OpenCodeForge</AssemblyName>
         <AssemblyProduct>OpenCodeForge</AssemblyProduct>

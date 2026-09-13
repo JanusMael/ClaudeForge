@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.Layer.Abstractions</RootNamespace>
         <AssemblyName>LayeredEditors.Abstractions</AssemblyName>
         <Description>

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>false</IsPackable>  <!-- product-specific: one product's half, no second consumer -->
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Avalonia</RootNamespace>
         <AssemblyName>ClaudeForge.Avalonia</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

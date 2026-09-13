@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Artifacts</RootNamespace>
         <AssemblyName>AgentForge.Artifacts</AssemblyName>
         <Description>

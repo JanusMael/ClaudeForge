@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Sdk</RootNamespace>
         <AssemblyName>AgentForge.Sdk</AssemblyName>
         <!-- Generate XML documentation file so consumers see the threading and
@@ -9,6 +10,19 @@
              this stub stage; the architectural contracts are what matter. -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Description>
+            The public client surface over AgentForge.Core's engines: open a config, read and
+            write it through layered scopes, take and restore backups, inspect MCP servers,
+            memory and artifacts, and be told what changed — with the threading and
+            cancellation contracts stated on the interface rather than implied.
+
+            Product-neutral by construction. A concrete client supplies its own descriptors,
+            scopes, footprint catalog and schema; AgentConfigClientCore supplies everything
+            that does not depend on which agent is being edited.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
     </PropertyGroup>
 
     <ItemGroup>

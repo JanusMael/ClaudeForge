@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Jsonc</RootNamespace>
         <AssemblyName>AgentForge.Jsonc</AssemblyName>
         <Description>

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Diagnostics</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Diagnostics</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -19,11 +20,13 @@
             built-in ExceptionValidationPlugin, and a DataValidationErrors attached-property
             logger that catches binding errors Avalonia's own logger never sees.
         </Description>
-        <!-- NuGet package metadata — placeholders, filled in before first publish. -->
-        <PackageId>LayeredEditors.Avalonia.Diagnostics</PackageId>
-        <Authors>LayeredEditors contributors</Authors>
+        <!-- Identity, authors, licence, repository and readme now come from
+             src/Directory.Build.props, which covers all eleven packages. The placeholders
+             that used to sit here named this package WITHOUT the Bennewitz.Ninja prefix and
+             credited "LayeredEditors contributors"; both would have shipped on first publish.
+             Tags stay, because they are the one piece of this metadata that is genuinely
+             per-package. -->
         <PackageTags>avalonia;serilog;logging;diagnostics;binding;crash</PackageTags>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -47,9 +50,7 @@
         </AssemblyAttribute>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- README packaged for NuGet when we decide to publish. Kept optional
-             via Condition so the project still builds without it. -->
-        <None Include="README.md" Pack="true" PackagePath="\" Condition="Exists('README.md')"/>
-    </ItemGroup>
+    <!-- This project's own README.md is still the one that ships: src/Directory.Build.props
+         packs a project-local README.md when there is one and the shared PACKAGE-README.md
+         otherwise, so the include that used to sit here is now redundant rather than removed. -->
 </Project>

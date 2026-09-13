@@ -1,8 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Core</RootNamespace>
         <AssemblyName>AgentForge.Core</AssemblyName>
+        <Description>
+            The product-neutral engines an agent-configuration app is built on: JSON Schema
+            loading and validation with a network-first resolution chain and a disk cache,
+            the layered settings workspace, the backup and restore engine, artifact profiles
+            and the model catalog, platform path resolution, and the update check.
+
+            Knows about no agent. Every product-shaped answer — which files, which scopes,
+            which schema — arrives as a descriptor from the host.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
     </PropertyGroup>
 
     <ItemGroup>

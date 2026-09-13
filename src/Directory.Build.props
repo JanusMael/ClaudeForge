@@ -47,4 +47,87 @@
         <IsTrimmable>true</IsTrimmable>
     </PropertyGroup>
 
+    <!--
+      ══ NuGet package identity and metadata ══  (plans/00001, work item 2)
+
+      Eleven of the seventeen projects under src/ become private NuGet packages on GitHub
+      Packages; the two apps and the four product-specific halves do not.  This block says
+      what a package IS, once, instead of seventeen times.
+
+      ⛔ WHICH projects pack is the one thing it deliberately does NOT decide.  Every csproj
+      under src/ states <IsPackable> for itself, true or false, and
+      PackageMetadataTests.EverySrcProjectStatesIsPackableExplicitly fails if one defaults.
+      A guard asserting "the packable set is exactly these eleven" would need a list of the
+      eleven — the copy-of-the-truth this repo's guards exist to avoid.  Asserting that
+      nothing DEFAULTS is the non-vacuous form: a new project cannot be published, or
+      skipped, by being forgotten.
+    -->
+    <PropertyGroup>
+        <!--
+          Bennewitz.Ninja.<AssemblyName>, per the plan's naming decision.
+
+          ⚠ $(AssemblyName) is NOT usable here, and using it would fail silently.
+          Directory.Build.props is imported at the TOP of every csproj, before that file's
+          own <AssemblyName> is assigned, so it evaluates EMPTY and all eleven packages
+          would be called "Bennewitz.Ninja." — an id collision rather than an error.
+          $(MSBuildProjectName) is the csproj file name; it is defined before any import,
+          and it is what the SDK defaults AssemblyName to anyway.
+
+          ⛔ The alternative was a src/Directory.Build.targets, imported AFTER the csproj
+          body where $(AssemblyName) is real.  Rejected: MSBuild imports only the CLOSEST
+          Directory.Build.targets, so adding one under src/ silently detaches every src
+          project from the ROOT targets file — the publish strip, the dead-resx guard and
+          the raw-hex guard all stop running, and nothing fails.  That is a worse trap than
+          the drift this accepts.
+
+          The drift it accepts: a project whose AssemblyName stops matching its file name
+          would be packaged under the file's name.  Closed by a guard rather than by hope —
+          PackageMetadataTests.EverySrcProjectsAssemblyNameMatchesItsFileName.
+        -->
+        <PackageId>Bennewitz.Ninja.$(MSBuildProjectName)</PackageId>
+
+        <Authors>Brian Bennewitz</Authors>
+        <!-- One source of truth: the root props already declares it for the assemblies. -->
+        <Company>$(AssemblyCompany)</Company>
+
+        <RepositoryUrl>https://github.com/JanusMael/ClaudeForge</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/JanusMael/ClaudeForge</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+        <!-- Satisfied by the ItemGroup below, which packs either the project's own README.md
+             or the shared one.  Both land at the package root under this name. -->
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <!--
+          ⓘ No .snupkg, on purpose.  The root props sets DebugType=embedded for Release, so
+          the symbols are already inside the packaged DLL and a symbol package would carry
+          nothing.  Setting IncludeSymbols here would produce empty .snupkg files and a
+          second artefact to push for every package.
+        -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--
+          A project with its own README.md packs it; everything else packs the shared one,
+          renamed to README.md at the package root.
+
+          ⚠ The fallback exists because one project already HAS a real readme:
+          LayeredEditors.Avalonia.Diagnostics wrote one before any of this, and replacing it
+          with the family boilerplate would lose the better document.  A shared readme is the
+          default, not a mandate.
+
+          Not conditioned on IsPackable — it cannot be, since the csproj sets that after this
+          file is imported.  Harmless: Pack metadata is only read during `dotnet pack`, which
+          IsPackable=false skips entirely.
+        -->
+        <None Include="$(MSBuildProjectDirectory)/README.md"
+              Condition="Exists('$(MSBuildProjectDirectory)/README.md')"
+              Pack="true" PackagePath="README.md" Visible="false" />
+        <None Include="$(MSBuildThisFileDirectory)PACKAGE-README.md"
+              Condition="!Exists('$(MSBuildProjectDirectory)/README.md')"
+              Pack="true" PackagePath="README.md" Visible="false" />
+    </ItemGroup>
+
 </Project>
