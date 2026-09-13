@@ -12,9 +12,12 @@
              Resources/OpenCodeForge.svg. Replacing it means regenerating BOTH the .ico
              and the .png; nothing rebuilds them from the .svg. -->
         <ApplicationIcon>Resources\OpenCodeForge.ico</ApplicationIcon>
-        <!-- Windows TFM for the same reason ClaudeForge carries it: it picks up the
-             net10.0-windows build of LayeredEditors.Avalonia.Services. -->
-        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- ⛔ SINGLE TFM, inherited from Directory.Build.props. This app copied ClaudeForge's
+             <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks> to pick up a
+             net10.0-windows build of LayeredEditors.Avalonia.Services — a build that never
+             existed, because MSBuild cross-targets only when TargetFramework is EMPTY and the
+             root sets it. The copy inherited the mistake along with the comment. See
+             DefaultShareService's remarks. -->
         <!-- SatelliteResourceLanguages deliberately unset, matching the other app: setting it
              turns into a strict allow-list and silently drops any culture not spelled exactly
              as its satellite folder. -->

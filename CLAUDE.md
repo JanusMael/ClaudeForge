@@ -181,12 +181,17 @@ it is a source scan because a registry deliberately does not expose whether it h
 ⚠ **Startup blocks on this chain** — it is awaited from `AgentConfigClientCore.OpenAsync`. A
 `FetchTimeout` of 3s bounds it (the `HttpClient`'s own timeout is 15s, five times too long to
 sit in front of a launch), and a per-instance latch stops probing after one connectivity
-failure. ⓘ **The two apps pay different prices, and the difference is whether the window's
-registry is shared.** OpenCodeForge builds **three** — its own, plus one inside each of the two
-clients it constructs without passing one — so each of its schemas is fetched twice and an
-offline launch pays two timeouts per schema. ClaudeForge builds **one** and hands it to both
-SDK clients, so each schema is fetched once. Sharing is the better shape and is what makes the
-nav provenance badge speak for save-validation too; OpenCodeForge does not do it yet.
+failure. ⭐ **Both apps build exactly ONE registry and hand it to every consumer**, so each schema
+is fetched once per launch and an offline launch pays one timeout per schema. Sharing is also
+what makes the nav provenance badge speak for save-validation: with separate registries the badge
+can report `Fetched` for the pages while the registry the save path validates against has fallen
+back to bundled, and no surface anywhere disagrees.
+
+> ⓘ **Corrected 2026-09-13.** This paragraph said OpenCodeForge built **three** — its own inside
+> `InitializeAsync`, plus one inside each client it constructed without passing one — and that it
+> "does not do it yet". That was accurate when written. `SharedSchemaRegistryTests` now pins both
+> halves: that the two clients share an instance, and that `InitializeAsync` adds no third.
+> ClaudeForge's composition root has shared one since network-first.
 
 ⚠ **This order was bundled-first until 2026-09-09, and the prose said so in four places** —
 twice as the stated reason for a test's design, because nothing asserted it. The reversal is

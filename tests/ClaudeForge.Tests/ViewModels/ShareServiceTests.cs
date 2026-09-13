@@ -330,26 +330,32 @@ public class DefaultShareServiceTests
         await svc.ShareTextAsync("Test", "body", "https://example.com");
     }
 
+    /// <summary>
+    /// Constructing with no arguments — what the app does — starts nothing.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Replaces two tests that exercised an <c>hwndProvider</c> parameter which no longer
+    /// exists.</b> It was there to initialise MAUI Essentials behind
+    /// <c>#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER</c>, in a TFM that was declared but never
+    /// built — so both tests were asserting the wiring of a code path no build contained. What is
+    /// worth pinning is what the composition root actually calls.
+    /// </remarks>
     [TestMethod]
-    public void DefaultShareService_CanBeConstructed_WithNullProvider()
+    public void DefaultShareService_ConstructsWithNoArguments_AndLaunchesNothing()
     {
-        // Null hwndProvider must default gracefully without NRE.
-        DefaultShareService svc = new(hwndProvider: null);
-        Assert.IsNotNull(svc);
-    }
-
-    [TestMethod]
-    public void DefaultShareService_CanBeConstructed_WithCustomProvider()
-    {
-        bool called = false;
-        DefaultShareService svc = new(hwndProvider: () =>
+        bool launched = false;
+        DefaultShareService svc = new(processLauncher: psi =>
         {
-            called = true;
-            return 0;
+            launched = true;
+            _ = psi;
+            return null;
         });
+
         Assert.IsNotNull(svc);
-        // Provider is only invoked inside Windows share calls, not at construction.
-        Assert.IsFalse(called, "hwndProvider must not be invoked at construction time.");
+        Assert.IsFalse(launched, "Construction must not start a process.");
+
+        // The parameterless form is the one App.axaml.cs uses; it must not throw either.
+        Assert.IsNotNull(new DefaultShareService());
     }
 
     [TestMethod]

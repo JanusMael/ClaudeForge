@@ -101,67 +101,6 @@ Write-Host ("Publishing app: " + $appInfo.Name) -ForegroundColor Magenta
 
 Set-Location $srcRoot
 
-# ── 0. Workload preflight (Windows RIDs only) ────────────────────────────────
-# LayeredEditors.Avalonia.Services.csproj sets <UseMauiEssentials>true</UseMauiEssentials>
-# for its net10.0-windows10.0.19041.0 TFM so DefaultShareService can call the
-# native Windows share flyout via Microsoft.Maui.Essentials. That property
-# triggers an SDK workload check (NETSDK1147) which fails on any machine that
-# does not have the `maui-windows` workload installed — typically every fresh
-# clone of this repo on a machine without Visual Studio 2022+.
-#
-# Why this is opt-in / surgical rather than a blanket `dotnet workload restore`:
-#   - `restore` refreshes ALL advertising manifests on every invocation
-#     (slow: 10-30 s) and tries to reconcile every installed workload on the
-#     machine to its latest manifest version — including unrelated workloads
-#     (android, ios, etc.) that this project never touches.
-#   - This preflight is a no-op on the fast path (one `dotnet workload list`
-#     parse, ~500 ms) and only triggers an install if `maui-windows` is
-#     genuinely absent. `--skip-manifest-update` keeps the install targeted.
-#
-# Gating: only runs when at least one Windows RID is in the build set. Linux /
-# macOS RIDs publish via the net10.0 TFM which doesn't reference Maui, so
-# they don't need the workload — running the preflight then would just be
-# pointless overhead.
-#
-# Failure path: if the workload install fails (typically: not running
-# elevated; `dotnet workload install` writes to %ProgramFiles%\dotnet\
-# sdk-manifests on Windows and requires Admin), we abort here with a clear
-# remediation hint rather than letting the per-RID publish fail later with
-# the less-obvious NETSDK1147.
-$buildingWindows = ($Rids | Where-Object { $_ -like 'win-*' }).Count -gt 0
-if ($buildingWindows)
-{
-    Write-Host "Checking required .NET workloads for Windows publishes..." -ForegroundColor Magenta
-    # `dotnet workload list` writes a tabular display to stdout. Lines after
-    # the column header start with the workload id (one per row). Use a
-    # multiline regex anchored to start-of-line (with optional leading
-    # whitespace) and a word boundary so we don't false-positive on
-    # hypothetical future ids like `maui-windows-foo`.
-    $workloadOutput = & dotnet workload list 2>&1 | Out-String
-    if ($workloadOutput -notmatch '(?m)^\s*maui-windows\b')
-    {
-        Write-Host "  Missing workload: maui-windows. Installing..." -ForegroundColor Yellow
-        dotnet workload install maui-windows --skip-manifest-update
-        $workloadExit = $LASTEXITCODE
-        if ($workloadExit -ne 0)
-        {
-            Write-Host "" -ForegroundColor Red
-            Write-Host "Workload install failed (exit $workloadExit)." -ForegroundColor Red
-            Write-Host "Remediation:" -ForegroundColor Yellow
-            Write-Host "  - On Windows, run this script from an elevated (Admin) shell, OR" -ForegroundColor Yellow
-            Write-Host "  - Install manually: dotnet workload install maui-windows" -ForegroundColor Yellow
-            Write-Host "  - Verify with:      dotnet workload list" -ForegroundColor Yellow
-            Write-Host "" -ForegroundColor Red
-            exit $workloadExit
-        }
-        Write-Host "  Workload 'maui-windows' installed." -ForegroundColor Green
-    }
-    else
-    {
-        Write-Host "  Workload 'maui-windows' already installed." -ForegroundColor DarkGreen
-    }
-}
-
 # ── 1. Global pre-clean ─────────────────────────────────────────────────────
 # Wipe dist/ (all prior zips, logs, staging) and every bin/obj under src/.
 #

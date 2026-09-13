@@ -112,20 +112,13 @@ public class App : Application
                 return await dialog.ShowDialog<bool>(window);
             });
 
-            // Create the main window first so its handle can be captured lazily
-            // by DefaultShareService for the Windows HWND injection requirement.
             MainWindow mainWindow = new();
 
-            // Build the share service. On Windows 10+ builds, the DefaultShareService
-            // uses MAUI Essentials and requires the native HWND before each request —
-            // captured via a closure so the handle is fetched at call time rather
-            // than construction time (avoiding any ordering issues during startup).
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-            IShareService shareService = new DefaultShareService(
-                hwndProvider: () => mainWindow.TryGetPlatformHandle()?.Handle ?? default);
-#else
+            // ⚠ The share service needs nothing from the window. It used to: a #if for the
+            // Windows TFM passed an hwndProvider closure so MAUI Essentials could anchor its
+            // share flyout. That TFM never built, so the #else branch below is the only one that
+            // has ever compiled — see DefaultShareService's remarks.
             IShareService shareService = new DefaultShareService();
-#endif
 
             MainWindowViewModel mainVm = new(schemaRegistry, dialogService, shareService);
 

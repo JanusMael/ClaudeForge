@@ -1,7 +1,4 @@
 using System.Diagnostics;
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-using Microsoft.Maui.ApplicationModel.DataTransfer;
-#endif
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -9,62 +6,49 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 /// Default cross-platform implementation of <see cref="IShareService"/>.
 /// </summary>
 /// <remarks>
-/// On <b>Windows 10 v1809+</b> (build 17763+), uses MAUI Essentials and the
-/// caller-supplied HWND factory to anchor the share flyout to the correct window.
-/// On <b>macOS</b>, reveals files in Finder or opens URIs via <c>open</c>.
-/// On <b>Linux</b>, opens the parent directory via <c>xdg-open</c> or
-/// constructs a <c>mailto:</c> URL for text payloads.
+/// <para>
+/// Every platform hands the payload to the desktop rather than opening a share sheet:
+/// <b>Windows</b> reveals the file selected in Explorer, or opens a URI in the default browser;
+/// <b>macOS</b> reveals in Finder, opens a URI via <c>open</c>, or falls back to <c>pbcopy</c> for
+/// plain text; <b>Linux</b> opens the containing directory via <c>xdg-open</c>, or builds a
+/// <c>mailto:</c> URL.
+/// </para>
+/// <para>
+/// ⛔ <b>There is no native Share-sheet path, and there never has been one at runtime.</b> This
+/// class used to carry a MAUI Essentials implementation behind
+/// <c>#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER</c>, together with an <c>hwndProvider</c>
+/// constructor parameter that existed only to initialise it. That TFM was declared but never
+/// built — the repo-root <c>Directory.Build.props</c> sets the singular
+/// <c>&lt;TargetFramework&gt;</c>, and MSBuild cross-targets only when that property is empty, so
+/// the plural <c>&lt;TargetFrameworks&gt;</c> in this project was ignored. Every guarded block was
+/// therefore dead in every build that has ever shipped, and the fallbacks below are what users
+/// have always got. Removing them changed no behaviour; it made the source agree with the binary.
+/// </para>
+/// <para>
+/// ⚠ <b>Reintroducing a real share sheet is a new feature, not a revert.</b> It needs its own
+/// TFM that actually builds, its own trim pass — MAUI Essentials brought
+/// <c>ILLink.Suppressions.Windows.xml</c> with it — and its own place in a manual retest, because
+/// nothing in this repository has ever exercised that path.
+/// </para>
 /// </remarks>
 public sealed class DefaultShareService : IShareService
 {
-    private readonly Func<nint> _hwndProvider;
     private readonly Func<ProcessStartInfo, Process?> _processLauncher;
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-    private bool _mauiInitialized;
-#endif
 
-    /// <param name="hwndProvider">
-    /// Factory invoked once (lazily on first share operation) to retrieve the native
-    /// window handle for MAUI Essentials initialisation.  Pass
-    /// <c>() => avaloniaWindow.TryGetPlatformHandle()?.Handle ?? default</c>
-    /// from the app's startup code.  Omit or pass <see langword="null"/> on
-    /// non-Windows platforms — the value is never accessed then.
-    /// </param>
     /// <param name="processLauncher">
     /// Optional override for <see cref="Process.Start(ProcessStartInfo)"/>.
     /// Pass <c>_ =&gt; null</c> in unit tests to suppress real process launches.
     /// When <see langword="null"/> the default <see cref="Process.Start(ProcessStartInfo)"/>
     /// is used.
     /// </param>
-    public DefaultShareService(
-        Func<nint>? hwndProvider = null,
-        Func<ProcessStartInfo, Process?>? processLauncher = null)
+    public DefaultShareService(Func<ProcessStartInfo, Process?>? processLauncher = null)
     {
-        _hwndProvider = hwndProvider ?? (() => 0);
         _processLauncher = processLauncher ?? Process.Start;
     }
-
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-    /// <summary>
-    /// Initialises MAUI Essentials with the current window HWND the first time a
-    /// share operation is requested.  Subsequent calls are a no-op so the WinRT
-    /// interop layer is not disturbed mid-operation.
-    /// </summary>
-    private void EnsureMauiInit()
-    {
-        if (_mauiInitialized) return;
-        Microsoft.Maui.ApplicationModel.Platform.Init(_hwndProvider());
-        _mauiInitialized = true;
-    }
-#endif
 
     /// <inheritdoc />
     public Task ShareTextAsync(string title, string text, string? uri = null)
     {
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
-            return ShareTextWindowsAsync(title, text, uri);
-#endif
         if (OperatingSystem.IsMacOS())
         {
             if (!string.IsNullOrEmpty(uri))
@@ -74,9 +58,9 @@ public sealed class DefaultShareService : IShareService
             }
             else if (!string.IsNullOrEmpty(text))
             {
-                // macOS has no Share sheet API without NSSharingService (requires net10.0-macos
-                // third TFM). Fall back to pbcopy so the user at least has the text on the
-                // clipboard — analogous to the "Copy" action that every Share sheet contains.
+                // macOS has no Share sheet API without NSSharingService (requires a net10.0-macos
+                // TFM). Fall back to pbcopy so the user at least has the text on the clipboard —
+                // analogous to the "Copy" action that every Share sheet contains.
                 return CopyViaPbcopyAsync(text);
             }
         }
@@ -89,8 +73,7 @@ public sealed class DefaultShareService : IShareService
         }
         else if (OperatingSystem.IsWindows() && !string.IsNullOrEmpty(uri))
         {
-            // Windows fallback when MAUI is not active (net10.0 TFM / debug builds):
-            // open the URI in the default browser.
+            // Windows: open the URI in the default browser.
             TryStart(new ProcessStartInfo { FileName = uri, UseShellExecute = true });
         }
 
@@ -101,10 +84,11 @@ public sealed class DefaultShareService : IShareService
     /// <inheritdoc />
     public Task ShareFileAsync(string title, string filePath)
     {
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
-            return ShareFileWindowsAsync(title, filePath);
-#endif
+        // ⚠ `title` is accepted and unused on every platform. It names the share sheet, and none
+        // of the three fallbacks opens one — a file manager titles its own window. Kept because
+        // it is part of IShareService and a future share-sheet implementation needs it.
+        _ = title;
+
         if (OperatingSystem.IsMacOS())
         {
             // Reveal the file in Finder — the user can right-click → Share.
@@ -126,8 +110,7 @@ public sealed class DefaultShareService : IShareService
         }
         else if (OperatingSystem.IsWindows())
         {
-            // Windows fallback when MAUI is not active (net10.0 TFM / debug builds):
-            // reveal the file selected in Explorer so the user can share from there.
+            // Windows: reveal the file selected in Explorer so the user can share from there.
             // Use Arguments (not ArgumentList) so `/select,` and the quoted path stay
             // as a single token — ArgumentList splits on commas and double-escapes
             // inner quotes, which causes explorer.exe to silently ignore the argument.
@@ -144,29 +127,6 @@ public sealed class DefaultShareService : IShareService
 
         return Task.CompletedTask;
     }
-
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-    private async Task ShareTextWindowsAsync(string title, string text, string? uri)
-    {
-        EnsureMauiInit();
-        await Share.Default.RequestAsync(new ShareTextRequest
-        {
-            Title = title,
-            Text = text,
-            Uri = uri,
-        });
-    }
-
-    private async Task ShareFileWindowsAsync(string title, string filePath)
-    {
-        EnsureMauiInit();
-        await Share.Default.RequestAsync(new ShareFileRequest
-        {
-            Title = title,
-            File = new ShareFile(filePath),
-        });
-    }
-#endif
 
     /// <summary>
     /// Pipes <paramref name="text"/> into <c>pbcopy</c> to place it on the macOS clipboard.

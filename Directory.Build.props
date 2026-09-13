@@ -5,20 +5,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <!-- Allow restoring Windows targeting packs on non-Windows hosts.
-             Two projects in the solution use the plural <TargetFrameworks>
-             form to add a net10.0-windows10.0.19041.0 TFM:
-               * src/ClaudeForge/ClaudeForge.csproj
-                   (picks up the MAUI-Essentials build of the share service)
-               * src/LayeredEditors.Avalonia.Services/...csproj
-                   (the share service itself, compiled against MAUI Essentials)
-             On non-Windows hosts (macOS / Linux CI) `dotnet restore` against
-             those projects fails with NETSDK1100 unless this opt-in is set.
-             It is a no-op on Windows hosts and a no-op on projects that do
-             NOT target a Windows-only TFM, so setting it globally here is
-             both safe and future-proof — any new Windows-TFM project
-             inherits the same restore behaviour without a per-csproj edit. -->
-        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <!-- ⛔ THE SINGULAR FORM IS LOAD-BEARING, and two projects once believed otherwise.
+             src/ClaudeForge and src/LayeredEditors.Avalonia.Services each declared a plural
+             <TargetFrameworks> adding net10.0-windows10.0.19041.0, with comments saying it took
+             precedence over this property. It does not: MSBuild cross-targets only when
+             TargetFramework is EMPTY, so both projects built net10.0 alone for the whole life of
+             those declarations, and the MAUI Essentials share path they existed for never
+             compiled. Both declarations are now gone.
+
+             Adding a platform TFM to any project therefore means CLEARING this property for it
+             first — `<TargetFramework></TargetFramework>` in that csproj, before the plural form
+             — and re-adding EnableWindowsTargeting, which used to sit here so a Windows TFM
+             would restore on macOS / Linux CI hosts without NETSDK1100. Neither is needed while
+             every project is single-TFM, and leaving them in place documents a capability the
+             build does not have. -->
     </PropertyGroup>
     
     <PropertyGroup>

@@ -15,13 +15,13 @@
              render on the startup path. Generated from Resources/ClaudeForge.svg as a
              multi-resolution .ico (256/128/64/48/32/16). -->
         <ApplicationIcon>Resources\ClaudeForge.ico</ApplicationIcon>
-        <!-- Add Windows platform TFM to pick up the net10.0-windows build of
-             LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
-             Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it.
-             Note: <EnableWindowsTargeting>true</EnableWindowsTargeting> is set
-             repo-wide in Directory.Build.props so this project's Windows TFM
-             also restores on macOS / Linux CI hosts. -->
-        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- ⛔ SINGLE TFM, inherited from Directory.Build.props. This app used to declare
+             <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks> to pick up a
+             net10.0-windows build of LayeredEditors.Avalonia.Services, with a comment claiming
+             the plural form overrode the root's singular <TargetFramework>. It does not —
+             MSBuild cross-targets only when TargetFramework is EMPTY — so that TFM was never
+             built and no shipped ClaudeForge has ever contained the MAUI share path. See
+             DefaultShareService's remarks. -->
         <!-- SatelliteResourceLanguages intentionally omitted.
              When this property is set, .NET treats it as a STRICT allow-list:
              only satellite assemblies whose folder name exactly matches one of
@@ -203,13 +203,6 @@
          a valid `SuppressMessageAttribute.Scope` value. -->
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
         <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
-    </ItemGroup>
-
-    <!-- Windows-only suppression for Microsoft.Maui.ApplicationModel.
-         Included only when publishing against the Windows TFM so the
-         net10.0 TFM publish does not emit IL2007 (assembly not found). -->
-    <ItemGroup Condition="'$(Configuration)' == 'Release' And&#xD;&#xA;                        $([MSBuild]::IsTargetFrameworkCompatible(&#xD;&#xA;                            '$(TargetFramework)', 'net10.0-windows10.0.19041.0'))">
-        <_ILLinkSuppressions Include="ILLink.Suppressions.Windows.xml"/>
     </ItemGroup>
 
     <!--
