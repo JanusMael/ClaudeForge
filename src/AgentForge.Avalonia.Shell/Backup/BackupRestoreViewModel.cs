@@ -645,7 +645,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             ProgressMessage = _text.ProgressStarting;
             Progress<BackupProgress> progress = new(p =>
             {
-                ProgressMessage = SanitiseProgressItem(p.CurrentItem);
+                // Almost every report here is a file name, which passes straight through — but
+                // the discovery phase is a phrase, and it was the one English literal the backup
+                // side leaked into the progress bar.
+                ProgressMessage = SanitiseProgressItem(LocaliseProgressItem(p));
                 ProgressPercent = p.Total > 0 ? (double)p.Current / p.Total * 100.0 : 0;
             });
 
@@ -821,7 +824,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             ProgressMessage = _text.ProgressRestoring;
             Progress<BackupProgress> progress = new(p =>
             {
-                ProgressMessage = SanitiseProgressItem(p.CurrentItem);
+                ProgressMessage = SanitiseProgressItem(LocaliseProgressItem(p));
                 ProgressPercent = p.Total > 0 ? (double)p.Current / p.Total * 100.0 : 0;
             });
 
@@ -1144,6 +1147,33 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// Replaces the credentials filename with a generic label so it does not flash
     /// visibly in the progress area during a backup that includes credentials.
     /// </summary>
+    /// <summary>
+    /// The host's wording for a restore phase, or the engine's English when it has none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>Applied before <see cref="SanitiseProgressItem"/>, not after</b>, so the credentials
+    /// substitution still gets the last word. A localized phase label is never a path, so the two
+    /// never contend — but ordering them the other way would make that an accident rather than a
+    /// guarantee.
+    /// </para>
+    /// <para>
+    /// A null id means the engine is naming a file rather than a phase, which is nothing to
+    /// translate. See <c>BackupProgress.ItemId</c>.
+    /// </para>
+    /// </remarks>
+    private string LocaliseProgressItem(BackupProgress p)
+    {
+        if (p.ItemId is null)
+        {
+            return p.CurrentItem;
+        }
+
+        return _text.ProgressLabels.TryGetValue(p.ItemId, out string? localized)
+            ? localized
+            : p.CurrentItem;
+    }
+
     private static string SanitiseProgressItem(string item)
     {
         return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)

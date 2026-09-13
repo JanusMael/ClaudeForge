@@ -91,6 +91,29 @@ internal static class ClaudeBackupPage
                 [SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeDesktop,
             },
 
+            // ⚠ Keyed by ProductArchiveSection.ProgressLabelId — the archive SUB-PATH, which is
+            // what the section's own remarks call it ("claude-dir", "profiles"). Not the file
+            // name, not the destination: a key that misses simply shows the engine's English, so
+            // a mistake here is invisible at runtime. ClaudeBackupPageProgressTests pins every id
+            // against the descriptors rather than against a copy of this list.
+            ProgressLabels = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["claude.json"] = Strings.ProgressRestoreClaudeJson,
+                ["claude-dir"] = Strings.ProgressRestoreClaudeHome,
+                ["claude_desktop_config.json"] = Strings.ProgressRestoreDesktopConfig,
+                ["profiles"] = Strings.ProgressRestoreDesktopProfiles,
+                [".desktop-current"] = Strings.ProgressRestoreDesktopActiveProfile,
+
+                // The four phases the engine drives itself, which belong to no product.
+                [RestoreProgressIds.Applying] = Strings.ProgressRestoreApplying,
+                [RestoreProgressIds.Projects] = Strings.ProgressRestoreProjects,
+                [RestoreProgressIds.Worktrees] = Strings.ProgressRestoreWorktrees,
+                [RestoreProgressIds.Complete] = Strings.ProgressRestoreComplete,
+
+                // The backup side's only phrase — everything else it reports is a file name.
+                [BackupProgressIds.DiscoveringProjects] = Strings.ProgressBackupDiscoveringProjects,
+            },
+
             ButtonContinueWithoutSaving = Strings.ButtonContinueWithoutSaving,
             ButtonDiscardAndRestore = Strings.ButtonDiscardAndRestore,
             ButtonIncludeCredentialsConfirm = Strings.ButtonIncludeCredentialsConfirm,

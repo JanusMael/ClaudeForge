@@ -593,6 +593,36 @@
   <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
     <value>Desktop</value>
   </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>claude.json 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>~/.claude/ 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Desktop 구성 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Desktop 프로필 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Desktop 활성 프로필 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>복원 적용 중…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>프로젝트 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>워크트리 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>복원 완료</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>프로젝트를 검색하는 중…</value>
+  </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>보존</value>
   </data>

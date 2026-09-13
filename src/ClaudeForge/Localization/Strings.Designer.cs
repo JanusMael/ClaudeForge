@@ -1274,6 +1274,96 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("LabelClientAbbrevClaudeDesktop", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring claude.json….
+        /// </summary>
+        public static string ProgressRestoreClaudeJson {
+            get {
+                return ResourceManager.GetString("ProgressRestoreClaudeJson", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring ~/.claude/….
+        /// </summary>
+        public static string ProgressRestoreClaudeHome {
+            get {
+                return ResourceManager.GetString("ProgressRestoreClaudeHome", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring Desktop config….
+        /// </summary>
+        public static string ProgressRestoreDesktopConfig {
+            get {
+                return ResourceManager.GetString("ProgressRestoreDesktopConfig", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring Desktop profiles….
+        /// </summary>
+        public static string ProgressRestoreDesktopProfiles {
+            get {
+                return ResourceManager.GetString("ProgressRestoreDesktopProfiles", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring Desktop active profile….
+        /// </summary>
+        public static string ProgressRestoreDesktopActiveProfile {
+            get {
+                return ResourceManager.GetString("ProgressRestoreDesktopActiveProfile", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Applying restore….
+        /// </summary>
+        public static string ProgressRestoreApplying {
+            get {
+                return ResourceManager.GetString("ProgressRestoreApplying", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring projects….
+        /// </summary>
+        public static string ProgressRestoreProjects {
+            get {
+                return ResourceManager.GetString("ProgressRestoreProjects", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring worktrees….
+        /// </summary>
+        public static string ProgressRestoreWorktrees {
+            get {
+                return ResourceManager.GetString("ProgressRestoreWorktrees", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Restore complete.
+        /// </summary>
+        public static string ProgressRestoreComplete {
+            get {
+                return ResourceManager.GetString("ProgressRestoreComplete", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Discovering projects….
+        /// </summary>
+        public static string ProgressBackupDiscoveringProjects {
+            get {
+                return ResourceManager.GetString("ProgressBackupDiscoveringProjects", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Show all.

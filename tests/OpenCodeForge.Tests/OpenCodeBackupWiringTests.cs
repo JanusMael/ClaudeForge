@@ -301,6 +301,65 @@ public sealed class OpenCodeBackupWiringTests
         StringAssert.Contains(row.DisplayClientsTooltip, "OpenCodeTui", StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Every restore phase this app can show has a label, and each one says what the engine says.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>The failure this guards is silent by design.</b> An id with no entry falls back to
+    /// the engine's English — the right behaviour, since a blank progress bar would be worse —
+    /// and so a missing or misfiled key is invisible at runtime.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Two families of id, and this app's second family is the easy one to get wrong.</b>
+    /// A section id is the archive sub-path joined with <c>/</c>, so the database sections are
+    /// <c>data/opencode.db</c> and not <c>opencode.db</c>. Taking the ids from the descriptors
+    /// rather than re-typing them here is what makes that impossible to get wrong twice.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void EveryRestorePhaseHasALabelMatchingTheEngine()
+    {
+        BackupPageText options = OpenCodeBackupPage.Options(OpenCodeProducts.All).Text;
+
+        List<ProductArchiveSection> sections =
+        [
+            .. OpenCodeProducts.All
+                .Where(p => p.Backup is not null)
+                .SelectMany(p => p.Backup!.Sections)
+        ];
+
+        Assert.IsTrue(sections.Count > 0,
+            "No archive sections were found on OpenCode's descriptors, so this assertion covers "
+            + "nothing — OpenCodeProducts.All or its layout changed shape.");
+
+        List<string> missing =
+        [
+            .. sections.Select(s => s.ProgressLabelId)
+                       .Concat(RestoreProgressIds.All)
+                       .Concat(BackupProgressIds.All)
+                       .Where(id => !options.ProgressLabels.ContainsKey(id))
+        ];
+
+        Assert.AreEqual(0, missing.Count,
+            "These restore progress ids have no label, so the progress bar shows the engine's "
+            + "English for them: " + string.Join(", ", missing));
+
+        // ⭐ Presence is not correctness: two keys swapped between sections pass the check above
+        // and mislabel the bar for the life of the release.
+        List<string> mismatches =
+        [
+            .. sections
+                .Where(s => options.ProgressLabels.TryGetValue(s.ProgressLabelId, out string? v)
+                            && !string.Equals(v, s.ProgressLabel, StringComparison.Ordinal))
+                .Select(s => s.ProgressLabelId)
+        ];
+
+        Assert.AreEqual(0, mismatches.Count,
+            "A section's resx value disagrees with the label the engine reports for it: "
+            + string.Join(", ", mismatches));
+    }
+
     [TestMethod]
     public void TheProcessAdvisoryNamesOpenCode()
     {

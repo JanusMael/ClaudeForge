@@ -593,6 +593,36 @@
   <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
     <value>Desktop</value>
   </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>Restauration de claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Restauration de ~/.claude/…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Restauration de la configuration Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Restauration des profils Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Restauration du profil Desktop actif…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>Application de la restauration…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>Restauration des projets…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>Restauration des worktrees…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>Restauration terminée</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>Détection des projets…</value>
+  </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Rétention</value>
   </data>

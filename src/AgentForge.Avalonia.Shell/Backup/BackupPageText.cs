@@ -58,6 +58,33 @@ public sealed record BackupPageText
     /// </remarks>
     public required IReadOnlyDictionary<string, string> ClientAbbreviations { get; init; }
 
+    // ── Progress phases ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Progress-bar phase labels, keyed by the id the engine reports alongside them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three families of key, and a host needs all three:
+    /// <c>ProductArchiveSection.ProgressLabelId</c> for each of its own products' sections, every
+    /// id in <c>RestoreProgressIds.All</c> for the phases the restore engine drives itself, and
+    /// every id in <c>BackupProgressIds.All</c> for the one phrase the backup engine emits.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Phases only — a FILE NAME is never in here.</b> Most of a backup's progress names
+    /// files, which are data: they arrive with a null id and render as-is. Keying them would be a
+    /// resource set the size of the user's disk.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A missing key falls back to the engine's English, not to blank.</b> That is what makes
+    /// this safe to add to — a product that gains a section keeps working, in English, until
+    /// someone writes its key. It also means a typo is invisible at runtime, which is why the ids
+    /// are constants on one side and why each app has a guard asserting its map covers its own
+    /// sections AND agrees with the engine's wording for each.
+    /// </para>
+    /// </remarks>
+    public required IReadOnlyDictionary<string, string> ProgressLabels { get; init; }
+
     // ── Buttons ────────────────────────────────────────────────────────────
 
     /// <summary>Proceed past the unsaved-changes prompt without saving.</summary>

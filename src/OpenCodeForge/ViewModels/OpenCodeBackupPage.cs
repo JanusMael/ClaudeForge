@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Localization;
 
@@ -95,6 +96,28 @@ internal static class OpenCodeBackupPage
             {
                 [OpenCodeProducts.Config.ArchiveFolder] = Strings.LabelClientAbbrevOpenCode,
                 [OpenCodeProducts.Tui.ArchiveFolder] = Strings.LabelClientAbbrevOpenCodeTui,
+            },
+
+            // ⚠ Keyed by ProductArchiveSection.ProgressLabelId, which is the archive sub-path
+            // joined with '/' — so the database sections are "data/opencode.db" and not
+            // "opencode.db". A key that misses shows the engine's English and nothing reports it,
+            // which is why OpenCodeBackupWiringTests asserts coverage against the descriptors.
+            ProgressLabels = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["config"] = Strings.ProgressRestoreOpenCodeConfig,
+                ["config-default"] = Strings.ProgressRestoreOpenCodeConfigDefault,
+                ["data/opencode.db"] = Strings.ProgressRestoreOpenCodeDb,
+                ["data/opencode.db-wal"] = Strings.ProgressRestoreOpenCodeDbWal,
+                ["data/opencode.db-shm"] = Strings.ProgressRestoreOpenCodeDbShm,
+
+                // The four phases the engine drives itself, which belong to no product.
+                [RestoreProgressIds.Applying] = Strings.ProgressRestoreApplying,
+                [RestoreProgressIds.Projects] = Strings.ProgressRestoreProjects,
+                [RestoreProgressIds.Worktrees] = Strings.ProgressRestoreWorktrees,
+                [RestoreProgressIds.Complete] = Strings.ProgressRestoreComplete,
+
+                // The backup side's only phrase — everything else it reports is a file name.
+                [BackupProgressIds.DiscoveringProjects] = Strings.ProgressBackupDiscoveringProjects,
             },
 
             ButtonContinueWithoutSaving = Strings.ButtonContinueWithoutSaving,

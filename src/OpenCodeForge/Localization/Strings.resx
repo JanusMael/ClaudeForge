@@ -88,6 +88,36 @@
   <data name="LabelClientAbbrevOpenCodeTui" xml:space="preserve">
     <value>TUI</value>
   </data>
+  <data name="ProgressRestoreOpenCodeConfig" xml:space="preserve">
+    <value>Restoring opencode config…</value>
+  </data>
+  <data name="ProgressRestoreOpenCodeConfigDefault" xml:space="preserve">
+    <value>Restoring the default opencode config root…</value>
+  </data>
+  <data name="ProgressRestoreOpenCodeDb" xml:space="preserve">
+    <value>Restoring opencode.db…</value>
+  </data>
+  <data name="ProgressRestoreOpenCodeDbWal" xml:space="preserve">
+    <value>Restoring opencode.db-wal…</value>
+  </data>
+  <data name="ProgressRestoreOpenCodeDbShm" xml:space="preserve">
+    <value>Restoring opencode.db-shm…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>Applying restore…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>Restoring projects…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>Restoring worktrees…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>Restore complete</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>Discovering projects…</value>
+  </data>
   <data name="SectionArtifacts" xml:space="preserve">
     <value>Artifacts</value>
   </data>

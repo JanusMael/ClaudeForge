@@ -30,13 +30,13 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// throw: a file restored as a directory simply finds nothing and the restore still succeeds.
 /// </param>
 /// <param name="ProgressLabel">
-/// Text shown on the progress bar while this section applies.
+/// Progress-bar text while this section applies, in English.
 /// <para>
-/// ⚠ <b>Unlocalised, and that is pre-existing debt rather than a new decision.</b> These strings
-/// were English literals inside the restore engine before they became data. Moving them here makes
-/// them more visible, not more wrong — but the repo's rule is that user-visible text comes from a
-/// resx, so a later pass should key these by section id the way footprint labels are keyed by
-/// <c>FootprintCategory.Id</c>.
+/// ⚠ <b>The FALLBACK, not the text a user normally sees.</b> A host that draws a progress bar
+/// looks <see cref="ProgressLabelId"/> up in its own resources first; this value is what a
+/// consumer with no resources gets — the SDK, a script, a log line — and what any host shows for
+/// a section it has no key for. It is deliberately still here rather than replaced by a key,
+/// because a bare id shown to a user is worse than English.
 /// </para>
 /// </param>
 /// <param name="IsProductHome">
@@ -89,6 +89,30 @@ public sealed record ProductArchiveSection(
     bool RequiresCredentialOptIn = false,
     Func<bool>? IncludeWhen = null)
 {
+    /// <summary>
+    /// Stable id for this section, for a host that localizes <see cref="ProgressLabel"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Derived from <see cref="SubPath"/> rather than declared, because the sub-path already
+    /// IS the section id</b> — it is what this section's remarks call it (<c>claude-dir</c>,
+    /// <c>profiles</c>, <c>config-default</c>), it is unique within a product by construction
+    /// since two sections cannot occupy one place in the archive, and a declared id would be a
+    /// second name for the same thing, free to drift from the first.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Joined with <c>/</c>, never <see cref="Path.DirectorySeparatorChar"/>.</b> This is a
+    /// resource key, not a path: a key that changed shape between Windows and Linux would resolve
+    /// on one and silently fall back to English on the other.
+    /// </para>
+    /// <para>
+    /// ⚠ Renaming a sub-path therefore changes this id. That is already a breaking change to the
+    /// archive layout; the visible consequence here is one label reverting to English, which is
+    /// the mildest of that rename's effects.
+    /// </para>
+    /// </remarks>
+    public string ProgressLabelId => string.Join('/', SubPath);
+
     /// <summary>A single file beneath the product's archive folder.</summary>
     public static ProductArchiveSection File(string subPath, Func<string> destination, string progressLabel) =>
         new([subPath], destination, IsDirectory: false, progressLabel);

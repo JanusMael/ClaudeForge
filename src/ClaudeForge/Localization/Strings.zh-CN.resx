@@ -594,6 +594,36 @@
   <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
     <value>Desktop</value>
   </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>正在还原 claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>正在还原 ~/.claude/…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>正在还原 Desktop 配置…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>正在还原 Desktop 配置档案…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>正在还原 Desktop 当前配置档案…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>正在应用还原…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>正在还原项目…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>正在还原工作树…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>还原完成</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>正在检测项目…</value>
+  </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>保留</value>
   </data>

@@ -78,6 +78,43 @@ public static class Strings
     /// </summary>
     public static string LabelClientAbbrevOpenCodeTui => Get(nameof(LabelClientAbbrevOpenCodeTui));
 
+    // ── Restore progress ───────────────────────────────────────────────────
+    // ⚠ Keyed to ProductArchiveSection.ProgressLabelId / RestoreProgressIds by
+    // OpenCodeBackupPage, not by name. A rename here is free; a rename there falls silently back
+    // to the engine's English.
+
+    /// <summary>Progress label while OpenCode's config root is restored.</summary>
+    public static string ProgressRestoreOpenCodeConfig => Get(nameof(ProgressRestoreOpenCodeConfig));
+
+    /// <summary>Progress label while the second, default config root is restored.</summary>
+    public static string ProgressRestoreOpenCodeConfigDefault =>
+        Get(nameof(ProgressRestoreOpenCodeConfigDefault));
+
+    /// <summary>Progress label while the session database is restored.</summary>
+    public static string ProgressRestoreOpenCodeDb => Get(nameof(ProgressRestoreOpenCodeDb));
+
+    /// <summary>Progress label while the database's write-ahead log is restored.</summary>
+    public static string ProgressRestoreOpenCodeDbWal => Get(nameof(ProgressRestoreOpenCodeDbWal));
+
+    /// <summary>Progress label while the database's shared-memory file is restored.</summary>
+    public static string ProgressRestoreOpenCodeDbShm => Get(nameof(ProgressRestoreOpenCodeDbShm));
+
+    /// <summary>Progress label for the engine's apply phase.</summary>
+    public static string ProgressRestoreApplying => Get(nameof(ProgressRestoreApplying));
+
+    /// <summary>Progress label for the engine's per-project phase.</summary>
+    public static string ProgressRestoreProjects => Get(nameof(ProgressRestoreProjects));
+
+    /// <summary>Progress label for the engine's worktree phase.</summary>
+    public static string ProgressRestoreWorktrees => Get(nameof(ProgressRestoreWorktrees));
+
+    /// <summary>Progress label for the engine's final step.</summary>
+    public static string ProgressRestoreComplete => Get(nameof(ProgressRestoreComplete));
+
+    /// <summary>The one phrase the BACKUP engine emits; everything else it reports is a file.</summary>
+    public static string ProgressBackupDiscoveringProjects =>
+        Get(nameof(ProgressBackupDiscoveringProjects));
+
     /// <summary>Navigation header for the artifacts page.</summary>
     public static string SectionArtifacts => Get(nameof(SectionArtifacts));
 

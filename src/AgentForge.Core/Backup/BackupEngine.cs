@@ -93,7 +93,8 @@ public sealed class BackupEngine
         ArgumentNullException.ThrowIfNull(request);
 
         // resolve project set + worktrees.
-        progress?.Report(new BackupProgress(0, 0, "Discovering projects…", 0));
+        progress?.Report(new BackupProgress(
+            0, 0, "Discovering projects…", 0, BackupProgressIds.DiscoveringProjects));
         IReadOnlyList<string> settingsFilesForDiscovery = CollectSettingsFilesForDiscovery(request.ExplicitProjectDirs);
         IReadOnlyList<string> discovered = AdditionalDirectoriesResolver.Resolve(settingsFilesForDiscovery);
         IReadOnlyList<string> projects = MergeExplicitAndDiscovered(request.ExplicitProjectDirs, discovered);

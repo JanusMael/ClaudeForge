@@ -167,7 +167,8 @@ internal static class RestoreEngine
             // movement during the apply phase (extraction is done; bar would stall).
             int applySections = products.Sum(p => p.Backup.Sections.Count) + 2;
             int applyStep = 0;
-            progress?.Report(new BackupProgress(0, applySections, "Applying restore…", totalExtracted));
+            progress?.Report(new BackupProgress(
+                0, applySections, "Applying restore…", totalExtracted, RestoreProgressIds.Applying));
 
             // Place files into real paths, with .bak sidecars.
             string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
@@ -198,19 +199,25 @@ internal static class RestoreEngine
                     }
 
                     progress?.Report(
-                        new BackupProgress(++applyStep, applySections, section.ProgressLabel, totalExtracted));
+                        new BackupProgress(
+                            ++applyStep, applySections, section.ProgressLabel, totalExtracted,
+                            section.ProgressLabelId));
                 }
             }
 
             // Per-project restore: look at the manifest to know where each project lives.
             restored += RestoreProjects(tempRoot, entry.Manifest, stamp, skipped, fileFailures);
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring projects…", totalExtracted));
+            progress?.Report(new BackupProgress(
+                ++applyStep, applySections, "Restoring projects…", totalExtracted,
+                RestoreProgressIds.Projects));
 
             restored += RestoreWorktrees(tempRoot, stamp, skipped, fileFailures);
-            progress?.Report(new BackupProgress(++applyStep, applySections, "Restoring worktrees…", totalExtracted));
+            progress?.Report(new BackupProgress(
+                ++applyStep, applySections, "Restoring worktrees…", totalExtracted,
+                RestoreProgressIds.Worktrees));
 
             progress?.Report(new BackupProgress(restored, restored,
-                "Restore complete", 0));
+                "Restore complete", 0, RestoreProgressIds.Complete));
 
             string message =
                 $"Restored {restored} item(s). Existing files were moved aside as .pre-restore-{stamp}.bak.";
