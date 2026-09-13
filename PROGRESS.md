@@ -18,14 +18,15 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `2f4a7cb`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `2627403`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **63 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **64 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,295 passed · 0 failed · 11 skipped**, Debug — the three new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
+| Suite | **4,296 passed · 0 failed · 11 skipped**, Debug — four new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies already resolving to those ids. ⚠ All at version **`1.0.0`** — plan 00001 item 3 is the blocked piece and this is what it looks like unfixed |
+| Package canary | ✅ **PASSED** end to end on 2026-09-13, `0.0.0-local-20260913161300`: eleven packages → isolated `NUGET_PACKAGES` → Release build → **4,295 passed · 0 failed · 11 skipped** → both apps published `win-x64`. Zero warnings, zero IL diagnostics. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | ⚠ Awaiting | **The maintainer's manual retest pass** — see below. Everything that was being batched for it is now done |
 
 ---
@@ -62,9 +63,11 @@ them. Ranked by what actually changed and what automation cannot reach:
    tests and a clean 12/12 trim matrix. **Nobody has launched the app and pressed Share.** Expect
    Explorer to open with the file selected, or the default browser for a URI.
 
-✅ **Plan 00001 items 2 and 4 add nothing to that list.** Between them they change csproj and props
-metadata, one markdown file and the docs — no C#, no AXAML, no resx — so there is no surface to
-press. The five items above are unchanged by both.
+✅ **Plan 00001 items 2, 4 and 5 add nothing to that list.** Between them they change csproj and
+props metadata, build files, a `nuget.config`, one script, one CI job and the docs — no C#, no
+AXAML, no resx — so there is no surface to press. The five items above are unchanged by all three.
+⭐ Item 5 nevertheless **published both apps** on the way through, in package mode, as part of its
+canary.
 
 ⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
 Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
@@ -83,14 +86,23 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2** and **4** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
+Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
 package version must come from an MSBuild property AutoVersioning is taught to emit, and **that
 package's source is not in this repository** — ask the maintainer where it lives. The plan records
 an interim (`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines
 and the generator provably consumes) if that release slips.
 
-Items 5, 6 and 7 are unblocked and independent of it. **5** is the substantial one and the only
-item that changes how anything builds; **6** and **7** both want 5 to exist first.
+Items **6** and **7** remain. ⚠ **6 (the publish pipeline) is the one that needs item 3 first** —
+a release pushes at a real version, and `1.0.0` is not one. **7 (documentation)** is unblocked;
+`CLAUDE.md` still has no package layer and `TRIMMING.md` still never mentions the second app.
+
+⚠ **Two things item 5 deliberately left for item 6**, both recorded so they are not rediscovered:
+
+- **`src/publish/publish.ps1` still knows nothing about `artifacts/`.** It wipes every `bin/` and
+  `obj/` under `src/` and all of `dist/`, so it does not delete the local feed — but a stale
+  local-feed package **outranks** GitHub Packages in `nuget.config`'s source mapping, so a release
+  cut on a machine that has run the canary could consume a local build at the release version.
+- **Nothing pre-flights the feed for an already-published version**, which is item 6's core.
 
 ⚠ **Two questions for the maintainer, both surfaced by item 2 and neither blocking:**
 
@@ -139,8 +151,8 @@ retention and prune rates remain unmeasurable. Current sizes are live and correc
 
 ## Done — 2026-09-13
 
-Seven commits of substance, plus docs-only ones not listed. The retest batch, a strategic turn,
-then the packaging plan's first two unblocked items.
+Eight commits of substance, plus docs-only ones not listed. The retest batch, a strategic turn,
+then the packaging plan's three unblocked items.
 
 | Commit | What |
 |---|---|
@@ -149,7 +161,8 @@ then the packaging plan's first two unblocked items.
 | `131a38c` | ⭐ **All fifteen progress-bar phrases come from resx**, translated into all nine locales. The seam is an id beside the English fallback: `BackupProgress.ItemId`, and `ProductArchiveSection.ProgressLabelId` **derived from `SubPath`** rather than declared, because the sub-path already is the section id. Each app has a guard taking ids from the *descriptors* that asserts both coverage and that each label says what the engine says — presence alone passes two keys swapped between sections. **TWINS:** `BackupEngine`'s `"Discovering projects…"`, the backup side's only phrase, fixed here too |
 | `5f1a0aa` | ⭐ **[`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)** — the approved packaging plan, committed before implementation per the plan workflow |
 | `23f7c4f` | ⛔⛔ **A Windows TFM that was never built, in three projects.** See below |
-| **HEAD** | ⭐ **Plan 00001 item 4 — the libraries analyse themselves.** `EnableTrimAnalyzer` in `src/Directory.Build.props`. See below |
+| **HEAD** | ⭐ **Plan 00001 item 5 — the reference switch, the local feed and the canary.** `UseSharedPackages` rewrites `ProjectReference` → `PackageReference` centrally; `nuget.config` maps the private feed so a credential-free clone still restores; `scripts/package-canary.ps1` and a `package-canary` CI job prove the package mode. **It found a real difference on its first run.** See below |
+| `2627403` | ⭐ **Plan 00001 item 4 — the libraries analyse themselves.** `EnableTrimAnalyzer` in `src/Directory.Build.props`. See below |
 | `2f4a7cb` | ⭐ **Plan 00001 item 2 — package metadata.** One block in `src/Directory.Build.props` gives all eleven their identity, licence, repository and readme; every one of the seventeen projects under `src/` now states `<IsPackable>` for itself. Three guards in `PackageMetadataTests`, each canaried. See below |
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
@@ -246,6 +259,70 @@ zero IL diagnostics; so does Debug. ⓘ The plan predicted "224, all under `test
 came from setting the property globally. Scoped to `src/`, where it belongs, `tests/` is untouched
 and the number is nought. ⛔ `IsAotCompatible` is deliberately not set alongside it: it implies the
 AOT and single-file analysers too, which is a claim about these libraries nothing has measured.
+
+### The reference switch — one conditional, and three things that fail silently
+
+`UseSharedPackages` unset or `false` means `ProjectReference` and is what every human runs;
+`true` means `PackageReference` at `SharedPackageVersion`. The rewrite is **one ItemGroup in the
+ROOT `Directory.Build.targets`**, so no csproj declares both and the mixed graph the plan warns
+about is unrepresentable. New files: `nuget.config`, `scripts/package-canary.ps1`, and a
+`package-canary` job in `ci.yml`.
+
+⭐ **The plan said "both apps and all twelve test projects switch together". That list is
+incomplete, and the omission would have re-created the exact bug the sentence exists to prevent.**
+The four product-specific libraries switch too: leave `ClaudeForge.Avalonia` on a
+`ProjectReference` to `AgentForge.Core` and the app that references it has two
+`AgentForge.Core.dll` in its graph again. The condition is `IsPackable != true`, which says it
+without naming anyone.
+
+⛔ **Two MSBuild facts, both measured in an isolated probe after the first attempt silently
+switched nothing:**
+
+1. **`%(Metadata)` in a condition on an item OUTSIDE a target evaluates to EMPTY and does not
+   error.** The obvious spelling — `Include="@(ProjectReference)"` with a
+   `Condition="…StartsWith('AgentForge.')"` — matches nothing, and the build succeeds having done
+   nothing at all.
+2. **Item `Remove` is a string comparison, not a path comparison.** It does not normalise, `**`
+   does not traverse `..`, and an absolute pattern does not match a relatively-spelled item. This
+   repo spells these references two ways (`..\AgentForge.Core\…` from `src/`,
+   `..\..\src\AgentForge.Core\…` from `tests/`), so a glob tuned to one would silently miss the
+   other.
+
+   The implementation normalises to full paths first, then uses `Remove` twice as a **set
+   difference** — the one thing it does reliably. Plain evaluation, no target hooks, so restore
+   and build cannot disagree.
+
+⛔ **A package and a project do not put the same files in the output directory, and the canary is
+how that was found.** A `ProjectReference` copies the referenced project's XML documentation file
+next to its DLL; a `PackageReference` leaves it inside the `.nupkg`, because
+`CopyDocumentationFilesFromPackages` defaults to `false`.
+`PublicSurfaceContractTests.IAgentConfigClient_DocumentsThreadingContract` reads
+`AgentForge.Sdk.xml` from the test output, and it was **the one test of 4,295 that failed the
+first package-mode run**. Fixed in package mode only — repo-wide the property would drag every
+third-party package's XML into every `bin/`.
+
+✅ **The plan's `AssemblyLayeringTests` concern does not apply to this implementation, and that was
+checked rather than argued.** The plan expected the switch to edit csproj files, which would have
+left that guard reading `ProjectReference` elements that no longer existed — a vacuous pass. The
+central transform edits no csproj, so the guard's input is byte-identical in both modes.
+Demonstrated by injecting an `AgentForge.Artifacts -> ClaudeForge.Sdk.Claude` reference and
+watching it redden **in both modes**, naming the file. ⓘ The injected edge is circular, so restore
+fails before the test can run — the canary was driven against the pre-built test assembly, which
+is legitimate precisely because the guard reads disk rather than the build.
+
+⚠ **`PackageMetadataTests` gained a fourth guard, and it is the switch's premise.** The rewrite
+matches on the file-name prefixes `AgentForge.` / `LayeredEditors.` because MSBuild cannot read
+the referenced project's `IsPackable` from there. So the name and the packability must agree, and
+`TheSwitchesNamePrefixSelectsExactlyThePackableProjects` is what makes them — asserting **both**
+directions, since a packable project outside the prefixes silently stays a project reference and
+lets the canary validate project output while reporting success.
+
+ⓘ **No credentials anywhere, and a credential-free clone still restores.** `nuget.config` lists the
+private GitHub feed but maps it — and the local folder feed — to `Bennewitz.Ninja.AgentForge.*` and
+`Bennewitz.Ninja.LayeredEditors.*` only. Without that mapping NuGet queries every source for every
+package and the unauthenticated feed 401s on `Avalonia`. ⚠ The patterns name the two families
+rather than the whole `Bennewitz.Ninja.` prefix on purpose: `Bennewitz.Ninja.AutoVersioning` is
+**public and comes from nuget.org**, verified from its `.nupkg.metadata` rather than assumed.
 
 ### What the plan's adversarial pass caught before any of it was built
 
@@ -456,6 +533,21 @@ pass, not a fix.
   from a `Directory.Build.targets` placed under `src/`, which would silently detach every `src`
   project from the root targets file and its three build-time guards. Decided 2026-09-13 doing plan 00001
   item 2; the reasoning is written into the props file itself.
+- ⭐ **`UseSharedPackages` is a MODE, and the switch is CENTRAL** — one ItemGroup in the root
+  `Directory.Build.targets`, not a conditional in fourteen csproj files. Every project that is not
+  itself one of the eleven switches together (`IsPackable != true`), which includes the four
+  **product-specific** libraries the plan's own list omits: leaving one on a `ProjectReference`
+  re-creates the duplicate-assembly graph through the app that references it. ⛔ A
+  `Directory.Build.targets` under `src/` is the trap, not the answer — same finding as item 2.
+- ⛔ **The switch matches a NAME PREFIX, and the name must therefore agree with packability.**
+  MSBuild cannot read a referenced project's `IsPackable`, so the rewrite keys on `AgentForge.` /
+  `LayeredEditors.` and `PackageMetadataTests.TheSwitchesNamePrefixSelectsExactlyThePackableProjects`
+  asserts the two sets are the same set, **both directions**, because both fail quietly.
+- ⛔ **Never re-use a canary version.** NuGet extracts by id+version and will not re-extract, so the
+  second run of a repeated version validates the first run's packages and reports success. The
+  script uses a per-second timestamp **and** a `NUGET_PACKAGES` directory named for it — both, and
+  the directory is created fresh rather than emptied, because MSBuild's nodes hold DLLs open out of
+  it and the delete fails on Windows *after* the work is done.
 - ⭐ **The shared libraries run the trim analyser themselves** (`EnableTrimAnalyzer`, `src/` only),
   because packaging removes the only route it reaches them by today — a global property flowing
   through the app's build graph, which a packaged library is not in. Scoped to `src/` deliberately:

@@ -1,6 +1,116 @@
 <Project>
 
     <!--
+      ══ The shared-library reference switch ══  (plans/00001, work item 5)
+
+      ProjectReference for development; PackageReference for the per-PR canary and the release
+      publish. One conditional, applied centrally, so the two modes cannot be mixed.
+
+      ⛔ MIXING THEM IS THE FAILURE THIS EXISTS TO MAKE UNREPRESENTABLE. ClaudeForge.Tests
+      references src/AgentForge.Core AND src/ClaudeForge. If only the app switched, that test's
+      graph would hold two AgentForge.Core.dll — one from a project, one transitively from a
+      package — and MSBuild prefers the project output. A job named "package canary" would report
+      success over a suite still exercising project-built code.
+
+      ⭐ WHY THIS LIVES IN THE ROOT TARGETS FILE AND NOT A src/ ONE. It has to run AFTER each
+      csproj declares its ProjectReferences, which rules out Directory.Build.props. The obvious
+      answer — a Directory.Build.targets under src/ — is a trap measured while doing work item 2:
+      MSBuild imports only the CLOSEST one, so adding it silently detaches every src project from
+      THIS file, and the publish strip, the dead-resx guard and the raw-hex guard below all stop
+      running with nothing failing.
+
+      ⚠ WHICH REFERENCES SWITCH: those whose project file name begins `AgentForge.` or
+      `LayeredEditors.` — a rule, not a list, and PackageMetadataTests asserts that the set it
+      matches is exactly the set of packable projects. A reference to a PRODUCT-specific library
+      (ClaudeForge.Sdk.Claude, OpenCode.Avalonia, …) stays a ProjectReference, because none of
+      those is packaged.
+
+      ⚠ WHICH PROJECTS SWITCH: every project that is not itself one of the eleven — both apps,
+      all four product-specific libraries, the sample, and all twelve test projects. The eleven
+      keep referencing EACH OTHER by project in both modes, which is what `IsPackable != true`
+      expresses. ⓘ The plan says "both apps and all twelve test projects"; that list is
+      incomplete. A product library left on ProjectReference re-creates the duplicate-assembly
+      graph above through the app that references it, so it switches too.
+    -->
+    <PropertyGroup Condition="'$(UseSharedPackages)' == 'true' And '$(IsPackable)' != 'true'">
+        <_SwitchSharedReferences>true</_SwitchSharedReferences>
+
+        <!--
+          ⛔ A PACKAGE AND A PROJECT DO NOT PUT THE SAME FILES IN THE OUTPUT DIRECTORY, and the
+          canary is how that was found rather than reasoned about.
+
+          A ProjectReference copies the referenced project's XML documentation file next to its
+          DLL. A PackageReference does NOT: the SDK ships `lib/net10.0/*.xml` inside the .nupkg
+          but leaves it there, because CopyDocumentationFilesFromPackages defaults to false.
+          `PublicSurfaceContractTests.IAgentConfigClient_DocumentsThreadingContract` reads
+          AgentForge.Sdk.xml from the test output to assert the threading contract is documented
+          on the public interface, and it was the one test of 4,295 that failed in package mode.
+
+          ⚠ Set only in this mode, on purpose. Repo-wide it would also drag every third-party
+          package's XML into every bin/ directory — Avalonia's alone is megabytes — changing what
+          development builds produce in order to fix something development builds do not have.
+          Publish output is unaffected either way: the ExcludeNonDistributableFromPublish target
+          below strips *.xml.
+        -->
+        <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+    </PropertyGroup>
+
+    <!--
+      ⛔ TWO MSBUILD FACTS SHAPE EVERY LINE BELOW, both measured rather than recalled:
+
+      1. `%(Metadata)` in a condition on an item OUTSIDE a target evaluates to EMPTY and does not
+         error. The obvious spelling — Include="@(ProjectReference)" with a
+         Condition="...StartsWith('AgentForge.')" — therefore matches nothing, silently, and the
+         build succeeds having switched nothing. That was the first attempt here.
+      2. Item `Remove` is a STRING comparison of item specs, not a path comparison. It does not
+         normalise, `**` does not traverse `..`, and an absolute pattern will not match a
+         relatively-spelled item. This repo spells these references two ways —
+         `..\AgentForge.Core\…` from src/ and `..\..\src\AgentForge.Core\…` from tests/ — so a
+         glob tuned to one spelling would silently miss the other. Which is the whole failure
+         mode this file keeps running into.
+
+      So: normalise every ProjectReference to its full path first, then use Remove as a SET
+      DIFFERENCE, which is the one thing it does reliably. No per-item conditions, no target
+      hooks — plain evaluation, so restore and build see identical items and cannot disagree.
+    -->
+    <ItemGroup Condition="'$(_SwitchSharedReferences)' == 'true'">
+        <!-- The eleven, globbed off disk. A rule, not a list. -->
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\AgentForge.*\AgentForge.*.csproj" />
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\LayeredEditors.*\LayeredEditors.*.csproj" />
+
+        <!-- Full paths, so Remove can match. The transform carries metadata across, so any
+             PrivateAssets / OutputItemType on a reference survives the round trip. -->
+        <_NormalisedProjectReference Include="@(ProjectReference->'%(FullPath)')" />
+
+        <!-- Set difference, twice: what is NOT shared, then what IS. -->
+        <_NonSharedProjectReference Include="@(_NormalisedProjectReference)" />
+        <_NonSharedProjectReference Remove="@(_PackableSharedProject)" />
+
+        <_SharedProjectReference Include="@(_NormalisedProjectReference)" />
+        <_SharedProjectReference Remove="@(_NonSharedProjectReference)" />
+
+        <!-- Product-specific references stay projects; the shared ones become packages. Only
+             the ones this project actually referenced — adding all eleven everywhere would
+             compile fine and hide a missing dependency. -->
+        <ProjectReference Remove="@(ProjectReference)" />
+        <ProjectReference Include="@(_NonSharedProjectReference)" />
+        <PackageReference Include="@(_SharedProjectReference->'Bennewitz.Ninja.%(Filename)')"
+                          Version="$(SharedPackageVersion)" />
+    </ItemGroup>
+
+    <!--
+      ⚠ An empty version does not fail loudly on its own — it restores as NU1604 from deep inside
+      NuGet, naming a package the reader never wrote down. Say what actually went wrong instead.
+      The canary and release scripts always pass one; this catches a hand-typed
+      `-p:UseSharedPackages=true`.
+    -->
+    <Target Name="ValidateSharedPackageVersion"
+            BeforeTargets="CollectPackageReferences;BeforeBuild"
+            Condition="'$(_SwitchSharedReferences)' == 'true' And '$(SharedPackageVersion)' == ''">
+        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the eleven Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value, e.g. scripts/pack-local-feed.ps1 -Version 1.0.0-local-$(date). See plans/00001 work item 5." />
+    </Target>
+
+    <!--
       Strip non-distributable files from the publish output.
   
       The publish output directory is the authoritative list of what goes into the

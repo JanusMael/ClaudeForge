@@ -192,6 +192,84 @@ public sealed class PackageMetadataTests
             + string.Join(", ", offenders));
     }
 
+    /// <summary>
+    /// The name prefix the package-mode reference switch matches on selects exactly the set of
+    /// projects that are actually packaged.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This is the premise of the whole switch.</b> The root <c>Directory.Build.targets</c>
+    /// rewrites a <c>ProjectReference</c> into a <c>PackageReference</c> when the referenced
+    /// project's file name begins <c>AgentForge.</c> or <c>LayeredEditors.</c>. It matches on a
+    /// name because MSBuild cannot read the referenced project's <c>IsPackable</c> from there —
+    /// so the name and the packability have to agree, and this is what makes them.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Both directions fail silently, which is why both are asserted.</b> A packable project
+    /// named outside the prefixes keeps its <c>ProjectReference</c> in package mode: the canary
+    /// then builds the app against project output while claiming to validate packages. A
+    /// prefix-named project that is <i>not</i> packable is rewritten to a
+    /// <c>PackageReference</c> for a package nobody publishes, which at least fails loudly at
+    /// restore — but only once someone runs the canary.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void TheSwitchesNamePrefixSelectsExactlyThePackableProjects()
+    {
+        string repoRoot = FindRepoRoot();
+
+        // The same two prefixes the switch uses. Kept in sync by this test failing, which is the
+        // point: there is no third place that lists the eleven.
+        string[] prefixes = ["AgentForge.", "LayeredEditors."];
+
+        List<string> byName = [];
+        List<string> byPackability = [];
+
+        foreach (string csproj in EnumerateSrcProjects(repoRoot))
+        {
+            string name = Path.GetFileNameWithoutExtension(csproj);
+
+            if (prefixes.Any(p => name.StartsWith(p, StringComparison.Ordinal)))
+            {
+                byName.Add(name);
+            }
+
+            bool isPackable = XDocument.Load(csproj).Descendants()
+                .Where(e => e.Name.LocalName == "IsPackable")
+                .Select(e => e.Value.Trim())
+                .LastOrDefault() == "true";
+
+            if (isPackable)
+            {
+                byPackability.Add(name);
+            }
+        }
+
+        byName.Sort(StringComparer.Ordinal);
+        byPackability.Sort(StringComparer.Ordinal);
+
+        Assert.IsTrue(byPackability.Count > 0,
+            "No packable project under src/, so this guard is measuring nothing.");
+
+        string[] packableButNotPrefixed = byPackability.Except(byName, StringComparer.Ordinal).ToArray();
+        string[] prefixedButNotPackable = byName.Except(byPackability, StringComparer.Ordinal).ToArray();
+
+        Assert.AreEqual(0, packableButNotPrefixed.Length,
+            "These projects are packaged but their names do not begin 'AgentForge.' or "
+            + "'LayeredEditors.', so the reference switch in Directory.Build.targets will NOT "
+            + "rewrite references to them. In package mode they stay ProjectReferences and the "
+            + "canary silently validates project output instead of the package. Rename the "
+            + "project, or teach the switch a third prefix — and this test with it. Offenders: "
+            + string.Join(", ", packableButNotPrefixed));
+
+        Assert.AreEqual(0, prefixedButNotPackable.Length,
+            "These projects carry a shared-library name prefix but are not packaged, so in "
+            + "package mode the switch rewrites references to them into PackageReferences for "
+            + "packages that are never published, and restore fails. Either mark them packable "
+            + "or move them out of the AgentForge.*/LayeredEditors.* namespace. Offenders: "
+            + string.Join(", ", prefixedButNotPackable));
+    }
+
     private static XDocument LoadSrcProps(string repoRoot)
         => XDocument.Load(Path.Combine(repoRoot, "src", "Directory.Build.props"));
 

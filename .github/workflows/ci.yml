@@ -125,3 +125,39 @@ jobs:
           -c Release -r linux-x64
           --self-contained true
           -o /tmp/trim-check-opencodeforge
+
+  # ── The package canary ───────────────────────────────────────────────────────
+  #
+  # Eleven projects under src/ ship as private NuGet packages (plans/00001). Everything else
+  # consumes them as ProjectReference in development and PackageReference under
+  # UseSharedPackages=true. Development mode is what every human runs, so PACKAGE mode is the
+  # one that rots unobserved — and it is the mode the release publishes from.
+  #
+  # ⛔ The two modes are not equivalent, which is the whole reason this job exists rather than
+  # being assumed. Its first run found a real difference: a ProjectReference copies the
+  # referenced project's XML documentation file into the output directory and a PackageReference
+  # does not, which failed the one test that reads AgentForge.Sdk.xml to assert the threading
+  # contract is documented. Nothing about that is inferable from the package contents.
+  #
+  # ⚠ No credentials, and none needed. The job packs THIS commit into a local folder feed and
+  # restores from there; nuget.config maps the private GitHub feed to the same ids, but it is
+  # never reached because the local feed answers first. A fork runs this green.
+  package-canary:
+    name: Package Canary (Release linux-x64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # The script packs at a timestamped throwaway version into a job-local NUGET_PACKAGES,
+      # because NuGet will not re-extract an id+version it has already seen — without both, a
+      # second run silently validates the first run's packages. See the script's header.
+      - name: Pack, build, test and publish against packages
+        shell: pwsh
+        run: ./scripts/package-canary.ps1 -RuntimeIdentifier linux-x64
