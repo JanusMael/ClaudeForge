@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | `23f7c4f` *fix(build): delete the Windows TFM that was never built* — plus this file's own docs commit on top. `git log -1` wins over this cell |
+| HEAD | `537493a` *docs: handoff — the AI-facing docs catch up with the packaging turn*, plus this cell's own correction on top. `git log -1` wins over this cell |
 | Working tree | clean |
-| Unpushed | **59 commits** (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **61 commits**, counting the commit that writes this cell (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,291 passed · 0 failed · 11 skipped**, Debug |
 | Trim check | Release publish clean for **both** apps across **all six RIDs** — 12/12, zero ILLink warnings, re-run 2026-09-13 after the Windows-TFM deletion |
