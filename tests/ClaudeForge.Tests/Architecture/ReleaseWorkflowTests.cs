@@ -329,37 +329,160 @@ public sealed class ReleaseWorkflowTests
     public void EveryPublishingJobResolvesItsVersionFromTheTag()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
-        List<ReleaseWorkflow> workflows = Discover(repoRoot);
 
-        Assert.AreNotEqual(0, workflows.Count,
-            "Discovered no release workflow, so this guard is measuring nothing.");
-
+        // ⚠ NOT Discover(): that finds workflows driving `publish.ps1 -App`, which is the two
+        // APP releases. The package release publishes eleven libraries and touches no app, so it
+        // would have sat outside this guard entirely — the one workflow whose output is
+        // permanently immutable.
         List<string> problems = [];
+        int covered = 0;
 
-        foreach (ReleaseWorkflow workflow in workflows)
+        foreach (string path in TagTriggeredWorkflows(repoRoot))
         {
-            // ⚠ Comment lines are dropped BEFORE counting, and that is not tidiness. Both
-            // workflows explain this mechanism in their headers, naming the resolver script —
-            // so counting raw occurrences let a header comment stand in for a missing step.
-            // Caught by canarying this test rather than by reading it.
-            string text = string.Join('\n', File
-                .ReadAllLines(Path.Combine(repoRoot, ".github", "workflows", workflow.FileName))
+            // ⚠ Comment lines are dropped BEFORE counting, and that is not tidiness. Every one
+            // of these workflows explains this mechanism in its header, naming the resolver
+            // script — so counting raw occurrences let a header comment stand in for a missing
+            // step. Caught by canarying this test rather than by reading it.
+            string text = string.Join('\n', File.ReadAllLines(path)
                 .Where(l => !l.TrimStart().StartsWith('#')));
 
-            int publishes = Regex.Matches(text, @"publish\.ps1\s+-App\s").Count;
+            int publishes = Regex.Matches(text, @"publish\.ps1\s+-App\s").Count
+                + Regex.Matches(text, @"Publish-Packages\.ps1").Count;
+
+            if (publishes == 0)
+            {
+                continue;
+            }
+
+            covered++;
             int resolves = Regex.Matches(text, @"Resolve-ReleaseVersion\.ps1").Count;
 
             if (resolves < publishes)
             {
                 problems.Add(
-                    $"{workflow.FileName} runs publish.ps1 {publishes} time(s) but resolves the "
+                    $"{Path.GetFileName(path)} publishes {publishes} time(s) but resolves the "
                     + $"version from the tag only {resolves} time(s). $GITHUB_ENV does not cross "
                     + "a job boundary, so the unresolved job stamps the CI run's calendar date "
                     + "instead of the tag's. Add a 'Resolve version from tag' step to it.");
             }
         }
 
+        Assert.AreNotEqual(0, covered,
+            "No tag-triggered workflow publishes anything, so this guard is measuring nothing.");
+
         Assert.AreEqual(0, problems.Count, string.Join("\n", problems));
+    }
+
+    /// <summary>
+    /// A workflow's <c>TAG_PREFIX</c> is the prefix its own trigger accepts.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>The two are used at opposite ends and nothing connects them.</b> The trigger decides
+    /// which tags reach the workflow; <c>TAG_PREFIX</c> is what
+    /// <c>Resolve-ReleaseVersion.ps1</c> strips off the front of one. Drift between them does not
+    /// produce a wrong version — the resolver refuses a tag that does not start with the prefix
+    /// it was given — but it turns every release of that app into a failed run, discovered at
+    /// release time. The agreement is cheap to assert and impossible to see by reading two ends
+    /// of one file.
+    /// </remarks>
+    [TestMethod]
+    public void EveryTagPrefixMatchesItsOwnWorkflowsTrigger()
+    {
+        string repoRoot = PublishAppTable.FindRepoRoot();
+
+        List<string> problems = [];
+        int checkedCount = 0;
+
+        foreach (string path in TagTriggeredWorkflows(repoRoot))
+        {
+            string[] lines = File.ReadAllLines(path);
+            string text = string.Join('\n', lines.Where(l => !l.TrimStart().StartsWith('#')));
+
+            Match prefix = Regex.Match(text, @"^\s*TAG_PREFIX:\s*(?<value>\S+)\s*$",
+                RegexOptions.Multiline);
+
+            if (!prefix.Success)
+            {
+                continue;
+            }
+
+            checkedCount++;
+            string declared = prefix.Groups["value"].Value;
+
+            // Every tag this workflow accepts must begin with the prefix it strips.
+            List<string> tags = TagsOf(lines);
+            foreach (string tag in tags)
+            {
+                if (!tag.StartsWith(declared, StringComparison.Ordinal))
+                {
+                    problems.Add(
+                        $"{Path.GetFileName(path)} declares TAG_PREFIX '{declared}' but triggers "
+                        + $"on '{tag}', which does not start with it. Resolve-ReleaseVersion.ps1 "
+                        + "refuses a tag that does not carry the prefix it was handed, so every "
+                        + "release through this workflow would fail — at release time.");
+                }
+            }
+        }
+
+        Assert.AreNotEqual(0, checkedCount,
+            "No workflow declares TAG_PREFIX, so this guard is measuring nothing.");
+
+        Assert.AreEqual(0, problems.Count, string.Join("\n", problems));
+    }
+
+    /// <summary>Every workflow file that triggers on tags.</summary>
+    private static IEnumerable<string> TagTriggeredWorkflows(string repoRoot)
+    {
+        string dir = Path.Combine(repoRoot, ".github", "workflows");
+        if (!Directory.Exists(dir))
+        {
+            yield break;
+        }
+
+        foreach (string path in Directory.GetFiles(dir, "*.yml").Order(StringComparer.Ordinal))
+        {
+            if (TagsOf(File.ReadAllLines(path)).Count > 0)
+            {
+                yield return path;
+            }
+        }
+    }
+
+    /// <summary>The entries under a workflow's <c>tags:</c> key.</summary>
+    /// <remarks>
+    /// Indentation-scoped rather than YAML-parsed, matching <see cref="Discover"/>: the list ends
+    /// at the first line that is not a list entry.
+    /// </remarks>
+    private static List<string> TagsOf(string[] lines)
+    {
+        List<string> tags = [];
+        bool inTags = false;
+
+        foreach (string line in lines)
+        {
+            if (Regex.IsMatch(line, @"^\s*tags:\s*$"))
+            {
+                inTags = true;
+                continue;
+            }
+
+            if (!inTags)
+            {
+                continue;
+            }
+
+            Match entry = TagEntryRegex.Match(line);
+            if (entry.Success)
+            {
+                tags.Add(entry.Groups["tag"].Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(line))
+            {
+                inTags = false;
+            }
+        }
+
+        return tags;
     }
 
     /// <summary>

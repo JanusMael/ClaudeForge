@@ -18,11 +18,11 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `2ba224e`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `fd3e90e`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **75 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **77 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,302 passed · 0 failed · 11 skipped**, Debug — two new `ReleaseWorkflowTests` on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
+| Suite | **4,303 passed · 0 failed · 11 skipped**, Debug — three new `ReleaseWorkflowTests` across the release batches, on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies resolving to those ids — **now all at `2026.3.914`**, the same three parts the built DLLs stamp (`2026.3.914.1303`). The `1.0.0` this cell reported for two weeks is gone; plan 00001 item 3 is done |
@@ -103,8 +103,16 @@ nothing left to preflight for.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2**, **3**, **4** and **5** are done. ▶ **Item 6 — the publish pipeline —
-is the next one, and it is now unblocked**: it needed a real version to push, and it has one.
+Items **1** (`23f7c4f`), **2**, **3**, **4**, **5** and **6** are done. ▶ **Item 7 —
+documentation — is what remains**, and most of it has been written as the items landed:
+`AGENTS.md` has the enforceable rows, `.github/WORKFLOWS.md` has the versioning section. What is
+still outstanding is `CLAUDE.md`'s package layer and reference modes, and `TRIMMING.md`, which
+still never mentions the second app.
+
+⛔ **Nothing has been published to the feed yet.** The pipeline exists and its preflight has been
+run against the live feed — which confirmed none of the eleven ids holds `2026.3.914` — but no
+`packages-v*` tag has been pushed. The first one is a decision, not a step: every version on that
+feed is permanent.
 
 [PR #1](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/pull/1) is **MERGED** and
 **`2026.3.914` is published to nuget.org**. The root `Directory.Build.targets` assigns
@@ -173,6 +181,55 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14, fifth batch — the package publish pipeline (plan 00001 item 6)
+
+A `packages-v2026.3.914` tag now packs the eleven and pushes them to GitHub Packages.
+
+| | |
+|---|---|
+| Tag | `packages-v*.*.*` — **neither app's**. The eleven serve both, so riding ClaudeForge's tag would leave OpenCodeForge unable to publish shared code and tie a library fix to a full app release. Also `workflow_dispatch`, taking a **tag** rather than a bare version, so a manual run passes the same validation |
+| Workflow | [`.github/workflows/release-packages.yml`](.github/workflows/release-packages.yml) — suite gate, then resolve, then publish |
+| Script | [`scripts/Publish-Packages.ps1`](scripts/Publish-Packages.ps1) — three gates, all before the first upload |
+| No GitHub Release | The artifacts are packages on a feed, not downloads. This repo's Releases page is how users of two apps find binaries; an entry with nothing to download for either belongs elsewhere. Easily reversed if you disagree |
+
+⛔ **The first version of gate 3 passed with the literal token `definitely-not-a-valid-token`, and
+finding that is the whole value of this batch.** Measured against the live feed:
+
+| Request | Result |
+|---|---|
+| bad token → `/<id>/index.json` | **404** — identical to an unpublished id |
+| no auth → `/<id>/index.json` | 401 |
+| bad token → `/index.json` (service index) | **200** — proves nothing |
+
+So "404 means absent" hands a clean preflight to anyone whose token is missing, expired or
+garbled. The credentials are now proved first against `api.github.com/rate_limit` — 401 for a dead
+token, 200 for any live one, PAT or `GITHUB_TOKEN` — and only then is a 404 read as absent.
+
+⚠ **One residual gap, covered by push ORDER rather than by the check.** A token with
+`write:packages` but not `read:packages` is live, passes the probe, and still 404s on every read.
+So the eleven go one at a time in a stable order and the run stops on the first failure: a re-run
+over a partly-published set collides at package 1 with the other ten untouched. `--skip-duplicate`
+is deliberately not passed.
+
+ⓘ **Gate 2 is the one that ties this batch to the last.** Each package's contained assembly must
+carry the package's own three-part stamp, so a release whose `BuildTimestamp` was not pinned from
+the tag is refused rather than published as a permanent, silent lie. Canaried: packing
+`2026.3.901` against today's assemblies is rejected.
+
+ⓘ **`ReleaseTagScheme` cannot mistake a package tag for an app release** — verified, not assumed.
+ClaudeForge uses `Unprefixed`, which strips at most a leading `v` then requires `Version.TryParse`;
+`packages-v2026.3.914` fails that.
+
+⚠ **Still open from item 5, and now the last thing between here and a first release:**
+`src/publish/publish.ps1` knows nothing about `artifacts/`. A stale local-feed package at the
+release version would outrank GitHub Packages in `nuget.config`'s source mapping, so a release cut
+on a machine that has run the canary could consume a local build.
+
+ⓘ Also corrected here: `nuget.config` credited the local feed to `scripts/pack-local-feed.ps1`,
+which does not exist — the same phantom script the `ValidateSharedPackageVersion` error named.
 
 ---
 
