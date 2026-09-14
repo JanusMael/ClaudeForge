@@ -18,20 +18,16 @@
         <NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Reaches ClaudeCodeClient.FromExistingWorkspace and the internal
-             PreservedFields / OpaqueInnerJson bags. -->
-        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude.Tests"/>
-
-        <!-- Same expiring grants AgentForge.Sdk carries, for the same reason: the GUI and
-             its tests still construct clients through the internal FromExistingWorkspace
-             overload to share one SettingsWorkspace with the legacy view-model state.
-             Remove alongside the AgentForge.Sdk grants when 4.3.7 retires the wrap path. -->
-        <InternalsVisibleTo Include="ClaudeForge"/>
-        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
-    </ItemGroup>
 </Project>

@@ -18,6 +18,14 @@
         </Description>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -52,17 +60,4 @@
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Mirrors the InternalsVisibleTo pattern used by Core / Sdk /
-             LayeredEditors.Avalonia. ClaudeForge.Tests is where the shell's
-             existing coverage lives; a slice's tests move only if keeping them
-             put would leave them unable to see what they assert. -->
-        <InternalsVisibleTo Include="ClaudeForge.Tests" />
-
-        <!-- The second app's tests need the same view, for the same reason: SearchViewModel's
-             synchronous ExecuteSearch is internal because the public surface is the debounced
-             SearchQuery property, and a unit test cannot drive a 200 ms debounce that pivots
-             through the UI dispatcher. Both apps' tests assert the same seam. -->
-        <InternalsVisibleTo Include="OpenCodeForge.Tests" />
-    </ItemGroup>
 </Project>

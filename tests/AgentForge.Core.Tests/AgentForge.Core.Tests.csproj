@@ -4,6 +4,14 @@
         <RootNamespace>Bennewitz.Ninja.AgentForge.Core.Tests</RootNamespace>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
     </ItemGroup>

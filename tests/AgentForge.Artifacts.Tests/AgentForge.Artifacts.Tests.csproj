@@ -4,6 +4,14 @@
         <RootNamespace>Bennewitz.Ninja.AgentForge.Artifacts.Tests</RootNamespace>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <!-- Only the library under test. AgentForge.Artifacts is framework-only and knows no
              product's paths, so a fake source is all these tests need — which is the point:

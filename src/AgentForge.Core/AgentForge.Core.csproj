@@ -18,6 +18,14 @@
         </Description>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
         <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
@@ -41,10 +49,4 @@
         <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Test project needs access to the internal BackupJsonContext so it can exercise
-             the exact same serialisation path that production uses under trimming. -->
-        <InternalsVisibleTo Include="AgentForge.Core.Tests"/>
-        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
-    </ItemGroup>
 </Project>

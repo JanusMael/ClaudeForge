@@ -265,9 +265,14 @@ public partial class EssentialsCardViewModel : ObservableObject
     /// <remarks>
     /// ⚠ Public, not internal, since the card moved to the shell: the orchestrator that narrows
     /// an inter-related dropdown is each product's own <c>BuildCards</c> host, which is a separate
-    /// assembly. Same for <see cref="IsLoading"/>. Widening these beat adding an
-    /// <c>InternalsVisibleTo</c> for the apps — an app is an ordinary consumer of the shell, and a
-    /// friend grant would have quietly exposed every other internal too.
+    /// assembly. Same for <see cref="IsLoading"/>.
+    ///
+    /// ⓘ This used to add "widening these beat adding an <c>InternalsVisibleTo</c> for the apps,
+    /// which would have quietly exposed every other internal too". That argument has been
+    /// overtaken by <c>AssemblyInfo.InternalsVisibleTo.cs</c>, the solution-wide friend grant
+    /// every assembly now links — the exposure it warned about is the deliberate design. These
+    /// two stay public regardless: public is the honest shape for something another assembly is
+    /// expected to call, and it says so without the caller needing to know about a grant file.
     /// </remarks>
     public void SetFilteredOptions(IEnumerable<string> options)
     {

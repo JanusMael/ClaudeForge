@@ -25,6 +25,14 @@
         </Description>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <!-- Sdk depends on Core for the existing settings/backup/profile engines.
              The reverse must NOT be true — Core remains independent of Sdk so it
@@ -42,71 +50,4 @@
         <ProjectReference Include="..\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Test project needs the in-progress reflection-based surface checks
-             (e.g. asserting every async method requires a non-defaulted CT). -->
-        <InternalsVisibleTo Include="AgentForge.Sdk.Tests"/>
-
-        <!-- The Claude SDK's tests assert round-trips by reading the raw stored node
-             back via the internal GetScopeValue, and inspect the internal
-             PreservedFields bags. Same test-seam grant as above, one project over. -->
-        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude.Tests"/>
-
-        <!-- The Claude-domain half of the SDK. Its accessors project the workspace
-             through GetEffectiveNode / GetScopeValue and report mutations through
-             RaiseChangedFromAccessor, all of which are internal deliberately: they
-             traffic in JsonNode, which the public SDK surface keeps out (see
-             HookEvent.PreservedFields for the same reasoning). Making them public
-             to serve one consumer would be a worse trade than this grant.
-
-             NOTE: this is an assembly attribute, not a reference — AgentForge.Sdk
-             still cannot see anything in ClaudeForge.Sdk.Claude, and
-             AssemblyLayeringTests still holds. -->
-        <InternalsVisibleTo Include="ClaudeForge.Sdk.Claude"/>
-
-        <!-- The OpenCode-domain half, and the same grant for a narrower reason: every
-             concrete client has to return an IBackupClient from CreateBackupClient, and the
-             only implementation — BackupClient — is internal. Making it public to serve the
-             second product would widen the SDK's surface permanently to save one line here.
-
-             NOTE: an assembly attribute, not a reference. AgentForge.Sdk still cannot see
-             anything in OpenCode.Sdk, and AssemblyLayeringTests still holds. -->
-        <InternalsVisibleTo Include="OpenCode.Sdk"/>
-
-        <!-- OpenCodeForge (the second GUI) reaches WorkspaceForGui to hand the loaded
-             workspace to the shell's settings page, exactly as the first GUI does. Same
-             grant, same reason, and it retires on the same day: WorkspaceForGui is internal
-             because it exposes a mutable SettingsWorkspace, and the public surface that
-             replaces it has not been designed yet. -->
-        <InternalsVisibleTo Include="OpenCodeForge"/>
-
-        <!-- ClaudeForge (the GUI) is granted internals visibility for the duration
-             of the SDK migration. The GUI uses the
-             internal `FromExistingWorkspace` constructor to wrap a pre-loaded
-             SettingsWorkspace, sharing state with the SDK during the editor-VM
-             migration. After 4.3.7 fully removes the legacy workspace fields
-             from MainWindowViewModel this grant should be removed and the GUI
-             consume only the public SDK surface. -->
-        <InternalsVisibleTo Include="ClaudeForge"/>
-
-        <!-- ClaudeForge.Tests covers VMs that take AgentConfigClientCore in
-             their ctor (EffectiveSettingsViewModel, EnvironmentEditorViewModel
-             post-4.3.7-step-11). Tests construct clients via the internal
-             `FromExistingWorkspace` overload so they can wrap an in-memory
-             workspace without doing real disk I/O. Same expiration as the
-             ClaudeForge grant — remove once 4.3.7 fully retires the wrap path. -->
-        <!-- The neutral shell, for the save-confirmation dialog only. Its builder
-             reads SnapshotDirtyDocuments() / DirtyDocumentSnapshot, which are internal
-             for the same reason as the accessors above: they traffic in JsonNode, which
-             the public SDK surface deliberately keeps out. This grant is the smaller
-             move; promoting a JsonNode-bearing snapshot to the public surface to serve
-             one dialog would be the worse trade, and it is the same call already made
-             for ClaudeForge.Sdk.Claude.
-
-             NOTE: an assembly attribute, not a reference. AgentForge.Sdk still cannot
-             see anything in the shell, and AssemblyLayeringTests still holds. -->
-        <InternalsVisibleTo Include="AgentForge.Avalonia.Shell"/>
-
-        <InternalsVisibleTo Include="ClaudeForge.Tests"/>
-    </ItemGroup>
 </Project>
