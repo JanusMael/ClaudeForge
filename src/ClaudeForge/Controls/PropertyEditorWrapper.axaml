@@ -112,7 +112,7 @@
                     <TextBlock IsVisible="{Binding HasDangerSeverity}"
                                Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                               FontSize="11"
+                               FontSize="14"
                                VerticalAlignment="Center"
                                AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                ToolTip.Tip="{Binding DangerAccessibleText}" />
@@ -264,7 +264,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                               FontSize="11"
+                               FontSize="14"
                                VerticalAlignment="Top" />
                     <TextBlock Text="{Binding Danger.Explanation}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"

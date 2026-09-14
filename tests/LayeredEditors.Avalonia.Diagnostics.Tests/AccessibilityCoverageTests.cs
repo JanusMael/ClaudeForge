@@ -219,12 +219,42 @@ public sealed class AccessibilityCoverageTests
                    or TimePicker
                    or CalendarDatePicker
                    or SelectableTextBlock
-               || (control is TextBlock text && IsHandCursor(text.Cursor));
+               || (control is TextBlock text && IsHandCursor(text.Cursor) && !IsInsideButton(text));
     }
 
     /// <summary>
-    /// A hand cursor on a TextBlock is how the live windows mark a link-styled TextBlock that
-    /// acts as a button. <see cref="Cursor"/> exposes no type accessor; its
+    /// A TextBlock inside a Button takes its name from the Button and is never separately
+    /// focusable, so naming it as well would only make a screen reader say it twice.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ This exists because the hand-cursor rule below outlived the design it described. The
+    /// live windows' header links WERE hand-cursor TextBlocks with PointerPressed handlers —
+    /// which made them mouse-only, since a TextBlock cannot take focus. They are Buttons now,
+    /// and Avalonia's Cursor is an INHERITED property, so the Button's hand cursor reaches its
+    /// content TextBlock and trips the rule on a control that is no longer a link at all.
+    /// <para>
+    /// The hand-cursor clause is kept rather than deleted: it still catches the original
+    /// anti-pattern if someone reintroduces it.
+    /// </para>
+    /// </remarks>
+    private static bool IsInsideButton(Control control)
+    {
+        for (ILogical? parent = control.GetLogicalParent();
+             parent is not null;
+             parent = parent.GetLogicalParent())
+        {
+            if (parent is Button)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A hand cursor on a TextBlock is how the live windows used to mark a link-styled TextBlock
+    /// that acts as a button. <see cref="Cursor"/> exposes no type accessor; its
     /// <see cref="Cursor.ToString"/> is the <see cref="StandardCursorType"/> name.
     /// </summary>
     private static bool IsHandCursor(Cursor? cursor)

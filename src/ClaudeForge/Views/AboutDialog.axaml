@@ -149,20 +149,30 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- Vertical separator -->
-            <Border Grid.Column="1"
-                    Background="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                    Width="1"
-                    Margin="14,0" />
+            <!--
+                No vertical separator here, deliberately.
+
+                A 1px Border in this column stretched to the GRID's height, which is set by the
+                taller column - the left one carries icon, title, description, version, copyright
+                and two buttons, roughly twice the right. So the rule ran ~150px past the last
+                right-hand button into empty space and read as a rendering artifact. Reported as
+                "stray vertical line on the About dialog" 2026-09-14.
+
+                The column's own 14px gutter already separates the two halves. Constraining the
+                rule's height to the shorter column was the alternative and was rejected: it
+                couples the two columns' layout to buy back a divider nobody asked for.
+            -->
 
             <!--
                 Right: resources panel.
 
-                Empty for now — a single placeholder label keeps the visual
-                balance of the two-column body until the first hyperlink
-                lands. Append future <Button Classes="link" .../> rows here
-                as they are added; the StackPanel will grow vertically and
-                SizeToContent="Height" on the Window will absorb the change.
+                Append future <Button Classes="link" .../> rows here as they
+                are added; the StackPanel grows vertically and
+                SizeToContent="Height" on the Window absorbs the change.
+
+                ⓘ This used to say the panel was "empty for now" with a single
+                placeholder label. It has carried real links — GitHub Repository
+                and Report an Issue — for some time; the comment outlived them.
             -->
             <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Top">
                 <TextBlock Text="{x:Static loc:Strings.HeadingAboutLinks}"

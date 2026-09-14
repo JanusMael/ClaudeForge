@@ -175,8 +175,8 @@
                         with a null variant resolves to NOTHING and the caller takes its fallback
                         hex, which is invisible and is the exact problem this token removes.
                     -->
-                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#A8071A" />
-                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#874400" />
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#CE2029" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#D97706" />
                     <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
                     <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
                     <!-- Save-dialog change-kind pills. Same value in both variants ON

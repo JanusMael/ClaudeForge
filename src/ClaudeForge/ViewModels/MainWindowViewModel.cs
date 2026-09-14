@@ -76,6 +76,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private readonly SchemaSnapshotService _snapshotService = new();
 
     private ConfigFileWatcher? _watcher;
+
+    // Path -> the descriptor it was discovered as, so a watcher hit can name its SCOPE and not
+    // just a path. Rebuilt alongside the watcher. Case-insensitive because Windows paths are.
+    private readonly Dictionary<string, DiscoveredFile> _watchedFiles =
+        new(StringComparer.OrdinalIgnoreCase);
     // legacy _workspace / _desktopWorkspace fields
     // retired. The SDK clients (ClaudeCodeSdk / ClaudeDesktopSdk) are the
     // only state holders. NavigationTreeBuilder.BuildGroups derives the
@@ -4867,10 +4872,55 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _watcher?.Dispose();
         _watcher = new ConfigFileWatcher();
         _watcher.FileChanged += OnFileChangedExternally;
-        foreach (DiscoveredFile f in files.Where(f => f.Exists))
+        _watchedFiles.Clear();
+
+        int watched = 0;
+        foreach (DiscoveredFile f in files)
         {
-            _watcher.Watch(f.FilePath);
+            // ⛔ THIS USED TO FILTER ON f.Exists, AND THAT LOST THREE OF SIX FILES.
+            // ConfigFileWatcher.Watch needs only the containing DIRECTORY; it registers a
+            // FileSystemWatcher(dir, name) and already raises Created when the file appears. So
+            // filtering on the file existing was never necessary, and it meant a config created
+            // while the app was running — settings.local.json, .mcp.json — was invisible until
+            // some unrelated change forced a re-arm. The symptom is "sometimes it notices my new
+            // file, sometimes it never does", which is the worst kind of bug to report.
+            //
+            // Surfaced by the event log added the same day: every re-arm printed
+            // "armed for 3 of 6 discovered file(s)" and the three names next to it.
+            string? directory = Path.GetDirectoryName(f.FilePath);
+            if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
+            {
+                _watcher.Watch(f.FilePath);
+                _watchedFiles[f.FilePath] = f;
+                watched++;
+                EnqueueWatcherEvent(
+                    f.FilePath,
+                    f.Exists ? "watching" : "watching (file does not exist yet)",
+                    f);
+            }
+            else
+            {
+                // The only remaining reason to skip: Watch would no-op anyway.
+                EnqueueWatcherEvent(f.FilePath, "NOT watched, directory does not exist", f);
+            }
         }
+
+        EnqueueWatcherEvent(
+            "(watcher setup)",
+            $"armed for {watched} of {files.Count} discovered file(s)");
+    }
+
+    /// <summary>Scope and identity of a discovered file, for the event log.</summary>
+    private static string Describe(DiscoveredFile? f)
+    {
+        if (f is null)
+        {
+            return "scope=unknown";
+        }
+
+        string profile = f.ProfileName is null ? string.Empty : $", profile={f.ProfileName}";
+        string readOnly = f.IsReadOnly ? ", read-only" : string.Empty;
+        return $"scope={f.Scope}, type={f.FileType}{profile}{readOnly}";
     }
 
     private void OnFileChangedExternally(object? sender, string filePath)
@@ -4930,10 +4980,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// branch of <see cref="OnFileChangedExternally"/> so the user sees EVERY
     /// debounced event, not just the ones that trigger a reload.
     /// </summary>
-    private static void EnqueueWatcherEvent(string filePath, string disposition)
+    private void EnqueueWatcherEvent(string filePath, string disposition, DiscoveredFile? known = null)
     {
+        DiscoveredFile? descriptor = known;
+        if (descriptor is null)
+        {
+            _watchedFiles.TryGetValue(filePath, out descriptor);
+        }
+
         AvaloniaDiagnostics.EnqueueEvent(
-            $"{DateTime.Now:HH:mm:ss.fff}  {filePath}  — {disposition}");
+            $"{DateTime.Now:HH:mm:ss.fff}  [{Describe(descriptor)}]  {filePath}  — {disposition}");
     }
 
     /// <summary>
