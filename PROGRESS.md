@@ -182,6 +182,27 @@ been pointing at a script that does not exist.
 | Measured | Eleven `.nupkg` at `2026.3.914`, every inter-package dependency pinned to it, against DLLs stamped `2026.3.914.1303`. Read out of the nuspecs and out of `FileVersionInfo`, not out of MSBuild |
 | Guard | `PackageVersionLockstepTests` — three tests. Canaried red twice before being trusted: the assignment swapped to `$(Version)`, and a stray `JsonC 9.9.9` packed into the local feed |
 
+⭐ **The packages' INTERNAL versioning was already AutoVersioning's, and now it is pinned.** Read
+out of the DLLs inside the eleven `.nupkg`: `AssemblyVersion` *and* `FileVersion` are both
+`2026.3.914.1303` — identity included, which is the one a consumer binds to. Only the NuGet half
+was ever missing. ⚠ **This assertion could not be canaried red**, and the two failed attempts are
+the finding: `-p:AssemblyVersion=3.3.3.0` is ignored outright because the generator writes the
+attribute, and `GenerateAutoVersionedAssemblyInfo=false` fails the build with `BAUTOVERSIONING00`
+rather than falling back to the SDK's assembly info. The skew is unreachable from MSBuild today, so
+the guard's subject is a future change to that package. The comparison itself was canaried against
+the third-party assemblies in the same output directory — `HarfBuzzSharp` carries identity `1.0.0`
+against file version `8.3.1`, and it separates them correctly.
+
+ⓘ **One loose end, not a defect:** `$(Version)` is still `1.0.0`. It no longer reaches the package
+(the assignment overrides it) and never reached the assemblies (the generator wins), but anything
+that reads it — a future zip name, a workflow, a publish step — would get `1.0.0`. Worth knowing
+before item 6 names an artifact after it.
+
+ⓘ **`InformationalVersion` on all eleven is the literal string `Built with ♥`**, which is
+AutoVersioning's own choice. That is the attribute crash reports and `--version`-style diagnostics
+usually read, so a consumer of these packages cannot recover a version from it. A question for that
+package's repo, not this one.
+
 ⛔ **The error text on `ValidateSharedPackageVersion` was wrong in two ways at once**, and it is the
 one message whose entire job is to rescue someone who has just hit a confusing NuGet failure. It
 named `scripts/pack-local-feed.ps1`, which **does not exist** — the real one is

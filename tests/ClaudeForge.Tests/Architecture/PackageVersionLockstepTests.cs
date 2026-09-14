@@ -85,12 +85,35 @@ public sealed class PackageVersionLockstepTests
     }
 
     /// <summary>
-    /// Every packable assembly carries the same three-part stamp, read from the DLLs themselves.
+    /// Every packable assembly carries the same three-part stamp, read from the DLLs themselves —
+    /// in its <b>identity</b> as much as in its file version.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// ⭐ <b>AssemblyVersion is asserted alongside FileVersion because it is the one a CONSUMER of
+    /// these packages resolves against.</b> A library whose identity stays <c>1.0.0.0</c> while its
+    /// package version moves is indistinguishable from every earlier build at load time, and a
+    /// diagnostic that reports "which version is running" reports the wrong thing. Both come from
+    /// AutoVersioning today; nothing but this says they have to.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The identity assertion could NOT be canaried red on this repo, and that is worth
+    /// knowing rather than glossing.</b> Two measured attempts: building a packable project with
+    /// <c>-p:AssemblyVersion=3.3.3.0</c> produces the AutoVersioning stamp anyway — the generator
+    /// writes the attribute and a hand-set property is ignored outright — and switching
+    /// <c>GenerateAutoVersionedAssemblyInfo</c> off fails the build with
+    /// <c>BAUTOVERSIONING00</c> rather than falling back to the SDK's own assembly info. So the
+    /// skew is currently unreachable from MSBuild, and this guard's subject is a future change to
+    /// that package, or its replacement, rather than a mistake someone can make today. What WAS
+    /// canaried is the comparison itself: run against the third-party assemblies sitting in the
+    /// same output directory it separates them correctly — <c>HarfBuzzSharp</c> alone carries
+    /// identity <c>1.0.0</c> against file version <c>8.3.1</c>.
+    /// </para>
+    /// <para>
     /// ⓘ The fourth part is minute-resolution and deliberately not compared: two assemblies built
-    /// either side of a minute boundary differ there, which is a property of the stamp rather than
-    /// a defect. The first three parts are what becomes the package version.
+    /// by separate invocations either side of a minute differ there, which is a property of the
+    /// stamp rather than a defect. The first three parts are what becomes the package version.
+    /// </para>
     /// </remarks>
     [TestMethod]
     public void EveryPackableAssemblyCarriesTheSameThreePartStamp()
@@ -103,6 +126,7 @@ public sealed class PackageVersionLockstepTests
             + "PackageMetadataTests explains what <IsPackable> is doing here.");
 
         Dictionary<string, string> stamps = [];
+        List<string> identityMismatches = [];
         List<string> missing = [];
 
         foreach (string name in packable)
@@ -115,7 +139,16 @@ public sealed class PackageVersionLockstepTests
                 continue;
             }
 
-            stamps[name] = ThreePartStamp(FileVersionInfo.GetVersionInfo(dll).FileVersion);
+            string fileStamp = ThreePartStamp(FileVersionInfo.GetVersionInfo(dll).FileVersion);
+            string identityStamp = ThreePartStamp(
+                System.Reflection.AssemblyName.GetAssemblyName(dll).Version?.ToString());
+
+            stamps[name] = fileStamp;
+
+            if (!string.Equals(fileStamp, identityStamp, StringComparison.Ordinal))
+            {
+                identityMismatches.Add($"{name}: AssemblyVersion {identityStamp}, FileVersion {fileStamp}");
+            }
         }
 
         Assert.AreEqual(0, missing.Count,
@@ -123,6 +156,14 @@ public sealed class PackageVersionLockstepTests
             + "never read and this guard covers less than it claims. They arrive transitively "
             + "through the app reference; if one has been dropped from the graph, say so here "
             + "rather than letting the scan quietly shrink. Missing: " + string.Join(", ", missing));
+
+        Assert.AreEqual(0, identityMismatches.Count,
+            "These packable assemblies' IDENTITY does not match their file version, so the package "
+            + "version would name something a consumer never binds to: the assembly loads under a "
+            + "different version than the package it came from, and every build looks like the "
+            + "same assembly. Both are AutoVersioning's to write — check that "
+            + "GenerateAutoVersionedAssemblyInfo is still on and that nothing is setting "
+            + "<AssemblyVersion> by hand. Offenders: " + string.Join("; ", identityMismatches));
 
         string[] distinct = stamps.Values.Distinct(StringComparer.Ordinal).ToArray();
 
