@@ -7,7 +7,7 @@ verified items are listed once at the end and should not be repeated. Findings g
 | | |
 |---|---|
 | Build under test | `src/ClaudeForge/bin/Release/net10.0/win-x64/publish/ClaudeForge.exe` |
-| Currently running | `artifacts/a11y-untrimmed/ClaudeForge.exe` (pid 56284) — an **untrimmed** build made for the F5 investigation. ⚠ Not the shipping artifact; relaunch the one above for anything else |
+| Currently running | ⓘ **Nothing, by default.** `artifacts/a11y-untrimmed/` holds an untrimmed build left over from the `F5` investigation; it is **no longer needed for the accessibility pass**, because `F5` is refuted and the shipping artifact exposes a full tree. Use the build under test |
 | Logs | `logs/app-*.txt` and `logs/events-*.txt` **beside each exe** |
 
 ⚠ **Use a scratch project for anything that writes.** E1–E3 modify config; a throwaway directory
@@ -108,8 +108,13 @@ The UIA audit covered the main window only; it walks whatever top-level windows 
 **Do:** on the running untrimmed build, press **F12** and **Shift+F12** so both diagnostics windows
 are open, then say so — `scripts/Audit-Accessibility.ps1` does the rest.
 
-⚠ Must be run against an **untrimmed** build. The shipping one exposes no accessibility tree at all
-— see `F5`.
+✅ **Run it against the SHIPPING build.** This line previously said an untrimmed build was required
+because the shipping one exposed no accessibility tree. That was `F5`, and `F5` is refuted — the
+shipping, trimmed, single-file artifact walks **168** UIA descendants. Auditing the untrimmed build
+measures something users never run.
+
+ⓘ The script now **settles before it walks**, so it may be started immediately after launching the
+app; it prints the count it settled on and how long that took. Do not pass `-NoSettle`.
 
 ---
 

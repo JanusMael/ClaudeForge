@@ -217,7 +217,97 @@ colour has to move as well.
 
 ---
 
-## ⛔⛔ F5 · The PUBLISHED app exposes NO accessibility tree
+## ✅ F5 · REFUTED — the published app's accessibility tree was never missing
+
+> ⓘ **This entry was a release blocker and is no longer one.** It is kept in full, with the
+> original reasoning intact below, because the way it went wrong is more useful than the finding
+> ever was: every step of the diagnosis was sound except the measurement it rested on.
+
+**Original claim.** The published build exposed **1** UIA descendant — the OS-supplied `TitleBar` —
+against Debug's 173, root-caused to `TrimMode=link`, which Avalonia does not support.
+
+**It does not reproduce.** Re-measured 2026-09-14 on the same shipped configuration:
+
+| Build | UIA descendants of the main window |
+|---|---|
+| Release published, trimmed, single-file, self-contained — `TrimMode=link` | **168** |
+| The same, `TrimMode=partial` | **168** |
+| Original F5 reading | 1 |
+
+⭐ **The build was proven identical, not merely similar.** ILLink ran, and
+`obj/Release/net10.0/win-x64/linked/Avalonia.Win32.Automation.dll` is **92,672 bytes** — the exact
+figure the evidence table below quotes. Same bytes, opposite conclusion, so the divergence is in
+the **instrument**, not the artifact.
+
+⭐ **`scripts/Audit-Accessibility.ps1` agrees and is not vacuous**: 168 elements visited, 37
+findings, including the 26 unnamed `PART_ExpandCollapseChevron` buttons that F6 records. F6 was
+measured off the very tree F5 says is absent.
+
+### Why it read 1
+
+The tree **builds incrementally**, and F5 sampled it once. Cold launch, extraction cache cleared,
+polling every 120 ms:
+
+| t | descendants |
+|---|---|
+| 5.29 s | **72** |
+| 7.13 s | **COMException** mid-construction |
+| 8.03 s | **168**, stable thereafter |
+
+A sample before ~8 s under-reports; early enough, only the OS `TitleBar` exists, which counts as 1.
+
+⚠ **This also explains the "one variable" control that made F5 look airtight.**
+`PublishTrimmed=false` → 227 against `true` → 1 holds trimming as the only difference, but a
+trimmed **single-file compressed** build self-extracts on first run and reaches a ready tree
+*seconds* later than an untrimmed multi-file one. One fixed delay, two different readiness times —
+so the control varied startup latency, not just trimming.
+
+⛔ **The proposed cure could not have worked either, and that was checkable without running
+anything.** `Microsoft.NET.ILLink.targets:45` defaults `BuiltInComInteropSupport` to false under
+`Condition="'$(PublishTrimmed)' == 'true'"`. **`TrimMode` is not in that condition**, so no trim
+mode restores built-in COM interop. The upstream COM explanation was load-bearing for the fix and
+does not survive reading the targets file.
+
+### What was done about it
+
+- ✅ **`scripts/Audit-Accessibility.ps1` now settles before it walks** — it polls until the count is
+  unchanged across consecutive samples, treats a mid-construction `COMException` as "not ready",
+  and treats a count of 1 or 0 as not-ready rather than as an answer. If it never settles it says
+  so and labels its output a floor. `-NoSettle` opts out.
+- ✅ **Both apps moved to `TrimMode=partial` anyway** — see below. Not to fix this, since there was
+  nothing to fix, but because `link` is genuinely unsupported.
+
+### ⚠ What is NOT refuted: `link` really is unsupported
+
+[AvaloniaUI/Avalonia#16697](https://github.com/AvaloniaUI/Avalonia/issues/16697) — *"COM interop is
+not supported with `TrimMode=link`"* — reports access-violation crashes for users running Magnifier
+or a screen reader. Nothing measured here contradicts that; this repo simply was not exhibiting it.
+Both apps now set `partial`, and the measured cost is **~76 KB** on win-x64 (27,647,430 →
+27,725,447 bytes), not the meaningful growth this document assumed.
+
+⭐ **The move needed one line, not the suppression campaign proposed below.** Under `partial` a
+non-trimmable assembly is copied whole, so `Avalonia.DesignerSupport`'s unreachable remote-designer
+entry point stops being dead code and its `IL2026` / `IL2072` / `IL2075` escalate to
+`NETSDK1144`. `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` restores the `link`
+treatment for that assembly alone — the dead code is removed again rather than the warnings
+silenced over code that would still ship. **Six-RID two-app matrix: 12/12 green, zero IL
+diagnostics.**
+
+### ⛔ The lesson, which is the part worth keeping
+
+**A measurement tool whose default can silently under-report will eventually manufacture a defect.**
+Everything downstream of the bad number was competent: the cause was isolated with a control, the
+mechanism was researched against upstream, two candidate fixes were tried and rejected with
+evidence, and the whole thing was written up. None of that could rescue a first number taken before
+the thing being measured existed.
+
+Two guards against the repeat, both now in place: the tool settles by default, and a count of 1 is
+treated as "not ready" rather than reported as fact.
+
+---
+
+<details>
+<summary>The original F5 investigation, kept verbatim for its evidence trail</summary>
 
 **Found by automating what could not be tested by hand.** A screen-reader pass was not available,
 so the running app was driven through UI Automation — the same API a screen reader uses.
@@ -227,74 +317,37 @@ so the running app was driven through UI Automation — the same API a screen re
 | **Debug** (untrimmed) | **173** |
 | **Release published** (trimmed, single-file, self-contained) | **1** |
 
-That one element is the **OS-provided `TitleBar`**. The entire Avalonia content tree — every
-control, every `AutomationProperties.Name` in this repository — is absent from the shipped artifact.
-
-⛔ **Every accessibility fix in the recent batches is invisible to a screen reader in the build
-users actually run.** The names are in the markup and they are correct; the platform never sees
-them.
+That one element is the **OS-provided `TitleBar`**.
 
 ### Why nothing caught it
 
 ⚠ **The existing guards assert the MARKUP, and the markup is fine.** `AutomationProperties.Name`
 is present on every interactive control — that is checked repo-wide, and it passes. What none of
 them can check is what the platform ends up *exposing*, because the headless test app is stripped
-of the App's resource dictionaries and cannot instantiate views. It is the same blind spot that let
-the Backup page sit blank for a whole phase: markup correct, rendered result never observed.
+of the App's resource dictionaries and cannot instantiate views.
 
 ⓘ **Keyboard reach is unaffected** — focus is not UIA, which is why `A6` genuinely passes on the
-published build. Accessible *naming* is what is gone, not *operability*.
+published build.
 
-### ✅ Cause isolated: it is TRIMMING
-
-Three things differed between Debug and the shipped build — configuration, self-contained and
-trimming — so the first comparison did not establish which. A Release publish with
-`-p:PublishTrimmed=false` and **everything else held constant** settles it:
+### Cause isolated: it is TRIMMING
 
 | Release publish, self-contained, single-file | UIA descendants |
 |---|---|
 | `PublishTrimmed=true` — what ships | **1** |
 | `PublishTrimmed=false` | **227** |
 
-One variable, and the whole tree comes back.
+⚠ **No trim warning was emitted.**
 
-⚠ **No trim warning was emitted.** `TrimMode=link` removed it silently, which is why a clean 12/12
-six-RID publish matrix says nothing about this.
+### Mechanism: `TrimMode=link` is unsupported by Avalonia
 
-### ✅ Mechanism established: `TrimMode=link` is UNSUPPORTED by Avalonia
+Both apps set it. Upstream states COM interop is not supported with `TrimMode=link`, and describes
+runtime crashes when UI automation is invoked — access violations calling
+`UiaReturnRawElementProvider`, with users running magnifiers or screen readers crashing on startup.
 
-Both apps set it — `src/ClaudeForge/ClaudeForge.csproj:105` and
-`src/OpenCodeForge/OpenCodeForge.csproj:102`.
-
-Upstream, [AvaloniaUI/Avalonia#16697](https://github.com/AvaloniaUI/Avalonia/issues/16697) —
-*"TrimMode=link, while not supported, still builds successfully, but crashes inconsistently"* —
-states it plainly:
-
-> **COM interop is not supported with `TrimMode=link`.**
-
-and describes the failure mode this repository has been shipping into:
-
-> Applications build successfully with minimal warnings, creating a false sense of security …
-> Runtime crashes occur specifically when UI automation is invoked … access violations calling
-> `UiaReturnRawElementProvider` … Users with accessibility tools enabled (magnifier, screen
-> readers) experience immediate crashes on startup.
-
-The reporter's own complaint is the part that matters most here:
+The reporter's own complaint is the part that aged best:
 
 > If `TrimMode=link` is enabled, some part of the build process should inform the developer of the
 > peril they will face in a more obvious way, ideally failing the build.
-
-It does not. That is precisely why a clean 12/12 six-RID matrix and a zero-warning publish said
-nothing.
-
-⛔⛔ **This is potentially a CRASH, not only a missing tree.** What was observed here is silent
-degradation — the app kept running with a TitleBar-only provider — most likely because Avalonia 12
-carries the MicroCom migration from
-[#8006](https://github.com/AvaloniaUI/Avalonia/issues/8006) (closed via PR #16543) that made the
-provider fail gracefully. **The upstream reports are of access violations.** Anyone running
-Magnifier is in the population those reports describe, so this should not be triaged as an
-accessibility-only defect until someone has established which behaviour Avalonia 12.1.2 actually
-exhibits under load.
 
 ### The evidence, in order
 
@@ -308,29 +361,11 @@ exhibits under load.
 | No embedded `ILLink.Substitutions.xml` in either assembly | Avalonia is not deliberately stubbing it out |
 | No trim warning, no runtime log entry | silent by construction |
 
-### The fix, and the work it actually needs
-
-Upstream recommends **`TrimMode=copyused`** — spelled **`partial`** in modern .NET, where
-`copyused`→`partial` and `link`→`full` were renamed.
-
-⚠ **Measured here: switching to `partial` does not just work.** The publish fails, because
-`Avalonia.DesignerSupport` — remote designer / preview code, full of `Assembly.LoadFrom` and
-reflection — is then analysed and its `IL2026`/`IL2072`/`IL2075` diagnostics escalate to errors:
-
-```
-ILLink : Trim analysis error IL2026: Avalonia.DesignerSupport.Remote.RemoteDesignerEntryPoint…
-error NETSDK1144: Optimizing assemblies for size failed.
-```
-
-So the real task is: move to `partial`, then either suppress that assembly's diagnostics through
-the `_ILLinkSuppressions` mechanism `TRIMMING.md` documents, or keep designer support out of the
-publish altogether. ⓘ Size will grow — that is the trade `link` was buying, and it was buying it
-against an unsupported configuration.
+ⓘ **The fourth row is the one that settles the refutation.** 92,672 bytes is what a correct,
+fully-working build also produces — so the row proved the assembly was trimmed, which was true, and
+was read as evidence that its COM surface had been removed, which was not.
 
 ### ⛔ Rejected: `BuiltInComInteropSupport=true`
-
-**Hypothesis tried and rejected:** *"Avalonia's Windows UIA provider is COM-based, and trimming
-disables built-in COM interop; re-enable it with `BuiltInComInteropSupport=true`."*
 
 Publishing with that property **fails the build outright**:
 
@@ -339,12 +374,11 @@ IL2026: Built-in COM support is not trim compatible.  https://aka.ms/dotnet-illi
 NETSDK1144: Optimizing assemblies for size failed.
 ```
 
-⭐ **Recorded because it is the first idea anyone will have, and it is a dead end by design.** The
-two are mutually exclusive in .NET — which is the same wall `TrimMode=link` runs into from the other
-side, and is why the answer is the trim mode rather than a COM switch.
+⭐ Recorded because it is the first idea anyone will have, and it is a dead end by design. ⓘ Still
+true, and still worth keeping — but see above: the property it controls is gated on
+`PublishTrimmed`, so this was never the lever.
 
-ⓘ The reasoning attached to this hypothesis was also wrong in its second half: it supposed the
-automation *assembly* or its types had been removed. They had not — see the evidence table above.
+</details>
 
 ---
 

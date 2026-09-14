@@ -20,6 +20,11 @@
 #   pwsh -NoProfile -File scripts/Audit-Accessibility.ps1 -ProcessName ClaudeForge
 #   pwsh -NoProfile -File scripts/Audit-Accessibility.ps1 -ProcessName OpenCodeForge -MaxDepth 40
 #
+# ⛔ The script WAITS for the automation tree to stop growing before walking it, because
+# a count sampled during startup is not a measurement — see Wait-ForStableTree, and the
+# F5 entry in docs/RETEST-FINDINGS.md, which is a release blocker that a single early
+# sample invented. -NoSettle opts out; nothing else should.
+#
 # ⓘ Open the windows you want covered BEFORE running: every top-level window of the process is
 # audited, so press F12 and Shift+F12 first to include the diagnostics windows.
 
@@ -27,7 +32,10 @@
 param(
     [string] $ProcessName = 'ClaudeForge',
     [int] $MaxDepth = 30,
-    [int] $MaxElements = 6000
+    [int] $MaxElements = 6000,
+    [int] $SettleTimeoutSeconds = 60,
+    [int] $SettleSamples = 3,
+    [switch] $NoSettle
 )
 
 Set-StrictMode -Version Latest
@@ -93,6 +101,94 @@ function Get-TopLevelWindows {
     return $windows
 }
 
+<#
+.SYNOPSIS
+    Block until the UI Automation tree stops growing, or say plainly that it never did.
+
+.DESCRIPTION
+    ⛔ A SINGLE SNAPSHOT TAKEN DURING STARTUP IS NOT A MEASUREMENT.  Measured on the
+    shipped ClaudeForge win-x64 build, cold, extraction cache cleared, polling every
+    120 ms: 72 descendants at 5.3 s, a COMException mid-construction at 7.1 s, then
+    168 from 8.0 s onward.  A sample taken early enough sees only the OS-supplied
+    TitleBar, which counts as 1.
+
+    ⛔⛔ That is not hypothetical, and it is why settling is the DEFAULT rather than
+    an option.  `docs/RETEST-FINDINGS.md` F5 recorded exactly that 1, concluded the
+    published app exposed no accessibility tree, and became the release blocker at
+    the top of PROGRESS.md.  It did not reproduce — the same build, proven identical
+    by its linked Avalonia.Win32.Automation.dll being the same 92,672 bytes F5 itself
+    quotes, walks 168 and yields real findings.  A measurement tool whose default can
+    silently under-report manufactured a defect that never existed.
+
+    ⚠ A count of 1 or 0 is treated as NOT READY, never as a settled answer.  If the
+    tree really is that small the loop burns its timeout and reports "did not settle"
+    — which is the honest outcome.  Reporting 1 as a fact is the failure mode above.
+#>
+function Wait-ForStableTree {
+    param(
+        [string] $Name,
+        [int] $TimeoutSeconds,
+        [int] $RequiredStableSamples
+    )
+
+    $root = [System.Windows.Automation.AutomationElement]::RootElement
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $previous = -1
+    $stable = 0
+    $current = -1
+
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        Start-Sleep -Milliseconds 500
+
+        $procs = @(Get-Process -Name $Name -ErrorAction SilentlyContinue)
+        if ($procs.Count -eq 0) {
+            throw ("No process named '" + $Name + "' is running. Start the app first.")
+        }
+
+        $total = 0
+        $ready = $true
+
+        foreach ($proc in $procs) {
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $proc.Id)
+
+            try {
+                $found = $root.FindAll([System.Windows.Automation.TreeScope]::Children, $condition)
+                foreach ($w in $found) {
+                    $total += $w.FindAll(
+                        [System.Windows.Automation.TreeScope]::Descendants,
+                        [System.Windows.Automation.Condition]::TrueCondition).Count
+                }
+            }
+            catch {
+                # Mid-construction. The provider is still attaching, so this is "not
+                # ready" rather than a failure — see the COMException at 7.1 s above.
+                $ready = $false
+            }
+        }
+
+        if (-not $ready -or $total -le 1) {
+            $stable = 0
+            $previous = -1
+            continue
+        }
+
+        if ($total -eq $previous) { $stable++ } else { $stable = 0 }
+        $previous = $total
+        $current = $total
+
+        if ($stable -ge $RequiredStableSamples) {
+            Write-Host ('Tree settled at ' + $total + ' descendants after ' +
+                        [math]::Round($sw.Elapsed.TotalSeconds, 1) + 's.') -ForegroundColor Cyan
+            return
+        }
+    }
+
+    Write-Host ('⚠ Tree did NOT settle within ' + $TimeoutSeconds + 's. Last count: ' +
+                $current + '. Every count below is a FLOOR, not a measurement — do not ' +
+                'quote it as evidence that a control is missing.') -ForegroundColor Yellow
+}
+
 function Invoke-Walk {
     param(
         [System.Windows.Automation.AutomationElement] $Element,
@@ -155,6 +251,15 @@ function Invoke-Walk {
 }
 
 function Main {
+    if ($NoSettle) {
+        Write-Host 'Settle loop SKIPPED (-NoSettle). Counts below are only trustworthy if the app has been up a while.' -ForegroundColor Yellow
+    }
+    else {
+        Wait-ForStableTree -Name $ProcessName `
+            -TimeoutSeconds $SettleTimeoutSeconds `
+            -RequiredStableSamples $SettleSamples
+    }
+
     $windows = @(Get-TopLevelWindows -Name $ProcessName)
     Write-Host ('Top-level windows: ' + $windows.Count) -ForegroundColor Cyan
 
