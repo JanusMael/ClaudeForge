@@ -81,9 +81,14 @@ the other's writes as external changes, which is exactly the signal the watcher 
 ⓘ **Two live surfaces worth knowing:** **Shift+F12** opens *Live Config-File Events*, and
 `logs/events-*.txt` beside the executable now persists the same stream with scope.
 
-⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
-Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
-but no release has been cut through it since.
+✅ **`src/publish/publish.ps1`'s missing `maui-windows` workload preflight — looked at, and it is
+CORRECT.** Those sixty lines preflighted a workload for MAUI Essentials, which `23f7c4f` deleted
+along with the Windows TFM it lived behind — a TFM that never built, so no shipped ClaudeForge ever
+contained the MAUI share path. Verified now rather than re-asserted: no `Maui` reference survives in
+any csproj, props or targets file, and the only three `TargetFrameworks` mentions under `src/` are
+comments explaining what was removed. ⛔ **Do not restore it.** A preflight that installs a workload
+elevated, and aborts the release when that install fails, is a live hazard on the release path with
+nothing left to preflight for.
 
 ### After the retest — the release path
 
