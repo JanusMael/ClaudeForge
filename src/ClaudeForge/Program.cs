@@ -267,10 +267,15 @@ internal sealed class Program
         // Without this the WinExe-detached console swallows everything.
         TryAttachParentConsole();
 
-        Console.Error.WriteLine($"[ClaudeForge] Cleaning up *.bak restore sidecars under {PlatformPaths.ClaudeHome}…");
+        // Named once, then both reported and walked. The cleanup used to resolve its own home
+        // from a null default, so the directory in this message and the directory it deleted
+        // from were two independent lookups that happened to agree.
+        string claudeHome = PlatformPaths.ClaudeHome;
+
+        Console.Error.WriteLine($"[ClaudeForge] Cleaning up *.bak restore sidecars under {claudeHome}…");
         Log.Information("[Cleanup] Restore-sidecar cleanup invoked via --cleanup-restore-sidecars");
 
-        RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(onProgress: count =>
+        RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(claudeHome, onProgress: count =>
         {
             // Heartbeat every 1000 deletions so the user knows the run is
             // making progress on a large directory (the user's reported

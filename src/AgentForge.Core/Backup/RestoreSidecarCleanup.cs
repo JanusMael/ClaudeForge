@@ -45,18 +45,22 @@ public static partial class RestoreSidecarCleanup
     /// Best-effort: a single file's failure does not abort the run.
     /// </summary>
     /// <param name="claudeHome">
-    /// Root directory to walk.  Defaults to
-    /// <see cref="PlatformPaths.ClaudeHome"/> when null — that's the
-    /// production target.  Tests pass a sandboxed home.
+    /// Root directory to walk. ⛔ <b>Required, and it used to default to
+    /// <c>PlatformPaths.ClaudeHome</c> when null.</b> A neutral type whose default resolves to
+    /// Claude data couples a second product to Claude without naming Claude anywhere near the
+    /// call site — the shape that made both OpenCode clients report Claude's footprint as their
+    /// own, where a delete would have removed the other agent's data. The caller says which home
+    /// it means; ClaudeForge's does, and its console message now names the same value it passes
+    /// rather than resolving one independently. <c>NeutralLayerDefaultsTests</c> guards it.
     /// </param>
     /// <param name="onProgress">
     /// Optional progress callback fired every 1000 deleted files so the
     /// CLI can stream a heartbeat for long runs (the user's reported
     /// baseline was 99 307 sidecars).
     /// </param>
-    public static Result Run(string? claudeHome = null, Action<int>? onProgress = null)
+    public static Result Run(string claudeHome, Action<int>? onProgress = null)
     {
-        string home = claudeHome ?? PlatformPaths.ClaudeHome;
+        string home = claudeHome;
         if (!Directory.Exists(home))
         {
             return new Result(0, 0, 0, 0, Array.Empty<string>());

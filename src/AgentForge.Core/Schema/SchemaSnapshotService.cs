@@ -20,11 +20,19 @@ public sealed class SchemaSnapshotService
 {
     private readonly string _directory;
 
-    public SchemaSnapshotService() : this(Path.Combine(PlatformPaths.ClaudeHome, "cache"))
-    {
-    }
-
-    /// <summary>Constructor for tests that want a temp directory instead of the user cache.</summary>
+    /// <summary>
+    /// The directory snapshots live in. The caller names it — there is no default.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>There used to be a parameterless constructor defaulting to
+    /// <c>{ClaudeHome}/cache</c>, and it had no callers at all.</b> A neutral type whose default
+    /// resolves to Claude data couples a second product to Claude without naming Claude anywhere
+    /// near the call site — the exact shape that made both OpenCode clients report Claude's disk
+    /// footprint as their own. Same reasoning as <c>SchemaRegistry</c>'s null cache directory
+    /// meaning NO DISK: there is no neutral default, because <c>~/.claude/cache</c> is Claude's
+    /// answer and OpenCode's schemas do not belong beneath it.
+    /// <c>NeutralLayerDefaultsTests</c> is what keeps it from coming back.
+    /// </remarks>
     public SchemaSnapshotService(string directory)
     {
         _directory = directory;

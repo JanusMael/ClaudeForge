@@ -73,7 +73,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     public IDialogService DialogServiceForViewAccess { get; }
 
     private readonly IShareService? _shareService;
-    private readonly SchemaSnapshotService _snapshotService = new();
+    // ⛔ This used to be a bare `new()`, taking a parameterless constructor whose default was
+    // {ClaudeHome}/cache — the Claude-ness living in the NEUTRAL layer rather than here. Naming
+    // the directory at the app is the whole correction: it is identical behaviour, and it is now
+    // ClaudeForge saying ~/.claude is Claude's answer instead of AgentForge.Core assuming it.
+    // ⚠ A target-typed `new()` also makes a call site invisible to any search for the type name,
+    // which is how this one was nearly missed. See NeutralLayerDefaultsTests.
+    private readonly SchemaSnapshotService _snapshotService =
+        new(Path.Combine(PlatformPaths.ClaudeHome, "cache"));
 
     private ConfigFileWatcher? _watcher;
 

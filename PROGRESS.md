@@ -18,11 +18,11 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `d97cc92`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `8188e18`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **80 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **81 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,303 passed · 0 failed · 11 skipped**, Debug — three new `ReleaseWorkflowTests` across the release batches, on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
+| Suite | **4,305 passed · 0 failed · 11 skipped**, Debug — two `NeutralLayerDefaultsTests` on the **4,303** the release batches left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies resolving to those ids — **now all at `2026.3.914`**, the same three parts the built DLLs stamp (`2026.3.914.1303`). The `1.0.0` this cell reported for two weeks is gone; plan 00001 item 3 is done |
@@ -106,9 +106,10 @@ nothing left to preflight for.
   "changes to ClaudeForge".** OpenCodeForge has a release workflow and no changelog. Everything
   that app has ever done is unreleased, so nothing is lost yet — but its first release needs
   either a second file or a per-app section here, and that is a decision, not a chore.
-- Free, no retest cost, and what is left of this list: a guard for Claude-shaped defaults in the
-  neutral layer (see [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), and
-  roadmap phase markers 1–9. ✅ *`TRIMMING.md` never mentioning the second app* was already false
+- ✅ **The guard for Claude-shaped defaults exists** — `NeutralLayerDefaultsTests`, closing
+  [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5 item 1. It found a third
+  site on its first run; see the sixth batch below. What is left of this list: roadmap phase
+  markers 1–9. ✅ *`TRIMMING.md` never mentioning the second app* was already false
   when this line was written — that file's 12-publish note dates from 2026-09-14. Its real gap,
   the trim analyser property, is now written up.
 
@@ -201,6 +202,61 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14, sixth batch — a guard for Claude-shaped defaults, and what it found
+
+`NeutralLayerDefaultsTests` closes `docs/EXTRACTION-VERIFICATION.md` §5 item 1 — the one class of
+incompleteness that had already produced a real defect and that nothing watched for.
+`AssemblyLayeringTests` cannot see it: all three of its methods are about assembly **references**,
+and Claude-shaped code inside a neutral assembly declares no reference at all.
+
+⭐ **The rule is about DEFAULTS, not names.** Claude-named symbols are legitimate throughout the
+neutral layer — `SchemaRegistry`'s Claude product descriptor names Claude's paths because it
+*describes* Claude. Forbidden is a caller reaching Claude data without having said so: a `??`
+fallback, or a constructor chaining to one. There were 543 `Claude` references across the neutral
+projects, so a blanket ban was never the shape of this.
+
+**Two audited sites fixed**, both behaviour-identical — the Claude-ness moves from the neutral
+layer to the app that means it:
+
+| Site | Was | Now |
+|---|---|---|
+| `SchemaSnapshotService` | parameterless ctor → `{ClaudeHome}/cache` | ctor takes the directory; `MainWindowViewModel` names it |
+| `RestoreSidecarCleanup.Run` | `claudeHome ?? PlatformPaths.ClaudeHome` | required parameter; `Program.cs` passes it |
+
+ⓘ **`Program.cs` improved incidentally**: its console message named `PlatformPaths.ClaudeHome` while
+the cleanup resolved its own home independently. Two lookups that happened to agree; now one value,
+reported and walked.
+
+⛔ **I said `SchemaSnapshotService`'s parameterless ctor had no callers, and that was wrong.**
+`MainWindowViewModel` constructed it with a target-typed `new()` — no type name on the line, so no
+search for the type found it. The compiler did. Worth holding: **a `new()` makes a call site
+invisible to any grep for the type.**
+
+### ⛔ What the guard found on its first run, that the audit believed was fixed
+
+`AgentForge.Sdk/Memory/FootprintService.cs:89` — `_paths ?? ClaudeArtifactPaths.Default`.
+
+The audit records the footprint defect as *"Fixed this session in `765648a`"*. That fix was at the
+**call sites**: both OpenCode clients now pass their own paths and catalog. **The default itself
+was never removed.** `AgentConfigClientCore` still reads
+`_footprintService ??= new FootprintService()`, so a third client that forgets to override gets
+Claude's footprint exactly as the first two did — and *that* line carries no `Claude` token at all,
+so no scan will ever show it.
+
+⚠ **Allowed rather than fixed, deliberately.** `FootprintService` is `ClaudeArtifactPaths`-typed
+throughout, so making it neutral is a real refactor of the disk-footprint feature — which is in the
+pending manual retest. It is the single entry in the guard's `KnownSites` ratchet, which **only
+shrinks**: a stale entry fails the test, so an exemption cannot outlive its fix.
+
+▶ **This is the next piece of neutral-layer work**, and it should follow the retest rather than
+precede it.
+
+ⓘ Canaried three ways: the exemption removed (the real `FootprintService` line trips it), a stale
+exemption added (the ratchet's self-check fires), and the parameterless constructor restored (the
+reflection half fires).
 
 ---
 
