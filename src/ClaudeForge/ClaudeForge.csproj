@@ -102,7 +102,29 @@
         <!-- 
           Optimization settings for a clean distribution.
         -->
-        <TrimMode>link</TrimMode>
+        <!--
+          TrimMode: `partial`, NOT `link`.
+
+          ⛔ `link` is UNSUPPORTED BY AVALONIA and the build never says so.
+          AvaloniaUI/Avalonia#16697 — "TrimMode=link, while not supported, still
+          builds successfully, but crashes inconsistently" — states that COM
+          interop is not supported under it, and reports access violations in
+          `UiaReturnRawElementProvider` for users running Magnifier or a screen
+          reader.  Applications "build successfully with minimal warnings,
+          creating a false sense of security", which is exactly what a clean
+          six-RID publish matrix bought here for months.
+
+          ⚠ The measured cost of moving is ~76 KB on win-x64 (27,647,430 ->
+          27,725,447 bytes, single-file compressed).  `docs/RETEST-FINDINGS.md`
+          assumed the growth would be meaningful; it is not.
+
+          ⓘ This does NOT fix an accessibility defect, because there was none to
+          fix — see the F5 entry in docs/RETEST-FINDINGS.md.  The trimmed `link`
+          build exposes a full UIA tree (168 descendants, measured).  This change
+          is about leaving a configuration upstream calls unsupported, on the
+          strength of upstream's crash reports, not about a defect observed here.
+        -->
+        <TrimMode>partial</TrimMode>
         <DebuggerSupport>false</DebuggerSupport>
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -204,6 +226,30 @@
          a valid `SuppressMessageAttribute.Scope` value. -->
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
         <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
+    </ItemGroup>
+
+    <!--
+      Avalonia.DesignerSupport is remote-designer / preview code — Assembly.LoadFrom,
+      Bson-over-TCP, reflection over arbitrary types — and it is NEVER reached by a
+      published app.
+
+      ⚠ It becomes a publish BLOCKER the moment TrimMode stops being `link`.  Under
+      `partial` an assembly that is not marked trimmable is copied WHOLE, so
+      DesignerSupport's `RemoteDesignerEntryPoint.Main` stops being dead code, gets
+      analysed, and its IL2026 / IL2072 / IL2075 escalate to
+      `NETSDK1144: Optimizing assemblies for size failed`.  Measured, not assumed.
+
+      ⭐ Marking just this assembly trimmable restores the `link` treatment FOR IT
+      ALONE: the unreachable entry point is removed again and the diagnostics go with
+      it.  That is why there is no matching block in ILLink.Suppressions.xml —
+      suppressing those warnings would silence a real analysis over code that would
+      then still be shipped.  This removes the code instead.
+
+      ⓘ `docs/RETEST-FINDINGS.md` proposed the suppression route.  This is the cheaper
+      one: measured at zero IL diagnostics on a full win-x64 publish.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <TrimmableAssembly Include="Avalonia.DesignerSupport"/>
     </ItemGroup>
 
     <!--

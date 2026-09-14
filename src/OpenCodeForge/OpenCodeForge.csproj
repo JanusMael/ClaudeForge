@@ -99,7 +99,19 @@
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <PublishTrimmed>true</PublishTrimmed>
-        <TrimMode>link</TrimMode>
+        <!--
+          TrimMode: `partial`, matching ClaudeForge.  ⛔ `link` is UNSUPPORTED by
+          Avalonia (AvaloniaUI/Avalonia#16697: COM interop is not supported under
+          it, with reported access violations for users running Magnifier or a
+          screen reader) and NOTHING IN THE BUILD SAYS SO.
+
+          Kept identical to ClaudeForge deliberately — the long comment at the top
+          of this block exists because this app once published UNTRIMMED while CI
+          reported a green "Trim Check", and two apps whose trim settings drift are
+          how that happens.  The full reasoning and the measured size cost live in
+          ClaudeForge.csproj; it is not duplicated here so the two cannot disagree.
+        -->
+        <TrimMode>partial</TrimMode>
 
         <!--
           PACKAGING. Mirrors ClaudeForge so both apps produce the same shape of
@@ -167,5 +179,19 @@
     -->
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
         <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
+    </ItemGroup>
+
+    <!--
+      Avalonia.DesignerSupport, marked trimmable — REQUIRED by TrimMode=partial, and
+      not optional the way a suppression would be.  `partial` copies a non-trimmable
+      assembly WHOLE, which makes DesignerSupport's unreachable remote-designer entry
+      point analysable and turns its IL2026 / IL2072 / IL2075 into
+      NETSDK1144. Marking it trimmable removes the dead code instead of silencing the
+      warnings over code that would still ship.
+
+      Same entry as ClaudeForge, same reason; the long-form explanation is there.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <TrimmableAssembly Include="Avalonia.DesignerSupport"/>
     </ItemGroup>
 </Project>
