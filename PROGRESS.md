@@ -18,7 +18,7 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `cdde83c`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
 | Unpushed | **Everything** — nothing has been pushed and there is **no PR**. ⓘ This cell used to carry a count and was wrong four times in one day, for the same reason the HEAD cell names no hash: a number describing the commit that writes it is stale the moment anything follows. `git rev-list --count @{u}..HEAD` is the answer; the fact that matters here is *none of it is pushed* |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
