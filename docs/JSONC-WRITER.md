@@ -1,6 +1,6 @@
 # The JSONC writer — contract and guarantees
 
-`AgentForge.Jsonc` plus `JsoncEditWriter` replace whole-document re-serialization with
+`JsonC` plus `JsoncEditWriter` replace whole-document re-serialization with
 minimal in-place edits, so a save changes the bytes the user changed and leaves the rest
 alone.
 
@@ -170,7 +170,7 @@ tree with spans, return text edits.
 
 | Area | Where |
 |---|---|
-| Scanner, incl. gapless-coverage property over a nasty corpus | `AgentForge.Jsonc.Tests/JsoncScannerTests` |
+| Scanner, incl. gapless-coverage property over a nasty corpus | `JsonC.Tests/JsoncScannerTests` |
 | Comment / formatting / key-order preservation | `…/JsoncEditorPreservationTests` |
 | Insert, remove, nested-path creation | `…/JsoncEditorMutationTests` |
 | Refusal on unparseable input | `…/JsoncEditorSafetyTests` |

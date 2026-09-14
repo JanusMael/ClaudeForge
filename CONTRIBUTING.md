@@ -53,7 +53,7 @@ The `.slnf` files are [solution filters](https://learn.microsoft.com/visualstudi
 | Project | Description |
 |---------|-------------|
 | `src/AgentForge.Abstractions` | Product-neutral contracts, BCL-only — no UI, no serialization, no product knowledge |
-| `src/AgentForge.Jsonc` | Comment- and formatting-preserving JSONC reader + edit-based writer. Framework-only, no package references. See [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md) |
+| `src/JsonC` | Comment- and formatting-preserving JSONC reader + edit-based writer. Framework-only, no package references. See [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md) |
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
 | `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
 | `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
@@ -63,7 +63,7 @@ The `.slnf` files are [solution filters](https://learn.microsoft.com/visualstudi
 | `tests/AgentForge.Core.Tests` | Domain logic |
 | `tests/AgentForge.Sdk.Tests` | Product-neutral SDK contracts + regression tests. Builds without either product — uses its own `TestConfigClient` where a live client is needed |
 | `tests/ClaudeForge.Sdk.Claude.Tests` | Claude accessor round-trips, permission matchers, client lifecycle |
-| `tests/AgentForge.Jsonc.Tests` | Scanner/parser/editor contracts for the JSONC writer — comment and formatting preservation, and the refuse-to-edit-unparseable-input guarantee |
+| `tests/JsonC.Tests` | Scanner/parser/editor contracts for the JSONC writer — comment and formatting preservation, and the refuse-to-edit-unparseable-input guarantee |
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 

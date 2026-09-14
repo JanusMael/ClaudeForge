@@ -13,14 +13,14 @@
 
 ---
 
-## Where things stand — 2026-09-13
+## Where things stand — 2026-09-14
 
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `2627403`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `2bf0dfc`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **64 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **67 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,296 passed · 0 failed · 11 skipped**, Debug — four new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
@@ -86,11 +86,30 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⛔ **Item 3 is blocked and it is the long pole:** the
-package version must come from an MSBuild property AutoVersioning is taught to emit, and **that
-package's source is not in this repository** — ask the maintainer where it lives. The plan records
-an interim (`PackageVersion` computed from `BuildTimestamp`, which AutoVersioning already defines
-and the generator provably consumes) if that release slips.
+Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⏳ **Item 3 is no longer blocked — it is
+waiting on a merge and a publish, both the maintainer's.**
+
+AutoVersioning lives at **`JanusMael/Bennewitz.Ninja.AutoVersioning`**, public, and is cloned at
+`C:\c\cl\Bennewitz.Ninja.AutoVersioning`. The change it needed is open as
+[PR #1](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/pull/1) — `Build.props` now
+derives two properties during evaluation from the same `BuildTimestamp` the generator is handed:
+`AutoVersion` (`YEAR.QUARTER.MMdd.HHmm`, the four-part stamp) and `AutoPackageVersion`
+(`YEAR.QUARTER.MMdd`, three-part and SemVer-safe). ⭐ **Proven against a real packed package, not
+the loose props file:** a probe pinned to one timestamp produced an assembly stamped
+`2026.3.913.1613` and a package `2026.3.913` — the package version is exactly the first three
+parts of the assembly stamp, agreeing by construction.
+
+⚠ **The source generator was deliberately not touched**: that repo has no test project and no
+solution file, and the property must be readable *before* compilation, which a source generator
+cannot do. The cost is that the CalVer algorithm now exists twice, C# and MSBuild; the props
+comment names `BuildVersion.cs` as the reference implementation and the specific functions it
+mirrors.
+
+**Once merged and published**, this repo's side is one line in `src/Directory.Build.props` —
+`<PackageVersion>$(AutoPackageVersion)</PackageVersion>` — plus the plan's guard test: the package
+version equals the first three parts of the built DLL's `FileVersion`, read from the DLL rather
+than from the property that produced it. ⛔ It cannot be wired up before the publish; the property
+only exists in an unreleased build.
 
 Items **6** and **7** remain. ⚠ **6 (the publish pipeline) is the one that needs item 3 first** —
 a release pushes at a real version, and `1.0.0` is not one. **7 (documentation)** is unblocked;
@@ -146,6 +165,51 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14
+
+Three commits, all namespace/identity work, done **before** the first publish because a package id
+is immutable the moment it is pushed.
+
+| Commit | What |
+|---|---|
+| `dc43e00` | **Six `RootNamespace` values said `Bennewitz.Ninja.Layer.*` while every `namespace` under them said `LayeredEditors.*`.** `RootNamespace` only drives new-file defaults and generated code, so the two disagreed silently and the code was already right. Corrected, zero code churn. One namespace WAS wrong in code — `Layer.Avalonia.Services.Converters`, 4 files |
+| `2bf0dfc` | **`LayeredEditors.ViewModels` stopped claiming an Avalonia it does not have.** Assembly and package say `LayeredEditors.ViewModels`; every namespace inside said `LayeredEditors.Avalonia.ViewModels`. ⭐ The deciding fact: the project references `CommunityToolkit.Mvvm` and `LayeredEditors.Abstractions` and **nothing else** — no Avalonia at all. So the namespace moved, not the assembly. 110 files |
+| **HEAD** | ⭐ **`AgentForge.Jsonc` → `JsonC`.** See below |
+
+### ⭐ JsonC left the family, and that had teeth
+
+`AgentForge.Jsonc` is a comment- and formatting-preserving JSONC reader with **zero dependencies**
+and no agent knowledge of any kind. Under `PackageId = Bennewitz.Ninja.$(AssemblyName)` it would
+have published as `Bennewitz.Ninja.AgentForge.Jsonc` — a name that overclaims, forever, because a
+pushed id cannot be replaced. Renamed to `Bennewitz.Ninja.JsonC` (the maintainer's casing) along
+with the directory, csproj, assembly, namespaces and its test project.
+
+⛔ **It falls outside both family prefixes, and three separate selectors had to learn about it —
+they do not share a list.** The reference switch in the root `Directory.Build.targets`;
+`PackageMetadataTests`, which asserts the switch's selector and the packable set agree in both
+directions; and **`AssemblyLayeringTests`, which keeps its own.**
+
+⛔⛔ **That third one is the dangerous one.** Its shared-project scan globbed `AgentForge.*.csproj`.
+`JsonC` would have dropped out of the layering scan entirely, and its own vacuity guard — which
+exists precisely to catch "renaming the shared projects turns every assertion into a no-op pass" —
+would **not** have fired, because the remaining `AgentForge.*` projects still satisfy "at least
+one". Widened to a glob list and canaried: an injected `JsonC -> ClaudeForge.Sdk.Claude` reference
+now reddens and names the file.
+
+ⓘ **`LayeredEditors.*` was never in that scan either.** Not a decision, a gap — those projects are
+equally product-neutral. Added in the same change; it found no violations.
+
+⚠ **The type names are still `Jsonc*`** — `JsoncDocument`, `JsoncEditor`, `JsoncScanner`,
+`JsoncEditWriter` in `AgentForge.Core`. Only the namespace, assembly and package moved, because
+that is what was asked. `Bennewitz.Ninja.JsonC` containing `JsoncDocument` is visibly half-done;
+renaming the ~10 public types is a separate, purely mechanical change and a decision for the
+maintainer.
+
+**Measured:** 11 packages still pack, zero warnings, `Bennewitz.Ninja.JsonC` among them; suite
+4,296 passed / 0 failed / 11 skipped across all 12 assemblies.
 
 ---
 
@@ -528,6 +592,21 @@ pass, not a fix.
   for development, `PackageReference` for the per-PR canary and the release publish. Making it
   unconditional was considered and rejected: it costs the inner loop and makes a clean clone
   depend on feed credentials.
+- ⭐ **A package id must not overclaim, and it is only free to fix before the first publish.**
+  `JsonC` was renamed out of `AgentForge.*` on 2026-09-14 for exactly this reason: it is a
+  dependency-free JSONC reader that knows nothing about agents. ⛔ Being a family of one costs
+  three edits in three files that do **not** share a list — the switch in `Directory.Build.targets`,
+  `PackageMetadataTests`, and `AssemblyLayeringTests`. Prefer a family prefix for anything new.
+- ⛔ **`AssemblyLayeringTests` keeps its OWN selector, and its vacuity guard cannot detect a
+  family departure.** "At least one shared project exists" stays true while a renamed one silently
+  leaves the scan. Widening it is part of any rename, not an afterthought.
+- ⭐ **A namespace must not claim a dependency the project does not have.**
+  `LayeredEditors.ViewModels` carried `.Avalonia` in every namespace while referencing no Avalonia
+  at all; the namespace moved rather than the assembly, because the cheap fix would have cemented
+  something untrue in the package id.
+- ⚠ **`RootNamespace` is not the namespace.** Six of them disagreed with the code for a long time
+  and nothing failed — it only drives new-file defaults and generated code. Read the `namespace`
+  declarations before believing a csproj.
 - ⭐ **Package identity is declared once, in `src/Directory.Build.props`, and derived from
   `$(MSBuildProjectName)`** — never from `$(AssemblyName)`, which is empty at that point, and never
   from a `Directory.Build.targets` placed under `src/`, which would silently detach every `src`

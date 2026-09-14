@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// Applies path-level changes to JSONC text by replacing the minimal span for each

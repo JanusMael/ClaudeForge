@@ -74,9 +74,15 @@
       hooks — plain evaluation, so restore and build see identical items and cannot disagree.
     -->
     <ItemGroup Condition="'$(_SwitchSharedReferences)' == 'true'">
-        <!-- The eleven, globbed off disk. A rule, not a list. -->
+        <!-- The eleven, globbed off disk. Two family rules plus one exception, which is one
+             more than anybody wants: JsonC is a general-purpose JSONC reader with no agent
+             knowledge, so it was renamed out of the AgentForge family before first publish
+             rather than carrying a name that overclaims. It is named here explicitly because
+             it is a family of one. PackageMetadataTests asserts this set and the set of
+             packable projects are the same set, in BOTH directions. -->
         <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\AgentForge.*\AgentForge.*.csproj" />
         <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\LayeredEditors.*\LayeredEditors.*.csproj" />
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\JsonC\JsonC.csproj" />
 
         <!-- Full paths, so Remove can match. The transform carries metadata across, so any
              PrivateAssets / OutputItemType on a reference survives the round trip. -->

@@ -17,7 +17,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// preserves comments and formatting.
 /// <para>
 /// Phase 2's preservation guarantee is covered at the library level
-/// (<c>AgentForge.Jsonc.Tests</c>) and at the loader level
+/// (<c>JsonC.Tests</c>) and at the loader level
 /// (<c>ConfigFileLoaderPreservationTests</c>), but nothing exercised
 /// <see cref="MainWindowViewModel"/>'s <c>SaveCoreAsync</c> — the path a user
 /// actually triggers. <c>McpServersEditorRoundTripTests</c> comes closest and

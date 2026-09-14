@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// Insertion and removal — the cases where the editor has to synthesize text rather

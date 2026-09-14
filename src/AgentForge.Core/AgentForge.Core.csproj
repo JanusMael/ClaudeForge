@@ -27,10 +27,12 @@
 
     <ItemGroup>
         <!-- The comment-preserving writer, and the neutral IConfigWriter contract it and
-             the legacy writer both implement. Both are AgentForge.*, so the layering rule
-             is unaffected. -->
+             the legacy writer both implement. Neither is product-specific, so the layering
+             rule is unaffected. ⚠ This used to read "both are AgentForge.*" — JsonC left that
+             family when it was renamed, because nothing in it knows what an agent is. The
+             layering guard was widened to keep scanning it rather than losing it silently. -->
         <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
-        <ProjectReference Include="..\AgentForge.Jsonc\AgentForge.Jsonc.csproj"/>
+        <ProjectReference Include="..\JsonC\JsonC.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

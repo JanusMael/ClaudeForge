@@ -25,17 +25,29 @@ the published product; the second app grew out of it rather than replacing it.
 
 ## How the assemblies layer
 
-Four families, and the prefix tells you the layer:
+Four families and one standalone, and the prefix tells you the layer:
 
 - **`LayeredEditors.*`** — the schema-driven editor library. Knows about JSON Schema, property
   editors, scopes and layered values. Knows nothing about Claude or OpenCode.
 - **`AgentForge.*`** — product-neutral agent-configuration machinery: the SDK, the settings
   core, backup/restore, artifact resolution, and the Avalonia shell (nav, search, save,
   Essentials cards). Anything here must make sense for *both* products.
+- **`JsonC`** — a comment- and formatting-preserving JSONC reader plus an edit-based writer.
+  Zero dependencies, not even the BCL beyond the framework. ⭐ **A family of one, and named
+  outside `AgentForge.*` deliberately:** nothing in it knows what an agent is, so an
+  `AgentForge` prefix would have shipped a package id that overclaims. It was renamed before
+  the first publish, because a package id is immutable once pushed.
 - **`ClaudeForge.*` / `OpenCode.*`** — the product-specific halves: schema tables, danger
   tables, page layouts, product-shaped editors.
 - **`ClaudeForge` / `OpenCodeForge`** — the two app assemblies. Each is an ordinary consumer of
   everything above.
+
+⚠ **Being a family of one costs three edits, and they are not in one place.** The package-mode
+reference switch in the root `Directory.Build.targets` selects the shared projects by family
+prefix, so `JsonC` is named there explicitly; `PackageMetadataTests` asserts that selector and
+the packable set agree in both directions; and `AssemblyLayeringTests` keeps its *own* selector,
+which had to be widened too or `JsonC` would have silently left the layering scan. Prefer a
+family prefix for anything new.
 
 **The rule that matters: the two products never reference each other, and nothing
 product-specific is referenced by `AgentForge.*`.** `AssemblyLayeringTests` enforces it over

@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// One <c>"key": value</c> pair inside an object.

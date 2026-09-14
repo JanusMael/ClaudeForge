@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// The formatting conventions detected in a document, so newly inserted text matches

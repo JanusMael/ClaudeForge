@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// A replacement of one span of the original text. Insertions are zero-length spans;

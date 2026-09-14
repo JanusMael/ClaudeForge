@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// Turns JSONC text into a flat token list with offsets. Comments and whitespace are

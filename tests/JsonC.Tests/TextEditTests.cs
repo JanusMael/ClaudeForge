@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// <see cref="TextEdit.Apply"/> is the narrowest, most reused piece of the library, so

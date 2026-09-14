@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// The reason this library exists: a save must change the bytes the user changed and

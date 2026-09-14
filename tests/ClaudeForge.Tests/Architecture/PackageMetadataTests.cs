@@ -218,9 +218,16 @@ public sealed class PackageMetadataTests
     {
         string repoRoot = FindRepoRoot();
 
-        // The same two prefixes the switch uses. Kept in sync by this test failing, which is the
-        // point: there is no third place that lists the eleven.
+        // The same selectors the switch in Directory.Build.targets uses. Kept in sync by this
+        // test failing, which is the point: there is no third place that lists the eleven.
+        //
+        // ⚠ JsonC is named outright rather than matched by a family prefix, because it IS a
+        // family of one — a general-purpose JSONC reader, renamed out of AgentForge before
+        // first publish so the id would not claim agent knowledge it does not have. An
+        // exception in a rule-based selector is a smell; it earns its place only because the
+        // assertion below is two-directional, so the exception cannot rot unnoticed.
         string[] prefixes = ["AgentForge.", "LayeredEditors."];
+        string[] exactNames = ["JsonC"];
 
         List<string> byName = [];
         List<string> byPackability = [];
@@ -229,7 +236,8 @@ public sealed class PackageMetadataTests
         {
             string name = Path.GetFileNameWithoutExtension(csproj);
 
-            if (prefixes.Any(p => name.StartsWith(p, StringComparison.Ordinal)))
+            if (prefixes.Any(p => name.StartsWith(p, StringComparison.Ordinal))
+                || exactNames.Contains(name, StringComparer.Ordinal))
             {
                 byName.Add(name);
             }
@@ -255,11 +263,12 @@ public sealed class PackageMetadataTests
         string[] prefixedButNotPackable = byName.Except(byPackability, StringComparer.Ordinal).ToArray();
 
         Assert.AreEqual(0, packableButNotPrefixed.Length,
-            "These projects are packaged but their names do not begin 'AgentForge.' or "
-            + "'LayeredEditors.', so the reference switch in Directory.Build.targets will NOT "
-            + "rewrite references to them. In package mode they stay ProjectReferences and the "
-            + "canary silently validates project output instead of the package. Rename the "
-            + "project, or teach the switch a third prefix — and this test with it. Offenders: "
+            "These projects are packaged but the reference switch's selector does not match them "
+            + "(prefixes: " + string.Join(", ", prefixes) + "; exact: " + string.Join(", ", exactNames)
+            + "), so it will NOT rewrite references to them. In package mode they stay "
+            + "ProjectReferences and the canary silently validates project output instead of the "
+            + "package. Rename the project, or teach the switch another selector — and this test "
+            + "with it. Offenders: "
             + string.Join(", ", packableButNotPrefixed));
 
         Assert.AreEqual(0, prefixedButNotPackable.Length,

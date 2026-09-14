@@ -23,7 +23,7 @@ OpenCode.
 |---|---|
 | `AgentForge.Abstractions` | BCL-only vocabulary |
 | `AgentForge.Core` | Schema, backup, settings, platform |
-| `AgentForge.Jsonc` | JSONC reader/writer |
+| `JsonC` | JSONC reader/writer |
 | `AgentForge.Artifacts` | Artifact resolution |
 | `AgentForge.Sdk` | Client core |
 | `AgentForge.Avalonia.Shell` | Nav, search, save, Essentials, Backup page |

@@ -374,7 +374,7 @@
 > |---|---|
 > | 0 — Spikes | ✅ **10 of 11**; only **S5** (Desktop) open |
 > | 1 — Rename + neutralize | ✅ **complete (1a–1h)** |
-> | 2 — `AgentForge.Jsonc` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
+> | 2 — `JsonC` | ✅ **complete** — library, wiring, `--writer legacy`, [`docs/JSONC-WRITER.md`](./JSONC-WRITER.md); smoke-tested against a real install |
 > | 3 — Scope model | ✅ **complete** — `ConfigScope` is a struct, `ConfigScopeAdapter._cache` invariant retired. 4f then made the *ladder* the product's (`ScopeLadder`) and **kept the statics** — measured as 2 real edit sites, not 1,150 |
 > | 4 — Product model | ✅ **complete (4a–4f)** — both `IsClaudeCode` booleans replaced, merge rules and the scope ladder are the product's own statements, the shell hosts a list of product sections, and an export names its products in a list at schema v2. One deferral stated explicitly: `ConfigFileDiscoverer` still knows only Claude's file layouts |
 > | 5 — Extract the shell | ✅ **complete, 5 slices** — `AgentForge.Avalonia.Shell` holds `Status/`, `Navigation/`, `Search/`, `Save/`. **This was the plan's abandonment point and its trigger never fired**; all five slices reported in green. One piece **deferred, not rejected**: nav's tree assembly + `ProductSection` enrichment, measured at ~60 neutral lines for a rewrite of the 493-line `BuildNavigationTreeAsync`. Problem 8 was **restated, not solved** — see slice 5 |
@@ -733,7 +733,7 @@ Every open question, deferral, and out-of-scope item was reviewed individually. 
 |---|---|---|---|---|
 | 0 | Spikes S1–S11 — **10/11 done; only S5 open** | answers, no code | none | — |
 | 1 | Rename → `AgentForge.*` | nothing user-visible | mechanical only | — |
-| 2 | `AgentForge.Jsonc` | **ClaudeForge stops normalizing your formatting** | ⚠ save path | **A** |
+| 2 | `JsonC` | **ClaudeForge stops normalizing your formatting** | ⚠ save path | **A** |
 | 3 | Generalize scope model | nothing user-visible | ⚠ merge semantics | — |
 | 4 | Generalize product model | nothing user-visible | ⚠ multi-product wiring | **B** |
 | 5 | Extract shell + split resx | nothing user-visible | ⚠⚠ **highest** | **C** |
@@ -868,7 +868,7 @@ stated exit or it is just optimism:
 AgentForge.Abstractions       product identity · scope model · merge policy · permission
                               vocabulary · dialog primitives (moved from Sdk/Dialogs)
 AgentForge.Core               schema · merge · file IO · backup · platform · updates
-AgentForge.Jsonc              comment/format-preserving JSONC reader + edit-based writer   ← NEW
+JsonC              comment/format-preserving JSONC reader + edit-based writer   ← NEW
 AgentForge.Sdk                AgentConfigClientCore · env · diagnostics
 AgentForge.Artifacts          artifact source model · resolution engine · shadowing         ← NEW
 AgentForge.Permissions        normalized rule model · resolver · collision detector         ← NEW
@@ -909,7 +909,7 @@ Two rules the graph encodes that are easy to get wrong:
 - **`AgentForge.Permissions` must NOT reference `AgentForge.Sdk`.** It needs only the
   scope model and the rule types. Letting it reach the SDK invites a cycle once the SDK
   wants to expose a permissions accessor.
-- **`AgentForge.Jsonc` depends on nothing but the BCL.** It is a text-editing component;
+- **`JsonC` depends on nothing but the BCL.** It is a text-editing component;
   keeping it dependency-free is what makes it property-testable in isolation, which the
   risk profile demands.
 
@@ -925,7 +925,7 @@ up with *no* creating phase despite three Problems depending on the first. Expli
 | `AgentForge.Abstractions` | **Phase 1** ✅ | Must precede Phase 2 (`IConfigWriter`). Grows a contract per later phase. |
 | `AgentForge.Core` · `AgentForge.Sdk` | Phase 1 ✅ | Renames of the existing projects |
 | `ClaudeForge.Sdk.Claude` | Phase 1 ✅ | Claude-domain accessors split out. Also created `ClaudeForge.Sdk.Claude.Tests` — the shared test project must stay buildable without a product, which `AssemblyLayeringTests` now enforces for `tests/` too. |
-| `AgentForge.Jsonc` | Phase 2 ✅ | Framework-only, no package references. `AgentForge.Jsonc.Tests` alongside it. **`AgentForge.Core` now references it and `AgentForge.Abstractions`** — both shared, so layering is unaffected. |
+| `JsonC` | Phase 2 ✅ | Framework-only, no package references. `JsonC.Tests` alongside it. **`AgentForge.Core` now references it and `AgentForge.Abstractions`** — both shared, so layering is unaffected. |
 | `AgentForge.Avalonia.Shell` · `AgentForge.Localization` | Phase 5 | The shell extraction + resx split |
 | ~~`AgentForge.Permissions` · `AgentForge.Avalonia.Permissions`~~ | — | **Cut.** Passes 8 and 11 found nothing to put in them. |
 | `OpenCode.Sdk` | Phase 7 | |
@@ -1064,7 +1064,7 @@ an empty config and then overwrite the user's file). `SaveAsync` re-serializes t
 document with `WriteIndented = true`, discarding key order nuances, blank lines, and
 indentation style.
 
-**Solution — `AgentForge.Jsonc`, an edit-based writer.**
+**Solution — `JsonC`, an edit-based writer.**
 
 The proven design is the one `microsoft/node-jsonc-parser` uses: a scanner producing
 tokens with offsets, a parse tree carrying spans, and a `modify()` that returns **text
@@ -2434,7 +2434,7 @@ and `Submit-Winget.ps1` parameterized on package identity.
 >
 > ⚠ **Unresolved counterexample, recorded rather than smoothed over.** `807087c` (2026-08-18)
 > caught exactly this class of defect — an `IL2026` in `JsoncEditor.Quote` — when
-> `AgentForge.Jsonc` was already its own project with no `IsTrimmable` anywhere. By the behaviour
+> `JsonC` was already its own project with no `IsTrimmable` anywhere. By the behaviour
 > measured above that catch should not have been possible, so the rule is *not* simply "shared
 > libraries are invisible". The likeliest explanation is that the August run differed from the
 > command later written down for it (a global `-p:PublishTrimmed=true`, or `publish.ps1`, would
@@ -2773,7 +2773,7 @@ the shell in Phase 6 (both permission assemblies were cut). Its **English-only
 those keys become shared, per-app, or stay an English-only exception. Decide explicitly —
 do not let it drift through the refactor unexamined.
 
-### Phase 2 — `AgentForge.Jsonc` (Problem 4)
+### Phase 2 — `JsonC` (Problem 4)
 
 Standalone and independently valuable — land it early and let ClaudeForge benefit first.
 Switch `ConfigFileLoader` onto the edit-based writer for Claude, prove byte-stability on
@@ -6297,7 +6297,7 @@ Converters,Headless,Localization,Services,ViewModels}`).
 ### New test projects
 
 ```
-tests/AgentForge.Jsonc.Tests            tests/AgentForge.Artifacts.Tests
+tests/JsonC.Tests            tests/AgentForge.Artifacts.Tests
 tests/AgentForge.Permissions.Tests      tests/AgentForge.Avalonia.Shell.Tests   ← was missing
 tests/OpenCode.Sdk.Tests                tests/OpenCode.Avalonia.Tests
 tests/OpenCodeForge.Tests
@@ -6320,11 +6320,11 @@ intermittent cross-test failures.
 
 | Area | Must-have tests | Notes |
 |---|---|---|
-| **`AgentForge.Jsonc`** — highest risk in the plan | **Byte-stability**: load → save with no edit → assert every byte identical **outside the `"//"` stamp line** (the stamp embeds `DateTime.Now` — see Problem 4; assert the whole file only if option 2 or 3 is chosen). Corpus of real config files: commented, tab-indented, CRLF, BOM, trailing commas, deeply nested. **Single-edit minimality**: change one scalar → assert only that span and the stamp differ. **Comment survival** at every position (leading, trailing, between keys, inside arrays). **Insert/remove at path** with correct indent inference. **Malformed input** → no throw, no data loss. Property-based round-trip over generated documents. | This code sits on the save path for **both** products. Target the densest coverage in the repo. Include a fixture corpus under `tests/AgentForge.Jsonc.Tests/Fixtures/`. |
+| **`JsonC`** — highest risk in the plan | **Byte-stability**: load → save with no edit → assert every byte identical **outside the `"//"` stamp line** (the stamp embeds `DateTime.Now` — see Problem 4; assert the whole file only if option 2 or 3 is chosen). Corpus of real config files: commented, tab-indented, CRLF, BOM, trailing commas, deeply nested. **Single-edit minimality**: change one scalar → assert only that span and the stamp differ. **Comment survival** at every position (leading, trailing, between keys, inside arrays). **Insert/remove at path** with correct indent inference. **Malformed input** → no throw, no data loss. Property-based round-trip over generated documents. | This code sits on the save path for **both** products. Target the densest coverage in the repo. Include a fixture corpus under `tests/JsonC.Tests/Fixtures/`. |
 | **Shared permission vocabulary** ✅ *(done, `a453063`)* | ~~`PermissionOutcome` and `Decision<TRule>` compile against both products' rule types.~~ **`Decision<TRule>` was rejected on measurement — see Phase 6.** What is asserted instead: `default(PermissionOutcome)` is `Default`, never `Allow`, read through an uninitialised property rather than a folded constant; and the vocabulary is exactly the three shared answers plus fall-through, so a fifth outcome has to be added deliberately. Claude's ~200 existing permission tests stayed **exactly where they are and unchanged**, as predicted — there is no extraction to prove faithful, because there is no extraction. | Draft 11 specified an extraction-parity suite here; with Phase 6 reduced to a vocabulary, that suite has nothing to test. |
 | **`OpenCodePermissionModel`** | Parse/format for: bare-string form · `"*"` wildcard · per-tool action · per-tool `{pattern: action}` · arbitrary (MCP) tool keys · the four action-only tools (`todowrite` `question` `webfetch` `websearch`) rejecting the object form. Glob matching: `*`, `?`, `~`/`$HOME` expansion, `git *` vs `git commit *` specificity. Per-agent override precedence. Deny-wins ordering. | Mirror `tests/ClaudeForge.Sdk.Tests/Permissions/` structure. |
 | **`AgentForge.Artifacts`** | Claude's **existing** Memory / Agents-&-Skills tests pass unchanged. Plus: resolver returns winner **+ full shadowed chain**; same-name across all five source kinds (built-in / global-JSON / global-md / project-JSON / project-md) resolves per S7; three global roots per S8; upward traversal stops at the git worktree root; `skills.paths[]` glob expansion; remote sources listed-not-fetched. | The shadowing tests are the ones that catch real bugs — seed conflicts deliberately. |
-| **`OpenCode.Sdk`** | `DiscoverFiles` for every scope-ladder permutation (no project · project · `OPENCODE_CONFIG` set · `OPENCODE_CONFIG_CONTENT` set · `OPENCODE_CONFIG_DIR` relocated · managed present). Read-only scopes reject writes. `OpenCodeMergePolicy` per S1. JSONC load. Save round-trip through `AgentForge.Jsonc`. Schema validation surfaces real errors. Every test sandboxed via `PlatformPaths.TestUserProfileOverride`. | Mirror `ClaudeCodeClientLifecycleTests` / `ClaudeConfigClientAsyncTests` / `…CoreReentrancyTests` — the thread-safety and reentrancy contracts on `AgentConfigClientCore` apply to `OpenCodeClient` too and must be re-asserted, not assumed. |
+| **`OpenCode.Sdk`** | `DiscoverFiles` for every scope-ladder permutation (no project · project · `OPENCODE_CONFIG` set · `OPENCODE_CONFIG_CONTENT` set · `OPENCODE_CONFIG_DIR` relocated · managed present). Read-only scopes reject writes. `OpenCodeMergePolicy` per S1. JSONC load. Save round-trip through `JsonC`. Schema validation surfaces real errors. Every test sandboxed via `PlatformPaths.TestUserProfileOverride`. | Mirror `ClaudeCodeClientLifecycleTests` / `ClaudeConfigClientAsyncTests` / `…CoreReentrancyTests` — the thread-safety and reentrancy contracts on `AgentConfigClientCore` apply to `OpenCodeClient` too and must be re-asserted, not assumed. |
 | **Rules resolution** | Load order with project + global + `instructions[]`; first-match-wins per category; glob expansion order; **the `OPENCODE_CONFIG_DIR` gotcha is reported, not reproduced**; `@file` references flagged; v1-vs-v2 semantics both covered and version-gated (S9). | This is the feature the maintainer called out as most important — treat its test count as a proxy for whether it is really done. |
 | **Union classification** | Each of the four top-level unions (`permission` · `formatter` · `lsp` · `autoupdate`) builds a **typed** editor, not `JsonRawPropertyEditorViewModel` — assert the dispatched VM type, mirroring `PropertyEditorFactoryTests`. Same for the nested unions (`mcp.*` local/remote, `plugin[]` string-vs-tuple, `oauth` config-vs-false, `agent.*.color` hex-vs-theme, `scroll_speed`). **A regression here is silent** — the raw-JSON fallback works, it just looks terrible, and no existing test would notice. | This whole row exists because draft 9 wrongly assumed `SchemaTreeBuilder` collapsed unions. It classifies them `Complex`; only all-string unions get rescued. |
 | **Schema handling** | Root-`$ref` follow (S4) → **36** top-level nodes for `config.json`, **13** for `tui.json`. Overlay merge applies and survives a simulated refresh. `@deprecated`-in-description normalization. Provenance/opt-in promotion: bundled wins by default, fetched wins after opt-in, overlay merges onto whichever base won. `--schema-source` flag flips it. | Mirror `SchemaRegistryOverlayTests` + `ModelCatalogSchemaParityTests`. |
@@ -6366,7 +6366,7 @@ Backup ≈ 150, editors ≈ 2 × per compound editor plus shape tests):
 
 | Area | Estimate |
 |---|---|
-| `AgentForge.Jsonc` | 120–180 (fixture-heavy) |
+| `JsonC` | 120–180 (fixture-heavy) |
 | `OpenCode.Sdk` (discovery, merge, lifecycle, JSONC, validation) | 150–200 |
 | OpenCode permissions (own candidate · resolver · collisions · tester · grid) + rules resolution | 170–220 |
 | `AgentForge.Artifacts` (static→instance conversion + new behaviour) | 100–150 |
@@ -6395,7 +6395,7 @@ real rendering, real theme tokens, real filesystem scale, terminal launching, an
 reload/relaunch experience. **Seven gates, 3–8 steps each — roughly 10 minutes per gate.**
 Each targets invariants the repo has *actually* broken before, not hypotheticals.
 
-### Gate A — after Phase 2 (`AgentForge.Jsonc` on the save path)
+### Gate A — after Phase 2 (`JsonC` on the save path)
 The single highest-consequence change in the plan. Runs against **ClaudeForge**.
 1. Open a real `~/.claude/settings.json`, change one value, save. `git diff` (or a copy
    comparison) shows **the changed line plus the `"//"` stamp line** — no reflow, no
@@ -6615,7 +6615,7 @@ every new headless test with a temporary `Assert.Fail`.
    (`ObjectPropertyEditorViewModel.VisibleChildren` + `PropertyCategoryViewModel`) and
    build a purpose-built searchable keybind editor rather than 184 generic wrappers.
    Spike S6 measures it before any UI is written.
-4. **`AgentForge.Jsonc` is new code on the save path — the highest-consequence code in the
+4. **`JsonC` is new code on the save path — the highest-consequence code in the
    app.** A bug corrupts user config files for *both* products. Mitigation: land it in its
    own phase behind the byte-stability test; property-test round-trips over a corpus of
    real config files; keep the existing re-serializing writer available behind a debug flag

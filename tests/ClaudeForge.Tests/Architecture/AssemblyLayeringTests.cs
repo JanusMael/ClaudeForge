@@ -56,7 +56,30 @@ public sealed class AssemblyLayeringTests
     /// <summary>Name prefixes that identify a product-specific assembly or project.</summary>
     private static readonly string[] ProductPrefixes = ["ClaudeForge", "OpenCode"];
 
-    private const string SharedPrefix = "AgentForge";
+    /// <summary>
+    /// Filename globs selecting the product-neutral projects, across <c>src/</c> and <c>tests/</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ This was a single <c>AgentForge</c> prefix until <c>JsonC</c> left that family — it is a
+    /// general-purpose JSONC reader with no agent knowledge, so it was renamed out of the
+    /// namespace before the packages were first published. Under the old single prefix it would
+    /// have dropped out of this scan entirely, and the vacuity guard below would NOT have caught
+    /// it, because the other <c>AgentForge.*</c> projects still satisfy "at least one".
+    /// </para>
+    /// <para>
+    /// ⓘ <c>LayeredEditors.*</c> is listed here for the first time as well. It was never scanned,
+    /// which was a gap rather than a decision: those projects are every bit as product-neutral.
+    /// Adding them found no violations.
+    /// </para>
+    /// </remarks>
+    private static readonly string[] SharedProjectGlobs =
+    [
+        "AgentForge.*.csproj",
+        "LayeredEditors.*.csproj",
+        "JsonC.csproj",
+        "JsonC.*.csproj",
+    ];
 
     // ── csproj-level check (the leading indicator) ───────────────────────────
 
@@ -90,8 +113,10 @@ public sealed class AssemblyLayeringTests
              .Where(Directory.Exists)];
 
     private static IReadOnlyList<string> SharedProjectFiles =>
-        [.. ScannedRoots.SelectMany(root =>
-            Directory.GetFiles(root, $"{SharedPrefix}.*.csproj", SearchOption.AllDirectories))];
+        [.. ScannedRoots
+             .SelectMany(root => SharedProjectGlobs.SelectMany(glob =>
+                 Directory.GetFiles(root, glob, SearchOption.AllDirectories)))
+             .Distinct(StringComparer.OrdinalIgnoreCase)];
 
     [TestMethod]
     public void AtLeastOneSharedProjectExists_SoTheseTestsAreNotVacuous()
@@ -100,7 +125,7 @@ public sealed class AssemblyLayeringTests
         // no-op pass — the classic way an architecture test quietly stops testing anything.
         Assert.IsTrue(
             SharedProjectFiles.Count > 0,
-            $"No '{SharedPrefix}.*.csproj' found under {string.Join(" or ", ScannedRoots)}. "
+            $"No shared project matched {string.Join(", ", SharedProjectGlobs)} under {string.Join(" or ", ScannedRoots)}. "
             + "Either the shared projects were renamed (update this test) or they no longer "
             + "exist, in which case the layering rule is unguarded.");
 
@@ -110,7 +135,7 @@ public sealed class AssemblyLayeringTests
         {
             Assert.IsTrue(
                 SharedProjectFiles.Any(p => p.StartsWith(root, StringComparison.OrdinalIgnoreCase)),
-                $"No '{SharedPrefix}.*.csproj' found under '{root}', so that directory is "
+                $"No shared project matched {string.Join(", ", SharedProjectGlobs)} under '{root}', so that directory is "
                 + "unguarded. If the shared projects there were renamed, update this test.");
         }
     }
@@ -172,11 +197,21 @@ public sealed class AssemblyLayeringTests
     [TestMethod]
     public void SharedAssembliesNeverReferenceAProduct()
     {
-        string[] sharedAssemblies = Directory.GetFiles(OutputDirectory, $"{SharedPrefix}.*.dll");
+        // Mirrors SharedProjectGlobs. JsonC is matched exactly rather than as JsonC.*.dll, so
+        // that its TEST assembly is not loaded and inspected as if it were a shared library.
+        string[] assemblyGlobs = ["AgentForge.*.dll", "LayeredEditors.*.dll", "JsonC.dll"];
+
+        string[] sharedAssemblies =
+        [
+            .. assemblyGlobs
+                .SelectMany(glob => Directory.GetFiles(OutputDirectory, glob))
+                .Distinct(StringComparer.OrdinalIgnoreCase),
+        ];
+
         Assert.IsTrue(
             sharedAssemblies.Length > 0,
-            $"No '{SharedPrefix}.*.dll' in {OutputDirectory} — this test cannot see the shared "
-            + "assemblies, so it is not guarding anything.");
+            $"Nothing matching {string.Join(", ", assemblyGlobs)} in {OutputDirectory} — this "
+            + "test cannot see the shared assemblies, so it is not guarding anything.");
 
         List<string> violations = [];
 

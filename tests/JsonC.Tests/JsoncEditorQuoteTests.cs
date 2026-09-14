@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Bennewitz.Ninja.AgentForge.Jsonc;
+using Bennewitz.Ninja.JsonC;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// Pins <c>JsoncEditor.Quote</c> against <see cref="JsonSerializer"/> as an oracle.

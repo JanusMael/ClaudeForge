@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>
 /// A parsed JSONC value, located by span in the source text.

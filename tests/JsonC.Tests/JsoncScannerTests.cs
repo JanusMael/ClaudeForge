@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// Scanner contracts. The load-bearing one is <see cref="Tokens_AreGaplessAndCoverTheWholeInput"/>:

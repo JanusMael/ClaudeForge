@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace Bennewitz.Ninja.AgentForge.Jsonc.Tests;
+namespace Bennewitz.Ninja.JsonC.Tests;
 
 /// <summary>
 /// The refusal contract, and the reason it is the most important thing in this library.

@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Jsonc;
+namespace Bennewitz.Ninja.JsonC;
 
 /// <summary>Structural category of a parsed JSONC value.</summary>
 public enum JsoncValueKind

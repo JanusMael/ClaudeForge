@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Jsonc;
+using Bennewitz.Ninja.JsonC;
 using Serilog;
 
 namespace Bennewitz.Ninja.AgentForge.Core.FileIO;

@@ -30,7 +30,7 @@ Every project under `src/` that is neither an app nor product-specific.
 |---|---|
 | `Bennewitz.Ninja.AgentForge.Abstractions` | BCL-only vocabulary |
 | `Bennewitz.Ninja.AgentForge.Core` | Schema, backup, settings, platform |
-| `Bennewitz.Ninja.AgentForge.Jsonc` | JSONC reader/writer |
+| `Bennewitz.Ninja.JsonC` | JSONC reader/writer |
 | `Bennewitz.Ninja.AgentForge.Artifacts` | Artifact resolution |
 | `Bennewitz.Ninja.AgentForge.Sdk` | Client core |
 | `Bennewitz.Ninja.AgentForge.Avalonia.Shell` | Nav, search, save, Essentials, Backup page |

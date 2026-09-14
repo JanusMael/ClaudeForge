@@ -259,14 +259,14 @@ implementation: `AgentsSkillsEditorViewModel`.
 - [ ] `ClaudeForge.slnx` — under `<Folder Name="/src/">` or `/tests/`. Guard: `BuildFilePathIntegrityTests.EveryProjectOnDiskIsInTheSolution`. ⚠ A project missing here **never builds in CI at all**, which is silent locally because `dotnet build <csproj>` still works.
 - [ ] **Both `.slnf` filters** — `ClaudeForge.Only.slnf` *and* `OpenCodeForge.Only.slnf` — if the project is **shared** (`AgentForge.*`, `LayeredEditors.*`). A shared project belongs to *every* product's filter; only a product-specific project goes in one. Guard: `FilterIsSharedPlusExactlyOneProduct`, which failed on **both** filters until they were updated.
 - [ ] The test project needs its own entry in all of the above, same rules.
-- [ ] `Description` in the csproj. This repo uses it as the project's design rationale — see `src/AgentForge.Jsonc/AgentForge.Jsonc.csproj` for the tone. ⚠ Since plan 00001 item 2 it is **also** the nuspec description of any packable project, so it is read by a second audience on the feed page; write it for both, and keep the rationale.
+- [ ] `Description` in the csproj. This repo uses it as the project's design rationale — see `src/JsonC/JsonC.csproj` for the tone. ⚠ Since plan 00001 item 2 it is **also** the nuspec description of any packable project, so it is read by a second audience on the feed page; write it for both, and keep the rationale.
 - [ ] `InternalsVisibleTo` for the test project if anything is `internal`.
 - [ ] **`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** No widening needed — `SharedProjectsNeverDeclareAProductReference` globs `AgentForge.*.csproj` across `src/` and `tests/`, so a new project is inside the net automatically. ✅ Verified by canary: pointing `AgentForge.Artifacts` at `ClaudeForge.Sdk.Claude` failed and named the file.
-- [ ] A test project gets a `Parallelization.cs`. Default to **sequential** unless the tests are pure in-memory with no filesystem, no statics and no process-global seam. Copy the *reasoning*, not just the attribute: `tests/AgentForge.Jsonc.Tests/Parallelization.cs` states why it is safe, and `tests/ClaudeForge.Tests/Parallelization.cs` states why that suite is `DoNotParallelize`.
+- [ ] A test project gets a `Parallelization.cs`. Default to **sequential** unless the tests are pure in-memory with no filesystem, no statics and no process-global seam. Copy the *reasoning*, not just the attribute: `tests/JsonC.Tests/Parallelization.cs` states why it is safe, and `tests/ClaudeForge.Tests/Parallelization.cs` states why that suite is `DoNotParallelize`.
 - [ ] **The trim gate names its apps explicitly** in `.github/workflows/ci.yml`. A new *library* needs nothing there, but it is only trim-checked once an app references it — so a library added ahead of its consumers is **not** yet covered by that gate. Say so rather than assuming green.
 - [ ] **State `IsPackable` explicitly**, `true` or `false`, in the csproj next to `<OutputType>`. Eleven shared projects under `src/` are published as private NuGet packages; the SDK defaults a library to **packable**, so a project that says nothing is pushed to the feed by the next release — and GitHub Packages will not let a version be replaced. Guard: `PackageMetadataTests.EverySrcProjectStatesIsPackableExplicitly`, `src/` only. ⚠ It deliberately does **not** check *which* projects pack: that would need a list of the eleven, and the list is what drifts.
 - [ ] **A packable project needs a real `<Description>`**, which the row above already asks for — but here it also ships. The SDK's default is the literal string `Package Description`, which is what two packages were about to publish. Guard: `PackageMetadataTests.EveryPackableProjectDescribesItself`.
-- [ ] **A shared library's name must begin `AgentForge.` or `LayeredEditors.`** — that prefix is how the package-mode reference switch finds it (see *Working with the shared libraries as packages*). A packable project named anything else fails `PackageMetadataTests`, which asserts the prefix-matched set and the packable set are the same set.
+- [ ] **A shared library's name must begin `AgentForge.` or `LayeredEditors.`**, or be added to the switch's exact-name list — those selectors are how the package-mode reference switch finds it (see *Working with the shared libraries as packages*). A packable project the selector misses fails `PackageMetadataTests`, which asserts the selected set and the packable set are the same set, in **both** directions. ⚠ `JsonC` is the one exact-name entry: a general-purpose JSONC reader renamed out of the `AgentForge` family before first publish, because nothing in it knows what an agent is. Prefer a family prefix — an exception costs three edits (`Directory.Build.targets`, `PackageMetadataTests`, `AssemblyLayeringTests`).
 - [ ] **The csproj file name must equal `<AssemblyName>`** for anything under `src/`. `src/Directory.Build.props` builds `<PackageId>` as `Bennewitz.Ninja.$(MSBuildProjectName)` — it cannot read `$(AssemblyName)`, which is assigned after that file is imported — so a divergence ships the package under the file's name. Guard: `PackageMetadataTests.EverySrcProjectsAssemblyNameMatchesItsFileName`.
 - [ ] **Do not add `<TargetFrameworks>`** without first writing `<TargetFramework></TargetFramework>` in the same `PropertyGroup`. See §1; three projects declared a TFM that never built. Guard: `SingleTargetFrameworkTests`.
 - [ ] Line endings **CRLF** and **no BOM** for `.cs`/`.csproj` — match the siblings, and check with `head -c3 <file> | od -An -tx1`. ⚠ Python's `encoding="utf-8-sig"` **adds** a BOM on write; it silently changed six files' first bytes in session 10.
@@ -285,9 +285,15 @@ Everything here is for the **package** mode the per-PR canary and the release pu
       report success. The script defaults to a per-second timestamp **and** points
       `NUGET_PACKAGES` at a directory named for it. Both, not either.
 - [ ] ⚠ **A new shared library must be named `AgentForge.*` or `LayeredEditors.*`** to be picked
-      up. The switch in the root `Directory.Build.targets` matches on that prefix — a rule rather
-      than a list — and `PackageMetadataTests` asserts the prefix-matched set is exactly the
-      packable set, so a misnamed project fails rather than silently staying a project reference.
+      up, or be named outright in the switch's exact-name list. The switch in the root
+      `Directory.Build.targets` matches on those selectors, and `PackageMetadataTests` asserts the
+      selected set is exactly the packable set, in both directions, so a project the selector
+      misses fails rather than silently staying a project reference.
+- [ ] ⛔ **`AssemblyLayeringTests` keeps its OWN copy of the selectors** — `SharedProjectGlobs`
+      for csproj files and a parallel assembly-glob list — and does not share them with the
+      switch. A library that leaves a family therefore drops out of the layering scan, and the
+      vacuity guard does **not** notice, because the remaining family members still satisfy
+      "at least one". That is exactly what the `JsonC` rename would have done unguarded.
 - [ ] **Credentials for the private feed go in your USER config, never in `nuget.config`:**
 
       ```bash
