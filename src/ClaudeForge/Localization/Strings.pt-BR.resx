@@ -2936,4 +2936,31 @@ Alguns caminhos dentro de arquivos de configuração podem precisar de edições
   <data name="SchemaCheckFailedFmt" xml:space="preserve">
     <value>Não foi possível carregar o esquema de {0}. Consulte o log para mais detalhes.</value>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Chave da entrada</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Valor da entrada</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Tipo de servidor</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Tipo de origem</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>carga útil a corresponder</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formatar</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Recuar novamente o JSON (analisar e formatar).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>JSON bruto</value>
+  </data>
 </root>

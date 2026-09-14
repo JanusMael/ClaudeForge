@@ -314,9 +314,9 @@
                                                                 <MenuFlyout>
                                                                     <MenuItem
                                                                         Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
                                                                         Tag="FullOld"
-                                                                        Click="OnCopyCellValue" 
-        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"/>
+                                                                        Click="OnCopyCellValue"/>
                                                                 </MenuFlyout>
                                                             </SelectableTextBlock.ContextFlyout>
                                                         </SelectableTextBlock>
@@ -335,9 +335,9 @@
                                                                 <MenuFlyout>
                                                                     <MenuItem
                                                                         Header="{x:Static loc:Strings.LabelMenuCopy}"
+                                                                        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
                                                                         Tag="FullNew"
-                                                                        Click="OnCopyCellValue" 
-        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"/>
+                                                                        Click="OnCopyCellValue"/>
                                                                 </MenuFlyout>
                                                             </SelectableTextBlock.ContextFlyout>
                                                         </SelectableTextBlock>

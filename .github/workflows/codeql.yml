@@ -59,6 +59,10 @@ jobs:
           # Use the default query suite ("security-and-quality").
           # Swap for "security-extended" to catch a wider (noisier) set of CWEs.
           queries: security-and-quality
+          # Single-query exclusions live in the config file, not here — see the
+          # rationale in it for why cs/path-combine is filtered. The suite above
+          # is unchanged; every other query still runs.
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Restore
         run: dotnet restore ClaudeForge.slnx

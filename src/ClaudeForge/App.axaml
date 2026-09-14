@@ -292,7 +292,11 @@
                          plain page background, where these same brushes are reused
                          (PermissionTesterView, GuidedRuleBuilderView, AgentsSkillsEditorView).
                          Every pair here is >= 4.5:1 on the pill and >= 7.3:1 on the page.
-                         Recheck both numbers if you retint either half. -->
+                         Recheck both numbers if you retint either half — which
+                         StatusPaletteContrastTests now does on every build, reading these
+                         very values, so a retint that breaks either floor fails rather
+                         than shipping. The margin is thin: the worst pill pair clears by
+                         0.07 and the worst page pair by 0.05. -->
                     <SolidColorBrush x:Key="AppStatusSuccessForegroundBrush" Color="#156321" />
                     <SolidColorBrush x:Key="AppStatusWarningForegroundBrush" Color="#874400" />
                     <SolidColorBrush x:Key="AppStatusFailureForegroundBrush" Color="#A8071A" />
@@ -377,8 +381,10 @@
     <!--
         Application-level DataTemplates for the three Claude-specific specialized editors.
         These are not known by LayeredEditors.Avalonia, so they're registered here and
-        resolved by fall-through when the library's PropertyEditorWrapper.ContentControl
-        encounters a type it doesn't recognise.
+        resolved by fall-through when the APP's Controls/PropertyEditorWrapper.axaml
+        ContentControl encounters a type it doesn't recognise.  (Not the library's
+        wrapper: nothing in this app instantiates that one — every PropertyEditorWrapper
+        here resolves to ClaudeForge.Controls, including the recursive ones.)
     -->
     <Application.DataTemplates>
 

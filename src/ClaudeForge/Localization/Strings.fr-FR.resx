@@ -2948,4 +2948,31 @@ Certains chemins dans les fichiers de configuration peuvent nécessiter des modi
   <data name="SchemaCheckFailedFmt" xml:space="preserve">
     <value>Impossible de charger le schéma de {0}. Consultez le journal pour plus de détails.</value>
   </data>
+  <data name="AutoNameRemoveEntry" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="AutoNameMapKey" xml:space="preserve">
+    <value>Clé de l'entrée</value>
+  </data>
+  <data name="AutoNameMapValue" xml:space="preserve">
+    <value>Valeur de l'entrée</value>
+  </data>
+  <data name="AutoNameMcpServerKind" xml:space="preserve">
+    <value>Type de serveur</value>
+  </data>
+  <data name="AutoNameMarketplaceSourceType" xml:space="preserve">
+    <value>Type de source</value>
+  </data>
+  <data name="WatermarkMcpMatchPayload" xml:space="preserve">
+    <value>charge utile à comparer</value>
+  </data>
+  <data name="ButtonFormatJson" xml:space="preserve">
+    <value>Formater</value>
+  </data>
+  <data name="TipFormatJson" xml:space="preserve">
+    <value>Réindenter le JSON (analyser et mettre en forme).</value>
+  </data>
+  <data name="AutoNameRawJsonEditor" xml:space="preserve">
+    <value>JSON brut</value>
+  </data>
 </root>

@@ -79,6 +79,13 @@ public sealed class AxamlAccessibilityCoverageTests
     {
         "Button",
         "ToggleButton",
+
+        // Added on main when its own scan widened, and kept here on merge: a
+        // RepeatButton is a focusable control a reader announces like any other
+        // button.  Dropping it would have made this branch's WIDER scan the
+        // weaker guard of the two, which is the wrong way round.
+        "RepeatButton",
+
         "TextBox",
         "ComboBox",
         "CheckBox",
@@ -196,15 +203,20 @@ public sealed class AxamlAccessibilityCoverageTests
             // old root simply never looked at.  Decrement as backfill lands;
             // do NOT raise them.
             //
-            // All three are genuine debt, not ControlTemplate-part noise: the
-            // PropertyEditorWrapper counts are real user-facing controls inside
-            // the per-type editor DataTemplates (the boolean toggle, the string
-            // TextBox, the enum ComboBox, the list add/remove Buttons), and the
-            // ModelPicker one is a glyph-only "▾" dropdown Button that a screen
-            // reader would otherwise announce as the bare character.
-            ["src/ClaudeForge/Controls/ModelPicker.axaml"] = 1,
-            ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 48,
-            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 6,
+            // ⭐ BACKFILLED to zero on main and merged here 2026-09-14.  These
+            // three carried 1 / 48 / 6 — real user-facing controls inside the
+            // per-type editor DataTemplates (the boolean toggle, the string
+            // TextBox, the enum ComboBox, the list add/remove Buttons) plus
+            // ModelPicker's glyph-only "▾" dropdown Button.  main's a11y batch
+            // named all 54 of them, so the entries drop to the strict default.
+            //
+            // ⚠ They are kept at 0 rather than deleted BECAUSE the merge had to
+            // reconcile two baselines: this branch's (which had never seen the
+            // backfill) was the looser one, and a stale 48 would have let 48
+            // fresh unnamed controls back in without failing anything.
+            ["src/ClaudeForge/Controls/ModelPicker.axaml"] = 0,
+            ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 0,
+            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 0,
 
             // Everything else the widened scan newly reached already scores 0
             // and so needs no entry — including all of src/OpenCodeForge/,
