@@ -68,6 +68,51 @@ Where a product genuinely needs privileged access to neutral internals, the seam
 `InternalsVisibleTo` grant rather than a reference. An attribute is not a dependency; layering
 holds.
 
+## The package layer
+
+The eleven shared projects — the `AgentForge.*` and `LayeredEditors.*` families plus `JsonC` —
+are also published as **private NuGet packages**, ids prefixed `Bennewitz.Ninja.`, to this
+repository's GitHub Packages feed. See [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)
+for the reasoning and the measurements.
+
+⭐ **There are two reference MODES, and no csproj declares both.** `UseSharedPackages` unset or
+`false` — the default, and what every human runs — means `ProjectReference`. `true` means
+`PackageReference` at `SharedPackageVersion`, which is what the per-PR canary and the release
+consume. One conditional, applied centrally in the **root** `Directory.Build.targets`, so the two
+cannot be mixed.
+
+⛔ **Mixing them is the failure the switch exists to make unrepresentable.** A test project that
+referenced one shared library by project and another by package would hold two
+`AgentForge.Core.dll` in one graph, and MSBuild prefers the project output — so a job named
+"package canary" would report success over a suite still exercising project-built code.
+
+⚠ **The switch has to live in the ROOT targets file.** It runs after each csproj declares its
+`ProjectReference`s, which rules out `Directory.Build.props`; and the obvious alternative — a
+`Directory.Build.targets` under `src/` — is a trap, because MSBuild imports only the CLOSEST one.
+Adding it would silently detach every `src` project from the root file, taking the publish strip,
+the dead-resx guard and the raw-hex guard with it, and nothing would fail.
+
+**One version, from one source.** `PackageVersion` is assigned from `$(AutoPackageVersion)` in
+that same root file — the CalVer stamp AutoVersioning writes into the assemblies — so a package
+and the assembly inside it agree by construction rather than by two conventions that happen to
+line up. A release pins the whole thing to its **tag** by exporting `BuildTimestamp`; see
+[`AGENTS.md`](./AGENTS.md) for why that is the only knob of the three that works.
+
+| Job | How |
+|---|---|
+| Prove the repo still works in package mode | `pwsh -NoProfile -File scripts/package-canary.ps1` — packs at a throwaway version into `artifacts/localfeed`, restores through a job-local `NUGET_PACKAGES`, then builds, tests and publishes against the packages |
+| Publish for real | Push a `packages-v2026.3.914` tag. `release-packages.yml` gates on the suite, resolves the version, and runs `scripts/Publish-Packages.ps1` |
+| Check before publishing | `scripts/Publish-Packages.ps1 -PackageVersion <v> -PreflightOnly` |
+
+⛔ **A published package version can never be replaced or re-pushed**, which is why the publish
+script refuses on three grounds before the first upload and pushes one package at a time. ⚠ Under
+a day-resolution CalVer that also means **one package release per calendar day**: a second on the
+same day collides with an immutable version, and the recovery is tomorrow.
+
+⚠ **The tag prefix is deliberately neither app's.** The eleven serve both products, so riding
+ClaudeForge's `v*.*.*` would leave OpenCodeForge unable to publish shared code and tie a library
+fix to cutting a full app release.
+
 ## Build, run, test
 
 The solution file `ClaudeForge.slnx` is **hand-maintained**. A project missing from it silently
@@ -315,6 +360,8 @@ one-shot maintenance task would show a window nobody asked for and hold file loc
 | Platform conditionals and path handling | [`PLATFORM.md`](./PLATFORM.md) |
 | **Where the work stands right now, and what to do next** | [`PROGRESS.md`](./PROGRESS.md) — the resume anchor. Read it first in a fresh session, and reconcile it against `git` rather than trusting it |
 | The two-app plan, phase status, and every spike measurement | [`docs/OPENCODEFORGE-PLAN.md`](./docs/OPENCODEFORGE-PLAN.md) |
+| Why the shared libraries are packages, the two reference modes, and what an immutable feed costs | [`plans/00001`](./plans/00001-shared-libraries-as-private-nuget-packages.md) — approved and implemented; drift goes to `PROGRESS.md`, never into the plan |
+| What users see, release by release | [`CHANGELOG.md`](./CHANGELOG.md) — ⚠ ClaudeForge only. OpenCodeForge has a release workflow and no changelog yet |
 
 Area-specific `AGENTS.md` sidecars sit next to the code they describe — the editor one under
 `src/ClaudeForge/ViewModels/Editors/` is the largest.

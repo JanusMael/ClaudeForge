@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `f899f8a`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `d97cc92`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **79 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **80 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,303 passed · 0 failed · 11 skipped**, Debug — three new `ReleaseWorkflowTests` across the release batches, on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
@@ -106,17 +106,25 @@ nothing left to preflight for.
   "changes to ClaudeForge".** OpenCodeForge has a release workflow and no changelog. Everything
   that app has ever done is unreleased, so nothing is lost yet — but its first release needs
   either a second file or a per-app section here, and that is a decision, not a chore.
-- Free, no retest cost: a guard for Claude-shaped defaults in the neutral layer (see
-  [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), roadmap phase markers
-  1–9, and `TRIMMING.md` never mentioning the second app.
+- Free, no retest cost, and what is left of this list: a guard for Claude-shaped defaults in the
+  neutral layer (see [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), and
+  roadmap phase markers 1–9. ✅ *`TRIMMING.md` never mentioning the second app* was already false
+  when this line was written — that file's 12-publish note dates from 2026-09-14. Its real gap,
+  the trim analyser property, is now written up.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2**, **3**, **4**, **5** and **6** are done. ▶ **Item 7 —
-documentation — is what remains**, and most of it has been written as the items landed:
-`AGENTS.md` has the enforceable rows, `.github/WORKFLOWS.md` has the versioning section. What is
-still outstanding is `CLAUDE.md`'s package layer and reference modes, and `TRIMMING.md`, which
-still never mentions the second app.
+✅ **All seven items are done.** `23f7c4f` (1), then 2–6 across the batches below, and item 7 —
+documentation — closed with `CLAUDE.md`'s **The package layer** section and `TRIMMING.md`'s
+**`EnableTrimAnalyzer`** section. `AGENTS.md`'s enforceable rows and
+`.github/WORKFLOWS.md`'s versioning section landed with the items they describe.
+
+ⓘ **Item 7's own description was stale in one respect**, found by checking rather than by
+following it: it said `TRIMMING.md` "never mentions the second app". It has since 2026-09-14 —
+the 12-publish note at the top of that file. What was genuinely missing was the other half, the
+analyser property, which is now written up with the distinction that makes it matter: the Roslyn
+analyser runs on every build of every `src/` project, while ILLink's whole-program pass — the one
+that decides what is actually removed — still runs only on a publish.
 
 ⛔ **Nothing has been published to the feed yet.** The pipeline exists and its preflight has been
 run against the live feed — which confirmed none of the eleven ids holds `2026.3.914` — but no
