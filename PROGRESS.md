@@ -20,9 +20,9 @@
 | Branch | `feat/agentforge-opencodeforge` |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
-| Unpushed | **Everything since 2026-09-11.** `origin/feat/agentforge-opencodeforge` exists and sits at `e13a412`; there is still **no PR**. ⚠ This cell previously read *"nothing has been pushed"*, which was false for four days — the remote branch was already there. `git rev-list --count @{u}..HEAD` is the answer; the fact that matters is that the remote is days behind and no PR exists |
+| Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-14. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. `git rev-list --count HEAD..origin/main` = 0 |
-| Suite | **4,313 passed · 0 failed · 11 skipped**, Debug, post-merge. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Suite | **4,320 passed · 0 failed · 11 skipped**, Debug. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
@@ -43,11 +43,16 @@
 2. **The five open UI defects** — `F1`–`F4`, `F6` in
    [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md). ⚠ `F2` and `F4` are one piece of work, not
    two; they pull the same colour token in opposite directions.
-3. **Push, and decide on a PR.** The remote branch is days behind and there is no PR — see the
-   cell above.
-4. **The first `packages-v*` tag.** Preflight first
-   (`scripts/Publish-Packages.ps1 -PackageVersion <v> -PreflightOnly`); nothing is on the feed yet
-   and every version there is permanent.
+3. **Decide on a PR.** The branch is pushed and level with origin; whether it gets a PR is still
+   open, and opening one against `main` is a locked decision the maintainer has not made.
+4. **The first `packages-v*` tag.** ⚠ **The preflight that "passed" on 2026-09-14 exercised gates
+   1–2 ONLY** — gate 3, *does the feed already hold this version*, is **SKIPPED when no token is
+   set**, and this machine has none. The script says so in its own output. That run is evidence the
+   eleven packages build and stamp correctly at `2026.3.914`, and **no evidence at all** that the
+   feed is clear. Re-run with a real token before tagging:
+   `scripts/Publish-Packages.ps1 -PackageVersion <v> -PreflightOnly`.
+   ⛔ Nothing is on the feed yet, every version there is permanent, and the CalVer is
+   day-resolution — one release per calendar day, recovery is tomorrow.
 
 ⓘ **Locked decisions — do not relitigate.** The package tag is a dedicated `packages-v*` prefix,
 not either app's. A same-day second package release fails at pre-flight by design. `PublicVersion`
@@ -67,6 +72,28 @@ deliberately. The `maui-windows` preflight removal was correct and must not be r
 - **OpenCodeForge gets its own `CHANGELOG-OpenCodeForge.md`**, separate from ClaudeForge's,
   **created when it cuts its first release** — not before, because an empty changelog for a parked
   app is a document that lags reality.
+- **Friend grants live in ONE linked file**, `AssemblyInfo.InternalsVisibleTo.cs` beside the
+  `.slnx`, linked by all 29 projects as `../../AssemblyInfo.InternalsVisibleTo.cs`. ⛔ **`internal`
+  now means SOLUTION-internal** — the file compiles into every assembly, so a grant applies to all
+  of them. If something must not cross an assembly boundary, `internal` no longer says so; make it
+  private. Guarded by `SharedFriendGrantsTests`; maintainer's stated preference, `c7643ab`.
+
+### What landed on 2026-09-14, after the retest
+
+| | |
+|---|---|
+| `1f4c87d` | Merge `origin/main` — 25 commits of drift, 19 conflicts. ⚠ Two duplicate-attribute defects came from **clean** auto-merges, not conflicts, and only the build caught them |
+| `dcf6bd5` | `F5` withdrawn; `Audit-Accessibility.ps1` settles before it walks |
+| `b6a0b78` | Both apps → `TrimMode=partial` + `TrimmableAssembly`, `TrimModeIntegrityTests` |
+| `94c864c` | This file — blocker removed, six decisions recorded |
+| `c7643ab` | Friend grants consolidated into one linked file, `SharedFriendGrantsTests` |
+
+ⓘ **`E1` needs no automated work.** `tests/AgentForge.Core.Tests/FileIO/ConfigFileLoaderPreservationTests.cs`
+already drives the real `ConfigFileLoader` path — hand-formatted commented file in, one value
+changed, comments / blank lines / tabs / key order asserted intact, plus a legacy-writer contrast.
+The layer above is fail-safe too: `SelectedConfigWriter()` returns `null` unless `--writer legacy`
+is passed, and `null` means the comment-preserving writer — the **opposite** of the `SchemaRegistry`
+trap, where bare meant offline. What remains for `E1` is a human driving the UI.
 
 ---
 

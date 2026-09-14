@@ -68,6 +68,20 @@ Where a product genuinely needs privileged access to neutral internals, the seam
 `InternalsVisibleTo` grant rather than a reference. An attribute is not a dependency; layering
 holds.
 
+⭐ **Those grants are no longer per-project.** `AssemblyInfo.InternalsVisibleTo.cs` sits beside
+`ClaudeForge.slnx` and is **linked** — never copied — by all 29 projects as
+`../../AssemblyInfo.InternalsVisibleTo.cs`, relative and forward-slashed so Linux and macOS resolve
+it as Windows does. One list that is obviously complete, in place of a dozen that were individually
+precise and collectively unknowable.
+
+⛔ **The cost is that `internal` now means SOLUTION-internal.** The file compiles into every linking
+assembly, so every grant applies to every assembly. If a member must not be reachable from another
+assembly, `internal` no longer expresses that — make it private. ⚠ The names in it are **assembly**
+names (`AgentForge.Core`), not the `Bennewitz.Ninja.*` root namespaces; a grant naming the namespace
+form compiles, ships, and grants nothing. `SharedFriendGrantsTests` guards the shape, including that
+no project declares a grant of its own in **either** spelling — the SDK `<InternalsVisibleTo>` item
+or a raw `<AssemblyAttribute>`, both of which were in use before the consolidation.
+
 ## The package layer
 
 The eleven shared projects — the `AgentForge.*` and `LayeredEditors.*` families plus `JsonC` —
