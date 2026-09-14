@@ -82,9 +82,17 @@ jobs:
   # Artifact naming comes from the app descriptor's AssemblyName, so these are
   # OpenCodeForge-<rid>.zip / .tar.gz — unversioned, because the version lives in the tag.
   #
-  # ⓘ PublicVersion is exported because MSBuild surfaces environment variables as properties
-  # and the AutoVersioning generator may read it. It does NOT affect archive filenames; the
-  # scripts name archives from the assembly name alone.
+  # ⛔ PublicVersion USED TO BE EXPORTED HERE DIRECTLY, on the reasoning that MSBuild surfaces
+  # environment variables as properties and "the AutoVersioning generator may read it". It is
+  # surfaced, and the generator does read it — but only to write
+  # [AssemblyMetadata("PublicVersion", …)], never the version. Measured:
+  # -p:PublicVersion=2026.3.901 stamps 2026.3.914.1346 and carries that attribute. So every
+  # release before this one had AssemblyVersion and FileVersion of the day CI ran, with its own
+  # tag recorded one attribute away — which is why nothing ever looked wrong.
+  #
+  # The property the generator reads for the VERSION is BuildTimestamp.
+  # scripts/Resolve-ReleaseVersion.ps1 derives both from the tag and exports them together, so
+  # they cannot describe different releases. Its header carries the three-way measurement.
   publish-windows:
     name: Publish (Windows)
     needs: test
@@ -98,9 +106,12 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        shell: bash
-        run: echo "PublicVersion=${GITHUB_REF_NAME#${TAG_PREFIX}}" >> "$GITHUB_ENV"
+      # Exports BuildTimestamp (and ReleaseVersion) into $GITHUB_ENV, where MSBuild picks it
+      # up as a property. It must run in EVERY publish job: $GITHUB_ENV does not cross a job
+      # boundary, and a job that skipped it would silently stamp the CI date instead.
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1 -TagPrefix $env:TAG_PREFIX
 
       - name: Publish (win-x64, win-arm64)
         shell: pwsh
@@ -130,8 +141,9 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#${TAG_PREFIX}}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1 -TagPrefix $env:TAG_PREFIX
 
       - name: Publish (linux-x64, linux-arm64)
         shell: pwsh
@@ -158,8 +170,9 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#${TAG_PREFIX}}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1 -TagPrefix $env:TAG_PREFIX
 
       - name: Publish (osx-x64, osx-arm64)
         shell: pwsh

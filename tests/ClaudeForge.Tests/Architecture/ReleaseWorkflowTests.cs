@@ -306,4 +306,123 @@ public sealed class ReleaseWorkflowTests
         Assert.IsTrue(checkedCount > 0, "No sample tags were checked.");
         Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
     }
+
+    /// <summary>
+    /// Every job that publishes resolves its version from the tag first.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>A release that does not pin the version stamps the day CI RAN, and looks correct
+    /// while doing it.</b> The version is a CalVer stamp computed from a captured instant, so a
+    /// tag cut minutes before its build agrees with it by coincidence — and diverges on a re-run
+    /// days later, or a tag cut near midnight. Nothing reports the difference; the binaries
+    /// simply carry a version that is not in any tag.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>It has to be per JOB, which is why this counts rather than merely finds one.</b>
+    /// <c>$GITHUB_ENV</c> does not cross a job boundary, so a workflow that resolved the version
+    /// once and published from three jobs would pin one of them. Counting the resolve steps
+    /// against the publish steps is what notices a job added later without one.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void EveryPublishingJobResolvesItsVersionFromTheTag()
+    {
+        string repoRoot = PublishAppTable.FindRepoRoot();
+        List<ReleaseWorkflow> workflows = Discover(repoRoot);
+
+        Assert.AreNotEqual(0, workflows.Count,
+            "Discovered no release workflow, so this guard is measuring nothing.");
+
+        List<string> problems = [];
+
+        foreach (ReleaseWorkflow workflow in workflows)
+        {
+            // ⚠ Comment lines are dropped BEFORE counting, and that is not tidiness. Both
+            // workflows explain this mechanism in their headers, naming the resolver script —
+            // so counting raw occurrences let a header comment stand in for a missing step.
+            // Caught by canarying this test rather than by reading it.
+            string text = string.Join('\n', File
+                .ReadAllLines(Path.Combine(repoRoot, ".github", "workflows", workflow.FileName))
+                .Where(l => !l.TrimStart().StartsWith('#')));
+
+            int publishes = Regex.Matches(text, @"publish\.ps1\s+-App\s").Count;
+            int resolves = Regex.Matches(text, @"Resolve-ReleaseVersion\.ps1").Count;
+
+            if (resolves < publishes)
+            {
+                problems.Add(
+                    $"{workflow.FileName} runs publish.ps1 {publishes} time(s) but resolves the "
+                    + $"version from the tag only {resolves} time(s). $GITHUB_ENV does not cross "
+                    + "a job boundary, so the unresolved job stamps the CI run's calendar date "
+                    + "instead of the tag's. Add a 'Resolve version from tag' step to it.");
+            }
+        }
+
+        Assert.AreEqual(0, problems.Count, string.Join("\n", problems));
+    }
+
+    /// <summary>
+    /// No workflow sets <c>PublicVersion</c>, which looks like the version input and is not one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>The property is not forbidden — a SECOND PLACE SETTING IT is.</b>
+    /// <c>scripts/Resolve-ReleaseVersion.ps1</c> emits it beside <c>BuildTimestamp</c>, both from
+    /// the same tag, so they cannot disagree about which release they describe. A workflow that
+    /// also sets it is how they start to.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>What made this dangerous is that the name promises the version and does not deliver
+    /// it.</b> It is AutoVersioning's own documented CI-version property, but the generator writes
+    /// it only as <c>[AssemblyMetadata("PublicVersion", …)]</c> — measured: a build with
+    /// <c>-p:PublicVersion=2026.3.901</c> carries that attribute and stamps
+    /// <c>2026.3.914.1346</c>. Both release workflows set it directly for a phase, and their
+    /// comments described a version flow that was not happening.
+    /// </para>
+    /// <para>
+    /// ⓘ Comment lines are skipped on purpose: the workflows explain this in prose, and that
+    /// prose is the reason it will not be reintroduced.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void NoWorkflowSetsPublicVersion()
+    {
+        string repoRoot = PublishAppTable.FindRepoRoot();
+        string dir = Path.Combine(repoRoot, ".github", "workflows");
+
+        Assert.IsTrue(Directory.Exists(dir), $"No workflows directory at '{dir}'.");
+
+        List<string> offenders = [];
+        int scanned = 0;
+
+        foreach (string path in Directory.GetFiles(dir, "*.yml").Order(StringComparer.Ordinal))
+        {
+            scanned++;
+            string[] lines = File.ReadAllLines(path);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].TrimStart().StartsWith('#'))
+                {
+                    continue;
+                }
+
+                if (lines[i].Contains("PublicVersion", StringComparison.Ordinal))
+                {
+                    offenders.Add($"{Path.GetFileName(path)}:{i + 1}: {lines[i].Trim()}");
+                }
+            }
+        }
+
+        Assert.AreNotEqual(0, scanned, "Scanned no workflow files, so this guard proves nothing.");
+
+        Assert.AreEqual(0, offenders.Count,
+            "These workflow lines set PublicVersion themselves. It is not the version input — the "
+            + "generator writes it only as assembly METADATA, and the numbers come from "
+            + "BuildTimestamp — so a workflow setting it independently produces a binary whose "
+            + "recorded version and stamped version can name different tags. "
+            + "scripts/Resolve-ReleaseVersion.ps1 emits both from one tag; call that instead. "
+            + "Offenders: " + string.Join("; ", offenders));
+    }
 }

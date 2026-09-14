@@ -90,20 +90,53 @@ build native to its target architecture and (on Windows) honouring the
 
 #### Versioning
 
-Each `publish-*` job sets `PublicVersion: ${{ github.ref_name }}` (with the
-leading `v` stripped). `publish.ps1` reads `$env:PublicVersion`, forwards it
-to `Publish-Rid.ps1` as `-Version`, which:
+Every artifact's version is a CalVer stamp — `YEAR.QUARTER.MMdd` — computed by the
+AutoVersioning package from one captured instant. A release pins that instant to the **tag**
+rather than to whenever CI happened to run, through one step in every publish job:
 
-1. Passes `-p:Version=<value>` to `dotnet publish` so the produced assembly's
-   `AssemblyVersion` / `FileVersion` match the tag.
-2. Embeds the version in the archive filename:
-   - Windows: `ClaudeForge-<version>-<rid>.zip`
-   - Linux / macOS: `ClaudeForge-<version>-<rid>.tar.gz`
+```yaml
+- name: Resolve version from tag
+  shell: pwsh
+  run: ./scripts/Resolve-ReleaseVersion.ps1
+```
 
-Local devs who run `pwsh src/publish/publish.ps1` without a `-Version` or
-`$env:PublicVersion` get unversioned filenames (`ClaudeForge-<rid>.{zip,tar.gz}`)
-and the csproj's baseline `<Version>` is used for the assembly — handy for
-sanity-check builds where you don't need the version surfaced.
+The script strips the app's tag prefix and validates the shape before anything is built — the
+date has to be real, and the quarter has to agree with the month, because everything downstream
+publishes something immutable. It then exports two values into `$GITHUB_ENV`:
+
+| | |
+|---|---|
+| `BuildTimestamp` | `yyyyMMdd000000`, midnight **local** on the tag's own date. MSBuild surfaces it as a property, and it is the one input the generator reads for the version |
+| `ReleaseVersion` | the tag with its prefix stripped, prerelease suffix included |
+| `PublicVersion` | the same string, under the name the generator records it by |
+
+⛔ **`PublicVersion` was the previous answer, and it does not set the version.** It is
+AutoVersioning's own documented CI-version property, which is what made it believable — but the
+generator writes it only as `[AssemblyMetadata("PublicVersion", …)]`. Measured:
+`-p:PublicVersion=2026.3.901` stamps `2026.3.914.1346` **and** carries that attribute.
+`publish.ps1` has no version handling either, so neither half of the old claim here — that it
+"stamps the assembly" and "embeds the version in archive filenames" — was true. Releases before
+this one had an `AssemblyVersion` and `FileVersion` of the day CI ran, with their own tag sitting
+one attribute away, which is precisely why nothing looked wrong.
+
+⭐ **The attribute is worth keeping, for one reason.** `AssemblyVersion` and `FileVersion` are
+numeric, so `v2026.3.914-rc.1` and `v2026.3.914` both stamp `2026.3.914.0`, and
+`InformationalVersion` is a fixed string. Without that metadata an rc binary and its final release
+are indistinguishable from the file alone. What is forbidden is a **second** place setting it:
+the resolver emits it beside `BuildTimestamp` from one tag, and
+`ReleaseWorkflowTests.NoWorkflowSetsPublicVersion` keeps a workflow from setting it independently.
+
+⚠ **The resolve step belongs in EVERY publish job.** `$GITHUB_ENV` does not cross a job boundary,
+so a job missing one stamps the CI date while its siblings stamp the tag — a split release, with
+nothing reporting it. `ReleaseWorkflowTests.EveryPublishingJobResolvesItsVersionFromTheTag` counts
+the steps against the publish invocations.
+
+ⓘ **Archives are unversioned** — `ClaudeForge-<rid>.zip` / `.tar.gz`. The version lives in the tag
+and in the binaries it stamps.
+
+ⓘ A tag release stamps a fourth part of `0` (`2026.3.914.0`) by construction: that part is `HHmm`
+and the timestamp is pinned to midnight. That is the reproducibility, not a rounding error — the
+same tag built twice produces the same version, which a package feed requires.
 
 #### Pre-release detection
 
@@ -282,10 +315,13 @@ A developer can reproduce exactly what CI does:
 # Reproduces the trim-check job (CI ubuntu runner):
 pwsh src/publish/publish.ps1 -All -Rids linux-x64
 
-# Reproduces the publish-windows job (CI windows runner):
-$env:PublicVersion = '1.2.3'
+# Reproduces the publish-windows job (CI windows runner), version pinned the way a
+# release pins it. Ask the resolver rather than hand-writing the timestamp — it is the
+# same script CI runs, and it validates the tag:
+pwsh scripts/Resolve-ReleaseVersion.ps1 -Tag v2026.3.914
+$env:BuildTimestamp = '20260914000000'
 pwsh src/publish/publish.ps1 -All -Rids win-x64,win-arm64
-Remove-Item Env:\PublicVersion
+Remove-Item Env:\BuildTimestamp
 
 # Reproduces the full release on a single host (won't pass — Windows RIDs
 # need a Windows host for the maui-windows workload + native binaries):
@@ -294,8 +330,9 @@ pwsh src/publish/publish.ps1 -All
 
 When CI fails and a local run passes (or vice versa), the divergence is almost
 always one of: missing `maui-windows` workload, a stale `bin/obj` the orchestrator
-didn't clean (`-Clean` is implicit when called via `publish.ps1`), or a
-non-default `$env:PublicVersion` left in the shell environment.
+didn't clean (`-Clean` is implicit when called via `publish.ps1`), or a stale
+`$env:BuildTimestamp` left in the shell environment — which pins the version
+silently, and to a date nobody typed twice.
 
 ---
 

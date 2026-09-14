@@ -32,10 +32,29 @@ env:
 # Configure under Settings → Secrets and variables → Actions on the repository.
 #
 # This workflow delegates all build work to `src/publish/publish.ps1` — the
-# same script developers run locally. The script reads $env:PublicVersion to
-# stamp the assembly and embed the version in archive filenames; the workflow
-# wires that env var from the tag below. To trace what the script does, read
-# its header comment (publish.ps1) and its single-RID worker (Publish-Rid.ps1).
+# same script developers run locally. To trace what it does, read its header
+# comment (publish.ps1) and its single-RID worker (Publish-Rid.ps1).
+#
+# ⛔ THIS BLOCK USED TO SAY the script "reads $env:PublicVersion to stamp the
+# assembly and embed the version in archive filenames". BOTH HALVES WERE FALSE.
+# publish.ps1 has no version handling at all — archives are unversioned, as the
+# release-notes body below already said — and PublicVersion does not set the
+# version: the AutoVersioning generator writes it only as
+# [AssemblyMetadata("PublicVersion", …)]. Measured: -p:PublicVersion=2026.3.901
+# stamps 2026.3.914.1346 and carries that attribute.
+#
+# So every release before this one had AssemblyVersion and FileVersion of the DAY
+# CI RAN rather than of its tag — while the tag sat in a metadata attribute two
+# steps away, which is why nothing looked wrong. The two agreed by coincidence,
+# a tag being cut minutes before its build, and would diverge on a re-run days
+# later or a tag cut near midnight.
+#
+# The numbers now come from the tag through scripts/Resolve-ReleaseVersion.ps1,
+# which exports BuildTimestamp — the one input the generator reads for the
+# version — alongside PublicVersion, so both describe the same tag by
+# construction. That script's header carries the three-way measurement, and the
+# reason the metadata attribute is still worth having: a prerelease suffix
+# survives nowhere else, since x.y.z-rc.1 and x.y.z both stamp x.y.z.0.
 #
 # Repository secrets (Settings → Secrets → Actions → New repository secret):
 #
@@ -137,15 +156,13 @@ jobs:
   #   ubuntu-latest   → linux-x64, linux-arm64
   #   macos-latest    → osx-x64, osx-arm64   (native dylibs match the runner arch)
   #
-  # PublicVersion env var → publish.ps1 → -p:Version on dotnet publish AND
-  # the archive filename. Result naming: ClaudeForge-<version>-<rid>.zip (Win)
-  # or .tar.gz (Linux/macOS).
+  # Archives are UNVERSIONED — ClaudeForge-<rid>.zip (Win) or .tar.gz — because the
+  # version lives in the tag and in the binaries it stamps. Every publish job resolves
+  # that version from the tag first; see the header for what used to happen instead.
   publish-windows:
     name: Publish (Windows)
     needs: test
     runs-on: windows-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -155,9 +172,12 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        shell: bash
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      # Exports BuildTimestamp (and ReleaseVersion) into $GITHUB_ENV, where MSBuild picks
+      # it up as a property. It must run in EVERY publish job: $GITHUB_ENV does not cross
+      # a job boundary, and a job that skipped it would silently stamp the CI date.
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (win-x64, win-arm64)
         shell: pwsh
@@ -186,8 +206,6 @@ jobs:
     name: Publish (Linux)
     needs: test
     runs-on: ubuntu-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -197,8 +215,9 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (linux-x64, linux-arm64)
         shell: pwsh
@@ -218,8 +237,6 @@ jobs:
     name: Publish (macOS)
     needs: test
     runs-on: macos-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -229,8 +246,9 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (osx-x64, osx-arm64)
         shell: pwsh

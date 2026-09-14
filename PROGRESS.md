@@ -18,11 +18,11 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `90af071`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `2ba224e`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **74 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **75 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,300 passed · 0 failed · 11 skipped**, Debug — the three `PackageVersionLockstepTests` on the **4,297** baseline. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
+| Suite | **4,302 passed · 0 failed · 11 skipped**, Debug — two new `ReleaseWorkflowTests` on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies resolving to those ids — **now all at `2026.3.914`**, the same three parts the built DLLs stamp (`2026.3.914.1303`). The `1.0.0` this cell reported for two weeks is gone; plan 00001 item 3 is done |
@@ -168,6 +168,50 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14, fourth batch — a release pins its version from its own tag
+
+⛔ **Every release this repo has ever cut stamped the date CI ran, not the tag.** `release.yml` and
+`release-opencodeforge.yml` both set `PublicVersion` from the tag and both described a version flow
+that was not happening. Measured three ways on one packable project:
+
+| What a release pins | `PackageVersion` | Assembly stamp | |
+|---|---|---|---|
+| `PublicVersion=2026.3.901` — what both workflows did | `2026.3.914` | `2026.3.914.1346` | sets no version |
+| `AutoPackageVersion=2026.3.901` | `2026.3.901` | `2026.3.914.1347` | **skew** |
+| `BuildTimestamp=20260901120000` | `2026.3.901` | `2026.3.901.1200` | ✅ both follow |
+
+The reason is in AutoVersioning's own props: `BuildTimestamp` is a `CompilerVisibleProperty`, so
+the generator sees it. `AutoVersion` and `AutoPackageVersion` are not in that list — MSBuild-side
+only, so pinning them moves the package and leaves the assembly behind.
+
+⚠ **`PublicVersion` is not inert, and the first read of this was wrong.** The generator does write
+it — as `[AssemblyMetadata("PublicVersion", …)]`, never as the version. So the tag *was* in every
+binary, one attribute away from the numbers that disagreed with it, which is exactly why nothing
+ever looked wrong. ⭐ It is kept for one reason: `AssemblyVersion` and `FileVersion` are numeric, so
+`v2026.3.914-rc.1` and `v2026.3.914` both stamp `2026.3.914.0` and `InformationalVersion` is a
+fixed string — without that attribute an rc binary and its final release are indistinguishable from
+the file alone.
+
+| | |
+|---|---|
+| The derivation | [`scripts/Resolve-ReleaseVersion.ps1`](scripts/Resolve-ReleaseVersion.ps1) — strips the app's tag prefix, rejects an unreal date or a quarter that disagrees with its month, exports `BuildTimestamp` + `ReleaseVersion` + `PublicVersion` |
+| Wired into | Every publish job of both release workflows. ⚠ Per job, not per workflow: `$GITHUB_ENV` does not cross a job boundary |
+| Packages | Need no change — `dotnet pack` already derives from `AutoPackageVersion`, which follows `BuildTimestamp`. Verified end to end with the env var rather than `-p:`, since that is how a workflow passes it: `2026.3.914` package, `2026.3.914.0` assembly |
+| Guards | `ReleaseWorkflowTests.EveryPublishingJobResolvesItsVersionFromTheTag` and `.NoWorkflowSetsPublicVersion`, both canaried red |
+
+⛔ **The first version of the counting guard was fooled by a comment** — the workflow header names
+the resolver script, so counting raw occurrences let that comment stand in for a missing step. The
+canary is what found it; reading the test would not have. It counts non-comment lines now.
+
+ⓘ **A tag release stamps a fourth part of `0`** (`2026.3.914.0`), because that part is `HHmm` and
+the timestamp is pinned to midnight. That is what makes the same tag reproducible, which a package
+feed requires.
+
+⚠ **`$(Version)` is still `1.0.0` and still reaches nothing.** Unchanged by this batch, and still
+the thing to check before item 6 names an artifact after it.
 
 ---
 
