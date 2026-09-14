@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `fd3e90e`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `a8c9f20`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **77 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **78 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,303 passed · 0 failed · 11 skipped**, Debug — three new `ReleaseWorkflowTests` across the release batches, on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
@@ -131,13 +131,16 @@ them. Canaried red on a wrong source property and on a mixed-version feed before
 ⓘ A `-p:PackageVersion=…` on the command line is a **global** property and still outranks the
 assignment, so `package-canary.ps1` packs at its throwaway prerelease exactly as before.
 
-⚠ **Two things item 5 deliberately left for item 6**, both recorded so they are not rediscovered:
+✅ **The two things item 5 deliberately left for item 6 are both closed.**
 
-- **`src/publish/publish.ps1` still knows nothing about `artifacts/`.** It wipes every `bin/` and
-  `obj/` under `src/` and all of `dist/`, so it does not delete the local feed — but a stale
-  local-feed package **outranks** GitHub Packages in `nuget.config`'s source mapping, so a release
-  cut on a machine that has run the canary could consume a local build at the release version.
-- **Nothing pre-flights the feed for an already-published version**, which is item 6's core.
+- **`src/publish/publish.ps1` now wipes `artifacts/localfeed`** alongside `dist/` and every
+  `bin/`+`obj/` under `src/`. It is the one build input that sat outside `src/` and so survived
+  every existing wipe, and in package mode a local package at the release version is preferred
+  over the published one — silently, a folder source being exactly as valid to NuGet as a remote
+  one. A release cut on a developer's machine could have shipped whatever the working tree held
+  when the canary last ran.
+- **The feed pre-flight is item 6's gate 3**, and it does more than the plan asked — see the
+  fifth batch below for why "404 means absent" was not good enough.
 
 ⚠ **Two questions for the maintainer, both surfaced by item 2 and neither blocking:**
 
@@ -223,10 +226,13 @@ the tag is refused rather than published as a permanent, silent lie. Canaried: p
 ClaudeForge uses `Unprefixed`, which strips at most a leading `v` then requires `Version.TryParse`;
 `packages-v2026.3.914` fails that.
 
-⚠ **Still open from item 5, and now the last thing between here and a first release:**
-`src/publish/publish.ps1` knows nothing about `artifacts/`. A stale local-feed package at the
-release version would outrank GitHub Packages in `nuget.config`'s source mapping, so a release cut
-on a machine that has run the canary could consume a local build.
+✅ **Closed in the same batch: `src/publish/publish.ps1` now wipes `artifacts/localfeed`.** It was
+the one build input outside `src/`, so every existing wipe missed it, and in package mode a local
+package at the release version is preferred over the published one. ⚠ **A side effect worth
+knowing:** running `publish.ps1` locally now empties the feed, so the third
+`PackageVersionLockstepTests` goes inconclusive until the canary re-packs it — the suite then
+reads **4,302 · 12** rather than 4,303 · 11. That is the guard declining to claim a measurement it
+did not take, not a regression.
 
 ⓘ Also corrected here: `nuget.config` credited the local feed to `scripts/pack-local-feed.ps1`,
 which does not exist — the same phantom script the `ValidateSharedPackageVersion` error named.

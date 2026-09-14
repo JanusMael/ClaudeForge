@@ -132,6 +132,23 @@ foreach ($dir in $cleanTargets) {
     Remove-Item -Recurse -Force -LiteralPath $dir -ErrorAction SilentlyContinue
 }
 
+# ⛔ AND THE LOCAL PACKAGE FEED, WHICH IS NOT UNDER src/ AND SO SURVIVED EVERY WIPE ABOVE.
+# scripts/package-canary.ps1 writes throwaway packages into artifacts/localfeed, and
+# nuget.config lists that directory as a source mapped to the same eleven ids as the private
+# GitHub feed. In package mode a local package at the version being released is preferred over
+# the published one — silently, because a local folder source is exactly as valid to NuGet as a
+# remote one. A release cut on a developer's machine could then ship a build of whatever was in
+# the working tree when the canary last ran.
+#
+# ⓘ Deleting it is safe by design: nuget.config already documents the feed as absent on a fresh
+# clone, and nothing maps to it unless UseSharedPackages=true. The canary re-packs it on its
+# next run. See plans/00001 work items 5 and 6.
+$localFeed = Join-Path (Split-Path $srcRoot -Parent) 'artifacts/localfeed'
+if (Test-Path $localFeed) {
+    Write-Host "  Wiping the local package feed (artifacts/localfeed)..." -ForegroundColor DarkGray
+    Remove-Item -Recurse -Force -LiteralPath $localFeed -ErrorAction SilentlyContinue
+}
+
 # ── 2. Per-RID loop with optional prompting ─────────────────────────────────
 # `Read-BuildRidChoice` returns one of:
 #   'Yes'  — build this RID, keep prompting for the rest
