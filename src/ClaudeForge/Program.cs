@@ -117,6 +117,16 @@ internal sealed class Program
             EnableEventTailWindow = true,
             EventTailWindowTitle = "Live Config-File Events — Shift+F12 to hide",
             EventTailLaunchLabel = "Config-file events ▸",
+            // ⭐ The same stream, persisted. The tail window above is live-only, so "did the
+            // watcher fire while I was editing?" was unanswerable once the window closed — and
+            // impossible to hand to anyone else. This writes events-*.txt beside app-*.txt in the
+            // same directory (next to the executable), same bucketing and retention.
+            EnableEventLogFile = true,
+            // NOTE: no hyphen. BucketedRollingFileSink rejects a prefix containing '-' because
+            // the file name is {prefix}-{yyyyMMdd}-{HH}.txt and the hyphen is the field
+            // separator it parses back when pruning. "config-events" throws, and it throws
+            // from ConfigureLogging - before any logging exists - so the app dies silently.
+            EventLogFileNamePrefix = "events",
         });
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture

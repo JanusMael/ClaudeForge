@@ -5,6 +5,14 @@ This document captures hard-won knowledge about `PublishTrimmed` with Avalonia
 is zero ILLink warnings in the Release publish across all six RIDs:
 `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`.
 
+> ⚠ **There are TWO apps, and the target is therefore 12 publishes, not six.**
+> `ClaudeForge` and `OpenCodeForge` are published separately and each has its
+> own link closure, so a trim break can exist in one and not the other. This
+> file said "six RIDs" throughout while only ever describing the first app —
+> corrected 2026-09-14. ⛔ `ILLink.Suppressions.xml` belongs to `ClaudeForge`
+> and covers *its* dependency closure; it is an app-level artifact and a
+> packaged library neither carries nor needs one.
+
 > **Avalonia 12 dependency note:** `Avalonia.Svg.Skia` has no Avalonia 12
 > release. The app references `Svg.Skia 3.0.2` directly instead — same
 > underlying `SKSvg` API, no Avalonia version dependency. The trim

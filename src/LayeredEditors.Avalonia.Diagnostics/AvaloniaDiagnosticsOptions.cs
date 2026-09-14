@@ -113,6 +113,38 @@ public sealed class AvaloniaDiagnosticsOptions
     public string? EventTailLaunchLabel { get; init; }
 
     /// <summary>
+    /// Also persist host-fed events (<see cref="AvaloniaDiagnostics.EnqueueEvent"/>) to their own
+    /// rolling file, separate from the main application log. Defaults to <c>false</c> (opt-in).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>A separate FILE, not a separate level.</b> The event stream is deliberately outside
+    /// the Serilog pipeline so host-domain chatter does not pollute the app log, and until now it
+    /// existed only in the <see cref="EnableEventTailWindow"/> window — which is live-only. That
+    /// makes a question like "did the file watcher fire while I was editing?" unanswerable after
+    /// the fact, and impossible to hand to anyone else.
+    /// </para>
+    /// <para>
+    /// ⚠ Independent of <see cref="EnableEventTailWindow"/> on purpose: either, both or neither.
+    /// Nothing is written unless the host enqueues.
+    /// </para>
+    /// </remarks>
+    public bool EnableEventLogFile { get; init; }
+
+    /// <summary>
+    /// File-name prefix for the <see cref="EnableEventLogFile"/> file. Defaults to
+    /// <c>"events"</c>, so it sorts beside the main log rather than mixing with it.
+    /// </summary>
+    /// <remarks>
+    /// MUST NOT CONTAIN A HYPHEN. The file name is <c>{prefix}-{yyyyMMdd}-{HH}.txt</c> and the
+    /// hyphen is the field separator the retention sweep parses back, so
+    /// <c>BucketedRollingFileSink</c> throws on one. That throw comes out of
+    /// <c>ConfigureLogging</c>, which runs BEFORE any logging exists - so the app exits with no
+    /// window and no log line anywhere. Measured the hard way with the prefix "config-events".
+    /// </remarks>
+    public string? EventLogFileNamePrefix { get; init; }
+
+    /// <summary>
     /// Bridge Avalonia's internal logger (<c>Avalonia.Logging.Logger.Sink</c>)
     /// into Serilog so binding errors, layout warnings, etc. reach the same
     /// sinks. Defaults to <c>true</c>. Incompatible with
