@@ -187,8 +187,8 @@ have published as `Bennewitz.Ninja.AgentForge.Jsonc` — a name that overclaims,
 pushed id cannot be replaced. Renamed to `Bennewitz.Ninja.JsonC` (the maintainer's casing) along
 with the directory, csproj, assembly, namespaces and its test project.
 
-⛔ **It falls outside both family prefixes, and three separate selectors had to learn about it —
-they do not share a list.** The reference switch in the root `Directory.Build.targets`;
+⛔ **It falls outside both family prefixes, and FOUR separate selectors had to learn about it —
+they do not share a list, and the canary found the one the rename missed.** The reference switch in the root `Directory.Build.targets`;
 `PackageMetadataTests`, which asserts the switch's selector and the packable set agree in both
 directions; and **`AssemblyLayeringTests`, which keeps its own.**
 
@@ -595,8 +595,10 @@ pass, not a fix.
 - ⭐ **A package id must not overclaim, and it is only free to fix before the first publish.**
   `JsonC` was renamed out of `AgentForge.*` on 2026-09-14 for exactly this reason: it is a
   dependency-free JSONC reader that knows nothing about agents. ⛔ Being a family of one costs
-  three edits in three files that do **not** share a list — the switch in `Directory.Build.targets`,
-  `PackageMetadataTests`, and `AssemblyLayeringTests`. Prefer a family prefix for anything new.
+  four edits in four files that do **not** share a list — the switch in `Directory.Build.targets`,
+  `PackageMetadataTests`, `AssemblyLayeringTests`, and **`nuget.config`'s `packageSourceMapping`**.
+  ⛔ The fourth is invisible to every normal build and only the package canary fails on it. Prefer
+  a family prefix for anything new.
 - ⛔ **`AssemblyLayeringTests` keeps its OWN selector, and its vacuity guard cannot detect a
   family departure.** "At least one shared project exists" stays true while a renamed one silently
   leaves the scan. Widening it is part of any rename, not an afterthought.

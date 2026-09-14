@@ -42,12 +42,20 @@ Four families and one standalone, and the prefix tells you the layer:
 - **`ClaudeForge` / `OpenCodeForge`** — the two app assemblies. Each is an ordinary consumer of
   everything above.
 
-⚠ **Being a family of one costs three edits, and they are not in one place.** The package-mode
-reference switch in the root `Directory.Build.targets` selects the shared projects by family
-prefix, so `JsonC` is named there explicitly; `PackageMetadataTests` asserts that selector and
-the packable set agree in both directions; and `AssemblyLayeringTests` keeps its *own* selector,
-which had to be widened too or `JsonC` would have silently left the layering scan. Prefer a
-family prefix for anything new.
+⚠ **Being a family of one costs FOUR edits, in four uncoupled places.** The package-mode reference
+switch in the root `Directory.Build.targets` selects the shared projects by family prefix, so
+`JsonC` is named there explicitly; `PackageMetadataTests` asserts that selector and the packable
+set agree in both directions; `AssemblyLayeringTests` keeps its *own* selector, which had to be
+widened or `JsonC` would have silently left the layering scan; and **`nuget.config`'s
+`packageSourceMapping`** has to route the id to the private feeds.
+
+⛔ **The rename missed the fourth and only the package canary caught it.** A normal build never
+asks for these package ids, so nothing local fails. The symptom is `NU1101 "no packages exist with
+this id"` listing only nuget.org, with the real feeds under *"were not considered"* — which reads
+like a missing package rather than a mapping gap. ⚠ The broad `Bennewitz.Ninja.*` pattern that
+would make this automatic is unavailable: it would also capture the public
+`Bennewitz.Ninja.AutoVersioning`, and every credential-free clone would then get a 401 from the
+private feed on a package every project references. **Prefer a family prefix for anything new.**
 
 **The rule that matters: the two products never reference each other, and nothing
 product-specific is referenced by `AgentForge.*`.** `AssemblyLayeringTests` enforces it over
