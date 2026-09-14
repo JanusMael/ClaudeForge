@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Editor for file/directory path properties. Shows a text box plus a Browse button

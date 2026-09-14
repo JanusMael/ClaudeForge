@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 

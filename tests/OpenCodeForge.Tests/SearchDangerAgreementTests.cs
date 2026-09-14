@@ -7,7 +7,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 

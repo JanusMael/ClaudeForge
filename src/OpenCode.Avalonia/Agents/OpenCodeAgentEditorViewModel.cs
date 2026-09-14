@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk.Agents;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

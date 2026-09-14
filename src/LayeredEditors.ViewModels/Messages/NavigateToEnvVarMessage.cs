@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+namespace Bennewitz.Ninja.LayeredEditors.Messages;
 
 /// <summary>
 /// Sent via <see cref="CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger"/> when

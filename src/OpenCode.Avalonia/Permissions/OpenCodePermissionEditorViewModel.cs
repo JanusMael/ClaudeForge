@@ -5,7 +5,7 @@ using System.Globalization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Localization;
 using Bennewitz.Ninja.OpenCode.Sdk.Permissions;
 using CommunityToolkit.Mvvm.ComponentModel;

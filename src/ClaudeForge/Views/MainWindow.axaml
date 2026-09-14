@@ -3,7 +3,7 @@
         xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
         xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
         xmlns:backup="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
-        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
         xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"

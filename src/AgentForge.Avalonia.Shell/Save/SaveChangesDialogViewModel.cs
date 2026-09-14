@@ -195,7 +195,7 @@ public sealed class SaveChangeEntryViewModel
 
     /// <summary>
     /// Whether to render a severity dot. Named to match
-    /// <see cref="LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
+    /// <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
     /// so the markup is the same shape on every danger surface.
     /// </summary>
     public bool HasDangerSeverity => Danger.Explanation is not null;

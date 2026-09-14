@@ -3,7 +3,7 @@ using System.Text;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 using Bennewitz.Ninja.OpenCodeForge.Localization;

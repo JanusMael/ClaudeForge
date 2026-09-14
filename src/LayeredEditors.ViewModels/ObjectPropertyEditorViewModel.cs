@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Editor for object-type properties. Renders child property editors recursively.

@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Keybinds;
 using Bennewitz.Ninja.OpenCode.Sdk.Keybinds;
 

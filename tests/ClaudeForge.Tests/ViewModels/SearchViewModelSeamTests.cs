@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

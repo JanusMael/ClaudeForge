@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
-        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.ViewModels</RootNamespace>
         <AssemblyName>LayeredEditors.ViewModels</AssemblyName>
         <Description>
             View-models for layered-scope settings editors — pure presentation logic with NO

@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Artifacts;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;

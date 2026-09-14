@@ -2,12 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Controls;
 
 /// <summary>
-/// A chrome control that wraps any <see cref="LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel"/>:
+/// A chrome control that wraps any <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel"/>:
 /// renders the property name, scope badge, override indicator, lock icon, reset button,
 /// description, and delegates the actual input control to a DataTemplate.
 /// Specialized editor types not listed in the built-in DataTemplates fall through to

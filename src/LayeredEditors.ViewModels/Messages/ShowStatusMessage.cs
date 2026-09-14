@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+namespace Bennewitz.Ninja.LayeredEditors.Messages;
 
 /// <summary>How the shell should render a <see cref="ShowStatusMessage"/>.</summary>
 public enum StatusSeverity

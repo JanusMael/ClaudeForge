@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// <para>
 /// ⭐⭐ <b>The load-bearing case is the one where this DISAGREES with the settings row.</b> The
 /// obvious implementation — delegate to
-/// <see cref="LayeredEditors.Avalonia.ViewModels.IDangerAnnotatedEditor.AssessDanger"/> the way a
+/// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor.AssessDanger"/> the way a
 /// search hit does — reports the assessment at the scope the user happens to be EDITING, which is
 /// not the scope the runtime value came from. Every test here would still pass with that
 /// implementation except <see cref="EffectiveRow_IsAssessedAtTheWinningScope_NotTheEditingScope"/>,

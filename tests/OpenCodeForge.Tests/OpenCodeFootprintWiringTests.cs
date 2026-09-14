@@ -1,7 +1,7 @@
 using System.Xml.Linq;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Sdk;
 using Bennewitz.Ninja.OpenCode.Sdk.Memory;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;

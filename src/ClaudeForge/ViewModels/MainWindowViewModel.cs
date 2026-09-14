@@ -29,7 +29,7 @@ using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+using Bennewitz.Ninja.LayeredEditors.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using CommunityToolkit.Mvvm.ComponentModel;

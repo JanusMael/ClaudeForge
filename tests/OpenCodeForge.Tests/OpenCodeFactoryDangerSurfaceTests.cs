@@ -2,7 +2,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCodeForge.Adapters;
 
 namespace Bennewitz.Ninja.OpenCodeForge.Tests;

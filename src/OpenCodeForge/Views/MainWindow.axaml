@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bennewitz.Ninja.OpenCodeForge.ViewModels"
-        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
         xmlns:views="using:Bennewitz.Ninja.OpenCodeForge.Views"
         xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:services="using:Bennewitz.Ninja.OpenCodeForge.Services"

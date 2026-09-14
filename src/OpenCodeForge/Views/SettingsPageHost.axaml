@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
-             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              x:Class="Bennewitz.Ninja.OpenCodeForge.Views.SettingsPageHost"
              x:DataType="shell:SettingsGroupEditorViewModel">

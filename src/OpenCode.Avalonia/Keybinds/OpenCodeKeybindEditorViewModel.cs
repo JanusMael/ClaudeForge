@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 using Bennewitz.Ninja.OpenCode.Avalonia.Localization;
 using Bennewitz.Ninja.OpenCode.Sdk.Keybinds;
 using CommunityToolkit.Mvvm.ComponentModel;

@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:vm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
              xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:loc="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Localization"

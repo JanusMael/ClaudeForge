@@ -1,4 +1,4 @@
-using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
+using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 

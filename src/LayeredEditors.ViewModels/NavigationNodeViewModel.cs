@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// A node in a hierarchical settings navigation tree (sidebar).

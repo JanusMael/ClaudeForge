@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>Editor for general string properties.</summary>
 public partial class StringPropertyEditorViewModel : PropertyEditorViewModel

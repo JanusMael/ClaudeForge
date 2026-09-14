@@ -3580,7 +3580,7 @@ pointed at something the local runs could not see.
 `src/ClaudeForge/ViewModels/Editors/AGENTS.md` cited
 `src/LayeredEditors.Avalonia/ViewModels` for the generic leaf editors, which live in
 `src/LayeredEditors.ViewModels`. The doc used the **namespace** shape
-(`Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels`) as a **directory path**, and for
+(`Bennewitz.Ninja.LayeredEditors.ViewModels`) as a **directory path**, and for
 that project the two genuinely differ. **This branch introduced it**, in `8834039` during
 the Phase 1 renames — precisely the rot the guard exists to catch.
 

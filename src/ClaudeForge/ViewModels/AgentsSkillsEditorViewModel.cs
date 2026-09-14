@@ -5,7 +5,7 @@ using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+using Bennewitz.Ninja.LayeredEditors.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
