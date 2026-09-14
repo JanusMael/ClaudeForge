@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
-        <RootNamespace>Bennewitz.Ninja.Layer.Abstractions</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Abstractions</RootNamespace>
         <AssemblyName>LayeredEditors.Abstractions</AssemblyName>
         <Description>
             Generic abstractions for hierarchical, layered-scope settings editors.

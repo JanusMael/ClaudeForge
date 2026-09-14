@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Description>

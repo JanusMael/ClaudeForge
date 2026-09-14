@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Diagnostics.Tests</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

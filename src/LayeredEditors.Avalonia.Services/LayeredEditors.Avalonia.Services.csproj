@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Services</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.Services</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Services</AssemblyName>
         <Description>
             Platform-agnostic and Avalonia-backed service implementations that are not specific

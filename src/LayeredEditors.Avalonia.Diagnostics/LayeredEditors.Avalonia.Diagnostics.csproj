@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Diagnostics</RootNamespace>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Diagnostics</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <!-- Generate XML doc in all configurations for IDE IntelliSense and NuGet packaging.

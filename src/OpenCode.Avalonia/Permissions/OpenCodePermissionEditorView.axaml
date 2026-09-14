@@ -19,7 +19,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:perm="using:Bennewitz.Ninja.OpenCode.Avalonia.Permissions"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.OpenCode.Avalonia.Localization"
-             xmlns:shared="clr-namespace:Bennewitz.Ninja.Layer.Avalonia.Services.Converters;assembly=LayeredEditors.Avalonia.Services"
+             xmlns:shared="clr-namespace:Bennewitz.Ninja.LayeredEditors.Avalonia.Services.Converters;assembly=LayeredEditors.Avalonia.Services"
              x:Class="Bennewitz.Ninja.OpenCode.Avalonia.Permissions.OpenCodePermissionEditorView"
              x:DataType="perm:OpenCodePermissionEditorViewModel">
 
