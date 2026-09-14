@@ -18,16 +18,16 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `2bf0dfc`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `790ce63`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **67 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **71 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,296 passed · 0 failed · 11 skipped**, Debug — four new packaging guards on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
+| Suite | **4,297 passed · 0 failed · 11 skipped**, Debug — four packaging guards plus one theme-brush regression test on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies already resolving to those ids. ⚠ All at version **`1.0.0`** — plan 00001 item 3 is the blocked piece and this is what it looks like unfixed |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13, `0.0.0-local-20260913161300`: eleven packages → isolated `NUGET_PACKAGES` → Release build → **4,295 passed · 0 failed · 11 skipped** → both apps published `win-x64`. Zero warnings, zero IL diagnostics. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
-| ⚠ Awaiting | **The maintainer's manual retest pass** — see below. Everything that was being batched for it is now done |
+| ⚠ Awaiting | **The rest of the manual retest.** The first pass ran 2026-09-14 and found six defects, all now fixed (`e9859b9`, `790ce63`) — but the fixes themselves are **unverified in the running app**. See *RESUME HERE* |
 
 ---
 
@@ -42,32 +42,44 @@ OpenCode.** Its Release build output is 14 assemblies — 6 `AgentForge.*`, 5 `L
 3 `ClaudeForge*` — and **zero** OpenCode ones; `release.yml` passes `-App ClaudeForge` explicitly
 on all three publish jobs and its tag pattern excludes `opencodeforge-v*`. Nothing needs carving out.
 
-### ✅ The retest batch is finished — hand over now
+### ▶ The manual retest — first pass done, fixes UNVERIFIED
 
-Both items the previous session was holding work for are done, and one defect surfaced while doing
-them. Ranked by what actually changed and what automation cannot reach:
+The maintainer drove ClaudeForge (Release `win-x64`) on 2026-09-14 and reported findings one at a
+time; fixes were batched and landed in `e9859b9` + `790ce63`. **Every fix below is unverified in a
+running app** — that is the next thing to do.
 
-1. **Theming, BOTH variants** — highest risk, unchanged from the previous handoff. Two theme files
-   merged with colour tokens from both sides. Check the ✨ NEW badge (`AppAccent*`, new from
-   `main`), the severity dots, and the save-dialog change pills. Automation proved the keys exist,
+**Passed, do not retest:** save → reload a config (the one path nothing had ever exercised),
+the F12 live-log window, and About page → *Share Log*.
+
+**Fixed, needs looking at:**
+
+| | What to check |
+|---|---|
+| Theme brushes | Toggle light ↔ dark repeatedly on a settings page. Severity glyphs must change palette **immediately**, on every row, with no mixture. This was the worst defect found |
+| Severity glyphs | Critical is now `⊗`, Caution `⚠`, at FontSize 14. ⛔ **`⚠` rendering is NOT confirmed on any platform** — if it shows as colour emoji or tofu, say so |
+| Light palette | Critical `#CE2029` (fire engine), Caution `#D97706` (amber, not brown) |
+| Share config | Effective settings → *Share config* now copies the JSON to the clipboard on Windows. Paste somewhere to confirm |
+| Config watcher | Create `settings.local.json` or `.mcp.json` **while the app is running** — it should now be picked up. `logs/events-*.txt` should say `armed for 6 of 6` |
+| F12 keyboard | Tab should now reach the header links (*Log file*, *Open folder*, *Config-file events*) with a visible focus ring, and Enter/Space should activate them |
+| About dialog | The stray vertical line is gone |
+
+**Still never tested at all:**
+
+1. **Theming across both variants, systematically** — the ✨ NEW badge (`AppAccent*`, from the
+   `main` merge), severity dots, save-dialog change pills. Automation proved the keys exist,
    never that they look right together.
-2. **The keybinds editor's warning states** — `LE.DangerText` / `LE.DangerBorder` were referenced
-   nine times and defined nowhere; the original bug was invisible because no conflicting keybind
-   was ever seeded. Seed one and confirm red text inside a visible border.
-3. **Save → reload a config, in both apps.** Still the one thing no verification has touched, and
-   this branch changed the save dialog.
-4. **Diagnostics windows (F12)** — `main`'s accessibility pass and live-log fix arrived untested.
-5. ⚠ **Share, from the About and Effective-settings pages, on Windows.** New to this list.
-   `DefaultShareService` lost six `#if` blocks and a constructor parameter in `23f7c4f`. The claim
-   that this changed nothing rests on the TFM never having built — which is measured — plus 4,291
-   tests and a clean 12/12 trim matrix. **Nobody has launched the app and pressed Share.** Expect
-   Explorer to open with the file selected, or the default browser for a URI.
+2. **OpenCodeForge — nothing has been driven.** Its keybinds editor's warning states
+   (`LE.DangerText` / `LE.DangerBorder`) need a **conflicting keybind seeded** or they never
+   render. Also its own theming and save → reload.
+3. **F12 diagnostics accessibility** beyond the tab trap — `main`'s accessibility pass arrived
+   through the merge untested.
 
-✅ **Plan 00001 items 2, 4 and 5 add nothing to that list.** Between them they change csproj and
-props metadata, build files, a `nuget.config`, one script, one CI job and the docs — no C#, no
-AXAML, no resx — so there is no surface to press. The five items above are unchanged by all three.
-⭐ Item 5 nevertheless **published both apps** on the way through, in package mode, as part of its
-canary.
+⚠ **Close any other ClaudeForge before testing.** A second instance from `C:\c\cl\ClaudeForge`
+(Debug build) was running against the same `~/.claude` throughout the first pass; each app sees
+the other's writes as external changes, which is exactly the signal the watcher test measures.
+
+ⓘ **Two live surfaces worth knowing:** **Shift+F12** opens *Live Config-File Events*, and
+`logs/events-*.txt` beside the executable now persists the same stream with scope.
 
 ⚠ **Also worth one look: `src/publish/publish.ps1` lost its `maui-windows` workload preflight.**
 Sixty lines that ran on every Windows release publish and could abort it. The script still parses,
@@ -86,34 +98,22 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⏳ **Item 3 is no longer blocked — it is
-waiting on a merge and a publish, both the maintainer's.**
+Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⏳ **Item 3 is half done and the
+remaining half is one line in this repo.**
 
-AutoVersioning lives at **`JanusMael/Bennewitz.Ninja.AutoVersioning`**, public, and is cloned at
-`C:\c\cl\Bennewitz.Ninja.AutoVersioning`. The change it needed is open as
-[PR #1](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/pull/1) — `Build.props` now
-derives two properties during evaluation from the same `BuildTimestamp` the generator is handed:
-`AutoVersion` (`YEAR.QUARTER.MMdd.HHmm`, the four-part stamp) and `AutoPackageVersion`
-(`YEAR.QUARTER.MMdd`, three-part and SemVer-safe). ⭐ **Proven against a real packed package, not
-the loose props file:** a probe pinned to one timestamp produced an assembly stamped
-`2026.3.913.1613` and a package `2026.3.913` — the package version is exactly the first three
-parts of the assembly stamp, agreeing by construction.
+[PR #1](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/pull/1) is **MERGED** and
+**`2026.3.914` is published to nuget.org**. `Directory.Build.props` already references it, and the
+new properties are confirmed reaching this repo: `AutoPackageVersion` evaluates to `2026.3.914`,
+`AutoVersion` to `2026.3.914.1001`, and the published app stamps `2026.3.914.1002`.
 
-⚠ **The source generator was deliberately not touched**: that repo has no test project and no
-solution file, and the property must be readable *before* compilation, which a source generator
-cannot do. The cost is that the CalVer algorithm now exists twice, C# and MSBuild; the props
-comment names `BuildVersion.cs` as the reference implementation and the specific functions it
-mirrors.
+⛔ **`PackageVersion` is NOT yet assigned**, so `dotnet pack` still produces `1.0.0`. What remains:
 
-**Once merged and published**, this repo's side is one line in `src/Directory.Build.props` —
-`<PackageVersion>$(AutoPackageVersion)</PackageVersion>` — plus the plan's guard test: the package
-version equals the first three parts of the built DLL's `FileVersion`, read from the DLL rather
-than from the property that produced it. ⛔ It cannot be wired up before the publish; the property
-only exists in an unreleased build.
-
-Items **6** and **7** remain. ⚠ **6 (the publish pipeline) is the one that needs item 3 first** —
-a release pushes at a real version, and `1.0.0` is not one. **7 (documentation)** is unblocked;
-`CLAUDE.md` still has no package layer and `TRIMMING.md` still never mentions the second app.
+1. `<PackageVersion>$(AutoPackageVersion)</PackageVersion>` — ⚠ **not in `src/Directory.Build.props`**:
+   that file is imported BEFORE the NuGet-generated props that define `AutoPackageVersion`, so it
+   would evaluate empty. The root `Directory.Build.targets` is the place, beside the reference switch.
+2. The plan's guard test: the package version equals the first three parts of the built DLL's
+   `FileVersion`, read from the DLL rather than from the property that produced it.
+3. Then **item 6** (the publish pipeline) unblocks — it needs a real version to push.
 
 ⚠ **Two things item 5 deliberately left for item 6**, both recorded so they are not rediscovered:
 
@@ -165,6 +165,78 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14, second batch — the manual retest and its fixes
+
+The maintainer drove the app; findings came in one at a time and fixes were batched.
+
+| Commit | What |
+|---|---|
+| `e9859b9` | Six retest defects: theme brushes, Windows share, the config watcher, severity glyphs and palette, the F12 keyboard trap, the About separator |
+| `790ce63` | The event-log file the maintainer asked for, plus the AutoVersioning bump to `2026.3.914` |
+
+### ⛔⛔ The worst one: themed brushes were snapshots
+
+`BrushHelper.ResolveThemed` read `ActualThemeVariant` at Convert time. An `IValueConverter` re-runs
+only when its binding SOURCE changes, and a severity does not change because the theme did — so
+every element kept whichever palette was live when it was last materialised. Rows rebuilt by
+navigation picked up the new one, rows that were not kept the old one, and **one screen showed
+both**. Reported as *"brighter on reopen, dark after switching to light, sometimes light then later
+dark inside the same theme"*.
+
+⭐ The fix is far smaller than either option first considered: return ONE shared `SolidColorBrush`
+per key and re-colour it on variant change. `Color` is change-notifying, so every element already
+holding it re-renders — **zero markup change**, and it covers all three converters and any future
+caller rather than the 17 binding sites that exist today.
+
+⚠ Three process lessons, all recorded because each nearly shipped something wrong:
+
+- **The first canary was INVALID.** Stashing the fix turned the new test red — on a
+  `NullReferenceException` in its own reflection scaffolding, not on its assertion. Scaffolding
+  must never be what fails. Made tolerant; the re-run fails on the real assertion.
+- **The existing suite caught a flaw in the fix.** `AppSeverityThemedLookupTests` passed in
+  isolation and failed in the full run: the first version cached the COLOUR as well as the
+  instance. The cache is identity-only now.
+- ⛔ **I claimed "nothing today would catch this" and was wrong** — two themed-lookup test classes
+  already existed. They assert a FRESH Convert respects the variant, which the old code did
+  correctly. None covered a brush already handed out and never re-converted.
+
+### The other five
+
+- **Share config was a silent no-op on Windows** — `IsWindows() && !string.IsNullOrEmpty(uri)`, and
+  the caller passes no URI. macOS falls back to `pbcopy`, Linux to `mailto:`, Windows to nothing.
+  ⛔ Not a regression from `23f7c4f`: the MAUI path lived behind a TFM that never compiled, so **no
+  shipped build ever had it**. Now uses `clip.exe`. Failure reporting moved off `Debug.WriteLine`,
+  which is compiled OUT of Release while its comment claimed it was there "so developers can
+  diagnose".
+- **Only 3 of 6 config files were watched** — `SetupFileWatcher` filtered on `f.Exists`, but
+  `ConfigFileWatcher.Watch` needs only the DIRECTORY and already raises `Created`. A config created
+  while the app ran was invisible. Surfaced by the new event log printing `armed for 3 of 6`.
+- ⛔ **The F12 "tab trap" was misdiagnosed twice.** I claimed Avalonia's `ListBox` defaults
+  `TabNavigation` to `Continue` and wrote a fix plus a global style on it. **Measured: the default
+  is already `Once`.** Both were no-ops asserting a falsehood; both reverted. The real cause:
+  `HeaderLink.Create` returned a `TextBlock`, which is not focusable — so the window's only tab
+  stop was the log list and Tab had nowhere to go. The actions were **mouse-only** while their
+  automation properties made a screen reader announce them correctly. *Announcing a control is not
+  the same as exposing it.* They are `Button`s now.
+- **Severity glyphs and palette** — see *Locked decisions*.
+- **The About dialog's separator** stretched to the grid height, set by the taller column, and ran
+  ~150px past the last button into empty space.
+
+### The instrument that answered the watcher question
+
+`AvaloniaDiagnosticsOptions.EnableEventLogFile` writes `logs/events-*.txt` beside `app-*.txt`, with
+scope, file type, profile, read-only — and, crucially, **the files that are NOT watched**. The
+events had only ever existed in the Shift+F12 window, which is live-only, and both `[FileWatcher]`
+log lines are `Log.Debug` while the shipping level is Information — so the question was
+unanswerable from either surface.
+
+⛔ **The prefix must not contain a hyphen and I shipped a build that died proving it.** The file
+name is `{prefix}-{yyyyMMdd}-{HH}.txt`; `BucketedRollingFileSink` throws on a hyphen, from
+`ConfigureLogging`, which runs BEFORE logging exists. `"config-events"` exited with no window and
+no log line anywhere, and I handed it over without checking it started.
 
 ---
 
@@ -592,6 +664,32 @@ pass, not a fix.
   for development, `PackageReference` for the per-PR canary and the release publish. Making it
   unconditional was considered and rejected: it costs the inner loop and makes a clean clone
   depend on feed credentials.
+- ⛔ **The Caution glyph's `#D97706` is a DELIBERATE 3:1 trade — do not "fix" it.** Maintainer,
+  2026-09-14: *"AA contrast for this particular glyph I can give up; accessibility is intended to
+  accommodate screen readers as first class but low vision is less supported already and I am ok
+  with that."* A contrast audit WILL flag it (3.19:1, below the 4.5:1 text floor) and the obvious
+  remedy — darken it — is exactly the regression this prevents, because darkening amber is what
+  makes it brown. It is triple-coded: shape, tooltip, and `AutomationProperties.HelpText`.
+  ⚠ Distinct from the `#F57C00` incident on record, which was 2.70:1, below BOTH floors,
+  unmeasured, and the only channel. Scope is the GLYPH only —
+  `AppStatusWarning/FailureForegroundBrush` keep their AA-text values.
+- ⭐ **Severity tiers are separated by SHAPE, not luminance, and that is forced rather than chosen.**
+  Measured: all four tiers sat within 1.02–1.08:1 of each other in both themes. On white, 4.5:1
+  pushes every tier below luminance ~0.175, so four tiers cannot be far apart inside that band.
+  Colour can make them pop; only shape can make them distinguishable. Glyphs follow Windows'
+  three-icon convention — `⊗` Critical, `⚠` Caution, `●` Info, `○` Neutral. ⛔ Two warning triangles
+  differing only in hue was rejected: it puts Critical and Caution on the red-amber axis with no
+  shape to separate them.
+- ⛔ **`⚠` is BARE — no U+FE0E text-variation selector.**
+  `EveryGlyphIsASingleBmpCharacterNotAnEmoji` rejects anything over one UTF-16 unit. `U+26A0+FE0E`
+  is two BMP units, not the surrogate pair that guard was written for, so its REASON does not apply
+  while its RULE still fires. U+26A0 already defaults to text presentation. ⚠ **Rendering is NOT
+  confirmed on any platform** — if it shows as colour emoji, add FE0E and widen the guard
+  deliberately.
+- ⛔ **A themed brush is SHARED AND MUTABLE.** `BrushHelper.ResolveThemed` hands back one instance
+  per key and re-colours it on variant change; treat what it returns as read-only. The cache is
+  identity-only — the colour is re-read on every resolve — because caching the colour made it stale
+  when resource dictionaries changed without the variant changing.
 - ⭐ **A package id must not overclaim, and it is only free to fix before the first publish.**
   `JsonC` was renamed out of `AgentForge.*` on 2026-09-14 for exactly this reason: it is a
   dependency-free JSONC reader that knows nothing about agents. ⛔ Being a family of one costs
