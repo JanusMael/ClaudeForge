@@ -18,9 +18,9 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `a8c9f20`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `f899f8a`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **78 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **79 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
 | Suite | **4,303 passed · 0 failed · 11 skipped**, Debug — three new `ReleaseWorkflowTests` across the release batches, on the **4,300** the packaging batch left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
@@ -92,11 +92,20 @@ nothing left to preflight for.
 
 ### After the retest — the release path
 
-- ⚠ **`CHANGELOG.md` is stale**: its top entry is `[2026.2.528] - TBD`, older than the shipped
-  `v2026.3.901`, with no Unreleased section. **13+ `feat` commits** touching ClaudeForge's UI need
-  writing up — a feature release, not a plumbing one (severity indication across rows / search /
-  effective view / save dialog, the schema provenance badge and in-app check, `--schema-source`,
-  the no-raw-hex tripwire, and now the host-supplied backup wording).
+- ✅ **`CHANGELOG.md` has an `[Unreleased]` section**, written from the 108 `feat`/`fix` commits
+  since `v2026.3.901` and filtered to what a ClaudeForge **user** sees. The stale `- TBD` is
+  corrected to `- [2026.2.612]`, the file's own `[X] - [Y]` shape meaning "current until Y" —
+  read off the tag dates rather than guessed. ⓘ The gap was far bigger than this cell said:
+  **eight releases** shipped between `2026.2.612` and `2026.3.901` with no entries at all. Those
+  are not back-filled — the file now says so in a blockquote and points at the auto-generated
+  release notes, rather than leaving a three-month hole that reads like a quiet period.
+  ⭐ **Leading the Changed section is a behaviour change users must read**: the `**/` permission
+  fix makes matching stricter in BOTH directions, so a `deny` rule that relied on the over-match
+  now covers less.
+- 🔭 **Open, and structural: there are two apps and one changelog, whose first line says
+  "changes to ClaudeForge".** OpenCodeForge has a release workflow and no changelog. Everything
+  that app has ever done is unreleased, so nothing is lost yet — but its first release needs
+  either a second file or a per-app section here, and that is a decision, not a chore.
 - Free, no retest cost: a guard for Claude-shaped defaults in the neutral layer (see
   [`docs/EXTRACTION-VERIFICATION.md`](docs/EXTRACTION-VERIFICATION.md) §5), roadmap phase markers
   1–9, and `TRIMMING.md` never mentioning the second app.

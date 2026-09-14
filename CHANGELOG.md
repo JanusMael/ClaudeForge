@@ -10,7 +10,90 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 
 
-## [2026.2.528] - TBD
+## [Unreleased]
+
+### Added
+
+- **Saving a config now preserves its comments and formatting.** Writes go through a
+  JSONC editor that edits the bytes in place rather than re-serializing the document,
+  so comments, key order, blank lines and indentation survive a save. Previously a
+  save rewrote the file from a parsed object and quietly discarded all of it. The
+  previous behaviour is available for one release as `--writer legacy` if a file
+  round-trips wrongly; please report it if you need that flag.
+- **Every setting now says how much it matters.** A severity indicator sits on
+  settings rows, on search results, and in the effective view — so scanning a page
+  shows at a glance which values carry weight and which are routine. The classification
+  is Claude Code's own answer about its own settings, not a generic heuristic, and it
+  travels per product rather than being a colour chosen in markup.
+- **The save dialog says which pending changes weaken a boundary.** Before writing,
+  the preview calls out edits that loosen a permission or a safety-relevant setting,
+  instead of listing every change with equal weight.
+- **An Artifacts page** — the first page that is not a settings group. It shows the
+  agents, skills and commands resolved for the current workspace, with where each one
+  came from.
+- **Schemas are fetched, and the app says which copy it used.** A launch tries the
+  upstream schema first and falls back to the bundled copy, and every section of the
+  navigation carries a badge naming the copy it was built from. *Check for schema
+  updates* in the About dialog re-fetches on demand and re-labels those badges. A
+  product with no upstream — Claude Desktop, whose schema is hand-maintained — is
+  omitted from a check's results rather than reported as up to date, so the result
+  never describes a fetch that was not attempted.
+- **`--schema-source <bundled|fetched>`** forces one branch of that chain, for
+  reproducing a report against a known copy. `fetched` is fatal if the fetch fails
+  rather than falling back, because a run that silently used the bundled copy would
+  prove nothing.
+- **Live config-file events, and a log of them on disk.** **Shift+F12** opens a window
+  showing config-file changes as they happen, and the same stream is written to
+  `logs/events-*.txt` beside the executable, with the scope each change belongs to.
+
+### Changed
+
+- ⚠ **Permission path patterns match more strictly, and a `deny` rule may cover less
+  than it did.** `**/` was compiling in a way that matched *partial path segments*, so
+  `Read(**/secrets/key.txt)` also matched `/proj/notsecrets/key.txt`. An `allow` rule
+  therefore granted access it did not describe. The correction is stricter in both
+  directions: a `deny` rule that happened to rely on the over-match no longer catches
+  those paths. Re-read any `deny` rule using `**/` and confirm it still covers what you
+  intended.
+- **Backup wording comes from the host application.** Progress phase labels, the
+  Clients column's short names, and the credentials prompt now name the host's own
+  credential store instead of using generic text.
+- **The accent colour and the "✨ NEW" badge are owned rather than borrowed.** The badge
+  is a tint pill rather than a solid chip, and the accent no longer depends on an
+  undefined system brush that rendered differently across platforms.
+
+### Fixed
+
+- **Themed colours now follow a light/dark switch immediately.** Severity glyphs and
+  other themed elements kept whichever palette was live when they were last drawn, so
+  a switch could leave one screen showing both palettes at once.
+- **Screen readers now announce the interface.** Navigation rows in the tree, settings
+  tabs, rows in four list boxes, the spinner buttons on numeric fields, composite
+  controls, and every control in the diagnostics windows previously announced nothing
+  or read out an internal type name. The diagnostics window's header links are now
+  reachable by keyboard with a visible focus ring.
+- **A folded description rendered as the two characters `>-`** — valid YAML that looked
+  like a healthy value.
+- **The Artifacts page painted its metadata red and its problems grey**, inverting the
+  two colours that matter most on it.
+- **The `apiKey` escalation warning never fired.** The condition it was guarded by
+  could not be true.
+- **Sharing a config did nothing on Windows.** *Share config* on the effective-settings
+  view now copies the JSON to the clipboard.
+- **A config file created while the app was running was not picked up** — a new
+  `settings.local.json` or `.mcp.json` is now watched from the moment it appears.
+- **The live-log window hid itself when F12 was pressed again**, instead of staying put.
+- **A config that fails to parse is no longer installed by a reload**, and overlapping
+  reloads are serialized rather than each guarding itself.
+- **Backup patterns: `/foo` matched nothing and `**/foo` matched too much.**
+
+
+> **Releases 2026.2.612 through 2026.3.901 are not written up here.** Eight releases
+> shipped in that window while this file was not being updated; their auto-generated
+> notes are on the [Releases page](https://github.com/JanusMael/ClaudeForge/releases).
+> The gap is stated rather than left to look like a quiet period.
+
+## [2026.2.528] - [2026.2.612]
 
 ### Added
 
