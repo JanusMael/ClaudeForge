@@ -18,14 +18,14 @@
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
-| HEAD | The commit that writes this cell, sitting on `790ce63`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
+| HEAD | The commit that writes this cell, sitting on `467fa4e`. ⓘ A hash cannot be written into the commit that produces it, and two earlier attempts each needed a follow-up commit to correct this row — so it names no hash: **`git log -1` is the answer** |
 | Working tree | clean |
-| Unpushed | **71 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
+| Unpushed | **72 commits**, counting this one (`git rev-list --count @{u}..HEAD` — trust that over this cell). Nothing pushed; **no PR** |
 | Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,297 passed · 0 failed · 11 skipped**, Debug — four packaging guards plus one theme-brush regression test on a **4,292** baseline. ⚠ The previous cell said 4,291; measured by filtering the new class out of the run, the baseline was 4,292, which is what `plans/00001`'s own diagram already said |
+| Suite | **4,300 passed · 0 failed · 11 skipped**, Debug — the three `PackageVersionLockstepTests` on the **4,297** baseline. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
 | Trim check | ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, **before** the two packaging commits, and has **not** been re-run. Neither adds code. What has been re-run since: a full Release solution build (zero IL diagnostics) and two `ClaudeForge win-x64` Release publishes, both clean, with no `.md` in the output. Say "12/12 plus spot-checks", not "12/12" |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
-| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies already resolving to those ids. ⚠ All at version **`1.0.0`** — plan 00001 item 3 is the blocked piece and this is what it looks like unfixed |
+| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies resolving to those ids — **now all at `2026.3.914`**, the same three parts the built DLLs stamp (`2026.3.914.1303`). The `1.0.0` this cell reported for two weeks is gone; plan 00001 item 3 is done |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13, `0.0.0-local-20260913161300`: eleven packages → isolated `NUGET_PACKAGES` → Release build → **4,295 passed · 0 failed · 11 skipped** → both apps published `win-x64`. Zero warnings, zero IL diagnostics. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | ⚠ Awaiting | **The rest of the manual retest.** The first pass ran 2026-09-14 and found six defects, all now fixed (`e9859b9`, `790ce63`) — but the fixes themselves are **unverified in the running app**. See *RESUME HERE* |
 
@@ -98,22 +98,25 @@ but no release has been cut through it since.
 
 ### Plan 00001 — where it stands
 
-Items **1** (`23f7c4f`), **2**, **4** and **5** are done. ⏳ **Item 3 is half done and the
-remaining half is one line in this repo.**
+Items **1** (`23f7c4f`), **2**, **3**, **4** and **5** are done. ▶ **Item 6 — the publish pipeline —
+is the next one, and it is now unblocked**: it needed a real version to push, and it has one.
 
 [PR #1](https://github.com/JanusMael/Bennewitz.Ninja.AutoVersioning/pull/1) is **MERGED** and
-**`2026.3.914` is published to nuget.org**. `Directory.Build.props` already references it, and the
-new properties are confirmed reaching this repo: `AutoPackageVersion` evaluates to `2026.3.914`,
-`AutoVersion` to `2026.3.914.1001`, and the published app stamps `2026.3.914.1002`.
+**`2026.3.914` is published to nuget.org**. The root `Directory.Build.targets` assigns
+`<PackageVersion>$(AutoPackageVersion)</PackageVersion>`, and all eleven packages now pack at
+`2026.3.914` with every inter-package dependency pinned to it — measured by reading the nuspecs
+out of the `.nupkg` files, not by asking MSBuild.
 
-⛔ **`PackageVersion` is NOT yet assigned**, so `dotnet pack` still produces `1.0.0`. What remains:
+⚠ **The assignment is in the root targets file, and moving it is the silent mistake.**
+`src/Directory.Build.props` — where the rest of the package identity lives, which is why it is
+tempting — is imported BEFORE the NuGet-generated props that define `AutoPackageVersion`, so the
+value would evaluate empty, the SDK's default would already have run, and eleven packages would
+pack at `1.0.0` again with nothing reporting anything. `PackageVersionLockstepTests` asserts both
+halves, and its stamp comparison reads the **built DLLs** rather than the property that produced
+them. Canaried red on a wrong source property and on a mixed-version feed before being trusted.
 
-1. `<PackageVersion>$(AutoPackageVersion)</PackageVersion>` — ⚠ **not in `src/Directory.Build.props`**:
-   that file is imported BEFORE the NuGet-generated props that define `AutoPackageVersion`, so it
-   would evaluate empty. The root `Directory.Build.targets` is the place, beside the reference switch.
-2. The plan's guard test: the package version equals the first three parts of the built DLL's
-   `FileVersion`, read from the DLL rather than from the property that produced it.
-3. Then **item 6** (the publish pipeline) unblocks — it needs a real version to push.
+ⓘ A `-p:PackageVersion=…` on the command line is a **global** property and still outranks the
+assignment, so `package-canary.ps1` packs at its throwaway prerelease exactly as before.
 
 ⚠ **Two things item 5 deliberately left for item 6**, both recorded so they are not rediscovered:
 
@@ -165,6 +168,29 @@ the fix and was already tried — see the script's own comment. ⚠ It navigates
 ⛔ **Phase 16's quantitative half still gates the footprint page's RATES, not the page.**
 `usage.isUsedInstall` in `docs/opencode-install-probe.json` still reads `false`, so growth,
 retention and prune rates remain unmeasurable. Current sizes are live and correct.
+
+---
+
+## Done — 2026-09-14, third batch — the packages stop being 1.0.0
+
+Plan 00001 work item 3. One property assignment, one guard class, and one error message that had
+been pointing at a script that does not exist.
+
+| | |
+|---|---|
+| The assignment | `<PackageVersion>$(AutoPackageVersion)</PackageVersion>` in the ROOT `Directory.Build.targets`, beside the reference switch and for the same reason: it is the file imported last |
+| Measured | Eleven `.nupkg` at `2026.3.914`, every inter-package dependency pinned to it, against DLLs stamped `2026.3.914.1303`. Read out of the nuspecs and out of `FileVersionInfo`, not out of MSBuild |
+| Guard | `PackageVersionLockstepTests` — three tests. Canaried red twice before being trusted: the assignment swapped to `$(Version)`, and a stray `JsonC 9.9.9` packed into the local feed |
+
+⛔ **The error text on `ValidateSharedPackageVersion` was wrong in two ways at once**, and it is the
+one message whose entire job is to rescue someone who has just hit a confusing NuGet failure. It
+named `scripts/pack-local-feed.ps1`, which **does not exist** — the real one is
+`scripts/package-canary.ps1 -PackOnly` — and its literal `$(date)` was expanded by *MSBuild* as a
+property, so the example version it printed was truncated to `1.0.0-local-`. Both fixed.
+
+⚠ **`artifacts/localfeed` currently holds eleven packages at `0.0.0-local-20260914094410`.** That
+is the hazard item 6 has to close: a stale local-feed package outranks GitHub Packages in
+`nuget.config`'s source mapping.
 
 ---
 

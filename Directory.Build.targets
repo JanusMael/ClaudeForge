@@ -1,6 +1,38 @@
 <Project>
 
     <!--
+      ══ The package version ══  (plans/00001, work item 3)
+
+      One stamp, one source. AutoVersioning computes the version the assemblies carry and now
+      also exposes it as a plain MSBuild property, readable before compilation; the eleven
+      packages take their version from that same property, so a package and the assembly inside
+      it agree BY CONSTRUCTION rather than by two conventions that happen to line up.
+
+      ⛔ WHY NOT src/Directory.Build.props, WHERE THE REST OF THE PACKAGE IDENTITY LIVES.
+      AutoPackageVersion is defined by the AutoVersioning package's own props, which arrive via
+      the NuGet-generated import — AFTER Directory.Build.props. Assigned there it evaluates to
+      EMPTY, and an empty PackageVersion does not fail: the SDK's default assignment has already
+      run, so all eleven pack at 1.0.0 exactly as they did before. This file is imported last,
+      which is the whole reason it is this file.
+
+      ⚠ THE CONDITION IS NOT DEFENSIVE PADDING. Without it, a build in which AutoVersioning has
+      not contributed its props — a `dotnet msbuild` on a project whose restore has not run —
+      would assign the empty string and pack an unversioned package. Falling back to the SDK's
+      default is the honest failure: 1.0.0 is visibly wrong, an empty version is a restore error
+      from deep inside NuGet naming nothing the reader wrote down.
+
+      ⓘ The canary passes -p:PackageVersion=<throwaway> on the command line. That is a GLOBAL
+      property and outranks this assignment, which is what lets one script pack eleven packages
+      at a per-run prerelease version without touching this file.
+
+      PackageVersionLockstepTests reads the stamp back out of a BUILT DLL rather than out of the
+      property that produced it — the property agreeing with itself proves nothing.
+    -->
+    <PropertyGroup Condition="'$(AutoPackageVersion)' != ''">
+        <PackageVersion>$(AutoPackageVersion)</PackageVersion>
+    </PropertyGroup>
+
+    <!--
       ══ The shared-library reference switch ══  (plans/00001, work item 5)
 
       ProjectReference for development; PackageReference for the per-PR canary and the release
@@ -113,7 +145,7 @@
     <Target Name="ValidateSharedPackageVersion"
             BeforeTargets="CollectPackageReferences;BeforeBuild"
             Condition="'$(_SwitchSharedReferences)' == 'true' And '$(SharedPackageVersion)' == ''">
-        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the eleven Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value, e.g. scripts/pack-local-feed.ps1 -Version 1.0.0-local-$(date). See plans/00001 work item 5." />
+        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the eleven Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value: 'pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly' prints the version it packed. See plans/00001 work item 5." />
     </Target>
 
     <!--
