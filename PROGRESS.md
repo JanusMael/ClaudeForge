@@ -20,56 +20,70 @@
 | Branch | `feat/agentforge-opencodeforge` |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
-| Unpushed | **Everything** — nothing has been pushed and there is **no PR**. ⓘ This cell used to carry a count and was wrong four times in one day, for the same reason the HEAD cell names no hash: a number describing the commit that writes it is stale the moment anything follows. `git rev-list --count @{u}..HEAD` is the answer; the fact that matters here is *none of it is pushed* |
-| Merged from `main` | ✅ `ea6d129`, 2026-09-12 — level with `main` (`git rev-list --count HEAD..main` = 0) |
-| Suite | **4,305 passed · 0 failed · 11 skipped**, Debug — two `NeutralLayerDefaultsTests` on the **4,303** the release batches left. ⚠ **The skipped count is machine-dependent now, and 11 is the LUCKY reading.** One of the three is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **4,299 · 12**. That is the guard refusing to claim a measurement it did not take, not a regression |
-| Trim check | ⛔ **A GREEN MATRIX HERE MEANS LESS THAN IT LOOKS — see `F5`.** The trim mode both apps use, `TrimMode=link`, is one Avalonia explicitly does not support, and the cost is that the shipped app exposes **no accessibility tree**. No warning fires, so every clean publish this row has ever recorded was clean *and* broken. ⓘ The **12/12** six-RID two-app matrix is from 2026-09-13, before the packaging commits, and has not been re-run; since then, a full Release solution build (zero IL diagnostics) and several `ClaudeForge win-x64` publishes, all clean. Say "12/12 plus spot-checks, on an unsupported trim mode" |
-| Trim analyser | ⭐ **`EnableTrimAnalyzer` is now on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included** — not only inside an app's trimmed publish. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
-| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, inter-package dependencies resolving to those ids — **now all at `2026.3.914`**, the same three parts the built DLLs stamp (`2026.3.914.1303`). The `1.0.0` this cell reported for two weeks is gone; plan 00001 item 3 is done |
-| Package canary | ✅ **PASSED** end to end on 2026-09-13, `0.0.0-local-20260913161300`: eleven packages → isolated `NUGET_PACKAGES` → Release build → **4,295 passed · 0 failed · 11 skipped** → both apps published `win-x64`. Zero warnings, zero IL diagnostics. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
-| ⚠ Awaiting | **Seven retest items, all write-path or accessibility** — see [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md). ⛔ And **`F5`**: the published app exposes no accessibility tree, root-caused to an unsupported `TrimMode`. That is a release blocker in its own right, independent of the retest |
+| Unpushed | **Everything since 2026-09-11.** `origin/feat/agentforge-opencodeforge` exists and sits at `e13a412`; there is still **no PR**. ⚠ This cell previously read *"nothing has been pushed"*, which was false for four days — the remote branch was already there. `git rev-list --count @{u}..HEAD` is the answer; the fact that matters is that the remote is days behind and no PR exists |
+| Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. `git rev-list --count HEAD..origin/main` = 0 |
+| Suite | **4,313 passed · 0 failed · 11 skipped**, Debug, post-merge. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
+| Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
+| Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
+| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
+| Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
+| ⚠ Awaiting | **Seven retest items, all write-path or accessibility** — see [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md). ⓘ **There is no longer a release blocker above them**: `F5` was the one, and it is refuted |
 
 ---
 
-## ▶ RESUME HERE — finish the ClaudeForge regression, then fix `F5`
+## ▶ RESUME HERE — finish the ClaudeForge regression
 
 ### The next steps, in order
 
-1. ⛔ **`F5` — the published app has no accessibility tree.** Root-caused, evidenced, and the two
-   obvious fixes already eliminated. The work: move both apps off `TrimMode=link` to `partial`,
-   then deal with the `Avalonia.DesignerSupport` trim diagnostics that currently fail that publish.
-   **This blocks a release on its own**, independent of anything below.
-2. **The seven outstanding retest items** — [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md).
+1. **The seven outstanding retest items** — [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md).
    `E1` (`JsonC` preserves comments on save) first: newest library, no release behind it, and its
-   failure mode destroys user content silently.
-3. **The five open UI defects** — `F1`–`F4`, `F6` in
+   failure mode destroys user content silently. **This is now the top of the list**, because the
+   item that outranked it turned out not to exist.
+2. **The five open UI defects** — `F1`–`F4`, `F6` in
    [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md). ⚠ `F2` and `F4` are one piece of work, not
    two; they pull the same colour token in opposite directions.
-4. **Push, and open a PR.** 83 commits, nothing pushed, no PR — see the cell above.
-5. **The two decisions still waiting on the maintainer:** the first `packages-v*` tag (nothing is on
-   the feed yet, and every version there is permanent), and whether OpenCodeForge gets its own
-   changelog.
+3. **Push, and decide on a PR.** The remote branch is days behind and there is no PR — see the
+   cell above.
+4. **The first `packages-v*` tag.** Preflight first
+   (`scripts/Publish-Packages.ps1 -PackageVersion <v> -PreflightOnly`); nothing is on the feed yet
+   and every version there is permanent.
 
 ⓘ **Locked decisions — do not relitigate.** The package tag is a dedicated `packages-v*` prefix,
 not either app's. A same-day second package release fails at pre-flight by design. `PublicVersion`
 is kept but emitted only by `Resolve-ReleaseVersion.ps1`. OpenCodeForge testing is parked
 deliberately. The `maui-windows` preflight removal was correct and must not be restored.
 
+**Settled 2026-09-14:**
+
+- **`F5` is refuted on this session's evidence**, rather than held open pending a second machine.
+- **Both apps run `TrimMode=partial`.** Not to fix `F5` — there was nothing to fix — but because
+  `link` is unsupported by Avalonia and upstream reports crashes for screen-reader users.
+- **`Audit-Accessibility.ps1` settles by default.** `-NoSettle` is the opt-out and nothing else
+  should use it.
+- **`main` is merged into this branch on request only**, and was on 2026-09-14. Split work still
+  does not flow the other way: no merge, no PR, no fast-forward into `main` until the split is
+  done and the maintainer approves.
+- **OpenCodeForge gets its own `CHANGELOG-OpenCodeForge.md`**, separate from ClaudeForge's,
+  **created when it cuts its first release** — not before, because an empty changelog for a parked
+  app is a document that lags reality.
+
 ---
 
 **Two things drive everything: cut a ClaudeForge release from the split, and get the shared
-libraries out as private NuGet packages first.** The second is new as of 2026-09-13 and has an
-approved plan: [`plans/00001-shared-libraries-as-private-nuget-packages.md`](plans/00001-shared-libraries-as-private-nuget-packages.md).
+libraries out as private NuGet packages first.** The second has an approved plan:
+[`plans/00001-shared-libraries-as-private-nuget-packages.md`](plans/00001-shared-libraries-as-private-nuget-packages.md).
 
 ⭐ **The hard part of the release is already true: the ClaudeForge artifact has never contained
 OpenCode.** Its Release build output is 14 assemblies — 6 `AgentForge.*`, 5 `LayeredEditors.*`,
 3 `ClaudeForge*` — and **zero** OpenCode ones; `release.yml` passes `-App ClaudeForge` explicitly
 on all three publish jobs and its tag pattern excludes `opencodeforge-v*`. Nothing needs carving out.
 
-### ▶ The retest — first pass DONE, and it changed what "next" means
+### ▶ The retest — first pass DONE, and one of its findings has since been withdrawn
 
 The maintainer drove ClaudeForge against `ba794c2` on 2026-09-14. **All seven fixes from the
-earlier batch are verified**, plus four never-tested items. **Six defects are open.**
+earlier batch are verified**, plus four never-tested items. **Five defects are open** — `F1`–`F4`
+and `F6`. The sixth, `F5`, is refuted.
 
 Two live documents carry it, and they are the ones to read — not this summary:
 
@@ -94,40 +108,40 @@ first. Its sandbox keeps: `artifacts/retest-opencode-config` holds a copy of the
 `opencode.json` plus a `tui.json` seeded with two keybind conflicts, reached via
 `OPENCODE_CONFIG_DIR`.
 
-### ⛔⛔ The finding that outranks the rest: `F5`
+### ✅ `F5` is REFUTED — and how it happened is the part worth keeping
 
-**The published app exposes NO accessibility tree.** Debug walks 173 UI Automation descendants; the
-shipped build walks **1** — the OS-supplied TitleBar. Every `AutomationProperties.Name` in this
-repository is correct in markup and invisible in the artifact users run.
+**The published app's accessibility tree was never missing.** `F5` recorded 1 UIA descendant on the
+shipped build and became the top release blocker. Re-measured on the same configuration: **168**,
+under both trim modes. The build was proven identical, not merely similar — its linked
+`Avalonia.Win32.Automation.dll` is **92,672 bytes**, the exact figure `F5`'s own evidence table
+quotes — so the divergence was in the instrument, not the artifact.
 
-**Root cause, researched and evidenced:** `TrimMode=link` — set by **both** apps
-(`ClaudeForge.csproj:105`, `OpenCodeForge.csproj:102`) — is **explicitly unsupported by Avalonia**.
-[AvaloniaUI/Avalonia#16697](https://github.com/AvaloniaUI/Avalonia/issues/16697): *"COM interop is
-not supported with TrimMode=link"*, and it reports **access-violation crashes** for users running
-Magnifier or a screen reader. This repo sees silent degradation instead, most likely because
-Avalonia 12 carries the MicroCom migration from
-[#8006](https://github.com/AvaloniaUI/Avalonia/issues/8006).
+**The cause of the bad reading:** the tree builds incrementally. Cold launch, polling every 120 ms:
+72 descendants at 5.3 s, a `COMException` mid-construction at 7.1 s, 168 from 8.0 s. A single early
+sample under-reports; early enough, only the OS `TitleBar` exists — which counts as 1.
 
-⚠ **The fix is `TrimMode=copyused` — spelled `partial` — and it is NOT a one-liner.** Measured:
-switching to `partial` fails the publish on `Avalonia.DesignerSupport`'s `IL2026`/`IL2072`/`IL2075`
-diagnostics. The work is to move to `partial` and then suppress that assembly via the
-`_ILLinkSuppressions` mechanism `TRIMMING.md` documents, or keep designer support out of the
-publish. Size will grow; that is what `link` was buying, against an unsupported configuration.
+⚠ **This also explains the control that made `F5` look airtight.** `PublishTrimmed=false` → 227 vs
+`true` → 1 looks like one variable, but a trimmed single-file **compressed** build self-extracts on
+first run and is ready seconds later than an untrimmed multi-file one. One fixed delay, two
+different readiness times.
 
-⛔ **Two candidate fixes are already eliminated with evidence** — do not re-try them:
-`BuiltInComInteropSupport=true` is refused by the build as incompatible with trimming, and
-`TrimMode=partial` fails as above.
+⛔ **And the proposed cure could not have worked, which was checkable without running anything.**
+`Microsoft.NET.ILLink.targets:45` defaults `BuiltInComInteropSupport` to false under
+`Condition="'$(PublishTrimmed)' == 'true'"` — **`TrimMode` is not in that condition.**
 
-ⓘ **Nothing caught this and nothing could have.** The AXAML guards assert that markup sets a name,
-and it does. The headless test app is stripped of the App's resource dictionaries and cannot
-instantiate views. No trim warning fired, so the 12/12 six-RID matrix said nothing. The new
-`scripts/Audit-Accessibility.ps1` is what closes that gap — it drives a running app through the
-same API a screen reader uses. ⚠ Run it against an **untrimmed** build; the shipping one has no
-tree to walk.
+⭐ **The lesson: a measurement tool whose default can silently under-report will eventually
+manufacture a defect.** Everything downstream of the bad number was competent — control experiment,
+upstream research, two candidate fixes rejected with evidence, a full write-up. None of it could
+rescue a first number taken before the thing being measured existed. `Audit-Accessibility.ps1` now
+settles before it walks, and treats a count of 1 as "not ready" rather than as an answer.
 
-ⓘ **`artifacts/a11y-untrimmed/` is a working untrimmed build** kept for exactly that, and
-`artifacts/a11y-trimmed-loose/` is the non-single-file trimmed publish that proved
-`Avalonia.Win32.Automation.dll` ships but is cut from 123,904 to 92,672 bytes.
+ⓘ **What is NOT refuted:** `TrimMode=link` really is unsupported by Avalonia, with upstream reports
+of access violations for users running Magnifier or a screen reader. Both apps moved to `partial`
+on that basis alone. Measured cost: **~76 KB** on win-x64, against the "size will grow" this
+document once assumed.
+
+ⓘ **`artifacts/a11y-untrimmed/` and `artifacts/a11y-trimmed-loose/`** were built for the `F5`
+investigation. They are no longer needed to walk a tree — the **shipping** artifact has one.
 
 ⚠ **Close any other ClaudeForge before testing.** Two instances on one `~/.claude` each see the
 other's writes as external changes — the exact signal the watcher test measures.
@@ -275,6 +289,11 @@ ClaudeForge for the split-library release.
 guards check that the markup sets one; the headless test app cannot instantiate views. Markup
 correctness and *exposed* correctness are different questions, and only the second one matters to a
 user. It found `F5` and `F6` on its first run.
+
+> ⓘ **Corrected 2026-09-14.** `F6` stands. **`F5` does not** — it was an artifact of sampling the
+> automation tree before it had finished building, and the audit script now settles before it
+> walks. See the `F5` section above. The instrument was right about the gap it was built to close
+> and wrong about the first thing it reported through it.
 
 ⚠ **Two findings pull against each other and must be fixed together:** `F2` wants the light Caution
 token lighter (it reads brown); `F4` needs it darker (its *text* use measures 3.19:1 against a
