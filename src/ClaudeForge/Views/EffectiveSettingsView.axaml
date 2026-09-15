@@ -138,7 +138,7 @@
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate x:DataType="shell:EffectivePropertyRow">
-                                        <!-- Dual-coded: the GLYPH differs per tier (▲ ◆ ● ○) as
+                                        <!-- Dual-coded: the GLYPH differs per tier (⊗ ⚠ ● ○) as
                                              well as the colour, because Critical-vs-Caution sits
                                              exactly on the red-green axis. Geometric shapes, not
                                              emoji — emoji need a system emoji font and render as

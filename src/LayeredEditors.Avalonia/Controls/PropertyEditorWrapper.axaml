@@ -44,7 +44,7 @@
                         a page reads the weight before the label.
 
                         ⭐ DUAL-CODED, per UI-STYLE-GUIDE's status-pill principle: the GLYPH
-                        differs per severity (▲ ◆ ● ○) as well as the colour, because colour
+                        differs per severity (⊗ ⚠ ● ○) as well as the colour, because colour
                         alone excludes colour-blind users and Critical-vs-Caution sits exactly on
                         the red-green axis. Geometric shapes rather than emoji — emoji need a
                         system emoji font and render as tofu without one (see AVALONIA-GOTCHAS).
