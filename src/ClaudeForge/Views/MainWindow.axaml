@@ -80,7 +80,6 @@
             <SolidColorBrush x:Key="InstallBannerFgBrush" Color="#FF292524" />
             <SolidColorBrush x:Key="InstallBannerBorderBrush" Color="#FFFBBF24" />
             <SolidColorBrush x:Key="InstallBannerCodeBgBrush" Color="#FFFEF08A" />
-            <SolidColorBrush x:Key="InstallBannerCodeBorderBrush" Color="#FFD97706" />
             <!-- Teal-blue from LE.LinkBrush — the same colour used for hyperlinks throughout the app -->
             <SolidColorBrush x:Key="InstallBannerLinkBrush" Color="#FF006B8A" />
 

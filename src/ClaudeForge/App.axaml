@@ -238,10 +238,6 @@
                          Dark:  text #9BCFF2 on #152C42 = 8.57:1; pill vs page 1.27:1. -->
                     <SolidColorBrush x:Key="AppAccentBrush" Color="#0F4C81" />
                     <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#DCEAF7" />
-                    <!-- Group-header labels inside the Browse suggestions picker.
-                         Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
-                         in all theme variants, so we own this token explicitly. -->
-                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#1F1F1F" />
                     <!-- Muted secondary text (e.g. "Old" column in SaveChangesDialog).
                          Semi.Avalonia does not guarantee SystemControlForegroundBaseMediumBrush
                          across all theme variants, so we own this token explicitly. -->
@@ -361,7 +357,6 @@
                          this theme too. -->
                     <SolidColorBrush x:Key="AppAccentBrush" Color="#9BCFF2" />
                     <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#152C42" />
-                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
                     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />
                     <!-- Dark-theme property heading color (see Light counterpart for rationale). -->
