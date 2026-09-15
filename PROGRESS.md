@@ -13,7 +13,7 @@
 
 ---
 
-## Where things stand — 2026-09-14
+## Where things stand — 2026-09-15
 
 | | |
 |---|---|
@@ -22,7 +22,7 @@
 | Working tree | clean |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-14. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. `git rev-list --count HEAD..origin/main` = 0 |
-| Suite | **4,320 passed · 0 failed · 11 skipped**, Debug. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Suite | **4,351 passed · 0 failed · 11 skipped**, Debug — 2026-09-15, 31 guards added across `F1`/`F2`/`F4`/`F6` plus the dead-token scan, and nothing else moved. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
@@ -40,9 +40,14 @@
    `E1` (`JsonC` preserves comments on save) first: newest library, no release behind it, and its
    failure mode destroys user content silently. **This is now the top of the list**, because the
    item that outranked it turned out not to exist.
-2. **The five open UI defects** — `F1`–`F4`, `F6` in
-   [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md). ⚠ `F2` and `F4` are one piece of work, not
-   two; they pull the same colour token in opposite directions.
+2. **The one open UI defect** — `F3` in
+   [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md). ⚠ It is a **public-surface** change:
+   `IShareService` ships in one of the eleven packages, so reporting the share OUTCOME is either an
+   additional member (non-breaking) or a changed signature (cleaner) — a deliberate call, not an
+   implementation detail. ⓘ **`F1`, `F2`, `F4` and `F6` are fixed, not open** — all three need a look at the running UI, which is why they join the retest list rather
+   than leaving it. ⚠ The old note that `F2` and `F4` are one job is spent: they were, and the
+   resolution was to split the caution palette by **role** rather than to find one colour that
+   satisfied both. There is no longer a token being pulled in two directions.
 3. **Decide on a PR.** The branch is pushed and level with origin; whether it gets a PR is still
    open, and opening one against `main` is a locked decision the maintainer has not made.
 4. **The first `packages-v*` tag.** ⚠ **The preflight that "passed" on 2026-09-14 exercised gates
@@ -78,6 +83,107 @@ deliberately. The `maui-windows` preflight removal was correct and must not be r
   of them. If something must not cross an assembly boundary, `internal` no longer says so; make it
   private. Guarded by `SharedFriendGrantsTests`; maintainer's stated preference, `c7643ab`.
 
+### What landed on 2026-09-15 — `F1`, `F2`, `F4`
+
+⚠ **Uncommitted, in the working tree, awaiting approval.** No hash to quote yet.
+Suite **4,351 · 0 · 11**; trim gate green for both apps on linux-x64, zero IL diagnostics.
+
+#### `F2` + `F4` — the caution palette splits by ROLE
+
+**Every contrast figure in `RETEST-FINDINGS` was recomputed; all sixteen reproduce exactly.**
+
+⛔ **`F4` was one instance of six.** The mechanism is `AppCautionBrush` — an accent chosen for the
+**3.0:1** non-text floor — used as a **text foreground**, where the floor is **4.5:1**. Five sites
+beyond the banner measured 3.07–3.19:1. ⭐ And the repo already contained the correct pattern:
+`EssentialsView` draws its caution panel as tint + border + *ordinary* body text, while
+`AboutEditorView` and `MemoryEditorView` built the same panel and coloured the header with the
+border token.
+
+| | |
+|---|---|
+| `F2` | `#EA580C` for the accent role — a **hue** shift, not a lightening. 3.56:1, up from 3.19:1 |
+| `F4` ×5 | new `AppCautionTextBrush`: light `#9A3412` (7.31:1), dark unchanged at 7.76:1 |
+| `F4` banner | `AppSeverityToTintBrushConverter` — the severity's own colour at 10%, body text **inherited** |
+
+⭐ **The banner tint adds no colour to the palette.** A `AppSeverity*BackgroundBrush` family would
+have been eight new tints across two variants and two apps, against this palette's own rule that
+no unreviewed colour enters it. Deriving the tint from the existing severity brush is correct for
+all four severities and both themes for free.
+
+⛔ **The alpha ceiling is set by the border, not by taste** — the banner's border is the same
+colour as its tint, so Caution's border falls to **2.96:1 against its own tint at 15%**.
+
+⭐ **Both new guards COMPUTE contrast from the hexes in `App.axaml` rather than quoting it**, so a
+future palette change is checked rather than merely recorded. Canaried four ways, each red exactly
+as predicted — restoring `#D97706` reddens with *this finding's own numbers*, 3.19 and 3.07.
+
+#### `F6` — the nav tree's 26 unnamed chevrons
+
+Named from the theme, in the file that already exists for parts no view can reach:
+`TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron` →
+`WrapperStrings.LabelExpandCollapse` → `AutoNameExpandCollapse` in all nine resx files.
+
+⛔ **The finding's own preferred fix was refuted by measuring it.** `RETEST-FINDINGS` argued that
+hiding the chevron was *"arguably more correct"* because the `TreeViewItem` already exposes an
+ExpandCollapse pattern. It does not: `TreeViewItemAutomationPeer` carries `IScrollProvider` and
+`ISelectionItemProvider` only, while the chevron's `ToggleButtonAutomationPeer` carries
+`IToggleProvider`. The chevron is the **only** programmatic expand/collapse affordance in the
+tree, so hiding it would have removed the affordance rather than a duplicate.
+
+⚠ **The element is a `ToggleButton`; the audit's "Button" was the PEER's control type.** A
+selector written from the UIA walk matches nothing and **builds with zero errors and zero
+warnings** — canaried exactly that way, and the guard caught it announcing `''`.
+
+⭐ `TreeChevronAutomationNameTests` asserts the *rationale* as well as the behaviour: if a later
+Avalonia gives the item an ExpandCollapse provider, the premise test reddens and the name-vs-hide
+choice is remade on the new facts.
+
+ⓘ Translations for the eight locales are mine, not a translator's — short, standard UI wording
+("Expandir o contraer", "展开或折叠"), worth a glance if you have a native speaker to hand.
+
+#### Dead brush tokens — asked for after `F2`
+
+⛔ **Two tokens were declared and referenced by nothing**, both now deleted:
+`InstallBannerCodeBorderBrush` (its palette is theme-independent and nothing was missing a border)
+and `SuggestionGroupHeaderBrush`, whose comment explained that Semi does not guarantee a Fluent key
+*"so we own this token explicitly"* — a live-sounding constraint on a picker that had since moved
+to inherited foregrounds.
+
+`NoDeadBrushTokensTests` now holds the line. ⚠ Two exclusions, both measured rather than guessed:
+the generated compat shims (**260 of 307** declared brush keys, whose consumers are templates
+inside theme packages this scan cannot see), and **four runtime-built key families** —
+`AppSeverity*`, `AppChangeKind*`, `common-action-brush-*`, `scope-brush-*`. ⭐ Each family
+exemption must still be **earned**: the test checks that the source it names still constructs a key
+of that shape, so deleting a converter makes its exemption lapse rather than hide real dead tokens
+forever.
+
+ⓘ **A test, not an MSBuild task, and not `theme-audit`.** `CheckUnusedResxKeys` is the closer local
+precedent and had already solved both traps independently rediscovered here — comment stripping and
+dynamically-built keys — but it is **per-project**, and brush tokens are declared in one app and
+referenced from the other and from the shared library. `theme-audit` owns the mirror question
+(referenced here, defined by no theme) and lives in another repository, runs on theme pin bumps,
+and calls its own report a snapshot; see [`docs/THEME-AUDIT.md`](docs/THEME-AUDIT.md) for the
+split and for what would belong upstream.
+
+#### `F1` — severity glyph size
+
+Severity glyph size becomes a function of severity: `AppSeverityToFontSizeConverter` replaces the
+**nine** hardcoded literals across **seven** files in both apps, at **Critical ×1.55, Caution
+×1.15, circles ×1.00** against each site's existing tier base (14 for a settings row, 11 for a nav
+badge, search hit, effective-value cell or save-dialog line).
+
+⛔ **The report understated the defect, and only measuring showed it.** Ink height at 14pt runs
+`⚠` 10.70, `○` 10.14, `⊗` 8.52, `●` 6.02 — so Critical drew smaller than Caution *and* smaller
+than the hollow "nothing to do" circle. ×1.255 buys Critical bare parity with Caution, which is why
+the shipped scale is as large as it is; there is no cheap version of this fix.
+
+⭐ **The guard asserts ink, not points**, because `SizeFor(Critical) > SizeFor(Caution)` goes green
+at ×1.01 with the defect still on screen. Canaried three ways, each red exactly as predicted.
+
+ⓘ Two stale claims in `AppSeverityToGlyphConverter`'s remarks were corrected in passing: it still
+named the superseded `▲ ◆ ● ○` glyphs, and asserted a visual-weight escalation that the
+measurement disproves.
+
 ### What landed on 2026-09-14, after the retest
 
 | | |
@@ -109,8 +215,8 @@ on all three publish jobs and its tag pattern excludes `opencodeforge-v*`. Nothi
 ### ▶ The retest — first pass DONE, and one of its findings has since been withdrawn
 
 The maintainer drove ClaudeForge against `ba794c2` on 2026-09-14. **All seven fixes from the
-earlier batch are verified**, plus four never-tested items. **Five defects are open** — `F1`–`F4`
-and `F6`. The sixth, `F5`, is refuted.
+earlier batch are verified**, plus four never-tested items. **One defect is open** — `F3`.
+`F5` is refuted; `F1`, `F2`, `F4` and `F6` are fixed and awaiting a look at the UI.
 
 Two live documents carry it, and they are the ones to read — not this summary:
 

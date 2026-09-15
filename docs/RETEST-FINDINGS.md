@@ -1,13 +1,13 @@
 # Retest findings — 2026-09-14
 
 Open while the retest runs. Companion to [`MANUAL-RETEST-PLAN.md`](./MANUAL-RETEST-PLAN.md):
-that file says what to drive, this one says what came back. Nothing here is fixed yet.
+that file says what to drive, this one says what came back.
 
 **Status legend:** 🔵 reported, not started · 🟡 in progress · ✅ fixed · ⛔ fixed but unverified
 
 ---
 
-## 🔵 F1 · Severity glyph sizing — Critical must outrank Caution
+## ⛔ F1 · Severity glyph sizing — Critical must outrank Caution
 
 **Reported:** Critical needs to be **bigger than** Caution; Caution needs to be **one step bigger**
 than it is now; the circles (Info / None) stay exactly as they are.
@@ -41,9 +41,47 @@ be a *scale* per severity applied to a per-site base, not an absolute.
 ⚠ **`EveryGlyphIsASingleBmpCharacterNotAnEmoji` and the themed-brush guards both touch this area** —
 whatever lands has to keep them green.
 
+### ⛔ Fixed, unverified — and the report understated it
+
+**Measured first**, through Avalonia + Skia, because the fix is a size and the report asserted the
+disparity without a number. Ink height at 14pt — the line box is font-metric driven and identical
+for all four glyphs, so it cannot express this and is not what the eye compares:
+
+| | `⚠` Caution | `○` None | `⊗` Critical | `●` Info |
+|---|---|---|---|---|
+| ink height @ 14pt | **10.70** | **10.14** | **8.52** | 6.02 |
+
+⛔ **The inversion was in two places, not one.** `⊗` draws at **0.797×** `⚠` — but it also draws
+*smaller than the hollow `○`*, so the glyph meaning "noted, nothing to do" was the larger of the
+two. The report caught the Critical-vs-Caution half; this half was invisible without measuring.
+
+⚠ **Which is why the scale looks disproportionate and is not.** ×1.255 buys Critical nothing but
+parity with Caution; any lead starts above that, so there is no cheap version of this fix.
+Shipped: **Critical ×1.55, Caution ×1.15, circles ×1.00** — Critical's ink lands ~7% above
+Caution's and clears `○` comfortably. Chosen from a rendered comparison of six candidate pairs.
+
+ⓘ **The ratio is a Windows measurement.** Neither `U+2297` nor `U+26A0` exists in Segoe UI, Inter
+or Arial, so both resolve through the same font fallback — which is why the figure held identically
+across every family tried. Another platform's fallback could shift the margin; it cannot invert the
+ranking, because the scales are strictly ordered.
+
+| | |
+|---|---|
+| Added | `AppSeverityToFontSizeConverter` — scale per severity, tier base as `ConverterParameter` |
+| Changed | all **nine** literals across **seven** files in both apps |
+| Guarded | `AppSeverityToFontSizeConverterTests` (17), `SeverityGlyphFontSizeMarkupTests` (2) |
+
+⭐ **The guard asserts ink, not points.** A test of `SizeFor(Critical) > SizeFor(Caution)` would go
+green at ×1.01 with the defect still on screen, so `TheScalesBeatTheMeasuredInkDisparity`
+multiplies the scales by the measured ink heights instead. Canaried: dropping Critical to ×1.20 —
+still larger than Caution *in points* — reddens it alone.
+
+⚠ **Still to verify by eye at the retest**: that 21.7pt does not disturb row height on the settings
+list, and that the 11pt tier (nav, search, effective, save dialog) still reads as a badge.
+
 ---
 
-## 🔵 F2 · Light-theme Caution reads brown, not amber
+## ⛔ F2 · Light-theme Caution reads brown, not amber
 
 **Reported:** in **light** theme Caution is a tad too dark and reads brown. **Dark theme is fine.**
 
@@ -103,6 +141,33 @@ Light-theme `#D97706` is declared in three places, and they are separate keys, n
 `InstallBannerCodeBorderBrush` — a **border**, a different role at a different contrast floor.
 Decide about it deliberately rather than sweeping it up in a find-and-replace.
 
+### ⛔ Fixed, unverified — and the deliberate decision about that fourth site
+
+**Every contrast figure in the tables above was recomputed and all sixteen reproduce exactly**, so
+the reasoning stands as written. Shipped: **`#EA580C`**, the hue shift, in
+`AppSeverityCautionBrush` (both apps) and `AppCautionBrush` (ClaudeForge). It measures **3.56:1**
+against today's 3.19:1 — the rare fix that reads better *and* measures better.
+
+⚠ **The hue gap to Critical narrows 35° → 24°**, which is the red-green axis. `F1`'s shape
+difference is what absorbs it, and it is the reason not to chase orange any further than this.
+
+ⓘ **`InstallBannerCodeBorderBrush` was deliberately left alone**, on two grounds rather than one:
+its palette is explicitly **theme-independent** (the install banner is pale goldenrod with dark
+text in both variants, by design), and the key is **declared at `MainWindow.axaml:83` and never
+referenced anywhere** — the usage nearby is `InstallBannerCodeBgBrush`. It is a dead token in a
+palette that is not the caution family, so `F2` does not reach it.
+
+ⓘ **Nothing is missing a border as a result**, which is the obvious next question. The banner roots
+and `UpdateBanner` use `InstallBannerBorderBrush`; the post-install note pairs the *code*
+background with that same generic border; and `InstallCommandPanel:47` borders its command block
+from the `SystemControl*` family. ⚠ That last one looks like two defects and is neither:
+`theme-audit-report.md` marks those keys *"dynamic (invisible) — all"*, but that describes the
+upstream themes — this repo **defines them itself** in `Resources/Compat/FluentKeys.Semi.axaml`,
+merged at `App.axaml:133`. And a theme-dependent brush inside a deliberately theme-independent
+banner would be the `F4` mechanism again, except the shim's `SystemBaseLowColor` is **translucent**
+(`#33000000` light, `#33FFFFFF` dark), so it composites over the banner's own pale yellow and the
+forced dark text stays readable in both variants.
+
 ---
 
 ## 🔵 F3 · *Share config* succeeds silently — the user cannot tell it did anything
@@ -158,7 +223,11 @@ contracts in `LOCALIZATION.md` apply.
 
 ---
 
-## 🔵 F4 · Danger-banner TEXT fails the contrast floor in light theme
+## ⛔ F4 · Danger-banner TEXT fails the contrast floor in light theme
+
+> ⛔ **This was one instance of six, and all six are fixed.** See *"The mechanism, and how far it
+> reaches"* at the end of this section — the banner was only the surface it happened to be
+> reported against.
 
 **Reported:** the danger callout's orange text works on black, does not work on white. Same
 component, both themes.
@@ -212,8 +281,79 @@ floors differ.
 
 ⭐ **Or give the banner the background it was designed to have.** Dark text on a light warm tint is
 the light-theme mirror of what dark mode already does, and is why dark works: `#9A3412` on `#FFFBEB`
-measures ~7:1. ⚠ The tint alone is not enough — `#D97706` on `#FFFBEB` is 3.07:1 — so the text
-colour has to move as well.
+measures **7.05:1** (computed). ⚠ The tint alone is not enough — `#D97706` on `#FFFBEB` is 3.07:1 —
+so the text colour has to move as well.
+
+### ⛔ The mechanism, and how far it reaches
+
+**The defect is not a banner defect.** It is `AppCautionBrush` — a token chosen to clear the
+**3.0:1** non-text floor — being used as a **text foreground**, where the floor is **4.5:1**.
+That happens at six places, not one:
+
+| Site | Surface | Ratio | |
+|---|---|---|---|
+| `InstallCommandPanel.axaml:68` | white | 3.19 | ✅ fixed |
+| `AboutEditorView.axaml:42` | white | 3.19 | ✅ fixed |
+| `AboutEditorView.axaml:70` | tint `#FFFBEB` | 3.07 | ✅ fixed |
+| `AboutEditorView.axaml:109` | white | 3.19 | ✅ fixed |
+| `MemoryEditorView.axaml:317` | tint `#FFFBEB` | 3.07 | ✅ fixed |
+| the `IsDangerNow` banner | white | 3.19 | ✅ fixed — see below |
+
+The six **border** uses of the same token are all fine: 3.19:1 against a 3.0:1 floor.
+
+⭐ **The repo already contained the correct pattern.** `EssentialsView:92-100` draws its caution
+panel as tint background + caution **border** + body text in `AppPrimaryTextBrush`.
+`AboutEditorView` and `MemoryEditorView` build the same panel and colour the header with the
+*border* token. The fix was to make the others match the one that was already right.
+
+**What shipped:** a new `AppCautionTextBrush` — light `#9A3412` (**7.31:1** on white, **7.05:1** on
+the tint), dark `#F59E0B`. ⓘ The dark value is the accent **unchanged**, because it already
+measures **7.76:1** as text — which is precisely why only light theme was ever reported.
+
+⭐ **Guarded by `CautionBrushIsNotUsedAsTextTests`, which COMPUTES the ratios from the hexes in
+`App.axaml` rather than quoting them.** A test asserting "the token equals `#9A3412`" would pass
+forever while saying nothing about readability. Canaried by restoring `#D97706`: it reddens
+reporting **3.19:1 and 3.07:1** — this finding's own numbers, re-derived.
+
+### ⛔ The banner needed a severity-driven tint, and got one for free
+
+⛔ **A single warm tint was not an option, because the banner is severity-driven.**
+`DangerAssessment(Severity, IsDangerNow, …)` computes the two **independently** —
+`TableDangerClassifier` takes severity from `EscalatesAt`/`Tier`, whose `EscalatedTier` defaults
+to **`Critical`**, and `IsDangerNow` from `rule.Unsafe(currentValue)`. So a **Critical** banner is
+the designed-for case, and an amber wash beneath a red-bordered one would say the wrong thing.
+
+The obvious route — an `AppSeverity*BackgroundBrush` family — meant **eight new tints** across two
+variants and two apps. ⚠ That collides with a rule this palette states in its own comments: the
+severity brushes were reused from already-vetted pairs *"so no unreviewed colour enters the
+palette"*.
+
+⭐ **So the tint is DERIVED rather than declared.** `AppSeverityToTintBrushConverter` returns the
+existing severity colour at **10% alpha**, composited over whatever surface is behind it. That is
+correct for all four severities and both themes, and adds **no colour to the palette at all**.
+
+| | |
+|---|---|
+| Background | `SeverityToTint` — the severity's own colour at 10% |
+| Border + glyph | unchanged, still `SeverityToBrush` |
+| Body text | ⭐ **no `Foreground` at all** — it inherits |
+
+ⓘ **Inheriting, rather than naming `AppPrimaryTextBrush`, is what lets BOTH apps render it** —
+OpenCodeForge declares no such token, and the banner lives in the shared wrapper. It reaches
+14.8:1 or better on every tint.
+
+⛔ **The alpha is bounded above by the BORDER, which is the constraint nobody would guess from the
+markup.** The banner draws its border in the same colour the tint is made from, so raising alpha
+pulls the two together. On white, Caution's border against its own tint measures **3.23:1 at 8%,
+3.15:1 at 10%, 3.07:1 at 12%, and 2.96:1 at 15%** — under the floor, while the tint still looks
+perfectly reasonable. `SeverityTintStaysLegibleTests` derives that ceiling rather than quoting it,
+and asserts the chosen alpha sits below it.
+
+⚠ **The tint brush is theme-TRACKED, and a fresh brush per `Convert` would have been a bug.**
+`BrushHelper` returns one shared mutable brush per key and re-colours it on variant change,
+because a converter only re-runs when its binding *source* changes and a severity does not change
+because the theme did — a defect this repo already shipped once and fixed. A stale 10% wash reads
+as a slightly-off background rather than as a wrong colour, so it would have survived review.
 
 ---
 
@@ -382,7 +522,7 @@ true, and still worth keeping — but see above: the property it controls is gat
 
 ---
 
-## 🔵 F6 · 26 nav-tree chevrons announce nothing
+## ⛔ F6 · 26 nav-tree chevrons announce nothing
 
 **Found by** `scripts/Audit-Accessibility.ps1` against a build that exposes its tree (see `F5` —
 the shipped one does not). 227 elements walked, two distinct findings.
@@ -413,6 +553,40 @@ consumed theme are a second surface, and only a runtime audit reaches them.
    `TreeViewItem` itself already exposes the ExpandCollapse pattern, so the chevron is an
    implementation detail and announcing it as a separate button duplicates a control the reader
    already has.
+
+### ⛔ Fixed by NAMING it — and option 2's premise turned out to be false
+
+**Option 2 was the better-argued fix and it is wrong on this Avalonia.** Measured on a real
+templated `TreeViewItem` rather than assumed:
+
+```
+ITEM     peer=TreeViewItemAutomationPeer   interfaces: IScrollProvider, ISelectionItemProvider
+CHEVRON  peer=ToggleButtonAutomationPeer   interfaces: IToggleProvider
+```
+
+⛔ **There is no `IExpandCollapseProvider` on the item.** The chevron's `IToggleProvider` is the
+*only* programmatic expand/collapse affordance the tree exposes, so hiding it would have removed
+the affordance rather than de-duplicated it — a regression dressed as a cleanup, and one that
+reads as more correct than the fix.
+
+⚠ **And the element is a `ToggleButton`, not the `Button` this document reports above.** That
+`Button` is the *peer's* control type — what a UIA walk can see — not the element's type. A style
+selector written from the walk matches nothing, **builds with zero errors and zero warnings**, and
+silently leaves the part unnamed. Canaried exactly that way: the wrong selector builds clean and
+the guard reports the chevron announcing `''`.
+
+| | |
+|---|---|
+| Fix | `TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron` in `Themes/AccessibilityNames.axaml`, the file that already exists for parts the markup cannot reach |
+| Name | `WrapperStrings.LabelExpandCollapse` → ClaudeForge's `AutoNameExpandCollapse`, in all nine resx files. Deliberately **state-free**: the Toggle pattern already reports expanded or collapsed, so a name that changed with state would be announced twice |
+| Guard | `TreeChevronAutomationNameTests` — builds a real templated `TreeViewItem` and reads the peer, which is the only thing that can see a template part |
+
+⭐ **The guard pins the REASONING, not just the behaviour.**
+`ThePremiseHolds_TheChevronIsTheOnlyExpandCollapseAffordance` asserts that the item peer still
+lacks `IExpandCollapseProvider`. If a later Avalonia adds it, that test reddens and says so — the
+choice gets remade on the new facts instead of being inherited from this note.
+
+ⓘ The chevron is `Focusable=False`, so naming it adds no tab stop.
 
 ⓘ **The `Thumb` is accepted noise.** Scrollbar thumbs are conventionally unnamed — the scrollbar
 carries the name — and no screen reader expects otherwise.
