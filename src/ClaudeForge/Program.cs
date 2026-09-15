@@ -88,6 +88,9 @@ internal sealed class Program
             // Themes/AccessibilityNames.axaml styles for every host.
             nameof(WrapperStrings.LabelSpinnerIncrease) => Strings.AutoNameSpinnerIncrease,
             nameof(WrapperStrings.LabelSpinnerDecrease) => Strings.AutoNameSpinnerDecrease,
+            // Same shape again: the navigation tree's expand/collapse chevrons are TreeViewItem
+            // template parts, named for every host by that same theme file.
+            nameof(WrapperStrings.LabelExpandCollapse) => Strings.AutoNameExpandCollapse,
             nameof(WrapperStrings.LabelBrowse) => Strings.ButtonBrowse,
             nameof(WrapperStrings.LabelAdd) => Strings.ButtonAdd,
             nameof(WrapperStrings.LabelRemove) => Strings.AutoNameRemoveEntry,

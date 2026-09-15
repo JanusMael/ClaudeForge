@@ -555,6 +555,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Expand or collapse.
+        /// </summary>
+        public static string AutoNameExpandCollapse {
+            get {
+                return ResourceManager.GetString("AutoNameExpandCollapse", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Decrease value.
         /// </summary>
         public static string AutoNameSpinnerDecrease {

@@ -65,6 +65,7 @@ public static class WrapperStrings
             nameof(LabelReset) => "Reset",
             nameof(LabelSpinnerIncrease) => "Increase value",
             nameof(LabelSpinnerDecrease) => "Decrease value",
+            nameof(LabelExpandCollapse) => "Expand or collapse",
             nameof(LabelBrowse) => "Browse...",
             nameof(LabelAdd) => "Add",
             nameof(LabelRemove) => "Remove",
@@ -115,6 +116,18 @@ public static class WrapperStrings
 
     /// <summary>Screen-reader name for a <c>ButtonSpinner</c>'s down button.</summary>
     public static string LabelSpinnerDecrease => Resolver(nameof(LabelSpinnerDecrease));
+
+    /// <summary>
+    /// Screen-reader name for a <c>TreeViewItem</c>'s expand/collapse chevron.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Deliberately state-free.</b> The chevron's peer is a
+    /// <c>ToggleButtonAutomationPeer</c> and carries <c>IToggleProvider</c>, so the
+    /// expanded-or-collapsed state is already reported through the pattern. A name that changed
+    /// with the state would have a reader announce it twice, and disagree with the pattern for as
+    /// long as the two were out of step.
+    /// </remarks>
+    public static string LabelExpandCollapse => Resolver(nameof(LabelExpandCollapse));
 
     /// <summary>
     /// Restore <see cref="Resolver"/> to the default-English implementation.

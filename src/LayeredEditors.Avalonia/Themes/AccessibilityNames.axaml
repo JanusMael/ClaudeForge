@@ -14,8 +14,14 @@
     scoping it to ButtonSpinner would match nothing.  TemplatePartAutomationNameTests reads
     TemplatedParent to keep both facts honest.
 
-    Guard: LayeredEditors.Avalonia.Tests/Themes/TemplatePartAutomationNameTests.cs applies this
-    file's styles to real templated controls and reads their automation peers.
+    ⚠ The ELEMENT TYPE in a selector is a fact about the template too, and UIA cannot supply it:
+    a UIA walk reports a control's PEER type, so the TreeViewItem chevron below reads as "Button"
+    while the element is a ToggleButton.  A selector written from the walk matches nothing, builds
+    with zero errors and zero warnings, and silently leaves the part unnamed.
+
+    Guards: LayeredEditors.Avalonia.Tests/Themes/TemplatePartAutomationNameTests.cs and
+    TreeChevronAutomationNameTests.cs apply this file's styles to real templated controls and read
+    their automation peers.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -42,6 +48,39 @@
     <Style Selector="ButtonSpinner /template/ RepeatButton#PART_DecreaseButton">
         <Setter Property="AutomationProperties.Name"
                 Value="{x:Static loc:WrapperStrings.LabelSpinnerDecrease}" />
+    </Style>
+
+    <!--
+        ── TreeViewItem expand/collapse chevron ─────────────────────────────────────────
+
+        The navigation tree's chevrons reached a screen reader as an unnamed "button" — 26 of
+        them on one pass of scripts/Audit-Accessibility.ps1 (finding F6).  Like the spinner
+        buttons above, the element is a template part no view declares, so nothing in markup
+        could name it and the AXAML scan had no element to flag.
+
+        ⛔ NAMED rather than hidden, and the reasoning that says otherwise is WRONG HERE.  The
+        tempting fix is AutomationProperties.AccessibilityView="Raw" on the grounds that the
+        TreeViewItem already exposes an ExpandCollapse pattern, making the chevron a duplicate.
+        Measured on a real templated TreeViewItem instead of assumed:
+
+            ITEM     peer=TreeViewItemAutomationPeer   interfaces: IScrollProvider,
+                                                                   ISelectionItemProvider
+            CHEVRON  peer=ToggleButtonAutomationPeer   interfaces: IToggleProvider
+
+        There is no IExpandCollapseProvider on the item.  The chevron's IToggleProvider is the
+        ONLY programmatic expand/collapse affordance the tree exposes, so hiding it would remove
+        the affordance rather than de-duplicate it.
+
+        ⚠ The selector says ToggleButton, not Button.  A UIA walk reports this element's CONTROL
+        TYPE as Button — that is the peer's answer, not the element's — and a selector written
+        from that reading matches nothing and fails silently, which is the same shape of trap as
+        scoping a part to the wrong templated parent.  Verified: TemplatedParent is TreeViewItem.
+
+        ⓘ The chevron is Focusable=False, so naming it does not add a tab stop.
+    -->
+    <Style Selector="TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron">
+        <Setter Property="AutomationProperties.Name"
+                Value="{x:Static loc:WrapperStrings.LabelExpandCollapse}" />
     </Style>
 
     <!--

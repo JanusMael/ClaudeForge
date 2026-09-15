@@ -137,6 +137,10 @@
     <value>値を大きくする</value>
     <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
   </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>展開または折りたたみ</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
   <data name="AutoNameSpinnerDecrease" xml:space="preserve">
     <value>値を小さくする</value>
     <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
