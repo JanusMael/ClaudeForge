@@ -19,12 +19,20 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
 /// <para>
 /// ⚠ <b>Geometric shapes, deliberately not emoji.</b> Emoji glyphs need a system emoji font to
 /// fall back to and silently render as tofu without one — a documented problem on Linux in
-/// <c>AVALONIA-GOTCHAS.md</c>. <c>▲ ◆ ● ○</c> live in ordinary text fonts.
+/// <c>AVALONIA-GOTCHAS.md</c>. <c>⊗ ⚠ ● ○</c> live in ordinary text fonts.
 /// </para>
 /// <para>
-/// The shapes escalate in visual weight rather than being arbitrary: a filled triangle reads as
-/// louder than a filled diamond, which reads louder than a dot, and a hollow dot reads as
-/// "noted, nothing to do".
+/// ⛔ <b>The shapes do NOT escalate in drawn size, and assuming they did was defect F1.</b>
+/// Measured through Skia at 14pt, the ink heights run <c>⚠</c> 10.70, <c>○</c> 10.14,
+/// <c>⊗</c> 8.52, <c>●</c> 6.02 — so at one shared point size the loudest tier drew smaller than
+/// the quietest, and Critical drew smaller than the hollow "noted, nothing to do" circle. Rank is
+/// carried by <see cref="AppSeverityToFontSizeConverter"/>, whose per-severity scales exist to
+/// overcome exactly that disparity.
+/// </para>
+/// <para>
+/// ⚠ <b>An earlier version of this remark claimed the escalation as a property of the shapes.</b>
+/// It was describing a different set of glyphs (<c>▲ ◆ ● ○</c>) and was never re-measured when
+/// they changed, so it went on reassuring readers about a hierarchy that had quietly inverted.
 /// </para>
 /// </remarks>
 public sealed class AppSeverityToGlyphConverter : IValueConverter
@@ -46,7 +54,9 @@ public sealed class AppSeverityToGlyphConverter : IValueConverter
         // the guard's REASON does not apply here while its RULE still fires. Keeping the guard
         // intact is the better trade: if a platform renders this as colour emoji, add FE0E and
         // widen the guard deliberately rather than loosening it pre-emptively.
-        // ⚠ NOT yet confirmed by rendering on any platform.
+        // ⚠ Confirmed on WINDOWS by the 2026-09-14 retest: the screenshots show a themed
+        // triangle, not colour emoji and not tofu, so the reasoning above holds there. Linux and
+        // macOS are still unconfirmed, and that is where the tofu risk actually lives.
         //
         // ⚠ is deliberately NOT used for Critical as well. Two warning triangles differing
         // only in hue would put Critical and Caution on the red-amber axis with no shape to

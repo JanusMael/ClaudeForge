@@ -27,6 +27,7 @@
              grids so a tier looks the same wherever it appears. -->
         <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
         <!-- The change-kind pill's fill. A converter rather than a bound hex string, so the
              colour lives in the theme and not in SaveChangeEntryViewModel. -->
         <conv:ChangeKindToBrushConverter x:Key="KindToBrush" />
@@ -269,7 +270,7 @@
                                                         <TextBlock IsVisible="{Binding HasDangerSeverity}"
                                                                    Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                                                    Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                                                                   FontSize="11"
+                                                                   FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
                                                                    VerticalAlignment="Center"
                                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                                                    ToolTip.Tip="{Binding DangerAccessibleText}" />

@@ -18,6 +18,7 @@
              this app declares in App.axaml alongside ClaudeForge’s. -->
         <conv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <conv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <conv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
     </Window.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -213,7 +214,7 @@
                                     <TextBlock IsVisible="{Binding HasDangerSeverity}"
                                                Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                                               FontSize="11"
+                                               FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
                                                VerticalAlignment="Center"
                                                AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                                ToolTip.Tip="{Binding DangerAccessibleText}" />

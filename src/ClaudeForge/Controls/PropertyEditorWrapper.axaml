@@ -27,6 +27,7 @@
              one loses it. -->
         <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
     </UserControl.Resources>
 
     <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
@@ -113,7 +114,7 @@
                     <TextBlock IsVisible="{Binding HasDangerSeverity}"
                                Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                               FontSize="14"
+                               FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
                                VerticalAlignment="Center"
                                AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                ToolTip.Tip="{Binding DangerAccessibleText}" />
@@ -265,7 +266,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
-                               FontSize="14"
+                               FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
                                VerticalAlignment="Top" />
                     <TextBlock Text="{Binding Danger.Explanation}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
