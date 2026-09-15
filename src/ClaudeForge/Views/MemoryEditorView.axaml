@@ -314,7 +314,7 @@
                             <StackPanel Spacing="2">
                                 <TextBlock Text="{x:Static loc:Strings.HeaderFootprintLargeWarning}"
                                            FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AppCautionBrush}" />
+                                           Foreground="{DynamicResource AppCautionTextBrush}" />
                                 <TextBlock Text="{Binding FootprintWarningMessage}"
                                            TextWrapping="Wrap"
                                            Foreground="{DynamicResource AppPrimaryTextBrush}" />

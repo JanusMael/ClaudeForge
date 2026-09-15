@@ -39,7 +39,7 @@
                     <TextBlock Text="{x:Static loc:Strings.TargetNullNotDetected}"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
-                               Foreground="{DynamicResource AppCautionBrush}" />
+                               Foreground="{DynamicResource AppCautionTextBrush}" />
                     <!-- Claude Code install panel: shell one-liner + terminal launch.
                          The outer StackPanel's IsVisible gate (ClaudeCodeVersion
                          is null-or-empty) stays in lockstep with
@@ -67,7 +67,7 @@
                 <StackPanel Spacing="6">
                     <TextBlock Text="{x:Static loc:Strings.LabelClaudeCodeNotOnPath}"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource AppCautionBrush}" />
+                               Foreground="{DynamicResource AppCautionTextBrush}" />
                     <TextBlock Text="{Binding ClaudeCodeNotOnPathMessage}"
                                TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -106,7 +106,7 @@
                     <TextBlock Text="{x:Static loc:Strings.TargetNullNotDetected}"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
-                               Foreground="{DynamicResource AppCautionBrush}" />
+                               Foreground="{DynamicResource AppCautionTextBrush}" />
                     <!-- Claude Desktop install panel: download URL + browser open.
                          No shell installer exists for Claude Desktop, so the
                          ForClaudeDesktop() factory produces a URL-flavoured VM.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Media;
 
@@ -81,6 +82,59 @@ internal static class BrushHelper
         return tracked;
     }
 
+    /// <summary>
+    /// A translucent version of a themed brush: the same colour at <paramref name="alpha"/>, for
+    /// use as a tint behind content.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Derived rather than declared, deliberately.</b> A tint per severity per theme per app
+    /// would be eight new palette entries, and this palette's own comments record the rule that no
+    /// unreviewed colour should enter it. Compositing the existing, already-vetted colour over
+    /// whatever surface is behind produces the right tint for every severity and both themes with
+    /// no new colour at all.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Tracked like <see cref="ResolveThemed"/>, and for exactly the same reason.</b> A
+    /// snapshot brush was a real, user-visible bug — see the theme-tracking note below. A tint
+    /// minted fresh per Convert would reintroduce it in a form that is harder to spot, because a
+    /// stale 10% wash reads as a slightly-off background rather than as a wrong colour.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Alpha is bounded above by the BORDER that sits on the tint</b>, not by taste. The
+    /// banner draws its border in the same severity colour the tint is made from, so raising alpha
+    /// pulls the two together: measured on white, Caution's border against its own tint is 3.23:1
+    /// at 8%, 3.15:1 at 10%, 3.07:1 at 12% and <b>2.96:1 at 15%</b> — under the 3.0:1 floor.
+    /// <c>SeverityTintStaysLegibleTests</c> holds that ceiling.
+    /// </para>
+    /// </remarks>
+    internal static IBrush ResolveThemedTint(string key, string fallbackHex, double alpha)
+    {
+        if (Application.Current is not { } app)
+        {
+            return new SolidColorBrush(WithAlpha(Color.Parse(fallbackHex), alpha));
+        }
+
+        EnsureHooked(app);
+
+        string cacheKey = string.Create(
+            CultureInfo.InvariantCulture, $"{key}@{alpha:F3}");
+
+        if (LiveTints.TryGetValue(cacheKey, out TrackedTint? live))
+        {
+            live.Brush.Color = WithAlpha(ColorFor(app, live.ResourceKey, live.FallbackHex), alpha);
+            return live.Brush;
+        }
+
+        SolidColorBrush tracked = new(WithAlpha(ColorFor(app, key, fallbackHex), alpha));
+        LiveTints[cacheKey] = new TrackedTint(tracked, key, fallbackHex, alpha);
+        return tracked;
+    }
+
+    /// <summary>The colour with its alpha replaced. RGB is untouched, so the hue cannot drift.</summary>
+    internal static Color WithAlpha(Color color, double alpha) =>
+        Color.FromArgb((byte)Math.Round(Math.Clamp(alpha, 0d, 1d) * 255), color.R, color.G, color.B);
+
     // ── Theme tracking ───────────────────────────────────────────────────────
     //
     // ⛔⛔ THE BRUSH USED TO BE A SNAPSHOT, AND THAT WAS A REAL, USER-VISIBLE BUG.
@@ -104,6 +158,17 @@ internal static class BrushHelper
     private static readonly Dictionary<string, SolidColorBrush> LiveBrushes = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> Fallbacks = new(StringComparer.Ordinal);
     private static bool _hooked;
+
+    /// <summary>
+    /// Tints are tracked separately rather than folded into <see cref="LiveBrushes"/>: one key can
+    /// be wanted at several alphas, and the refresh has to know the RESOURCE key, which is no
+    /// longer the cache key once alpha is part of it. Kept additive so the opaque path — the one
+    /// carrying the fix described above — is not restructured to accommodate this.
+    /// </summary>
+    private sealed record TrackedTint(
+        SolidColorBrush Brush, string ResourceKey, string FallbackHex, double Alpha);
+
+    private static readonly Dictionary<string, TrackedTint> LiveTints = new(StringComparer.Ordinal);
 
     private static void EnsureHooked(Application app)
     {
@@ -135,6 +200,12 @@ internal static class BrushHelper
         {
             pair.Value.Color = ColorFor(app, pair.Key, Fallbacks[pair.Key]);
         }
+
+        foreach (TrackedTint tint in LiveTints.Values)
+        {
+            tint.Brush.Color = WithAlpha(
+                ColorFor(app, tint.ResourceKey, tint.FallbackHex), tint.Alpha);
+        }
     }
 
     /// <summary>Drops the tracked-brush cache. Tests only — see the remarks above.</summary>
@@ -142,6 +213,7 @@ internal static class BrushHelper
     {
         LiveBrushes.Clear();
         Fallbacks.Clear();
+        LiveTints.Clear();
         _hooked = false;
     }
 }

@@ -28,6 +28,7 @@
         <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
         <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
         <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
+        <libconv:AppSeverityToTintBrushConverter x:Key="SeverityToTint" />
     </UserControl.Resources>
 
     <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
@@ -256,7 +257,15 @@
                 ⚠ HorizontalAlignment=Left so the banner sizes to its sentence. Stretched across
                 the full row it read as a page-wide alert rather than one row's problem.
             -->
+            <!-- ⛔ The explanation TextBlock below sets NO Foreground, deliberately. It used to
+                 take the severity brush, which is an ACCENT chosen to clear the 3.0:1 non-text
+                 floor; as body text the floor is 4.5:1 and the light theme measured 3.19:1
+                 (finding F4). Inheriting gives ordinary body text, which reaches 14.8:1 or better
+                 on the tint — and inheriting rather than naming a token is what lets BOTH apps
+                 render this, since OpenCodeForge declares no AppPrimaryTextBrush.
+                 The tint and the border still carry the severity, so nothing is lost. -->
             <Border IsVisible="{Binding IsDangerNow}"
+                    Background="{Binding Danger.Severity, Converter={StaticResource SeverityToTint}}"
                     BorderBrush="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                     BorderThickness="1"
                     CornerRadius="4"
@@ -269,7 +278,6 @@
                                FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
                                VerticalAlignment="Top" />
                     <TextBlock Text="{Binding Danger.Explanation}"
-                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                FontSize="11"
                                TextWrapping="Wrap"
                                MaxWidth="720"

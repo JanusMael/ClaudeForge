@@ -65,7 +65,7 @@
                    IsVisible="{Binding NoTerminalMessage,
                    Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                    FontSize="11"
-                   Foreground="{DynamicResource AppCautionBrush}" />
+                   Foreground="{DynamicResource AppCautionTextBrush}" />
 
     </StackPanel>
 </UserControl>

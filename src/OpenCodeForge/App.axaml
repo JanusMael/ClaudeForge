@@ -81,7 +81,13 @@
                         hex, which is invisible and is the exact problem this token removes.
                     -->
                     <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#CE2029" />
-                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#D97706" />
+                    <!-- #EA580C replaced #D97706, which read BROWN rather than amber (F2). A hue
+                         shift, not a lightening: #D97706 was already at 3.19:1 against white and
+                         every step lighter falls under the 3.0:1 non-text floor, whereas #EA580C
+                         reads orange AND measures 3.56:1. Kept in step with ClaudeForge, whose
+                         App.axaml carries the full reasoning — a severity must not mean one colour
+                         in one app and another colour in the other. -->
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#EA580C" />
                     <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
                     <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
                     <!-- Save-dialog change-kind pills. Same value in both variants ON

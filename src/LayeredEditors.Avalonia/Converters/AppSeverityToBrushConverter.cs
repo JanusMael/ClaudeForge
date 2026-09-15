@@ -43,7 +43,13 @@ public sealed class AppSeverityToBrushConverter : IValueConverter
     /// </remarks>
     public static string KeyFor(AppSeverity severity) => $"AppSeverity{severity}Brush";
 
-    private static string FallbackFor(AppSeverity severity) => severity switch
+    /// <remarks>
+    /// ⚠ <c>internal</c> rather than private so <see cref="AppSeverityToTintBrushConverter"/> uses
+    /// this exact table instead of keeping a second copy. Two copies of a fallback would drift, and
+    /// a drifted fallback is invisible: both are only reached when a host has failed to declare a
+    /// key, which <c>AppSeverityTokenCoverageTests</c> already forbids.
+    /// </remarks>
+    internal static string FallbackFor(AppSeverity severity) => severity switch
     {
         AppSeverity.Critical => "#A8071A",
         AppSeverity.Caution => "#874400",
