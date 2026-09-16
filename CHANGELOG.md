@@ -10,7 +10,7 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 
 
-## [2026.2.528] - TBD
+## [2026.2.528] - [2026.3.916]
 
 ### Added
 
