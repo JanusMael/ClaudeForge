@@ -9,6 +9,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Platform;
 /// <summary>Probes installed product versions without blocking the UI thread.</summary>
 public static partial class ProductVersionProbe
 {
+    /// <summary>How long a single <c>--version</c> probe may run before it is killed.</summary>
+    private const int DefaultProbeTimeoutMs = 2000;
+
     /// <summary>
     /// Try to get the Claude Code CLI version string, e.g. "1.2.3". When
     /// <paramref name="explicitBinaryPath"/> is provided, the probe runs that
@@ -18,12 +21,33 @@ public static partial class ProductVersionProbe
     /// <see langword="null"/>, the probe falls back to <c>"claude"</c> as a
     /// bare PATH lookup (the legacy behaviour).
     /// </summary>
-    public static async Task<string?> TryGetClaudeCodeVersionAsync(string? explicitBinaryPath = null)
+    public static Task<string?> TryGetClaudeCodeVersionAsync(string? explicitBinaryPath = null)
     {
-        ResolvedCommand cmd = ResolveCommand(explicitBinaryPath);
+        return TryGetVersionAsync(ResolveCommand(explicitBinaryPath), DefaultProbeTimeoutMs);
+    }
+
+    /// <summary>
+    /// Runs an already-resolved command under an explicit timeout and returns its trimmed
+    /// stdout, or <see langword="null"/> if it failed to start, exited non-zero, produced
+    /// nothing, or was killed at the deadline.
+    /// </summary>
+    /// <param name="cmd">Exe/args pair from <see cref="ResolveCommand"/>.</param>
+    /// <param name="timeoutMs">
+    /// Deadline for the child process. Split out from <see cref="TryGetClaudeCodeVersionAsync"/>
+    /// so tests can drive the kill path with a timeout of a few hundred milliseconds instead of
+    /// waiting out the production <see cref="DefaultProbeTimeoutMs"/>.
+    /// </param>
+    /// <param name="onProcessStarted">
+    /// Test seam invoked with the child's PID immediately after a successful
+    /// <see cref="Process.Start(ProcessStartInfo)"/>, so a test can verify afterwards that the
+    /// process really was killed rather than merely abandoned. Never used in production.
+    /// </param>
+    internal static async Task<string?> TryGetVersionAsync(
+        ResolvedCommand cmd, int timeoutMs, Action<int>? onProcessStarted = null)
+    {
         try
         {
-            ProcessResult run = await RunWithTimeoutAsync(cmd.Exe, cmd.Args, 2000);
+            ProcessResult run = await RunWithTimeoutAsync(cmd.Exe, cmd.Args, timeoutMs, onProcessStarted);
             if (run.ExitCode == 0 && !string.IsNullOrWhiteSpace(run.Stdout))
             {
                 return run.Stdout.Trim();
@@ -157,7 +181,7 @@ public static partial class ProductVersionProbe
     }
 
     private static async Task<ProcessResult> RunWithTimeoutAsync(
-        string exe, string args, int timeoutMs)
+        string exe, string args, int timeoutMs, Action<int>? onProcessStarted = null)
     {
         using CancellationTokenSource cts = new(timeoutMs);
         ProcessStartInfo psi = new(exe, args)
@@ -168,6 +192,7 @@ public static partial class ProductVersionProbe
             CreateNoWindow = true,
         };
         Process proc = Process.Start(psi) ?? throw new InvalidOperationException("Process did not start");
+        onProcessStarted?.Invoke(proc.Id);
         try
         {
             // Drain both streams concurrently.  Reading only stdout while stderr is also
