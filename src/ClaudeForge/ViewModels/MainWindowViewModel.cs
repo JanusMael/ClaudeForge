@@ -3024,9 +3024,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Dispatcher.UIThread.Post(
                 () =>
                 {
-                    if (navigable is AgentsSkillsEditorViewModel agents && pending.Segments.Count > 0)
+                    // ⛔ This used to type-test for AgentsSkillsEditorViewModel, so the
+                    // post-layout tab re-apply reached exactly ONE page and every other
+                    // tabbed page silently kept whatever tab it defaulted to. ReapplyTab is
+                    // on the interface with a do-nothing default, so asking every navigable
+                    // page costs nothing and stops the next tabbed page being forgotten.
+                    if (pending.Segments.Count > 0)
                     {
-                        agents.SelectSegment(pending.Segments[0]);
+                        navigable.ReapplyTab(pending.Segments);
                     }
                 },
                 DispatcherPriority.Loaded);

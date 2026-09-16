@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -34,7 +34,8 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 /// </para>
 /// </summary>
 public partial class SettingsGroupEditorViewModel
-    : ObservableObject, IDisposable, ISchemaGroupEditor, INavigablePage, LibVm.IDangerAnnotatedEditor
+    : ObservableObject, IDisposable, ISchemaGroupEditor, INavigablePage, LibVm.IDangerAnnotatedEditor,
+      IDeepNavigable
 {
     private bool _disposed;
 
@@ -1439,5 +1440,62 @@ public partial class SettingsGroupEditorViewModel
         {
             editor.PropertyChanged -= OnEditorPropertyChanged;
         }
+    }
+
+    // ── IDeepNavigable ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// The selected tab id, which is the whole of this page's position below its
+    /// navigation node. Contributed tabs address exactly like built-in ones —
+    /// <see cref="IGroupTabCustomizer"/> gives every tab an id, so
+    /// <c>claude-code/hooks/hooks.flow</c> needs no special case.
+    /// <para>
+    /// Deliberately not the navigation filter: that is set BY a deep link
+    /// (<see cref="ApplyNavigationFilter"/>) to reveal a property, so persisting
+    /// it would make a one-off reveal sticky across restarts.
+    /// </para>
+    /// </summary>
+    /// <inheritdoc />
+    public IReadOnlyList<string> CaptureDeepPath()
+    {
+        return SelectedTab?.Id is { Length: > 0 } id ? [id] : [];
+    }
+
+    /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 })
+        {
+            SelectTab(segments[0]);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryRestoreDeepPathAsync(
+        IReadOnlyList<string> segments,
+        DeepRestoreMode mode,
+        object? transientState,
+        CancellationToken ct)
+    {
+        if (segments is null || segments.Count == 0)
+        {
+            return Task.FromResult(false);
+        }
+
+        string tabId = segments[0];
+        SelectTab(tabId);
+
+        // SelectTab is a silent no-op for an id this group doesn't have — a tab
+        // the customizer withheld, or a stale link. Report that honestly so the
+        // host can warn: the user asked for a tab and did not get it.
+        bool found = Tabs.Any(t => string.Equals(t.Id, tabId, StringComparison.OrdinalIgnoreCase));
+        if (!found)
+        {
+            Log.Information(
+                "[DeepLink] group={Group} has no tab '{Tab}'; staying on {Selected}",
+                GroupName, tabId, SelectedTab?.Id ?? "(none)");
+        }
+
+        return Task.FromResult(found);
     }
 }

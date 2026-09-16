@@ -1479,6 +1479,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     }
 
     /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 })
+        {
+            SelectSegment(segments[0]);
+        }
+    }
+
+    /// <inheritdoc />
     public object? CaptureTransientState()
     {
         // Only worth carrying when there is an edit in progress; a plain viewing
@@ -1595,9 +1604,16 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
         if (source is not null)
         {
+            // Compare the ENCODED source on both sides. A plugin's source is a
+            // path, and a path cannot survive a round trip through a segment, so
+            // what arrives here is the encoded spelling. Normalising both sides
+            // also means a human may type either one.
+            string wanted = NavDeepPath.EncodeSource(source);
+
             ArtifactRowViewModel? exact = rows.FirstOrDefault(
                 r => string.Equals(r.DisplayName, name, StringComparison.OrdinalIgnoreCase)
-                     && string.Equals(r.Source, source, StringComparison.OrdinalIgnoreCase));
+                     && string.Equals(
+                         NavDeepPath.EncodeSource(r.Source), wanted, StringComparison.OrdinalIgnoreCase));
             if (exact is not null)
             {
                 return exact;

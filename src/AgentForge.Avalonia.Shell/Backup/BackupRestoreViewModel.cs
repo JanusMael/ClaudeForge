@@ -31,7 +31,7 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 /// Progress is reported through <see cref="ProgressPercent"/> and <see cref="ProgressMessage"/>
 /// so the view can bind to them directly.
 /// </remarks>
-public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INavigablePage
+public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INavigablePage, IDeepNavigable
 {
     private bool _vmDisposed;
     private readonly IDialogService _dialogService;
@@ -1347,6 +1347,76 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     {
         Refresh();
     }
+
+    // ── IDeepNavigable ───────────────────────────────────────────────────
+
+    /// <summary>Stable tab ids, so a deep link survives reordering and translation.</summary>
+    public const string TabBackupId = "backup";
+
+    /// <inheritdoc cref="TabBackupId"/>
+    public const string TabRestoreId = "restore";
+
+    /// <inheritdoc cref="TabBackupId"/>
+    public const string TabMsixFixId = "msix-fix";
+
+    private static int? TabIndexFor(string? tabId)
+    {
+        return tabId?.ToLowerInvariant() switch
+        {
+            TabBackupId => 0,
+            TabRestoreId => 1,
+            TabMsixFixId => 2,
+            var _ => null,
+        };
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> CaptureDeepPath()
+    {
+        return
+        [
+            SelectedTabIndex switch
+            {
+                1 => TabRestoreId,
+                2 => TabMsixFixId,
+                var _ => TabBackupId,
+            },
+        ];
+    }
+
+    /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 } && TabIndexFor(segments[0]) is { } index)
+        {
+            SelectedTabIndex = index;
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryRestoreDeepPathAsync(
+        IReadOnlyList<string> segments,
+        DeepRestoreMode mode,
+        object? transientState,
+        CancellationToken ct)
+    {
+        if (segments is null || segments.Count == 0 || TabIndexFor(segments[0]) is not { } index)
+        {
+            return Task.FromResult(false);
+        }
+
+        // The MSIX tab is Windows-only. It keeps its Items slot either way, so the
+        // index is always valid; selecting a hidden tab would just show nothing,
+        // which is worse than staying put and reporting the miss.
+        if (index == 2 && !ShowMsixTab)
+        {
+            Log.Information("[DeepLink] backup tab '{Tab}' is not shown on this platform", segments[0]);
+            return Task.FromResult(false);
+        }
+
+        SelectedTabIndex = index;
+        return Task.FromResult(true);
+    }
 }
 
 /// <summary>
@@ -1524,4 +1594,5 @@ public sealed class BackupRowViewModel : ObservableObject
     /// tooltip so the row is visually distinguishable from restorable backups.
     /// </summary>
     public bool IsSanitized => Entry.Manifest?.Mode == BackupMode.Sanitized;
+
 }

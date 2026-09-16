@@ -1,4 +1,5 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+﻿using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -28,7 +29,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// includes the workspace.Changed forwarder shipped in step 8 — so editor
 /// direct writes still trigger refresh).
 /// </remarks>
-public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
+public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable, IDeepNavigable
 {
     private readonly AgentConfigClientCore _client;
     private readonly string? _projectRoot;
@@ -313,5 +314,54 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
         {
             Dispatcher.UIThread.Post(Refresh);
         }
+    }
+
+    // ── IDeepNavigable ───────────────────────────────────────────────────
+
+    /// <summary>Stable tab ids, so a deep link survives reordering and translation.</summary>
+    public const string TabPropertiesId = "properties";
+
+    /// <inheritdoc cref="TabPropertiesId"/>
+    public const string TabJsonId = "json";
+
+    private static int? TabIndexFor(string? tabId)
+    {
+        return tabId?.ToLowerInvariant() switch
+        {
+            TabPropertiesId => 0,
+            TabJsonId => 1,
+            var _ => null,
+        };
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> CaptureDeepPath()
+    {
+        return [SelectedTabIndex == 1 ? TabJsonId : TabPropertiesId];
+    }
+
+    /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 } && TabIndexFor(segments[0]) is { } index)
+        {
+            SelectedTabIndex = index;
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryRestoreDeepPathAsync(
+        IReadOnlyList<string> segments,
+        DeepRestoreMode mode,
+        object? transientState,
+        CancellationToken ct)
+    {
+        if (segments is null || segments.Count == 0 || TabIndexFor(segments[0]) is not { } index)
+        {
+            return Task.FromResult(false);
+        }
+
+        SelectedTabIndex = index;
+        return Task.FromResult(true);
     }
 }
