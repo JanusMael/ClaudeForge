@@ -77,6 +77,35 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   name (and help text where the label alone is ambiguous), the header links announce
   as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
   if a control lands without one.
+- **A skill whose `description` was a folded block scalar showed `>-` instead of its
+  description.** Nearly every skill Claude Code ships writes `description: >-` with the
+  prose on the following indented lines, and the front-matter parser understood only
+  plain and quoted scalars: the value read as the literal header token, and the prose
+  lines fell through as unparsed filler that an edit would have stranded. Block scalars
+  — folded (`>`) and literal (`|`), with all three chomping indicators (`-`, `+`, none)
+  and an explicit indent digit — now parse to their real text, and a field keeps its
+  shape when edited, so changing a `>-` description re-renders as a folded block
+  instead of collapsing the file into one very long line. An untouched block still
+  round-trips byte-for-byte. A description carrying newlines is flattened to one line
+  for the list row, which is a single ellipsised line; the detail pane and the editor
+  keep the real multi-line value.
+- **A description split across lines without a `>` or `|` read as empty.** A YAML
+  value can be carried over several indented lines with no block indicator at all,
+  opening either on the key line or the line below it — Anthropic's own
+  `math-olympiad` plugin skill writes its description that way, so it showed
+  "(no description)". Those lines now fold into the value, and the surrounding
+  quotes come off the joined result rather than either line alone, which is what
+  left a stray `"` on the shapes that did parse. Editing one re-renders it as a
+  folded block rather than collapsing it into a single very long line.
+- **A nested mapping was flattened into phantom top-level fields, and editing one
+  broke the file.** `metadata:` with indented `node_type:` / `type:` beneath it
+  surfaced `node_type` and `type` as if they were top-level keys; writing one then
+  re-rendered it at column 0, silently lifting it out of its parent. Nested
+  mappings are unmodelled by design, so one is now consumed whole and re-emitted
+  verbatim — it round-trips byte-for-byte and is invisible to the typed read/write
+  surface, which is what the class documentation already promised. The supported
+  and unsupported YAML constructs are now written down in
+  [docs/YAML-FRONT-MATTER.md](docs/YAML-FRONT-MATTER.md).
 - **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
   the detail pane but never the row's subtitle, which is what the list renders —
   so editing a `description` and saving kept showing the old text until the next

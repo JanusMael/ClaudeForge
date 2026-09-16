@@ -771,10 +771,26 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// edit renders its row exactly the way the initial load would have — the
     /// two drifting apart is what made a saved description look stale.
     /// </para>
+    /// <para>
+    /// Flattened to a single line.  Descriptions are written as YAML block
+    /// scalars, so a parsed one can carry newlines (a blank line in a folded
+    /// block, or any literal <c>|</c> block).  The row is one ellipsised line of
+    /// fixed height, so an embedded newline would either be swallowed silently or
+    /// push the row's layout around depending on the control.  The detail pane
+    /// and the editor keep the real, multi-line value.
+    /// </para>
     /// </summary>
     private static string NormaliseSubtitle(string? description)
     {
-        return string.IsNullOrWhiteSpace(description) ? NoDescriptionPlaceholder : description!;
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return NoDescriptionPlaceholder;
+        }
+
+        // Collapse every run of whitespace — newlines, tabs, the two-space indent
+        // a folded block leaves on continuation lines — into single spaces.
+        return string.Join(' ', description!.Split(
+            (char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
     // Pre-existing untranslated placeholder, kept verbatim so this change is
