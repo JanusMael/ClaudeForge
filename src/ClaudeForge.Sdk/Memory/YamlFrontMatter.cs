@@ -306,10 +306,13 @@ public static class YamlFrontMatter
                     sb.Append(nl);
                     break;
                 case FrontMatterCommentNode comment:
-                    sb.Append(comment.RawText).Append(nl);
+                    sb.Append(WithLineEnding(comment.RawText, nl)).Append(nl);
                     break;
                 case FrontMatterField field:
-                    sb.Append(field.RawText ?? RenderField(field, nl)).Append(nl);
+                    sb.Append(field.RawText is { } raw
+                                  ? WithLineEnding(raw, nl)
+                                  : RenderField(field, nl))
+                      .Append(nl);
                     break;
             }
         }
@@ -317,6 +320,23 @@ public static class YamlFrontMatter
         sb.Append(OpenDelimiter).Append(nl);
         sb.Append(frontMatter.Body);
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Re-emit preserved source text with the composed file's line ending.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Parse"/> strips the <c>\r</c> from each line and joins multi-line
+    /// <see cref="FrontMatterField.RawText"/> with <c>\n</c>, so a CRLF file whose
+    /// block scalar, block list or nested mapping came back verbatim would end up
+    /// with LF inside that construct and CRLF everywhere else — mixed line endings
+    /// written into a file the user only opened, and not the byte-for-byte round
+    /// trip the contract promises.
+    /// </remarks>
+    private static string WithLineEnding(string rawText, string nl)
+    {
+        string lf = rawText.Replace("\r\n", "\n", StringComparison.Ordinal);
+        return nl == "\n" ? lf : lf.Replace("\n", nl, StringComparison.Ordinal);
     }
 
     // ── Block scalars ────────────────────────────────────────────────────
