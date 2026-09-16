@@ -1363,6 +1363,24 @@ Novos terminais captarão a alteração; terminais existentes precisam ser reini
   <data name="StatusReloaded" xml:space="preserve">
     <value>Recarregado.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuração copiada para a área de transferência.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuração aberta no navegador.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuração enviada ao cliente de e-mail.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuração exibida no gerenciador de arquivos.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>O compartilhamento não está disponível neste sistema.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Não foi possível compartilhar a configuração — consulte o log para mais detalhes.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nada a exportar — as configurações ainda não foram carregadas.</value>
   </data>

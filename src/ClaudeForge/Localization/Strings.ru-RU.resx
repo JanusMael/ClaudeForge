@@ -1306,6 +1306,24 @@
   <data name="StatusReloaded" xml:space="preserve">
     <value>Перезагружено.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Конфигурация скопирована в буфер обмена.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Конфигурация открыта в браузере.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Конфигурация передана почтовому клиенту.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Конфигурация показана в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Общий доступ недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Не удалось поделиться конфигурацией — подробности см. в журнале.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Нечего экспортировать — параметры ещё не загружены.</value>
   </data>

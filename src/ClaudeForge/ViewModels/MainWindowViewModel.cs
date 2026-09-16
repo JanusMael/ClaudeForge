@@ -4520,7 +4520,23 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // not governed by this policy.
             Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
                 SchemaTreeBuilder.CollectDescriptions(ccNodes),
-                ClaudeDangerTable.Settings),
+                ClaudeDangerTable.Settings)
+            {
+                // Share outcomes reach the centre pill, exactly as backup/restore's do. Without
+                // this the page has no status surface at all — it does not even carry a
+                // page-local label — so the button would go on acknowledging nothing.
+                OnTerminalStatus = (text, isFailure) =>
+                {
+                    if (isFailure)
+                    {
+                        SetStatusFailure(text);
+                    }
+                    else
+                    {
+                        SetStatusSuccess(text);
+                    }
+                },
+            },
             IsTopLevel = true,
         });
 

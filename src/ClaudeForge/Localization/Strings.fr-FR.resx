@@ -1306,6 +1306,24 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   <data name="StatusReloaded" xml:space="preserve">
     <value>Rechargé.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuration copiée dans le presse-papiers.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuration ouverte dans le navigateur.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuration transmise au client de messagerie.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuration affichée dans le gestionnaire de fichiers.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Le partage n'est pas disponible sur ce système.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Impossible de partager la configuration — consultez le journal pour plus de détails.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Rien à exporter — les paramètres ne sont pas encore chargés.</value>
   </data>

@@ -1363,6 +1363,24 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   <data name="StatusReloaded" xml:space="preserve">
     <value>Recargado.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuración copiada al portapapeles.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuración abierta en el navegador.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuración enviada al cliente de correo.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuración mostrada en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Compartir no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>No se pudo compartir la configuración — consulta el registro para más detalles.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nada que exportar — los ajustes aún no se han cargado.</value>
   </data>

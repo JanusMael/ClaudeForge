@@ -1046,10 +1046,21 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     }
 
     /// <summary>
-    /// Sends the backup archive to another app or device via the OS share panel.
-    /// On Windows 10+ opens the native share flyout; on macOS reveals the file in
-    /// Finder; on Linux opens the containing directory.
+    /// Hands the backup archive to the desktop's file manager: Explorer with the archive
+    /// selected, Finder via <c>open -R</c>, or the containing directory via <c>xdg-open</c>.
     /// </summary>
+    /// <remarks>
+    /// ⛔ <b>This said "on Windows 10+ opens the native share flyout", and no shipped build ever
+    /// has.</b> That path lived behind a TFM that was never compiled — see
+    /// <c>DefaultShareService</c>'s remarks — so the summary described a feature that did not
+    /// exist on the platform most users run.
+    /// <para>
+    /// ⚠ The outcome is logged and <b>not</b> surfaced, which is the same silent-success defect
+    /// as F3 one surface along. <see cref="OnTerminalStatus"/> is right here and would carry it;
+    /// what is missing is the sentence, because this is a shared library and its user-visible
+    /// text comes from the host's resx (as the progress phase labels already do).
+    /// </para>
+    /// </remarks>
     [RelayCommand]
     private async Task ShareBackupAsync(BackupRowViewModel? row)
     {
@@ -1061,7 +1072,9 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         try
         {
             Log.Information("[Backup] Share requested for {Archive}", row.Entry.FileName);
-            await _shareService.ShareFileAsync(row.DisplayName, row.Entry.ArchivePath);
+            ShareOutcome outcome = await _shareService.ShareFileAsync(row.DisplayName, row.Entry.ArchivePath);
+            Log.Information("[Backup] Share outcome for {Archive}: {Outcome}",
+                row.Entry.FileName, outcome);
         }
         catch (Exception ex)
         {

@@ -47,16 +47,21 @@ public sealed class DefaultShareService : IShareService
     }
 
     /// <inheritdoc />
-    public Task ShareTextAsync(string title, string text, string? uri = null)
+    public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
     {
         if (OperatingSystem.IsMacOS())
         {
             if (!string.IsNullOrEmpty(uri))
             {
                 // Open URI in the default browser.
-                TryStart(new ProcessStartInfo { FileName = "open", ArgumentList = { uri }, UseShellExecute = false });
+                return Task.FromResult(
+                    TryStart(new ProcessStartInfo
+                        { FileName = "open", ArgumentList = { uri }, UseShellExecute = false })
+                        ? ShareOutcome.OpenedInBrowser
+                        : ShareOutcome.Failed);
             }
-            else if (!string.IsNullOrEmpty(text))
+
+            if (!string.IsNullOrEmpty(text))
             {
                 // macOS has no Share sheet API without NSSharingService (requires a net10.0-macos
                 // TFM). Fall back to pbcopy so the user at least has the text on the clipboard —
@@ -66,19 +71,43 @@ public sealed class DefaultShareService : IShareService
         }
         else if (OperatingSystem.IsLinux())
         {
+            // ⚠ An empty payload no longer reaches the desktop handler. The mailto: below was
+            // built unconditionally, so a caller with neither URI nor text launched a blank
+            // compose window — an action the caller would now have to describe to the user as
+            // though something had been shared.
+            if (string.IsNullOrEmpty(uri) && string.IsNullOrEmpty(text))
+            {
+                return Task.FromResult(ShareOutcome.Unavailable);
+            }
+
             // Linux: construct a mailto: URI and hand it to the desktop handler.
             string target = uri
                             ?? $"mailto:?subject={Uri.EscapeDataString(title)}&body={Uri.EscapeDataString(text)}";
-            TryStart(new ProcessStartInfo { FileName = target, UseShellExecute = true });
+            bool launched = TryStart(new ProcessStartInfo { FileName = target, UseShellExecute = true });
+            if (!launched)
+            {
+                return Task.FromResult(ShareOutcome.Failed);
+            }
+
+            // Which handler ran is decided by what was handed over: a caller-supplied URI goes
+            // wherever the desktop sends that scheme, and the fallback is a mailto: by
+            // construction.
+            return Task.FromResult(uri is null
+                ? ShareOutcome.OpenedMailClient
+                : ShareOutcome.OpenedInBrowser);
         }
         else if (OperatingSystem.IsWindows())
         {
             if (!string.IsNullOrEmpty(uri))
             {
                 // Windows: open the URI in the default browser.
-                TryStart(new ProcessStartInfo { FileName = uri, UseShellExecute = true });
+                return Task.FromResult(
+                    TryStart(new ProcessStartInfo { FileName = uri, UseShellExecute = true })
+                        ? ShareOutcome.OpenedInBrowser
+                        : ShareOutcome.Failed);
             }
-            else if (!string.IsNullOrEmpty(text))
+
+            if (!string.IsNullOrEmpty(text))
             {
                 // ⛔ THIS BRANCH DID NOT EXIST, AND SHARING TEXT ON WINDOWS WAS A SILENT NO-OP.
                 // The condition above used to be `IsWindows() && !string.IsNullOrEmpty(uri)`, so
@@ -97,11 +126,11 @@ public sealed class DefaultShareService : IShareService
         }
 
         // Unsupported OS, or nothing to share.
-        return Task.CompletedTask;
+        return Task.FromResult(ShareOutcome.Unavailable);
     }
 
     /// <inheritdoc />
-    public Task ShareFileAsync(string title, string filePath)
+    public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
     {
         // ⚠ `title` is accepted and unused on every platform. It names the share sheet, and none
         // of the three fallbacks opens one — a file manager titles its own window. Kept because
@@ -113,8 +142,11 @@ public sealed class DefaultShareService : IShareService
             // Reveal the file in Finder — the user can right-click → Share.
             if (File.Exists(filePath))
             {
-                TryStart(new ProcessStartInfo
-                    { FileName = "open", ArgumentList = { "-R", filePath }, UseShellExecute = false });
+                return Task.FromResult(
+                    TryStart(new ProcessStartInfo
+                        { FileName = "open", ArgumentList = { "-R", filePath }, UseShellExecute = false })
+                        ? ShareOutcome.RevealedInFileManager
+                        : ShareOutcome.Failed);
             }
         }
         else if (OperatingSystem.IsLinux())
@@ -123,8 +155,11 @@ public sealed class DefaultShareService : IShareService
             string? dir = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
-                TryStart(new ProcessStartInfo
-                    { FileName = "xdg-open", ArgumentList = { dir }, UseShellExecute = false });
+                return Task.FromResult(
+                    TryStart(new ProcessStartInfo
+                        { FileName = "xdg-open", ArgumentList = { dir }, UseShellExecute = false })
+                        ? ShareOutcome.RevealedInFileManager
+                        : ShareOutcome.Failed);
             }
         }
         else if (OperatingSystem.IsWindows())
@@ -135,16 +170,21 @@ public sealed class DefaultShareService : IShareService
             // inner quotes, which causes explorer.exe to silently ignore the argument.
             if (File.Exists(filePath))
             {
-                TryStart(new ProcessStartInfo
-                {
-                    FileName = "explorer.exe",
-                    Arguments = $"/select,\"{filePath}\"",
-                    UseShellExecute = false,
-                });
+                return Task.FromResult(
+                    TryStart(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = $"/select,\"{filePath}\"",
+                        UseShellExecute = false,
+                    })
+                        ? ShareOutcome.RevealedInFileManager
+                        : ShareOutcome.Failed);
             }
         }
 
-        return Task.CompletedTask;
+        // Unsupported OS, or the path is not on disk. ⚠ Not a failure — nothing was attempted,
+        // and the two are distinguished because the status pill keeps a failure on screen.
+        return Task.FromResult(ShareOutcome.Unavailable);
     }
 
     /// <summary>
@@ -162,7 +202,7 @@ public sealed class DefaultShareService : IShareService
     /// ⚠ <c>clip.exe</c> reads stdin and writes nothing; it is not launched through
     /// <see cref="TryStart"/> because that path does not redirect stdin.
     /// </remarks>
-    private static async Task CopyViaClipExeAsync(string text)
+    private static async Task<ShareOutcome> CopyViaClipExeAsync(string text)
     {
         try
         {
@@ -179,14 +219,19 @@ public sealed class DefaultShareService : IShareService
             await proc.StandardInput.WriteAsync(text).ConfigureAwait(false);
             proc.StandardInput.Close();
             await proc.WaitForExitAsync().ConfigureAwait(false);
+
+            // ⚠ The exit code is the evidence, not the fact that Start() returned. clip.exe
+            // writes nothing on success, so a non-zero code is the only signal there is.
+            return proc.ExitCode == 0 ? ShareOutcome.CopiedToClipboard : ShareOutcome.Failed;
         }
         catch (Exception ex)
         {
             Report($"clip.exe failed; text was not copied to the clipboard: {ex.Message}");
+            return ShareOutcome.Failed;
         }
     }
 
-    private static async Task CopyViaPbcopyAsync(string text)
+    private static async Task<ShareOutcome> CopyViaPbcopyAsync(string text)
     {
         try
         {
@@ -201,10 +246,16 @@ public sealed class DefaultShareService : IShareService
             await proc.StandardInput.WriteAsync(text);
             proc.StandardInput.Close();
             await proc.WaitForExitAsync();
+
+            return proc.ExitCode == 0 ? ShareOutcome.CopiedToClipboard : ShareOutcome.Failed;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[DefaultShareService] pbcopy failed: {ex.Message}");
+            // ⛔ THIS WAS Debug.WriteLine, WHICH IS COMPILED OUT OF RELEASE — the same defect
+            // already corrected in Report() and in TryStart(), left behind here because this
+            // sibling was not on the same screen. Route it through Report() like the others.
+            Report($"pbcopy failed; text was not copied to the clipboard: {ex.Message}");
+            return ShareOutcome.Failed;
         }
     }
 
@@ -228,7 +279,21 @@ public sealed class DefaultShareService : IShareService
         Trace.WriteLine($"[DefaultShareService] {message}");
     }
 
-    private void TryStart(ProcessStartInfo psi)
+    /// <summary>Launches <paramref name="psi"/>; <see langword="false"/> when it did not start.</summary>
+    /// <remarks>
+    /// ⛔ <b>This returned <c>void</c>, and that is why a share failure could never reach the
+    /// user.</b> It caught, it logged, and it told its caller nothing — so <c>ShareTextAsync</c>
+    /// completed identically whether the browser opened or <c>Process.Start</c> threw. The
+    /// <see cref="ShareOutcome.Failed"/> arm of every caller is wired to this return value; it is
+    /// not assumed anywhere.
+    /// <para>
+    /// ⚠ A <see langword="null"/> process still counts as not started. That is the shape a test
+    /// launcher takes (<c>_ =&gt; null</c>), so <see cref="ShareOutcome.Failed"/> is what a
+    /// suppressed launch reports — deliberately, since a test that saw success from a launch that
+    /// never happened would vouch for the defect this type exists to catch.
+    /// </para>
+    /// </remarks>
+    private bool TryStart(ProcessStartInfo psi)
     {
         try
         {
@@ -237,7 +302,10 @@ public sealed class DefaultShareService : IShareService
             if (proc is null)
             {
                 Report($"Process.Start returned null for '{psi.FileName}'.");
+                return false;
             }
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -248,6 +316,7 @@ public sealed class DefaultShareService : IShareService
             // log, because it never reached Serilog. Share stays best-effort and still shows
             // the user no dialog; it is simply no longer silent to whoever reads the log.
             Report($"Process launch failed ({psi.FileName}): {ex.Message}");
+            return false;
         }
     }
 }

@@ -1373,6 +1373,24 @@
   <data name="StatusReloaded" xml:space="preserve">
     <value>已重新加载。</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>配置已复制到剪贴板。</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>配置已在浏览器中打开。</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>配置已交给邮件客户端。</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>配置已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>此系统不支持共享。</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>无法共享配置 — 详情请查看日志。</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>没有可导出的内容 — 设置尚未加载。</value>
   </data>

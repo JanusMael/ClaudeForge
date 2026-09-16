@@ -78,8 +78,11 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   two colours that matter most on it.
 - **The `apiKey` escalation warning never fired.** The condition it was guarded by
   could not be true.
-- **Sharing a config did nothing on Windows.** *Share config* on the effective-settings
-  view now copies the JSON to the clipboard.
+- **Sharing a config did nothing on Windows, and said nothing anywhere.** *Share config*
+  on the effective-settings view now copies the JSON to the clipboard, and the status bar
+  reports what actually happened — copied to the clipboard, opened in your browser, handed
+  to your mail client — rather than completing in silence. A share that fails now says so
+  and stays on screen until dismissed; previously it was recorded only in the log.
 - **A config file created while the app was running was not picked up** — a new
   `settings.local.json` or `.mcp.json` is now watched from the moment it appears.
 - **The live-log window hid itself when F12 was pressed again**, instead of staying put.

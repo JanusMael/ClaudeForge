@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -35,6 +36,23 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
     private readonly IReadOnlyDictionary<string, string> _descriptions;
     private readonly IDangerClassifier? _danger;
     private bool _disposed;
+
+    /// <summary>
+    /// Raised with the terminal outcome of a share, for the host to route to the centre status
+    /// pill: the sentence, and whether it is a failure (false → green ✓ Success pill that
+    /// auto-clears, true → red ✗ Failure pill that sticks until dismissed).
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Emissions go through this and never through the legacy <c>StatusMessage</c>
+    /// setter</b>, which still compiles and routes to <c>StatusKind.State</c> — grey plain text,
+    /// no icon, no auto-clear. The host (MainWindowViewModel) wires this to
+    /// <c>SetStatusSuccess</c> / <c>SetStatusFailure</c>, which is where that lifecycle lives.
+    /// <para>
+    /// Same shape and same reason as <c>BackupRestoreViewModel.OnTerminalStatus</c>: a page-local
+    /// label is invisible to a user standing on another nav node, and share had not even that.
+    /// </para>
+    /// </remarks>
+    public Action<string, bool /* isFailure */>? OnTerminalStatus { get; set; }
 
     /// <param name="danger">
     /// The danger policy for the product this page reports on, or <see langword="null"/> for a
@@ -202,25 +220,73 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable
     public event EventHandler<string>? CopyJsonRequested;
 
     /// <summary>
-    /// Shares the current effective settings JSON via the OS share sheet.
+    /// Hands the current effective settings JSON to the desktop, and reports through the centre
+    /// status pill which action that turned out to be.
     /// </summary>
+    /// <remarks>
+    /// ⛔ <b>This acknowledged nothing, in either direction.</b> Success returned silently and
+    /// failure only reached the log, under a comment about not surfacing a dialog — the right
+    /// instinct about modals, and the wrong conclusion, because the pill is the non-modal channel
+    /// this codebase already has. Reported 2026-09-14 as "the share config button appears to do
+    /// nothing"; on Windows it genuinely did nothing, and nothing could tell.
+    /// <para>
+    /// ⚠ <b>The sentence is chosen from <see cref="ShareOutcome"/>, never assumed.</b> A generic
+    /// "Shared" would be wrong on Windows, where the payload goes to the clipboard and nothing is
+    /// shared — and a message asserted without an outcome would have hidden the no-op just as the
+    /// void return did.
+    /// </para>
+    /// </remarks>
     [RelayCommand]
     private async Task ShareConfigAsync()
     {
         if (_shareService is null)
         {
+            // The button is reachable with no service wired (headless, and any host that omits
+            // it). Saying so is the honest answer; returning quietly is the defect.
+            OnTerminalStatus?.Invoke(Strings.StatusShareConfigUnavailable, /* isFailure: */ false);
             return;
         }
 
         try
         {
-            await _shareService.ShareTextAsync("Claude Config", EffectiveJson);
+            ShareOutcome outcome = await _shareService.ShareTextAsync("Claude Config", EffectiveJson);
+            Log.Information("[EffectiveSettings] Share config outcome: {Outcome}", outcome);
+            ReportShareOutcome(outcome);
         }
         catch (Exception ex)
         {
-            // Share is best-effort; log without surfacing a dialog.
             Log.Error(ex, "[EffectiveSettings] Share failed: {Message}", ex.Message);
+            OnTerminalStatus?.Invoke(Strings.StatusShareConfigFailed, /* isFailure: */ true);
         }
+    }
+
+    private void ReportShareOutcome(ShareOutcome outcome)
+    {
+        // ⚠ No default arm, deliberately. Every declared member is answered here, so adding one
+        // to ShareOutcome without a sentence is CS8509 at build time rather than a silent
+        // fall-through to a wrong one — which is the class of defect this whole change closes.
+        //
+        // ⭐ CS8524 is the OTHER half of that diagnostic and is suppressed on purpose. Roslyn
+        // splits "a named member is unanswered" (CS8509) from "a cast could produce a value with
+        // no name" (CS8524) so exactly this trade is expressible: keep the guarantee that matters
+        // and decline the one a `_ =>` arm would take down with it. Adding `_ =>` to satisfy
+        // CS8524 would silence CS8509 as well, and the next member added to ShareOutcome would
+        // then ship reporting a sentence written for something else. An out-of-range cast throws
+        // here, and the caller's catch reports it as a failure — loud, which is the right way for
+        // this to fail.
+#pragma warning disable CS8524
+        (string text, bool isFailure) = outcome switch
+        {
+            ShareOutcome.CopiedToClipboard => (Strings.StatusShareConfigCopiedToClipboard, false),
+            ShareOutcome.OpenedInBrowser => (Strings.StatusShareConfigOpenedInBrowser, false),
+            ShareOutcome.OpenedMailClient => (Strings.StatusShareConfigOpenedMailClient, false),
+            ShareOutcome.RevealedInFileManager => (Strings.StatusShareConfigRevealedInFileManager, false),
+            ShareOutcome.Unavailable => (Strings.StatusShareConfigUnavailable, false),
+            ShareOutcome.Failed => (Strings.StatusShareConfigFailed, true),
+        };
+#pragma warning restore CS8524
+
+        OnTerminalStatus?.Invoke(text, isFailure);
     }
 
     private void OnSdkChanged(object? sender, ClientChangedEventArgs e)

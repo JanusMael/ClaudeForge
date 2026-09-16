@@ -25,16 +25,29 @@ file sealed class RecordingShareService : IShareService
     public List<ShareTextCall> TextCalls { get; } = [];
     public List<ShareFileCall> FileCalls { get; } = [];
 
-    public Task ShareTextAsync(string title, string text, string? uri = null)
+    /// <summary>What the next call reports. ⚠ Defaults to <see cref="ShareOutcome.Unavailable"/>
+    /// because that is the truth about a stub: it recorded the payload and shared nothing. A test
+    /// asserting a success sentence has to say which success it is arranging, so the arrangement
+    /// cannot be mistaken for the thing under test.</summary>
+    public ShareOutcome NextOutcome { get; set; } = ShareOutcome.Unavailable;
+
+    /// <summary>Set to throw from both methods, for the caller's catch path.</summary>
+    public Exception? ThrowOnShare { get; set; }
+
+    public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
     {
         TextCalls.Add(new ShareTextCall(title, text, uri));
-        return Task.CompletedTask;
+        return ThrowOnShare is not null
+            ? Task.FromException<ShareOutcome>(ThrowOnShare)
+            : Task.FromResult(NextOutcome);
     }
 
-    public Task ShareFileAsync(string title, string filePath)
+    public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
     {
         FileCalls.Add(new ShareFileCall(title, filePath));
-        return Task.CompletedTask;
+        return ThrowOnShare is not null
+            ? Task.FromException<ShareOutcome>(ThrowOnShare)
+            : Task.FromResult(NextOutcome);
     }
 }
 
@@ -171,8 +184,14 @@ public class EffectiveSettingsShareCommandTests
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
+    /// <remarks>
+    /// ⓘ This was <c>ShareConfig_NullService_IsNoOp</c>, and the name stopped being true when F3
+    /// landed: a missing service is now reported rather than absorbed. It still pins the half
+    /// that matters here — no throw — and the sentence it emits is asserted in
+    /// <c>ShareOutcomeTests.WithNoShareServiceWired_TheUserIsToldSoRatherThanNothing</c>.
+    /// </remarks>
     [TestMethod]
-    public async Task ShareConfig_NullService_IsNoOp()
+    public async Task ShareConfig_NullService_DoesNotThrow()
     {
         EffectiveSettingsViewModel vm = new(MakeClient(), shareService: null);
 

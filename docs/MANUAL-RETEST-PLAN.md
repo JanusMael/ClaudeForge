@@ -1,5 +1,8 @@
 # ClaudeForge retest — outstanding items
 
+⚠ **There are EIGHT items now, not seven** — `F3` joined the list on 2026-09-16 when its fix
+landed, on the same footing as `F1`/`F2`/`F4`/`F6`: fixed, unverified against a running UI.
+
 **Purpose: regress ClaudeForge for the split-library release.** Only what is still to do is below;
 verified items are listed once at the end and should not be repeated. Findings go to
 [`RETEST-FINDINGS.md`](./RETEST-FINDINGS.md).
@@ -100,6 +103,23 @@ scanned/deleted summary, and **exits without opening a window**.
 
 **Fail:** a window appears, a different directory is named, or there is no output (run it from a
 terminal you can see — it reattaches to the parent console).
+
+### ☐ F3 · *Share config* now says what it did
+
+**Do:** on the Effective settings page, click **Share config**.
+
+**Pass:** the centre status pill reports *"Configuration copied to the clipboard."* on Windows,
+and the clipboard really holds the JSON. The pill clears itself after ~6 s rather than needing a
+dismiss.
+
+**Fail:** no pill; a grey pill with no icon that never clears (that is the legacy `StatusMessage`
+channel, and it means the emission bypassed the typed helpers); or a success message on a machine
+where the clipboard did not actually change.
+
+ⓘ While you are there: **Share log** in the About dialog and **Share** on a backup row still
+acknowledge nothing on screen by design — see F3's note in
+[`RETEST-FINDINGS.md`](./RETEST-FINDINGS.md). Their outcome goes to `logs/app-*.txt` only. Not a
+regression; the decision on whether to give them pills too is open.
 
 ### ☐ B2 · Diagnostics-window accessibility — *needs one action from you, then I run it*
 

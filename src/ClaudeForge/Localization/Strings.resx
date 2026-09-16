@@ -1443,6 +1443,30 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="StatusReloaded" xml:space="preserve">
     <value>Reloaded.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuration copied to the clipboard.</value>
+    <comment>Centre status pill after Share config. Windows and macOS have no share sheet, so the payload goes to the clipboard; say that rather than a generic "Shared".</comment>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuration opened in your browser.</value>
+    <comment>Centre status pill after Share config handed a URI to the default browser.</comment>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuration handed to your mail client.</value>
+    <comment>Centre status pill after Share config handed a mailto: URL to the desktop mail handler (the Linux fallback).</comment>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuration revealed in your file manager.</value>
+    <comment>Centre status pill after Share config revealed a file in Explorer, Finder or the Linux file manager.</comment>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Sharing is not available on this system.</value>
+    <comment>Centre status pill when no share path exists at all - an unsupported OS, an empty payload, or no share service wired. Not a failure: nothing was attempted, so the pill auto-clears rather than sticking.</comment>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Could not share the configuration — see the log for details.</value>
+    <comment>Centre status pill when a share path was attempted and did not work. Emitted as a Failure pill, which sticks until dismissed.</comment>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nothing to export — settings not loaded yet.</value>
   </data>

@@ -170,7 +170,23 @@ forced dark text stays readable in both variants.
 
 ---
 
-## 🔵 F3 · *Share config* succeeds silently — the user cannot tell it did anything
+## ⛔ F3 · *Share config* succeeds silently — the user cannot tell it did anything
+
+> ⛔ **Fixed, awaiting a look at the running UI.** `IShareService` now returns a `ShareOutcome`
+> — clipboard / browser / mail client / file manager / unavailable / failed — and
+> `EffectiveSettingsViewModel` picks a sentence per outcome and emits it through a new
+> `OnTerminalStatus` hook that `MainWindowViewModel` wires to the centre pill, exactly as
+> backup/restore's is. Six resx keys in all nine locale files.
+>
+> ⭐ **The outcome is measured, not assumed.** `TryStart` returned `void` and swallowed every
+> failure, so `Failed` would have been decoration; it now returns `bool` and both failure arms
+> read it. `ShareOutcomeTests` pins that with a launcher that reports "did not start" — and a
+> canary that made `TryStart` claim success reddened exactly the two tests that assert it.
+>
+> ⚠ **Two sibling surfaces are NOT fixed.** *Share log* (About) and *Share backup archive* both
+> have the same silent-success shape. Each now records its outcome in the log, which is what
+> makes them visible at all, but neither reaches the pill: About has no status channel, and
+> backup's is shared-library code whose user-visible text has to come from the host's resx.
 
 **Reported:** the copy works, but nothing acknowledges it. And **a modal is the wrong answer** —
 which matches this codebase: the centre status pill is the non-modal, auto-clearing channel.
@@ -214,9 +230,17 @@ The fix therefore has to start at the interface: report which action was taken
 
 ⚠ **`IShareService` lives in `LayeredEditors.Avalonia.Services`, which is one of the eleven
 published packages** — so this is a public-surface change with a version and consumers behind it,
-not an internal tidy. `PublicSurfaceContractTests` covers that surface. The non-breaking route is an
-**additional** member returning the outcome, leaving the existing signature alone; the breaking
-route is cleaner but should be a deliberate call.
+not an internal tidy. The non-breaking route is an **additional** member returning the outcome,
+leaving the existing signature alone; the breaking route is cleaner but should be a deliberate call.
+
+> ⓘ **Corrected 2026-09-16.** This said *"`PublicSurfaceContractTests` covers that surface"*. It
+> does not: that class lives in `AgentForge.Sdk.Tests` and pins the SDK, not this package. Nothing
+> pinned `IShareService`, and the signature change went through a full green suite without one
+> test noticing — which is the evidence, not an argument about it.
+>
+> ✅ **The breaking route was taken, deliberately, on 2026-09-16.** Nothing is on the feed yet, so
+> the change costs a recompile nobody has to do; it will never be this cheap again. The blast
+> radius was one interface, one implementation, three call sites and two test fakes.
 
 ⓘ The message itself needs a resx entry — all user-visible text comes from resx, and the parity
 contracts in `LOCALIZATION.md` apply.

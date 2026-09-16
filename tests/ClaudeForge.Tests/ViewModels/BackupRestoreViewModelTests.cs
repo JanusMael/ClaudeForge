@@ -1084,7 +1084,11 @@ public sealed class BackupRestoreViewModelTests
         public string? LastFilePath { get; private set; }
         public bool ShouldThrow { get; set; }
 
-        public Task ShareFileAsync(string title, string filePath)
+        /// <summary>What the next call reports; <see cref="ShareOutcome.Unavailable"/> by
+        /// default, because a stub that records a payload has genuinely shared nothing.</summary>
+        public ShareOutcome NextOutcome { get; set; } = ShareOutcome.Unavailable;
+
+        public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
         {
             ShareFileCalls++;
             LastTitle = title;
@@ -1094,12 +1098,12 @@ public sealed class BackupRestoreViewModelTests
                 throw new IOException("fake share failure");
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(NextOutcome);
         }
 
-        public Task ShareTextAsync(string title, string text, string? subject = null)
+        public Task<ShareOutcome> ShareTextAsync(string title, string text, string? subject = null)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(NextOutcome);
         }
     }
 

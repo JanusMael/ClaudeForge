@@ -4689,7 +4689,61 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
                 return ResourceManager.GetString("StatusReloaded", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration copied to the clipboard..
+        /// </summary>
+        public static string StatusShareConfigCopiedToClipboard {
+            get {
+                return ResourceManager.GetString("StatusShareConfigCopiedToClipboard", resourceCulture);
+            }
+        }
         
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration opened in your browser..
+        /// </summary>
+        public static string StatusShareConfigOpenedInBrowser {
+            get {
+                return ResourceManager.GetString("StatusShareConfigOpenedInBrowser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration handed to your mail client..
+        /// </summary>
+        public static string StatusShareConfigOpenedMailClient {
+            get {
+                return ResourceManager.GetString("StatusShareConfigOpenedMailClient", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration revealed in your file manager..
+        /// </summary>
+        public static string StatusShareConfigRevealedInFileManager {
+            get {
+                return ResourceManager.GetString("StatusShareConfigRevealedInFileManager", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sharing is not available on this system..
+        /// </summary>
+        public static string StatusShareConfigUnavailable {
+            get {
+                return ResourceManager.GetString("StatusShareConfigUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not share the configuration — see the log for details..
+        /// </summary>
+        public static string StatusShareConfigFailed {
+            get {
+                return ResourceManager.GetString("StatusShareConfigFailed", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Reload failed: {0}.
         /// </summary>

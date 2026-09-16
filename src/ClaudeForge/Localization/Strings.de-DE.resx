@@ -1363,6 +1363,24 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   <data name="StatusReloaded" xml:space="preserve">
     <value>Neu geladen.</value>
   </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Konfiguration in die Zwischenablage kopiert.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Konfiguration im Browser geöffnet.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Konfiguration an das E-Mail-Programm übergeben.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Konfiguration im Datei-Manager angezeigt.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Teilen ist auf diesem System nicht verfügbar.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Konfiguration konnte nicht geteilt werden — Details siehe Protokoll.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nichts zu exportieren — Einstellungen sind noch nicht geladen.</value>
   </data>

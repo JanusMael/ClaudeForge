@@ -298,7 +298,14 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         try
         {
             Log.Information("[About] Share log requested: {LogPath}", logPath);
-            await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
+            ShareOutcome outcome = await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
+
+            // ⚠ Logged, not surfaced — and that is a gap, not a design. This page has no status
+            // channel of its own, so "Share log" is the same silent-success defect F3 fixed on
+            // Effective settings, one surface along. Recording the outcome is what makes it
+            // visible at all; giving it a pill needs an OnTerminalStatus hook here and wiring at
+            // both cached construction sites in MainWindowViewModel.
+            Log.Information("[About] Share log outcome: {Outcome}", outcome);
         }
         catch (Exception ex)
         {
