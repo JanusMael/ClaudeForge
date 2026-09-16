@@ -83,14 +83,14 @@ jobs:
 
           # Decode `gh` output as UTF-8. Without this the console's OEM code page
           # mangles non-ASCII in the release body before it reaches the manifest
-          # (an em dash lands as "ΓÇö"). Kept in sync with packaging/Submit-Winget.ps1.
+          # (an em dash lands as "ΓÇö"). Kept in sync with packaging/Resubmit-Winget.ps1.
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
           $ver = $env:VERSION_INPUT -replace '^v', ''
           if (-not $ver) { Write-Error "A version input is required."; exit 1 }
 
           # Everything app-shaped comes from the publish table, so this workflow and
-          # packaging/Submit-Winget.ps1 cannot disagree about what an app IS.
+          # packaging/Resubmit-Winget.ps1 cannot disagree about what an app IS.
           # $appInfo, never $app — PowerShell variable names are case-insensitive.
           . ./src/publish/PublishApps.ps1
           $appName   = if ($env:APP_INPUT) { $env:APP_INPUT } else { 'ClaudeForge' }
@@ -102,7 +102,7 @@ jobs:
 
           # Duplicate guard. Three paths can submit: this workflow (manually), this
           # workflow dispatched automatically by packaging/sign-release.ps1 (unless
-          # -SkipWinget), and packaging/Submit-Winget.ps1 locally. Two of them firing
+          # -SkipWinget), and packaging/Resubmit-Winget.ps1 locally. Two of them firing
           # for one release opens two PRs against the same manifest, which winget-pkgs
           # asks contributors not to do — 2026.3.810 shipped exactly that.
           $existing = gh api "search/issues?q=repo:microsoft/winget-pkgs+author:JanusMael+type:pr+state:open+in:title+$packageId" `
@@ -176,7 +176,7 @@ jobs:
           # winget-pkgs PR, publishing a version bump for an app that had not
           # released. Matched by exact name rather than "$packageId*" so an id that
           # merely starts with another cannot absorb its sibling's files.
-          # Kept in sync with packaging/Submit-Winget.ps1.
+          # Kept in sync with packaging/Resubmit-Winget.ps1.
           $ownManifests = @(Get-ChildItem packaging/winget/*.yaml | Where-Object {
             $_.Name -eq "$packageId.yaml" -or
             $_.Name -eq "$packageId.installer.yaml" -or

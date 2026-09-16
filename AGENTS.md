@@ -768,13 +768,13 @@ $text = [System.Text.UTF8Encoding]::new($false, $true).GetString($buf.ToArray())
 ```
 
 ```powershell
-# ACCEPTABLE when you must capture — the line already in packaging/Submit-Winget.ps1.
+# ACCEPTABLE when you must capture — the line already in packaging/Resubmit-Winget.ps1.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 ```
 
 ⛔ **What breaks: nothing you can see.** Mojibake inside an XML doc comment compiles cleanly, no analyzer objects, and the whole suite stays green — **a passing suite is not evidence here.** It only becomes visible when a corrupted literal reaches a user, such as a Serilog message or a manifest field.
 
-⚠ **This repo has been bitten twice, in two different surfaces.** `packaging/Submit-Winget.ps1` line 55 carries the fix and the note *"Shipped that way in 2026.3.810; don't again"* — mangled em dashes reached a **published winget manifest**. It happened again in 2026-09 when a script hand-ported files between branches and double-encoded **41 sequences across four files**, which reached `main` through two merged PRs before a reviewer caught it.
+⚠ **This repo has been bitten twice, in two different surfaces.** `packaging/Resubmit-Winget.ps1` (search for *"don't again"* — it moved when the script was renamed, and a line number in prose goes stale the first time anyone edits above it) carries the fix and the note *"Shipped that way in 2026.3.810; don't again"* — mangled em dashes reached a **published winget manifest**. It happened again in 2026-09 when a script hand-ported files between branches and double-encoded **41 sequences across four files**, which reached `main` through two merged PRs before a reviewer caught it.
 
 ⭐ **Filing it under "winget" is why it recurred** — the precedent did not fire for someone whose task was "port a file". It is a **console-decoding** defect, not a packaging one.
 
@@ -784,7 +784,7 @@ $text = [System.Text.UTF8Encoding]::new($false, $true).GetString($buf.ToArray())
 grep -rlP '\xce\x93[\xc2-\xc3]' --include=*.cs src/ tests/
 ```
 
-⚠ `packaging/Submit-Winget.ps1` and `.github/workflows/winget-submit.yml` legitimately contain `ΓÇö` because they *document* it. Do not "fix" those.
+⚠ `packaging/Resubmit-Winget.ps1` and `.github/workflows/winget-submit.yml` legitimately contain `ΓÇö` because they *document* it. Do not "fix" those.
 
 **Verify a port byte-for-byte** rather than trusting a build: count a distinctive non-ASCII character on both sides — `grep -c '—' <file>` — and require equal counts plus zero `Γ`.
 
@@ -844,7 +844,7 @@ pwsh src/publish/publish.ps1 -All -Rids win-x64
 | Localized-string workflow (`Strings.resx` + Designer + `{x:Static}`) | [`LOCALIZATION.md`](./LOCALIZATION.md) |
 | Build / test / PR workflow, contributor setup | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
 | CI / release workflow reference, publish.ps1 wiring | [`.github/WORKFLOWS.md`](./.github/WORKFLOWS.md) |
-| **Text corruption when a script captures process output** (UTF-8 double-encoded via OEM CP437 — `—` becomes `ΓÇö`); hand-porting files between branches | §4 *Capturing child-process output*, §2 *Hand-porting a fix* — **both in this file**. ⚠ Listed here by MECHANISM on purpose: the fix already existed in `packaging/Submit-Winget.ps1`, filed under winget, and did not fire for someone whose task was "port a file" |
+| **Text corruption when a script captures process output** (UTF-8 double-encoded via OEM CP437 — `—` becomes `ΓÇö`); hand-porting files between branches | §4 *Capturing child-process output*, §2 *Hand-porting a fix* — **both in this file**. ⚠ Listed here by MECHANISM on purpose: the fix already existed in `packaging/Resubmit-Winget.ps1`, filed under winget, and did not fire for someone whose task was "port a file" |
 | Public-facing description, install instructions, feature list | [`README.md`](./README.md) |
 | Compound-editor contract: force-fire, `_isLoading`, child subs, parity table | [`src/ClaudeForge/ViewModels/Editors/AGENTS.md`](./src/ClaudeForge/ViewModels/Editors/AGENTS.md) |
 | Workspace / scope semantics: `ConfigScope` order, `IsDirty` vs `HasActualChanges`, merge rules | [`src/AgentForge.Core/Settings/AGENTS.md`](./src/AgentForge.Core/Settings/AGENTS.md) |

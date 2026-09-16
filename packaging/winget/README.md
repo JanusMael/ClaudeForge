@@ -49,7 +49,7 @@ Both submission paths take the app by name and read everything else — package
 id, tag prefix, asset names — from `src/publish/PublishApps.ps1`:
 
 ```powershell
-pwsh packaging/Submit-Winget.ps1 -App OpenCodeForge -Version 2026.4.100
+pwsh packaging/Resubmit-Winget.ps1 -App OpenCodeForge -Version 2026.4.100 -Force
 ```
 
 or dispatch `.github/workflows/winget-submit.yml` and pick the app from its
@@ -141,7 +141,7 @@ two PRs against the same manifest, which winget-pkgs asks contributors not to do
 |---|---|---|
 | `packaging/sign-release.ps1` | **Dispatches the workflow itself** at the end, unless `-SkipWinget` | yes |
 | `.github/workflows/winget-submit.yml` | `gh workflow run winget-submit.yml -f version=<ver>` | yes |
-| `packaging/Submit-Winget.ps1` | run locally; submits straight from your machine | **no** |
+| `packaging/Resubmit-Winget.ps1` | run locally; submits straight from your machine. ⚠ Refuses without `-Force` | **no** |
 
 **The normal release is: run `sign-release.ps1` and stop — it already submits.** The
 other two are for re-submitting after a failure, or when you passed `-SkipWinget`.
