@@ -276,8 +276,10 @@ on all three publish jobs and its tag pattern excludes `opencodeforge-v*`. Nothi
 ### ▶ The retest — first pass DONE, and one of its findings has since been withdrawn
 
 The maintainer drove ClaudeForge against `ba794c2` on 2026-09-14. **All seven fixes from the
-earlier batch are verified**, plus four never-tested items. **One defect is open** — `F3`.
-`F5` is refuted; `F1`, `F2`, `F4` and `F6` are fixed and awaiting a look at the UI.
+earlier batch are verified**, plus four never-tested items. ⭐ **No defect is open any more.**
+`F5` is refuted; `F1`, `F2`, `F3`, `F4` and `F6` are fixed and awaiting a look at the UI. `F3`
+closed last, on 2026-09-16 — so **nothing on the retest list is a code task**, and every remaining
+item needs a human driving the app.
 
 Two live documents carry it, and they are the ones to read — not this summary:
 
