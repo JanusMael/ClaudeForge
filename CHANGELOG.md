@@ -10,7 +10,7 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
 
 
 
-## [2026.2.528] - TBD
+## [2026.2.528] - [2026.3.916]
 
 ### Added
 
@@ -77,6 +77,64 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   name (and help text where the label alone is ambiguous), the header links announce
   as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
   if a control lands without one.
+- **Screen readers announced every tab in the app as a class name.** A `TabItem` is
+  focusable and selectable, so a screen-reader user lands on one — but unnamed, UI
+  Automation falls back to the bound item's `ToString()`. Settings pages announced
+  their tabs as "Bennewitz.Ninja.ClaudeForge.ViewModels.GroupTab" and Agents & Skills
+  announced its own as "Avalonia.Controls.ScrollViewer". The accessibility guard
+  never caught it because `TabItem` was not in its list of interactive controls;
+  it is now, so this cannot come back. The tab strip on the settings pages names the
+  `TabItem` container rather than the header text inside it, which is what UI
+  Automation actually reports. No new strings — every tab already had a localized
+  header to announce.
+- **A deep link into a tab worked on exactly one page.** Only Agents & Skills
+  implemented the deep-navigable contract, so every settings page — Hooks,
+  Permissions, General, all of them — logged "not deep-navigable; 1 segment(s)
+  dropped" and landed on whichever tab it defaulted to, and nothing below the page
+  was persisted, so place-keeping could not bring a tab back either. The README had
+  documented `claude-code/permissions/properties` as working the whole time. Every
+  settings group page, Effective Settings and Backup / Restore now round-trip their
+  tab, and a tab contributed by the per-group customizer addresses exactly like a
+  built-in one — `claude-code/hooks/hooks.flow` opens the Hooks flow diagram. A tab
+  id the page does not have is now reported as a miss instead of being applied
+  silently and ignored.
+- **Every plugin artifact's remembered position was thrown away on the next
+  launch.** The captured path qualifies an item as `name@source`, and a plugin's
+  source is itself a path (`claude-plugins-official/plugins/math-olympiad`) — so the
+  path split into five segments, was rejected against the four-segment maximum, and
+  the restore fell back to the default tab. "Copy deep link" emitted the same
+  unusable string. Path separators inside a source are now written as `:`, so the
+  whole qualifier stays in one segment; both spellings are accepted when a path is
+  typed by hand.
+- **A skill whose `description` was a folded block scalar showed `>-` instead of its
+  description.** Nearly every skill Claude Code ships writes `description: >-` with the
+  prose on the following indented lines, and the front-matter parser understood only
+  plain and quoted scalars: the value read as the literal header token, and the prose
+  lines fell through as unparsed filler that an edit would have stranded. Block scalars
+  — folded (`>`) and literal (`|`), with all three chomping indicators (`-`, `+`, none)
+  and an explicit indent digit — now parse to their real text, and a field keeps its
+  shape when edited, so changing a `>-` description re-renders as a folded block
+  instead of collapsing the file into one very long line. An untouched block still
+  round-trips byte-for-byte. A description carrying newlines is flattened to one line
+  for the list row, which is a single ellipsised line; the detail pane and the editor
+  keep the real multi-line value.
+- **A description split across lines without a `>` or `|` read as empty.** A YAML
+  value can be carried over several indented lines with no block indicator at all,
+  opening either on the key line or the line below it — Anthropic's own
+  `math-olympiad` plugin skill writes its description that way, so it showed
+  "(no description)". Those lines now fold into the value, and the surrounding
+  quotes come off the joined result rather than either line alone, which is what
+  left a stray `"` on the shapes that did parse. Editing one re-renders it as a
+  folded block rather than collapsing it into a single very long line.
+- **A nested mapping was flattened into phantom top-level fields, and editing one
+  broke the file.** `metadata:` with indented `node_type:` / `type:` beneath it
+  surfaced `node_type` and `type` as if they were top-level keys; writing one then
+  re-rendered it at column 0, silently lifting it out of its parent. Nested
+  mappings are unmodelled by design, so one is now consumed whole and re-emitted
+  verbatim — it round-trips byte-for-byte and is invisible to the typed read/write
+  surface, which is what the class documentation already promised. The supported
+  and unsupported YAML constructs are now written down in
+  [docs/YAML-FRONT-MATTER.md](docs/YAML-FRONT-MATTER.md).
 - **A saved Agents & Skills edit left its list row stale.** `SaveAsync` refreshed
   the detail pane but never the row's subtitle, which is what the list renders —
   so editing a `description` and saving kept showing the old text until the next

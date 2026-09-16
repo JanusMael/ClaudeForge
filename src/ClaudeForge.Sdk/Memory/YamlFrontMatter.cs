@@ -26,14 +26,38 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
 ///   <item>No front-matter at all — returns <see cref="FrontMatter.Present"/>
 ///         = <see langword="false"/> and the whole text as
 ///         <see cref="FrontMatter.Body"/></item>
+///   <item>Block scalars — <c>description: &gt;-</c> followed by indented
+///         lines.  Both folded (<c>&gt;</c>) and literal (<c>|</c>), all three
+///         chomping indicators, and explicit indentation indicators.  Every
+///         skill Claude Code ships writes its <c>description</c> this way,
+///         because the prose contains quotes and colons that a plain scalar
+///         would have to escape.</item>
+///   <item>Multi-line flow scalars — a quoted or plain value carried across
+///         indented lines with no block indicator, opening either on the key
+///         line or on the line below it.  The lines fold with spaces, and the
+///         surrounding quotes come off the joined value, since the opening and
+///         closing quote sit on different lines.</item>
 /// </list>
 ///
-/// <para><b>Deliberately unsupported</b> (such keys round-trip verbatim via
-/// the field's preserved <see cref="FrontMatterField.RawText"/> but can't be
-/// edited through the typed surface): nested objects, anchors/aliases,
-/// multi-document streams, custom tags, folded/literal block scalars
-/// (<c>|</c> / <c>&gt;</c>), and YAML implicit type coercion
-/// (<c>yes</c>/<c>true</c>/numbers stay strings).</para>
+/// <para><b>Deliberately unsupported</b>: nested mappings, anchors/aliases,
+/// multi-document streams, custom tags, and YAML implicit type coercion
+/// (<c>yes</c>/<c>true</c>/numbers stay strings).  A nested mapping is consumed
+/// whole and re-emitted verbatim, so it round-trips byte-for-byte while staying
+/// invisible to <see cref="FrontMatter.FindScalar"/> and
+/// <see cref="FrontMatter.WithScalar"/>.  That invisibility is the point: a
+/// nested key surfaced as a top-level field would be re-rendered at column 0 on
+/// edit, silently lifting it out of its parent.</para>
+///
+/// <para>See <c>docs/YAML-FRONT-MATTER.md</c> for the full token reference.</para>
+///
+/// <para><b>Block-scalar round-trip:</b> a field that arrived as a block scalar
+/// records its style on <see cref="FrontMatterField.Block"/>, and
+/// <see cref="FrontMatter.WithScalar"/> carries that style onto the edited
+/// field — so editing a folded <c>description</c> writes a folded
+/// <c>description</c> back rather than collapsing it into one very long plain
+/// line and churning the whole file on first edit.  A value containing a
+/// newline can never be a plain scalar, so it is emitted as a literal block
+/// even when it did not arrive as one.</para>
 ///
 /// <para><b>Round-trip contract:</b> a field parsed from disk keeps its
 /// original <see cref="FrontMatterField.RawText"/>.  <see cref="Compose"/>
@@ -114,13 +138,28 @@ public static class YamlFrontMatter
                 continue;
             }
 
+            // A top-level key sits at column 0, so an indented key line belongs
+            // to a nested mapping — which the typed surface deliberately does
+            // not model.  Emitting it as a field would invent a phantom
+            // top-level key AND let an edit re-render it at column 0, silently
+            // lifting it out of its parent.  Pass it through verbatim instead.
+            // A well-formed mapping is consumed whole by its parent below; this
+            // is the backstop for an indented line that arrives some other way.
+            if (char.IsWhiteSpace(raw[0]))
+            {
+                nodes.Add(new FrontMatterCommentNode(raw));
+                continue;
+            }
+
             string key = raw[..colon].Trim();
             string valuePart = raw[(colon + 1)..].Trim();
 
             if (valuePart.Length == 0)
             {
-                // Either an empty scalar OR the header of a block list whose
-                // items follow on subsequent "  - x" lines.  Peek ahead.
+                // The value is not on this line, so it is one of: a block list
+                // ("  - x"), a nested mapping ("  k: v"), a multi-line flow
+                // scalar (indented prose with no block indicator), or a
+                // genuinely empty value.  Peek ahead to tell them apart.
                 var blockItems = new List<string>();
                 int blockEnd = i;
                 for (int j = i + 1; j < rawLines.Length; j++)
@@ -148,12 +187,52 @@ public static class YamlFrontMatter
                         rawLines[i..(blockEnd + 1)].Select(l => l.TrimEnd('\r')));
                     nodes.Add(new FrontMatterField(key, FrontMatterValue.OfList(blockItems), rawBlock));
                     i = blockEnd;
-                }
-                else
-                {
-                    nodes.Add(new FrontMatterField(key, FrontMatterValue.OfScalar(string.Empty), raw));
+                    continue;
                 }
 
+                int indentedEnd = ScanIndentedRun(rawLines, i);
+                if (indentedEnd > i)
+                {
+                    // The first continuation line decides, the way YAML itself
+                    // decides: "k: v" makes this a mapping, anything else makes
+                    // it a scalar whose value simply starts on the next line.
+                    if (IsKeyShaped(rawLines[i + 1].TrimEnd('\r').Trim()))
+                    {
+                        nodes.Add(new FrontMatterCommentNode(string.Join('\n',
+                            rawLines[i..(indentedEnd + 1)].Select(l => l.TrimEnd('\r')))));
+                    }
+                    else
+                    {
+                        nodes.Add(FlowScalarField(key, rawLines, i, firstFragment: null, indentedEnd));
+                    }
+
+                    i = indentedEnd;
+                    continue;
+                }
+
+                nodes.Add(new FrontMatterField(key, FrontMatterValue.OfScalar(string.Empty), raw));
+                continue;
+            }
+
+            if (TryParseBlockHeader(valuePart, out BlockScalarStyle? style, out int explicitIndent))
+            {
+                // Block scalar: the value lives on the following, more-indented
+                // lines. Consume them, decode per the header, and keep the whole
+                // span as RawText so an untouched field still round-trips exactly.
+                int blockEnd = ScanBlockEnd(rawLines, i, explicitIndent, out int indent);
+
+                string[] contentLines = rawLines[(i + 1)..(blockEnd + 1)]
+                                        .Select(l => l.TrimEnd('\r'))
+                                        .ToArray();
+
+                string decoded = DecodeBlockScalar(contentLines, indent, style!);
+
+                string rawBlock = string.Join('\n',
+                    rawLines[i..(blockEnd + 1)].Select(l => l.TrimEnd('\r')));
+
+                nodes.Add(new FrontMatterField(
+                    key, FrontMatterValue.OfScalar(decoded), rawBlock, style));
+                i = blockEnd;
                 continue;
             }
 
@@ -165,6 +244,17 @@ public static class YamlFrontMatter
                     ? new List<string>()
                     : inner.Split(',').Select(s => StripQuotes(s.Trim())).ToList();
                 nodes.Add(new FrontMatterField(key, FrontMatterValue.OfList(items), raw));
+                continue;
+            }
+
+            // A quoted scalar may open on the key line and run on over the
+            // following indented lines.  Without this the value would be
+            // truncated at the first line, keeping a stray opening quote.
+            int flowEnd = ScanIndentedRun(rawLines, i);
+            if (flowEnd > i)
+            {
+                nodes.Add(FlowScalarField(key, rawLines, i, valuePart, flowEnd));
+                i = flowEnd;
                 continue;
             }
 
@@ -216,10 +306,13 @@ public static class YamlFrontMatter
                     sb.Append(nl);
                     break;
                 case FrontMatterCommentNode comment:
-                    sb.Append(comment.RawText).Append(nl);
+                    sb.Append(WithLineEnding(comment.RawText, nl)).Append(nl);
                     break;
                 case FrontMatterField field:
-                    sb.Append(field.RawText ?? RenderField(field, nl)).Append(nl);
+                    sb.Append(field.RawText is { } raw
+                                  ? WithLineEnding(raw, nl)
+                                  : RenderField(field, nl))
+                      .Append(nl);
                     break;
             }
         }
@@ -227,6 +320,232 @@ public static class YamlFrontMatter
         sb.Append(OpenDelimiter).Append(nl);
         sb.Append(frontMatter.Body);
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Re-emit preserved source text with the composed file's line ending.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Parse"/> strips the <c>\r</c> from each line and joins multi-line
+    /// <see cref="FrontMatterField.RawText"/> with <c>\n</c>, so a CRLF file whose
+    /// block scalar, block list or nested mapping came back verbatim would end up
+    /// with LF inside that construct and CRLF everywhere else — mixed line endings
+    /// written into a file the user only opened, and not the byte-for-byte round
+    /// trip the contract promises.
+    /// </remarks>
+    private static string WithLineEnding(string rawText, string nl)
+    {
+        string lf = rawText.Replace("\r\n", "\n", StringComparison.Ordinal);
+        return nl == "\n" ? lf : lf.Replace("\n", nl, StringComparison.Ordinal);
+    }
+
+    // ── Block scalars ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Recognise a block-scalar header — the text after the colon on a key line.
+    /// Accepts <c>&gt;</c> / <c>|</c> with optional chomping (<c>-</c> / <c>+</c>),
+    /// an optional explicit indentation digit, and an optional trailing comment.
+    /// The two indicators may appear in either order (<c>&gt;2-</c> and <c>&gt;-2</c>
+    /// are both legal YAML).
+    /// </summary>
+    /// <param name="valuePart">The trimmed text following the key's colon.</param>
+    /// <param name="style">The decoded header on success; <see langword="null"/> otherwise.</param>
+    /// <param name="explicitIndent">
+    /// The explicit indentation indicator, or 0 when the block auto-detects its
+    /// indentation from the first non-empty content line.
+    /// </param>
+    /// <returns><see langword="true"/> when <paramref name="valuePart"/> is a block-scalar header.</returns>
+    private static bool TryParseBlockHeader(string valuePart, out BlockScalarStyle? style, out int explicitIndent)
+    {
+        style = null;
+        explicitIndent = 0;
+
+        if (valuePart.Length == 0 || (valuePart[0] != '>' && valuePart[0] != '|'))
+        {
+            return false;
+        }
+
+        BlockScalarKind kind = valuePart[0] == '>' ? BlockScalarKind.Folded : BlockScalarKind.Literal;
+        BlockChomping chomping = BlockChomping.Clip;
+
+        int p = 1;
+        for (; p < valuePart.Length; p++)
+        {
+            char c = valuePart[p];
+            if (c == '-')
+            {
+                chomping = BlockChomping.Strip;
+            }
+            else if (c == '+')
+            {
+                chomping = BlockChomping.Keep;
+            }
+            else if (c is >= '1' and <= '9')
+            {
+                explicitIndent = c - '0';
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // Anything left must be whitespace or a comment; otherwise this was not a
+        // block header at all (e.g. a plain scalar that merely starts with '>').
+        string rest = valuePart[p..].TrimStart();
+        if (rest.Length > 0 && rest[0] != '#')
+        {
+            return false;
+        }
+
+        style = new BlockScalarStyle(kind, chomping);
+        return true;
+    }
+
+    /// <summary>
+    /// Find the last line belonging to the block that opens at
+    /// <paramref name="headerIndex"/>, and report the block's content indentation.
+    /// The block continues over blank lines and any line indented at least as far
+    /// as the first non-empty content line; it ends at the first line indented
+    /// less than that (the next key, or the closing delimiter).
+    /// </summary>
+    private static int ScanBlockEnd(string[] rawLines, int headerIndex, int explicitIndent, out int indent)
+    {
+        int headerIndent = IndentOf(rawLines[headerIndex].TrimEnd('\r'));
+        indent = explicitIndent > 0 ? headerIndent + explicitIndent : -1;
+
+        int end = headerIndex;
+        for (int j = headerIndex + 1; j < rawLines.Length; j++)
+        {
+            string line = rawLines[j].TrimEnd('\r');
+
+            if (line.Trim().Length == 0)
+            {
+                // A blank line may be interior to the block; only a later
+                // content line proves it was. Don't extend `end` on its own.
+                continue;
+            }
+
+            int lineIndent = IndentOf(line);
+
+            // The first non-empty line fixes the block's indentation when the
+            // header carried no explicit indicator.
+            if (indent < 0)
+            {
+                if (lineIndent <= headerIndent)
+                {
+                    break;      // nothing is indented under the header — empty block
+                }
+
+                indent = lineIndent;
+            }
+
+            if (lineIndent < indent)
+            {
+                break;
+            }
+
+            end = j;
+        }
+
+        if (indent < 0)
+        {
+            indent = headerIndent + 2;
+        }
+
+        return end;
+    }
+
+    /// <summary>
+    /// Turn a block scalar's raw content lines into its string value, applying
+    /// folding (for <c>&gt;</c>) and the chomping indicator.
+    /// </summary>
+    private static string DecodeBlockScalar(string[] contentLines, int indent, BlockScalarStyle style)
+    {
+        // Strip the block indentation. Lines indented FURTHER keep the extra
+        // indentation — in a folded block that also makes them literal.
+        var stripped = contentLines
+                       .Select(l => l.Trim().Length == 0 ? string.Empty : StripIndent(l, indent))
+                       .ToList();
+
+        string joined = style.Kind == BlockScalarKind.Literal
+            ? string.Join('\n', stripped)
+            : Fold(stripped);
+
+        return Chomp(joined, style.Chomping);
+    }
+
+    /// <summary>
+    /// Fold a folded-block's lines: equally-indented lines join with a space, a
+    /// blank line becomes a newline, and a more-indented line stays on its own
+    /// line (YAML keeps such lines literal).
+    /// </summary>
+    private static string Fold(List<string> lines)
+    {
+        var sb = new StringBuilder();
+        bool atLineStart = true;
+
+        for (int i = 0; i < lines.Count; i++)
+        {
+            string line = lines[i];
+
+            if (line.Length == 0)
+            {
+                // Blank line → a hard break. Consecutive blanks each add one.
+                sb.Append('\n');
+                atLineStart = true;
+                continue;
+            }
+
+            bool moreIndented = char.IsWhiteSpace(line[0]);
+
+            if (!atLineStart)
+            {
+                sb.Append(moreIndented || EndsMoreIndented(lines, i - 1) ? '\n' : ' ');
+            }
+
+            sb.Append(line);
+            atLineStart = false;
+        }
+
+        return sb.ToString();
+    }
+
+    private static bool EndsMoreIndented(List<string> lines, int index)
+    {
+        return index >= 0 && lines[index].Length > 0 && char.IsWhiteSpace(lines[index][0]);
+    }
+
+    private static string Chomp(string value, BlockChomping chomping)
+    {
+        return chomping switch
+        {
+            BlockChomping.Strip => value.TrimEnd('\n'),
+            BlockChomping.Keep => value.Length == 0 ? value : value + "\n",
+            _ => value.TrimEnd('\n') + (value.Length == 0 ? string.Empty : "\n"),
+        };
+    }
+
+    private static int IndentOf(string line)
+    {
+        int n = 0;
+        while (n < line.Length && line[n] == ' ')
+        {
+            n++;
+        }
+
+        return n;
+    }
+
+    private static string StripIndent(string line, int indent)
+    {
+        int take = 0;
+        while (take < indent && take < line.Length && line[take] == ' ')
+        {
+            take++;
+        }
+
+        return line[take..];
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -245,7 +564,211 @@ public static class YamlFrontMatter
             return sb.ToString();
         }
 
-        return $"{field.Key}: {QuoteIfNeeded(field.Value.Scalar ?? string.Empty)}";
+        string scalar = field.Value.Scalar ?? string.Empty;
+
+        // A field that arrived as a block scalar goes back as one, in the same
+        // shape — otherwise a GUI edit of a folded `description` would rewrite it
+        // as a single enormous line and churn the file. A value that contains a
+        // newline CANNOT be a plain scalar at all, so it gets a literal block
+        // even if it was never one on disk.
+        BlockScalarStyle? style = field.Block
+                                  ?? (scalar.Contains('\n')
+                                      ? new BlockScalarStyle(BlockScalarKind.Literal, BlockChomping.Strip)
+                                      : null);
+
+        if (style is not null && scalar.Length > 0)
+        {
+            return RenderBlockScalar(field.Key, scalar, style, nl);
+        }
+
+        return $"{field.Key}: {QuoteIfNeeded(scalar)}";
+    }
+
+    /// <summary>Indentation used for re-rendered block-scalar content.</summary>
+    private const string BlockIndent = "  ";
+
+    /// <summary>
+    /// Width at which re-folded block content wraps.  Chosen to match the skill
+    /// files Claude Code itself ships, so an edit through the GUI produces a diff
+    /// of only the changed prose rather than a re-flow of the whole block.
+    /// </summary>
+    private const int FoldWidth = 96;
+
+    private static string RenderBlockScalar(string key, string scalar, BlockScalarStyle style, string nl)
+    {
+        var sb = new StringBuilder();
+        sb.Append(key).Append(": ").Append(style.Indicator);
+
+        // A literal block must keep the author's own line breaks; a folded block
+        // is re-wrapped, because folding makes the source line breaks invisible
+        // in the value anyway.
+        IEnumerable<string> lines = style.Kind == BlockScalarKind.Literal
+            ? scalar.Split('\n')
+            : scalar.Split('\n').SelectMany(paragraph => WrapToWidth(paragraph, FoldWidth));
+
+        foreach (string line in lines)
+        {
+            sb.Append(nl);
+            if (line.Length > 0)
+            {
+                sb.Append(BlockIndent).Append(line);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Greedy word wrap.  A single word longer than <paramref name="width"/> is
+    /// emitted on its own over-long line rather than being broken — splitting a
+    /// URL or an identifier would change the folded value.
+    /// </summary>
+    private static IEnumerable<string> WrapToWidth(string paragraph, int width)
+    {
+        if (paragraph.Trim().Length == 0)
+        {
+            yield return string.Empty;
+            yield break;
+        }
+
+        var current = new StringBuilder();
+        foreach (string word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (current.Length > 0 && current.Length + 1 + word.Length > width)
+            {
+                yield return current.ToString();
+                current.Clear();
+            }
+
+            if (current.Length > 0)
+            {
+                current.Append(' ');
+            }
+
+            current.Append(word);
+        }
+
+        if (current.Length > 0)
+        {
+            yield return current.ToString();
+        }
+    }
+
+    // ── Flow scalars and nested mappings ─────────────────────────────────
+
+    /// <summary>
+    /// Find the last line of the more-indented run that follows
+    /// <paramref name="headerIndex"/> — the lines belonging to a nested mapping
+    /// or continuing a multi-line flow scalar.
+    /// </summary>
+    /// <remarks>
+    /// A blank line ends the run.  Inside a mapping that is merely spacing, and
+    /// inside a flow scalar it is a paragraph break; stopping at it keeps this
+    /// conservative, and the remaining lines still round-trip verbatim through
+    /// the indented-key backstop in <see cref="Parse"/>.
+    /// </remarks>
+    /// <param name="rawLines">All lines of the source text.</param>
+    /// <param name="headerIndex">Index of the key line the run follows.</param>
+    /// <returns>
+    /// <paramref name="headerIndex"/> itself when no indented run follows.
+    /// </returns>
+    private static int ScanIndentedRun(string[] rawLines, int headerIndex)
+    {
+        int headerIndent = IndentOf(rawLines[headerIndex].TrimEnd('\r'));
+        int end = headerIndex;
+
+        for (int j = headerIndex + 1; j < rawLines.Length; j++)
+        {
+            string line = rawLines[j].TrimEnd('\r');
+            string trimmed = line.Trim();
+
+            if (trimmed.Length == 0
+                || trimmed is OpenDelimiter or "..."
+                || IndentOf(line) <= headerIndent)
+            {
+                break;
+            }
+
+            end = j;
+        }
+
+        return end;
+    }
+
+    /// <summary>
+    /// Does this line read as <c>key: value</c> (or a bare <c>key:</c>)?  Used
+    /// on the first continuation line to tell a nested mapping from prose that
+    /// merely happens to be indented.  A key never contains a space or a quote,
+    /// and its colon is always followed by whitespace or the end of the line —
+    /// so "Solve competition math problems (IMO, Putnam)" is not key-shaped, and
+    /// neither is a sentence containing "for example: this".
+    /// </summary>
+    private static bool IsKeyShaped(string trimmed)
+    {
+        if (trimmed.Length == 0 || trimmed[0] is '"' or '\'' or '-' or '#')
+        {
+            return false;
+        }
+
+        int colon = trimmed.IndexOf(':');
+        if (colon <= 0 || trimmed.AsSpan(0, colon).ContainsAny(' ', '"', '\''))
+        {
+            return false;
+        }
+
+        return colon == trimmed.Length - 1 || char.IsWhiteSpace(trimmed[colon + 1]);
+    }
+
+    /// <summary>
+    /// Build the field for a multi-line flow scalar — a value written across
+    /// several indented lines with no <c>&gt;</c> / <c>|</c> indicator, either
+    /// opening on the key line or starting on the line below it.
+    /// </summary>
+    /// <param name="key">The field's key.</param>
+    /// <param name="rawLines">All lines of the source text.</param>
+    /// <param name="headerIndex">Index of the key line.</param>
+    /// <param name="firstFragment">
+    /// The text after the colon on the key line, or <see langword="null"/> when
+    /// the value starts on the following line.
+    /// </param>
+    /// <param name="end">Index of the run's last line, from <see cref="ScanIndentedRun"/>.</param>
+    /// <remarks>
+    /// The lines join with single spaces, which is how YAML folds them, and the
+    /// surrounding quotes come off the joined result rather than any one line —
+    /// the opening and closing quotes sit on different lines.
+    /// <para>
+    /// The field is tagged folded/strip so that editing it re-renders as a
+    /// <c>&gt;-</c> block.  It arrived spread over several lines; collapsing it
+    /// into one very long plain line on first edit is exactly the churn
+    /// <see cref="BlockScalarStyle"/> exists to prevent.
+    /// </para>
+    /// </remarks>
+    private static FrontMatterField FlowScalarField(
+        string key, string[] rawLines, int headerIndex, string? firstFragment, int end)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(firstFragment))
+        {
+            parts.Add(firstFragment);
+        }
+
+        for (int j = headerIndex + 1; j <= end; j++)
+        {
+            string piece = rawLines[j].TrimEnd('\r').Trim();
+            if (piece.Length > 0)
+            {
+                parts.Add(piece);
+            }
+        }
+
+        string rawBlock = string.Join('\n',
+            rawLines[headerIndex..(end + 1)].Select(l => l.TrimEnd('\r')));
+
+        return new FrontMatterField(
+            key,
+            FrontMatterValue.OfScalar(StripQuotes(string.Join(' ', parts))),
+            rawBlock,
+            new BlockScalarStyle(BlockScalarKind.Folded, BlockChomping.Strip));
     }
 
     /// <summary>

@@ -44,6 +44,19 @@ public static class NavDeepPath
     public const char SourceSeparator = '@';
 
     /// <summary>
+    /// Stands in for <see cref="Separator"/> inside the source half of an item
+    /// key. A plugin artifact's source is itself a path
+    /// (<c>claude-plugins-official/plugins/math-olympiad</c>), and a raw
+    /// <c>/</c> there would split into extra segments and blow
+    /// <see cref="MaxSegments"/> — so the captured path for every plugin
+    /// artifact came back unparseable and the restore fell to the default tab.
+    /// <see cref="IDeepNavigable.CaptureDeepPath"/> already forbids returning a
+    /// filesystem path for exactly this reason; encoding here is what makes the
+    /// contract keepable for sources the editor does not choose.
+    /// </summary>
+    public const char SourcePathSeparator = ':';
+
+    /// <summary>
     /// Longest legal path: parent node, child node, tab, item
     /// (<c>claude-code/permissions/properties/&lt;item&gt;</c>).
     /// </summary>
@@ -247,7 +260,22 @@ public static class NavDeepPath
     {
         return string.IsNullOrWhiteSpace(source)
             ? name
-            : FormattableString.Invariant($"{name}{SourceSeparator}{source}");
+            : FormattableString.Invariant($"{name}{SourceSeparator}{EncodeSource(source)}");
+    }
+
+    /// <summary>
+    /// Render a source so it can live inside one path segment: path separators
+    /// become <see cref="SourcePathSeparator"/>. Idempotent, so it is safe to
+    /// apply to a source that has already been encoded — which is what lets a
+    /// comparison normalise both sides and accept either spelling from a human.
+    /// </summary>
+    /// <returns>The encoded source; empty string for a null or blank input.</returns>
+    public static string EncodeSource(string? source)
+    {
+        return string.IsNullOrWhiteSpace(source)
+            ? string.Empty
+            : source!.Replace(Separator, SourcePathSeparator)
+                     .Replace('\\', SourcePathSeparator);
     }
 
     private static bool IdMatches(string? nodeId, string segment)
