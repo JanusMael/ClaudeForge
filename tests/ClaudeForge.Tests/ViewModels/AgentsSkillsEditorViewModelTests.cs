@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
@@ -782,6 +782,64 @@ public sealed class AgentsSkillsEditorViewModelTests
     /// MemoryEditorViewModelTests; the rich DialogMessage/category confirm
     /// overload flattens to this four-string one via its default interface impl.
     /// </summary>
+    /// <summary>
+    /// Every skill Claude Code ships writes its description as a folded block
+    /// scalar. The row must show the prose, not the "&gt;-" header token.
+    /// </summary>
+    /// <remarks>ⓘ Ported from <c>main</c> on 2026-09-16 with the parser it guards.</remarks>
+    [TestMethod]
+    public async Task Refresh_FoldedBlockDescription_ShowsTheProseNotTheHeaderToken()
+    {
+        Write(Path.Combine(Home, "skills", "folded", "SKILL.md"),
+            "---\n" +
+            "name: folded\n" +
+            "description: >-\n" +
+            "  Fetch, vet, and act on review feedback left on a pull request.\n" +
+            "  Use this WHENEVER the developer says there is review feedback.\n" +
+            "---\n" +
+            "\n" +
+            "Body.\n");
+
+        var vm = new AgentsSkillsEditorViewModel(_project);
+        await vm.RefreshAsync();
+        await vm.LastDescriptionFill!;
+
+        Assert.AreEqual(
+            "Fetch, vet, and act on review feedback left on a pull request. "
+            + "Use this WHENEVER the developer says there is review feedback.",
+            SkillRows(vm).Single(r => r.DisplayName == "folded").Subtitle,
+            "The folded block must reach the row as its prose; showing '>-' is the bug this guards.");
+    }
+
+    /// <summary>
+    /// A row is one ellipsised line, so a description carrying newlines — a blank
+    /// line inside a folded block, or any literal block — is flattened for the
+    /// list. The detail pane and editor keep the real multi-line value.
+    /// </summary>
+    /// <remarks>ⓘ Ported from <c>main</c> on 2026-09-16 with the parser it guards.</remarks>
+    [TestMethod]
+    public async Task Refresh_MultiLineDescription_IsFlattenedToOneLineInTheList()
+    {
+        Write(Path.Combine(Home, "skills", "para", "SKILL.md"),
+            "---\n" +
+            "name: para\n" +
+            "description: |-\n" +
+            "  first line\n" +
+            "  second line\n" +
+            "---\n" +
+            "\n" +
+            "Body.\n");
+
+        var vm = new AgentsSkillsEditorViewModel(_project);
+        await vm.RefreshAsync();
+        await vm.LastDescriptionFill!;
+
+        string subtitle = SkillRows(vm).Single(r => r.DisplayName == "para").Subtitle!;
+
+        Assert.AreEqual("first line second line", subtitle);
+        Assert.IsFalse(subtitle.Contains('\n'), "A list row must never carry an embedded newline.");
+    }
+
     private sealed class StubDialogService : IDialogService
     {
         public bool ConfirmReturns { get; set; }

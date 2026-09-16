@@ -99,8 +99,15 @@ public sealed record FrontMatter(
         int existing = updated.FindIndex(n => n is FrontMatterField f
                                               && string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase));
 
+        // Inherit the block-scalar shape of the field being replaced. Without
+        // this, editing a `description: >-` block through the GUI would rewrite
+        // it as one very long plain line — a whole-file reformat on first edit.
+        BlockScalarStyle? block = existing >= 0 && updated[existing] is FrontMatterField prior
+            ? prior.Block
+            : null;
+
         // RawText cleared → Compose re-renders this field canonically.
-        var field = new FrontMatterField(key, value, RawText: null);
+        var field = new FrontMatterField(key, value, RawText: null, Block: block);
 
         if (existing >= 0)
         {
@@ -126,11 +133,65 @@ public abstract record FrontMatterNode;
 /// <param name="Value">The parsed scalar or list value.</param>
 /// <param name="RawText">
 /// The verbatim original source text for this field (including any block-list
-/// continuation lines), preserved so an untouched field round-trips byte-for-
-/// byte.  <see langword="null"/> for fields synthesised or edited in memory —
-/// <see cref="YamlFrontMatter.Compose"/> re-renders those canonically.
+/// or block-scalar continuation lines), preserved so an untouched field
+/// round-trips byte-for-byte.  <see langword="null"/> for fields synthesised or
+/// edited in memory — <see cref="YamlFrontMatter.Compose"/> re-renders those
+/// canonically.
 /// </param>
-public sealed record FrontMatterField(string Key, FrontMatterValue Value, string? RawText) : FrontMatterNode;
+/// <param name="Block">
+/// Set when the field's value arrived as a YAML block scalar (<c>&gt;</c> /
+/// <c>|</c>).  Carried so that editing the value re-renders it in the SAME
+/// shape it was written in, rather than collapsing a folded description into
+/// one very long plain line and churning the whole file on first edit.
+/// <see langword="null"/> for ordinary plain / quoted scalars and for lists.
+/// </param>
+public sealed record FrontMatterField(
+    string Key,
+    FrontMatterValue Value,
+    string? RawText,
+    BlockScalarStyle? Block = null) : FrontMatterNode;
+
+/// <summary>How a YAML block scalar folds its content.</summary>
+public enum BlockScalarKind
+{
+    /// <summary><c>&gt;</c> — newlines between equally-indented lines fold to spaces.</summary>
+    Folded,
+
+    /// <summary><c>|</c> — newlines are preserved exactly.</summary>
+    Literal,
+}
+
+/// <summary>What a block scalar does with trailing newlines.</summary>
+public enum BlockChomping
+{
+    /// <summary>Default (no indicator) — keep exactly one trailing newline.</summary>
+    Clip,
+
+    /// <summary><c>-</c> — strip every trailing newline.</summary>
+    Strip,
+
+    /// <summary><c>+</c> — keep all trailing newlines.</summary>
+    Keep,
+}
+
+/// <summary>
+/// The shape of a YAML block scalar header — e.g. <c>&gt;-</c> is
+/// <see cref="BlockScalarKind.Folded"/> + <see cref="BlockChomping.Strip"/>.
+/// </summary>
+/// <param name="Kind">Folded (<c>&gt;</c>) or literal (<c>|</c>).</param>
+/// <param name="Chomping">Trailing-newline handling.</param>
+public sealed record BlockScalarStyle(BlockScalarKind Kind, BlockChomping Chomping)
+{
+    /// <summary>The header token as it appears after the colon (e.g. <c>&gt;-</c>).</summary>
+    public string Indicator =>
+        (Kind == BlockScalarKind.Folded ? ">" : "|")
+        + Chomping switch
+        {
+            BlockChomping.Strip => "-",
+            BlockChomping.Keep => "+",
+            _ => string.Empty,
+        };
+}
 
 /// <summary>A comment line (begins with <c>#</c>), preserved verbatim including the marker.</summary>
 public sealed record FrontMatterCommentNode(string RawText) : FrontMatterNode;

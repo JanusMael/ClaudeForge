@@ -285,6 +285,26 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter [sealed] implements
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter right)
     static System.Collections.Generic.IReadOnlyList<System.String> KnownKeys { get; }
+enum Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockChomping : System.Int32
+    Clip = 0
+    Keep = 2
+    Strip = 1
+enum Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarKind : System.Int32
+    Folded = 0
+    Literal = 1
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle>
+    .ctor(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarKind Kind, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockChomping Chomping)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockChomping Chomping { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Indicator { get; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarKind Kind, out Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockChomping Chomping)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle left, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle left, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle right)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths [sealed]
     .ctor(System.String userProfile)
     System.String ClaudeHome { get; }
@@ -461,7 +481,8 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode [sealed] : Be
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode right)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField [sealed] : Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField>, System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
-    .ctor(System.String Key, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, System.String RawText)
+    .ctor(System.String Key, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, System.String RawText, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle Block = null)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle Block { get;init; }
     Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField <Clone>$()
     Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value { get;init; }
     System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField other)
@@ -473,7 +494,7 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField [sealed] : Bennewit
     System.String RawText { get;init; }
     System.String ToString()
     System.Type EqualityContract { get; }
-    System.Void Deconstruct(out System.String Key, out Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, out System.String RawText)
+    System.Void Deconstruct(out System.String Key, out Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, out System.String RawText, out Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle Block)
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField right)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode [abstract] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
