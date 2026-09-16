@@ -64,6 +64,30 @@ not either app's. A same-day second package release fails at pre-flight by desig
 is kept but emitted only by `Resolve-ReleaseVersion.ps1`. OpenCodeForge testing is parked
 deliberately. The `maui-windows` preflight removal was correct and must not be restored.
 
+**Settled 2026-09-16:**
+
+- **`F3` changes `IShareService`'s SIGNATURE**, rather than adding a second member.
+  `ShareTextAsync` returns what it actually did; `ShareFileAsync` gets the same treatment.
+  ⓘ Breaking in name only: **one** production call site, one implementation, two test fakes, and
+  ⛔ **no surface-contract test pins it** — `PublicSurfaceContractTests` lives in
+  `AgentForge.Sdk.Tests` and covers the SDK, not this package, contrary to what
+  `RETEST-FINDINGS` says. Nothing is on the feed, so this is as cheap as it will ever be.
+- **The outcome is an ENUM of what happened** — clipboard / browser / mail client / unavailable /
+  failed — not a bool and not a record. ⚠ There is **no share sheet on any platform**: macOS would
+  need `NSSharingService` behind a TFM that was never compiled. `Failed` and `Unavailable` stay
+  distinct because the status pill treats them differently (failure sticks, success auto-clears).
+- **The AI attribution trailers are gone from this branch**, and `main` was never touched — see
+  the rewrite note below.
+- **Still no PR, and the lock stands.** ⓘ `ci.yml` and `codeql.yml` both trigger on
+  `branches: ['**']`, so a branch push already runs full CI and CodeQL; a PR would add review
+  surface, not verification, on work still in motion.
+- **The first `packages-v*` tag waits for the split.** Nothing consumes the packages today — both
+  apps default to `ProjectReference` and the canary already proves package mode — so publishing an
+  immutable version now spends a number that cannot be reused. ⓘ The local preflight gap is
+  narrower than it looked: `release-packages.yml` runs `Publish-Packages.ps1` in Actions with
+  `packages: write`, so **gate 3 does run on the real publish**; only a local `-PreflightOnly` is
+  blind, and this machine's `gh` token carries no `read:packages`.
+
 **Settled 2026-09-14:**
 
 - **`F5` is refuted on this session's evidence**, rather than held open pending a second machine.
@@ -82,6 +106,36 @@ deliberately. The `maui-windows` preflight removal was correct and must not be r
   now means SOLUTION-internal** — the file compiles into every assembly, so a grant applies to all
   of them. If something must not cross an assembly boundary, `internal` no longer says so; make it
   private. Guarded by `SharedFriendGrantsTests`; maintainer's stated preference, `c7643ab`.
+
+### What landed on 2026-09-16 — the attribution trailers left this branch
+
+⚠ **History was rewritten and the branch force-pushed.** Every commit on
+`feat/agentforge-opencodeforge` after `v2026.3.901` has a new SHA. Anything that forked from the
+old line — the five `claude/*` branches share ancestry — will read as diverged; their own commits
+are untouched.
+
+⛔ **`main` was NOT touched, and neither was any release tag.** The scoping question turned on a
+fact worth keeping: of the **123** commits carrying a `Co-Authored-By: Claude` trailer, **all 12 on
+`main` sit inside `v2026.3.901`**, a published release. Zero trailers on `main` are outside a tag.
+So "clean the ones outside release tags" reduced to *this branch only* — no force-push to `main`,
+no disturbance to dependabot **#58**/**#59**, and `v2026.3.810` and `v2026.3.901` keep the SHAs
+their shipped binaries and the winget manifest were built from.
+
+Done with `git filter-repo --partial --refs v2026.3.901..feat/agentforge-opencodeforge`, the
+message callback in a file rather than a shell argument. Verified rather than assumed, on a scratch
+clone first and then again on the real repo:
+
+| | |
+|---|---|
+| Trailers in the rewritten range | 110 → **0** |
+| Trailers still on the branch | 12 — **all** ancestors of the protected tag |
+| `v2026.3.901` | `3c7aaab…` **unchanged** |
+| Commit count | 295 → **295** |
+| Tree at tip | `61139db…` → `61139db…` — **content byte-identical** |
+
+ⓘ One trailer remains on a `claude/*` branch only; those branches were left alone.
+ⓘ Recovery: `backup/pre-trailer-rewrite-20260916` points at the pre-rewrite tip (`8232a38`), and a
+52-ref snapshot sits beside it in the session scratchpad.
 
 ### What landed on 2026-09-15 — `F1`, `F2`, `F4`
 
