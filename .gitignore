@@ -164,3 +164,8 @@ packaging/BBWinget.md
 /manifests/
 
 reference/semi-avalonia/
+
+# PublicSurfaceBaselineTests writes the observed surface beside the baseline when they differ,
+# so the diff can be read and — if the change was deliberate — copied over the baseline. It is
+# a diagnostic from a failing run, never an input, and a failing test must not dirty the tree.
+tests/ClaudeForge.Tests/Architecture/PublicSurface/*.actual

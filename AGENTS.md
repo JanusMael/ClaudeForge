@@ -209,13 +209,20 @@ The schema refresh (`scripts/refresh-schema.{ps1,sh}`) does **NOT** carry model 
 
 - [ ] Accept `IShareService? shareService` as a constructor parameter (nullable — unit tests pass `null`; the app wires the real service).
 - [ ] For file-sharing commands (`ShareFileAsync`): also accept or inject a `Func<string?>` that returns the path lazily at execute-time (makes the provider testable without real Serilog / disk setup). See `AboutEditorViewModel._logPathProvider` pattern.
-- [ ] Implement the async handler: null-guard the service; call `ShareFileAsync` or `ShareTextAsync`; catch broadly and log via `Log.Error`. Never throw to the caller.
+- [ ] Implement the async handler: guard the service; call `ShareFileAsync` or `ShareTextAsync`; catch broadly and log via `Log.Error`. Never throw to the caller.
+- [ ] ⛔ **REPORT THE OUTCOME. A share that says nothing is the F3 defect, and it survived in three places.** Both methods return `Task<ShareOutcome>`; the handler picks a sentence from it and emits it through an `Action<string, bool isFailure>` hook the host wires to the centre pill. ⚠ A missing SERVICE reports `Unavailable` — it does not return quietly. Writing the legacy `StatusMessage` setter instead still compiles and routes to grey `StatusKind.State` with no icon and no auto-clear: wrong channel.
+- [ ] ⭐ **For a FILE share, do not write your own switch** — call `FileShareStatus.Describe(outcome, revealed, unavailable, failed)`. Three sentences, not six: `ShareFileAsync` can only report revealed / unavailable / failed, and the mapper reports anything else as a failure because it means the service broke its contract.
+- [ ] ⚠ **Say what actually happened.** No platform here opens a share sheet — Windows copies or reveals, macOS copies or reveals, Linux opens a mail client or a directory. A sentence reading "Shared" is wrong on every one of them.
 - [ ] Wire `[RelayCommand]` on the async handler. If the command should only be enabled when the path is known, add `CanExecute = nameof(CanShareXxx)` and evaluate the service + path together.
 - [ ] Bind in the corresponding view AXAML: `Command="{Binding ShareXxxCommand}"`.
-- [ ] Test stub: `RecordingShareService` (file-scoped in `tests/ClaudeForge.Tests/ViewModels/ShareServiceTests.cs`) records all calls; `NullDialogService` stubs the dialog dependency. Copy both into the new test class or move them to a shared helper.
-- [ ] Minimum test coverage: `NullService_IsNoOp`, `NullPath_CannotExecute` (if path-conditional), `Calls_ServiceWithExpectedPayload`, `Title_MatchesDisplayName`.
+- [ ] Wire the hook at the host: `OnTerminalStatus = RouteTerminalStatus` in `MainWindowViewModel`. ⚠ For a **cached** view-model (the two About ones) that goes *inside* the `??=`, or it re-attaches to an instance the tree already replaced.
+- [ ] Strings come from resx in **all nine** locale files plus `Strings.Designer.cs`. ⚠ In a **shared library** they cannot: add them to `BackupPageText`-style host-supplied text instead, and remember `required` members mean **OpenCodeForge must supply them too**.
+- [ ] Test stub: `RecordingShareService` (file-scoped in `tests/ClaudeForge.Tests/ViewModels/ShareServiceTests.cs`) records all calls and lets a test drive `NextOutcome`. ⚠ Its default is `Unavailable`, deliberately — a stub that records a payload has shared nothing, so a test asserting success must say which success it arranged.
+- [ ] Minimum test coverage: `NullService_SaysUnavailable`, `NullPath_CannotExecute` (if path-conditional), `Calls_ServiceWithExpectedPayload`, `Title_MatchesDisplayName`, and **one assertion per outcome** that the right sentence and severity reach the hook.
 
-Reference implementations: `BackupRestoreViewModel.ShareBackupCommand`, `EffectiveSettingsViewModel.ShareConfigCommand`, `AboutEditorViewModel.ShareLogCommand`.
+Reference implementations: `EffectiveSettingsViewModel.ShareConfigCommand` (text, six outcomes),
+`AboutEditorViewModel.ShareLogCommand` and `BackupRestoreViewModel.ShareBackupCommand` (file, via
+`FileShareStatus`). Guards: `ShareOutcomeTests`, `FileShareStatusTests`.
 
 ---
 
@@ -319,6 +326,18 @@ Everything here is for the **package** mode the per-PR canary and the release pu
       packing the same version twice makes the second run validate the first run's packages and
       report success. The script defaults to a per-second timestamp **and** points
       `NUGET_PACKAGES` at a directory named for it. Both, not either.
+- [ ] ⛔ **Changing a packaged library's PUBLIC API updates its surface baseline in the same
+      commit.** `PublicSurfaceBaselineTests` renders every `IsPackable=true` assembly's exported
+      types and members and diffs them against
+      `tests/ClaudeForge.Tests/Architecture/PublicSurface/<Assembly>.txt`. A mismatch fails and
+      writes a `.txt.actual` beside the baseline — read that, and if the change is deliberate,
+      copy it over the baseline **in the same commit** so a reviewer sees the diff. ⚠ The test
+      never repairs its own baseline: one that did would report a break once and then bless it.
+      ⭐ **Why this exists at all:** a breaking signature change to `IShareService` went through a
+      full green suite of 4,367 tests with nothing noticing, on 2026-09-16. `PublicSurfaceContract
+      Tests` looks like the guard and is not — it is in `AgentForge.Sdk.Tests`, covers one
+      assembly, and enforces house style rather than API shape. ⓘ Nullable annotations are a known
+      blind spot; enum member VALUES are not, so a renumbering fails loudly.
 - [ ] ⚠ **A new shared library must be named `AgentForge.*` or `LayeredEditors.*`** to be picked
       up, or be named outright in the switch's exact-name list. The switch in the root
       `Directory.Build.targets` matches on those selectors, and `PackageMetadataTests` asserts the

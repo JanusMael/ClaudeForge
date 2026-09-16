@@ -1,0 +1,86 @@
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.AvaloniaDialogService [sealed] implements Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IDialogService
+    .ctor()
+    Avalonia.Controls.WindowIcon DialogAppIcon { get;set; }
+    System.Threading.Tasks.Task ShowAlertAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogCategory category = 0)
+    System.Threading.Tasks.Task ShowAlertAsync(System.String title, System.String message)
+    System.Threading.Tasks.Task ShowAlertAsync(System.String title, System.String message, Avalonia.Controls.WindowIcon icon, System.Boolean isError = false)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.UnsavedChangesChoice> ShowUnsavedChangesAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message)
+    System.Threading.Tasks.Task<System.Boolean> ShowSaveChangesDialogAsync(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ISaveChangesPrompt prompt)
+    System.Threading.Tasks.Task<System.Nullable<System.Boolean>> ShowConfirmAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogCategory category = 1, System.String confirmLabel = "Confirm", System.String cancelLabel = "Cancel")
+    System.Threading.Tasks.Task<System.Nullable<System.Boolean>> ShowConfirmAsync(System.String title, System.String message, System.String confirmLabel = "Confirm", System.String cancelLabel = "Cancel")
+    System.Threading.Tasks.Task<System.String> PickFileAsync(System.String title = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter> filters = null)
+    System.Threading.Tasks.Task<System.String> PickFolderAsync(System.String title = null)
+    System.Threading.Tasks.Task<System.String> PickSaveFileAsync(System.String title, System.String defaultFileName, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter> filters = null)
+    System.Threading.Tasks.Task<System.String> ShowInputAsync(System.String title, System.String prompt, System.String placeholder = null)
+    System.Threading.Tasks.Task<System.String> ShowInputAsync(System.String title, System.String prompt, System.String placeholder, Avalonia.Controls.WindowIcon icon)
+    System.Void RegisterSaveChangesDialog(System.Func<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ISaveChangesPrompt, Avalonia.Controls.Window, System.Threading.Tasks.Task<System.Boolean>> factory)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.Converters.PermissionOutcomeToBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Services.Converters.PermissionOutcomeToBrushConverter Instance { get; }
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.DefaultEnvironmentProvider [sealed] implements Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IEnvironmentProvider
+    .ctor()
+    System.Collections.IDictionary GetVariables(System.EnvironmentVariableTarget target)
+    System.Void SetVariable(System.String name, System.String value, System.EnvironmentVariableTarget target)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.DefaultShareService [sealed] implements Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IShareService
+    .ctor(System.Func<System.Diagnostics.ProcessStartInfo, System.Diagnostics.Process> processLauncher = null)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome> ShareFileAsync(System.String title, System.String filePath)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome> ShareTextAsync(System.String title, System.String text, System.String uri = null)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter>
+    .ctor(System.String Name, System.Collections.Generic.IReadOnlyList<System.String> Extensions)
+    Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<System.String> Extensions { get;init; }
+    System.Int32 GetHashCode()
+    System.String Name { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Name, out System.Collections.Generic.IReadOnlyList<System.String> Extensions)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter left, Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter left, Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter right)
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IDialogService
+    System.Threading.Tasks.Task ShowAlertAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogCategory category = 0)
+    System.Threading.Tasks.Task ShowAlertAsync(System.String title, System.String message)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.UnsavedChangesChoice> ShowUnsavedChangesAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message)
+    System.Threading.Tasks.Task<System.Boolean> ShowSaveChangesDialogAsync(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ISaveChangesPrompt prompt)
+    System.Threading.Tasks.Task<System.Nullable<System.Boolean>> ShowConfirmAsync(System.String title, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage message, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogCategory category = 1, System.String confirmLabel = "Confirm", System.String cancelLabel = "Cancel")
+    System.Threading.Tasks.Task<System.Nullable<System.Boolean>> ShowConfirmAsync(System.String title, System.String message, System.String confirmLabel = "Confirm", System.String cancelLabel = "Cancel")
+    System.Threading.Tasks.Task<System.String> PickFileAsync(System.String title = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter> filters = null)
+    System.Threading.Tasks.Task<System.String> PickFolderAsync(System.String title = null)
+    System.Threading.Tasks.Task<System.String> PickSaveFileAsync(System.String title, System.String defaultFileName, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.FilePickerFilter> filters = null)
+    System.Threading.Tasks.Task<System.String> ShowInputAsync(System.String title, System.String prompt, System.String placeholder = null)
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IEnvironmentProvider
+    System.Collections.IDictionary GetVariables(System.EnvironmentVariableTarget target)
+    System.Void SetVariable(System.String name, System.String value, System.EnvironmentVariableTarget target)
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IPermissionPathPicker
+    System.Threading.Tasks.Task<System.String> PickFileAsync()
+    System.Threading.Tasks.Task<System.String> PickFolderAsync()
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ISaveChangesPrompt
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IShareService
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome> ShareFileAsync(System.String title, System.String filePath)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome> ShareTextAsync(System.String title, System.String text, System.String uri = null)
+interface Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IShellLauncher
+    System.Boolean LaunchTerminalWithCommand(System.String command)
+    System.Void LaunchUrl(System.String url)
+    System.Void OpenInDefaultEditor(System.String filePath)
+    System.Void RevealInFileManager(System.String filePath)
+enum Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome : System.Int32
+    CopiedToClipboard = 2
+    Failed = 0
+    OpenedInBrowser = 3
+    OpenedMailClient = 4
+    RevealedInFileManager = 5
+    Unavailable = 1
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShellLauncher [sealed] implements Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IShellLauncher
+    System.Boolean LaunchTerminalWithCommand(System.String command)
+    System.Void LaunchUrl(System.String url)
+    System.Void OpenInDefaultEditor(System.String filePath)
+    System.Void RevealInFileManager(System.String filePath)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShellLauncher Instance
+enum Bennewitz.Ninja.LayeredEditors.Avalonia.Services.UnsavedChangesChoice : System.Int32
+    Cancel = 2
+    DontSave = 1
+    Save = 0

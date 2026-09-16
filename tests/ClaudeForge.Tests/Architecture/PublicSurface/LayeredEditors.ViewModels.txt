@@ -1,0 +1,184 @@
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
+class Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage>
+    .ctor(System.String VarName)
+    Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.String VarName { get;init; }
+    System.Void Deconstruct(out System.String VarName)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage left, Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage left, Bennewitz.Ninja.LayeredEditors.Messages.NavigateToEnvVarMessage right)
+class Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage>
+    .ctor(System.String GroupTitle, System.String PropertyFilter = null)
+    Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String GroupTitle { get;init; }
+    System.String PropertyFilter { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String GroupTitle, out System.String PropertyFilter)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage left, Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage left, Bennewitz.Ninja.LayeredEditors.Messages.NavigateToNavGroupMessage right)
+class Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage>
+    .ctor(System.String Text, Bennewitz.Ninja.LayeredEditors.Messages.StatusSeverity Severity)
+    Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.Messages.StatusSeverity Severity { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Text { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Text, out Bennewitz.Ninja.LayeredEditors.Messages.StatusSeverity Severity)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage left, Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage left, Bennewitz.Ninja.LayeredEditors.Messages.ShowStatusMessage right)
+enum Bennewitz.Ninja.LayeredEditors.Messages.StatusSeverity : System.Int32
+    Success = 0
+    Warning = 1
+class Bennewitz.Ninja.LayeredEditors.ViewModels.BooleanPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Boolean IsValueSet { get; }
+    System.Nullable<System.Boolean> Value { get;set; }
+    System.Object ToValue()
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+class Bennewitz.Ninja.LayeredEditors.ViewModels.CompositePropertyEditorFactory [sealed] : Bennewitz.Ninja.LayeredEditors.ViewModels.DefaultPropertyEditorFactory implements Bennewitz.Ninja.LayeredEditors.ViewModels.IPropertyEditorFactory
+    .ctor()
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel Create(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext context = null)
+    System.Void Register(System.Func<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema, System.Boolean> matcher, System.Func<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext, Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> factory)
+class Bennewitz.Ninja.LayeredEditors.ViewModels.DefaultPropertyEditorFactory implements Bennewitz.Ninja.LayeredEditors.ViewModels.IPropertyEditorFactory
+    .ctor()
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel Create(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext context = null)
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel CreateObjectEditor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext context)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> CreateForGroup(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema> schemas, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext context = null)
+    const System.String NoStructuredEditorNotice
+class Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption>
+    .ctor(System.String Value, System.String Description)
+    Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String ToString()
+    System.String Value { get;init; }
+    System.Void Deconstruct(out System.String Value, out System.String Description)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption left, Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption left, Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption right)
+class Bennewitz.Ninja.LayeredEditors.ViewModels.EnumPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Boolean AllowsFreeForm { get; }
+    System.Boolean IsStrictEnum { get; }
+    System.Boolean IsValueSet { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.EnumOption> EnumOptionItems { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> EnumOptions { get; }
+    System.Object ToValue()
+    System.String SelectedValue { get;set; }
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+interface Bennewitz.Ninja.LayeredEditors.ViewModels.IChildEditorHost
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> Children { get; }
+interface Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment AssessDanger(System.String jsonPath)
+interface Bennewitz.Ninja.LayeredEditors.ViewModels.IPropertyEditorFactory
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel Create(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext context = null)
+class Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(System.String title, System.String icon = null, System.String description = null)
+    System.Boolean IsDivider { get;init; }
+    System.Boolean IsExpanded { get;set; }
+    System.Boolean IsLeaf { get; }
+    System.Boolean IsSelected { get;set; }
+    System.Boolean IsTopLevel { get;init; }
+    System.Collections.ObjectModel.ObservableCollection<Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel> Children { get; }
+    System.Object Editor { get;init; }
+    System.String Badge { get;set; }
+    System.String BadgeTooltip { get;set; }
+    System.String Description { get; }
+    System.String Icon { get; }
+    System.String NodeId { get;init; }
+    System.String Title { get; }
+class Bennewitz.Ninja.LayeredEditors.ViewModels.NumberPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Boolean IsInteger { get; }
+    System.Boolean IsValueSet { get; }
+    System.Nullable<System.Double> Maximum { get; }
+    System.Nullable<System.Double> Minimum { get; }
+    System.Nullable<System.Double> Value { get;set; }
+    System.Object ToValue()
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+class Bennewitz.Ninja.LayeredEditors.ViewModels.ObjectPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IChildEditorHost, Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> children, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace workspace = null)
+    System.Boolean IsExpanded { get;set; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> Children { get; }
+    System.Object ToValue()
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+class Bennewitz.Ninja.LayeredEditors.ViewModels.PathPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope, System.Func<System.Threading.Tasks.Task<System.String>> browseDialog = null)
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand BrowseCommand { get; }
+    System.Boolean IsValueSet { get; }
+    System.Object ToValue()
+    System.String Value { get;set; }
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+class Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel [abstract] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment AssessDanger(System.String jsonPath)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Danger { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier DangerClassifier { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema Schema { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope EditingScope { get;set; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope EffectiveScope { get;set; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope InheritedFromScope { get;set; }
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel AttachDangerClassifier(Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier classifier)
+    CommunityToolkit.Mvvm.Input.IRelayCommand ResetToInheritedCommand { get; }
+    System.Boolean CanReset { get; }
+    System.Boolean HasDangerSeverity { get; }
+    System.Boolean HasInheritedFromOtherScope { get; }
+    System.Boolean IsDangerNow { get; }
+    System.Boolean IsDeprecated { get; }
+    System.Boolean IsLocked { get; }
+    System.Boolean IsModified { get;set; }
+    System.Boolean IsNew { get; }
+    System.Boolean IsOverridden { get;set; }
+    System.Boolean IsSetAnywhere { get; }
+    System.Boolean IsUndocumented { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope> OtherScopesWithData { get;set; }
+    System.Object ToValue()
+    System.String DangerAccessibleText { get; }
+    System.String Description { get; }
+    System.String DisplayName { get; }
+    System.String HeaderActionText { get;set; }
+    System.String InheritedDisplay { get;set; }
+    System.String Path { get; }
+    System.String UnsupportedShapeNotice { get;set; }
+    System.String Watermark { get; }
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+    System.Void RecomputeDanger()
+    System.Void ResetToInherited()
+    System.Void TrackValueSet(System.Boolean isSet)
+    System.Void UpdateInheritedDisplay(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void UpdateOtherScopesWithData(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Windows.Input.ICommand HeaderActionCommand { get;set; }
+class Bennewitz.Ninja.LayeredEditors.ViewModels.StringArrayPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    CommunityToolkit.Mvvm.Input.IRelayCommand AddItemCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand<System.String> RemoveItemCommand { get; }
+    System.Boolean IsValueSet { get; }
+    System.Collections.ObjectModel.ObservableCollection<System.String> Items { get; }
+    System.Object ToValue()
+    System.String AddItemWatermark { get; }
+    System.String NewItemText { get;set; }
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()
+class Bennewitz.Ninja.LayeredEditors.ViewModels.StringPropertyEditorViewModel : Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel implements Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema schema, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Boolean IsValueSet { get; }
+    System.Object ToValue()
+    System.String Value { get;set; }
+    System.Void LoadFromValue(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope editingScope)
+    System.Void OnResetToInherited()

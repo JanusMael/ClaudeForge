@@ -1,0 +1,600 @@
+class Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore [abstract] implements Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient, System.IDisposable
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope defaultScope, Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry schemaRegistry, Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace preLoadedWorkspace = null, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter configWriter = null)
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter ConfigWriter { get; }
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IMergePolicy MergePolicy { get; }
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor Product { get; }
+    Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry SchemaRegistryInstance { get; }
+    Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope DefaultScope { get; }
+    Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder Scopes { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.IBackupClient Backup { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.IBackupClient CreateBackupClient()
+    Bennewitz.Ninja.AgentForge.Sdk.Env.IEnvAccessor Env { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.McpServers.IMcpServersAccessor McpServers { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintService FootprintService { get;set; }
+    System.Boolean AutoSave { get;set; }
+    System.Boolean HasUnsavedChanges { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverFiles(System.String projectRoot)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> CachedSchemaNodes { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> EditableScopes { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotUserMemoryFiles(System.String projectRoot = null)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult> SearchSchema(System.String query, System.Int32 maxResults = 50)
+    System.Threading.Tasks.Task DeleteFootprintCategoryAsync(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task DeleteProjectTranscriptsAsync(System.String mangledName, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task OpenAsync(System.String projectRoot, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task ReloadAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task RemoveValueAsync(System.String path, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SaveAsync(System.Boolean force, System.String headerComment, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SaveAsync(System.Boolean force, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SetValueAsync<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SetValueAsync<T>(System.String path, T value, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Boolean> SetValueIfChangedAsync<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAllAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>> GetFootprintStatsAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.String> ReadMemoryFileAsync(System.String absolutePath, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<T> GetEffectiveAsync<T>(System.String path, System.Threading.CancellationToken ct)
+    System.Void Dispose()
+    System.Void RemoveValue(System.String path, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    System.Void SetValue<T>(System.String path, T value)
+    System.Void SetValue<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    T GetEffective<T>(System.String path)
+    event System.EventHandler<Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs> Changed
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive>
+    .ctor(System.String FilePath, System.DateTimeOffset CreatedUtc, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest Manifest)
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest Manifest { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive other)
+    System.Boolean Equals(System.Object obj)
+    System.DateTimeOffset CreatedUtc { get;init; }
+    System.Int32 GetHashCode()
+    System.String FilePath { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String FilePath, out System.DateTimeOffset CreatedUtc, out Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest Manifest)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive right)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest>
+    .ctor(System.String Kind, System.Int32 SchemaVersion, System.DateTime CreatedUtc, System.String Platform, System.String AppVersion, Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode, System.Collections.Generic.IReadOnlyList<System.String> Clients, System.Collections.Generic.IReadOnlyList<System.String> Projects, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry> Worktrees, System.Boolean IncludedCredentials, System.Int64 SizeBytes, System.Int32 ItemCount, System.Collections.Generic.IReadOnlyList<System.String> Warnings)
+    Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IncludedCredentials { get;init; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry> Worktrees { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Clients { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Projects { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Warnings { get;init; }
+    System.DateTime CreatedUtc { get;init; }
+    System.Int32 GetHashCode()
+    System.Int32 ItemCount { get;init; }
+    System.Int32 SchemaVersion { get;init; }
+    System.Int64 SizeBytes { get;init; }
+    System.String AppVersion { get;init; }
+    System.String Kind { get;init; }
+    System.String Platform { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Kind, out System.Int32 SchemaVersion, out System.DateTime CreatedUtc, out System.String Platform, out System.String AppVersion, out Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode, out System.Collections.Generic.IReadOnlyList<System.String> Clients, out System.Collections.Generic.IReadOnlyList<System.String> Projects, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry> Worktrees, out System.Boolean IncludedCredentials, out System.Int64 SizeBytes, out System.Int32 ItemCount, out System.Collections.Generic.IReadOnlyList<System.String> Warnings)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupManifest right)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress>
+    .ctor(System.Int32 Step, System.Int32 Total, System.String Message, System.Int64 BytesWritten)
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.Int32 Step { get;init; }
+    System.Int32 Total { get;init; }
+    System.Int64 BytesWritten { get;init; }
+    System.String Message { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.Int32 Step, out System.Int32 Total, out System.String Message, out System.Int64 BytesWritten)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress right)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgressHandler [sealed] : System.MulticastDelegate implements System.ICloneable, System.Runtime.Serialization.ISerializable
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress progress, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.ValueTask EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.ValueTask Invoke(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgress progress)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest>
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode, System.String OutputDirectory, System.Boolean IncludeCredentials, System.Collections.Generic.IReadOnlyList<System.String> ExplicitProjectDirs = null, System.Int32 KeepLast = 10)
+    Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IncludeCredentials { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> ExplicitProjectDirs { get;init; }
+    System.Int32 GetHashCode()
+    System.Int32 KeepLast { get;init; }
+    System.String OutputDirectory { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode, out System.String OutputDirectory, out System.Boolean IncludeCredentials, out System.Collections.Generic.IReadOnlyList<System.String> ExplicitProjectDirs, out System.Int32 KeepLast)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest right)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry>
+    .ctor(System.String ProjectRoot, System.String WorktreePath)
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String ProjectRoot { get;init; }
+    System.String ToString()
+    System.String WorktreePath { get;init; }
+    System.Void Deconstruct(out System.String ProjectRoot, out System.String WorktreePath)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry left, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupWorktreeEntry right)
+interface Bennewitz.Ninja.AgentForge.Sdk.Backup.IBackupClient
+    System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive> CreateAsync(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupRequest request, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgressHandler onProgress, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult> RestoreAsync(Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive archive, Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupProgressHandler onProgress, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Backup.BackupArchive>> ListAsync(System.String directory, System.Threading.CancellationToken ct)
+class Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult>
+    .ctor(System.Boolean Success, System.String Message, System.Int32 FilesRestored, System.Collections.Generic.IReadOnlyList<System.String> Skipped, System.Collections.Generic.IReadOnlyList<System.String> Failures)
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean Success { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Failures { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Skipped { get;init; }
+    System.Int32 FilesRestored { get;init; }
+    System.Int32 GetHashCode()
+    System.String Message { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.Boolean Success, out System.String Message, out System.Int32 FilesRestored, out System.Collections.Generic.IReadOnlyList<System.String> Skipped, out System.Collections.Generic.IReadOnlyList<System.String> Failures)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult left, Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult left, Bennewitz.Ninja.AgentForge.Sdk.Backup.RestoreResult right)
+enum Bennewitz.Ninja.AgentForge.Sdk.ClientChangeKind : System.Int32
+    Mutation = 0
+    Reloaded = 2
+    Saved = 1
+class Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs>
+    .ctor(Bennewitz.Ninja.AgentForge.Sdk.ClientChangeKind Kind, System.String Path)
+    Bennewitz.Ninja.AgentForge.Sdk.ClientChangeKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Path { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Sdk.ClientChangeKind Kind, out System.String Path)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs left, Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs left, Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs right)
+enum Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind : System.Int32
+    Added = 0
+    Modified = 2
+    Removed = 1
+class Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.JsonFormatting
+    const System.Int32 DefaultMaxChars
+    const System.Int32 DefaultMaxLines
+    const System.String TruncationFooter
+    static System.Boolean LooksLikeJson(System.String value)
+    static System.String Cap(System.String text, System.Int32 maxLines = 30, System.Int32 maxChars = 2000)
+    static System.String TryPrettyPrint(System.String rawJson)
+class Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff>
+    .ctor(System.String Key, Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind Kind, System.String OldValue, System.String NewValue)
+    Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Key { get;init; }
+    System.String NewValue { get;init; }
+    System.String OldValue { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Key, out Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind Kind, out System.String OldValue, out System.String NewValue)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff left, Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff left, Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.PropertyDiff right)
+class Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.SensitiveKeys
+    const System.String RedactedMarker
+    static System.Boolean IsSensitive(System.String key)
+class Bennewitz.Ninja.AgentForge.Sdk.Dialogs.SdkDialogs
+    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage NotInstalled(System.String productName, System.String installUrl)
+    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage SaveFailed(System.String targetPath, System.String errorMessage)
+    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage SaveSucceeded(System.Collections.Generic.IReadOnlyList<System.String> writtenPaths)
+    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage SchemaValidationFailed(System.String fieldDescription, System.String validationMessage, System.String docsUrl = null)
+class Bennewitz.Ninja.AgentForge.Sdk.Env.EnvVarKey
+    const System.String AnthropicModel
+    const System.String DisableAutoMemory
+    const System.String DisableAutoUpdater
+    const System.String MaxOutputTokens
+    const System.String MaxThinkingTokens
+    static System.Collections.Generic.IReadOnlyList<System.String> AllWellKnown { get; }
+interface Bennewitz.Ninja.AgentForge.Sdk.Env.IEnvAccessor
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> All { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> AllAt(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    System.Nullable<System.Boolean> DisableAutoMemory { get;set; }
+    System.Nullable<System.Boolean> DisableAutoUpdater { get;set; }
+    System.Nullable<System.Int32> MaxOutputTokens { get;set; }
+    System.Nullable<System.Int32> MaxThinkingTokens { get;set; }
+    System.String AnthropicModel { get;set; }
+    System.String Get(System.String varName)
+    System.String GetAt(System.String varName, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    System.Void Set(System.String varName, System.String value)
+    System.Void SetAt(System.String varName, System.String value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+interface Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient implements System.IDisposable
+    Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope DefaultScope { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Backup.IBackupClient Backup { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Env.IEnvAccessor Env { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.McpServers.IMcpServersAccessor McpServers { get; }
+    System.Boolean AutoSave { get;set; }
+    System.Boolean HasUnsavedChanges { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> EditableScopes { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotUserMemoryFiles(System.String projectRoot = null)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult> SearchSchema(System.String query, System.Int32 maxResults = 50)
+    System.Threading.Tasks.Task DeleteFootprintCategoryAsync(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task DeleteProjectTranscriptsAsync(System.String mangledName, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task OpenAsync(System.String projectRoot, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task ReloadAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task RemoveValueAsync(System.String path, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SaveAsync(System.Boolean force, System.String headerComment, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SaveAsync(System.Boolean force, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SetValueAsync<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task SetValueAsync<T>(System.String path, T value, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Boolean> SetValueIfChangedAsync<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAllAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>> GetFootprintStatsAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.String> ReadMemoryFileAsync(System.String absolutePath, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<T> GetEffectiveAsync<T>(System.String path, System.Threading.CancellationToken ct)
+    System.Void RemoveValue(System.String path, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    System.Void SetValue<T>(System.String path, T value)
+    System.Void SetValue<T>(System.String path, T value, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    T GetEffective<T>(System.String path)
+    event System.EventHandler<Bennewitz.Ninja.AgentForge.Sdk.ClientChangedEventArgs> Changed
+interface Bennewitz.Ninja.AgentForge.Sdk.McpServers.IMcpServersAccessor
+    Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer Get(System.String name)
+    System.Boolean Remove(System.String name)
+    System.Collections.Generic.IReadOnlyDictionary<System.String, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer> All { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer> GetAt(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    System.Void Clear()
+    System.Void Set(System.String name, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer server)
+class Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer>
+    .ctor(System.String Name, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpTransport Transport, System.String Command = null, System.Collections.Generic.IReadOnlyList<System.String> Args = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Env = null, System.String Url = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers = null, System.String Description = null)
+    Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpTransport Transport { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Env { get;init; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Args { get;init; }
+    System.Int32 GetHashCode()
+    System.String Command { get;init; }
+    System.String Description { get;init; }
+    System.String Name { get;init; }
+    System.String ToString()
+    System.String Url { get;init; }
+    System.Void Deconstruct(out System.String Name, out Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpTransport Transport, out System.String Command, out System.Collections.Generic.IReadOnlyList<System.String> Args, out System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Env, out System.String Url, out System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Headers, out System.String Description)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer left, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer left, Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer right)
+enum Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpTransport : System.Int32
+    Sse = 1
+    Stdio = 0
+    StreamableHttp = 2
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter>
+    .ctor(System.String Name, System.String Description, System.Collections.Generic.IReadOnlyList<System.String> Tools, System.String Model)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<System.String> Tools { get;init; }
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String Model { get;init; }
+    System.String Name { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Name, out System.String Description, out System.Collections.Generic.IReadOnlyList<System.String> Tools, out System.String Model)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter From(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter fm)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.AgentFrontMatter right)
+    static System.Collections.Generic.IReadOnlyList<System.String> KnownKeys { get; }
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths [sealed]
+    .ctor(System.String userProfile)
+    System.String ClaudeHome { get; }
+    System.String ClaudeJsonPath { get; }
+    System.String CredentialsPath { get; }
+    System.String ManagedSettingsDropInDir { get; }
+    System.String ManagedSettingsPath { get; }
+    System.String UserMcpPath { get; }
+    System.String UserProfile { get; }
+    System.String UserSettingsPath { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths Default { get; }
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry>
+    .ctor(System.String AbsolutePath, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category, Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope Scope, System.String DisplayName, System.String Source, System.Boolean IsWritable, System.Int64 SizeBytes, System.DateTime LastWriteUtc)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope Scope { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsWritable { get;init; }
+    System.DateTime LastWriteUtc { get;init; }
+    System.Int32 GetHashCode()
+    System.Int64 SizeBytes { get;init; }
+    System.String AbsolutePath { get;init; }
+    System.String DisplayName { get;init; }
+    System.String Source { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String AbsolutePath, out Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category, out Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope Scope, out System.String DisplayName, out System.String Source, out System.Boolean IsWritable, out System.Int64 SizeBytes, out System.DateTime LastWriteUtc)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry left, Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry left, Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry right)
+enum Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope : System.Int32
+    Plugin = 2
+    Project = 1
+    User = 0
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryService
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry> Snapshot(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, System.String projectRoot)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry> Snapshot(System.String projectRoot = null)
+    static System.String LoadDescription(System.String absolutePath)
+    static System.Threading.Tasks.Task<System.String> ReadAsync(System.String absolutePath, System.Threading.CancellationToken ct)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog [sealed]
+    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition> definitions)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory CategoryAt(System.Int32 ordinal)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition DefinitionAt(System.Int32 ordinal)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory> All { get; }
+    System.Int32 Count { get; }
+    System.Nullable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory> TryGetById(System.String id)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog Default { get; }
+struct Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory>
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog Catalog { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition Definition { get; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsInStandardBackup { get; }
+    System.Int32 GetHashCode()
+    System.Int32 Ordinal { get; }
+    System.String Id { get; }
+    System.String ToString()
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory BashCommandLog { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory CostTrackerLog { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory FileEditHistory { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory PromptHistory { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory SessionMetadata { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory SessionTranscripts { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory Todos { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory right)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory> All { get; }
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition>
+    .ctor(System.String Id, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource> Sources, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource Anchor, System.Boolean IsInStandardBackup)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource Anchor { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsInStandardBackup { get;init; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource> Sources { get;init; }
+    System.Int32 GetHashCode()
+    System.String Id { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Id, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource> Sources, out Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource Anchor, out System.Boolean IsInStandardBackup)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryDefinition right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>
+    .ctor(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory Category, System.String AbsolutePath, System.Int32 FileCount, System.Int64 TotalBytes, System.Boolean IsInStandardBackup)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory Category { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsInStandardBackup { get;init; }
+    System.Int32 FileCount { get;init; }
+    System.Int32 GetHashCode()
+    System.Int64 TotalBytes { get;init; }
+    System.String AbsolutePath { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory Category, out System.String AbsolutePath, out System.Int32 FileCount, out System.Int64 TotalBytes, out System.Boolean IsInStandardBackup)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots [sealed]
+    .ctor(System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> roots)
+    System.Collections.Generic.IReadOnlyCollection<System.String> Keys { get; }
+    System.String TryResolve(System.String key)
+    const System.String Home
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots Single(System.String key, System.String absolutePath)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintService [sealed]
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fs = null, Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths = null, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog catalog = null, System.Func<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots> roots = null)
+    System.Threading.Tasks.Task DeleteAsync(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task DeleteProjectTranscriptsAsync(System.String mangledName, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>> GetStatsAsync(System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(System.Threading.CancellationToken ct)
+    static System.Boolean IsInStandardBackup(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
+    static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
+    static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
+    static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots roots, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
+struct Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource>
+    .ctor(System.String RootKey, System.String RelativePath, System.String Pattern = "*", System.Boolean Recursive = true, System.Boolean IsFile = false)
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsFile { get;init; }
+    System.Boolean Recursive { get;init; }
+    System.Int32 GetHashCode()
+    System.String Pattern { get;init; }
+    System.String RelativePath { get;init; }
+    System.String Resolve(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots roots)
+    System.String RootKey { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String RootKey, out System.String RelativePath, out System.String Pattern, out System.Boolean Recursive, out System.Boolean IsFile)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource Directory(System.String rootKey, System.String relativePath, System.String pattern = "*", System.Boolean recursive = true)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource File(System.String rootKey, System.String relativePath)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter>
+    .ctor(System.Boolean Present, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode> Nodes, System.String Body)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter WithList(System.String key, System.Collections.Generic.IReadOnlyList<System.String> items)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter WithScalar(System.String key, System.String value)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter Without(System.String key)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Find(System.String key)
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean Present { get;init; }
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField> Fields { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode> Nodes { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> FindList(System.String key)
+    System.Int32 GetHashCode()
+    System.String Body { get;init; }
+    System.String FindScalar(System.String key)
+    System.String ToString()
+    System.Void Deconstruct(out System.Boolean Present, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode> Nodes, out System.String Body)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter None(System.String body)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode [sealed] : Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode>, System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode other)
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean PrintMembers(System.Text.StringBuilder builder)
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.Type EqualityContract { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterBlankNode right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode [sealed] : Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode>, System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
+    .ctor(System.String RawText)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode other)
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean PrintMembers(System.Text.StringBuilder builder)
+    System.Int32 GetHashCode()
+    System.String RawText { get;init; }
+    System.String ToString()
+    System.Type EqualityContract { get; }
+    System.Void Deconstruct(out System.String RawText)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterCommentNode right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField [sealed] : Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField>, System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
+    .ctor(System.String Key, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, System.String RawText)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField other)
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean PrintMembers(System.Text.StringBuilder builder)
+    System.Int32 GetHashCode()
+    System.String Key { get;init; }
+    System.String RawText { get;init; }
+    System.String ToString()
+    System.Type EqualityContract { get; }
+    System.Void Deconstruct(out System.String Key, out Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue Value, out System.String RawText)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterField right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode [abstract] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode>
+    .ctor()
+    .ctor(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode original)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean PrintMembers(System.Text.StringBuilder builder)
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.Type EqualityContract { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode left, Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterNode right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue>
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsList { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> List { get; }
+    System.Int32 GetHashCode()
+    System.String Scalar { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue OfList(System.Collections.Generic.IReadOnlyList<System.String> items)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatterValue OfScalar(System.String value)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.MemoryArtifactDeleter
+    static System.Threading.Tasks.Task<System.String> DeleteAsync(System.String absolutePath, System.Boolean isSkill, System.Threading.CancellationToken ct)
+    static System.ValueTuple<System.String, System.Int32, System.Int64> StatTarget(System.String absolutePath, System.Boolean isSkill, System.Int64 knownSize)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.MemoryFileWriter
+    static System.Threading.Tasks.Task WriteAsync(System.String targetPath, System.String content, System.Threading.CancellationToken ct)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats>
+    .ctor(System.String MangledName, System.String DisplayName, System.String AbsolutePath, System.Int32 FileCount, System.Int64 TotalBytes, System.DateTime LastWriteUtc)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats other)
+    System.Boolean Equals(System.Object obj)
+    System.DateTime LastWriteUtc { get;init; }
+    System.Int32 FileCount { get;init; }
+    System.Int32 GetHashCode()
+    System.Int64 TotalBytes { get;init; }
+    System.String AbsolutePath { get;init; }
+    System.String DisplayName { get;init; }
+    System.String MangledName { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String MangledName, out System.String DisplayName, out System.String AbsolutePath, out System.Int32 FileCount, out System.Int64 TotalBytes, out System.DateTime LastWriteUtc)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats left, Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats left, Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter>
+    .ctor(System.String Name, System.String Description)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String Name { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Name, out System.String Description)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter From(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter fm)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.SkillFrontMatter right)
+    static System.Collections.Generic.IReadOnlyList<System.String> KnownKeys { get; }
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter>
+    .ctor(System.String Description)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Description)
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter From(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter fm)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter left, Bennewitz.Ninja.AgentForge.Sdk.Memory.SlashCommandFrontMatter right)
+    static System.Collections.Generic.IReadOnlyList<System.String> KnownKeys { get; }
+enum Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory : System.Int32
+    Configuration = 9
+    CrossToolMemory = 8
+    Hook = 4
+    Plan = 5
+    PrimaryMemory = 0
+    ProjectMemory = 1
+    Rule = 6
+    Skill = 7
+    SlashCommand = 3
+    Subagent = 2
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile>
+    .ctor(System.String AbsolutePath, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category, System.String DisplayName, System.Int64 SizeBytes, System.DateTime LastWriteUtc, System.String Subtitle)
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category { get;init; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsDeletable { get; }
+    System.Boolean IsSkill { get; }
+    System.DateTime LastWriteUtc { get;init; }
+    System.Int32 GetHashCode()
+    System.Int64 SizeBytes { get;init; }
+    System.String AbsolutePath { get;init; }
+    System.String DisplayName { get;init; }
+    System.String Subtitle { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String AbsolutePath, out Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category, out System.String DisplayName, out System.Int64 SizeBytes, out System.DateTime LastWriteUtc, out System.String Subtitle)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile left, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile left, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile right)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryService
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotFiles(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, System.String projectRoot)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotFiles(System.String projectRoot = null)
+    static System.Threading.Tasks.Task<System.String> ReadAsync(System.String absolutePath, System.Threading.CancellationToken ct)
+class Bennewitz.Ninja.AgentForge.Sdk.Memory.YamlFrontMatter
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter Parse(System.String text)
+    static System.String Compose(Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter frontMatter)
+class Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult>
+    .ctor(System.String JsonPath, System.String Name, System.String Title, System.String Description, System.String Snippet)
+    Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String JsonPath { get;init; }
+    System.String Name { get;init; }
+    System.String Snippet { get;init; }
+    System.String Title { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String JsonPath, out System.String Name, out System.String Title, out System.String Description, out System.String Snippet)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult left, Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult left, Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult right)
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
