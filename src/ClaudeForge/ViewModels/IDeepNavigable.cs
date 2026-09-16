@@ -115,4 +115,24 @@ public interface IDeepNavigable
         DeepRestoreMode mode,
         object? transientState,
         CancellationToken ct);
+
+    /// <summary>
+    /// Re-apply just the tab from <paramref name="segments"/>, after layout has
+    /// settled.
+    /// <para>
+    /// Selecting a navigation node rebuilds the page's view, and that rebuild can
+    /// land <em>after</em> the synchronous part of a restore — leaving the tab on
+    /// whatever the page defaults to. The host therefore calls this once at
+    /// <c>DispatcherPriority.Loaded</c>. It must be cheap, synchronous and
+    /// idempotent: no I/O, and re-applying an already-correct tab is a no-op.
+    /// </para>
+    /// <para>
+    /// Default implementation does nothing, so a page whose position cannot be
+    /// clobbered by a rebuild need not implement it.
+    /// </para>
+    /// </summary>
+    /// <param name="segments">The same segments passed to <see cref="TryRestoreDeepPathAsync"/>.</param>
+    void ReapplyTab(IReadOnlyList<string> segments)
+    {
+    }
 }

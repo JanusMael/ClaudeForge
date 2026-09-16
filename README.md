@@ -238,6 +238,12 @@ pages nested under a product:
 | `agents-skills/skills/pdf@user` | …disambiguated when several sources ship a `pdf` skill |
 | `claude-code/permissions` | Claude Code → Permissions |
 | `claude-code/permissions/properties` | …on its Overview tab |
+| `claude-code/hooks/hooks.flow` | Hooks, on the Flow diagram tab |
+| `effective-settings/json` | Effective Settings, Raw JSON tab |
+| `backup-restore/restore` | Backup / Restore, Restore tab |
+
+Every settings page takes `properties`, `effective` and `json`; a page that
+contributes its own tab addresses it the same way, which is what `hooks.flow` is.
 
 **You don't have to compose these by hand.** Open an agent, skill, or command and use
 **Copy deep link** in its toolbar — that puts the exact path on your clipboard,
@@ -247,6 +253,11 @@ also how you hand someone else a pointer to a specific artifact.
 Page and tab ids are stable identifiers, not display labels, so a link keeps
 working in any language. A settings page's id is its sidebar name lower-cased with
 punctuation collapsed to `-` (`MCP Servers` → `mcp-servers`).
+
+In the `name@source` form, a plugin's source is itself a path, so its separators
+are written as `:` to keep the whole thing inside one segment —
+`math-olympiad@claude-plugins-official:plugins:math-olympiad`. **Copy deep link**
+does this for you; either spelling is accepted if you type one by hand.
 
 A path that doesn't work says so rather than failing quietly. A **malformed** one is
 reported on your terminal, with the valid pages listed:
