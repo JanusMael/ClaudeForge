@@ -13,15 +13,15 @@
 
 ---
 
-## Where things stand — 2026-09-15
+## Where things stand — 2026-09-16
 
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
-| Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-14. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
-| Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. `git rev-list --count HEAD..origin/main` = 0 |
+| Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-16. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
+| Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. ⛔⛔ **`git rev-list --count HEAD..origin/main` now reads 47, and that number is a LIE about drift.** `origin/main` has not moved since 2026-09-11 (`e0c4915`); the pre-rewrite tip is still 0 behind it. The 2026-09-16 history rewrite gave every already-merged `main` commit a new SHA on this branch, so git no longer recognises the originals. **The content is fully merged; only the identities differ.** ⚠ A future `git merge origin/main` will therefore try to replay 47 commits whose changes are already present — and this repo has already shipped two duplicate-attribute defects from *clean* auto-merges, which is exactly the shape that produces them. Treat any conflict there as duplication, not divergence, and diff before accepting |
 | Suite | **4,351 passed · 0 failed · 11 skipped**, Debug — 2026-09-15, 31 guards added across `F1`/`F2`/`F4`/`F6` plus the dead-token scan, and nothing else moved. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
@@ -40,14 +40,21 @@
    `E1` (`JsonC` preserves comments on save) first: newest library, no release behind it, and its
    failure mode destroys user content silently. **This is now the top of the list**, because the
    item that outranked it turned out not to exist.
-2. **The one open UI defect** — `F3` in
-   [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md). ⚠ It is a **public-surface** change:
-   `IShareService` ships in one of the eleven packages, so reporting the share OUTCOME is either an
-   additional member (non-breaking) or a changed signature (cleaner) — a deliberate call, not an
-   implementation detail. ⓘ **`F1`, `F2`, `F4` and `F6` are fixed, not open** — all three need a look at the running UI, which is why they join the retest list rather
-   than leaving it. ⚠ The old note that `F2` and `F4` are one job is spent: they were, and the
-   resolution was to split the caution palette by **role** rather than to find one colour that
-   satisfied both. There is no longer a token being pulled in two directions.
+2. **`F3`, the one open UI defect** — [`docs/RETEST-FINDINGS.md`](docs/RETEST-FINDINGS.md).
+   ⭐ **The design is SETTLED — build it, do not re-decide it** (see *Settled 2026-09-16*):
+   `IShareService.ShareTextAsync` and `ShareFileAsync` change SIGNATURE to return an **enum** of
+   what happened — clipboard / browser / mail client / unavailable / failed. Then
+   `EffectiveSettingsViewModel.ShareConfigAsync` picks a sentence per outcome and emits it through
+   the **typed** pill helpers. ⚠ Writing the legacy `StatusMessage` setter still compiles and
+   routes to `StatusKind.State` — grey, no icon, no auto-clear — so it is the wrong channel.
+   ⓘ Needs a resx key per sentence in **all nine** locale files, as `F6` did.
+   ⛔ Report honestly: `DefaultShareService.TryStart` currently swallows failures, so `Failed` has
+   to be wired, not assumed — a void return is *why* the Windows no-op survived unnoticed.
+
+   ⓘ **`F1`, `F2`, `F4` and `F6` are fixed, not open** — all four await a look at the running UI,
+   which is why they join the retest list rather than leaving it. ⚠ The old note that `F2` and `F4`
+   are one job is spent: they were, and the resolution was to split the caution palette by **role**
+   rather than to find one colour satisfying both. No token is being pulled two ways any more.
 3. **Decide on a PR.** The branch is pushed and level with origin; whether it gets a PR is still
    open, and opening one against `main` is a locked decision the maintainer has not made.
 4. **The first `packages-v*` tag.** ⚠ **The preflight that "passed" on 2026-09-14 exercised gates
