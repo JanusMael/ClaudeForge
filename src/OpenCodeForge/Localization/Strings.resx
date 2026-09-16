@@ -391,6 +391,18 @@
   <data name="StatusChooseBackupFolder" xml:space="preserve">
     <value>Choose an output folder first (click Browse next to the folder path).</value>
   </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Backup archive revealed in your file manager.</value>
+    <comment>Centre status pill after Share on a backup row revealed the archive in the platform's file manager. Supplied to the shared backup page via BackupPageText.</comment>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Sharing the archive is not available on this system.</value>
+    <comment>Centre status pill when sharing the archive could not be attempted. OpenCodeForge wires no share service today, so this is the reachable one. Not a failure, so the pill auto-clears.</comment>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Could not reveal the backup archive — see the log for details.</value>
+    <comment>Centre status pill when revealing the archive was attempted and did not work.</comment>
+  </data>
   <data name="StatusOpenCodeRunningFmt" xml:space="preserve">
     <value>[!] OpenCode is currently running ({0} process(es)). Some files may be locked during restore.</value>
   </data>

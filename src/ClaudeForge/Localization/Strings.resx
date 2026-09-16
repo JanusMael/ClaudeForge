@@ -1467,6 +1467,30 @@ New terminals will pick up the change; existing terminals need to be restarted. 
     <value>Could not share the configuration — see the log for details.</value>
     <comment>Centre status pill when a share path was attempted and did not work. Emitted as a Failure pill, which sticks until dismissed.</comment>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Log file revealed in your file manager.</value>
+    <comment>Centre status pill after Share log revealed the log file in the platform's file manager. Say revealed, not shared - no platform here opens a share sheet.</comment>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Sharing the log is not available on this system.</value>
+    <comment>Centre status pill when sharing the log could not be attempted - unsupported platform, or the log file is not on disk. Not a failure, so the pill auto-clears.</comment>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Could not reveal the log file — see the log for details.</value>
+    <comment>Centre status pill when revealing the log was attempted and did not work. Emitted as a Failure pill, which sticks until dismissed.</comment>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Backup archive revealed in your file manager.</value>
+    <comment>Centre status pill after Share on a backup row revealed the archive in the platform's file manager. Supplied to the shared backup page via BackupPageText.</comment>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Sharing the archive is not available on this system.</value>
+    <comment>Centre status pill when sharing the archive could not be attempted - no share service, unsupported platform, or the archive is gone. Not a failure.</comment>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Could not reveal the backup archive — see the log for details.</value>
+    <comment>Centre status pill when revealing the archive was attempted and did not work.</comment>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nothing to export — settings not loaded yet.</value>
   </data>

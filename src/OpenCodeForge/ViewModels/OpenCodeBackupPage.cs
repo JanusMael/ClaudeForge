@@ -158,6 +158,14 @@ internal static class OpenCodeBackupPage
             StatusChooseBackupFolder = Strings.StatusChooseBackupFolder,
             StatusAgentRunningFmt = Strings.StatusOpenCodeRunningFmt,
 
+            // ⚠ OpenCodeForge wires no share service today, so the reachable outcome here is
+            // Unavailable — and it now SAYS so rather than the button doing nothing. The other
+            // two are supplied because BackupPageText requires them, which is the point of
+            // `required`: the day a share service is wired, the sentences already exist.
+            StatusShareArchiveRevealed = Strings.StatusShareArchiveRevealed,
+            StatusShareArchiveUnavailable = Strings.StatusShareArchiveUnavailable,
+            StatusShareArchiveFailed = Strings.StatusShareArchiveFailed,
+
             TextCredentialsExplainer = Strings.TextCredentialsExplainer,
             TextCrossPlatformRestoreMiddle = Strings.TextCrossPlatformRestoreMiddle,
             TextCrossPlatformRestorePrefix = Strings.TextCrossPlatformRestorePrefix,

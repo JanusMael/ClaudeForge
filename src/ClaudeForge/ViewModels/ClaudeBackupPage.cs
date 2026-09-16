@@ -152,6 +152,13 @@ internal static class ClaudeBackupPage
             StatusChooseBackupFolder = Strings.StatusChooseBackupFolder,
             StatusAgentRunningFmt = Strings.StatusClaudeRunningFmt,
 
+            // Share on a backup row reveals the archive; it does not open a share sheet, because
+            // no platform here has one. Three sentences and not six: ShareFileAsync can only
+            // report revealed / unavailable / failed.
+            StatusShareArchiveRevealed = Strings.StatusShareArchiveRevealed,
+            StatusShareArchiveUnavailable = Strings.StatusShareArchiveUnavailable,
+            StatusShareArchiveFailed = Strings.StatusShareArchiveFailed,
+
             TextCredentialsExplainer = Strings.TextCredentialsExplainer,
             TextCrossPlatformRestoreMiddle = Strings.TextCrossPlatformRestoreMiddle,
             TextCrossPlatformRestorePrefix = Strings.TextCrossPlatformRestorePrefix,

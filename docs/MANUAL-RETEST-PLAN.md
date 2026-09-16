@@ -116,10 +116,15 @@ dismiss.
 channel, and it means the emission bypassed the typed helpers); or a success message on a machine
 where the clipboard did not actually change.
 
-ⓘ While you are there: **Share log** in the About dialog and **Share** on a backup row still
-acknowledge nothing on screen by design — see F3's note in
-[`RETEST-FINDINGS.md`](./RETEST-FINDINGS.md). Their outcome goes to `logs/app-*.txt` only. Not a
-regression; the decision on whether to give them pills too is open.
+**Also check the two siblings, which now report too:**
+
+- **Share log** — About dialog → *Share log*. Pass: the pill says the log file was revealed, and
+  Explorer opens with it selected.
+- **Share** on a backup row — right-click a row in the Restore tab. Pass: the pill says the
+  archive was revealed, and Explorer opens with it selected.
+
+⚠ Both say *revealed*, never *shared* — no platform here opens a share sheet, and claiming one is
+the defect. A pill reading "shared" is a **fail**.
 
 ### ☐ B2 · Diagnostics-window accessibility — *needs one action from you, then I run it*
 

@@ -1391,6 +1391,24 @@
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>无法共享配置 — 详情请查看日志。</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>日志文件已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>此系统不支持共享日志。</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>无法显示日志文件 — 详情请查看日志。</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>备份文件已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>此系统不支持共享备份文件。</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>无法显示备份文件 — 详情请查看日志。</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>没有可导出的内容 — 设置尚未加载。</value>
   </data>

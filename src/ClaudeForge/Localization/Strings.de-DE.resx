@@ -1381,6 +1381,24 @@ Neue Terminals übernehmen die Änderung; bestehende Terminals müssen neu gesta
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>Konfiguration konnte nicht geteilt werden — Details siehe Protokoll.</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Protokolldatei im Datei-Manager angezeigt.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Das Teilen des Protokolls ist auf diesem System nicht verfügbar.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Protokolldatei konnte nicht angezeigt werden — Details siehe Protokoll.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Sicherungsarchiv im Datei-Manager angezeigt.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Das Teilen des Archivs ist auf diesem System nicht verfügbar.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Sicherungsarchiv konnte nicht angezeigt werden — Details siehe Protokoll.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nichts zu exportieren — Einstellungen sind noch nicht geladen.</value>
   </data>

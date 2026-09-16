@@ -1381,6 +1381,24 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>No se pudo compartir la configuración — consulta el registro para más detalles.</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Archivo de registro mostrado en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Compartir el registro no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>No se pudo mostrar el archivo de registro — consulta el registro para más detalles.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Archivo de copia de seguridad mostrado en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Compartir la copia de seguridad no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>No se pudo mostrar la copia de seguridad — consulta el registro para más detalles.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nada que exportar — los ajustes aún no se han cargado.</value>
   </data>

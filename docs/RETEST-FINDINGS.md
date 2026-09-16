@@ -183,10 +183,18 @@ forced dark text stays readable in both variants.
 > read it. `ShareOutcomeTests` pins that with a launcher that reports "did not start" — and a
 > canary that made `TryStart` claim success reddened exactly the two tests that assert it.
 >
-> ⚠ **Two sibling surfaces are NOT fixed.** *Share log* (About) and *Share backup archive* both
-> have the same silent-success shape. Each now records its outcome in the log, which is what
-> makes them visible at all, but neither reaches the pill: About has no status channel, and
-> backup's is shared-library code whose user-visible text has to come from the host's resx.
+> ✅ **The two sibling surfaces are fixed too, in a second pass.** *Share log* (About) and *Share
+> backup archive* had the identical silent-success shape and now report through the same pill.
+> About gained its own `OnTerminalStatus` hook, wired at both cached construction sites; backup
+> already had one, and its three sentences come from the host's resx through `BackupPageText`,
+> the seam the progress phase labels already use. Both go through **one** mapper,
+> `FileShareStatus.Describe` — a switch written twice in two assemblies is two chances to answer
+> the same outcome differently.
+>
+> ⛔ **An outcome a file share cannot produce is reported as a FAILURE**, not borrowed as a
+> success. `ShareFileAsync` reveals a file on all three platforms; it cannot write a clipboard or
+> open a browser, so a service returning one is not honouring its contract — and saying "revealed
+> in your file manager" when it was not is the exact lie this finding is about.
 
 **Reported:** the copy works, but nothing acknowledges it. And **a modal is the wrong answer** —
 which matches this codebase: the centre status pill is the non-modal, auto-clearing channel.

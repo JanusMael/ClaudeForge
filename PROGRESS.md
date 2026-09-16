@@ -22,7 +22,7 @@
 | Working tree | clean |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-16. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **2026-09-14** — 25 commits of drift closed, 19 files conflicted. ⛔⛔ **`git rev-list --count HEAD..origin/main` now reads 47, and that number is a LIE about drift.** `origin/main` has not moved since 2026-09-11 (`e0c4915`); the pre-rewrite tip is still 0 behind it. The 2026-09-16 history rewrite gave every already-merged `main` commit a new SHA on this branch, so git no longer recognises the originals. **The content is fully merged; only the identities differ.** ⚠ A future `git merge origin/main` will therefore try to replay 47 commits whose changes are already present — and this repo has already shipped two duplicate-attribute defects from *clean* auto-merges, which is exactly the shape that produces them. Treat any conflict there as duplication, not divergence, and diff before accepting |
-| Suite | **4,367 passed · 0 failed · 11 skipped**, Debug — 2026-09-16, +16 for `F3`'s share-outcome guards and nothing else moved. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Suite | **4,379 passed · 0 failed · 11 skipped**, Debug — 2026-09-16, `+16` for `F3`'s share-outcome guards and `+12` for its two sibling surfaces; nothing else moved. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
@@ -69,10 +69,12 @@ deliberately. The `maui-windows` preflight removal was correct and must not be r
   keys across all nine locale files; `ShareOutcomeTests` is the guard. ⭐ `TryStart` returns `bool`
   now, so `Failed` is read from a measurement rather than assumed — a canary that made it claim
   success reddened exactly the two tests that assert it, and no others.
-  ⚠ **Two sibling surfaces were deliberately left**: *Share log* and *Share backup archive* have
-  the same silent-success shape and now log their outcome, but neither reaches the pill. Whether
-  they get one is open, and it is not free — About has no status channel, and backup is
-  shared-library code whose text must come from the host's resx.
+  ✅ **The two siblings are closed too**, in a second pass on request: *Share log* and *Share
+  backup archive* now report through the same pill. One mapper, `FileShareStatus.Describe`, for
+  both — they live in different assemblies, so a second switch would drift unnoticed. Backup's
+  three sentences come from the host's resx via `BackupPageText`, which means **OpenCodeForge
+  supplies them too**: it wires no share service, so its button now says *unavailable* instead of
+  doing nothing silently.
 - **`F3` changes `IShareService`'s SIGNATURE**, rather than adding a second member.
   `ShareTextAsync` returns what it actually did; `ShareFileAsync` gets the same treatment.
   ⓘ Breaking in name only: **one** production call site, one implementation, two test fakes, and

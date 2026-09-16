@@ -4745,6 +4745,61 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to Log file revealed in your file manager..
+        /// </summary>
+        public static string StatusShareLogRevealed {
+            get {
+                return ResourceManager.GetString("StatusShareLogRevealed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sharing the log is not available on this system..
+        /// </summary>
+        public static string StatusShareLogUnavailable {
+            get {
+                return ResourceManager.GetString("StatusShareLogUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not reveal the log file — see the log for details..
+        /// </summary>
+        public static string StatusShareLogFailed {
+            get {
+                return ResourceManager.GetString("StatusShareLogFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Backup archive revealed in your file manager..
+        /// </summary>
+        public static string StatusShareArchiveRevealed {
+            get {
+                return ResourceManager.GetString("StatusShareArchiveRevealed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sharing the archive is not available on this system..
+        /// </summary>
+        public static string StatusShareArchiveUnavailable {
+            get {
+                return ResourceManager.GetString("StatusShareArchiveUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not reveal the backup archive — see the log for details..
+        /// </summary>
+        public static string StatusShareArchiveFailed {
+            get {
+                return ResourceManager.GetString("StatusShareArchiveFailed", resourceCulture);
+            }
+        }
+        
+
+        /// <summary>
         ///   Looks up a localized string similar to Reload failed: {0}.
         /// </summary>
         public static string StatusReloadFailedFmt {

@@ -192,6 +192,29 @@ public sealed record BackupPageText
     public required string StatusChooseBackupFolder { get; init; }
 
     /// <summary>
+    /// Said after *Share* on a backup row revealed the archive in the platform's file manager.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Say "revealed", not "shared".</b> No platform here opens a share sheet — Explorer
+    /// selects the file, Finder does the same via <c>open -R</c>, Linux opens the containing
+    /// directory. Claiming a share is the defect these three members exist to stop.
+    /// </remarks>
+    public required string StatusShareArchiveRevealed { get; init; }
+
+    /// <summary>
+    /// Said when sharing the archive could not be attempted at all — no share service wired, an
+    /// unsupported platform, or an archive no longer on disk. ⚠ Not a failure: the pill clears
+    /// itself rather than waiting to be dismissed.
+    /// </summary>
+    public required string StatusShareArchiveUnavailable { get; init; }
+
+    /// <summary>
+    /// Said when revealing the archive was attempted and did not work. Emitted as a failure, so
+    /// it stays on screen until the user dismisses it.
+    /// </summary>
+    public required string StatusShareArchiveFailed { get; init; }
+
+    /// <summary>
     /// The agent is running and files may be locked; <c>{0}</c> = process count.
     /// </summary>
     /// <remarks>

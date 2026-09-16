@@ -1324,6 +1324,24 @@
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>Не удалось поделиться конфигурацией — подробности см. в журнале.</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Файл журнала показан в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Общий доступ к журналу недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Не удалось показать файл журнала — подробности см. в журнале.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Архив резервной копии показан в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Общий доступ к архиву недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Не удалось показать архив — подробности см. в журнале.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Нечего экспортировать — параметры ещё не загружены.</value>
   </data>

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -292,6 +293,10 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         string? logPath = _logPathProvider();
         if (logPath is null || _shareService is null)
         {
+            // ⚠ CanShareLog already guards both, so reaching here means the command was invoked
+            // around its CanExecute. Say so rather than returning quietly — silence is precisely
+            // what made this defect invisible.
+            ReportShareOutcome(ShareOutcome.Unavailable);
             return;
         }
 
@@ -299,18 +304,38 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         {
             Log.Information("[About] Share log requested: {LogPath}", logPath);
             ShareOutcome outcome = await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
-
-            // ⚠ Logged, not surfaced — and that is a gap, not a design. This page has no status
-            // channel of its own, so "Share log" is the same silent-success defect F3 fixed on
-            // Effective settings, one surface along. Recording the outcome is what makes it
-            // visible at all; giving it a pill needs an OnTerminalStatus hook here and wiring at
-            // both cached construction sites in MainWindowViewModel.
             Log.Information("[About] Share log outcome: {Outcome}", outcome);
+            ReportShareOutcome(outcome);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[About] Share log failed for {LogPath}", logPath);
+            ReportShareOutcome(ShareOutcome.Failed);
         }
+    }
+
+    /// <summary>
+    /// Raised with the terminal outcome of *Share log*, for the host to route to the centre
+    /// status pill: the sentence, and whether it is a failure.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Same shape and same reason as <c>BackupRestoreViewModel.OnTerminalStatus</c> and
+    /// <c>EffectiveSettingsViewModel</c>'s. This page has no status surface of its own, so
+    /// without the hook *Share log* acknowledged nothing at all — the F3 defect, one surface
+    /// along. ⓘ The two About view-models are CACHED and reused across reloads, so the host wires
+    /// this once at construction rather than on every navigation rebuild.
+    /// </remarks>
+    public Action<string, bool /* isFailure */>? OnTerminalStatus { get; set; }
+
+    private void ReportShareOutcome(ShareOutcome outcome)
+    {
+        (string text, bool isFailure) = FileShareStatus.Describe(
+            outcome,
+            Strings.StatusShareLogRevealed,
+            Strings.StatusShareLogUnavailable,
+            Strings.StatusShareLogFailed);
+
+        OnTerminalStatus?.Invoke(text, isFailure);
     }
 
     /// <summary>

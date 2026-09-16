@@ -387,6 +387,15 @@ public static class Strings
     /// <summary>“Choose an output folder first (click Browse next to the folder path).”</summary>
     public static string StatusChooseBackupFolder => Get(nameof(StatusChooseBackupFolder));
 
+    /// <summary>“Could not reveal the backup archive — see the log for details.”</summary>
+    public static string StatusShareArchiveFailed => Get(nameof(StatusShareArchiveFailed));
+
+    /// <summary>“Backup archive revealed in your file manager.”</summary>
+    public static string StatusShareArchiveRevealed => Get(nameof(StatusShareArchiveRevealed));
+
+    /// <summary>“Sharing the archive is not available on this system.”</summary>
+    public static string StatusShareArchiveUnavailable => Get(nameof(StatusShareArchiveUnavailable));
+
     /// <summary>“[!] OpenCode is currently running ({0} process(es)). Some files may be locked during…”</summary>
     public static string StatusOpenCodeRunningFmt => Get(nameof(StatusOpenCodeRunningFmt));
 

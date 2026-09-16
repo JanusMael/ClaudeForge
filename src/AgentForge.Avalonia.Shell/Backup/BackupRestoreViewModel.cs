@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -1055,17 +1056,25 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// <c>DefaultShareService</c>'s remarks — so the summary described a feature that did not
     /// exist on the platform most users run.
     /// <para>
-    /// ⚠ The outcome is logged and <b>not</b> surfaced, which is the same silent-success defect
-    /// as F3 one surface along. <see cref="OnTerminalStatus"/> is right here and would carry it;
-    /// what is missing is the sentence, because this is a shared library and its user-visible
-    /// text comes from the host's resx (as the progress phase labels already do).
+    /// ✅ The outcome now reaches the centre pill through <see cref="OnTerminalStatus"/>, the
+    /// same channel backup and restore already use. It could not before F3, because the service
+    /// returned <c>void</c> and had nothing to report; the sentences come from the host's resx,
+    /// as the progress phase labels do, because this assembly has none.
     /// </para>
     /// </remarks>
     [RelayCommand]
     private async Task ShareBackupAsync(BackupRowViewModel? row)
     {
-        if (row?.Entry is null || _shareService is null)
+        if (row?.Entry is null)
         {
+            // No row is not an outcome — the command was reached with nothing selected, and there
+            // is nothing to tell the user about. A missing SERVICE is different, and says so.
+            return;
+        }
+
+        if (_shareService is null)
+        {
+            ReportShareOutcome(ShareOutcome.Unavailable);
             return;
         }
 
@@ -1075,11 +1084,32 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
             ShareOutcome outcome = await _shareService.ShareFileAsync(row.DisplayName, row.Entry.ArchivePath);
             Log.Information("[Backup] Share outcome for {Archive}: {Outcome}",
                 row.Entry.FileName, outcome);
+            ReportShareOutcome(outcome);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[Backup] Share failed for {Archive}", row.Entry.FileName);
+            ReportShareOutcome(ShareOutcome.Failed);
         }
+    }
+
+    /// <summary>
+    /// Routes a share outcome to the centre status pill, in the host's words.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Deliberately does <b>not</b> touch the page-local <c>StatusMessage</c>. Share is reachable
+    /// from a context menu on a row, and the pill is the surface a user sees wherever they are
+    /// standing — which is the whole reason <see cref="OnTerminalStatus"/> exists.
+    /// </remarks>
+    private void ReportShareOutcome(ShareOutcome outcome)
+    {
+        (string text, bool isFailure) = FileShareStatus.Describe(
+            outcome,
+            _text.StatusShareArchiveRevealed,
+            _text.StatusShareArchiveUnavailable,
+            _text.StatusShareArchiveFailed);
+
+        OnTerminalStatus?.Invoke(text, isFailure);
     }
 
     /// <summary>

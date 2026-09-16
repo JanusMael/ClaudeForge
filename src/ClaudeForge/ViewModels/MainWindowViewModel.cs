@@ -637,6 +637,29 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// The shape every page's <c>OnTerminalStatus</c> hook is wired to: a sentence plus whether
+    /// it is a failure, routed to the pill that matches.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ One method rather than the same three-line lambda at four construction sites. It began
+    /// as backup/restore's alone; F3 added Effective settings, and *Share log* added the two
+    /// cached About view-models. A lambda copied four times is four chances to route a failure to
+    /// the success pill, where it would auto-clear after six seconds instead of waiting to be
+    /// dismissed.
+    /// </remarks>
+    private void RouteTerminalStatus(string text, bool isFailure)
+    {
+        if (isFailure)
+        {
+            SetStatusFailure(text);
+        }
+        else
+        {
+            SetStatusSuccess(text);
+        }
+    }
+
+    /// <summary>
     /// Convert an exception into a status-bar-safe message.  Strips
     /// absolute filesystem paths and truncates the message so the
     /// Failure pill (which sticks indefinitely until the user
@@ -4450,7 +4473,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _aboutCodeVm ??= new AboutEditorViewModel(
             AboutProduct.ClaudeCode,
             dialogService: DialogServiceForViewAccess,
-            shareService: _shareService);
+            shareService: _shareService)
+        {
+            // ⚠ Inside the `??=`, so it is wired once with the cached instance rather than on
+            // every navigation rebuild. Share log had no status surface at all before this.
+            OnTerminalStatus = RouteTerminalStatus,
+        };
         ccHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
             // Same id as the Claude Desktop sibling below \u2014 ids are unique per
@@ -4492,7 +4520,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _aboutDesktopVm ??= new AboutEditorViewModel(
             AboutProduct.ClaudeDesktop,
             dialogService: DialogServiceForViewAccess,
-            shareService: _shareService);
+            shareService: _shareService)
+        {
+            OnTerminalStatus = RouteTerminalStatus,
+        };
         dtHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
             NodeId = NavIdVersionInfo,
@@ -4525,17 +4556,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // Share outcomes reach the centre pill, exactly as backup/restore's do. Without
                 // this the page has no status surface at all — it does not even carry a
                 // page-local label — so the button would go on acknowledging nothing.
-                OnTerminalStatus = (text, isFailure) =>
-                {
-                    if (isFailure)
-                    {
-                        SetStatusFailure(text);
-                    }
-                    else
-                    {
-                        SetStatusSuccess(text);
-                    }
-                },
+                OnTerminalStatus = RouteTerminalStatus,
             },
             IsTopLevel = true,
         });
@@ -4706,20 +4727,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 IsAnyWorkspaceDirty = () => ComputeHasActualChanges(),
                 SaveAllWorkspaces = SaveForBackupOrRestoreAsync,
                 OnRestoreCompleted = ReloadAsync,
-                // route backup/restore terminal outcomes
-                // through the centre status bar pill in addition to
-                // the page-local label.
-                OnTerminalStatus = (text, isFailure) =>
-                {
-                    if (isFailure)
-                    {
-                        SetStatusFailure(text);
-                    }
-                    else
-                    {
-                        SetStatusSuccess(text);
-                    }
-                },
+                // route backup/restore terminal outcomes — and, since F3's siblings, the
+                // Share-archive outcome too — through the centre status bar pill in addition
+                // to the page-local label.
+                OnTerminalStatus = RouteTerminalStatus,
             };
             _backupVm.PersistentStateChanged += OnBackupStateChanged;
         }

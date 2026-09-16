@@ -1324,6 +1324,24 @@ Les nouveaux terminaux prendront en compte la modification ; les terminaux exist
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>Impossible de partager la configuration — consultez le journal pour plus de détails.</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Fichier journal affiché dans le gestionnaire de fichiers.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Le partage du journal n'est pas disponible sur ce système.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Impossible d'afficher le fichier journal — consultez le journal pour plus de détails.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Archive de sauvegarde affichée dans le gestionnaire de fichiers.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Le partage de l'archive n'est pas disponible sur ce système.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Impossible d'afficher l'archive de sauvegarde — consultez le journal pour plus de détails.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Rien à exporter — les paramètres ne sont pas encore chargés.</value>
   </data>

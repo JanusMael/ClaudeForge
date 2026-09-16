@@ -1381,6 +1381,24 @@ Novos terminais captarão a alteração; terminais existentes precisam ser reini
   <data name="StatusShareConfigFailed" xml:space="preserve">
     <value>Não foi possível compartilhar a configuração — consulte o log para mais detalhes.</value>
   </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Arquivo de log exibido no gerenciador de arquivos.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>O compartilhamento do log não está disponível neste sistema.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Não foi possível exibir o arquivo de log — consulte o log para mais detalhes.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Arquivo de backup exibido no gerenciador de arquivos.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>O compartilhamento do backup não está disponível neste sistema.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Não foi possível exibir o arquivo de backup — consulte o log para mais detalhes.</value>
+  </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nada a exportar — as configurações ainda não foram carregadas.</value>
   </data>
