@@ -219,6 +219,16 @@
              VM seeds it from the remembered tab → customizer default → first. -->
         <TabControl ItemsSource="{Binding Tabs}"
                     SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+            <!-- The name has to sit on the TabItem CONTAINER: UI Automation reports
+                 the container, and an unnamed one falls back to the bound item's
+                 ToString(), which announced every settings tab as the GroupTab type
+                 name. The ItemTemplate below names the header TextBlock, which is
+                 inside the container and not what gets reported. -->
+            <TabControl.Styles>
+                <Style Selector="TabItem" x:DataType="vm:GroupTab">
+                    <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+                </Style>
+            </TabControl.Styles>
             <TabControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:GroupTab">
                     <TextBlock Text="{Binding Header}"

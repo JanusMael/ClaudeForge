@@ -77,6 +77,16 @@ see the corresponding entry on the [Releases page](https://github.com/JanusMael/
   name (and help text where the label alone is ambiguous), the header links announce
   as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
   if a control lands without one.
+- **Screen readers announced every tab in the app as a class name.** A `TabItem` is
+  focusable and selectable, so a screen-reader user lands on one — but unnamed, UI
+  Automation falls back to the bound item's `ToString()`. Settings pages announced
+  their tabs as "Bennewitz.Ninja.ClaudeForge.ViewModels.GroupTab" and Agents & Skills
+  announced its own as "Avalonia.Controls.ScrollViewer". The accessibility guard
+  never caught it because `TabItem` was not in its list of interactive controls;
+  it is now, so this cannot come back. The tab strip on the settings pages names the
+  `TabItem` container rather than the header text inside it, which is what UI
+  Automation actually reports. No new strings — every tab already had a localized
+  header to announce.
 - **A deep link into a tab worked on exactly one page.** Only Agents & Skills
   implemented the deep-navigable contract, so every settings page — Hooks,
   Permissions, General, all of them — logged "not deep-navigable; 1 segment(s)
