@@ -83,7 +83,7 @@ and fixed by the same plan.
 
 ---
 
-## ▶ RESUME HERE — plans 00003 Phase A
+## ▶ RESUME HERE — plans 00003 Phase B
 
 ⛔ **[`plans/00002`](plans/00002-claude-code-real-config-locations.md) and
 [`plans/00003`](plans/00003-release-built-from-shared-packages.md) are APPROVED (2026-09-17) and
@@ -91,20 +91,55 @@ FROZEN.** Never edit them. Everything below is drift, which is what this file is
 
 **Phase 0 is DONE** — `2c84f47` (removal) and `1e41f87` (guard reconciliation).
 
+**Phase A is DONE** — 2026-09-17, all four steps, at HEAD `904df7d`.
+
+| Step | Result |
+|---|---|
+| A2 · eleven baselines unchanged | ✅ **No regeneration.** ⚠ The guard's premise assertion is only `Count > 0`, which would pass green if discovery found *one* of eleven — so the count was measured independently rather than trusted: 11 projects declare `<IsPackable>true</IsPackable>`, all 11 assemblies were beside the test, all 11 baselines matched. ⭐ The real evidence of no-regeneration is that **no `.txt.actual` was written** — that guard writes one on every mismatch, so a clean tree after the run is the measurement |
+| A3 · full Debug suite | ✅ **3,509 · 0 · 13** — the figure was **predicted before the run** so a smaller count would have been as legible as a larger one, and all **9** test projects reported (a project that silently fails to run is the failure this cross-check exists to catch) |
+| A4 · six-RID trim gate | ✅ **6/6, zero IL diagnostics.** ⚠ Zero is the same reading a broken detector gives, so the detector was canaried against synthetic `IL2026` and `NETSDK1144` lines and fired on both. `-c Release` takes the `PublishTrimmed=true` / `TrimMode=partial` branch and each RID produced a real ~27.7 MB single-file exe, so the gate measured a trimmed build rather than an untrimmed one |
+| A5 · package canary | ✅ **PASSED** at `0.0.0-local-20260917182607` — packed, restored through an isolated cache, full **Release** suite under `-p:UseSharedPackages=true` at the same **3,509 · 0 · 13**, then a real win-x64 self-contained publish |
+
 ### Next, in order
 
-1. **Phase A — confirm the eleven public-surface baselines are UNCHANGED.** No regeneration.
-   ⛔ **If one needs regenerating, stop.** It means something changed a shared library, and Phase A's
-   premise — that exactly one variable changes between here and the release — is false.
-2. **Phase B — the whole retest, all eight items.** ⛔ **The build under test must be PACKAGE MODE.**
-   Pack locally with `package-canary.ps1 -PackOnly -CanaryVersion <the intended CalVer>`, then
-   `dotnet publish -p:UseSharedPackages=true -p:SharedPackageVersion=<same>`. ⚠ **Not through
-   `src/publish/publish.ps1`**, which wipes `artifacts/localfeed` on purpose. ⓘ
-   [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md)'s *Build under test* row still names a
-   plain Release publish and **must be updated first**, or the next person retests the wrong thing.
-3. **Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are identical),
+1. **Phase B — the whole retest, all eight items.** ⛔ **The build under test must be PACKAGE MODE.**
+   ✅ [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md)'s *Build under test* row **has now been
+   updated** to say so — it previously named a plain Release publish, which would have retested a
+   `ProjectReference` artifact nobody ships. ⚠ Any exe built before that edit does not count,
+   including the `2026.3.917.1244` one the row used to advertise.
+2. **Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are identical),
    C1 preflight with a real `read:packages` token, C2 the tag. ⛔ C2 is irreversible.
-4. **Phase D**, then **Phase E** (00002 as the second package version).
+3. **Phase D**, then **Phase E** (00002 as the second package version).
+
+### ⭐ Decisions taken 2026-09-17 — locked, do not relitigate
+
+- **The release CalVer is chosen at the START of Phase B, not in advance.** Phase B's build must be
+  packed at the exact version the tag will carry, and the retest is driven by hand through the UI, so
+  pinning a day before the retest is ready just means re-packing. ⭐ Plan `00003` (line 51) already
+  settles the apparent risk: publishing `2026.3.920` and then `2026.3.925` is **ordinary**, and
+  "would cost a second version" is a *preference*, not a constraint. Only re-pushing an existing
+  version is impossible.
+- **A5 is re-run immediately before the C2 tag**, on the commit actually being tagged — not inherited
+  from this Phase A run. ⛔ C2 is irreversible and a published version can never be replaced, so the
+  five minutes buys away any argument about what was certified. ⚠ This is deliberately *stricter*
+  than "the delta looks docs-only": that judgment is exactly what should not be trusted at an
+  irreversible step.
+- **PR #65 was admin-merged into `main`** as `c149b82` (`AGENTS.md` only, +10/−4, all checks green).
+  ⓘ It does **not** touch the release path; `main` and this branch diverged long ago.
+
+### ⚠ Phase A drift — three things the plan did not name
+
+- ⛔ **The `gh` token on this machine has NO `read:packages` scope** (`repo`, `workflow`, `read:org`,
+  `read:user`…). **C1 cannot run until that exists**, and finding out at C1 means finding out one
+  step before the irreversible one. Provision the PAT before Phase C starts, not during it.
+- ✅ **`scripts/package-canary.ps1` line 6 was stale from Phase 0** — *"both apps, the four
+  product-specific libraries … all twelve test projects"*. Corrected to the one-app tree: the app,
+  its **two** product-specific libraries, the sample, **nine** test projects.
+- ⛔ **Line 10 of that same file was deliberately LEFT WRONG.** It still reads *"this canary, and the
+  release"*, which is finding **1** above verbatim — the release does not publish from package mode.
+  ⚠ It is **evidence, not a typo**: Phase D changes the behaviour, and the comment is corrected there
+  in the same change. Fixing the words now would erase the only in-repo trace of the defect while
+  leaving the defect.
 
 ### ⚠ Phase 0 drift — the approved plan's list was incomplete
 
