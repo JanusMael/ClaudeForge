@@ -9,8 +9,9 @@ verified items are listed once at the end and should not be repeated. Findings g
 
 | | |
 |---|---|
-| Build under test | `src/ClaudeForge/bin/Release/net10.0/win-x64/publish/ClaudeForge.exe` |
-| Currently running | ⓘ **Nothing, by default.** `artifacts/a11y-untrimmed/` holds an untrimmed build left over from the `F5` investigation; it is **no longer needed for the accessibility pass**, because `F5` is refuted and the shipping artifact exposes a full tree. Use the build under test |
+| Build under test | `src/ClaudeForge/bin/Release/net10.0/win-x64/publish/ClaudeForge.exe` — ⚠ **this path is not in the repository and does not survive a clean.** Produce it with `dotnet publish src/ClaudeForge -c Release -r win-x64 --self-contained true`; a single-file exe is the whole output. Built at `2026.3.917.1244` on 2026-09-17, zero IL diagnostics |
+| ⛔ Do NOT retest against `artifacts/` | Both Windows builds there — `a11y-untrimmed/` and `a11y-trimmed-loose/` — are **dated 2026-09-14**, so they predate the wholesale YAML front-matter parser replacement *and* the `F3` share-outcome work. They would exercise the **old write path**, which is exactly what `E1` exists to catch. They were left over from the `F5` investigation and are no longer needed for the accessibility pass either, because `F5` is refuted and the shipping artifact exposes a full tree |
+| Date the binary before trusting a run | The version stamp encodes **build** time — `Starting ClaudeForge v2026.3.<MMDD>.<HHmm>` in `logs/app-*.txt`. Read it first on any "I don't see the fix" result, to separate a real defect from a stale exe |
 | Logs | `logs/app-*.txt` and `logs/events-*.txt` **beside each exe** |
 
 ⚠ **Use a scratch project for anything that writes.** E1–E3 modify config; a throwaway directory

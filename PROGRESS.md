@@ -44,6 +44,13 @@
    replaced the YAML front-matter parser wholesale with `main`'s, so the artifact write path moved
    underneath it.
 
+   ✅ **The build under test is ready** — `2026.3.917.1244`, single-file, zero IL diagnostics, at
+   `src/ClaudeForge/bin/Release/net10.0/win-x64/publish/ClaudeForge.exe`. ⛔ **It was missing until
+   2026-09-17**, and the two Windows exes under `artifacts/` are **2026-09-14 leftovers** from the
+   `F5` investigation — old enough to predate both the YAML parser replacement and `F3`, so
+   retesting against one would exercise the very write path `E1` exists to check. That path is not
+   in the repository and does not survive a clean; the retest plan now carries the publish command.
+
    ⓘ **`F1`, `F2`, `F3`, `F4` and `F6` are fixed, not open** — all five await a look at the running
    UI, which is why they join the retest list rather than leaving it. ⚠ The old note that `F2` and
    `F4` are one job is spent: they were, and the resolution was to split the caution palette by
