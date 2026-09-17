@@ -1233,6 +1233,29 @@ and [`00003`](plans/00003-release-built-from-shared-packages.md) are the drafts 
   each rebase re-decides about them unless they are dropped here too.
 - ⛔ **`CLAUDE_CONFIG_DIR` does NOT relocate managed settings** — they live outside the config
   directory entirely. The policy-escape concern raised while drafting 00002 does not exist.
+- ⛔⛔ **This ClaudeForge release carries NO OpenCodeForge code, and is cut from a ClaudeForge-only
+  branch.** OpenCodeForge is revisited *after* the release, in the world where the packages exist
+  and are published. ⓘ The shipped artifact already contained none — verified: no `ProjectReference`
+  from the app or from any of the eleven, no OpenCode assembly in the Release output, and
+  `release.yml` deliberately excludes the `opencodeforge-v*` tag. The requirement is about the tree.
+- **The branch is made by SUBTRACTING from `feat/agentforge-opencodeforge`'s HEAD**, which is then
+  **parked, not deleted and not merged**. A subtractive change on a known-good tree is verifiable;
+  rebuilding from `main` would mean hand-porting hundreds of commits past a history rewrite, after
+  which neither counts nor patch-ids can say when the port is done. Six projects go:
+  `src/OpenCode.Avalonia`, `src/OpenCode.Sdk`, `src/OpenCodeForge`, `tests/OpenCode.Sdk.Tests`,
+  `tests/OpenCode.Avalonia.Tests`, `tests/OpenCodeForge.Tests`.
+- ⚠ **Neutrality is evidenced ONCE on the parked branch before the `packages-v*` tag.** Extraction
+  removes **~941 tests** and **50 files exercising `AgentForge.*` from the OpenCode side** — the only
+  non-Claude consumer of libraries about to become immutable. ⓘ The guards survive:
+  `NeutralLayerDefaultsTests` is a source scan of the neutral layer itself, not a two-product
+  comparison, and `AssemblyLayeringTests` loses only a vacuous direction. What is lost is proof by
+  *use*, so it gets produced deliberately rather than assumed. See 00003 step C0.
+- **The package-mode guard fires on a LOCAL publish too**, with a named escape hatch that the
+  archived evidence records. ⛔ A silent hatch would be this whole effort's founding defect pointed
+  the other way.
+- **The two accessibility entries are dropped from this branch's `## [Unreleased]`.** They describe
+  work shipped in `v2026.3.916`; `main` owns released history and stays silent. Keeping them would
+  have the next release announce a fix users have had since September.
 
 - ⭐ **Schema loading: the disk cache is the MATERIALISED RESULT, not a tier in a chain.** Decided
   by the maintainer on 2026-09-12, three answers given explicitly:

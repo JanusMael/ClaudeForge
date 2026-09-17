@@ -155,23 +155,6 @@ reconcile them against and renumbering them would be guesswork.
   name (and help text where the label alone is ambiguous), the header links announce
   as links, and a headless test in `LayeredEditors.Avalonia.Diagnostics.Tests` fails
   if a control lands without one.
-- **Every number field and model picker announced itself as an unnamed edit box.**
-  `NumericUpDown` and `AutoCompleteBox` are composite controls: each carried the correct
-  screen-reader name, but neither ever holds focus — focus goes to an inner text box that
-  had no name of its own, so the name sat on an element a screen-reader user never lands
-  on. Measured with UIA: 6 number fields and 8 pickers. The text box now inherits the
-  name the view already sets, so tabbing into "Max Output Tokens" announces
-  "Max Output Tokens" instead of nothing. A field whose name is genuinely missing stays
-  unnamed rather than being papered over.
-- **Screen readers read out `Avalonia.Controls.PathIcon` on every number field's
-  up/down buttons.** Those two buttons come from the `NumericUpDown` control template,
-  not from any view, so nothing could annotate them and the AXAML accessibility guard
-  had no element to flag at any scan width — and with no name set, Avalonia announces a
-  `Content.ToString()`, which for an icon is its type name. Twelve buttons in ClaudeForge:
-  Essentials (Max Output Tokens, Max Thinking Tokens), General, Sandbox, and the
-  Backup / Restore retention count; six more on OpenCodeForge's Essentials page. They now
-  announce "Increase value" / "Decrease value", translated in all eight locales, named
-  once in the shared theme so both apps get it.
 - **Screen readers announced every tab in the app as a class name.** A `TabItem` is
   focusable and selectable, so a screen-reader user lands on one — but unnamed, UI
   Automation falls back to the bound item's `ToString()`. Settings pages announced

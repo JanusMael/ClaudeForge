@@ -64,6 +64,10 @@ the release.
 | `LICENSE` and the package metadata both name **Brian Bennewitz** | They disagree today — `LICENSE` says *"ClaudeForge Contributors"*, `Directory.Build.props:43` says *Brian Bennewitz*, and the packages ship **no `<Copyright>` at all** because inventing one that contradicts `LICENSE` was judged worse than omitting it. A single named holder is unambiguous for MIT, already matches the shipped `<Authors>`, and survives the move to a repository that is not ClaudeForge |
 | Package `<Description>`s lose their **internal** lines only | `AgentForge.Core`'s ends *"Invariant: AgentForge.\* must never reference ClaudeForge.\*. AssemblyLayeringTests enforces it"* — a test class no consumer can see, and already recorded in `CLAUDE.md`. The outward-facing paragraphs are accurate and specific; a rewrite would most likely make them blander |
 | [`00002`](00002-claude-code-real-config-locations.md) lands **before** the packages tag | Immutable feed, day-resolution CalVer |
+| ⛔ **The release is cut from a ClaudeForge-only branch** — no OpenCodeForge code in the tree | Maintainer's decision. ⓘ The shipped artifact already contained none: no `ProjectReference` from the app or from any of the eleven, no OpenCode assembly in the Release output, and `release.yml` deliberately excludes the `opencodeforge-v*` tag. The branch requirement is about the tree it is cut from |
+| The branch is made by **subtracting from this HEAD**, and this branch is **parked** | A subtractive change on a known-good tree, verifiable by the suite and the trim gate. Rebuilding from `main` would mean hand-porting hundreds of commits past a history rewrite, after which — as this repo has measured — neither commit counts nor patch-ids can tell you when the port is complete. OpenCodeForge rejoins after the release, in the world where the packages exist |
+| ⚠ **Neutrality is evidenced once on the parked branch before the tag** | Extraction removes ~941 tests and **50 files that exercise `AgentForge.*` from the OpenCode side** — the only non-Claude consumer of libraries about to become immutable. ⓘ The *guards* survive: `NeutralLayerDefaultsTests` is a source scan of the neutral layer itself, not a comparison between products, and `AssemblyLayeringTests` loses only a vacuous direction. What is lost is proof by use, so it is produced once, deliberately, rather than assumed |
+| The guard fires on a **local publish too**, with a named escape hatch the evidence records | `publish.ps1` is *"the canonical entry point — same script developers run locally"*. Guarding CI alone rebuilds the local-versus-released divergence this plan exists to close; guarding with no exit means credentials for anyone publishing from a fresh clone. A hatch that the archived evidence names is the only shape that keeps one default without hiding a departure from it |
 | The retest gates the **app** release, not the **package** tag | The packages are library code; the retest regresses the ClaudeForge UI. Blocking the tag on a UI pass would couple two things that fail for different reasons |
 
 ### Alternatives dismissed
@@ -102,34 +106,37 @@ the release.
 
 ## Open questions — answer before the tag, not after
 
-⛔ **Does the build-time guard fire for a LOCAL publish, or only in CI?** This is the sharp edge of
-the decisions above and it was not visible until they combined. `release.yml` calls
-`src/publish/publish.ps1`, described in its own header as *"the canonical entry point — same script
-developers run locally"*. If the guard simply requires package mode whenever that script runs, then
-**every developer needs feed credentials to publish locally**, which is precisely the outcome
-`nuget.config`'s source mapping was designed to avoid and says so at length. Three shapes, and the
-choice is a real trade rather than a detail:
+ⓘ **All of this plan's open questions have been answered; they are recorded in *Decisions* above.**
+Whether forks must be able to release (no — and the cost is temporary, because the destination is
+public). Where `SharedPackageVersion` comes from (a committed pin in the root props). What proves
+provenance (a build-time guard plus archived restore evidence, because `Directory.Build.targets:87`
+deliberately erased the one artifact-level difference that existed). Whether the guard fires
+locally (yes, with a named escape hatch the evidence records).
 
-- guard on CI only — a local publish stays credential-free, and local and released artifacts are
-  built differently, which is the gap this whole plan exists to close;
-- guard always — one build shape everywhere, at the cost of credentials for every developer who
-  publishes;
-- guard always, with a named local escape hatch that the archived evidence records — one shape by
-  default, and a publish that took the other path cannot claim it did not.
-
-⚠ **A silent escape hatch is the defect this plan was written to fix**, pointed the other way. If
-there is one, the evidence has to name it.
-
-ⓘ **Answered while drafting, recorded in *Decisions* above:** whether forks must be able to
-release (no — and the cost is temporary), where `SharedPackageVersion` comes from (a committed pin),
-and what proves provenance (a build-time guard plus archived restore evidence, because
-`Directory.Build.targets:87` deliberately erased the one artifact-level difference that existed).
+⚠ **One thing to hold onto while implementing.** The escape hatch must be **named and recorded**,
+never silent. A publish that quietly took the other path while the release claimed package mode is
+this plan's own founding defect pointed the other way.
 
 ---
 
 ## The sequence
 
-Four phases. Each step names what shows it worked; no step is complete on a green build alone.
+Five phases. Each step names what shows it worked; no step is complete on a green build alone.
+
+### Phase 0 — extract the ClaudeForge-only branch
+
+Everything else happens on that branch. Doing it first means the suite, the trim gate and the canary
+all measure the tree that will actually be released.
+
+| Step | Verification |
+|---|---|
+| 0a · Branch from this HEAD; delete the six OpenCodeForge projects | `src/OpenCode.Avalonia`, `src/OpenCode.Sdk`, `src/OpenCodeForge`, and `tests/OpenCode.Sdk.Tests`, `tests/OpenCode.Avalonia.Tests`, `tests/OpenCodeForge.Tests` are gone |
+| 0b · Remove their six `ClaudeForge.slnx` entries, `release-opencodeforge.yml`, the CI steps, and the friend grants | `BuildFilePathIntegrityTests` green **both ways** — every project on disk listed, and every listed project present. ⚠ That test guards both directions and a deletion can break either |
+| 0c · Purge the references in `AGENTS.md`, `CONTRIBUTING.md`, `docs/OPENCODEFORGE-PLAN.md`, `docs/AVALONIA-GOTCHAS.md`, `src/ClaudeForge/ViewModels/AGENTS.md` and `src/PACKAGE-README.md` | `BuildFilePathIntegrityTests` green — it scans root `*.md` and every area `AGENTS.md`, so a path pointing at a deleted project fails there |
+| 0d · Full suite and trim gate on the new branch | Green at the **reduced** count. ⚠ Write the expected number down first: the drop from ~4,429 should be about **941**, and a much smaller drop means projects are still being built |
+
+⛔ **The parked branch is not deleted and not merged.** It is the OpenCodeForge continuation and it
+is needed again at C0 below.
 
 ### Phase A — freeze the shared-library surface
 
@@ -137,7 +144,7 @@ Four phases. Each step names what shows it worked; no step is complete on a gree
 |---|---|
 | A1 · Implement [`00002`](00002-claude-code-real-config-locations.md) | That plan's own step verifications |
 | A2 · Regenerate the eleven public-surface baselines | `PublicSurfaceBaselineTests` green, and the diff **reviewed** — a baseline regenerated without reading it records whatever happened, including a mistake |
-| A3 · Full suite, Debug | 4,429+ passed, 0 failed. ⚠ The skipped count is machine-dependent: 11 or 12 depending on whether `artifacts/localfeed` holds packages |
+| A3 · Full suite, Debug | 0 failed, at Phase 0's reduced count. ⚠ The skipped count is machine-dependent: 11 or 12 depending on whether `artifacts/localfeed` holds packages |
 | A4 · Trim gate, both apps, six RIDs | 12/12, zero IL diagnostics. A green Debug suite is not evidence here — an `IL2026` once broke Release publish for three phases while thousands of Debug tests passed |
 | A5 · Package canary on the exact commit that will be tagged | `pwsh -NoProfile -File scripts/package-canary.ps1` passes end to end |
 
@@ -157,6 +164,7 @@ run on a stale commit it certifies a build nobody is shipping.
 
 | Step | Verification |
 |---|---|
+| **C0 · Neutrality, evidenced once on the parked branch** | Bring Phase A's shared-library commits onto `feat/agentforge-opencodeforge`, run its suite, **record the result**. ⛔ This is the last moment it can be done: after C2 the surface is immutable, and the ~941 tests exercising `AgentForge.*` from the OpenCode side are the only proof the neutral layer is neutral by *use* rather than by source scan |
 | C1 · Preflight with a real `read:packages` token | ⛔ **Gate 3 is SKIPPED when no token is set**, and the 2026-09-14 run that "passed" exercised gates 1–2 only. The script says so in its own output — read it, do not infer it |
 | C2 · Push `packages-v<CalVer>` | `release-packages.yml` green; all eleven ids resolvable from the feed at that exact version |
 
