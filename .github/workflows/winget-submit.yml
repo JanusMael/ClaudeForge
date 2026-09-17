@@ -45,7 +45,6 @@ on:
         default: ClaudeForge
         options:
           - ClaudeForge
-          - OpenCodeForge
       version:
         description: "Release version to submit (no leading 'v'), e.g. 2026.3.701."
         required: true

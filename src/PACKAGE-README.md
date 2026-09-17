@@ -1,7 +1,9 @@
 # AgentForge and LayeredEditors
 
-Shared libraries behind [ClaudeForge and OpenCodeForge](https://github.com/JanusMael/ClaudeForge) —
-two Avalonia desktop apps that edit the configuration of two different coding agents.
+Shared libraries behind [ClaudeForge](https://github.com/JanusMael/ClaudeForge) — an Avalonia
+desktop app that edits a coding agent's configuration. They are deliberately **product-neutral**:
+every product-shaped answer, from which files to which scopes to which schema, arrives as a
+descriptor from the host rather than being built in.
 
 These packages are **private** and are published for those apps and the projects that follow them.
 The public API is not stable and carries no compatibility guarantee between versions.
@@ -14,8 +16,7 @@ The public API is not stable and carries no compatibility guarantee between vers
 | `Bennewitz.Ninja.AgentForge.*` | Product-neutral agent-configuration machinery: the SDK, settings core, backup/restore, artifact resolution, and the Avalonia shell |
 
 **The layering rule:** nothing product-specific is referenced by `AgentForge.*`, and no two products
-reference each other. Every package here is consumable by a host that knows nothing about Claude or
-OpenCode.
+reference each other. Every package here is consumable by a host that knows nothing about Claude.
 
 ## The packages
 

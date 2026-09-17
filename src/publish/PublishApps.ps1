@@ -78,22 +78,6 @@ $script:PublishAppTable = @(
         DesktopFile     = 'assets/linux/claudeforge.desktop'
         LinuxSetup      = 'assets/linux/linux-setup.sh'
     }
-    [pscustomobject]@{
-        Name            = 'OpenCodeForge'
-        ProjectPath     = 'src/OpenCodeForge/OpenCodeForge.csproj'
-        AssemblyName    = 'OpenCodeForge'
-        StartupLogToken = 'Starting OpenCodeForge'
-        LogFilePattern  = 'opencodeforge-*.log'
-        TagPrefix       = 'opencodeforge-'
-        WingetPackageId = 'Bennewitz.Ninja.OpenCodeForge'
-        # ⚠ The icon is PLACEHOLDER artwork — see the comment inside the SVG.
-        # linux-setup.sh is the SAME FILE both apps ship: it identifies the app
-        # from the single .desktop staged beside it, so there is one script
-        # rather than two that drift.
-        IconSvg         = 'src/OpenCodeForge/Resources/OpenCodeForge.svg'
-        DesktopFile     = 'assets/linux/opencodeforge.desktop'
-        LinuxSetup      = 'assets/linux/linux-setup.sh'
-    }
 )
 
 <#

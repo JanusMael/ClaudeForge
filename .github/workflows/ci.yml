@@ -119,13 +119,6 @@ jobs:
           --self-contained true
           -o /tmp/trim-check-claudeforge
 
-      - name: Publish OpenCodeForge (Release, linux-x64)
-        run: >
-          dotnet publish src/OpenCodeForge
-          -c Release -r linux-x64
-          --self-contained true
-          -o /tmp/trim-check-opencodeforge
-
   # ── The package canary ───────────────────────────────────────────────────────
   #
   # Eleven projects under src/ ship as private NuGet packages (plans/00001). Everything else

@@ -57,9 +57,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ClaudeForge")]
 [assembly: InternalsVisibleTo("ClaudeForge.Avalonia")]
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude")]
-[assembly: InternalsVisibleTo("OpenCode.Avalonia")]
-[assembly: InternalsVisibleTo("OpenCode.Sdk")]
-[assembly: InternalsVisibleTo("OpenCodeForge")]
 
 // ── Test projects ────────────────────────────────────────────────────────────────────────────
 // ⓘ These are why most of the per-project grants existed at all: a test reaching an internal
@@ -75,9 +72,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("JsonC.Tests")]
 [assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Diagnostics.Tests")]
 [assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Tests")]
-[assembly: InternalsVisibleTo("OpenCode.Avalonia.Tests")]
-[assembly: InternalsVisibleTo("OpenCode.Sdk.Tests")]
-[assembly: InternalsVisibleTo("OpenCodeForge.Tests")]
 
 // ══ WHAT THE GRANTS ARE ACTUALLY FOR ═════════════════════════════════════════════════════════
 //
