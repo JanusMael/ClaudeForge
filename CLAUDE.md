@@ -375,7 +375,8 @@ one-shot maintenance task would show a window nobody asked for and hold file loc
 | **Where the work stands right now, and what to do next** | [`PROGRESS.md`](./PROGRESS.md) — the resume anchor. Read it first in a fresh session, and reconcile it against `git` rather than trusting it |
 | The two-app plan, phase status, and every spike measurement | [`docs/OPENCODEFORGE-PLAN.md`](./docs/OPENCODEFORGE-PLAN.md) |
 | Why the shared libraries are packages, the two reference modes, and what an immutable feed costs | [`plans/00001`](./plans/00001-shared-libraries-as-private-nuget-packages.md) — approved and implemented; drift goes to `PROGRESS.md`, never into the plan |
-| What users see, release by release | [`CHANGELOG.md`](./CHANGELOG.md) — ⚠ ClaudeForge only. OpenCodeForge has a release workflow and no changelog yet |
+| Which YAML front-matter tokens are supported, and which round-trip verbatim | [`docs/YAML-FRONT-MATTER.md`](./docs/YAML-FRONT-MATTER.md) — ⚠ paths in it differ from `main`'s, and there are **two** block-scalar test files on purpose: both sides wrote that coverage independently and the parser here is the union |
+| What users see, release by release | [`CHANGELOG.md`](./CHANGELOG.md) — ⚠ ClaudeForge only. OpenCodeForge has a release workflow and no changelog yet. ⛔ **Rebased on `main`'s, not merged with it**: `main` owns the released sections, this branch's `## [Unreleased]` owns only what has not shipped |
 
 Area-specific `AGENTS.md` sidecars sit next to the code they describe — the editor one under
 `src/ClaudeForge/ViewModels/Editors/` is the largest.

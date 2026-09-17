@@ -13,16 +13,16 @@
 
 ---
 
-## Where things stand — 2026-09-16
+## Where things stand — 2026-09-17
 
 | | |
 |---|---|
 | Branch | `feat/agentforge-opencodeforge` |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
-| Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-16. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
+| Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **Integrated by hand on 2026-09-16, up to `origin/main` `52f604d`** — record the SHA, because neither counting nor patch-ids can tell you again. `main` released **`v2026.3.916`** that day. ⛔⛔ **Both automatic answers are WRONG here, in opposite directions.** `git rev-list --count HEAD..origin/main` over-reports (the 2026-09-16 history rewrite renamed every already-merged commit, so ~27 look unmerged); `git cherry` saw through that and found the 8 genuinely new — but now over-reports too, because a hand-port produces a different patch-id than the commit it ports. **The only reliable record is this cell.** Compare `52f604d..origin/main` to find what is new since. ⓘ The CHANGELOG has now been rebased on `main`'s **twice** in one day — `main` owns the released history and this branch owns only what has not shipped, so keeping a local copy of the released sections just makes the next reconciliation bigger. ⛔ **`git merge origin/main` remains the wrong tool**: the merge base is `3c7aaab` (2026-09-01), `main`'s paths no longer exist here (`ClaudeForge.Sdk`→`AgentForge.Sdk`, the backup VM moved into `AgentForge.Avalonia.Shell`), and this repo has shipped two duplicate-attribute defects from *clean* auto-merges. Ports go through `AGENTS.md` §*Hand-porting a fix*. ⓘ What the 8 were: **4 ported** (YAML front-matter ×2, winget rename, version-probe test), **1 ported as a union** (deep links), **1 already present by a different mechanism** (tab a11y — this branch names containers via `ToString()`, `main` via a style; porting would have added a redundant second mechanism for a defect already fixed and guarded), **1 packaging** (`sign-release.ps1` is now committed rather than ignored), **1 reconciled** (CHANGELOG) |
-| Suite | **4,380 passed · 0 failed · 11 skipped**, Debug — 2026-09-16: `+16` for `F3`'s share-outcome guards, `+12` for its two sibling surfaces, `+1` for the package surface baseline. Nothing else moved. ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Suite | **4,429 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-17 at `697e840`. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
@@ -38,18 +38,26 @@
 ### The next steps, in order
 
 1. **The eight outstanding retest items** — [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md).
-   `E1` (`JsonC` preserves comments on save) first: newest library, no release behind it, and its
-   failure mode destroys user content silently. **This is now the top of the list**, because the
-   item that outranked it turned out not to exist.
+   **Every one needs a human driving the app; none is a code task.** `E1` (`JsonC` preserves
+   comments on save) first: newest library, no release behind it, and its failure mode destroys
+   user content silently. ⚠ **`E1` matters more than it did on 2026-09-15**, because 2026-09-16
+   replaced the YAML front-matter parser wholesale with `main`'s, so the artifact write path moved
+   underneath it.
 
    ⓘ **`F1`, `F2`, `F3`, `F4` and `F6` are fixed, not open** — all five await a look at the running
    UI, which is why they join the retest list rather than leaving it. ⚠ The old note that `F2` and
    `F4` are one job is spent: they were, and the resolution was to split the caution palette by
    **role** rather than to find one colour satisfying both. No token is being pulled two ways any
    more.
-2. **Decide on a PR.** The branch is pushed and level with origin; whether it gets a PR is still
-   open, and opening one against `main` is a locked decision the maintainer has not made.
-3. **The first `packages-v*` tag.** ⚠ **The preflight that "passed" on 2026-09-14 exercised gates
+2. **Contribute two changelog entries to `main`.** The `NumericUpDown`/`AutoCompleteBox` and
+   spinner-button accessibility entries are branch-authored, `main`'s `CHANGELOG.md` has never
+   listed them, and the work shipped in `v2026.3.916` through PR #53 — so users have it and `main`
+   does not say so. They were hand-carried across **two** `main` rebases on 2026-09-16 and will
+   need carrying again at the next one. ⭐ A small PR against `main` ends the recurrence; nothing
+   done on this branch can.
+3. **Decide on a PR for this branch.** Pushed and level with origin; whether it gets one is still
+   open, and opening it against `main` is a locked decision the maintainer has not made.
+4. **The first `packages-v*` tag.** ⚠ **The preflight that "passed" on 2026-09-14 exercised gates
    1–2 ONLY** — gate 3, *does the feed already hold this version*, is **SKIPPED when no token is
    set**, and this machine has none. The script says so in its own output. That run is evidence the
    eleven packages build and stamp correctly at `2026.3.914`, and **no evidence at all** that the

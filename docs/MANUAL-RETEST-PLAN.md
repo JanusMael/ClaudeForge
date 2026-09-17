@@ -45,6 +45,12 @@ survive.
 **Fail:** a reformatted file, or comments gone. That is what the old writer did and what this
 library exists to prevent.
 
+⚠ **Also drive an agent/skill `.md` while you are here, not just a settings JSON.** On 2026-09-16
+the YAML front-matter parser was replaced wholesale with `main`'s, plus two behaviours `main` had
+lost, so the **artifact** write path moved underneath this item. Edit a skill whose `description`
+is a folded block (`description: >-`) and one that ends in a blank line, save, and diff: the prose
+must round-trip, and trailing blank lines must survive. Those two are exactly what the union fixed.
+
 ### ☐ E2 · Save lands in the right scope — `AgentForge.Core` + `LayeredEditors`
 
 **Do:** change values at **User** and **Project** scope (and **Local** if present). Save. Reload the
