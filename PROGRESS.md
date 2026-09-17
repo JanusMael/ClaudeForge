@@ -17,13 +17,15 @@
 
 | | |
 |---|---|
-| Branch | `feat/agentforge-opencodeforge` |
+| Branch | ⛔⛔ **TWO NOW, and the active one changed on 2026-09-17.** This file is on **`release/claudeforge-on-packages`** — ClaudeForge only, cut from `feat/agentforge-opencodeforge` by subtraction in plans/00003 Phase 0. ⛔ **`feat/agentforge-opencodeforge` is PARKED: not deleted, not merged.** It is the OpenCodeForge continuation, it is pushed, and it is needed again at **Phase C0** to evidence that the neutral layer is neutral by *use* — the ~941 tests exercising `AgentForge.*` from the OpenCode side are the only proof of that, and the packages become immutable right after |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | clean |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **Integrated by hand on 2026-09-16, up to `origin/main` `52f604d`** — record the SHA, because neither counting nor patch-ids can tell you again. `main` released **`v2026.3.916`** that day. ⛔⛔ **Both automatic answers are WRONG here, in opposite directions.** `git rev-list --count HEAD..origin/main` over-reports (the 2026-09-16 history rewrite renamed every already-merged commit, so ~27 look unmerged); `git cherry` saw through that and found the 8 genuinely new — but now over-reports too, because a hand-port produces a different patch-id than the commit it ports. **The only reliable record is this cell.** Compare `52f604d..origin/main` to find what is new since. ⓘ The CHANGELOG has now been rebased on `main`'s **twice** in one day — `main` owns the released history and this branch owns only what has not shipped, so keeping a local copy of the released sections just makes the next reconciliation bigger. ⛔ **`git merge origin/main` remains the wrong tool**: the merge base is `3c7aaab` (2026-09-01), `main`'s paths no longer exist here (`ClaudeForge.Sdk`→`AgentForge.Sdk`, the backup VM moved into `AgentForge.Avalonia.Shell`), and this repo has shipped two duplicate-attribute defects from *clean* auto-merges. Ports go through `AGENTS.md` §*Hand-porting a fix*. ⓘ What the 8 were: **4 ported** (YAML front-matter ×2, winget rename, version-probe test), **1 ported as a union** (deep links), **1 already present by a different mechanism** (tab a11y — this branch names containers via `ToString()`, `main` via a style; porting would have added a redundant second mechanism for a defect already fixed and guarded), **1 packaging** (`sign-release.ps1` is now committed rather than ignored), **1 reconciled** (CHANGELOG) |
-| Suite | **4,429 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-17 at `697e840`. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
-| Trim check | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
+| Suite | ⭐ **3,509 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-17 at `1e41f87` on the release branch. ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
+| Suite (parked branch) | **4,429 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-17 at `697e840`. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics, 2026-09-17 at `1e41f87`** — linux-x64/arm64, win-x64/arm64, osx-x64/arm64. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
+| Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
@@ -81,7 +83,58 @@ and fixed by the same plan.
 
 ---
 
-## ▶ RESUME HERE — finish the ClaudeForge regression
+## ▶ RESUME HERE — plans 00003 Phase A
+
+⛔ **[`plans/00002`](plans/00002-claude-code-real-config-locations.md) and
+[`plans/00003`](plans/00003-release-built-from-shared-packages.md) are APPROVED (2026-09-17) and
+FROZEN.** Never edit them. Everything below is drift, which is what this file is for.
+
+**Phase 0 is DONE** — `2c84f47` (removal) and `1e41f87` (guard reconciliation).
+
+### Next, in order
+
+1. **Phase A — confirm the eleven public-surface baselines are UNCHANGED.** No regeneration.
+   ⛔ **If one needs regenerating, stop.** It means something changed a shared library, and Phase A's
+   premise — that exactly one variable changes between here and the release — is false.
+2. **Phase B — the whole retest, all eight items.** ⛔ **The build under test must be PACKAGE MODE.**
+   Pack locally with `package-canary.ps1 -PackOnly -CanaryVersion <the intended CalVer>`, then
+   `dotnet publish -p:UseSharedPackages=true -p:SharedPackageVersion=<same>`. ⚠ **Not through
+   `src/publish/publish.ps1`**, which wipes `artifacts/localfeed` on purpose. ⓘ
+   [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md)'s *Build under test* row still names a
+   plain Release publish and **must be updated first**, or the next person retests the wrong thing.
+3. **Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are identical),
+   C1 preflight with a real `read:packages` token, C2 the tag. ⛔ C2 is irreversible.
+4. **Phase D**, then **Phase E** (00002 as the second package version).
+
+### ⚠ Phase 0 drift — the approved plan's list was incomplete
+
+Recorded here rather than in the plan, which is frozen.
+
+- **It named five deletions and sixteen were needed.** Beyond the six projects: `OpenCodeForge.Only.slnf`,
+  three winget manifests, the winget-submit dropdown option, the linux desktop asset, the
+  install-probe snapshot **and an orphaned OpenCode test living inside `ClaudeForge.Tests`**, two
+  scripts, the CI trim-check step, and the `PublishApps.ps1` row.
+- ⛔ **It did not anticipate 27 reddened guards.** None was a product defect; every one was a guard
+  correctly noticing the tree holds one app. They needed **three** different answers — narrowed
+  lists, lowered floors that still trip on a broken regex, and two guards that now return
+  `Assert.Inconclusive` because a comparison with one subject cannot be made honestly.
+  ⭐ **Widening them again is one grep: `TWO-APP GUARD NARROWED`.**
+- **The solution-filter concept collapsed.** With one product a filter selects the whole solution and
+  `FilterExcludesTheOtherProduct` has nothing to exclude, so the filter and its four tests were
+  deleted. They return from the parked branch with the second app.
+- **`LE.DangerBorder` / `LE.DangerText` are exempted, not deleted** — their only consumer was
+  OpenCodeForge, and deleting them is a shared-library change Phase A forbids. ⛔ **The exemption is
+  written in BOTH guards that ask the question** (`NoDeadBrushTokensTests` and
+  `ThemeResourceIntegrityTests`); fixing one and believing it done lets the pair disagree silently.
+  Delete tokens and both lists in Phase E.
+- ⛔ **`BuildFilePathIntegrityTests` bit twice, both times on text written minutes earlier** — a
+  comment in `package-canary.ps1` and six lines in this file. It scans root `*.md`, area
+  `AGENTS.md`, `scripts/`, `src/publish/` and `packaging/`, and reads any `src/…` or `tests/…`
+  spelling as a claim the path exists. **Write deleted projects as bare names.**
+
+---
+
+## Done — 2026-09-17, earlier: the ClaudeForge regression state
 
 ### The next steps, in order
 
