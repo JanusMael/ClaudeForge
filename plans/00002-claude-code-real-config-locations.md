@@ -163,10 +163,26 @@ exactly as `OpenCodeEnvironment` documents.
 
 Per-OS paths, plus `managed-settings.d/` and `managed-mcp.json`.
 
-**Verification:** on each platform, a policy file placed in the system directory is discovered and
-marked read-only; one placed at `~/.claude/managed-settings.json` is **not** discovered. ⚠ Assert
-the negative too — discovering the new location while still reading the old one leaves the
-confidently-wrong display in place for anyone who has such a file.
+**Verification**, in two parts, because the obvious one cannot run:
+
+⛔ **A test cannot write to `C:\Program Files\ClaudeCode\` or `/etc/claude-code/`** — both need
+elevation, so "place a policy file in the system directory and see it discovered" is not a runnable
+check on a normal CI agent or developer machine. Writing the plan as though it were would produce a
+step that is quietly skipped or quietly run as admin, and neither is evidence.
+
+1. **Path resolution** — assert the computed path per platform against the three literals, with the
+   platform simulated rather than the file created. This is the half that can be wrong in a way
+   nobody notices.
+2. **Discovery behaviour** — exercise `ConfigFileDiscoverer` against an **injected** managed root, a
+   scratch directory, asserting the entries are found and marked `readOnly: true`.
+
+⚠ **Assert the negative in both parts**: a file at `~/.claude/managed-settings.json` is **not**
+discovered. Adding the new location while still reading the old one leaves the confidently-wrong
+display in place for exactly the users who already have such a file, and a test that only checks the
+new path passes either way.
+
+ⓘ **That injected root is a new seam**, and it is the same shape as the `ClaudeEnvironment` value
+above rather than a second mechanism — which is the point.
 
 ### 3 · One resolved home, threaded through both implementations
 

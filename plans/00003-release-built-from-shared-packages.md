@@ -42,13 +42,26 @@ claim lived in a comment, and a comment is not a guard — the same shape as the
 ## Why this plan orders everything else
 
 A published package version is **permanent**, and the CalVer is day-resolution — one package release
-per calendar day, recovery is tomorrow. That single constraint fixes the order of everything below:
+per calendar day, recovery is tomorrow.
 
-**Any change to a shared library must land before the first `packages-v*` tag, or it costs another
-version and another day.** [`00002`](00002-claude-code-real-config-locations.md) changes
-`AgentForge.Core` (`PlatformPaths`) and `AgentForge.Sdk` (`ClaudeArtifactPaths`), both packable. It
-is therefore not a parallel task — it is a prerequisite of the tag, and the tag is a prerequisite of
-the release.
+⚠ **An earlier draft of this plan overstated what follows from that, and the correction matters.**
+It said a shared-library change *"must land before the first `packages-v*` tag, or it costs another
+version and another day"*, and concluded it was therefore **a prerequisite of the tag**. That does
+not follow. Only **re-pushing an existing version** is impossible; publishing `2026.3.920` and then
+`2026.3.925` is ordinary. "Would cost a second version" is a *preference*, not a constraint, and
+nothing in the immutability of the feed orders 00002 ahead of the release.
+
+The real trade is between two risks, and it is **open — see the decision at the end of this
+section**:
+
+| Order | What it buys | What it costs |
+|---|---|---|
+| **00002 first** | One package version carries both the pipeline and the config fixes; `E1` becomes automatable before the retest runs | ⛔ A rewrite of path resolution across `AgentForge.Core` and `AgentForge.Sdk` — **every file the app reads and writes** — lands directly in front of a release whose only purpose is proving the package pipeline. If D4 or D6 fails, nothing can attribute it |
+| **00002 second** | The release change-set is minimal, so a failure in Phase D is unambiguously the pipeline. 00002 then ships as the second package version against a pipeline already proven | Two package releases instead of one, on two different days; `E1` stays a manual retest item for the first release |
+
+⛔ **Do not treat the current phase order as settled.** Phases A–D below are written for "00002
+first" because that is how the plan was drafted, not because it was chosen. If "00002 second" is
+picked, Phase A loses step A1 and 00002 becomes a Phase E against the published packages.
 
 ---
 
@@ -131,12 +144,19 @@ all measure the tree that will actually be released.
 | Step | Verification |
 |---|---|
 | 0a · Branch from this HEAD; delete the six OpenCodeForge projects | `src/OpenCode.Avalonia`, `src/OpenCode.Sdk`, `src/OpenCodeForge`, and `tests/OpenCode.Sdk.Tests`, `tests/OpenCode.Avalonia.Tests`, `tests/OpenCodeForge.Tests` are gone |
-| 0b · Remove their six `ClaudeForge.slnx` entries, `release-opencodeforge.yml`, the CI steps, and the friend grants | `BuildFilePathIntegrityTests` green **both ways** — every project on disk listed, and every listed project present. ⚠ That test guards both directions and a deletion can break either |
-| 0c · Purge the references in `AGENTS.md`, `CONTRIBUTING.md`, `docs/OPENCODEFORGE-PLAN.md`, `docs/AVALONIA-GOTCHAS.md`, `src/ClaudeForge/ViewModels/AGENTS.md` and `src/PACKAGE-README.md` | `BuildFilePathIntegrityTests` green — it scans root `*.md` and every area `AGENTS.md`, so a path pointing at a deleted project fails there |
-| 0d · Full suite and trim gate on the new branch | Green at the **reduced** count. ⚠ Write the expected number down first: the drop from ~4,429 should be about **941**, and a much smaller drop means projects are still being built |
+| 0b · Remove their six `ClaudeForge.slnx` entries, `release-opencodeforge.yml`, the CI steps, the six OpenCode grants in `AssemblyInfo.InternalsVisibleTo.cs` (lines 60-62 and 78-80), and the **OpenCodeForge entry in `src/publish/PublishApps.ps1`** | `BuildFilePathIntegrityTests` green **both ways** — every project on disk listed, and every listed project present; it guards both directions and a deletion can break either. ⭐ It also scans `src/publish/`, `scripts/` and `packaging/`, so the `PublishApps.ps1` row's `ProjectPath` reddens there rather than surviving to the release cut. Plus `SharedFriendGrantsTests` for the grants file |
+| 0c · ⛔ **`src/PACKAGE-README.md` first — it is packed into all eleven packages** | `src/Directory.Build.props` packs it as `PackageReadmeFile` for every project without its own README, and lines 3 and 18 name OpenCodeForge. Left alone, the **immutable** published packages describe a product that is not in the tree they were built from. ⚠ **No existing guard covers this file**: `BuildFilePathIntegrityTests` scans root `*.md` and area `AGENTS.md` only. Verify by reading the `README.md` inside a packed `.nupkg`, not the source file |
+| 0d · Purge references in `AGENTS.md`, `CONTRIBUTING.md`, `docs/AVALONIA-GOTCHAS.md`, `src/ClaudeForge/ViewModels/AGENTS.md` and `docs/MANUAL-RETEST-PLAN.md` | `BuildFilePathIntegrityTests` green — it scans root `*.md` and every area `AGENTS.md`, so a path naming a deleted project fails there. ⓘ `MANUAL-RETEST-PLAN.md` is included because **Phase B reads it** and it currently describes OpenCodeForge surfaces |
+| 0e · **Delete** `docs/OPENCODEFORGE-PLAN.md` on the release branch | It is not a document with OpenCodeForge references in it — it is entirely about OpenCodeForge, so purging references from it is incoherent. ⛔ Delete rather than edit, and **only on the release branch**: the parked branch keeps it, and it is the record needed when OpenCodeForge is revisited |
+| 0f · Full suite and trim gate on the new branch | Green at the **reduced** count. ⚠ Write the expected number down first: the drop from ~4,429 should be about **941**, and a much smaller drop means projects are still being built. ⓘ The trim gate is now a **two-RID-set, one-app** matrix rather than twelve publishes — six, for ClaudeForge alone |
 
 ⛔ **The parked branch is not deleted and not merged.** It is the OpenCodeForge continuation and it
 is needed again at C0 below.
+
+ⓘ **Checked, and clean:** no test project outside `tests/OpenCode.*` references OpenCode, and
+neither the ClaudeForge app nor any of the eleven packable projects holds a `ProjectReference` to
+one. The six deletions are therefore genuinely subtractive — this was verified rather than assumed,
+because a single incoming reference would turn Phase 0 from a deletion into a refactor.
 
 ### Phase A — freeze the shared-library surface
 
@@ -145,7 +165,7 @@ is needed again at C0 below.
 | A1 · Implement [`00002`](00002-claude-code-real-config-locations.md) | That plan's own step verifications |
 | A2 · Regenerate the eleven public-surface baselines | `PublicSurfaceBaselineTests` green, and the diff **reviewed** — a baseline regenerated without reading it records whatever happened, including a mistake |
 | A3 · Full suite, Debug | 0 failed, at Phase 0's reduced count. ⚠ The skipped count is machine-dependent: 11 or 12 depending on whether `artifacts/localfeed` holds packages |
-| A4 · Trim gate, both apps, six RIDs | 12/12, zero IL diagnostics. A green Debug suite is not evidence here — an `IL2026` once broke Release publish for three phases while thousands of Debug tests passed |
+| A4 · Trim gate, six RIDs | ⚠ **6/6, not 12/12** — the release branch has one app. Zero IL diagnostics. A green Debug suite is not evidence here: an `IL2026` once broke the Release publish for three phases while thousands of Debug tests passed over it |
 | A5 · Package canary on the exact commit that will be tagged | `pwsh -NoProfile -File scripts/package-canary.ps1` passes end to end |
 
 ⚠ **A5 runs on the commit being tagged, not an earlier one.** The canary validates whatever it packs;
@@ -164,7 +184,7 @@ run on a stale commit it certifies a build nobody is shipping.
 
 | Step | Verification |
 |---|---|
-| **C0 · Neutrality, evidenced once on the parked branch** | Bring Phase A's shared-library commits onto `feat/agentforge-opencodeforge`, run its suite, **record the result**. ⛔ This is the last moment it can be done: after C2 the surface is immutable, and the ~941 tests exercising `AgentForge.*` from the OpenCode side are the only proof the neutral layer is neutral by *use* rather than by source scan |
+| **C0 · Neutrality, evidenced once on the parked branch** | Bring Phase A's shared-library commits onto `feat/agentforge-opencodeforge` and run its suite. ⛔ **Pass criterion: the ~941 OpenCode tests are green. A failure BLOCKS C2** — it is not a note to record and move past, because it means the surface about to become permanent is not neutral, and that is the one thing this step exists to find out. ⓘ If 00002 is ordered second, C0 carries far less and is correspondingly cheaper. ⚠ Porting across these two branches is not free: this repo has measured that after the history rewrite neither commit counts nor patch-ids can say what has been carried, so carry by explicit cherry-pick of a named list, not by a count |
 | C1 · Preflight with a real `read:packages` token | ⛔ **Gate 3 is SKIPPED when no token is set**, and the 2026-09-14 run that "passed" exercised gates 1–2 only. The script says so in its own output — read it, do not infer it |
 | C2 · Push `packages-v<CalVer>` | `release-packages.yml` green; all eleven ids resolvable from the feed at that exact version |
 
@@ -175,9 +195,9 @@ by re-pushing.
 
 | Step | Verification |
 |---|---|
-| D1 · Publish path selects package mode at C2's version | A publish log showing `PackageReference` resolution for all eleven, from the **github** source — not the local feed, which `publish.ps1` wipes |
+| D1 · Publish path selects package mode at C2's version | ⭐ **The evidence mechanism exists and is named, rather than assumed:** `.nupkg.metadata`, written beside each restored package in the global packages folder, carries `{"version":…,"contentHash":…,"source":"https://…"}`. Reading `source` for each of the eleven is what distinguishes the **github** feed from `artifacts/localfeed`. ⚠ Verify the file is actually present for all eleven before relying on it — the restore writes it, a cache hit may not |
 | D2 · `packages: read` in `release.yml` | A real workflow run restoring from the private feed |
-| D3 · The provenance check from *Open question 3* | It **fails** when the mode is dropped. Prove that by dropping it deliberately and watching it redden |
+| D3 · The build-time guard, and the recorded escape hatch | It **fails** when package mode is dropped — prove that by dropping it deliberately and watching it redden. And the archived evidence **names the hatch** when it was used: a publish that quietly took the other path while the release claimed package mode is this plan's founding defect pointed the other way |
 | D4 · Full suite and trim gate in package mode | Green, at the published version, with no local feed present |
 | D5 · Correct `ci.yml:132` and `package-canary.ps1:10` | They describe what D1–D3 made true |
 | D6 · Cut the release | The shipped artifact passes D3 |
