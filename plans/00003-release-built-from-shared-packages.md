@@ -51,17 +51,29 @@ not follow. Only **re-pushing an existing version** is impossible; publishing `2
 `2026.3.925` is ordinary. "Would cost a second version" is a *preference*, not a constraint, and
 nothing in the immutability of the feed orders 00002 ahead of the release.
 
-The real trade is between two risks, and it is **open — see the decision at the end of this
-section**:
+✅ **Settled: 00002 lands AFTER the first package release, as the second package version.** The
+release then carries the pipeline change and nothing else, so a failure in Phase D is unambiguously
+the pipeline rather than one of two candidates. 00002 ships against a pipeline already proven. The
+cost is accepted: two package releases on two different days, and `E1` stays a **manual** retest
+item for the first release.
 
-| Order | What it buys | What it costs |
-|---|---|---|
-| **00002 first** | One package version carries both the pipeline and the config fixes; `E1` becomes automatable before the retest runs | ⛔ A rewrite of path resolution across `AgentForge.Core` and `AgentForge.Sdk` — **every file the app reads and writes** — lands directly in front of a release whose only purpose is proving the package pipeline. If D4 or D6 fails, nothing can attribute it |
-| **00002 second** | The release change-set is minimal, so a failure in Phase D is unambiguously the pipeline. 00002 then ships as the second package version against a pipeline already proven | Two package releases instead of one, on two different days; `E1` stays a manual retest item for the first release |
+⭐ **That choice simplifies three things, which is a fair sign it is the right one.**
 
-⛔ **Do not treat the current phase order as settled.** Phases A–D below are written for "00002
-first" because that is how the plan was drafted, not because it was chosen. If "00002 second" is
-picked, Phase A loses step A1 and 00002 becomes a Phase E against the published packages.
+| | |
+|---|---|
+| Phase A | No shared-library change lands before the tag, so there is **no public-surface change to review** — Phase A becomes verification of the surface that already exists, not a freeze of a new one |
+| C0 | The parked branch already holds **identical** shared-library code, so evidencing neutrality is running its suite as-is. ⭐ The cross-branch port — the step this repo's own history says is treacherous, because after the rewrite neither counts nor patch-ids can say what has been carried — **disappears entirely** |
+| Attribution | One variable changes at a time |
+
+✅ **Settled: the WHOLE retest gates the package tag**, not just the write-path items. Phase B
+therefore runs **before** Phase C rather than alongside it. ⛔ This is the conservative reading and
+it was chosen deliberately over gating on `E1`–`E5` alone: the five that exercise one shared library
+each are the ones that *could* expose a defect the feed cannot take back, but a tag that cannot be
+undone is not the place to be clever about which checks matter.
+
+⚠ **The consequence is that all eight manual items sit on the critical path to the tag**, `E1`
+included, and `E1` is manual because 00002 moved. Nothing proceeds to Phase C until a human has
+driven the app.
 
 ---
 
@@ -134,7 +146,10 @@ this plan's own founding defect pointed the other way.
 
 ## The sequence
 
-Five phases. Each step names what shows it worked; no step is complete on a green build alone.
+Six phases, in order: **0 → A → B → C → D → E**. Each step names what shows it worked; no step is
+complete on a green build alone. ⛔ Nothing here runs in parallel — Phase B gates Phase C because a
+published version cannot be taken back, and Phase E follows Phase D because its whole value is
+landing on a pipeline that has already been proven.
 
 ### Phase 0 — extract the ClaudeForge-only branch
 
@@ -158,12 +173,15 @@ neither the ClaudeForge app nor any of the eleven packable projects holds a `Pro
 one. The six deletions are therefore genuinely subtractive — this was verified rather than assumed,
 because a single incoming reference would turn Phase 0 from a deletion into a refactor.
 
-### Phase A — freeze the shared-library surface
+### Phase A — confirm the shared-library surface
+
+⭐ **Nothing changes the libraries here.** 00002 is Phase E. This phase establishes that the surface
+about to become permanent is the surface already proven, which is a much cheaper claim than freezing
+a new one.
 
 | Step | Verification |
 |---|---|
-| A1 · Implement [`00002`](00002-claude-code-real-config-locations.md) | That plan's own step verifications |
-| A2 · Regenerate the eleven public-surface baselines | `PublicSurfaceBaselineTests` green, and the diff **reviewed** — a baseline regenerated without reading it records whatever happened, including a mistake |
+| A2 · The eleven public-surface baselines are **unchanged** | `PublicSurfaceBaselineTests` green with **no regeneration**. ⛔ If a baseline needs regenerating, something changed a shared library and this phase's premise is false — stop and find out what, rather than accepting the new baseline |
 | A3 · Full suite, Debug | 0 failed, at Phase 0's reduced count. ⚠ The skipped count is machine-dependent: 11 or 12 depending on whether `artifacts/localfeed` holds packages |
 | A4 · Trim gate, six RIDs | ⚠ **6/6, not 12/12** — the release branch has one app. Zero IL diagnostics. A green Debug suite is not evidence here: an `IL2026` once broke the Release publish for three phases while thousands of Debug tests passed over it |
 | A5 · Package canary on the exact commit that will be tagged | `pwsh -NoProfile -File scripts/package-canary.ps1` passes end to end |
@@ -175,16 +193,20 @@ run on a stale commit it certifies a build nobody is shipping.
 
 | Step | Verification |
 |---|---|
-| B1 · `E1` against a scratch home, enabled by A1 | The fixture diffs byte-identical except the edited value, **and** the real `~/.claude` proven untouched by a before/after listing |
-| B2 · `E2`–`E5`, `F1`–`F6` | Per `docs/MANUAL-RETEST-PLAN.md`. Four are objectively checkable; the colour and glyph items need eyes |
+⛔ **This phase gates the package tag, not only the app release.** All eight items complete before
+Phase C. A published version cannot be taken back, so nothing proceeds on a partial retest.
 
-ⓘ Phase B gates the **app** release only. Phase C may proceed alongside it.
+| Step | Verification |
+|---|---|
+| B1 · `E1` — comments and formatting survive a save | ⚠ **Manual**, because 00002 is Phase E. A hand-written `settings.json` with comments, deliberate key order, blank lines and odd indentation diffs byte-identical except the edited value. ⭐ Also drive a skill `.md` with a `description: >-` folded block and one ending in a blank line — the artifact write path moved under this item when the YAML parser was replaced |
+| B2 · `E2`–`E5` | Per `docs/MANUAL-RETEST-PLAN.md`. ⭐ These four plus `E1` exercise **one shared library each** — `JsonC`, `AgentForge.Core` + `LayeredEditors`, `AgentForge.Core.Backup`, `AgentForge.Sdk`, `AgentForge.Artifacts` — which is exactly the code about to become permanent. They are the highest-value items in the phase |
+| B3 · `F1`, `F2`, `F4`, `F6` | Fixed, awaiting a look at a running UI. Colour and glyph judgements; these need eyes and cannot be automated |
 
 ### Phase C — publish the packages
 
 | Step | Verification |
 |---|---|
-| **C0 · Neutrality, evidenced once on the parked branch** | Bring Phase A's shared-library commits onto `feat/agentforge-opencodeforge` and run its suite. ⛔ **Pass criterion: the ~941 OpenCode tests are green. A failure BLOCKS C2** — it is not a note to record and move past, because it means the surface about to become permanent is not neutral, and that is the one thing this step exists to find out. ⓘ If 00002 is ordered second, C0 carries far less and is correspondingly cheaper. ⚠ Porting across these two branches is not free: this repo has measured that after the history rewrite neither commit counts nor patch-ids can say what has been carried, so carry by explicit cherry-pick of a named list, not by a count |
+| **C0 · Neutrality, evidenced on the parked branch** | ⭐ **No port needed.** With 00002 deferred to Phase E, `feat/agentforge-opencodeforge` already holds **identical** shared-library code, so this is running its suite as it stands. ⛔ **Pass criterion: the ~941 OpenCode tests are green, and a failure BLOCKS C2** — it means the surface about to become permanent is not neutral, which is the one thing this step exists to find out. ⚠ Confirm the two branches' shared-library trees really are identical before relying on that — `git diff <release-branch> feat/agentforge-opencodeforge -- src/AgentForge src/LayeredEditors src/JsonC` should be empty. Do not infer it from the plan saying so |
 | C1 · Preflight with a real `read:packages` token | ⛔ **Gate 3 is SKIPPED when no token is set**, and the 2026-09-14 run that "passed" exercised gates 1–2 only. The script says so in its own output — read it, do not infer it |
 | C2 · Push `packages-v<CalVer>` | `release-packages.yml` green; all eleven ids resolvable from the feed at that exact version |
 
@@ -201,6 +223,19 @@ by re-pushing.
 | D4 · Full suite and trim gate in package mode | Green, at the published version, with no local feed present |
 | D5 · Correct `ci.yml:132` and `package-canary.ps1:10` | They describe what D1–D3 made true |
 | D6 · Cut the release | The shipped artifact passes D3 |
+
+### Phase E — 00002, as the second package version
+
+Only once the pipeline is proven. [`00002`](00002-claude-code-real-config-locations.md) carries its
+own steps and verifications; what belongs here is the sequencing around them.
+
+| Step | Verification |
+|---|---|
+| E1 · Implement 00002 on the release branch | That plan's own step verifications |
+| E2 · Regenerate the eleven public-surface baselines, and **read the diff** | `PublicSurfaceBaselineTests` green. A baseline regenerated without reading it records whatever happened, including a mistake |
+| E3 · Re-evidence neutrality on the parked branch | ⛔ **Now the port is real** — 00002's commits have to be carried across, and this repo has measured that after the history rewrite neither commit counts nor patch-ids can say what has been carried. Carry by explicit cherry-pick of a named list |
+| E4 · Second `packages-v<CalVer>` tag, then bump the committed `SharedPackageVersion` | A different calendar day from the first. ⭐ The bump is a reviewable diff, which is the point of the pin |
+| E5 · `E1` re-run **automated** against a scratch home | The dividend 00002 was originally folded in for: set `CLAUDE_CONFIG_DIR` on the child process, drive the app, diff the fixture, and prove the real `~/.claude` untouched by a before/after listing |
 
 ---
 

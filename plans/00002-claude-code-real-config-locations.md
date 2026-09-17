@@ -1,13 +1,20 @@
 # 00002 — ClaudeForge resolves Claude Code's real config locations
 
-> Status: **draft, awaiting approval**. Supersedes nothing. Sequenced by [`00003`](00003-release-built-from-shared-packages.md).
+> Status: **draft, awaiting approval**. Supersedes nothing.
+> ⛔ **Sequenced as Phase E of [`00003`](00003-release-built-from-shared-packages.md) — AFTER the
+> first package release, as the second package version.** An earlier draft claimed this had to land
+> before the first `packages-v*` tag. It does not: only re-pushing an existing version is
+> impossible, so a second version is a preference rather than a constraint — and landing a rewrite
+> of path resolution in front of the release that exists to prove the package pipeline would leave
+> a Phase D failure with two candidate causes.
 
 ---
 
 ## Two defects, one accessor family
 
-Both live in `PlatformPaths` and its duplicate, both are silent, and both must land before the first
-`packages-v*` tag because they change packable assemblies and a published version is permanent.
+Both live in `PlatformPaths` and its duplicate, and both are silent. They change packable assemblies,
+so they land as **one** package version — but that version is the **second**, not the first; see the
+status line above.
 
 ### ⛔ 1 · Managed settings are read from the wrong directory — the larger one
 

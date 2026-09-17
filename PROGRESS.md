@@ -1256,6 +1256,23 @@ and [`00003`](plans/00003-release-built-from-shared-packages.md) are the drafts 
 - **The two accessibility entries are dropped from this branch's `## [Unreleased]`.** They describe
   work shipped in `v2026.3.916`; `main` owns released history and stays silent. Keeping them would
   have the next release announce a fix users have had since September.
+- ⭐ **00002 lands AFTER the first package release, as the SECOND package version.** ⛔ An earlier
+  draft called it a prerequisite of the `packages-v*` tag on the grounds that a later fix "costs
+  another version and another day". That does not follow — only **re-pushing** an existing version
+  is impossible, so a second version is a preference. The real reason to defer it is risk
+  attribution: 00002 rewrites path resolution across `AgentForge.Core` and `AgentForge.Sdk`, and
+  landing that in front of the release meant to prove the package pipeline would leave a failure
+  with two candidate causes. ⭐ Deferring also removes C0's cross-branch port entirely, because the
+  parked branch then holds identical shared-library code.
+- **The WHOLE retest gates the `packages-v*` tag**, not only the five write-path items. ⓘ Chosen
+  deliberately over gating on `E1`–`E5` alone — those five exercise one shared library each and are
+  the ones that *could* expose a defect the feed cannot take back, but a tag that cannot be undone
+  is not the place to be clever about which checks matter. ⚠ Consequence: all eight manual items are
+  on the critical path, `E1` included, and `E1` is **manual** for this release because 00002 moved.
+- ⓘ **`RepositoryUrl` / `PackageProjectUrl` need no decision.** Package metadata is per-version, so
+  a version built from `JanusMael/ClaudeForge` correctly names it; later versions from the new
+  repository carry their own. ⓘ The ids are free: `Bennewitz.Ninja.JsonC` is a 404 on nuget.org, and
+  `Bennewitz.Ninja.AutoVersioning` is already published there, so the account exists.
 
 - ⭐ **Schema loading: the disk cache is the MATERIALISED RESULT, not a tier in a chain.** Decided
   by the maintainer on 2026-09-12, three answers given explicitly:
