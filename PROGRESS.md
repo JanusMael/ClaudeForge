@@ -33,6 +33,54 @@
 
 ---
 
+## ⛔⛔ Two findings from 2026-09-17, both silent, both blocking the package release
+
+Neither was reported by anything. Both are written up in
+[`00002`](plans/00002-claude-code-real-config-locations.md) and
+[`00003`](plans/00003-release-built-from-shared-packages.md), **drafts awaiting approval**.
+
+### 1 · The release has NEVER been built from the shared packages
+
+Two places in the repository say it is — `.github/workflows/ci.yml:132` (*"it is the mode the
+release publishes from"*) and `scripts/package-canary.ps1:10` (*"this canary, and the release"*).
+Neither is true. `src/publish/Publish-Rid.ps1:160-167` is the **only** `dotnet publish` in the
+release chain and its complete flag list is `IncrementalBuild`, `BuildInParallel` and
+`RunResxKeyGuard`. The switch at `Directory.Build.targets:67` fires on `UseSharedPackages == 'true'`,
+which nothing sets, so **every RID of every release ever cut used `ProjectReference`**.
+
+⛔ Even asking would fail: `release.yml:21-23` grants `contents: write` and `pull-requests: read`,
+**not `packages: read`**, so the private feed would 401. Two independent halves, both missing.
+
+⚠ **The canary proves package mode WORKS; nothing makes the release USE it.** The canary,
+`PublicSurfaceBaselineTests` and `PackageVersionLockstepTests` all stay green forever while the
+shipped artifact is built from project references. The claim lived in a comment, and a comment is
+not a guard — the same shape as the schema registry that `ProductionSchemaRegistryTests` now
+source-scans for.
+
+### 2 · Managed settings are read from the wrong directory
+
+Claude Code reads enterprise policy from a **system** directory —
+`/Library/Application Support/ClaudeCode/` (macOS), `/etc/claude-code/` (Linux and WSL),
+`C:\Program Files\ClaudeCode\` (Windows) — holding `managed-settings.json`, `managed-settings.d/`
+and `managed-mcp.json`. ClaudeForge reads `~/.claude/managed-settings.json`
+(`PlatformPaths.cs:60-65`); the real system directory appears **nowhere in the product**, and
+`managed-mcp.json` is unhandled.
+
+It fails **both** ways, silently: a machine with real policy shows **no managed layer**, so the
+effective view tells the user their own value wins where policy overrides it; and a file the user
+places at `~/.claude/managed-settings.json` displays as enforced while doing nothing.
+
+⭐ **The discovery code was written for the right thing and pointed at the wrong place.**
+`ConfigFileDiscoverer.cs:32-56` already marks the entries `readOnly: true`, already reads a drop-in
+directory, and already catches `UnauthorizedAccessException` — *"skip gracefully if unreadable
+(e.g. enterprise policy dir)"*. A privileged directory was anticipated; `~/.claude/` is never one.
+
+ⓘ The same file also documents `CLAUDE_CONFIG_DIR` to the user
+(`EnvVarTooltipConverter.cs:39`, live on two surfaces) and ignores it. Independent of the above,
+and fixed by the same plan.
+
+---
+
 ## ▶ RESUME HERE — finish the ClaudeForge regression
 
 ### The next steps, in order
@@ -1151,6 +1199,40 @@ pass, not a fix.
 ---
 
 ## 🔒 Locked decisions — do not relitigate
+
+**Settled 2026-09-17 — the package release path.** Plans [`00002`](plans/00002-claude-code-real-config-locations.md)
+and [`00003`](plans/00003-release-built-from-shared-packages.md) are the drafts carrying these.
+
+- ⭐ **The shared libraries go to a DEDICATED REPOSITORY, published to nuget.org** — gated on being
+  fully tested first. The private GitHub feed is therefore a **test rig, not the end state**, which
+  is what makes the fork-credential cost below acceptable: it disappears when the packages are
+  public. The Claude-specific halves stay in this repository and are consumed through the published
+  feed. ⚠ All eleven packable projects are product-neutral **today**; `ClaudeForge.Sdk.Claude` and
+  `ClaudeForge.Avalonia` are not packable, so that arrangement means a move **and** two new packages.
+- ⭐ **The XAML-quality audits eventually ship as their own package**, enforcing theme, styling and
+  accessibility rules across every Avalonia project rather than living in one app's test suite. ⛔
+  The payoff starts before any move: the generic guards sit in `tests/ClaudeForge.Tests/` and
+  **OpenCodeForge is not covered by them**. It is a different *kind* of package — analyzer or
+  MSBuild task, consumed with `PrivateAssets="all"` by every project including the eleven, so it is
+  **not** switched by `UseSharedPackages`. See 00003's *Downstream* section.
+- **The release restores from the PUBLISHED feed**, not a locally-packed one, and **forks lose the
+  ability to cut a release**. Temporary, per the first item.
+- **Provenance is a build-time guard plus archived restore evidence naming the SOURCE.** ⛔ There is
+  no artifact-level tell: `Directory.Build.targets:87` erases the one known difference on purpose
+  and the publish strip removes `*.xml` either way. "Package mode" and "package mode from the
+  published feed" are different claims and only the restore source separates them.
+- **`SharedPackageVersion` is a committed pin in the ROOT `Directory.Build.props`.** Not a default,
+  so the targets file's refusal is satisfied; the release needs no inputs and git history records
+  every version move. ⚠ Root, not `src/` — test projects consume the packages too.
+- **`LICENSE` and the package metadata both name Brian Bennewitz**, and `<Copyright>` gets set.
+  Survives the repository move; a project-named holder would not.
+- **Package `<Description>`s lose their internal lines only** — the layering invariants are already
+  in `CLAUDE.md`; the outward-facing paragraphs stay as written.
+- **`main`'s CHANGELOG stays silent about the v2026.3.916 accessibility fix.** No PR for the two
+  entries. ⓘ Consequence: this branch's copies sit in `## [Unreleased]` describing shipped work, so
+  each rebase re-decides about them unless they are dropped here too.
+- ⛔ **`CLAUDE_CONFIG_DIR` does NOT relocate managed settings** — they live outside the config
+  directory entirely. The policy-escape concern raised while drafting 00002 does not exist.
 
 - ⭐ **Schema loading: the disk cache is the MATERIALISED RESULT, not a tier in a chain.** Decided
   by the maintainer on 2026-09-12, three answers given explicitly:
