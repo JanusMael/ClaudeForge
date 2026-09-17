@@ -1,6 +1,6 @@
 # 00003 — A ClaudeForge release actually built from the shared packages
 
-> Status: **draft, awaiting approval**. Supersedes nothing. Sequences [`00002`](00002-claude-code-real-config-locations.md).
+> Status: **approved 2026-09-17**. Supersedes nothing. Sequences [`00002`](00002-claude-code-real-config-locations.md).
 
 ---
 
