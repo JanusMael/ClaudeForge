@@ -3,7 +3,7 @@
 # WHY THIS EXISTS
 # ---------------
 # Eleven projects under src/ are published as private NuGet packages (plans/00001). Everything
-# else — both apps, the four product-specific libraries, the sample and all twelve test projects
+# else — the app, its two product-specific libraries, the sample and all nine test projects
 # — consumes them one of two ways:
 #
 #     UseSharedPackages unset/false  ->  ProjectReference   (development: the editor, the suite)
