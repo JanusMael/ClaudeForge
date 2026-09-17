@@ -1,6 +1,6 @@
 # 00002 — ClaudeForge resolves Claude Code's real config locations
 
-> Status: **draft, awaiting approval**. Supersedes nothing.
+> Status: **approved 2026-09-17**. Supersedes nothing.
 > ⛔ **Sequenced as Phase E of [`00003`](00003-release-built-from-shared-packages.md) — AFTER the
 > first package release, as the second package version.** An earlier draft claimed this had to land
 > before the first `packages-v*` tag. It does not: only re-pushing an existing version is
