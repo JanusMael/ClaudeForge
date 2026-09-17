@@ -36,7 +36,9 @@ public sealed class AppChangeKindTokenCoverageTests
     private static readonly string[] AppFiles =
     [
         "src/ClaudeForge/App.axaml",
-        "src/OpenCodeForge/App.axaml",
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "src/OpenCodeForge/App.axaml" was here;
+        // restore it when OpenCodeForge rejoins. ⚠ With one app this no longer compares two
+        // palettes, so it proves each token exists rather than that the two agree.
     ];
 
     private static readonly string[] Variants = ["Light", "Dark"];
@@ -126,8 +128,10 @@ public sealed class AppChangeKindTokenCoverageTests
             }
         }
 
-        Assert.IsTrue(measured >= 12,
-            $"only {measured} pill colour(s) were measured; 3 kinds x 2 variants x 2 apps = 12 are "
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 12 (3 kinds x 2 variants x 2 apps);
+        // this branch ships one app. Restore 12 when OpenCodeForge rejoins.
+        Assert.IsTrue(measured >= 6,
+            $"only {measured} pill colour(s) were measured; 3 kinds x 2 variants x 1 app = 6 are "
             + "expected, so the scan has lost its subjects and would pass without checking "
             + "anything.");
 

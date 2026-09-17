@@ -54,6 +54,32 @@ public sealed class NoDeadBrushTokensTests
         "src/ClaudeForge/Resources/Compat/SimpleKeys.Semi.axaml",
     ];
 
+    /// <summary>
+    /// Tokens whose only consumer left with OpenCodeForge in plans/00003 Phase 0.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>TWO-APP GUARD NARROWED — plans/00003 Phase 0, and this entry has a NAMED EXIT.</b>
+    /// <c>EditorColors.axaml</c> records the consumer itself: <i>"OpenCodeKeybindEditorView.axaml
+    /// has named LE.DangerText (7 times) and LE.DangerBorder"</i>. That view is gone, so both are
+    /// genuinely dead.
+    /// <para>
+    /// ⚠ <b>They are exempted rather than deleted because deleting them is a SHARED-LIBRARY change,
+    /// and 00003 Phase A requires the shared surface be unchanged before the immutable
+    /// <c>packages-v*</c> tag</b> — that premise is what makes a Phase D failure attributable to the
+    /// pipeline rather than to two candidate causes.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Delete the tokens and this list in Phase E</b>, alongside 00002, where a shared-library
+    /// change is landing anyway. An allow-list with no exit is how a dead-token guard quietly stops
+    /// mattering, which is the failure this whole class exists to prevent.
+    /// </para>
+    /// </remarks>
+    private static readonly string[] DeadWithOpenCodeForge =
+    [
+        "LE.DangerBorder",
+        "LE.DangerText",
+    ];
+
     /// <param name="KeyPattern">The shape of key this family produces.</param>
     /// <param name="BuiltBy">
     /// The source file that constructs it. Named so the exemption can be re-verified rather than
@@ -110,6 +136,12 @@ public sealed class NoDeadBrushTokensTests
         foreach ((string key, SortedSet<string> where) in declarations.OrderBy(k => k.Key, StringComparer.Ordinal))
         {
             if (Families.Any(f => Regex.IsMatch(key, f.KeyPattern)))
+            {
+                continue;
+            }
+
+            // See DeadWithOpenCodeForge: exempt until Phase E, not forgiven.
+            if (DeadWithOpenCodeForge.Contains(key, StringComparer.Ordinal))
             {
                 continue;
             }

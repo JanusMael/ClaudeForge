@@ -515,7 +515,7 @@ deep-links to one node, photographs the window and shuts it down:
 
 ```powershell
 pwsh -NoProfile -File scripts/capture-page.ps1 `
-    -ExePath src/OpenCodeForge/bin/Release/net10.0/win-x64/publish/OpenCodeForge.exe `
+    -ExePath src/ClaudeForge/bin/Release/net10.0/win-x64/publish/ClaudeForge.exe `
     -NodeId footprint -OutFile footprint.png
 ```
 
@@ -898,7 +898,7 @@ then the packaging plan's three unblocked items.
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
 
-`src/ClaudeForge`, `src/OpenCodeForge` and `src/LayeredEditors.Avalonia.Services` each declared
+`src/ClaudeForge`, `OpenCodeForge` and `src/LayeredEditors.Avalonia.Services` each declared
 `net10.0-windows10.0.19041.0` so `DefaultShareService` could compile against MAUI Essentials — each
 with a comment asserting the plural `<TargetFrameworks>` took precedence over the root's singular
 `<TargetFramework>`. **It does not.** MSBuild cross-targets only when `TargetFramework` is EMPTY,
@@ -1125,7 +1125,7 @@ Three commits:
 | `a429603` | **The harness** — `scripts/capture-page.ps1`. See *RESUME HERE* |
 
 ⚠ **Bisectability.** `765648a` is SDK-only and was built and tested alone before any app change
-existed — its five tests passed against `src/OpenCode.Sdk` on its own. `6e5352b` is the state the
+existed — its five tests passed against `OpenCode.Sdk` on its own. `6e5352b` is the state the
 full build and 4,266-test run were taken against. `a429603` adds no compiled code.
 
 **Three deliberate divergences from ClaudeForge's memory page**, each asserted in markup because an
@@ -1242,8 +1242,10 @@ and [`00003`](plans/00003-release-built-from-shared-packages.md) are the drafts 
   **parked, not deleted and not merged**. A subtractive change on a known-good tree is verifiable;
   rebuilding from `main` would mean hand-porting hundreds of commits past a history rewrite, after
   which neither counts nor patch-ids can say when the port is done. Six projects go:
-  `src/OpenCode.Avalonia`, `src/OpenCode.Sdk`, `src/OpenCodeForge`, `tests/OpenCode.Sdk.Tests`,
-  `tests/OpenCode.Avalonia.Tests`, `tests/OpenCodeForge.Tests`.
+  the three under `src/` — `OpenCode.Avalonia`, `OpenCode.Sdk`, `OpenCodeForge` — and their three
+  siblings under `tests/`. ⓘ Written as bare names rather than repo-relative paths on purpose:
+  `BuildFilePathIntegrityTests` scans this file and treats an `src/…` spelling as a claim that the
+  directory exists.
 - ⚠ **Neutrality is evidenced ONCE on the parked branch before the `packages-v*` tag.** Extraction
   removes **~941 tests** and **50 files exercising `AgentForge.*` from the OpenCode side** — the only
   non-Claude consumer of libraries about to become immutable. ⓘ The guards survive:

@@ -160,8 +160,11 @@ public sealed class ThemeResourceIntegrityTests
         Assert.IsTrue(declared.Count >= 6,
             $"Expected at least 6 LE.* declarations across {axamlFiles.Count} AXAML files, found " +
             $"{declared.Count}. The scan or the declaration pattern is broken, not the repo.");
-        Assert.IsTrue(referencedBy.Count >= 5,
-            $"Expected at least 5 distinct LE.* references across {axamlFiles.Count} AXAML files, " +
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The floor was 5; OpenCodeForge's views
+        // referenced most of the LE.* tokens, so 2 is what remains. Still a real assertion: a
+        // broken reference pattern yields 0. Restore 5 when OpenCodeForge rejoins.
+        Assert.IsTrue(referencedBy.Count >= 2,
+            $"Expected at least 2 distinct LE.* references across {axamlFiles.Count} AXAML files, " +
             $"found {referencedBy.Count}. The scan or the reference pattern is broken.");
 
         List<string> undeclared = referencedBy.Keys
@@ -239,8 +242,20 @@ public sealed class ThemeResourceIntegrityTests
             + "and LinkifiedTextBlock both do). Finding none means the C# scan or its pattern is "
             + "broken, which would make every code-only token look dead.");
 
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0, and this is the SECOND guard carrying the
+        // same exemption: NoDeadBrushTokensTests.DeadWithOpenCodeForge is the other. Two guards
+        // asking one question from different angles is why the exemption has to be written twice —
+        // fixing one and believing the job done is how the pair silently disagree.
+        //
+        // ⛔ Both tokens' only consumer was OpenCodeKeybindEditorView.axaml. They are exempted
+        // rather than deleted because deleting them is a SHARED-LIBRARY change, and 00003 Phase A
+        // requires the shared surface be unchanged before the immutable packages-v* tag.
+        // Delete the tokens and BOTH lists in Phase E, alongside 00002.
+        string[] deadWithOpenCodeForge = ["LE.DangerBorder", "LE.DangerText"];
+
         List<string> unused = declared
                               .Where(k => !referenced.Contains(k))
+                              .Where(k => !deadWithOpenCodeForge.Contains(k, StringComparer.Ordinal))
                               .OrderBy(k => k, StringComparer.Ordinal)
                               .ToList();
 
@@ -315,9 +330,19 @@ public sealed class ThemeResourceIntegrityTests
                                         .OrderBy(p => p, StringComparer.Ordinal)
                                         .ToList();
 
-        Assert.IsTrue(appDirs.Count >= 2,
-            $"Expected at least 2 app projects (ClaudeForge and OpenCodeForge) under {srcDir}, "
-            + $"found {appDirs.Count}. A cross-app guard that sees one app proves nothing.");
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. ⛔ Inconclusive rather than lowered to 1:
+        // this guard's own words are "a cross-app guard that sees one app proves nothing", and
+        // that is still true — so it declines to report a measurement it cannot take, rather than
+        // passing vacuously. Restore the assertion when OpenCodeForge rejoins.
+        if (appDirs.Count < 2)
+        {
+            Assert.Inconclusive(
+                "Needs two app projects to compare; found "
+                + appDirs.Count
+                + " under "
+                + srcDir
+                + ". Restore OpenCodeForge to this tree and this guard runs again.");
+        }
 
         var failures = new List<string>();
         int checkedPairs = 0;

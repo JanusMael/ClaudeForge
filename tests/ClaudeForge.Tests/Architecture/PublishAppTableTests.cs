@@ -98,10 +98,14 @@ public sealed class PublishAppTableTests
     {
         List<PublishAppTable.Row> rows = ReadTable(FindRepoRoot());
 
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The floor was 2; this branch ships one app.
+        // 1 is still a real assertion, because the failure this guards against is the regex
+        // silently reading NOTHING, which would make every other test in this class pass without
+        // checking anything. Restore 2 when OpenCodeForge rejoins.
         Assert.IsTrue(
-            rows.Count >= 2,
-            $"Parsed {rows.Count} row(s) out of {TableRelativePath}, expected at least the two "
-            + "shipping apps. Either the table's shape changed and this regex no longer reads it, "
+            rows.Count >= 1,
+            $"Parsed {rows.Count} row(s) out of {TableRelativePath}, expected at least the one "
+            + "shipping app. Either the table's shape changed and this regex no longer reads it, "
             + "or an app was removed — the first case makes every other test in this class pass "
             + "without checking anything.");
     }

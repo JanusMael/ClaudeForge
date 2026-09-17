@@ -39,7 +39,9 @@ public sealed class SeverityGlyphFontSizeMarkupTests
     /// and the <c>IsDangerNow</c> banner), plus the nav badge, search hit, both effective-value
     /// grids, the save dialog and OpenCodeForge's nav badge.
     /// </remarks>
-    private const int ExpectedGlyphSites = 9;
+    // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 9; one site was OpenCodeForge's.
+    // Restore 9 when OpenCodeForge rejoins.
+    private const int ExpectedGlyphSites = 8;
 
     /// <summary>
     /// A <c>TextBlock</c> whose <c>Text</c> comes from the severity glyph converter. Attributes
@@ -137,8 +139,10 @@ public sealed class SeverityGlyphFontSizeMarkupTests
             }
         }
 
-        Assert.IsTrue(users >= 7,
-            $"only {users} file(s) use SeverityToFontSize; seven render a severity glyph, so the "
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 7; one of the seven was
+        // OpenCodeForge's. Restore 7 when OpenCodeForge rejoins.
+        Assert.IsTrue(users >= 6,
+            $"only {users} file(s) use SeverityToFontSize; six render a severity glyph, so the "
             + "scan has lost its subjects and would pass without checking anything");
 
         Assert.IsTrue(missing.Count == 0,

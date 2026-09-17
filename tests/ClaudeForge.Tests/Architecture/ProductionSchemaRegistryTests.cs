@@ -37,7 +37,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 public sealed class ProductionSchemaRegistryTests
 {
     /// <summary>The app assemblies — i.e. every composition root this repo ships.</summary>
-    private static readonly string[] AppProjectDirs = ["ClaudeForge", "OpenCodeForge"];
+    // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCodeForge" was here; restore it when
+    // OpenCodeForge rejoins.
+    private static readonly string[] AppProjectDirs = ["ClaudeForge"];
 
     /// <summary>
     /// <c>new SchemaRegistry()</c> with an empty argument list.
@@ -100,7 +102,8 @@ public sealed class ProductionSchemaRegistryTests
 
     [TestMethod]
     [DataRow("ClaudeForge")]
-    [DataRow("OpenCodeForge")]
+    // TWO-APP GUARD NARROWED — plans/00003 Phase 0. [DataRow("OpenCodeForge")] was here; restore
+    // it when OpenCodeForge rejoins.
     public void EachAppAsksForTheNetworkByName(string app)
     {
         string repoRoot = FindRepoRoot();

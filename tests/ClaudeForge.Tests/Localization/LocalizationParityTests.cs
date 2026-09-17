@@ -389,13 +389,11 @@ public sealed class LocalizationParityTests
         ("ClaudeForge.Avalonia", false,
             "Editor-library strings for Claude's permission controls. English-only; no "
             + "translations have been written for them."),
-        ("OpenCodeForge", false,
-            "The second app's shell strings. English-only; the app itself is newer than any "
-            + "translation pass."),
-        ("OpenCode.Avalonia", false,
-            "Editor-library strings for OpenCode's permission grid and MCP editor. English-only, "
-            + "and deliberately so: the alternative was leaving them as literals in the AXAML, "
-            + "which is strictly worse — a literal cannot even be found by a translator."),
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The "OpenCodeForge" and "OpenCode.Avalonia"
+        // ledger entries were here and named projects that no longer exist; restore both when
+        // OpenCodeForge rejoins. Their recorded reason, worth keeping: both were English-only
+        // deliberately, because the alternative was leaving the strings as literals in AXAML — and
+        // a literal cannot even be found by a translator.
     ];
 
     private static string FindRepoRoot()

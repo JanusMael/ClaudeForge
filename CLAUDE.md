@@ -16,9 +16,16 @@ one set of shared libraries:
 | App | Edits | Entry point |
 |---|---|---|
 | **ClaudeForge** | Claude Code (`settings.json`) and Claude Desktop (`claude_desktop_config.json`) | `src/ClaudeForge` |
-| **OpenCodeForge** | OpenCode (`opencode.json` / `opencode.jsonc`) and its TUI (`tui.json`) | `src/OpenCodeForge` |
+| **OpenCodeForge** | OpenCode (`opencode.json` / `opencode.jsonc`) and its TUI (`tui.json`) | ⛔ **not on this branch** |
 
 Both are Avalonia apps on .NET 10, published self-contained and trimmed per RID.
+
+⛔ **This is the RELEASE branch and it holds ONE app.** OpenCodeForge and its two libraries were
+removed here by plans/00003 Phase 0, so the ClaudeForge release carries no OpenCodeForge code; they
+live on the parked `feat/agentforge-opencodeforge` branch and rejoin after the release, once the
+shared packages exist and are published. ⚠ **The two-app narrative below is still the architecture
+and still load-bearing** — it is why `AgentForge.*` is product-neutral, and that neutrality is what
+the published packages sell. Read it as the design, not as an inventory of this tree.
 
 The repository keeps its original name. That is deliberate — ClaudeForge shipped first and is
 the published product; the second app grew out of it rather than replacing it.
@@ -147,8 +154,9 @@ needs its own publish:
 
 ```bash
 dotnet publish src/ClaudeForge    -c Release -r linux-x64 --self-contained true
-dotnet publish src/OpenCodeForge  -c Release -r linux-x64 --self-contained true
 ```
+
+ⓘ There was a second line here for OpenCodeForge; on this branch there is one app to publish.
 
 `src/Directory.Build.props` sets `IsTrimmable` for everything under `src/`, which is what gives
 ILLink eyesight into the shared libraries. Without it, trim warnings in a shared project are

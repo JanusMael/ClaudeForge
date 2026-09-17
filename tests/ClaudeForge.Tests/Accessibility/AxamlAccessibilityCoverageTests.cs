@@ -146,8 +146,8 @@ public sealed class AxamlAccessibilityCoverageTests
         "ClaudeForge",
         "ClaudeForge.Avalonia",
         "LayeredEditors.Avalonia",
-        "OpenCode.Avalonia",
-        "OpenCodeForge",
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCode.Avalonia" and "OpenCodeForge"
+        // were here; restore both when OpenCodeForge rejoins this tree.
     };
 
     /// <summary>

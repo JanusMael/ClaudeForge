@@ -38,11 +38,12 @@ The repo hosts two apps over a shared core, so there are three entry points:
 
 | File | Scope | Use it when |
 |---|---|---|
-| `ClaudeForge.slnx` | **Everything.** | You are changing shared code, or you want what CI builds. |
-| `ClaudeForge.Only.slnf` | Shared + ClaudeForge | Working on ClaudeForge alone. |
-| `OpenCodeForge.Only.slnf` | Shared + OpenCode | Working on OpenCodeForge alone. |
+| `ClaudeForge.slnx` | **Everything.** | Always — it is also what CI builds. |
 
-The `.slnf` files are [solution filters](https://learn.microsoft.com/visualstudio/ide/filtered-solutions) over `ClaudeForge.slnx` — a view, not a copy. Both include the whole shared layer and its tests, since a change there affects the product you are in.
+ⓘ **There are no `.slnf` solution filters on this branch.** They existed to give each product a
+focused view of the shared layer plus its own projects; with a single product a filter selects the
+entire solution, so it offered nothing and the guards around it could no longer fail. They are
+restored from the parked branch when a second product returns — see plans/00003 Phase 0.
 
 ⚠ **`ClaudeForge.slnx` is the one CI builds and tests**, so a project missing from it never builds in CI at all — and no local build will tell you. Add new projects there first. A filter cannot paper over the omission: naming a project that is absent from the parent solution is a hard `MSB4025` error. The reverse drift — added to the solution, forgotten in the filters — is caught by `SolutionFilterTests` instead, because MSBuild has no opinion about it.
 

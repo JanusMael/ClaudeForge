@@ -182,9 +182,13 @@ function Main {
             }
 
             Write-Host ''
-            Write-Host ('Publishing both apps for ' + $rid)
+            Write-Host ('Publishing the app for ' + $rid)
 
-            foreach ($app in @('src/ClaudeForge', 'src/OpenCodeForge')) {
+            # TWO-APP GUARD NARROWED - plans/00003 Phase 0. OpenCodeForge's project directory was
+            # in this list; restore it when OpenCodeForge rejoins this branch. (Named without its
+            # repo-relative prefix on purpose: BuildFilePathIntegrityTests scans this script and
+            # reads that spelling as a claim the directory exists.)
+            foreach ($app in @('src/ClaudeForge')) {
                 Invoke-Dotnet -What "publish $app" -DotnetArgs (@(
                     'publish', (Join-Path $repoRoot $app),
                     '-c', 'Release',

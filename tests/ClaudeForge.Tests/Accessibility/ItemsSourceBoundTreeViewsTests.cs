@@ -74,11 +74,21 @@ public sealed class ItemsSourceBoundTreeViewsTests
         string repoRoot = FindRepoRoot();
         List<(string File, string Body)> trees = FindItemsSourceBoundTreeViews(repoRoot);
 
-        // A scan that finds nothing proves nothing. Both apps' navigation trees must show up, so a
-        // regex slip empties the list rather than silently passing.
-        Assert.IsTrue(trees.Count >= 2,
-            $"expected at least 2 ItemsSource-bound TreeViews (ClaudeForge's and OpenCodeForge's "
-            + $"navigation), found {trees.Count}. The scan or its pattern is broken, not the repo.");
+        // A scan that finds nothing proves nothing, so the floor exists to make a regex slip empty
+        // the list rather than silently pass.
+        //
+        // ⚠ THE FLOOR WAS LOWERED FROM 2 TO 1, and that is a decision rather than a fix. It read
+        // "both apps' navigation trees must show up" when this repository held two apps. The
+        // release branch holds one — see plans/00003 Phase 0 — so 2 became unreachable and the
+        // guard failed for a reason that had nothing to do with accessibility.
+        //
+        // ⛔ Lowering an anti-vacuity floor is exactly how one stops guarding anything, so: 1 is
+        // still a real assertion here, because ClaudeForge's navigation tree is the one tree this
+        // scan must always find. If it ever reports 0, the pattern is broken. Restore 2 when a
+        // second app's tree returns to this tree, and do not lower it again without saying why.
+        Assert.IsTrue(trees.Count >= 1,
+            $"expected at least 1 ItemsSource-bound TreeView (ClaudeForge's navigation), found "
+            + $"{trees.Count}. The scan or its pattern is broken, not the repo.");
 
         List<string> failures = [];
 

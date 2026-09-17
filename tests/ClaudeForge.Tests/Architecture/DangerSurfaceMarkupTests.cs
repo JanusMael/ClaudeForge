@@ -64,7 +64,9 @@ public sealed class DangerSurfaceMarkupTests
         new("PropertyEditorViewModel", 2,
             "the settings row (both apps keep their own PropertyEditorWrapper)",
             DelegatesTo: "PropertyEditorWrapper"),
-        new("SearchResultViewModel", 2, "a search hit (both apps render results)"),
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 2, "both apps render results"; only
+        // ClaudeForge's MainWindow.axaml remains. Restore 2 when OpenCodeForge rejoins.
+        new("SearchResultViewModel", 1, "a search hit (ClaudeForge's results list)"),
         // ⚠ ClaudeForge renders effective values TWICE — the group editor's Effective tab and the
         // standalone Effective Settings page — from the same row type through two unrelated
         // producers. OpenCodeForge draws no tab strip and hosts no such page, so both files are
@@ -174,9 +176,11 @@ public sealed class DangerSurfaceMarkupTests
             }
         }
 
-        Assert.IsTrue(checkedFiles >= 7,
-            $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers, two search "
-            + "templates, two effective-value grids and the save dialog carry it, so the scan has "
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 7; one of the two search templates was
+        // OpenCodeForge's. Restore 7 when OpenCodeForge rejoins.
+        Assert.IsTrue(checkedFiles >= 6,
+            $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers, one search "
+            + "template, two effective-value grids and the save dialog carry it, so the scan has "
             + "lost its subjects and would pass without checking anything.");
 
         Assert.IsTrue(offenders.Count == 0,
@@ -204,8 +208,8 @@ public sealed class DangerSurfaceMarkupTests
             .Select(f => f.Relative)];
 
         Assert.AreEqual(2, wrappers.Count,
-            $"expected exactly 2 PropertyEditorWrapper.axaml files (the shared one OpenCodeForge "
-            + $"renders and ClaudeForge's own copy), found {wrappers.Count}: "
+            $"expected exactly 2 PropertyEditorWrapper.axaml files (the shared one in "
+            + $"LayeredEditors.Avalonia and ClaudeForge's own copy), found {wrappers.Count}: "
             + string.Join(", ", wrappers));
 
         List<string> missing = [.. AxamlFiles(repoRoot)

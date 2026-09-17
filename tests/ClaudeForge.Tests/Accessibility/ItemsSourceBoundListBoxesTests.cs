@@ -57,10 +57,13 @@ public sealed class ItemsSourceBoundListBoxesTests
 
         // A scan that finds nothing proves nothing, and a regex slip empties the list silently
         // rather than throwing.
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The floor is unchanged at 1; only the
+        // example changed, because the one it named (OpenCodeForge's search results) is gone.
+        // Naming a subject that no longer exists is how a reader concludes the guard covers
+        // something it does not.
         Assert.IsTrue(bound.Count >= 1,
-            "expected at least 1 ItemsSource-bound ListBox with an ItemTemplate x:DataType "
-            + $"(OpenCodeForge's search results), found {bound.Count}. The scan is broken, not "
-            + "the repo.");
+            "expected at least 1 ItemsSource-bound ListBox with an ItemTemplate x:DataType, "
+            + $"found {bound.Count}. The scan is broken, not the repo.");
 
         List<string> failures = [];
 

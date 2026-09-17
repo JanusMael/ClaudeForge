@@ -45,7 +45,9 @@ public sealed class AppSeverityTokenCoverageTests
     private static readonly string[] AppFiles =
     [
         "src/ClaudeForge/App.axaml",
-        "src/OpenCodeForge/App.axaml",
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "src/OpenCodeForge/App.axaml" was here;
+        // restore it when OpenCodeForge rejoins. ⚠ With one app this no longer compares two
+        // palettes, so it proves each token exists rather than that the two agree.
     ];
 
     private static readonly string[] Variants = ["Light", "Dark"];

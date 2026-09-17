@@ -42,10 +42,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 public sealed class TrimModeIntegrityTests
 {
     /// <summary>The apps that publish a trimmed, self-contained artifact.</summary>
+    // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCodeForge" was here; restore it when
+    // OpenCodeForge rejoins. ⚠ TheTwoApps_DoNotDriftApartOnTrimSettings indexes [0] and [1] and
+    // therefore cannot run with one entry — it is skipped below rather than weakened, because a
+    // drift check between one app and itself is a test that cannot fail.
     private static readonly string[] ShippingApps =
     {
         "ClaudeForge",
-        "OpenCodeForge",
     };
 
     private const string RequiredTrimMode = "partial";
@@ -145,6 +148,18 @@ public sealed class TrimModeIntegrityTests
     public void TheTwoApps_DoNotDriftApartOnTrimSettings()
     {
         string repoRoot = FindRepoRoot();
+
+        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. There is one shipping app on this branch,
+        // so there is no pair to compare. ⛔ Inconclusive rather than a trivial pass: a drift check
+        // between one app and itself would report success without taking a measurement, which is
+        // the shape of test this class was written to replace.
+        if (ShippingApps.Length < 2)
+        {
+            Assert.Inconclusive(
+                "Needs two shipping apps; this branch has "
+                + ShippingApps.Length
+                + ". Restore OpenCodeForge to ShippingApps when it rejoins.");
+        }
 
         string[] modes = ShippingApps
             .Select(app => LoadAppCsproj(repoRoot, app)
