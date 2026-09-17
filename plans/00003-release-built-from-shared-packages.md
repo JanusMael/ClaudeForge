@@ -162,6 +162,7 @@ all measure the tree that will actually be released.
 | 0b · Remove their six `ClaudeForge.slnx` entries, `release-opencodeforge.yml`, the CI steps, the six OpenCode grants in `AssemblyInfo.InternalsVisibleTo.cs` (lines 60-62 and 78-80), and the **OpenCodeForge entry in `src/publish/PublishApps.ps1`** | `BuildFilePathIntegrityTests` green **both ways** — every project on disk listed, and every listed project present; it guards both directions and a deletion can break either. ⭐ It also scans `src/publish/`, `scripts/` and `packaging/`, so the `PublishApps.ps1` row's `ProjectPath` reddens there rather than surviving to the release cut. Plus `SharedFriendGrantsTests` for the grants file |
 | 0c · ⛔ **`src/PACKAGE-README.md` first — it is packed into all eleven packages** | `src/Directory.Build.props` packs it as `PackageReadmeFile` for every project without its own README, and lines 3 and 18 name OpenCodeForge. Left alone, the **immutable** published packages describe a product that is not in the tree they were built from. ⚠ **No existing guard covers this file**: `BuildFilePathIntegrityTests` scans root `*.md` and area `AGENTS.md` only. Verify by reading the `README.md` inside a packed `.nupkg`, not the source file |
 | 0d · Purge references in `AGENTS.md`, `CONTRIBUTING.md`, `docs/AVALONIA-GOTCHAS.md`, `src/ClaudeForge/ViewModels/AGENTS.md` and `docs/MANUAL-RETEST-PLAN.md` | `BuildFilePathIntegrityTests` green — it scans root `*.md` and every area `AGENTS.md`, so a path naming a deleted project fails there. ⓘ `MANUAL-RETEST-PLAN.md` is included because **Phase B reads it** and it currently describes OpenCodeForge surfaces |
+| 0d2 · Delete `scripts/probe-opencode.ps1` and `scripts/refresh-opencode-db-schema.ps1`, and the OpenCode half of `.github/workflows/schema-refresh.yml` | ⚠ **No guard catches these.** They are scripts, not references, so `BuildFilePathIntegrityTests` has nothing to flag — they would simply sit there dead, and the schema-refresh workflow would keep fetching schemas for a product that is not in the tree. Verify by grepping the whole tree for `opencode` case-insensitively and reading every remaining hit |
 | 0e · **Delete** `docs/OPENCODEFORGE-PLAN.md` on the release branch | It is not a document with OpenCodeForge references in it — it is entirely about OpenCodeForge, so purging references from it is incoherent. ⛔ Delete rather than edit, and **only on the release branch**: the parked branch keeps it, and it is the record needed when OpenCodeForge is revisited |
 | 0f · Full suite and trim gate on the new branch | Green at the **reduced** count. ⚠ Write the expected number down first: the drop from ~4,429 should be about **941**, and a much smaller drop means projects are still being built. ⓘ The trim gate is now a **two-RID-set, one-app** matrix rather than twelve publishes — six, for ClaudeForge alone |
 
@@ -196,6 +197,40 @@ run on a stale commit it certifies a build nobody is shipping.
 ⛔ **This phase gates the package tag, not only the app release.** All eight items complete before
 Phase C. A published version cannot be taken back, so nothing proceeds on a partial retest.
 
+### ⛔⛔ The build under test must be PACKAGE MODE, or this phase validates the wrong artifact
+
+Phase B runs before Phase C, so no packages exist on the feed yet — which means the obvious build to
+retest is a `ProjectReference` one, while Phase D ships `PackageReference`. **The one phase gating an
+irreversible step would then exercise an artifact nobody ships.**
+
+⚠ **Assuming the two modes are equivalent is the precise move that created the defect this plan
+exists to fix.** They are close by design and the publish output is stripped identically — but the
+canary found a real difference (`Directory.Build.targets:70-87`) **by measurement**, and only then
+was it erased on purpose. "Close enough" here is a belief, not a result.
+
+The circularity resolves with a **locally-packed** package-mode build — the same reference mechanics
+as the release, without needing the feed to exist:
+
+```
+# -CanaryVersion pins the pack to the version Phase C will publish, so the retested
+# build and the shipped build differ ONLY in which feed answered the restore.
+pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly -CanaryVersion <the intended CalVer>
+
+dotnet publish src/ClaudeForge -c Release -r win-x64 --self-contained true `
+  -p:UseSharedPackages=true -p:SharedPackageVersion=<the same value>
+```
+
+⭐ **Packing at the intended release version rather than the default throwaway is what makes this
+worth doing.** It reduces the gap between what was retested and what ships to a single variable —
+the restore source — and that variable is exactly what D1's `.nupkg.metadata` check reads.
+
+⛔ **That publish cannot go through `src/publish/publish.ps1`**, which wipes `artifacts/localfeed` —
+deliberately, so a release never silently consumes a stale local package. Here the local feed is the
+point, so drive `dotnet publish` directly.
+
+ⓘ `docs/MANUAL-RETEST-PLAN.md`'s *Build under test* row names a plain Release publish and must be
+updated to this, or the next person retests the wrong thing for the documented reason.
+
 | Step | Verification |
 |---|---|
 | B1 · `E1` — comments and formatting survive a save | ⚠ **Manual**, because 00002 is Phase E. A hand-written `settings.json` with comments, deliberate key order, blank lines and odd indentation diffs byte-identical except the edited value. ⭐ Also drive a skill `.md` with a `description: >-` folded block and one ending in a blank line — the artifact write path moved under this item when the YAML parser was replaced |
@@ -222,7 +257,7 @@ by re-pushing.
 | D3 · The build-time guard, and the recorded escape hatch | It **fails** when package mode is dropped — prove that by dropping it deliberately and watching it redden. And the archived evidence **names the hatch** when it was used: a publish that quietly took the other path while the release claimed package mode is this plan's founding defect pointed the other way |
 | D4 · Full suite and trim gate in package mode | Green, at the published version, with no local feed present |
 | D5 · Correct `ci.yml:132` and `package-canary.ps1:10` | They describe what D1–D3 made true |
-| D6 · Cut the release | The shipped artifact passes D3 |
+| D6 · Cut the release | The shipped artifact passes D3. ⚠ **The tag points at the release branch, not `main`** — `release.yml` triggers on `v*.*.*` and is branch-agnostic, so this works mechanically, but it is a departure worth stating: a locked decision keeps split work out of `main` until the maintainer approves, so this release is cut from a feature branch. ⓘ If that is not acceptable, it is a decision to make **before** Phase C, not after the packages are permanent |
 
 ### Phase E — 00002, as the second package version
 
