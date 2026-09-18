@@ -1088,3 +1088,66 @@ unnamed limit, and no-framework-type-names), plus `ExpanderAutomationNameTests` 
 Expander in markup to declare a name — the style's precondition, which fails **silently** when
 absent. ⚠ Canaried both: breaking the selector reds exactly 3 peer tests by name and leaves the
 other 6 green; removing one Expander's name reds the markup guard with the file and line.
+
+---
+
+## 🔵 F12 · `F9`'s fix landed in the app's object editor only; the shared library's still drops unmodelled keys
+
+Found during **C0** (plans/00003 Phase C), not during the retest — C0 asks for proof that the two
+branches' shared-library trees are identical before relying on the parked suite as neutrality
+evidence. They are:
+
+```
+git diff release/claudeforge-on-packages feat/agentforge-opencodeforge \
+  -- src/AgentForge src/LayeredEditors src/JsonC      ->  empty
+```
+
+⭐ **The empty diff is the finding.** It is empty because `F9`'s fix never reached the shared layer.
+`1077e95` changed exactly one editor file — `src/ClaudeForge/ViewModels/Editors/ObjectPropertyEditorViewModel.cs`.
+
+⚠ **There are TWO classes by that name and the repository already says so**, at
+[`IChildEditorHost.cs`](../src/LayeredEditors.ViewModels/IChildEditorHost.cs) — *"one here in the
+library and one in the app, and the app's does not derive from this one."* That comment exists
+because a **type test** against either class covers only half the object editors in play. The same
+split makes a **fix** against either class cover only half.
+
+| | App copy | Library copy |
+|---|---|---|
+| File | `src/ClaudeForge/ViewModels/Editors/ObjectPropertyEditorViewModel.cs` | `src/LayeredEditors.ViewModels/ObjectPropertyEditorViewModel.cs` |
+| Namespace | `Bennewitz.Ninja.ClaudeForge.ViewModels.Editors` | `Bennewitz.Ninja.LayeredEditors.ViewModels` |
+| Lines | 331 | 118 |
+| Constructed by | `DefaultEditorFactory.cs:311` | `DefaultPropertyEditorFactory.cs:93` |
+| Carries `F9`'s fix | ✅ yes (`1077e95`) | ⛔ **no** |
+
+The library copy still rebuilds the object from its schema-derived children, which is `F9`'s exact
+shape — a key the schema never modelled has no child, so it has no way to survive:
+
+```csharp
+// src/LayeredEditors.ViewModels/ObjectPropertyEditorViewModel.cs:51
+public override object? ToValue()
+{
+    Dictionary<string, object?> dict = new(StringComparer.Ordinal);
+    foreach (PropertyEditorViewModel child in Children)
+    { ... }
+}
+```
+
+⛔ **What is NOT established, and must not be asserted without measuring it.** `F9` was destructive
+in the app because `ToJsonValue` fed a writer that treated the rebuilt object as a whole-object
+replacement. Whether the library's `ToValue()` reaches an equivalent path — rather than being
+funnelled through the edit-based JSONC writer, which emits only changed keys — has **not** been
+traced. Until it is, this is a matching *shape*, not a reproduced defect. The decisive experiment is
+the one `F9` itself used: drive a save over an object holding a key the schema does not name, then
+read the file.
+
+⚠ **Why the suite cannot answer it.** `F9`'s 233 lines of new coverage
+(`ObjectPropertyEditorNestedTests`, `SettingsGroupEditorViewModelTests`) were written against the
+**app's** class and live in `ClaudeForge.Tests`. A green 4,429-test parked run says nothing about
+the library copy, and did not: C0 passed at **4,429 · 0 · 11** with this present. A copy inherits
+the original's defect, and the original's tests cannot see the copy — the same pair of halves as
+`PathRuleMatcher.GlobBody` against `GitignoreReader.PatternToRegex`.
+
+**Bearing on C2.** Not a blocker on its own reading of `00003`:51 — publishing `2026.3.918` and a
+later `2026.3.925` is ordinary, so a defect shipped in one package version is fixed by the next
+rather than stranded by immutability. What immutability removes is the option of *quietly* fixing
+`2026.3.918` in place.
