@@ -554,7 +554,7 @@ true, and still worth keeping — but see above: the property it controls is gat
 
 ---
 
-## ⛔ F6 · 26 nav-tree chevrons announce nothing
+## ✅ F6 · 26 nav-tree chevrons announce nothing — FIXED, verified 2026-09-17
 
 **Found by** `scripts/Audit-Accessibility.ps1` against a build that exposes its tree (see `F5` —
 the shipped one does not). 227 elements walked, two distinct findings.
@@ -629,6 +629,23 @@ The diagnostics windows were not open when the audit ran, and the script walks e
 window that exists at that moment. **Press F12 and Shift+F12, then re-run** to cover them — which
 is what plan item `B2` actually asks about.
 
+### ✅ VERIFIED FIXED — 2026-09-17, on the package-mode build `v2026.3.917.1839`
+
+Measured against the running app with `scripts/retest/Find-UiElement.ps1`:
+
+```
+pwsh -NoProfile -File scripts/retest/Find-UiElement.ps1 -Needles 'Expand or collapse'
+… matched: 26
+```
+
+⭐ **The count is the evidence.** This finding named exactly **26** unnamed
+`PART_ExpandCollapseChevron` buttons; the running app now exposes exactly **26** chevrons, every
+one of them announcing *"Expand or collapse"*. A different number either way would have meant the
+two measurements were not looking at the same set — same count, and every one named, is what makes
+this conclusive rather than suggestive.
+
+ⓘ Verified incidentally while driving `E3`, not as a dedicated pass.
+
 ---
 
 ## Observations from the retest
@@ -654,3 +671,102 @@ answer is that the colour is correct.
 the design exists for is working and a red-green colour-blind reader is not stranded. F1 is
 therefore a **visual-hierarchy** defect, not an accessibility one: the glyphs say the right things,
 the louder one is drawn smaller. Worth knowing before anyone reaches for an urgent fix.
+
+---
+
+## 🔵 F7 · Backup captures project files; restore silently ignores them
+
+Found driving `E3` on 2026-09-17 against the package-mode build `v2026.3.917.1839`.
+
+**A backup taken with a project open contains that project's `.claude/` files. Restoring
+that same archive does not put them back, reports no error, and leaves no sidecar.**
+
+### What was measured
+
+The project `C:\c\cl\retest-2026.3.917` was open. A *Settings only (fast, default)* backup
+produced `backup-20260917-192520.zip`, whose entry list contains all four of the project's
+config files:
+
+```
+ClaudeCode/projects/retest-2026.3.917/.claude/settings.json
+ClaudeCode/projects/retest-2026.3.917/.claude/settings.local.json
+ClaudeCode/projects/retest-2026.3.917/.claude/agents/retest-folded.md
+ClaudeCode/projects/retest-2026.3.917/.claude/agents/retest-trailing.md
+```
+
+Two changes were then made on disk — one value edited, one file deleted — and the archive
+restored from the Restore tab:
+
+| | Before restore | After restore | Expected |
+|---|---|---|---|
+| project `settings.json` `model` | `e3-CHANGED-after-backup` | **`e3-CHANGED-after-backup`** | `e2-project-write` |
+| project `agents/retest-folded.md` | deleted | **still absent** | restored |
+| `~/.claude` (user scope) | — | ✅ restored, 5,899 sidecars written | restored |
+| `.pre-restore-*.bak` under the project | — | **0** | some, if it had been touched |
+
+Zero sidecars under the project is the tell: the restore did not merely fail to *write*
+there, it never *considered* the path at all.
+
+### ⚠ Why this is a defect rather than a documented scope limit
+
+Both halves of the UI text claim the opposite:
+
+- Backup tab — *"Project files (`.claude/` in your repo) are included only when a project
+  is open at backup time, or added explicitly."* A project **was** open, and they **were**
+  included.
+- Restore tab — *"This will overwrite your current configuration files."* No exclusion of
+  project scope is stated anywhere, and the Restore tab offers no scope selector or
+  checkbox that could have deselected it.
+
+So the product tells the user those files are in the archive, and the archive agrees — and
+then restore quietly drops them.
+
+### ⛔ Why it matters more than a missing feature
+
+A user restores a backup precisely when something is broken. The failure mode here is
+**believing you have recovered when you have not**: the app reports success, the user-scope
+settings visibly come back, and the project's own `.claude/` is silently left in whatever
+broken state prompted the restore. The asymmetry is invisible unless someone diffs the
+archive against the disk, which is exactly what nobody does mid-incident.
+
+ⓘ Either direction is a defensible fix — restore project entries, or stop capturing them
+and say so. **Whichever is chosen, backup and restore must agree**, and the UI text must
+match the behaviour.
+
+---
+
+## 🔵 F8 · A successful restore leaves every `.pre-restore-*.bak` sidecar behind
+
+Found alongside `F7`, same build and run.
+
+**5,899 sidecars** remained under `~/.claude` after the restore completed and the app
+reloaded normally. The count is exactly the restored-file count, so nothing is cleaned up
+at all — this is not a partial-cleanup edge case.
+
+```
+find ~/.claude -name "*.pre-restore-*.bak" | wc -l
+5899
+```
+
+### What the UI promises, and what it does not
+
+The Restore tab says *"Existing files will be moved aside as `.pre-restore-*.bak` before
+being overwritten."* That is accurate about the *mechanism* and silent about the
+*lifecycle* — nothing on the page says whether they are temporary or permanent, and no
+status text appeared after the restore to say either.
+
+⚠ `E3`'s stated pass condition is **"no `*.bak` sidecars remain"**, and
+`--cleanup-restore-sidecars` exists in the product precisely because surviving sidecars
+have happened before. On that criterion this run fails.
+
+### ⛔ The cost is silent and compounding
+
+Every sidecar is a full copy of the file it shadows, so a restore roughly **doubles** the
+on-disk size of `~/.claude` — here, of a 211 MB payload. Nothing tells the user, nothing
+cleans it, and a second restore would double it again. The existing CLI tool is the
+sanctioned remedy, but a user who does not know it exists has no reason to look for one:
+the restore reported success.
+
+ⓘ The fix is a decision, not just code: either sweep the sidecars once a restore has
+committed, or keep them deliberately and **say so on the page**, with the cleanup command
+named at the point the cost is incurred.

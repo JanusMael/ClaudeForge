@@ -32,7 +32,17 @@ external changes.
 Reading and rendering are covered. Everything that writes is not. These five are ordered by that
 risk, one per shared library.
 
-### ☐ E1 · Save preserves comments and formatting — `JsonC`
+### ✅ E1 · Save preserves comments and formatting — `JsonC` — PASSED 2026-09-17
+
+> Verified byte-exact against pristine baselines on the package-mode build `v2026.3.917.1839`.
+> Comments (line and block), deliberate key order, ragged indentation and blank lines all survived;
+> only the edited value changed. The folded `description: >-` round-tripped as prose, trailing
+> newlines survived, and a non-ASCII **value** (`café — naïve ✨ 日本語`) came back untouched.
+> ⓘ Two candidate defects were raised and both cleared **by measurement**: the writer does not
+> escape user content (the `—` escaping is confined to the app's own generated stamp), and it
+> does not rewrite line endings (round 1's mixed endings came from the tester's paste).
+> ⛔ First attempt looked green while the agent files had **never been written** — "identical to
+> baseline" is the absence of a test, not a passing round-trip. Confirm a write happened.
 
 The newest shared library, with no prior release behind it. It replaced a serialize-and-overwrite
 writer, so a regression here **destroys user content silently**.
@@ -52,7 +62,15 @@ lost, so the **artifact** write path moved underneath this item. Edit a skill wh
 is a folded block (`description: >-`) and one that ends in a blank line, save, and diff: the prose
 must round-trip, and trailing blank lines must survive. Those two are exactly what the union fixed.
 
-### ☐ E2 · Save lands in the right scope — `AgentForge.Core` + `LayeredEditors`
+### ✅ E2 · Save lands in the right scope — `AgentForge.Core` + `LayeredEditors` — PASSED 2026-09-17
+
+> All three scopes driven through UIA with distinct markers. Each landed in its own file and
+> **nowhere else**: `e2-project-write` in `settings.json`, `e2-local-write` in
+> `settings.local.json`, the User write in `~/.claude/settings.json`. Values survived a cold
+> restart, and the effective view attributed the winner correctly (`LOCAL` / `(overridden)`).
+> ⓘ A suspected layering defect — one surface showing `opus` while another showed the Local value —
+> did **not** reproduce from a cold start and was not filed; see `F5` for why that discipline
+> matters. The scope selector drives the editor, and each scope correctly shows its own value.
 
 **Do:** change values at **User** and **Project** scope (and **Local** if present). Save. Reload the
 window.
@@ -63,7 +81,20 @@ view shows the correct layer winning.
 **Fail:** a value written to the wrong file. The scope ladder is shared-library code and is exactly
 what an extraction can scramble.
 
-### ☐ E3 · Backup, then restore — `AgentForge.Core.Backup`
+### ⛔ E3 · Backup, then restore — `AgentForge.Core.Backup` — **FAILED 2026-09-17**, two findings
+
+> **Backup passed.** A *Settings only* archive was written, and the *Include API credentials?*
+> consent dialog's promise held — `Omit` produced an archive containing **zero** credential
+> entries, verified by reading the zip.
+>
+> **Restore failed on two counts**, both silent:
+> - ⛔ [`F7`](RETEST-FINDINGS.md) — the archive **contained** the open project's four `.claude/`
+>   files; restore put none of them back, wrote no sidecar under the project, and reported no
+>   error. A changed value stayed changed and a deleted file stayed deleted.
+> - ⛔ [`F8`](RETEST-FINDINGS.md) — **5,899** `.pre-restore-*.bak` sidecars remained after the
+>   restore completed, roughly doubling the on-disk size of `~/.claude`.
+>
+> ⓘ User-scope restore itself worked correctly.
 
 The largest piece of shared machinery, and destructive when wrong.
 
@@ -96,7 +127,13 @@ is live risk and the symptom is a secret in a log.
 
 ## Also outstanding
 
-### ☐ C3 · The `--cleanup-restore-sidecars` CLI tool
+### 🟡 C3 · The `--cleanup-restore-sidecars` CLI tool — BEHAVIOUR PASSED 2026-09-17, output unverified
+
+> ⭐ Tested against real work: the **5,899** sidecars `E3` had just created. It removed **all of
+> them** (5,899 → 0), opened **no window**, and left `~/.claude/settings.json` valid.
+> ⚠ The printed summary could **not** be captured — the tool reattaches to the parent console, so
+> redirected stdout sees nothing, exactly as the Fail note below warns. **Still needs one run from
+> a terminal a human can see** to confirm the wording and the directory it names.
 
 Its call site changed in this batch: `Program.cs` now passes the home explicitly, where the message
 and the walk previously resolved it independently.
@@ -105,7 +142,7 @@ and the walk previously resolved it independently.
 & "C:\c\cl\OpenForge2k\src\ClaudeForge\bin\Release\net10.0\win-x64\publish\ClaudeForge.exe" --cleanup-restore-sidecars
 ```
 
-**Pass:** prints `Cleaning up *.bak restore sidecars under C:\Users\Janus2\.claude…`, reports a
+**Pass:** prints `Cleaning up *.bak restore sidecars under <the current user's ~/.claude>…`, reports a
 scanned/deleted summary, and **exits without opening a window**.
 
 **Fail:** a window appears, a different directory is named, or there is no output (run it from a
