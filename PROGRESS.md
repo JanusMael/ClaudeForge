@@ -83,7 +83,7 @@ and fixed by the same plan.
 
 ---
 
-## ▶ RESUME HERE — plans 00003 Phase B
+## ▶ RESUME HERE — plans 00003, Phase C BLOCKED on three defects
 
 ⛔ **[`plans/00002`](plans/00002-claude-code-real-config-locations.md) and
 [`plans/00003`](plans/00003-release-built-from-shared-packages.md) are APPROVED (2026-09-17) and
@@ -100,16 +100,50 @@ FROZEN.** Never edit them. Everything below is drift, which is what this file is
 | A4 · six-RID trim gate | ✅ **6/6, zero IL diagnostics.** ⚠ Zero is the same reading a broken detector gives, so the detector was canaried against synthetic `IL2026` and `NETSDK1144` lines and fired on both. `-c Release` takes the `PublishTrimmed=true` / `TrimMode=partial` branch and each RID produced a real ~27.7 MB single-file exe, so the gate measured a trimmed build rather than an untrimmed one |
 | A5 · package canary | ✅ **PASSED** at `0.0.0-local-20260917182607` — packed, restored through an isolated cache, full **Release** suite under `-p:UseSharedPackages=true` at the same **3,509 · 0 · 13**, then a real win-x64 self-contained publish |
 
+**Phase B is DONE** — 2026-09-17, all eight items driven against the package-mode build
+`v2026.3.917.1839`, packed at the pinned CalVer `2026.3.917`.
+
+| Item | Result |
+|---|---|
+| E1 save preserves comments/formatting | ✅ PASS |
+| E2 save lands in the right scope | ✅ PASS |
+| E3 backup, then restore | ⛔ **FAIL** — `F7`, `F8` |
+| E4 secrets stay redacted | ✅ PASS — and it surfaced `F9` |
+| E5 artifact resolution | ✅ PASS (source attribution; exact counts recorded as unverified) |
+| C3 `--cleanup-restore-sidecars` | 🟡 behaviour PASS; printed output needs one human terminal |
+| F3 share config + two siblings | ✅ PASS |
+| B2 diagnostics-window accessibility | ✅ PASS |
+
+### ⛔⛔ PHASE C IS BLOCKED. Do not tag.
+
+Plan `00003` is explicit: *"All eight items complete before Phase C. A published version cannot be
+taken back, so nothing proceeds on a partial retest."* Three defects are open, and one is data loss:
+
+- ⛔ **`F9` — editing any env value DELETES every env key the app does not model.** Reproduced
+  twice, confirmed on disk. This is the one that should block on its own merits.
+- ⛔ **`F7` — backup captures project files; restore silently ignores them.**
+- ⛔ **`F8` — a successful restore leaves every `.pre-restore-*.bak` sidecar behind** (5,899 of
+  them, roughly doubling `~/.claude` on disk).
+
+⭐ **`F6` was verified FIXED in passing** — it named exactly 26 unnamed chevrons and the running app
+exposes exactly 26, all announcing *"Expand or collapse"*. The matching count is what makes it
+conclusive. `F10` is new and is the same class.
+
 ### Next, in order
 
-1. **Phase B — the whole retest, all eight items.** ⛔ **The build under test must be PACKAGE MODE.**
-   ✅ [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md)'s *Build under test* row **has now been
-   updated** to say so — it previously named a plain Release publish, which would have retested a
-   `ProjectReference` artifact nobody ships. ⚠ Any exe built before that edit does not count,
-   including the `2026.3.917.1244` one the row used to advertise.
-2. **Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are identical),
-   C1 preflight with a real `read:packages` token, C2 the tag. ⛔ C2 is irreversible.
-3. **Phase D**, then **Phase E** (00002 as the second package version).
+1. **Fix `F9` first** — it is data loss in the user's own configuration, and `env` is exactly where
+   non-standard keys belong.
+2. **Decide `F7` and `F8`.** Each is a *decision* before it is code: restore project entries or stop
+   capturing them (either way backup and restore must agree, and the UI text must match); sweep the
+   sidecars after a committed restore or keep them deliberately and say so on the page.
+3. **Re-run the affected retest items** against a rebuilt package-mode artifact.
+4. **Then Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are
+   identical), C1 preflight, C2 the tag. ⛔ C2 is irreversible. ⛔⛔ **C1 needs a `read:packages`
+   PAT that this machine does not have** — provision it before Phase C starts.
+5. **Phase D**, then **Phase E** (00002 as the second package version).
+
+ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
+not an optional extra.
 
 ### ⭐ Decisions taken 2026-09-17 — locked, do not relitigate
 
