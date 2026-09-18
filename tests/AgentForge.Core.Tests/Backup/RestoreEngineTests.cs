@@ -1,4 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -410,7 +411,7 @@ public sealed class RestoreEngineTests
         string src = Path.Combine(_baseDir, "missing.txt");
         string dest = Path.Combine(_baseDir, "live", "missing.txt");
 
-        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000");
+        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(0, restored);
         Assert.IsNull(failure);
@@ -426,7 +427,7 @@ public sealed class RestoreEngineTests
         string dest = Path.Combine(_baseDir, "live", "dest.txt");
         File.WriteAllText(src, "from backup");
 
-        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000");
+        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(1, restored);
         Assert.IsNull(failure);
@@ -444,7 +445,7 @@ public sealed class RestoreEngineTests
         File.WriteAllText(src, "new from backup");
         File.WriteAllText(dest, "old live content");
 
-        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000");
+        (int restored, string? failure) = RestoreEngine.RestoreSection(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(1, restored);
         Assert.IsNull(failure);
@@ -461,7 +462,7 @@ public sealed class RestoreEngineTests
     {
         string src = Path.Combine(_baseDir, "no-such-src");
         string dest = Path.Combine(_baseDir, "dest");
-        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000");
+        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(0, restored);
         Assert.AreEqual(0, failures.Count);
@@ -478,7 +479,7 @@ public sealed class RestoreEngineTests
         File.WriteAllText(Path.Combine(src, "nested", "child.txt"), "child");
         File.WriteAllText(Path.Combine(src, "nested", "deeper", "leaf.txt"), "leaf");
 
-        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000");
+        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(3, restored);
         Assert.AreEqual(0, failures.Count);
@@ -497,7 +498,7 @@ public sealed class RestoreEngineTests
         File.WriteAllText(Path.Combine(src, "shared.txt"), "from backup");
         File.WriteAllText(Path.Combine(dest, "shared.txt"), "live content");
 
-        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000");
+        (int restored, List<string> failures) = RestoreEngine.RestoreDirectory(src, dest, "20260519-120000", new RestoreJournal());
 
         Assert.AreEqual(1, restored);
         Assert.AreEqual(0, failures.Count);
@@ -505,6 +506,235 @@ public sealed class RestoreEngineTests
         Assert.AreEqual("live content",
             File.ReadAllText(Path.Combine(dest, "shared.txt.pre-restore-20260519-120000.bak")),
             "Sidecar must capture the pre-restore live content.");
+    }
+
+    // ── F7 · a project outside the home folder is restorable when this machine knows it ──
+    //
+    // Backup captures whatever project is open. Restore refused anything outside the user
+    // profile, called it "not present on this machine", and returned success — so for anyone
+    // who keeps repositories outside their home directory the archive said the files were
+    // there and nothing ever put them back. The authorisation set is what closes it, and it
+    // is read from this machine, never from the archive.
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_UnderHome_AllowedWithNoKnownProjects()
+    {
+        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        Assert.IsTrue(RestoreEngine.IsAuthorisedRestoreTarget(Path.Combine(home, "anything"), []),
+            "The home-folder allow must stand on its own, so a machine with no ~/.claude.json "
+            + "behaves exactly as it did before the authorisation set existed.");
+    }
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_OutsideHome_RefusedUntilTheProjectListNamesIt()
+    {
+        string outside = OperatingSystem.IsWindows() ? @"D:\src\app" : "/srv/src/app";
+
+        Assert.IsFalse(RestoreEngine.IsAuthorisedRestoreTarget(outside, []),
+            "Premise: this path is outside the home folder, so it is refused by default — "
+            + "otherwise the allow below would prove nothing.");
+        Assert.IsTrue(RestoreEngine.IsAuthorisedRestoreTarget(outside, [outside]),
+            "A path this machine's own project list names must be authorised.");
+    }
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_DescendantOfAKnownProject_Allowed()
+    {
+        string root = OperatingSystem.IsWindows() ? @"D:\src\app" : "/srv/src/app";
+        string child = Path.Combine(root, ".claude", "settings.json");
+
+        Assert.IsTrue(RestoreEngine.IsAuthorisedRestoreTarget(child, [root]),
+            "A project root authorises what is inside it, or the .claude subtree the backup "
+            + "actually captures would still be refused.");
+    }
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_SiblingWithASharedPrefix_Refused()
+    {
+        // The prefix trap: "D:\src\app" must not authorise "D:\src\app-secrets".
+        string root = OperatingSystem.IsWindows() ? @"D:\src\app" : "/srv/src/app";
+        string sibling = OperatingSystem.IsWindows() ? @"D:\src\app-secrets" : "/srv/src/app-secrets";
+
+        Assert.IsFalse(RestoreEngine.IsAuthorisedRestoreTarget(sibling, [root]),
+            "A shared name prefix is not containment. Without the explicit separator this "
+            + "authorises a directory the user never opened.");
+    }
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_SystemPath_RefusedEvenWithAProjectList()
+    {
+        // The whole point of keeping a check at all: a crafted manifest naming a system
+        // directory must not become authorised just because the user has projects.
+        string system = OperatingSystem.IsWindows() ? @"C:\Windows\System32" : "/etc";
+        string root = OperatingSystem.IsWindows() ? @"D:\src\app" : "/srv/src/app";
+
+        Assert.IsFalse(RestoreEngine.IsAuthorisedRestoreTarget(system, [root]),
+            "A path in neither the home folder nor the project list stays refused. This is "
+            + "the case the original under-profile check existed for.");
+    }
+
+    [TestMethod]
+    public void IsAuthorisedRestoreTarget_UncPath_RefusedEvenWhenListed()
+    {
+        // A UNC path redirects writes to another host. IsUnderUserProfile rejects these and
+        // this branch does not go through it, so the rule is restated — and measured.
+        const string unc = @"\\evil-server\share\project";
+
+        Assert.IsFalse(RestoreEngine.IsAuthorisedRestoreTarget(unc, [unc]),
+            "A UNC path must be refused even when it appears in the project list, because a "
+            + "list entry is not a reason to write to a network host.");
+    }
+
+    [TestMethod]
+    public void RestoreProjects_OutsideHomeButAKnownProject_IsRestored()
+    {
+        // The F7 repro end to end: the archive carries a project's files, the live path is
+        // outside the home folder, and this machine's project list names it.
+        string projBackupDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "OutsideProject");
+        Directory.CreateDirectory(Path.Combine(projBackupDir, ".claude"));
+        File.WriteAllText(Path.Combine(projBackupDir, ".claude", "settings.json"), """{"model":"restored"}""");
+
+        // A real directory outside the user profile. _baseDir is a temp path; on Windows that
+        // is normally outside the home folder, and where it is not, the test says so rather
+        // than passing for the wrong reason.
+        string livePath = Path.Combine(_baseDir, "live-outside", "OutsideProject");
+        Directory.CreateDirectory(livePath);
+
+        // Point "home" somewhere else entirely, so livePath really is outside it. On this
+        // machine the temp root sits under the user profile, and without the redirect the
+        // under-profile allow would carry the test and the project-list allow — the thing
+        // being measured — would never be reached.
+        PlatformPaths.TestUserProfileOverride = Path.Combine(_baseDir, "fake-home");
+        try
+        {
+            Assert.IsFalse(RestoreEngine.IsUnderUserProfile(livePath),
+                "Premise: with home redirected, the project path is outside it.");
+
+            BackupManifest manifest = new() { Projects = { livePath } };
+            RestoreJournal journal = new();
+
+            int count = RestoreEngine.RestoreProjects(
+                _baseDir, manifest, "20260519-120000", [livePath], journal);
+
+            Assert.AreEqual(1, count, "The project's file must be restored.");
+            Assert.AreEqual(0, journal.Skipped.Count,
+                $"Nothing should be skipped: {string.Join(", ", journal.Skipped)}");
+            Assert.AreEqual("""{"model":"restored"}""",
+                File.ReadAllText(Path.Combine(livePath, ".claude", "settings.json")),
+                "F7: a backup that captured the project's files must put them back.");
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = null;
+        }
+    }
+
+    [TestMethod]
+    public void RestoreProjects_OutsideHomeAndUnknown_IsStillRefused()
+    {
+        // The other half — remove the authorisation and the same restore must refuse.
+        // Without this, the test above could be passing because the check is simply gone.
+        string projBackupDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "OutsideProject");
+        Directory.CreateDirectory(projBackupDir);
+        File.WriteAllText(Path.Combine(projBackupDir, "payload.txt"), "should not land");
+
+        string livePath = Path.Combine(_baseDir, "live-outside2", "OutsideProject");
+        Directory.CreateDirectory(livePath);
+
+        PlatformPaths.TestUserProfileOverride = Path.Combine(_baseDir, "fake-home");
+        try
+        {
+            Assert.IsFalse(RestoreEngine.IsUnderUserProfile(livePath),
+                "Premise: with home redirected, the project path is outside it.");
+
+            BackupManifest manifest = new() { Projects = { livePath } };
+            RestoreJournal journal = new();
+
+            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(1, journal.Skipped.Count);
+            Assert.IsFalse(File.Exists(Path.Combine(livePath, "payload.txt")),
+                "An unauthorised path must receive nothing.");
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = null;
+        }
+    }
+
+    // ── F8 · a committed restore sweeps the sidecars it wrote ─────────
+
+    [TestMethod]
+    public void Journal_RecordsEverySidecarWritten()
+    {
+        // The sweep deletes by exact path, so the ledger has to be complete. A sidecar
+        // written but not recorded is one that survives for ever.
+        string src = Path.Combine(_baseDir, "ledger-src");
+        string dest = Path.Combine(_baseDir, "ledger-dest");
+        Directory.CreateDirectory(src);
+        Directory.CreateDirectory(dest);
+        File.WriteAllText(Path.Combine(src, "a.txt"), "new");
+        File.WriteAllText(Path.Combine(dest, "a.txt"), "old");
+        File.WriteAllText(Path.Combine(src, "b.txt"), "new-b");   // no live counterpart
+        RestoreJournal journal = new();
+
+        RestoreEngine.RestoreDirectory(src, dest, "20260519-120000", journal);
+
+        Assert.AreEqual(1, journal.Sidecars.Count,
+            "Exactly the overwritten file gets a sidecar — b.txt had no live copy to move aside.");
+        StringAssert.EndsWith(journal.Sidecars[0], "a.txt.pre-restore-20260519-120000.bak");
+        Assert.IsTrue(File.Exists(journal.Sidecars[0]),
+            "The recorded path must be the real one on disk, or the sweep deletes nothing.");
+    }
+
+    [TestMethod]
+    public void SweepSidecars_DeletesWhatTheRunWrote_AndLeavesTheRestoredFile()
+    {
+        string src = Path.Combine(_baseDir, "sweep-src");
+        string dest = Path.Combine(_baseDir, "sweep-dest");
+        Directory.CreateDirectory(src);
+        Directory.CreateDirectory(dest);
+        File.WriteAllText(Path.Combine(src, "a.txt"), "new");
+        File.WriteAllText(Path.Combine(dest, "a.txt"), "old");
+        RestoreJournal journal = new();
+        RestoreEngine.RestoreDirectory(src, dest, "20260519-120000", journal);
+        Assert.AreEqual(1, journal.Sidecars.Count, "Premise: a sidecar was written.");
+
+        int swept = RestoreEngine.SweepSidecars(journal.Sidecars);
+
+        Assert.AreEqual(1, swept);
+        Assert.IsFalse(File.Exists(journal.Sidecars[0]), "F8: the sidecar must be gone.");
+        Assert.AreEqual("new", File.ReadAllText(Path.Combine(dest, "a.txt")),
+            "The restored file itself must be untouched — the sweep removes copies, not content.");
+    }
+
+    [TestMethod]
+    public void SweepSidecars_RefusesAnythingThatIsNotOurOwnSidecar()
+    {
+        // A hand-rolled notes.md.bak in ~/.claude is the user's, not ours. The ledger should
+        // never contain one, so this is the second lock on the one operation here that deletes
+        // user-visible files.
+        string handRolled = Path.Combine(_baseDir, "notes.md.bak");
+        File.WriteAllText(handRolled, "mine");
+
+        int swept = RestoreEngine.SweepSidecars([handRolled]);
+
+        Assert.AreEqual(0, swept);
+        Assert.IsTrue(File.Exists(handRolled),
+            "A .bak that does not match the pre-restore pattern must survive the sweep.");
+    }
+
+    [TestMethod]
+    public void SweepSidecars_MissingFile_IsNotCountedAndDoesNotThrow()
+    {
+        // Something else removed it between restore and sweep. Counting it would overstate
+        // what the message tells the user was cleaned up.
+        string absent = Path.Combine(_baseDir, "gone.json.pre-restore-20260519-120000.bak");
+
+        int swept = RestoreEngine.SweepSidecars([absent]);
+
+        Assert.AreEqual(0, swept);
     }
 
     // ── RestoreProjects (manifest-driven projects subtree) ────────────
@@ -515,10 +745,11 @@ public sealed class RestoreEngineTests
         // tempRoot has no ClaudeCode/projects/ subtree → 0 restored, no
         // skipped, no failures.  This is the common SettingsOnly case.
         BackupManifest manifest = new();
-        List<string> skipped = [];
-        List<string> failures = [];
+        RestoreJournal journal = new();
+        List<string> skipped = journal.Skipped;
+        List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", skipped, failures);
+        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
 
         Assert.AreEqual(0, count);
         Assert.AreEqual(0, skipped.Count);
@@ -539,10 +770,11 @@ public sealed class RestoreEngineTests
         {
             Projects = { Path.Combine(_baseDir, "definitely-does-not-exist", "GhostProject") },
         };
-        List<string> skipped = [];
-        List<string> failures = [];
+        RestoreJournal journal = new();
+        List<string> skipped = journal.Skipped;
+        List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", skipped, failures);
+        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
 
         Assert.AreEqual(0, count);
         Assert.AreEqual(1, skipped.Count);
@@ -579,15 +811,16 @@ public sealed class RestoreEngineTests
         try
         {
             BackupManifest manifest = new() { Projects = { systemRoot } };
-            List<string> skipped = [];
-            List<string> failures = [];
+            RestoreJournal journal = new();
+            List<string> skipped = journal.Skipped;
+            List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", skipped, failures);
+            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
 
             Assert.AreEqual(0, count);
             Assert.AreEqual(1, skipped.Count);
-            Assert.IsTrue(skipped[0].Contains("outside user profile", StringComparison.Ordinal),
-                $"Skip note should name the security reason: '{skipped[0]}'");
+            Assert.IsTrue(skipped[0].Contains("not a path this machine recognises", StringComparison.Ordinal),
+                $"Skip note should name the refusal, not invent a missing folder: '{skipped[0]}'");
             // Verify nothing actually landed there.
             Assert.IsFalse(File.Exists(Path.Combine(systemRoot, "evil.txt")),
                 "RestoreProjects must NOT have copied the file to a path outside the user profile.");
@@ -624,10 +857,11 @@ public sealed class RestoreEngineTests
         try
         {
             BackupManifest manifest = new() { Projects = { liveProjectRoot } };
-            List<string> skipped = [];
-            List<string> failures = [];
+            RestoreJournal journal = new();
+            List<string> skipped = journal.Skipped;
+            List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", skipped, failures);
+            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
 
             Assert.AreEqual(1, count);
             Assert.AreEqual(0, skipped.Count);
@@ -646,10 +880,11 @@ public sealed class RestoreEngineTests
     [TestMethod]
     public void RestoreWorktrees_NoWorktreesDir_ReturnsZero()
     {
-        List<string> skipped = [];
-        List<string> failures = [];
+        RestoreJournal journal = new();
+        List<string> skipped = journal.Skipped;
+        List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", skipped, failures);
+        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
 
         Assert.AreEqual(0, count);
         Assert.AreEqual(0, skipped.Count);
@@ -664,10 +899,11 @@ public sealed class RestoreEngineTests
         string wtDir = Path.Combine(_baseDir, "ClaudeCode", "worktrees", "foo");
         Directory.CreateDirectory(wtDir);
 
-        List<string> skipped = [];
-        List<string> failures = [];
+        RestoreJournal journal = new();
+        List<string> skipped = journal.Skipped;
+        List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", skipped, failures);
+        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
 
         Assert.AreEqual(0, count);
         Assert.AreEqual(1, skipped.Count);
@@ -702,14 +938,15 @@ public sealed class RestoreEngineTests
             File.WriteAllText(Path.Combine(wtDir, ".worktree-meta.json"),
                 $"{{\"projectRoot\":\"\",\"worktreePath\":\"{systemRoot.Replace("\\", "\\\\")}\"}}");
 
-            List<string> skipped = [];
-            List<string> failures = [];
+            RestoreJournal journal = new();
+            List<string> skipped = journal.Skipped;
+            List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", skipped, failures);
+            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
 
             Assert.AreEqual(0, count);
             Assert.AreEqual(1, skipped.Count);
-            Assert.IsTrue(skipped[0].Contains("outside user profile", StringComparison.Ordinal),
+            Assert.IsTrue(skipped[0].Contains("outside your home folder", StringComparison.Ordinal),
                 $"Skip note should name the security reason: '{skipped[0]}'");
             Assert.IsFalse(File.Exists(Path.Combine(systemRoot, "evil.txt")));
         }
@@ -739,10 +976,11 @@ public sealed class RestoreEngineTests
             File.WriteAllText(Path.Combine(wtDir, ".worktree-meta.json"),
                 $"{{\"projectRoot\":\"\",\"worktreePath\":\"{liveWtPath.Replace("\\", "\\\\")}\"}}");
 
-            List<string> skipped = [];
-            List<string> failures = [];
+            RestoreJournal journal = new();
+            List<string> skipped = journal.Skipped;
+            List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", skipped, failures);
+            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
 
             // Count of 1 — settings.json restored.  The .worktree-meta.json
             // itself is also under wtDir so RestoreDirectory will copy it

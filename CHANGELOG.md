@@ -61,6 +61,17 @@ reconcile them against and renumbering them would be guesswork.
 
 ### Fixed
 
+- **Restoring a backup now puts your project's files back.** A backup taken with a project
+  open contains that project's `.claude/` files, but restore quietly skipped any project
+  kept outside your home folder — reported success, wrote nothing, and described the
+  refusal as a path that was *"not present on this machine"*. Projects your Claude Code has
+  opened are now restored wherever they live, and anything genuinely refused says so in
+  words that match the reason.
+- **A restore cleans up after itself.** Files it overwrites are still moved aside as
+  `.pre-restore-*.bak` first, and once the restore has completed without a single failure
+  those copies are removed and counted in the result — previously every one of them stayed,
+  roughly doubling the size of `~/.claude` on each restore with nothing saying so. A restore
+  that could not place every file keeps them, deliberately, and says that instead.
 - **Editing one environment variable no longer deletes the others.** Saving a change to
   any variable the app recognises removed every variable it did not — proxy settings,
   internal tool paths, anything an organisation adds that the schema has never heard of.

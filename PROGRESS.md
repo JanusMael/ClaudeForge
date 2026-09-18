@@ -126,9 +126,21 @@ one is fixed in code but not yet re-driven, so `E3` and `E4` are both still unti
   removal — `env` is simply the object where users keep keys the schema never named. The
   editor now carries the editing scope's unmodelled keys across a save and re-emits them
   verbatim. ⛔ **Still unverified in the running app**: `E4` re-runs before this closes.
-- ⛔ **`F7` — backup captures project files; restore silently ignores them.**
-- ⛔ **`F8` — a successful restore leaves every `.pre-restore-*.bak` sidecar behind** (5,899 of
-  them, roughly doubling `~/.claude` on disk).
+- ✅ **`F7` — backup captures project files; restore silently ignores them. FIXED 2026-09-18.**
+  ⭐ **`RestoreProjects` was never missing** — it refused on `IsUnderUserProfile`, and the retest
+  project lived at `C:\c\cl\retest-2026.3.917`. **One check was doing two jobs**: a real defence
+  against a crafted manifest, and an unwritten scope limit that excluded every repository kept
+  outside `~`. Restore now also authorises paths **this machine's own `~/.claude.json` lists as
+  projects** — a source the archive cannot forge — and the skip message no longer calls a refusal
+  a missing path. ⛔ Worktrees are the same shape and are **not** fixed; see `F11`.
+- ✅ **`F8` — a successful restore leaves every `.pre-restore-*.bak` sidecar behind. FIXED
+  2026-09-18.** A `RestoreJournal` records each sidecar as it is written and a clean restore
+  deletes exactly those, reporting the count. ⚠ Three bounds: **only on a run with zero file
+  failures** (a partial restore is when the undo trail matters), **only this run's** paths, and
+  **only** names matching the pre-restore pattern. `--cleanup-restore-sidecars` still owns
+  everything older — including the 5,899 from the retest.
+- ⛔ **Both are code-only. `E3` re-runs against a rebuilt package-mode artifact before either
+  closes.**
 
 ⭐ **`F6` was verified FIXED in passing** — it named exactly 26 unnamed chevrons and the running app
 exposes exactly 26, all announcing *"Expand or collapse"*. The matching count is what makes it
@@ -137,10 +149,10 @@ conclusive. `F10` is new and is the same class.
 ### Next, in order
 
 1. ✅ **`F9` is fixed** — see the row above. ⚠ Code only; the retest item is still open.
-2. **Decide `F7` and `F8`.** Each is a *decision* before it is code: restore project entries or stop
-   capturing them (either way backup and restore must agree, and the UI text must match); sweep the
-   sidecars after a committed restore or keep them deliberately and say so on the page.
-3. **Re-run the affected retest items** against a rebuilt package-mode artifact.
+2. ✅ **`F7` and `F8` are decided and fixed** — 2026-09-18, both recommendations taken: restore
+   project entries, and sweep the sidecars once a restore has committed. ⚠ Code only.
+3. **Re-run the affected retest items** (`E3`, `E4`) against a rebuilt package-mode artifact.
+   ⛔ **This is now the only thing between here and Phase C.**
 4. **Then Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are
    identical), C1 preflight, C2 the tag. ⛔ C2 is irreversible. ⛔⛔ **C1 needs a `read:packages`
    PAT that this machine does not have** — provision it before Phase C starts.
@@ -148,6 +160,20 @@ conclusive. `F10` is new and is the same class.
 
 ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
 not an optional extra.
+
+### ⭐ Decisions taken 2026-09-18 — locked, do not relitigate
+
+- **`F7`: restore the project entries** rather than stop capturing them. Both UI texts already
+  claimed this behaviour, so the archive, the Backup tab and the Restore tab all become true at
+  once — the alternative would have made the product honest by removing a capability.
+- **`F7` authorisation comes from `~/.claude.json`, not from the manifest.** ⛔ The security check
+  is NOT removed. A path is written to when the running user's home contains it, or when this
+  machine's own project list names it; both are things a crafted archive cannot forge.
+- **`F8`: sweep after the restore commits**, not "keep them and say so". ⚠ The sweep is bounded to
+  a zero-failure run, to this run's own sidecar paths, and to the pre-restore filename pattern.
+- **`F11` (external worktrees) is NOT fixed by the same move, on purpose.** Authorising them
+  soundly means running `git worktree list` per project in front of a destructive operation. That
+  cost gets decided on its own, not smuggled in beside `F7`.
 
 ### ⭐ Decisions taken 2026-09-17 — locked, do not relitigate
 

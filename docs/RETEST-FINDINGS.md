@@ -674,7 +674,7 @@ the louder one is drawn smaller. Worth knowing before anyone reaches for an urge
 
 ---
 
-## 🔵 F7 · Backup captures project files; restore silently ignores them
+## ⛔ F7 · Backup captures project files; restore silently ignores them — FIXED, unverified
 
 Found driving `E3` on 2026-09-17 against the package-mode build `v2026.3.917.1839`.
 
@@ -733,9 +733,56 @@ archive against the disk, which is exactly what nobody does mid-incident.
 and say so. **Whichever is chosen, backup and restore must agree**, and the UI text must
 match the behaviour.
 
+### ✅ Fixed 2026-09-18 — restore them; the decision was taken, not inferred
+
+⭐ **The root cause was NOT "restore has no project support".** `RestoreEngine.RestoreProjects`
+has always existed and always worked. It refused this project because of one line —
+`IsUnderUserProfile(livePath)` — and the retest project lived at `C:\c\cl\retest-2026.3.917`,
+outside the home folder. Every repository kept outside `~` hit the same refusal.
+
+⛔ **That check was a security rule and a scope limit wearing the same clothes**, and only the
+security half was ever written down. The manifest is genuinely untrusted — a crafted zip can
+name `C:\Windows\System32` — so the answer was not to delete the check but to ask a source the
+zip cannot write to:
+
+| Allow | Source | Why a crafted archive cannot forge it |
+|---|---|---|
+| Under the user's home | `PlatformPaths.UserProfile` | The running user's own profile |
+| A project this machine has opened | keys of `~/.claude.json`'s `projects`, via `KnownProjectsDiscovery` | The user's own file; `C:\Windows\System32` is in nobody's project list |
+
+An **ancestor** match counts, so a project root authorises its `.claude` subtree — with an
+explicit separator in the prefix test, because `D:\src\app` must not authorise
+`D:\src\app-secrets`. Path comparison is case-insensitive except on Linux.
+
+⚠ **The message was lying too.** A refusal was reported as *"paths are not present on this
+machine"*, which sent the reader looking for a missing folder rather than at a rule. The
+reason now travels with each skipped entry.
+
+⛔ **A second defect surfaced while making this testable.** `IsUnderUserProfile` read
+`Environment.GetFolderPath` directly while every other path in the engine resolves through
+`PlatformPaths` — so under the test profile override the predicate disagreed with the rest of
+the engine, and the refusal path could not be exercised against a real directory at all. It
+now uses `PlatformPaths.UserProfile`. Identical in production; the difference is that the
+repro is now measurable, and it was that gap which made both end-to-end tests report
+`Inconclusive` on their first run rather than passing vacuously.
+
+⚠ **Worktrees keep the old rule, knowingly.** Nothing on this machine independently lists
+worktree paths — the archive's own `projectRoot` authorises nothing, since a crafted zip would
+simply name a real project beside an arbitrary `worktreePath`. The sound source is
+`WorktreeProbe` against the live repositories, which means spawning `git` per project, with a
+timeout each, in front of a destructive operation. That is a decision with a cost; it is
+recorded here and in the code rather than taken in passing. **See `F11`.**
+
+**Guards:** 8 tests in `RestoreEngineTests` — the six authorisation cases (home-only, project
+list, descendant, shared-prefix sibling, system path, UNC) and both halves of the end-to-end
+repro. ⚠ Canaried: with the project-list allow removed, exactly three go red, by name.
+
+⛔ **Still unverified in the running app.** `E3` re-runs against a rebuilt package-mode
+artifact before this is called done.
+
 ---
 
-## 🔵 F8 · A successful restore leaves every `.pre-restore-*.bak` sidecar behind
+## ⛔ F8 · A successful restore leaves every `.pre-restore-*.bak` sidecar behind — FIXED, unverified
 
 Found alongside `F7`, same build and run.
 
@@ -770,6 +817,64 @@ the restore reported success.
 ⓘ The fix is a decision, not just code: either sweep the sidecars once a restore has
 committed, or keep them deliberately and **say so on the page**, with the cleanup command
 named at the point the cost is incurred.
+
+### ✅ Fixed 2026-09-18 — sweep after the restore commits
+
+A restore now deletes the sidecars **it wrote**, and reports how many in its result message.
+Three bounds, each load-bearing:
+
+| Bound | Why |
+|---|---|
+| Only on a **clean** run | One file failure means a PARTIAL restore, and that is precisely when someone wants the previous bytes back. A partial run keeps every sidecar and says so |
+| Only **this run's**, by exact path | A `RestoreJournal` records each sidecar as it is written, so the sweep deletes a known list rather than matching a pattern. An earlier restore's sidecars are someone else's undo trail |
+| Only files matching the **pre-restore pattern** | Second lock on the one operation in restore that removes user-visible files. A hand-rolled `notes.md.bak` is the user's |
+
+ⓘ `--cleanup-restore-sidecars` keeps its job: everything written before this sweep existed —
+including the **5,899** from this retest — plus anything a partial or interrupted restore
+leaves behind.
+
+⚠ **The Restore tab's wording was left alone.** *"Existing files will be moved aside as
+`.pre-restore-*.bak` before being overwritten"* is still true; it is what happens during the
+restore. What it does not say is that they are then removed, and the result message now does —
+at the moment the user is reading about the outcome. Changing it would mean re-translating two
+strings across nine locales for something already stated.
+
+⭐ **An existing test had to be INVERTED, deliberately.**
+`RoundTrip_RestoreWritesFilesBackAndCreatesBakSidecars` required exactly one surviving
+sidecar — the old contract, correctly guarded. It now requires zero *and* asserts the
+message's cleanup count, because **zero on its own is not evidence of a sweep**: an engine
+that stopped writing sidecars entirely would satisfy it just as well, and that would remove
+the undo trail a partial restore still depends on.
+
+**Guards:** 4 tests in `RestoreEngineTests` (ledger completeness, the sweep, the
+pattern refusal, a vanished file) plus the inverted round-trip. ⚠ Canaried twice — disabling
+the sweep reds one by name; dropping the ledger entry reds two, the second at its premise.
+
+⛔ **Still unverified in the running app.** `E3` re-runs before this closes.
+
+---
+
+## 🔵 F11 · External worktrees are still refused when they sit outside the home folder
+
+Raised 2026-09-18 while fixing [`F7`](#-f7--backup-captures-project-files-restore-silently-ignores-them--fixed-unverified),
+which it is the exact sibling of.
+
+`RestoreWorktrees` still gates on `IsUnderUserProfile` alone, so a git worktree outside the
+home folder is captured by backup and refused by restore — the same asymmetry, with the same
+silence, one level down.
+
+⛔ **It is not fixable by the same move, which is why it was not fixed.** The projects case
+works because this machine keeps its own list of the paths the user has opened. Nothing
+equivalent exists for worktrees, and the archive's own `projectRoot` field authorises nothing:
+a crafted zip would name a real project beside an arbitrary `worktreePath`.
+
+The sound source is `WorktreeProbe.DiscoverExternalAsync` against the live repositories — which
+spawns `git` once per known project, with a timeout each, immediately before a destructive
+operation. That is a real cost and a real dependency, so it is a decision rather than a
+follow-on edit.
+
+ⓘ Narrower than `F7` in practice: external worktrees are only captured in Full mode, and the
+refusal is now reported honestly rather than as a missing path.
 
 ---
 
