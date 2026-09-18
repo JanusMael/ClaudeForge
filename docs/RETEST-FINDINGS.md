@@ -1091,7 +1091,7 @@ other 6 green; removing one Expander's name reds the markup guard with the file 
 
 ---
 
-## 🔵 F12 · `F9`'s fix landed in the app's object editor only; the shared library's still drops unmodelled keys
+## ✅ F12 · `F9`'s fix landed in the app's object editor only; the shared library's still dropped unmodelled keys — FIXED and REPRODUCED
 
 Found during **C0** (plans/00003 Phase C), not during the retest — C0 asks for proof that the two
 branches' shared-library trees are identical before relying on the parked suite as neutrality
@@ -1132,13 +1132,37 @@ public override object? ToValue()
 }
 ```
 
-⛔ **What is NOT established, and must not be asserted without measuring it.** `F9` was destructive
-in the app because `ToJsonValue` fed a writer that treated the rebuilt object as a whole-object
-replacement. Whether the library's `ToValue()` reaches an equivalent path — rather than being
-funnelled through the edit-based JSONC writer, which emits only changed keys — has **not** been
-traced. Until it is, this is a matching *shape*, not a reproduced defect. The decisive experiment is
-the one `F9` itself used: drive a save over an object holding a key the schema does not name, then
-read the file.
+⭐ **Reachability was traced, then reproduced.** The first write-up of this finding stopped at
+"matching shape, reachability unknown" and said so; both halves have since been closed.
+
+The chain, all of it in shared code:
+
+| Step | Where |
+|---|---|
+| 1 · the shell reads the editor's value | `AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs:773` — `JsonCurrency.ToJsonNode(editor.ToValue())` |
+| 2 · it writes that at the editor's **path** | `WriteEditorValue` → `_sdkClient.SetValue(jsonPath, value, scope)` — a **replace**, not a merge |
+| 3 · editing a child re-writes the whole parent | this file's own `OnChildPropertyChanged`: the force-fire exists *"so the hosting group editor always re-invokes `ToValue()` and writes the complete updated object"* |
+| 4 · `ToValue()` rebuilds from schema children | a key with no child has no way to survive |
+| 5 · the trigger condition exists downstream | `opencode-config.json` carries 49 `additionalProperties` and an `env`/`environment` object |
+
+⛔ **Step 3 is the sharp edge**: the very mechanism that makes the host notice an edit is what turns
+a rebuild into a deletion. It reads as change-propagation plumbing, not as a destructive write.
+
+**Reproduced** by two tests written *before* the fix, against the library class directly: with the
+re-emit absent, `ToValue_PreservesKeysNoChildModels_AtEditingScope` and
+`ToValue_RoundTripsUnmodelledKeys_WithNoEditAtAll` fail by name and the other three pass. Predicting
+**exactly those two** before the run is what makes the pair evidence rather than decoration — the
+other three guard the opposite error (carrying too much) and are green with or without the fix, so
+counting them would have overstated the catch.
+
+**The fix** mirrors the app's: capture the editing scope's unmodelled keys on load, re-emit them in
+`ToValue()` where no child claims the name, drop them on reset. ⓘ One deliberate difference — the
+app clones its `JsonNode`s because a node has a single parent; the library's currency contract admits
+only scalars and read-only collections, so there is nothing to clone and no copy is made.
+
+⚠ **Verified by test, not in a running app.** `F9` was additionally driven through the UI; this was
+not. The reproduction is at the class boundary where the defect lives, and steps 1–3 above are read
+from the shared shell rather than exercised end to end.
 
 ⚠ **Why the suite cannot answer it.** `F9`'s 233 lines of new coverage
 (`ObjectPropertyEditorNestedTests`, `SettingsGroupEditorViewModelTests`) were written against the
@@ -1147,7 +1171,13 @@ the library copy, and did not: C0 passed at **4,429 · 0 · 11** with this prese
 the original's defect, and the original's tests cannot see the copy — the same pair of halves as
 `PathRuleMatcher.GlobBody` against `GitignoreReader.PatternToRegex`.
 
-**Bearing on C2.** Not a blocker on its own reading of `00003`:51 — publishing `2026.3.918` and a
-later `2026.3.925` is ordinary, so a defect shipped in one package version is fixed by the next
-rather than stranded by immutability. What immutability removes is the option of *quietly* fixing
-`2026.3.918` in place.
+**Bearing on C2.** Fixed before the tag, so `2026.3.918` ships the corrected library rather than a
+known-defective one. ⚠ **It also invalidated `C0`**, which is the part worth remembering: `C0`
+evidences the neutral layer by running the parked branch's suite, and its stated premise is that the
+two branches' shared-library trees are *identical*. Changing a shared library on one branch breaks
+that premise silently — nothing fails, the earlier `C0` result simply stops describing the code being
+published. The fix was cherry-picked to `feat/agentforge-opencodeforge` and `C0` re-run.
+
+ⓘ **`F12` never affected the shipped ClaudeForge artifact.** The app uses its own object editor, the
+one `F9` fixed; the defective copy is reached only through the library's `DefaultPropertyEditorFactory`,
+which is OpenCodeForge and external package consumers.

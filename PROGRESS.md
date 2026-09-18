@@ -22,8 +22,8 @@
 | Working tree | clean |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **Integrated by hand on 2026-09-16, up to `origin/main` `52f604d`** — record the SHA, because neither counting nor patch-ids can tell you again. `main` released **`v2026.3.916`** that day. ⛔⛔ **Both automatic answers are WRONG here, in opposite directions.** `git rev-list --count HEAD..origin/main` over-reports (the 2026-09-16 history rewrite renamed every already-merged commit, so ~27 look unmerged); `git cherry` saw through that and found the 8 genuinely new — but now over-reports too, because a hand-port produces a different patch-id than the commit it ports. **The only reliable record is this cell.** Compare `52f604d..origin/main` to find what is new since. ⓘ The CHANGELOG has now been rebased on `main`'s **twice** in one day — `main` owns the released history and this branch owns only what has not shipped, so keeping a local copy of the released sections just makes the next reconciliation bigger. ⛔ **`git merge origin/main` remains the wrong tool**: the merge base is `3c7aaab` (2026-09-01), `main`'s paths no longer exist here (`ClaudeForge.Sdk`→`AgentForge.Sdk`, the backup VM moved into `AgentForge.Avalonia.Shell`), and this repo has shipped two duplicate-attribute defects from *clean* auto-merges. Ports go through `AGENTS.md` §*Hand-porting a fix*. ⓘ What the 8 were: **4 ported** (YAML front-matter ×2, winget rename, version-probe test), **1 ported as a union** (deep links), **1 already present by a different mechanism** (tab a11y — this branch names containers via `ToString()`, `main` via a style; porting would have added a redundant second mechanism for a defect already fixed and guarded), **1 packaging** (`sign-release.ps1` is now committed rather than ignored), **1 reconciled** (CHANGELOG) |
-| Suite | ⭐ **3,540 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-18 at `00ff937`. ⓘ **+31 over the 2026-09-17 figure of 3,509**, all guards added with the `F7`/`F8`/`F9`/`F10` fixes; each run was predicted before it was taken. The 2026-09-17 note follows because the *drop* it explains still matters: ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
-| Suite (parked branch) | **4,429 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-17 at `697e840`. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| Suite | ⭐ **3,545 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-18 after the `F12` fix. ⓘ **+5 over 3,540**, the `F12` guards; **+36 over the 2026-09-17 figure of 3,509**, the rest being the `F7`/`F8`/`F9`/`F10` guards; each run was predicted before it was taken. The 2026-09-17 note follows because the *drop* it explains still matters: ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
+| Suite (parked branch) | **4,434 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-18 after the `F12` fix was cherry-picked (`+5` over the 2026-09-17 figure of 4,429, the `F12` guards). 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics — RE-RUN 2026-09-18, immediately before the tag** (linux-x64/arm64, win-x64/arm64, osx-x64/arm64). ⭐ **Zero was proven to mean "looked and found nothing"**: the detector was canaried against planted `IL2026` and `NETSDK1144` lines and matched 2 of 2, and each RID really trimmed — ILLink's *"Optimizing assemblies for size"* appears once per log and every RID produced a single-file exe of 26.8–29.8 MB. ⛔ **This row previously claimed A5 would re-cover the matrix. It does not** — A5 publishes **win-x64 only**, which is why this was re-run separately. ⚠ **Cross-published from Windows**, whereas `release.yml` builds each RID on its native host so the dylibs match; this gate therefore measures **trim analysis**, not native-payload correctness. Phase D's `D3` is where a shipped artifact is measured. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
@@ -31,7 +31,7 @@
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
-| ⚠ Awaiting | ⭐ **The maintainer, and nothing else.** All eight retest items pass (2026-09-18), and `C1`, **A5** and **C0** have all passed. Every agent-side step before the tag is done. What remains is the maintainer pushing `packages-v2026.3.918`. ⓘ Two findings are open and neither gates the tag by itself: **`F11`** (deliberately unfixed) and **`F12`** (new, 2026-09-18 — `F9`'s fix reached the app's object editor but not the shared library's; see the decision note under *RESUME HERE*) |
+| ⚠ Awaiting | ⭐ **The maintainer, and nothing else.** All eight retest items pass (2026-09-18), and `C1`, **A5** and **C0** have all passed. Every agent-side step before the tag is done. What remains is the maintainer pushing `packages-v2026.3.918`. ⓘ **`F12` is FIXED** (2026-09-18) on both branches, reproduced by test first and re-evidenced by a `C0` re-run. **`F11`** stays open by an earlier locked decision and does not gate the tag |
 
 ---
 
@@ -91,7 +91,7 @@ today**, at `2026.3.918`. ⛔ **The only remaining step before the tag is the ma
 | Next | Who |
 |---|---|
 | **C2** — push `packages-v2026.3.918`. ⛔⛔ **Irreversible, and the maintainer's to run** | maintainer |
-| ⚠ **Decide `F12` first** — it does not block, but it is knowable now and not later | maintainer |
+| ⓘ **`F12` is FIXED** — decided 2026-09-18, fix taken over ship-it-known | done |
 | ⓘ **`F11`** stays open by an earlier locked decision and does not gate the tag | — |
 | **Phase D**, then **Phase E** | agent |
 
@@ -104,17 +104,27 @@ canary runs in a row before the regress was visible. The rule that terminates it
 after the final commit**, and this row says only that it did.
 
 Packed at a fresh `0.0.0-local-<timestamp>`; eleven packages; full **Release** suite in package mode
-at **3,540 · 0 · 13** across all 9 test projects; real win-x64 self-contained publish, 0 warnings.
+at **3,545 · 0 · 13** across all 9 test projects; real win-x64 self-contained publish, 0 warnings.
+ⓘ That figure is the Debug suite's, measured before this text was committed; the post-commit A5 run
+confirms it in Release under package mode, and a mismatch is reported as drift rather than edited away.
 ⭐ **The figure was predicted before the run**, so a smaller count would have been as legible as a
 larger one. ⭐ **Package consumption was checked, not inferred** — a green canary is also what a
 mixed graph reports, and MSBuild prefers the project output. The app's own `project.assets.json`
 resolves all eleven as `Bennewitz.Ninja.*` **packages** at that run's canary version; the only
 `"type": "project"` entries are the two product-specific libraries, which is correct.
 
-### ✅ C0 PASSED — 2026-09-18, parked branch at `030ec9e`
+### ✅ C0 PASSED — 2026-09-18, parked branch, **RE-RUN after the `F12` fix**
 
-**4,429 · 0 · 11** across 12 test projects, matching the prediction exactly. The OpenCode side
+**4,434 · 0 · 11** across 12 test projects, matching the prediction exactly. The OpenCode side
 contributes 906 (`OpenCode.Sdk` 332, `OpenCode.Avalonia` 355, `OpenCodeForge.Tests` 219).
+
+⛔⛔ **Fixing a shared library invalidates `C0`, not only `A5` — and it does so SILENTLY.** `C0`
+evidences neutrality by running the parked branch's suite, and its stated premise is that the two
+branches' shared-library trees are **identical**. `F12`'s fix changed `LayeredEditors.ViewModels` on
+the release branch alone, and at that moment the earlier `C0` result stopped describing the code
+about to be published — with nothing failing to say so. The first run (**4,429 · 0 · 11**, at
+`030ec9e`) was real but is superseded. The fix was cherry-picked to the parked branch and `C0`
+re-run; **the number above is the one that counts.**
 ⚠ **The shared-library trees were proven identical rather than taken from the plan**, as `00003`
 requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC` is empty,
 and the same command over `src/ClaudeForge` is **not**, so the empty result is a measurement and not
@@ -128,21 +138,33 @@ and `TheTwoApps_DoNotDriftApartOnTrimSettings` — are **absent from the parked 
 ran and passed. All 11 skips there are platform-conditional or environment-gated; not one is a
 cross-app guard declining to measure. That is neutrality evidenced *by use*.
 
-### ⚠ `F12`, found by C0's own prerequisite check — a decision, not a blocker
+### ✅ `F12` — found by C0's own prerequisite check, FIXED before the tag
 
-`F9`'s fix (`1077e95`) landed in **`src/ClaudeForge/ViewModels/Editors/ObjectPropertyEditorViewModel.cs`
-only**. There are two classes by that name and the repo already documents why
-(`IChildEditorHost.cs`); the library's copy — the one in the
-`Bennewitz.Ninja.LayeredEditors.ViewModels` package, reached via `DefaultPropertyEditorFactory.cs:93`
-— still rebuilds the object from schema-derived children, which is `F9`'s exact shape.
+`F9`'s fix (`1077e95`) landed in the **app's** object editor only. There are two classes by that
+name and the repo already documents why (`IChildEditorHost.cs`): neither derives from the other, so
+a **type test** against either covers half the object editors in play — and so does a **fix**. The
+library's copy, the one inside `Bennewitz.Ninja.LayeredEditors.ViewModels`, still rebuilt objects
+from schema-derived children.
 
-⛔ **Not asserted: that it is exploitable.** Whether the library's `ToValue()` reaches a
-whole-object-replacement writer, or is funnelled through the edit-based JSONC writer that emits only
-changed keys, has **not** been traced. It is a matching shape until someone drives the save.
+⭐ **Traced, then reproduced, then fixed.** The shared shell reads `editor.ToValue()` and writes it
+at the editor's path via `SetValue`, which **replaces** rather than merges; the library editor's own
+`OnChildPropertyChanged` force-fires *"so the hosting group editor always re-invokes `ToValue()` and
+writes the complete updated object"*. ⛔ **That plumbing is the sharp edge** — the mechanism that
+makes the host notice an edit is what turns a rebuild into a deletion, and it reads as change
+propagation.
 
-**Why it surfaces now:** the package goes immutable at C2. Immutability does not strand the defect —
-`00003`:51 settles that `2026.3.918` followed by `2026.3.925` is ordinary — it removes the option of
-fixing `2026.3.918` in place. See [`docs/RETEST-FINDINGS.md`](./docs/RETEST-FINDINGS.md) `F12`.
+⭐ **Two tests written before the fix redden by name with the re-emit absent; three more pass either
+way and are NOT counted as the catch.** Predicting which two would go red is what makes them
+evidence. ⚠ **Verified by test, not in a running app** — `F9` was additionally driven through the
+UI; this was not.
+
+⛔⛔ **The cost nobody schedules: it invalidated `C0`.** See the `C0` row above — a shared-library
+change breaks C0's identical-trees premise silently. Fix cherry-picked to the parked branch, `C0`
+re-run at **4,434 · 0 · 11**.
+
+ⓘ **`F12` never affected the shipped ClaudeForge artifact** — the app uses its own fixed editor. The
+defective copy was reachable only through `DefaultPropertyEditorFactory`, i.e. OpenCodeForge and
+external package consumers. See [`docs/RETEST-FINDINGS.md`](./docs/RETEST-FINDINGS.md) `F12`.
 
 ⚠ **The CalVer is baked into a passed C1.** Tagging on a later day means re-packing at that day's
 version and re-running both C1 and A5 — no loss, but not free.
