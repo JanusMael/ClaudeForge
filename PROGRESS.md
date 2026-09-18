@@ -114,18 +114,26 @@ FROZEN.** Never edit them. Everything below is drift, which is what this file is
 | F3 share config + two siblings | ✅ PASS |
 | B2 diagnostics-window accessibility | ✅ PASS |
 
-### ⛔⛔ PHASE C IS BLOCKED. Do not tag.
+### ✅ Phase C's retest gate is SATISFIED — 2026-09-18
 
 Plan `00003` is explicit: *"All eight items complete before Phase C. A published version cannot be
-taken back, so nothing proceeds on a partial retest."* ⓘ **Two defects remain open** — the data-loss
-one is fixed in code but not yet re-driven, so `E3` and `E4` are both still unticked:
+taken back, so nothing proceeds on a partial retest."* ⭐ **All eight are now complete**: the six
+that passed on 2026-09-17, plus `E3` and `E4` re-driven and passed on 2026-09-18 against the
+package-mode build `v2026.3.918.839`.
+
+⛔⛔ **Phase C is still blocked, on ONE thing and it is not the retest**: `C1` needs a
+`read:packages` PAT this machine does not have (see the Phase A drift section). ⚠ `C3`
+(`--cleanup-restore-sidecars` printed output) also remains 🟡 — behaviour passes, one human
+terminal still wanted.
+
+ⓘ The three defects that blocked this gate, and how each was closed:
 
 - ✅ **`F9` — editing any env value DELETES every env key the app does not model. FIXED
   2026-09-17**, and it was **not an `env` bug**: `ObjectPropertyEditorViewModel.ToJsonValue`
   rebuilt every object from its schema children, so the writer read any unmodelled key as a
   removal — `env` is simply the object where users keep keys the schema never named. The
   editor now carries the editing scope's unmodelled keys across a save and re-emits them
-  verbatim. ⛔ **Still unverified in the running app**: `E4` re-runs before this closes.
+  verbatim. ✅ **Verified in the running app 2026-09-18** — the save diff lists ONE change and no removals; both unmodelled keys and both comments survive on disk.
 - ✅ **`F7` — backup captures project files; restore silently ignores them. FIXED 2026-09-18.**
   ⭐ **`RestoreProjects` was never missing** — it refused on `IsUnderUserProfile`, and the retest
   project lived at `C:\c\cl\retest-2026.3.917`. **One check was doing two jobs**: a real defence
@@ -146,8 +154,15 @@ one is fixed in code but not yet re-driven, so `E3` and `E4` are both still unti
   failures** (a partial restore is when the undo trail matters), **only this run's** paths, and
   **only** names matching the pre-restore pattern. `--cleanup-restore-sidecars` still owns
   everything older — including the 5,899 from the retest.
-- ⛔ **Both are code-only. `E3` re-runs against a rebuilt package-mode artifact before either
-  closes.**
+- ✅ ✅ ✅ **ALL THREE VERIFIED IN THE RUNNING APP, 2026-09-18** — re-driven through UIA against
+  the package-mode build **`v2026.3.918.839`** (packed at `2026.3.918`, freshness proven by the
+  consumed package carrying `BuildAuthorisedRoots`). `E3` and `E4` both **PASS**; the eight-item
+  list is complete again. ⭐ **`F8` was measured, not assumed**: a final count of zero cannot tell
+  *swept* from *never written*, so the trees were polled at 150 ms across a live restore —
+  project **peak 2 → final 0**, `~/.claude` **peak 6,023 → final 0**. ⭐ That peak of 2 under the
+  project is also independent `F7` evidence, because the original finding's tell was *zero*
+  sidecars there. ⚠ The fixture project sat at `C:\c\cl\retest-2026.3.918`, **outside the home
+  folder** — the condition the failure needed.
 
 ⭐ **`F6` was verified FIXED in passing** — it named exactly 26 unnamed chevrons and the running app
 exposes exactly 26, all announcing *"Expand or collapse"*. The matching count is what makes it
@@ -158,8 +173,7 @@ conclusive. `F10` is new and is the same class.
 1. ✅ **`F9` is fixed** — see the row above. ⚠ Code only; the retest item is still open.
 2. ✅ **`F7` and `F8` are decided and fixed** — 2026-09-18, both recommendations taken: restore
    project entries, and sweep the sidecars once a restore has committed. ⚠ Code only.
-3. **Re-run the affected retest items** (`E3`, `E4`) against a rebuilt package-mode artifact.
-   ⛔ **This is now the only thing between here and Phase C.**
+3. ✅ **`E3` and `E4` re-run and PASSED** on `v2026.3.918.839`, 2026-09-18. All eight items green.
 4. **Then Phase C** — C0 neutrality on the parked branch (⭐ no port needed, the trees are
    identical), C1 preflight, C2 the tag. ⛔ C2 is irreversible. ⛔⛔ **C1 needs a `read:packages`
    PAT that this machine does not have** — provision it before Phase C starts.

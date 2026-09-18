@@ -67,6 +67,33 @@ having done nothing.
 dialog into an apparent silent hang. When an action seems to do nothing, dump the
 *first* 20 elements, not the last.
 
+⛔ **Refined 2026-09-18: "top of the tree" does NOT mean "top-level window".** The Save
+Changes and Include-API-credentials dialogs are `Window` elements **inside the main
+window's descendants** — element `[1]` of a descendant walk, not a sibling of it. A scan
+of `RootElement`'s children finds only the main window and reports *"no modal dialog
+found"* while the dialog is on screen. Enumerate the main window's descendants and take
+the first `ControlType.Window`.
+
+**6 · Some results are announced only in a pill that clears, and are never logged.**
+`RestoreResult.Message` — which carries the restored and swept counts — is assigned to
+`StatusMessage` and nothing else. `Watch-TransientStatus.ps1` caught the *progress* labels
+(`Restoring claude.json…`, `Restore complete`) and never the message itself.
+
+⭐ **When the report is unreadable, measure the effect instead.** To prove sidecars were
+written and then swept — a final count of zero cannot tell *swept* from *never written* —
+poll the trees at ~150 ms across a live restore and record the PEAK alongside the final:
+
+```
+C:\c\cl\retest-2026.3.918   peak=2      final=0
+~/.claude                   peak=6023   final=0
+```
+
+**7 · `Invoke()` can succeed and do nothing when the element came from a stale walk.**
+The first invoke of a virtualised list row's *Restore* button returned cleanly and wrote
+no log line; re-resolving the element after the tree stabilised worked. ⚠ This is lesson
+4 wearing a different coat — confirm against the app's **own log**, not the pattern's
+return value.
+
 ---
 
 ## Confirming an edit actually happened

@@ -81,7 +81,37 @@ view shows the correct layer winning.
 **Fail:** a value written to the wrong file. The scope ladder is shared-library code and is exactly
 what an extraction can scramble.
 
-### ⛔ E3 · Backup, then restore — `AgentForge.Core.Backup` — **FAILED 2026-09-17**, two findings
+### ✅ E3 · Backup, then restore — `AgentForge.Core.Backup` — **PASSED 2026-09-18** on the re-drive
+
+> Re-driven against the package-mode build `v2026.3.918.839` after `F7` and `F8` were fixed,
+> with the fixture project at `C:\c\cl\retest-2026.3.918` — **outside the home folder**, which
+> is the condition the original failure needed.
+>
+> | | Before restore | After restore | Expected |
+> |---|---|---|---|
+> | project `settings.json` value | `CHANGED-AFTER-BACKUP` | ✅ rolled back | rolled back |
+> | project `agents/retest-agent.md` | deleted | ✅ restored | restored |
+> | `.pre-restore-*.bak` under the project | — | ✅ **0** | 0 |
+> | `.pre-restore-*.bak` under `~/.claude` | — | ✅ **0** | 0 |
+>
+> ⭐ **Zero sidecars was measured, not assumed to mean "swept".** A final count of zero cannot
+> tell *swept* from *never written*, and the result message that carries the count is not logged
+> and clears before a settle-based probe can read it. So the trees were polled at 150 ms
+> throughout a live restore:
+>
+> | Tree | Peak during | Final |
+> |---|---|---|
+> | `C:\c\cl\retest-2026.3.918` | **2** | **0** |
+> | `~/.claude` | **6,023** | **0** |
+>
+> ⭐ **That same measurement is independent evidence for `F7`.** The original finding's tell was
+> *"zero sidecars under the project — the restore never considered the path at all"*. A peak of
+> **2** says it considered the path and wrote there.
+
+<details>
+<summary>The 2026-09-17 failure this replaces</summary>
+
+### ⛔ E3 · **FAILED 2026-09-17**, two findings
 
 > **Backup passed.** A *Settings only* archive was written, and the *Include API credentials?*
 > consent dialog's promise held — `Omit` produced an archive containing **zero** credential
@@ -96,6 +126,9 @@ what an extraction can scramble.
 >
 > ⓘ User-scope restore itself worked correctly.
 
+</details>
+
+
 The largest piece of shared machinery, and destructive when wrong.
 
 **Do:** take a backup. Change something. Restore.
@@ -106,7 +139,32 @@ sidecars remain**.
 **Fail:** a partial restore, or surviving sidecars — `--cleanup-restore-sidecars` exists because
 that has happened.
 
-### ✅ E4 · Secrets stay redacted — `AgentForge.Sdk` — PASSED 2026-09-17 ⚠ but it exposed `F9`
+### ✅ E4 · Secrets stay redacted — `AgentForge.Sdk` — PASSED 2026-09-17, re-driven 2026-09-18
+
+> **Re-driven on `v2026.3.918.839` after `F9` was fixed**, at Project scope, with two env keys
+> the schema models and two it does not.
+>
+> ⭐ **The editor still does not RENDER the unmodelled keys** — `RETEST_MARKER_918` and
+> `MY_CUSTOM_TOOL_PATH` appear nowhere on the page. That is the premise of the finding, live:
+> the fix preserves what it declines to show rather than starting to show it.
+>
+> The save diff, which listed three changes before, now lists one:
+>
+> ```
+> [Save] Claude Code settings — Project: 1 pending change(s)
+> [Save]   "Modified" env.ANTHROPIC_API_KEY: [redacted] → [redacted]
+> ```
+>
+> ⛔ **No `"Removed"` lines.** The 2026-09-17 run logged two. On disk afterwards, both unmodelled
+> keys survive, both comments survive, and key order is unchanged — so `E1` rode along.
+>
+> ⚠ **One claim in the `F9` write-up was wrong and is corrected here.** It said the save dialog
+> shows `[redacted]` values. It does not — the dialog renders the full old and new values
+> (`"sk-ant-FAKE-retest-918-not-a-real-key"` → `"sk-ant-FAKE-EDITED-918"`); it is the **audit
+> log** that redacts. Showing the user their own value on their own screen before writing it is
+> defensible, and the argument the write-up built on it (that the dialog could not have let a
+> user rescue a deleted value) is moot now that nothing is removed. Recorded because the claim
+> was stated as measured.
 
 > **Redaction passes.** The save diff redacts every env value, not just the obviously secret
 > one: `"Modified" env.ANTHROPIC_API_KEY: [redacted] → [redacted]`. The planted key's raw value
