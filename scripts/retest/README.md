@@ -88,7 +88,20 @@ C:\c\cl\retest-2026.3.918   peak=2      final=0
 ~/.claude                   peak=6023   final=0
 ```
 
-**7 · `Invoke()` can succeed and do nothing when the element came from a stale walk.**
+**7 · `Find-UiElement` matches on the NAME, not the AutomationId** — so a needle like
+`ExpanderHeader` returns `matched: 0` against a tree full of `id=ExpanderHeader` elements.
+
+⛔ **That zero is indistinguishable from "fixed".** Chasing `F10` this read as confirmation
+that the defect was gone, and it happened to be — which is worse, because the method would
+have "confirmed" it either way. The ids in the earlier dump had been matched by a *different*
+needle in the same comma-joined list (`Avalonia.`), not by the id needle.
+
+⭐ **Confirm a fix with a POSITIVE assertion, then a negative one whose needle you have seen
+match.** For `F10`: first that the headers announce `ANTHROPIC · 41`, then that a scan for
+`Avalonia.` / `System.` returns zero — that second needle had produced seven hits an hour
+earlier, so its zero means something.
+
+**8 · `Invoke()` can succeed and do nothing when the element came from a stale walk.**
 The first invoke of a virtualised list row's *Restore* button returned cleanly and wrote
 no log line; re-resolving the element after the tree stabilised worked. ⚠ This is lesson
 4 wearing a different coat — confirm against the app's **own log**, not the pattern's
