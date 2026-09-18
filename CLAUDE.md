@@ -377,6 +377,8 @@ one-shot maintenance task would show a window nobody asked for and hold file loc
 |---|---|
 | Operational rules, cross-file invariants, per-task checklists | [`AGENTS.md`](./AGENTS.md) |
 | Avalonia behaviours that cost us time, with measurements | [`docs/AVALONIA-GOTCHAS.md`](./docs/AVALONIA-GOTCHAS.md) |
+| **Driving the app through UI Automation for a retest** | [`scripts/retest/README.md`](./scripts/retest/README.md) — harnesses, not tests; nothing here runs in CI. ⛔ Read its five lessons before hand-driving anything: a fixed sleep is not a measurement, `pwsh -File` does not parse PowerShell syntax so an array argument arrives as one string, `catch { continue }` without counting makes a degraded tree look empty, patterns never coordinate clicks, and modals live at the **top** of the tree |
+| Where the app's automation surface is thin, and what to do about it | [`docs/UIA-AUTOMATION-GAPS.md`](./docs/UIA-AUTOMATION-GAPS.md) — nine gaps plus a proposal for a reusable automation-surface helper. ⚠ Several are **accessibility** gaps wearing automation clothes; read it before concluding a control is missing |
 | Trim-warning baselines and what they mean | [`TRIMMING.md`](./TRIMMING.md) |
 | Localization and the resx parity contracts | [`LOCALIZATION.md`](./LOCALIZATION.md) |
 | Platform conditionals and path handling | [`PLATFORM.md`](./PLATFORM.md) |
