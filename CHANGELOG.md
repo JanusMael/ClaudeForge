@@ -61,6 +61,10 @@ reconcile them against and renumbering them would be guesswork.
 
 ### Fixed
 
+- **Collapsible section headers now announce their own name.** Every expander — the environment
+  variable groups, the permissions sections, the advanced panels — read out as
+  `Avalonia.Controls.Grid` to a screen reader, so nothing distinguished one section from
+  another. They now announce the heading you see.
 - **Restoring a backup now puts your project's files back.** A backup taken with a project
   open contains that project's `.claude/` files, but restore quietly skipped any project
   kept outside your home folder — reported success, wrote nothing, and described the

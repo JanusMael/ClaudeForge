@@ -122,9 +122,23 @@ that passed on 2026-09-17, plus `E3` and `E4` re-driven and passed on 2026-09-18
 package-mode build `v2026.3.918.839`.
 
 ⛔⛔ **Phase C is still blocked, on ONE thing and it is not the retest**: `C1` needs a
-`read:packages` PAT this machine does not have (see the Phase A drift section). ⚠ `C3`
-(`--cleanup-restore-sidecars` printed output) also remains 🟡 — behaviour passes, one human
-terminal still wanted.
+`read:packages` PAT this machine does not have (see the Phase A drift section).
+
+✅ **`C3` is now fully green too** (2026-09-18) — and the reason its output "could not be captured"
+was wrong: the tool writes to **`Console.Error`**, so redirecting stdout alone sees nothing while
+merging stderr sees everything. No terminal was needed. Driven against **three planted** sidecars
+so the counts are a measurement rather than a format string over zeros; the app log carried the
+identical summary and no process survived the run.
+
+✅ **`F10` is also fixed and verified** (2026-09-18) — expander headers announced
+`Avalonia.Controls.Grid`. ⭐ The name was on the **wrong element**, not missing: views already
+named the Expander, but focus goes to its `ExpanderHeader` part. ⛔ Two measurements corrected the
+plan — a plain string `Header` announces the type name too (so **all twelve** Expanders were
+affected, not the reported seven, and there was no fallback to protect), and the selector needs
+**`ToggleButton`**, since UIA's `Button` is the peer's answer and a selector from it matches
+nothing silently. ⛔⛔ **`F10`'s own diagnosis was wrong**: `Audit-Accessibility.ps1` has always
+had the type-name rule and it fires correctly — the audit simply only walks **pages that are on
+screen**, and Environment was not open during `B2`.
 
 ⓘ The three defects that blocked this gate, and how each was closed:
 

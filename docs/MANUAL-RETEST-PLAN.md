@@ -224,13 +224,30 @@ is live risk and the symptom is a secret in a log.
 
 ## Also outstanding
 
-### 🟡 C3 · The `--cleanup-restore-sidecars` CLI tool — BEHAVIOUR PASSED 2026-09-17, output unverified
+### ✅ C3 · The `--cleanup-restore-sidecars` CLI tool — PASSED 2026-09-18, output included
 
-> ⭐ Tested against real work: the **5,899** sidecars `E3` had just created. It removed **all of
-> them** (5,899 → 0), opened **no window**, and left `~/.claude/settings.json` valid.
-> ⚠ The printed summary could **not** be captured — the tool reattaches to the parent console, so
-> redirected stdout sees nothing, exactly as the Fail note below warns. **Still needs one run from
-> a terminal a human can see** to confirm the wording and the directory it names.
+> ⭐ Tested against real work on 2026-09-17: the **5,899** sidecars `E3` had just created. It
+> removed **all of them** (5,899 → 0), opened **no window**, and left `~/.claude/settings.json`
+> valid.
+>
+> ⛔ **The output was captured on 2026-09-18, and the reason it "could not be" was wrong.** The
+> tool writes to **`Console.Error`**, not stdout — every line in `RunRestoreSidecarCleanup` is a
+> `Console.Error.WriteLine`. Redirecting stdout alone captures nothing; merging stderr captures
+> everything, with no terminal and no console attach involved:
+>
+> ```
+> [ClaudeForge] Cleaning up *.bak restore sidecars under C:\Users\Janus\.claude…
+> [ClaudeForge] Scanned 3 *.bak file(s); deleted 3 (0.0 MB reclaimed); 0 failure(s).
+> ```
+>
+> ⭐ Driven against **three planted sidecars** rather than a zero-file run, so the counts are a
+> measurement and not a format string over zeros. All three were gone afterwards, the app log
+> carried the identical summary (`[Cleanup] Scanned 3 …`), `~/.claude/settings.json` stayed valid
+> JSON, and **no process survived the run** — so the no-window claim is measured too.
+>
+> ⚠ The Fail note below still stands for an *interactive* launch: `AttachConsole` is what makes
+> the lines visible in a terminal the binary was started from. What it does **not** do is prevent
+> capture by a parent that redirects — the two were conflated.
 
 Its call site changed in this batch: `Program.cs` now passes the home explicitly, where the message
 and the walk previously resolved it independently.

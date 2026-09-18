@@ -999,7 +999,7 @@ artifact before this is called done.
 
 ---
 
-## 🔵 F10 · Seven env-group expander headers announce `Avalonia.Controls.Grid`
+## ✅ F10 · Seven env-group expander headers announce `Avalonia.Controls.Grid` — FIXED and verified
 
 Found while driving `E4`, same build.
 
@@ -1037,3 +1037,54 @@ invisible to it.
 usefully". Worth a second rule: flag any accessible name that matches a framework type
 (`Avalonia.*`, `System.*`), since no such string is ever a legitimate user-facing name — that check
 would have caught both this and the `PathIcon` case recorded previously.
+
+### ⛔⛔ Correction 2026-09-18 — that rule ALREADY EXISTS, and the diagnosis above is wrong
+
+`Audit-Accessibility.ps1` has carried `Test-LooksLikeTypeName` all along, and it is checked
+**first**, ahead of the unnamed checks. Exercised directly rather than read:
+
+| Name | Flagged |
+|---|---|
+| `Avalonia.Controls.Grid` | ✅ yes |
+| `Avalonia.Controls.PathIcon` | ✅ yes |
+| `ANTHROPIC  ·  41` | correctly no |
+| `Advanced` | correctly no |
+
+⭐ **The real reason the `B2` run reported one finding is that the audit only visits what is on
+screen.** The Environment page was not open, so those seven elements were never walked. That is a
+materially different lesson, and a more useful one: a green audit means *"nothing wrong on the
+pages that happened to be showing"*, not *"nothing wrong in the app"*. Re-running it today **with
+the Environment page open** visited 196 elements and reported the scrollbar `Thumb` and nothing
+else.
+
+### ✅ Fixed 2026-09-18 — the name was on the wrong element, not missing
+
+⭐ **The view was already correct.** `PropertyEditorWrapper.axaml` sets
+`AutomationProperties.Name` on the Expander; the Expander's own peer had it (the UIA walk showed
+`Group  ANTHROPIC · 41` all along). Focus goes to the `ExpanderHeader` part, whose content is the
+template's Grid, so `ContentControlAutomationPeer` fell back to `Content.ToString()`. Same shape as
+the `PART_TextBox` cases already in `Themes/AccessibilityNames.axaml`, and the fix is one style
+there.
+
+⛔ **The measurement corrected the plan twice:**
+
+1. **A plain `Header="some text"` announces the type name too.** The first draft assumed string
+   headers were fine and that copying a name down might *overwrite* a good fallback; a guard
+   written to assert that failed. The theme wraps the header in a Grid either way, so **all
+   twelve** Expanders were affected, not the seven complex ones — and there was no fallback to
+   protect.
+2. **The selector needs `ToggleButton`, not `Button`.** UIA reports the part as `Button`; that is
+   the peer's answer. The theme's own `ExpanderHeaderToggleButtonTheme` is the fact. A selector
+   written from the walk matches nothing, builds clean, and leaves the header exactly as broken.
+
+**Verified in the running app** (`v2026.3.918.957`): `Button id=ExpanderHeader` now announces
+`ANTHROPIC · 41`, `OTEL · 37`, `Other · 33`, and a scan for `Avalonia.*` / `System.*` names across
+the page returns **zero** where it returned seven. ⭐ Checked on the **Permissions** page too,
+which `F10` never examined — its string-header `Advanced` expander announces `Advanced`, confirming
+the "all twelve were broken" measurement rather than just the reported seven.
+
+**Guards:** 4 peer tests in `TemplatePartAutomationNameTests` (complex header, string header, the
+unnamed limit, and no-framework-type-names), plus `ExpanderAutomationNameTests` requiring every
+Expander in markup to declare a name — the style's precondition, which fails **silently** when
+absent. ⚠ Canaried both: breaking the selector reds exactly 3 peer tests by name and leaves the
+other 6 green; removing one Expander's name reds the markup guard with the file and line.

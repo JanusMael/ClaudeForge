@@ -115,4 +115,34 @@
                 Value="{Binding $parent[AutoCompleteBox].(AutomationProperties.Name)}" />
     </Style>
 
+    <!--
+        ── Expander header ──────────────────────────────────────────────────────────────
+
+        An Expander's focusable element is the ExpanderHeader part, and the theme's template
+        gives that button a Grid as its content (chevron + presenter).  ContentControlAutomationPeer
+        then falls back to Content.ToString(), so the header announced "Avalonia.Controls.Grid" —
+        finding F10, measured through UIA 2026-09-18 as SEVEN of them on the Environment page with
+        nothing to tell "ANTHROPIC · 41" from "OTEL · 37".
+
+        ⛔ The views were already doing their part: every Expander in this solution sets
+        AutomationProperties.Name.  The name simply sat on the Expander's own peer while focus goes
+        to the part — the same wrong-element shape as PART_TextBox above, not a missing name.
+
+        ⚠ MEASURED, and it corrected the plan: a plain `Header="some text"` announces the type name
+        too.  The Grid is in the template either way, so the header's own text never reaches the
+        peer and there is no "good fallback" to preserve.  The first draft of the guard assumed
+        string headers were already fine and asserted it; the assertion failed, which is the only
+        reason this style covers all twelve Expanders rather than only the seven complex ones.
+
+        ⚠ ToggleButton, NOT Button.  A UIA walk reports this part as `Button` — the peer's answer,
+        not the element's — and a selector written from that reading matches nothing, builds with
+        zero warnings, and leaves the header exactly as broken.  The theme's own
+        `ExpanderHeaderToggleButtonTheme` is the fact; TemplatePartAutomationNameTests reads
+        TemplatedParent to keep it honest.
+    -->
+    <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+        <Setter Property="AutomationProperties.Name"
+                Value="{Binding $parent[Expander].(AutomationProperties.Name)}" />
+    </Style>
+
 </Styles>
