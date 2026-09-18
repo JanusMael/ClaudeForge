@@ -22,16 +22,16 @@
 | Working tree | clean |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **Integrated by hand on 2026-09-16, up to `origin/main` `52f604d`** — record the SHA, because neither counting nor patch-ids can tell you again. `main` released **`v2026.3.916`** that day. ⛔⛔ **Both automatic answers are WRONG here, in opposite directions.** `git rev-list --count HEAD..origin/main` over-reports (the 2026-09-16 history rewrite renamed every already-merged commit, so ~27 look unmerged); `git cherry` saw through that and found the 8 genuinely new — but now over-reports too, because a hand-port produces a different patch-id than the commit it ports. **The only reliable record is this cell.** Compare `52f604d..origin/main` to find what is new since. ⓘ The CHANGELOG has now been rebased on `main`'s **twice** in one day — `main` owns the released history and this branch owns only what has not shipped, so keeping a local copy of the released sections just makes the next reconciliation bigger. ⛔ **`git merge origin/main` remains the wrong tool**: the merge base is `3c7aaab` (2026-09-01), `main`'s paths no longer exist here (`ClaudeForge.Sdk`→`AgentForge.Sdk`, the backup VM moved into `AgentForge.Avalonia.Shell`), and this repo has shipped two duplicate-attribute defects from *clean* auto-merges. Ports go through `AGENTS.md` §*Hand-porting a fix*. ⓘ What the 8 were: **4 ported** (YAML front-matter ×2, winget rename, version-probe test), **1 ported as a union** (deep links), **1 already present by a different mechanism** (tab a11y — this branch names containers via `ToString()`, `main` via a style; porting would have added a redundant second mechanism for a defect already fixed and guarded), **1 packaging** (`sign-release.ps1` is now committed rather than ignored), **1 reconciled** (CHANGELOG) |
-| Suite | ⭐ **3,509 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-17 at `1e41f87` on the release branch. ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
+| Suite | ⭐ **3,540 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-18 at `00ff937`. ⓘ **+31 over the 2026-09-17 figure of 3,509**, all guards added with the `F7`/`F8`/`F9`/`F10` fixes; each run was predicted before it was taken. The 2026-09-17 note follows because the *drop* it explains still matters: ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
 | Suite (parked branch) | **4,429 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-17 at `697e840`. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
-| Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics, 2026-09-17 at `1e41f87`** — linux-x64/arm64, win-x64/arm64, osx-x64/arm64. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
+| Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics, 2026-09-17 at `1e41f87`** — linux-x64/arm64, win-x64/arm64, osx-x64/arm64. ⚠ **The six-RID matrix has NOT been re-run since**; 2026-09-18's changes were gated on a linux-x64 publish per commit only. **A5 is what re-covers this before the tag.** ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
-| ⚠ Awaiting | **Eight retest items** — write-path, accessibility, and now `F3`'s status pill; see [`docs/MANUAL-RETEST-PLAN.md`](docs/MANUAL-RETEST-PLAN.md). ⓘ **There is no longer a release blocker above them**: `F5` was the one, and it is refuted. ⓘ **Nothing in this repository is now a code task on the retest list** — every finding is fixed, and what remains is driving the UI |
+| ⚠ Awaiting | ✅ **Nothing.** All eight retest items pass (2026-09-18) and `C1` has passed. The only open finding is **`F11`**, which is deliberately unfixed and does not gate the tag. What remains is **A5**, **C0**, and the maintainer pushing `packages-v2026.3.918` |
 
 ---
 
@@ -83,7 +83,31 @@ and fixed by the same plan.
 
 ---
 
-## ▶ RESUME HERE — plans 00003, Phase C BLOCKED on three defects
+## ▶ RESUME HERE — plans 00003, Phase C: A5 → C0 → the maintainer tags
+
+⭐ **Status as of 2026-09-18: every retest item and every finding except `F11` is closed, and `C1`
+has PASSED.** The maintainer has said **tag today**, at `2026.3.918`.
+
+| Next | Who |
+|---|---|
+| **A5** — re-run `scripts/package-canary.ps1` on the commit actually being tagged (⛔ locked: never inherited) | agent |
+| **C0** — neutrality on the parked `feat/agentforge-opencodeforge`; the ~941 tests exercising `AgentForge.*` from the OpenCode side are the only proof the neutral layer is neutral *by use*, and the packages go immutable right after. ⭐ No port needed, trees identical | agent |
+| **C2** — push `packages-v2026.3.918`. ⛔⛔ **Irreversible, and the maintainer's to run** | maintainer |
+| **Phase D**, then **Phase E** | agent |
+
+⚠ **The CalVer is baked into a passed C1.** Tagging on a later day means re-packing at that day's
+version and re-running both C1 and A5 — no loss, but not free.
+
+ⓘ **`C1` PASSED 2026-09-18 for `2026.3.918`**, all three gates. Gate 3 ran for the **first time**
+and reported *"none of the 11 ids holds 2026.3.918"*; no `packages-v*` tag has ever existed. It
+needed `read:packages`, added to the existing classic PAT **in place** so the token value did not
+change. ⓘ Learned while getting there: `release-packages.yml:110` already runs all three gates with
+the built-in `GITHUB_TOKEN` before its first upload, so **C1 moves that check earlier rather than
+performing one that otherwise never happens**.
+
+---
+
+## Done — the 2026-09-17 state this replaces
 
 ⛔ **[`plans/00002`](plans/00002-claude-code-real-config-locations.md) and
 [`plans/00003`](plans/00003-release-built-from-shared-packages.md) are APPROVED (2026-09-17) and
@@ -107,10 +131,10 @@ FROZEN.** Never edit them. Everything below is drift, which is what this file is
 |---|---|
 | E1 save preserves comments/formatting | ✅ PASS |
 | E2 save lands in the right scope | ✅ PASS |
-| E3 backup, then restore | ⛔ **FAIL** — `F7`, `F8` |
+| E3 backup, then restore | ✅ **PASS on the 2026-09-18 re-drive** (was ⛔ FAIL — `F7`, `F8`) |
 | E4 secrets stay redacted | ✅ PASS — and it surfaced `F9` |
 | E5 artifact resolution | ✅ PASS (source attribution; exact counts recorded as unverified) |
-| C3 `--cleanup-restore-sidecars` | 🟡 behaviour PASS; printed output needs one human terminal |
+| C3 `--cleanup-restore-sidecars` | ✅ **PASS** — output captured 2026-09-18; it writes to **stderr**, which is why redirecting stdout saw nothing |
 | F3 share config + two siblings | ✅ PASS |
 | B2 diagnostics-window accessibility | ✅ PASS |
 
