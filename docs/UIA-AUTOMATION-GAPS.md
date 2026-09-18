@@ -145,3 +145,91 @@ which UIA defines for exactly this — would say so.
 
 **Workaround in use:** check `IsEnabled` before every `Invoke`, and treat a bare
 `System.Exception` as "probably disabled".
+
+---
+
+## G8 · Virtualized lists are invisible to automation — **Confirmed**
+
+The *Agents & Skills* page reports `rows=111 (agents+skills+commands, headers excluded)` while
+exposing only the realized handful to UIA. Searching for seven known user-scope skills returned
+**0 matches**, and the sanity check proved the measurement rather than the app was at fault: a
+*known* key in an expanded group also returned 0. The same applies to the `Other · 33` env group,
+whose children never entered the tree even after `ExpandCollapseState` reported `Expanded`.
+
+⛔ **So "not found" carries no information on any virtualized surface here**, which removes the
+one thing a retest harness needs: the ability to assert absence. It also means a screen-reader
+user's experience of these lists is untested and untestable by the current tooling.
+
+**Workaround in use:** a filter box, where one exists, to force the wanted rows to realize. It
+does not scale — it cannot enumerate, only confirm something already suspected.
+
+---
+
+## G9 · A filter box accepts programmatic text but does not filter — **Confirmed**
+
+`ValuePattern.SetValue` on the *Agents & Skills* filter sets the text (verified by reading it
+back) and the list does not react: the tree still held 219 descendants of unfiltered plugin rows,
+and a search for the filtered term returned **0 matches**.
+
+⚠ **This is the workaround for `G8` failing.** The filter is the only route to force a virtualized
+row to realize, so when it ignores programmatic input, user-scope artifacts become unverifiable by
+automation in both directions — cannot enumerate, cannot filter.
+
+ⓘ Likely a debounce or `TextInput`-event dependency rather than a binding fault: the same
+`SetValue` approach *does* commit on the settings editors, where the window title's dirty marker
+confirms the binding fired. Worth confirming before choosing a fix.
+
+**Workaround in use:** none that works. A human reads the list.
+
+---
+
+# ▶ Proposal — a reusable automation-surface helper
+
+⭐ **Raised by the maintainer, 2026-09-17, and worth doing.** Most gaps above are the same defect
+wearing different clothes: information the UI has, that never reaches the automation tree. Rather
+than patching each site, expose it once through a shared helper.
+
+## The virtualization half already has standard contracts
+
+UIA defines exactly this case, so nothing needs inventing:
+
+| Contract | What it buys |
+|---|---|
+| `IItemContainerProvider` (**ItemContainerPattern**) | `FindItemByProperty` — ask a list for an item by name **without** realizing the whole list |
+| `IVirtualizedItemProvider` (**VirtualizedItemPattern**) | `Realize()` — bring one found item into the tree on demand |
+
+A harness could then say *"find the row named `handoff`, realize it, read its source label"* and get
+a real answer, instead of scrolling and hoping. **`G8` disappears, and absence becomes assertable.**
+
+⚠ **Verify before committing:** whether Avalonia 12.1's automation layer exposes the hooks to
+implement these two providers from application code. That is the load-bearing unknown — the rest of
+this proposal is straightforward either way, and this repo should not assert it until measured.
+
+## It generalises well beyond virtualization
+
+The same helper is the natural home for several gaps already recorded here:
+
+| Gap | What the helper would supply |
+|---|---|
+| `G1` | A stable `AutomationId` on interactive controls — **not** user-visible, so exempt from the localization rule that makes `Name` an unsafe selector |
+| `G3` | `LabeledBy` / `ControllerFor` tying the winning-scope chip and `(overridden)` marker to the property they describe — an accessibility fix first, an automation fix second |
+| `F6` / `F10` | Names for theme-supplied template parts, which the repo-wide AXAML guard cannot see by construction |
+
+## Two shapes, and the dependency question
+
+- **Attached property + custom `AutomationPeer`** — no new package. `Avalonia.Xaml.Behaviors` is
+  **not** currently referenced by this repo, so the Behavior form would add a dependency to eleven
+  shipped packages; that is a decision, not a detail.
+- **A `Behavior`** — more declarative at the XAML call site, and the more natural fit if the
+  package is wanted anyway.
+
+⭐ **Either shape belongs in a neutral library, not an app.** `LayeredEditors.Avalonia` or
+`AgentForge.Avalonia.Shell` — it must make sense for both products, and an automation-surface
+helper plainly does.
+
+## ⭐ It is not Windows-only
+
+Avalonia's automation abstraction maps to **UIA on Windows** and **AT-SPI on Linux**, with
+NSAccessibility on macOS. A helper written against Avalonia's own automation types therefore
+carries to the Linux driver rather than being a Windows-shaped patch — which matters here, because
+the trim matrix already ships six RIDs and the accessibility audit has only ever run on one.

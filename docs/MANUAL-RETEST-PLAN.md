@@ -131,7 +131,26 @@ is live risk and the symptom is a secret in a log.
 
 **Pass:** redacted everywhere it appears — audit log, save diff, backup manifest.
 
-### ☐ E5 · Artifact resolution — `AgentForge.Artifacts`
+### 🟡 E5 · Artifact resolution — `AgentForge.Artifacts` — PARTIAL 2026-09-17, needs one human check
+
+> **Verified:** both project-level agents are listed and tagged **Project**; plugin artifacts are
+> tagged **Plugin (read-only)** with their marketplace path. The page reports
+> `rows=111 (agents+skills+commands, headers excluded)`.
+>
+> ⛔ **NOT verified — the 7 user-scope skills.** The list is virtualized, so UIA sees only the
+> realized rows and **absence proves nothing** (gap `G8`). The sanity check confirmed the
+> measurement rather than the app was at fault: a *known* key in an expanded group also returned
+> 0 matches. The filter box, which is the usual way to force a row to realize, accepts programmatic
+> text and does not filter (gap `G9`), so there is no automated route left.
+>
+> ⚠ **Counts cannot be compared naively.** Disk holds 116 artifacts, the page shows 111 — but the
+> disk figure counts every plugin in every marketplace folder, while the app loads only *enabled*
+> plugins. That gap is a measurement artefact until someone counts enabled plugins properly; it is
+> **not** evidence of a defect.
+>
+> **What a human needs to do:** open Agents & Skills, scroll to the User section, and confirm the
+> seven user skills — `address-pr-feedback`, `choices`, `commit`, `handoff`, `plan-file`,
+> `resume-handoff`, `step-back` — are listed and tagged **User**.
 
 **Do:** open Agents & Skills in a project having both user-level and project-level artifacts.
 
@@ -162,7 +181,24 @@ scanned/deleted summary, and **exits without opening a window**.
 **Fail:** a window appears, a different directory is named, or there is no output (run it from a
 terminal you can see — it reattaches to the parent console).
 
-### ☐ F3 · *Share config* now says what it did
+### ✅ F3 · *Share config* now says what it did — PASSED 2026-09-17, all three surfaces
+
+> Captured with `scripts/retest/Watch-TransientStatus.ps1`. ⚠ A settle-based probe **cannot see
+> this** — the tree went 274 → 276 → 274 across one settle, so the pill appeared and cleared while
+> the probe waited for stability, and the first attempt reported "no pill" for a pill that worked.
+>
+> | Surface | Pill | Side effect verified |
+> |---|---|---|
+> | Share config | *"Configuration copied to the clipboard."* | clipboard really changed — 6,509 chars of JSON |
+> | Backup row *Share* | *"Backup archive revealed in your file manager."* | Explorer opened on the archive folder |
+> | *Share Log* | *"Log file revealed in your file manager."* | Explorer opened on the logs folder |
+>
+> All three carried the **✓ icon** — not the grey icon-less legacy `StatusMessage` channel — and
+> **self-cleared at 6.4–6.9 s** without needing a dismiss. All three say **revealed**, never
+> *shared*.
+> ⓘ **Location correction:** *Share Log* is on the **Version Information** page, not the About
+> dialog. The About dialog carries only Close / Check for updates / Check for schema updates /
+> GitHub Repository / Report an Issue.
 
 **Do:** on the Effective settings page, click **Share config**.
 
