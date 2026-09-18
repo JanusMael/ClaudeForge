@@ -100,7 +100,7 @@ Packed at `0.0.0-local-20260918110913`; eleven packages; full **Release** suite 
 **3,540 · 0 · 13** across all 9 test projects; real win-x64 self-contained publish, 0 warnings.
 ⭐ **The figure was predicted before the run**, so a smaller count would have been as legible as a
 larger one. ⭐ **Package consumption was checked, not inferred** — a green canary is also what a
-mixed graph reports, and MSBuild prefers the project output. `src/ClaudeForge/obj/project.assets.json`
+mixed graph reports, and MSBuild prefers the project output. The app's own `project.assets.json`
 resolves all eleven as `Bennewitz.Ninja.*/0.0.0-local-20260918110913` **packages**; the only
 `"type": "project"` entries are the two product-specific libraries, which is correct.
 
@@ -109,9 +109,11 @@ resolves all eleven as `Bennewitz.Ninja.*/0.0.0-local-20260918110913` **packages
 **4,429 · 0 · 11** across 12 test projects, matching the prediction exactly. The OpenCode side
 contributes 906 (`OpenCode.Sdk` 332, `OpenCode.Avalonia` 355, `OpenCodeForge.Tests` 219).
 ⚠ **The shared-library trees were proven identical rather than taken from the plan**, as `00003`
-requires — `git diff <both branches> -- src/AgentForge src/LayeredEditors src/JsonC` is empty, and
-the same command over `src/ClaudeForge` is **not**, so the empty result is a measurement and not a
-bad pathspec. ⓘ All 9 commits on the parked branch since its last verified run are docs-only.
+requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC` is empty,
+and the same command over `src/ClaudeForge` is **not**, so the empty result is a measurement and not
+a bad pathspec. ⚠ `00003` spells the first two as bare family prefixes, which git resolves the same
+way; **spelled that way in this file they red `EveryHardcodedRepoPathInBuildFilesExists`**, because
+neither is a directory that exists. ⓘ All 9 commits on the parked branch since its last verified run are docs-only.
 
 ⭐ **The stronger evidence is not the total.** The two cross-app guards that return
 `Assert.Inconclusive` on the one-app release tree — `EveryAppTokenAsharedLibraryNeeds_IsDeclaredByEveryApp`
