@@ -770,3 +770,94 @@ the restore reported success.
 ⓘ The fix is a decision, not just code: either sweep the sidecars once a restore has
 committed, or keep them deliberately and **say so on the page**, with the cleanup command
 named at the point the cost is incurred.
+
+---
+
+## 🔵 F9 · Editing any env value DELETES every env key the app does not model
+
+Found driving `E4` on 2026-09-17 against the package-mode build `v2026.3.917.1839`.
+⛔ **This is data loss in the user's own configuration, and it reproduces every time.**
+
+### What happens
+
+Change a single environment variable in the editor and save. Every env key that is not in
+the app's known-variable list is **removed from the file**, including keys the user placed
+there deliberately and never touched in this session.
+
+Reproduced twice, the second time with a key name invented specifically to rule out any
+contamination from the first run:
+
+```
+[Save] Claude Code settings — Project: 3 pending change(s)
+[Save]   "Modified" env.ANTHROPIC_API_KEY: [redacted] → [redacted]
+[Save]   "Removed"  env.MY_CUSTOM_TOOL_PATH: old = [redacted]
+[Save]   "Removed"  env.RETEST_MARKER: old = [redacted]
+```
+
+Before and after, on disk:
+
+| Key | In the app's env groups? | Survived the save |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | yes (`ANTHROPIC · 41`) | ✅ |
+| `CLAUDE_CODE_ENABLE_TELEMETRY` | yes | ✅ |
+| `RETEST_MARKER` | no | ⛔ **deleted** |
+| `MY_CUSTOM_TOOL_PATH` | no | ⛔ **deleted** |
+| `RETEST_UNICODE` | no | ⛔ **deleted** (first run) |
+
+ⓘ The rest of the file is untouched — comments, key order and every other setting survive,
+so this is specific to the `env` object and not a writer regression. `E1` passes.
+
+⚠ **Only a save that touches `env` triggers it.** Saves that changed `model` left all five
+keys intact across several earlier runs, which is why `E1` and `E2` passed over this without
+seeing it.
+
+### ⚠ It is surfaced, but not in a form anyone can act on
+
+Credit where due: the removals **are** listed in the save-confirmation dialog as pending
+changes, so this is not strictly silent. Two things defeat that in practice:
+
+- ⛔ **The user did not ask for them.** They appear alongside the one edit that *was* made,
+  in a dialog whose habitual answer is *Save*.
+- ⛔ **The values are `[redacted]`**, correctly per `E4` — so the dialog can tell you
+  `MY_CUSTOM_TOOL_PATH` is being removed but not what it contained. The one surface that
+  could let a user rescue the value is the one that must not show it.
+
+### Why it matters
+
+`env` is exactly where non-standard keys belong: proxy settings, internal tool paths,
+anything an organisation adds that upstream has never heard of. The app's own env editor
+advertises 157 known variables across six groups — every variable outside that set is
+currently destroyed by editing any variable inside it.
+
+ⓘ Whether the fix is to render unknown keys, or to preserve them untouched while not
+rendering them, is a design decision. **Preserving them is the minimum**: an editor may
+decline to show a key, but it must not delete what it chose not to show.
+
+---
+
+## 🔵 F10 · Seven env-group expander headers announce `Avalonia.Controls.Grid`
+
+Found while driving `E4`, same build.
+
+Every collapsible group on the Environment page exposes its header as a `Button` whose
+accessible name is the **framework type name**:
+
+```
+[144] Button  id=ExpanderHeader  Avalonia.Controls.Grid
+[147] Button  id=ExpanderHeader  Avalonia.Controls.Grid
+…                                        (7 in total)
+```
+
+A screen-reader user tabbing the Environment page hears *"Avalonia.Controls.Grid, button"*
+seven times, with nothing to distinguish `ANTHROPIC · 41` from `OTEL · 37`. The group's
+label exists as a separate `Text` sibling, so the information is on screen and simply not
+attached to the control that takes focus.
+
+⚠ **Same class as `F6`, and the same reason the existing guards miss it.** `ExpanderHeader`
+is a control-template part supplied by the theme, not markup this repository writes, so the
+repo-wide `AutomationProperties.Name` check over `src/**/*.axaml` cannot see it — by
+construction. `F6` was 26 chevrons; this is 7 expander headers, and the fix is the same
+shape.
+
+ⓘ Worse than `F6` in one respect: a chevron announcing nothing is unhelpful, but a control
+announcing `Avalonia.Controls.Grid` actively asserts something false about what it is.

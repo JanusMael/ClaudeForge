@@ -106,7 +106,21 @@ sidecars remain**.
 **Fail:** a partial restore, or surviving sidecars — `--cleanup-restore-sidecars` exists because
 that has happened.
 
-### ☐ E4 · Secrets stay redacted — `AgentForge.Sdk`
+### ✅ E4 · Secrets stay redacted — `AgentForge.Sdk` — PASSED 2026-09-17 ⚠ but it exposed `F9`
+
+> **Redaction passes.** The save diff redacts every env value, not just the obviously secret
+> one: `"Modified" env.ANTHROPIC_API_KEY: [redacted] → [redacted]`. The planted key's raw value
+> appears **nowhere** in `logs/app-*.txt` or `logs/events-*.txt`, and the backup `manifest.json`
+> is clean (`includedCredentials: false`).
+> ⓘ The raw value **is** present inside the backup archive's copy of `settings.json` — by design,
+> and clearly warned: *"This mode preserves secrets verbatim"*, with a separate *Sanitized for
+> sharing* mode offered. An archive that redacted secrets could not restore them.
+> ⛔ **Driving this item surfaced [`F9`](RETEST-FINDINGS.md): editing any env value DELETES every
+> env key the app does not model.** Reproduced twice. That is data loss, and it is the most
+> serious finding of this retest pass.
+> ⚠ Checking "the secret does not appear" is only evidence if the surface would otherwise carry
+> it — `Get-BackupArchiveInfo.ps1 -SecretPattern` reports the key NAME count alongside the value
+> count, and calls a zero-name result INCONCLUSIVE rather than a pass.
 
 Two classifiers are deliberately duplicated across the layering boundary
 (`JsonRedactor.IsSensitiveKey` in Core, `SensitiveKeys.IsSensitive` in Sdk), so drift between them
