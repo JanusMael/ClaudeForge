@@ -165,6 +165,15 @@ not an optional extra.
 - **PR #65 was admin-merged into `main`** as `c149b82` (`AGENTS.md` only, +10/−4, all checks green).
   ⓘ It does **not** touch the release path; `main` and this branch diverged long ago.
 
+### ⚠ Flake seen 2026-09-17 — `LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock`
+
+Failed once in `ReloadHardeningTests`, on a run that was also building, then passed **five**
+consecutive full-project runs after it. It fires three overlapping `LoadAllWorkspacesAsync`
+calls while rewriting the settings file between them, so it is timing-sensitive by
+construction and the lack of a deadlock is its only real assertion. ⓘ Recorded rather than
+dismissed: the fix landing that day touches no part of that path. **If it recurs, it is a
+real reload race, not noise** — do not re-run until green and move on.
+
 ### ⚠ Phase A drift — three things the plan did not name
 
 - ⛔ **The `gh` token on this machine has NO `read:packages` scope** (`repo`, `workflow`, `read:org`,

@@ -156,6 +156,53 @@ public sealed class SavePreservationTests
             "Key order must be preserved exactly.");
     }
 
+    /// <summary>
+    /// The F9 fix re-emits the keys an object editor never rendered, so a save now hands the
+    /// writer a WHOLE object in which most keys are unchanged. This measures the claim that
+    /// rests on — that re-emitting an unchanged key costs nothing on disk — rather than
+    /// inferring it from the diffing code.
+    /// </summary>
+    [TestMethod]
+    public async Task GuiSave_RewritingAWholeObject_TouchesOnlyTheKeyThatChanged()
+    {
+        string after = await Session.Dispatch(
+            async () =>
+            {
+                MainWindowViewModel vm = BuildViewModel();
+                await vm.LoadAllWorkspacesAsync();
+                Assert.IsNotNull(vm.ClaudeCodeSdk);
+
+                // Exactly the shape the object editor now produces: the edited key plus every
+                // key it carried across, written as one object rather than as a leaf path.
+                JsonObject env = new()
+                {
+                    ["FOO"] = "changed",
+                    ["CARRIED"] = "untouched",
+                };
+                vm.ClaudeCodeSdk.SetValue("env", env, ConfigScope.User);
+                await vm.SaveForBackupOrRestoreAsync(isRestoreContext: false);
+
+                return await File.ReadAllTextAsync(CcSettingsPath);
+            },
+            CancellationToken.None);
+
+        StringAssert.Contains(after, "\"changed\"",
+            "The edit must reach disk, or everything below is vacuous.");
+        StringAssert.Contains(after, "\"CARRIED\"",
+            "The carried key must be written — it was not in the file before.");
+        StringAssert.Contains(after, "// Comment inside a nested object.",
+            "Re-emitting a whole object must not re-serialize it: the comment INSIDE env is "
+            + "what a wholesale replacement would destroy, and the F9 fix hands the writer a "
+            + "whole object on every save that touches one.");
+        StringAssert.Contains(after, "// Top-of-file comment that must survive a save.",
+            "And the rest of the document is untouched.");
+
+        CollectionAssert.AreEqual(
+            new[] { "model", "cleanupPeriodDays", "env", "permissions" },
+            TopLevelKeys(after).Where(k => k != "//").ToArray(),
+            "Key order must survive an object-level write exactly as it does a leaf one.");
+    }
+
     [TestMethod]
     public async Task GuiSave_WithWriterLegacy_IsLossy_SoTheHatchesCostIsMeasured()
     {
