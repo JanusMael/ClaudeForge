@@ -131,26 +131,32 @@ is live risk and the symptom is a secret in a log.
 
 **Pass:** redacted everywhere it appears — audit log, save diff, backup manifest.
 
-### 🟡 E5 · Artifact resolution — `AgentForge.Artifacts` — PARTIAL 2026-09-17, needs one human check
+### ✅ E5 · Artifact resolution — `AgentForge.Artifacts` — PASSED 2026-09-17 (source attribution)
 
-> **Verified:** both project-level agents are listed and tagged **Project**; plugin artifacts are
-> tagged **Plugin (read-only)** with their marketplace path. The page reports
-> `rows=111 (agents+skills+commands, headers excluded)`.
+> **Every artifact is attributed to the right source**, which is what this item exists to check:
 >
-> ⛔ **NOT verified — the 7 user-scope skills.** The list is virtualized, so UIA sees only the
-> realized rows and **absence proves nothing** (gap `G8`). The sanity check confirmed the
-> measurement rather than the app was at fault: a *known* key in an expanded group also returned
-> 0 matches. The filter box, which is the usual way to force a row to realize, accepts programmatic
-> text and does not filter (gap `G9`), so there is no automated route left.
+> | Scope | On disk | Listed | Source label |
+> |---|---|---|---|
+> | User skills | 7 | **7/7** | `User` |
+> | Project agents | 2 | **2/2** | `Project` |
+> | Plugin artifacts | many | yes | `Plugin (read-only)` + marketplace path |
 >
-> ⚠ **Counts cannot be compared naively.** Disk holds 116 artifacts, the page shows 111 — but the
-> disk figure counts every plugin in every marketplace folder, while the app loads only *enabled*
-> plugins. That gap is a measurement artefact until someone counts enabled plugins properly; it is
-> **not** evidence of a defect.
+> Enumerated with `scripts/retest/Get-VirtualizedRows.ps1`, which scrolls the list and accumulates
+> rows because the list is virtualized (gap `G8`) and the filter box ignores programmatic text
+> (gap `G9`).
 >
-> **What a human needs to do:** open Agents & Skills, scroll to the User section, and confirm the
-> seven user skills — `address-pr-feedback`, `choices`, `commit`, `handoff`, `plan-file`,
-> `resume-handoff`, `step-back` — are listed and tagged **User**.
+> ⛔ **Two false conclusions were caught before being filed, both by a count that did not add up.**
+> First, `LargeIncrement` scrolling jumped 0% → 84.2% in one step, enumerating **34 of 111** rows
+> while finishing at a tidy "100%" — *a scroll that reaches the end is not a scroll that saw
+> everything*. Second, the page has **three tabs** (Sub-agents / Skills / Slash Commands) and the
+> user skills live on a tab that was never opened; all seven read as MISSING until then.
+>
+> ⚠ **The exact count criterion is NOT verified, and is recorded as such.** The app reports 111;
+> scroll-enumeration recovered ~103 across the three tabs (rows realize lazily, so a sweep still
+> misses some); disk holds 116 counting every plugin in every marketplace folder, while the app
+> loads only *enabled* plugins. Both figures are approximations for different reasons, so the
+> comparison proves nothing either way — it is **not** evidence of a defect, and it is **not**
+> evidence of correctness.
 
 **Do:** open Agents & Skills in a project having both user-level and project-level artifacts.
 
@@ -220,7 +226,34 @@ where the clipboard did not actually change.
 ⚠ Both say *revealed*, never *shared* — no platform here opens a share sheet, and claiming one is
 the defect. A pill reading "shared" is a **fail**.
 
-### ☐ B2 · Diagnostics-window accessibility — *needs one action from you, then I run it*
+### ✅ B2 · Diagnostics-window accessibility — PASSED 2026-09-17
+
+> Run against the **shipping** package-mode build, all three windows open:
+>
+> ```
+> Tree settled at 291 descendants after 4.1s.
+> Top-level windows: 3
+>   walking: Live Config-File Events — Shift+F12 to hide
+>   walking: ClaudeForge — retest-2026.3.917
+>   walking: Live Debug Logs — F12 to hide
+> Elements visited: 291
+> Findings: 1
+>   [1] focusable, no accessible name  type=Thumb
+> ```
+>
+> **Zero findings in either diagnostics window.** The single finding is the scrollbar `Thumb`,
+> already recorded as accepted noise. ⭐ The 26 chevrons are absent, independently confirming
+> `F6`'s fix.
+>
+> ⓘ **No human keypress was needed after all** — `scripts/retest/Open-DiagnosticsWindows.ps1`
+> drives F12 / Shift+F12. ⛔ Plain `SetForegroundWindow` **fails silently** from a background
+> process (returns false, throws nothing), so the keys went nowhere and the binding looked broken;
+> `AttachThreadInput` is the documented remedy and makes it reliable.
+>
+> ⚠ **A green audit means "nothing is unnamed", not "everything is named usefully."** This run
+> reported 1 finding while seven controls were separately found announcing `Avalonia.Controls.Grid`
+> — see [`F10`](RETEST-FINDINGS.md). The audit's rule is *focusable with **no** name*; a wrong name
+> passes it.
 
 The UIA audit covered the main window only; it walks whatever top-level windows exist when it runs.
 

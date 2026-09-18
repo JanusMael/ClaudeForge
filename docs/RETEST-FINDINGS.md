@@ -861,3 +861,15 @@ shape.
 
 ⓘ Worse than `F6` in one respect: a chevron announcing nothing is unhelpful, but a control
 announcing `Avalonia.Controls.Grid` actively asserts something false about what it is.
+
+### ⛔ `Audit-Accessibility.ps1` cannot see this, and that is the lesson
+
+The `B2` audit run on 2026-09-17 visited **291 elements across all three windows and reported
+exactly ONE finding** — the scrollbar `Thumb`. It did not report these seven, because its rule is
+*focusable with **no** accessible name*, and these have one. A name that is present but wrong is
+invisible to it.
+
+⚠ So a green accessibility audit means "nothing is unnamed", **not** "everything is named
+usefully". Worth a second rule: flag any accessible name that matches a framework type
+(`Avalonia.*`, `System.*`), since no such string is ever a legitimate user-facing name — that check
+would have caught both this and the `PathIcon` case recorded previously.
