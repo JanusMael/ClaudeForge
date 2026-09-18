@@ -268,6 +268,239 @@ public sealed class ObjectPropertyEditorNestedTests
             "After cascading reset, the parent's IsModified must also be false.");
     }
 
+    // ── F9 · unmodelled keys survive an edit ──────────────────────────
+    //
+    // The object editor renders only the children the schema gave it. Everything else in
+    // the same object at the editing scope used to vanish the moment ONE modelled key was
+    // edited, because ToJsonValue rebuilt the object from Children and the writer read the
+    // absent keys as removals. Measured on `env`: changing ANTHROPIC_API_KEY deleted
+    // MY_CUSTOM_TOOL_PATH and RETEST_MARKER from the file.
+
+    /// <summary>
+    /// Build a LayeredValue holding one object at one scope.
+    /// </summary>
+    private static LayeredValue At(ConfigScope scope, JsonObject value)
+    {
+        return new LayeredValue(
+            "settings.nested",
+            [new ScopeEntry(scope, value, "/usr.json")])
+        {
+            EffectiveValue = value,
+            EffectiveScope = scope,
+        };
+    }
+
+    [TestMethod]
+    public void ToJsonValue_AfterLoad_KeepsKeysNoChildModels()
+    {
+        // Two modelled keys, two the editor has no child for.
+        JsonObject onDisk = new()
+        {
+            ["a"] = "known-a",
+            ["MY_CUSTOM_TOOL_PATH"] = "/opt/thing",
+            ["b"] = "known-b",
+            ["RETEST_MARKER"] = "marker",
+        };
+
+        FakeLeafEditor a = Leaf("a");
+        FakeLeafEditor b = Leaf("b");
+        ObjectPropertyEditorViewModel vm = Parent(a, b);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        // Premise: the editor really did ignore them — if it had children for these keys
+        // the test would be asserting the ordinary path and proving nothing.
+        Assert.AreEqual(2, vm.Children.Count,
+            "Premise: only 'a' and 'b' are modelled; the other two keys have no child.");
+
+        // The user edits ONE modelled key. This is the whole repro.
+        a.Value = JsonValue.Create("edited");
+        a.IsModified = true;
+
+        JsonObject? json = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(json);
+        Assert.AreEqual("edited", json["a"]!.GetValue<string>(), "The edit must land.");
+        Assert.AreEqual("/opt/thing", json["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
+            "An unmodelled key must survive an edit to a modelled sibling — the writer "
+            + "diffs this object against the on-disk baseline, so a key missing here is a "
+            + "key DELETED from the user's file.");
+        Assert.AreEqual("marker", json["RETEST_MARKER"]?.GetValue<string>(),
+            "Every unmodelled key survives, not just the first.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_UnmodelledNonScalarValues_SurviveStructurally()
+    {
+        // An unmodelled key is not always a string — a hand-written block the app has
+        // never heard of has to come back with its structure intact, not flattened.
+        JsonObject nested = new() { ["deep"] = new JsonArray(1, 2, 3) };
+        JsonObject onDisk = new()
+        {
+            ["a"] = "known",
+            ["customBlock"] = nested.DeepClone(),
+        };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        a.Value = JsonValue.Create("edited");
+
+        JsonObject? json = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(json);
+        Assert.IsTrue(JsonNode.DeepEquals(nested, json["customBlock"]),
+            "An unmodelled object/array value must round-trip structurally, not as text.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_UnmodelledKeys_AreClonedNotShared()
+    {
+        // Sharing the node would let a later edit of the emitted object reach back into
+        // the loaded snapshot, which is how "preserved" quietly becomes "mutated".
+        JsonObject onDisk = new() { ["a"] = "known", ["opaque"] = "original" };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        JsonObject first = (JsonObject)vm.ToJsonValue()!;
+        first["opaque"] = "mutated";
+
+        JsonObject second = (JsonObject)vm.ToJsonValue()!;
+        Assert.AreEqual("original", second["opaque"]!.GetValue<string>(),
+            "Each emission must carry its own clone of the preserved value.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_ModelledChildWins_OverASameNamedCarriedKey()
+    {
+        // A key that IS modelled must never be captured as unmodelled — otherwise the
+        // stale load-time value could shadow the user's edit.
+        JsonObject onDisk = new() { ["a"] = "on-disk" };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        a.Value = JsonValue.Create("edited");
+
+        JsonObject json = (JsonObject)vm.ToJsonValue()!;
+        Assert.AreEqual("edited", json["a"]!.GetValue<string>(),
+            "The child's current value wins; the load-time copy must not shadow it.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_UnmodelledKeysAtOtherScopes_AreNotCarried()
+    {
+        // This editor writes ONE scope. Hoisting another scope's keys into it would
+        // manufacture an override the user never asked for.
+        JsonObject userObj = new() { ["a"] = "user-a" };
+        JsonObject localObj = new() { ["a"] = "local-a", ["LOCAL_ONLY"] = "x" };
+
+        LayeredValue layered = new(
+            "settings.nested",
+            [
+                new ScopeEntry(ConfigScope.Local, localObj, "/loc.json"),
+                new ScopeEntry(ConfigScope.User, userObj, "/usr.json"),
+            ])
+        {
+            EffectiveValue = localObj,
+            EffectiveScope = ConfigScope.Local,
+        };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(layered, ConfigScope.User);
+
+        JsonObject json = (JsonObject)vm.ToJsonValue()!;
+        Assert.IsFalse(json.ContainsKey("LOCAL_ONLY"),
+            "A key that exists only at another scope must NOT be written into the editing "
+            + "scope — that would promote an inherited value into an explicit override.");
+    }
+
+    [TestMethod]
+    public void ToJsonValue_UnmodelledKeysOnly_StillEmitsTheObject()
+    {
+        // No child has a value, but the scope's file holds keys this editor never showed.
+        // Returning null here would tell the workspace to REMOVE the property — deleting
+        // the very keys this fix exists to keep.
+        JsonObject onDisk = new() { ["UNSEEN"] = "keep me" };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        Assert.IsNull(a.Value, "Premise: no child took a value from this object.");
+
+        JsonObject? json = vm.ToJsonValue() as JsonObject;
+        Assert.IsNotNull(json,
+            "An object holding only unmodelled keys must not serialise as 'remove me'.");
+        Assert.AreEqual("keep me", json["UNSEEN"]!.GetValue<string>());
+    }
+
+    [TestMethod]
+    public void ToJsonValue_NoUnmodelledKeys_StillReturnsNullWhenEmpty()
+    {
+        // The AGENTS.md §7 contract, unchanged: empty means "remove the key", never "{}".
+        JsonObject onDisk = new() { ["a"] = "known" };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        a.Value = null;
+
+        Assert.IsNull(vm.ToJsonValue(),
+            "With nothing carried and no child value, the editor must still return null so "
+            + "the workspace removes the property rather than writing an empty object.");
+    }
+
+    [TestMethod]
+    public void ResetToInherited_DropsCarriedKeys_SoThePropertyIsRemoved()
+    {
+        // Reset means "remove this property at this scope". Carrying keys through it would
+        // leave behind a property the user believes they cleared.
+        JsonObject onDisk = new() { ["a"] = "known", ["UNSEEN"] = "x" };
+
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+        vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
+
+        Assert.IsTrue(vm.CanReset, "Premise: there is something to reset.");
+        Assert.IsTrue(((JsonObject)vm.ToJsonValue()!).ContainsKey("UNSEEN"),
+            "Premise: the carried key is being emitted before the reset — without this the "
+            + "assertion below would pass on an editor that never carried anything.");
+
+        vm.ResetToInheritedCommand.Execute(null);
+
+        // Whether the object collapses to null also depends on the CHILDREN clearing
+        // themselves, which is each leaf's own contract (and the fake here keeps its value).
+        // What this object editor owes is that the keys it carried do not survive a reset.
+        JsonObject? json = vm.ToJsonValue() as JsonObject;
+        Assert.IsFalse(json?.ContainsKey("UNSEEN") ?? false,
+            "A reset must drop the carried keys; otherwise a property the user believes "
+            + "they cleared survives, rebuilt from keys the editor never showed them.");
+    }
+
+    [TestMethod]
+    public void ReloadingADifferentScope_ReplacesTheCarriedKeys()
+    {
+        // The capture is per-load. A stale set from a previous scope would write another
+        // scope's keys into this one.
+        FakeLeafEditor a = Leaf("a");
+        ObjectPropertyEditorViewModel vm = Parent(a);
+
+        vm.LoadFromLayered(At(ConfigScope.User, new JsonObject { ["FIRST"] = "1" }), ConfigScope.User);
+        Assert.IsTrue(((JsonObject)vm.ToJsonValue()!).ContainsKey("FIRST"),
+            "Premise: the first load carried FIRST.");
+
+        vm.LoadFromLayered(At(ConfigScope.Local, new JsonObject { ["SECOND"] = "2" }), ConfigScope.Local);
+
+        JsonObject json = (JsonObject)vm.ToJsonValue()!;
+        Assert.IsFalse(json.ContainsKey("FIRST"),
+            "A re-load must replace the carried set, not accumulate it.");
+        Assert.IsTrue(json.ContainsKey("SECOND"));
+    }
+
     // ── Collapse into prefix categories (large-object load perf) ──────
 
     private static ObjectPropertyEditorViewModel ParentWithNames(params string[] names)

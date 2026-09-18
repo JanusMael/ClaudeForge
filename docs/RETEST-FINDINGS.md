@@ -773,7 +773,7 @@ named at the point the cost is incurred.
 
 ---
 
-## 🔵 F9 · Editing any env value DELETES every env key the app does not model
+## ⛔ F9 · Editing any env value DELETES every env key the app does not model — FIXED, unverified
 
 Found driving `E4` on 2026-09-17 against the package-mode build `v2026.3.917.1839`.
 ⛔ **This is data loss in the user's own configuration, and it reproduces every time.**
@@ -832,6 +832,40 @@ currently destroyed by editing any variable inside it.
 ⓘ Whether the fix is to render unknown keys, or to preserve them untouched while not
 rendering them, is a design decision. **Preserving them is the minimum**: an editor may
 decline to show a key, but it must not delete what it chose not to show.
+
+### ✅ Fixed 2026-09-17 — the minimum, deliberately
+
+`ObjectPropertyEditorViewModel.ToJsonValue` rebuilt the object from its `Children`, and the
+writer diffs that object against the on-disk baseline — so a key with no child arrived at
+the writer as a key the user had removed. The editor now captures, on load, the keys present
+**at the editing scope** that no child models, and re-emits them verbatim on save.
+
+**Preserving, not rendering** — the minimum the finding asked for. Rendering unknown keys is
+a bigger design question (where in the six groups does an unknown variable go?) and it is not
+what stops the data loss.
+
+Four things worth knowing about the shape of it:
+
+| | |
+|---|---|
+| Not just `env` | The defect was in the generic object editor, so **every** settings object with unmodelled keys had it. The fix is generic for the same reason |
+| Only the editing scope | Carrying another scope's keys would promote an inherited value into an explicit override the user never asked for |
+| Order is safe | The carried keys append to the emitted object, but `JsoncEditWriter` diffs per path — a key that comes back unchanged produces **no edit at all** and keeps its original position, comments and spacing |
+| ⚠ Reset still clears them | *Reset to inherited* means "remove this property at this scope". Carrying keys through it would leave a property the user believes they cleared. Deliberate, and asserted |
+
+⭐ **The round-trip contract already required this.** The editors' `AGENTS.md` §7 says
+load-then-save must reproduce the value it was given; an object with unmodelled keys never
+did, and nothing measured it.
+
+**Guards:** 9 tests in `ObjectPropertyEditorNestedTests` (the carry itself, non-scalar values,
+cloning, scope isolation, the empty-object contract, reset, re-load) plus one end-to-end test
+in `SettingsGroupEditorViewModelTests` that drives the real `ApplyToWorkspace` flush — the path
+the defect actually used. ⚠ All ten were **canaried**: with the re-emit disabled, six of the
+nine and the end-to-end one go red, by name, and the end-to-end one fails on the surviving-key
+assertion *after* its "the edit reached the workspace" premise passed.
+
+⛔ **Still unverified in the running app.** `E4` re-runs against a rebuilt package-mode
+artifact before this is called done.
 
 ---
 

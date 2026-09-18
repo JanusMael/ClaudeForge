@@ -46,6 +46,36 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel, LibVm.IChi
     /// <summary>Minimum children a name-prefix must have to earn its own category.</summary>
     private const int MinCategoryMembers = 5;
 
+    /// <summary>
+    /// Keys found in this object AT THE EDITING SCOPE that no child models — captured on
+    /// load, re-emitted verbatim by <see cref="ToJsonValue"/>. <c>null</c> when the scope
+    /// holds nothing this editor cannot account for, which is the ordinary case.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ Without this, editing ONE modelled key deletes every unmodelled key in the same
+    /// object, because <see cref="ToJsonValue"/> rebuilds the object from
+    /// <see cref="Children"/> and the writer diffs that against the on-disk baseline — so a
+    /// key with no child reads as a key the user removed. Measured on <c>env</c>, where the
+    /// schema models ~157 names harvested from upstream descriptions and everything else
+    /// (proxy settings, internal tool paths, anything an organisation adds) is unmodelled:
+    /// changing one variable deleted the rest.
+    /// </para>
+    /// <para>
+    /// An editor may decline to RENDER a key it does not understand. It must not delete
+    /// what it chose not to show. This is also what the round-trip contract in the editors'
+    /// <c>AGENTS.md</c> §7 already required — load-then-save must reproduce the value it
+    /// was given, and an object with unmodelled keys did not.
+    /// </para>
+    /// <para>
+    /// Only the editing scope is captured, because that is the only scope this editor
+    /// writes. Comparison is ORDINAL, matching the projection in
+    /// <see cref="LoadFromLayered"/> — JSON keys are case-sensitive, so a differently-cased
+    /// near-match is a genuinely different key and is preserved as one.
+    /// </para>
+    /// </remarks>
+    private JsonObject? _unmodelledAtEditingScope;
+
     public ObjectPropertyEditorViewModel(SchemaNode schema, ConfigScope editingScope,
                                          IReadOnlyList<LibVm.PropertyEditorViewModel> children,
                                          SettingsWorkspace? workspace = null)
@@ -99,12 +129,30 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel, LibVm.IChi
             }
         }
 
+        // Re-emit what this editor never rendered. Appending rather than interleaving is
+        // safe for file layout: JsoncEditWriter diffs this object against the load-time
+        // baseline per path, so a key that comes back unchanged produces NO edit at all
+        // and keeps its original position, comments and spacing.
+        if (_unmodelledAtEditingScope is not null)
+        {
+            foreach (KeyValuePair<string, JsonNode?> kv in _unmodelledAtEditingScope)
+            {
+                if (!obj.ContainsKey(kv.Key))
+                {
+                    obj[kv.Key] = kv.Value?.DeepClone();
+                }
+            }
+        }
+
         return obj.Count > 0 ? obj : null;
     }
 
     public override void LoadFromLayered(LayeredValue layered, ConfigScope editingScope)
     {
         SetScopeState(layered, editingScope);
+
+        // Before projecting anything, remember what this editor is about to ignore.
+        _unmodelledAtEditingScope = CaptureUnmodelled(layered, editingScope);
 
         // Extract each child's value from the parent's per-scope entries directly.
         //
@@ -148,12 +196,52 @@ public class ObjectPropertyEditorViewModel : PropertyEditorViewModel, LibVm.IChi
         IsModified = Children.Any(c => c.IsModified);
     }
 
+    /// <summary>
+    /// The editing scope's raw object, minus every key some child already models.
+    /// </summary>
+    private JsonObject? CaptureUnmodelled(LayeredValue layered, ConfigScope editingScope)
+    {
+        JsonObject? atScope = layered.Entries
+                                     .Where(e => e.Scope == editingScope)
+                                     .Select(e => e.Value as JsonObject)
+                                     .FirstOrDefault(o => o is not null);
+        if (atScope is null)
+        {
+            return null;
+        }
+
+        HashSet<string> modelled = new(Children.Select(c => c.Schema.Name), StringComparer.Ordinal);
+        JsonObject? kept = null;
+        foreach (KeyValuePair<string, JsonNode?> kv in atScope)
+        {
+            if (modelled.Contains(kv.Key))
+            {
+                continue;
+            }
+
+            kept ??= [];
+            kept[kv.Key] = kv.Value?.DeepClone();
+        }
+
+        return kept;
+    }
+
+    /// <remarks>
+    /// ⚠ Resetting DOES drop the unmodelled keys, and that is the intended reading: reset
+    /// means "remove this property at this scope", an explicit destructive act on the whole
+    /// object. Preserving what the reset was asked to clear would leave a property the user
+    /// believes they deleted.
+    /// </remarks>
     protected override void OnResetToInherited()
     {
         foreach (LibVm.PropertyEditorViewModel child in Children)
         {
             child.ResetToInheritedCommand.Execute(null);
         }
+
+        // Drop the carried keys too, or ToJsonValue would keep returning a non-null object
+        // and the property would survive a reset that emptied every field the user can see.
+        _unmodelledAtEditingScope = null;
     }
 
     // -----------------------------------------------------------------------

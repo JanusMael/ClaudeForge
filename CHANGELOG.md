@@ -61,6 +61,12 @@ reconcile them against and renumbering them would be guesswork.
 
 ### Fixed
 
+- **Editing one environment variable no longer deletes the others.** Saving a change to
+  any variable the app recognises removed every variable it did not — proxy settings,
+  internal tool paths, anything an organisation adds that the schema has never heard of.
+  Variables the app does not model are now left exactly as they were. The same applies
+  to any other settings object: keys the editor does not render are no longer keys it
+  deletes.
 - **Themed colours now follow a light/dark switch immediately.** Severity glyphs and
   other themed elements kept whichever palette was live when they were last drawn, so
   a switch could leave one screen showing both palettes at once.

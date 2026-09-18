@@ -117,10 +117,15 @@ FROZEN.** Never edit them. Everything below is drift, which is what this file is
 ### ⛔⛔ PHASE C IS BLOCKED. Do not tag.
 
 Plan `00003` is explicit: *"All eight items complete before Phase C. A published version cannot be
-taken back, so nothing proceeds on a partial retest."* Three defects are open, and one is data loss:
+taken back, so nothing proceeds on a partial retest."* ⓘ **Two defects remain open** — the data-loss
+one is fixed in code but not yet re-driven, so `E3` and `E4` are both still unticked:
 
-- ⛔ **`F9` — editing any env value DELETES every env key the app does not model.** Reproduced
-  twice, confirmed on disk. This is the one that should block on its own merits.
+- ✅ **`F9` — editing any env value DELETES every env key the app does not model. FIXED
+  2026-09-17**, and it was **not an `env` bug**: `ObjectPropertyEditorViewModel.ToJsonValue`
+  rebuilt every object from its schema children, so the writer read any unmodelled key as a
+  removal — `env` is simply the object where users keep keys the schema never named. The
+  editor now carries the editing scope's unmodelled keys across a save and re-emits them
+  verbatim. ⛔ **Still unverified in the running app**: `E4` re-runs before this closes.
 - ⛔ **`F7` — backup captures project files; restore silently ignores them.**
 - ⛔ **`F8` — a successful restore leaves every `.pre-restore-*.bak` sidecar behind** (5,899 of
   them, roughly doubling `~/.claude` on disk).
@@ -131,8 +136,7 @@ conclusive. `F10` is new and is the same class.
 
 ### Next, in order
 
-1. **Fix `F9` first** — it is data loss in the user's own configuration, and `env` is exactly where
-   non-standard keys belong.
+1. ✅ **`F9` is fixed** — see the row above. ⚠ Code only; the retest item is still open.
 2. **Decide `F7` and `F8`.** Each is a *decision* before it is code: restore project entries or stop
    capturing them (either way backup and restore must agree, and the UI text must match); sweep the
    sidecars after a committed restore or keep them deliberately and say so on the page.

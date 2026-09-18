@@ -313,6 +313,57 @@ public partial class SettingsGroupEditorViewModelTests
     }
 
     /// <summary>
+    /// <b>F9 regression, end to end through the flush the defect actually used.</b>
+    /// Editing ONE modelled env key deleted every env key the schema does not model:
+    /// the object editor rebuilt <c>env</c> from its children, and a key with no child
+    /// came out the other side as a key the user had removed.
+    /// <para>
+    /// The sibling test above covers the opposite gate — an UNTOUCHED editor must not
+    /// flush at all. This one covers the touched case, which that gate deliberately lets
+    /// through, and which is where the keys were lost.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public void ApplyToWorkspace_TouchedObjectEditor_KeepsEnvKeysTheSchemaDoesNotModel()
+    {
+        // env as a real object node with exactly one modelled child, mirroring the
+        // production shape: the schema names some variables and knows nothing of the rest.
+        SchemaNode env = new("env", "env")
+        {
+            ValueType = SchemaValueType.Object,
+            Properties = [MakeNode("env.ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY")],
+        };
+
+        SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User,
+            """{"env":{"ANTHROPIC_API_KEY":"old","MY_CUSTOM_TOOL_PATH":"/opt/thing","RETEST_MARKER":"marker"}}"""));
+
+        SettingsGroupEditorViewModel vm = new("Environment", [env], workspace,
+            ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
+
+        ObjectPropertyEditorViewModel objectEditor =
+            (ObjectPropertyEditorViewModel)vm.Editors[0];
+        Assert.AreEqual(1, objectEditor.Children.Count,
+            "Premise: exactly one key is modelled, so the other two are the unmodelled ones "
+            + "this test is about. Model them all and the test proves nothing.");
+
+        // A real user edit on the modelled child — this is what populates _userEditedPaths
+        // and so opens the flush gate. Anything weaker and ApplyToWorkspace skips the
+        // editor entirely, which would make the assertions below vacuous.
+        ((StringPropertyEditorViewModel)objectEditor.Children[0]).Value = "new";
+        vm.ApplyToWorkspace();
+
+        JsonObject? after = workspace.GetLayeredValue("env").EffectiveValue as JsonObject;
+        Assert.IsNotNull(after, "env must still be an object after the flush.");
+        Assert.AreEqual("new", after["ANTHROPIC_API_KEY"]!.GetValue<string>(),
+            "The edit must actually reach the workspace, or nothing below was measured.");
+        Assert.AreEqual("/opt/thing", after["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
+            "An env key the schema does not model must survive an edit to one that it does. "
+            + "This is F9: the user's own variables were deleted by editing a sibling.");
+        Assert.AreEqual("marker", after["RETEST_MARKER"]?.GetValue<string>(),
+            "Every unmodelled key survives, not just the first.");
+    }
+
+    /// <summary>
     /// A3 regression: the SDK-routed WriteEditorValue ghost-guard must compare the
     /// value at the TARGET (editing) scope, not the cross-scope effective value.
     /// Project shadows User with model="opus"; the user explicitly pins "opus" at
