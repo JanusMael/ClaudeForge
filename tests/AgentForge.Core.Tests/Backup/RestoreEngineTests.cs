@@ -663,6 +663,49 @@ public sealed class RestoreEngineTests
         }
     }
 
+    [TestMethod]
+    public void BuildAuthorisedRoots_IncludesTheOpenProject()
+    {
+        // ⛔ The case F7 actually reported. A *Settings only* backup captures exactly the
+        // project the app has open; nothing else on the machine — not ~/.claude.json, not
+        // additionalDirectories — need ever have heard of it. An authorisation set built
+        // only from ~/.claude.json refuses that archive on restore, which is the first fix
+        // failing at the one scenario the finding describes. Measured, not supposed: the
+        // previous retest's fixture project was absent from a 62-entry project list.
+        string open = Path.Combine(_baseDir, "OpenProject");
+        Directory.CreateDirectory(open);
+
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots([open]);
+
+        Assert.IsTrue(roots.Contains(open),
+            "The host's open project must be authorised — it is the path the archive was "
+            + "taken for, and the user chose it in this app in this session.");
+    }
+
+    [TestMethod]
+    public void BuildAuthorisedRoots_WithNoOpenProject_StillReturnsTheMachinesOwnSources()
+    {
+        // Null is legal (a restore with no project open) and must not throw or produce a
+        // set that refuses everything the machine legitimately knows.
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(null);
+
+        Assert.IsNotNull(roots);
+        // No count assertion: this machine's ~/.claude.json is real and may hold anything,
+        // including nothing. Asserting a number here would make the test a property of the
+        // developer's home directory rather than of the code.
+    }
+
+    [TestMethod]
+    public void BuildAuthorisedRoots_IgnoresBlankOpenRoots()
+    {
+        // "No project open" reaches the host as an empty string as often as a null, and a
+        // blank entry in the set would be compared against every candidate path.
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(["", "   "]);
+
+        Assert.IsFalse(roots.Any(string.IsNullOrWhiteSpace),
+            "A blank root must never enter the authorised set.");
+    }
+
     // ── F8 · a committed restore sweeps the sidecars it wrote ─────────
 
     [TestMethod]

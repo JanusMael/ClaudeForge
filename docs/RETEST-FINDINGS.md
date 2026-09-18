@@ -766,6 +766,31 @@ now uses `PlatformPaths.UserProfile`. Identical in production; the difference is
 repro is now measurable, and it was that gap which made both end-to-end tests report
 `Inconclusive` on their first run rather than passing vacuously.
 
+### ⛔⛔ The first fix covered ONE of the three sources, and would not have closed this finding
+
+Caught while preparing the re-drive, by checking a premise instead of assuming it: **the
+previous retest's fixture project was absent from a 62-entry `~/.claude.json`.** ClaudeForge
+does not write that file — Claude Code does — so a project opened only in ClaudeForge is not
+in it, and an authorisation set built from it alone still refused the exact archive this
+finding was written about.
+
+Backup captures projects from **three** sources. Restore must mirror all three:
+
+| Source | Captured by | Authorised by |
+|---|---|---|
+| The explicitly-open project | every mode, including *Settings only* | ⛔ **was missing** — now passed in by the host |
+| `additionalDirectories` in the live settings files | every mode | ⛔ **was missing** — now resolved live |
+| `~/.claude.json` projects | Full mode only | ✅ the first fix |
+
+⭐ **Restore now calls backup's own discovery.** `BackupEngine.CollectSettingsFilesForDiscovery`
+became `internal` so `RestoreEngine.BuildAuthorisedRoots` asks the same question rather than
+keeping a parallel list — two lists that happen to agree today is how this finding happened in
+the first place.
+
+⚠ `BackupEngine.RestoreAsync` gains an optional `openProjectRoots` parameter, and the
+public-surface baseline moved with it in the same change. Source-compatible for existing
+callers; a caller that omits it simply authorises less.
+
 ⚠ **Worktrees keep the old rule, knowingly.** Nothing on this machine independently lists
 worktree paths — the archive's own `projectRoot` authorises nothing, since a crafted zip would
 simply name a real project beside an arbitrary `worktreePath`. The sound source is

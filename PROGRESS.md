@@ -133,6 +133,13 @@ one is fixed in code but not yet re-driven, so `E3` and `E4` are both still unti
   outside `~`. Restore now also authorises paths **this machine's own `~/.claude.json` lists as
   projects** — a source the archive cannot forge — and the skip message no longer calls a refusal
   a missing path. ⛔ Worktrees are the same shape and are **not** fixed; see `F11`.
+  ⛔⛔ **The first attempt covered ONE of backup's THREE project sources and would not have closed
+  the finding.** ClaudeForge does not write `~/.claude.json` — Claude Code does — so a project
+  opened only in ClaudeForge is absent from it, which is exactly what a *Settings only* backup
+  captures. Caught by checking the premise: the previous fixture was missing from a **62-entry**
+  list. Restore now calls **backup's own discovery** (`CollectSettingsFilesForDiscovery` is
+  `internal` for this) and the host hands over its open project. ⚠ `BackupEngine.RestoreAsync`
+  gained an optional `openProjectRoots`; the public-surface baseline moved in the same commit.
 - ✅ **`F8` — a successful restore leaves every `.pre-restore-*.bak` sidecar behind. FIXED
   2026-09-18.** A `RestoreJournal` records each sidecar as it is written and a clean restore
   deletes exactly those, reporting the count. ⚠ Three bounds: **only on a run with zero file
@@ -191,7 +198,16 @@ not an optional extra.
 - **PR #65 was admin-merged into `main`** as `c149b82` (`AGENTS.md` only, +10/−4, all checks green).
   ⓘ It does **not** touch the release path; `main` and this branch diverged long ago.
 
-### ⚠ Flake seen 2026-09-17 — `LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock`
+### ⚠ Two headless flakes, 2026-09-17 and 2026-09-18
+
+⚠ **Different tests, same shape**: each failed exactly once inside a full run and passed both in
+isolation and on every re-run. Neither touches a path this branch changed. Two in two days is
+worth watching — if a third appears, treat the headless session's shared state as the suspect
+rather than the individual tests.
+
+- **2026-09-18 · `GuiSave_WritesEveryProductsChanges_NotJustTheFirstSection`** — failed once in
+  the full-solution run, passed in isolation immediately after and in the next full run.
+- **2026-09-17 · `LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock`** — below.
 
 Failed once in `ReloadHardeningTests`, on a run that was also building, then passed **five**
 consecutive full-project runs after it. It fires three overlapping `LoadAllWorkspacesAsync`

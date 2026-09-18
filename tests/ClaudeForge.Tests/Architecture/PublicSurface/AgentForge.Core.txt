@@ -6,7 +6,7 @@ class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine [sealed]
     System.Boolean Delete(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry)
     System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry> List(System.String backupDirectory)
     System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Core.Backup.BackupResult> CreateAsync(Bennewitz.Ninja.AgentForge.Core.Backup.BackupRequest request, System.IProgress<Bennewitz.Ninja.AgentForge.Core.Backup.BackupProgress> progress = null, System.Threading.CancellationToken ct = null)
-    System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Core.Backup.RestoreResult> RestoreAsync(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry, System.IProgress<Bennewitz.Ninja.AgentForge.Core.Backup.BackupProgress> progress = null, System.Threading.CancellationToken ct = null)
+    System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Core.Backup.RestoreResult> RestoreAsync(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry, System.IProgress<Bennewitz.Ninja.AgentForge.Core.Backup.BackupProgress> progress = null, System.Threading.CancellationToken ct = null, System.Collections.Generic.IReadOnlyCollection<System.String> openProjectRoots = null)
     static Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine Default
     static System.Void InvalidateListCache()
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry>

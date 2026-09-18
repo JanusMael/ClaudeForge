@@ -44,11 +44,17 @@ internal static class RestoreEngine
     /// are moved aside with a <c>.pre-restore-{stamp}.bak</c> suffix before being
     /// overwritten. Returns a result summary.
     /// </summary>
+    /// <param name="openProjectRoots">
+    /// The project(s) the host currently has open, if any. Forwarded to
+    /// <see cref="BuildAuthorisedRoots"/>. ⚠ Omitting it is safe but NARROWS what can be
+    /// restored — a project no other source on this machine knows about is refused.
+    /// </param>
     internal static async Task<RestoreResult> RestoreAsync(
         BackupEntry entry,
         IReadOnlyList<ProductDescriptor>? restorableProducts = null,
         IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IReadOnlyCollection<string>? openProjectRoots = null)
     {
         ArgumentNullException.ThrowIfNull(entry);
         IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProducts;
@@ -211,9 +217,8 @@ internal static class RestoreEngine
             // own project list says which of those the restore is allowed to write to. Read here
             // rather than inside RestoreProjects so the authorisation source is visible at the
             // call site — it is the difference between a security check and a silent scope limit.
-            IReadOnlyList<string> knownProjectRoots =
-                KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots;
-            restored += RestoreProjects(tempRoot, entry.Manifest, stamp, knownProjectRoots, journal);
+            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(openProjectRoots);
+            restored += RestoreProjects(tempRoot, entry.Manifest, stamp, authorisedRoots, journal);
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring projects…", totalExtracted,
                 RestoreProgressIds.Projects));
@@ -322,6 +327,67 @@ internal static class RestoreEngine
                 _ = ex;
             }
         }
+    }
+
+    /// <summary>
+    /// The set of roots this restore may write to, built from the SAME sources
+    /// <see cref="BackupEngine.CreateAsync"/> captures from — read on this machine, never from
+    /// the archive.
+    /// </summary>
+    /// <param name="openProjectRoots">
+    /// The project the host currently has open, when it has one. The user chose it in this
+    /// application in this session, so it is as trustworthy as the files below and it is the case
+    /// <c>F7</c> actually reported: a *Settings only* backup captures exactly the open project,
+    /// and nothing else on the machine need ever have heard of it.
+    /// </param>
+    /// <remarks>
+    /// ⛔ <b>The first F7 fix covered only one of the three sources and would not have closed the
+    /// reported case.</b> Backup captures the explicitly-open project, the
+    /// <c>additionalDirectories</c> its settings files name, and — in Full mode — every project in
+    /// <c>~/.claude.json</c>. Authorising only the last still refuses a freshly-opened project that
+    /// Claude Code itself has never seen, which is precisely the archive the finding was written
+    /// about. Measured, not reasoned: the retest fixture was absent from a 62-entry project list.
+    /// </remarks>
+    internal static IReadOnlyCollection<string> BuildAuthorisedRoots(
+        IReadOnlyCollection<string>? openProjectRoots)
+    {
+        List<string> explicitRoots = openProjectRoots?
+                                     .Where(r => !string.IsNullOrWhiteSpace(r))
+                                     .ToList() ?? [];
+
+        HashSet<string> roots = new(OperatingSystem.IsLinux()
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase);
+
+        foreach (string r in explicitRoots)
+        {
+            roots.Add(r);
+        }
+
+        foreach (string r in KnownProjectsDiscovery
+                             .ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)
+        {
+            roots.Add(r);
+        }
+
+        // additionalDirectories, resolved from the live settings files — the user's own
+        // configuration, and the second thing a backup turns into a captured project.
+        try
+        {
+            foreach (string r in AdditionalDirectoriesResolver.Resolve(
+                         BackupEngine.CollectSettingsFilesForDiscovery(explicitRoots)))
+            {
+                roots.Add(r);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // An unreadable settings file narrows the authorised set; it must never fail the
+            // restore, which still has the other two sources and the home-folder allow.
+            Log.Debug(ex, "[Restore] Could not resolve additionalDirectories for authorisation.");
+        }
+
+        return roots;
     }
 
     /// <summary>
