@@ -85,8 +85,13 @@ and fixed by the same plan.
 
 ## ▶ RESUME HERE — plans 00003, Phase C: everything before the tag is DONE
 
-⭐ **Status as of 2026-09-18: `C1`, `A5` and `C0` have all PASSED.** The maintainer has said **tag
-today**, at `2026.3.918`. ⛔ **The only remaining step before the tag is the maintainer's.**
+⭐ **Status: `C1`, `A5`, `C0` and the six-RID trim gate have all PASSED**, on the commit that would
+carry the tag. ⛔ **The only remaining step is the maintainer's.**
+
+⚠ **The intended tag is still `packages-v2026.3.918`, and the day rolling over did not change
+that** — the version follows the tag, not the calendar; see the correction below before concluding
+otherwise. ⓘ Written 2026-09-18, still current on the 19th; the evidence is pinned to a **commit**,
+so it does not expire with the date.
 
 | Next | Who |
 |---|---|
@@ -166,8 +171,28 @@ re-run at **4,434 · 0 · 11**.
 defective copy was reachable only through `DefaultPropertyEditorFactory`, i.e. OpenCodeForge and
 external package consumers. See [`docs/RETEST-FINDINGS.md`](./docs/RETEST-FINDINGS.md) `F12`.
 
-⚠ **The CalVer is baked into a passed C1.** Tagging on a later day means re-packing at that day's
-version and re-running both C1 and A5 — no loss, but not free.
+⛔⛔ **CORRECTED 2026-09-19 — this said the calendar day forces a new version. IT DOES NOT, and
+believing it costs a day of rework for nothing.** The previous text read: *"The CalVer is baked into
+a passed C1. Tagging on a later day means re-packing at that day's version and re-running both C1
+and A5."* The first sentence is true; the second confuses **the day you tag on** with **the version
+you tag**.
+
+⭐ **The version comes from the TAG, not from the clock.** `Resolve-ReleaseVersion.ps1` emits
+`BuildTimestamp = yyyyMMdd000000` — *midnight local on the tag's own date* — precisely so *"the same
+tag built twice produces the same version"*. Pushing `packages-v2026.3.918` on the 19th, or the
+25th, still publishes **2026.3.918**.
+
+**Measured on 2026-09-19, not reasoned:** `Resolve-ReleaseVersion.ps1 -Tag packages-v2026.3.918`
+emitted `BuildTimestamp=20260918000000`, and a preflight pack at that stamp produced all eleven at
+`2026.3.918` with assembly `2026.3.918.0` — **gates 1 and 2 PASSED a day later**. Gate 3 asks only
+whether the feed already holds the version; nothing has ever been published, so it is unaffected.
+
+⭐ **`packages-v2026.3.918` is therefore the RIGHT tag even now**, because 2026.3.918 is the exact
+version Phase B's retest was driven against. Tagging `packages-v2026.3.919` instead would publish a
+version nothing was retested at, and *that* is what would cost a re-pack and a fresh C1 gate 3.
+
+ⓘ **A5 is indifferent to all of this** — the canary packs at a throwaway `0.0.0-local-<timestamp>`,
+so no CalVer enters it. It is pinned to the **commit**, not the day.
 
 ⓘ **`C1` PASSED 2026-09-18 for `2026.3.918`**, all three gates. Gate 3 ran for the **first time**
 and reported *"none of the 11 ids holds 2026.3.918"*; no `packages-v*` tag has ever existed. It
