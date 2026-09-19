@@ -461,6 +461,23 @@ internal static class RestoreEngine
             return false;
         }
 
+        // ⛔ THE UNC TEST MUST RUN ON THE RAW CANDIDATE, BEFORE NORMALISATION, and this is the
+        // whole reason it is here rather than only below. `Path.GetFullPath` preserves a UNC path
+        // on Windows, so a post-normalisation test looks correct there — but OFF Windows a
+        // backslash is an ordinary filename character, so `\\host\share` is not a rooted path at
+        // all and GetFullPath resolves it against the CURRENT DIRECTORY. The UNC shape is gone by
+        // the time the test below runs, the list comparison then matches, and the path is
+        // authorised. Measured: green on Windows, red on ubuntu and macOS, for the whole of this
+        // branch's history.
+        //
+        // ⚠ <see cref="IsUnderUserProfile"/> has always tested the raw candidate. This branch
+        // restated the rule in a place where it does not hold, which is the failure mode of
+        // restating a rule rather than sharing it.
+        if (IsUncShaped(candidate))
+        {
+            return false;
+        }
+
         string full;
         try
         {
@@ -476,9 +493,10 @@ internal static class RestoreEngine
             return false;
         }
 
-        // A UNC path is never authorised, whatever the project list says — the same rule
-        // IsUnderUserProfile applies, restated because this branch does not go through it.
-        if (full.StartsWith(@"\\", StringComparison.Ordinal) || full.StartsWith("//", StringComparison.Ordinal))
+        // Kept as well as the raw test above, not instead of it: on Windows a candidate can
+        // NORMALISE into a UNC path without looking like one (a mapped drive, a directory
+        // symlink), and only the normalised form shows that.
+        if (IsUncShaped(full))
         {
             return false;
         }
@@ -528,6 +546,27 @@ internal static class RestoreEngine
     /// was a scope limit wearing a security check's clothes, and it is why a project kept
     /// outside the home directory could be backed up but never restored.
     /// </summary>
+    /// <summary>
+    /// True when <paramref name="path"/> has the shape of a UNC / network path.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Deliberately platform-INDEPENDENT.</b> A restore archive is portable, so a
+    /// <c>projectRoot</c> written on Windows can be read on Linux. Refusing the shape everywhere
+    /// costs nothing — a leading <c>\\</c> is not a path any of these products writes on any
+    /// platform — while making the refusal conditional on the host is how the same string gets
+    /// refused on one machine and authorised on another.
+    /// <para>
+    /// ⚠ Both callers test the RAW candidate with this before normalising, because
+    /// <see cref="Path.GetFullPath(string)"/> destroys the UNC shape off Windows by resolving a
+    /// backslash-laden string against the current directory.
+    /// </para>
+    /// </remarks>
+    private static bool IsUncShaped(string path)
+    {
+        return path.StartsWith(@"\\", StringComparison.Ordinal)
+               || path.StartsWith("//", StringComparison.Ordinal);
+    }
+
     internal static bool IsUnderUserProfile(string? candidate)
     {
         if (string.IsNullOrWhiteSpace(candidate))
@@ -537,8 +576,7 @@ internal static class RestoreEngine
 
         // Reject UNC paths (\\server\share\...) — they are network locations outside
         // the user's local profile and could silently redirect writes to a remote host.
-        if (candidate.StartsWith(@"\\", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal))
+        if (IsUncShaped(candidate))
         {
             return false;
         }

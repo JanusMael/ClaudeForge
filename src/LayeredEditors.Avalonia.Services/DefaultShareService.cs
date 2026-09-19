@@ -152,8 +152,16 @@ public sealed class DefaultShareService : IShareService
         else if (OperatingSystem.IsLinux())
         {
             // Linux: open the directory containing the file.
+            //
+            // ⛔ THE FILE'S EXISTENCE IS THE PRECONDITION, NOT THE DIRECTORY'S. This branch used
+            // to ask only whether the containing directory existed, so sharing a file that is not
+            // on disk opened its parent anyway — and when no `xdg-open` is present (a CI runner,
+            // a headless box) that surfaced as Failed, which the status pill keeps on screen,
+            // rather than Unavailable, which it clears. macOS and Windows both require the file;
+            // only this branch disagreed, so the defect was invisible on two platforms out of
+            // three.
             string? dir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            if (File.Exists(filePath) && !string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
                 return Task.FromResult(
                     TryStart(new ProcessStartInfo
