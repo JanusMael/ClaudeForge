@@ -23,7 +23,8 @@
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
 | Merged from `main` | ✅ **Integrated by hand on 2026-09-16, up to `origin/main` `52f604d`** — record the SHA, because neither counting nor patch-ids can tell you again. `main` released **`v2026.3.916`** that day. ⛔⛔ **Both automatic answers are WRONG here, in opposite directions.** `git rev-list --count HEAD..origin/main` over-reports (the 2026-09-16 history rewrite renamed every already-merged commit, so ~27 look unmerged); `git cherry` saw through that and found the 8 genuinely new — but now over-reports too, because a hand-port produces a different patch-id than the commit it ports. **The only reliable record is this cell.** Compare `52f604d..origin/main` to find what is new since. ⓘ The CHANGELOG has now been rebased on `main`'s **twice** in one day — `main` owns the released history and this branch owns only what has not shipped, so keeping a local copy of the released sections just makes the next reconciliation bigger. ⛔ **`git merge origin/main` remains the wrong tool**: the merge base is `3c7aaab` (2026-09-01), `main`'s paths no longer exist here (`ClaudeForge.Sdk`→`AgentForge.Sdk`, the backup VM moved into `AgentForge.Avalonia.Shell`), and this repo has shipped two duplicate-attribute defects from *clean* auto-merges. Ports go through `AGENTS.md` §*Hand-porting a fix*. ⓘ What the 8 were: **4 ported** (YAML front-matter ×2, winget rename, version-probe test), **1 ported as a union** (deep links), **1 already present by a different mechanism** (tab a11y — this branch names containers via `ToString()`, `main` via a style; porting would have added a redundant second mechanism for a defect already fixed and guarded), **1 packaging** (`sign-release.ps1` is now committed rather than ignored), **1 reconciled** (CHANGELOG) |
 | Suite | ⭐ **3,545 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-18 after the `F12` fix. ⓘ **+5 over 3,540**, the `F12` guards; **+36 over the 2026-09-17 figure of 3,509**, the rest being the `F7`/`F8`/`F9`/`F10` guards; each run was predicted before it was taken. The 2026-09-17 note follows because the *drop* it explains still matters: ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
-| Suite (parked branch) | **4,434 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-18 after the `F12` fix was cherry-picked (`+5` over the 2026-09-17 figure of 4,429, the `F12` guards). 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
+| **CI on this branch** | ✅ **GREEN at `8692b20`** — all five jobs (ubuntu, macOS, windows, package canary, trim check). ⛔⛔ **It had been RED for roughly twenty consecutive commits before that, and this table had no row for it.** Every local gate was green throughout: the Windows suite, the six-RID trim matrix, the package canary. ⚠ **A green local suite on ONE platform is not the gate, and this row exists so the next reader checks `gh run list` rather than trusting the rows above it.** The two defects it was hiding are in the Done section |
+| Suite (parked branch) | **4,453 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-19 at `0de0f4e`, after the shared libraries were resynced from the release branch (`+19` over 4,434: the `F7`/`F8` and template-part guards that arrived with the sync). ⛔ The 4,434 and 4,429 figures below are **superseded** — both ran against an older `AgentForge.Core` than the release branch's; see the C0 correction under *RESUME HERE*. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics — RE-RUN 2026-09-18, immediately before the tag** (linux-x64/arm64, win-x64/arm64, osx-x64/arm64). ⭐ **Zero was proven to mean "looked and found nothing"**: the detector was canaried against planted `IL2026` and `NETSDK1144` lines and matched 2 of 2, and each RID really trimmed — ILLink's *"Optimizing assemblies for size"* appears once per log and every RID produced a single-file exe of 26.8–29.8 MB. ⛔ **This row previously claimed A5 would re-cover the matrix. It does not** — A5 publishes **win-x64 only**, which is why this was re-run separately. ⚠ **Cross-published from Windows**, whereas `release.yml` builds each RID on its native host so the dylibs match; this gate therefore measures **trim analysis**, not native-payload correctness. Phase D's `D3` is where a shipped artifact is measured. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
@@ -31,7 +32,7 @@
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
-| ⚠ Awaiting | ⭐ **The maintainer, and nothing else.** All eight retest items pass (2026-09-18), and `C1`, **A5** and **C0** have all passed. Every agent-side step before the tag is done. What remains is the maintainer pushing `packages-v2026.3.918`. ⓘ **`F12` is FIXED** (2026-09-18) on both branches, reproduced by test first and re-evidenced by a `C0` re-run. **`F11`** stays open by an earlier locked decision and does not gate the tag |
+| ⚠ Awaiting | ⛔ **NOT the maintainer yet — `A5` is stale and the tag must move.** On 2026-09-18 this cell said the maintainer was the only thing left; that was wrong, because CI was red and nobody had looked. Now: CI green at `8692b20`, `C0` re-passed for real at `0de0f4e`, `C1` gates 1–2 re-proven. ⛔ **`A5` must re-run on the final commit**, and **`packages-v2026.3.918` currently points at `b373226`, which has RED CI** — it is local-only and must be deleted and recreated. ⓘ `F12` FIXED on both branches; `F11` stays open by an earlier locked decision |
 
 ---
 
@@ -85,8 +86,15 @@ and fixed by the same plan.
 
 ## ▶ RESUME HERE — plans 00003, Phase C: everything before the tag is DONE
 
-⭐ **Status: `C1`, `A5`, `C0` and the six-RID trim gate have all PASSED**, on the commit that would
-carry the tag. ⛔ **The only remaining step is the maintainer's.**
+⛔⛔ **CORRECTED 2026-09-19. This section claimed everything was green and only the maintainer
+remained. CI was RED at the time, on ubuntu and macOS, and had been for ~20 commits.** Two guards
+that held only on Windows were shipping in packages about to become immutable. See the **CI on this
+branch** row. ⚠ **The lesson is not "CI was red" — it is that four local gates were green while the
+gate that mattered was not consulted at all.**
+
+⭐ **Status now: CI green at `8692b20`; `C0` re-passed for real at `0de0f4e`; `C1` gates 1–2
+re-proven; six-RID trim 6/6.** ⛔ **`A5` is stale and the tag must be re-pointed** — both are agent
+work, and neither is done.
 
 ⚠ **The intended tag is still `packages-v2026.3.918`, and the day rolling over did not change
 that** — the version follows the tag, not the calendar; see the correction below before concluding
@@ -118,7 +126,61 @@ mixed graph reports, and MSBuild prefers the project output. The app's own `proj
 resolves all eleven as `Bennewitz.Ninja.*` **packages** at that run's canary version; the only
 `"type": "project"` entries are the two product-specific libraries, which is correct.
 
-### ✅ C0 PASSED — 2026-09-18, parked branch, **RE-RUN after the `F12` fix**
+### ⛔⛔ C0's PREMISE CHECK WAS VACUOUS — corrected 2026-09-19, and the plan's own command is the culprit
+
+⛔ **Plan `00003` line 244 tells you to prove the trees identical with a command that cannot do it**,
+and the plan is frozen, so the correction lives here:
+
+```
+# ⛔ WRONG — the plan's command. Matches NOTHING and returns empty.
+git diff <release> feat/agentforge-opencodeforge -- src/AgentForge src/LayeredEditors src/JsonC
+
+# ✅ RIGHT — real directory names.
+git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' src/JsonC
+```
+
+**Git pathspecs match path COMPONENTS, not string prefixes.** Neither `src/AgentForge` nor
+`src/LayeredEditors` is a directory — the families are `src/AgentForge.Core`,
+`src/LayeredEditors.ViewModels` and so on — so the pathspec selected no files and the empty output
+read exactly like "identical". ⚠ The repo had already said so twice: `EveryHardcodedRepoPathInBuildFilesExists`
+**reddened CI on those two strings**, and the fix was applied to the prose without anyone noticing it
+falsified the verification.
+
+⛔ **The canary was broken in the same way, which is why it did not catch it.** The empty result was
+"canaried" by re-running over `src/ClaudeForge` and getting output — but that is a **different,
+real** pathspec, so it proved the command works, never that the pathspec under test matched
+anything. This is `scripts/retest/README.md` lesson 7 exactly: a zero that is indistinguishable from
+"fixed", confirmed by a needle that was never the needle in question. ⭐ **A pathspec canary must
+use the SAME pathspec form against a path that must differ.**
+
+**What was actually diverged:** the parked branch had **no `F7`, no `F8`** — `RestoreJournal.cs` did
+not exist there — plus no a11y expander-header names and none of the cross-platform guard fixes. The
+2026-09-18 run of **4,434** was real but exercised an *older* `AgentForge.Core` than the one being
+published, so it evidenced the wrong code.
+
+### ✅ C0 PASSED FOR REAL — 2026-09-19, parked branch at `0de0f4e`
+
+**4,453 · 0 · 11** across all twelve projects, predicted at 4,453 before the run, against shared
+libraries now **verified** identical (empty diff on the corrected pathspec, canaried against
+`src/ClaudeForge`, which is non-empty).
+
+⭐ **Two findings that strengthen the neutrality evidence rather than weaken it.** `src/OpenCodeForge`
+and `src/OpenCode.*` compiled **clean** against the new shared surface — all 14 errors in the first
+attempt were in `tests/AgentForge.Core.Tests` calling the old *internal* API. And the surface change
+itself is `BackupEngine.RestoreAsync` gaining `openProjectRoots = null`: **optional and appended**,
+so source-compatible for existing callers.
+
+⭐ **`PublicSurfaceBaselineTests` caught what a hand-sync missed.** Six library files and three test
+files were synced by hand and declared identical; the baseline guard then failed on the one exported
+line nobody thought about. It has now paid for itself twice — the first was `F3`'s `IShareService`
+break passing a 4,367-test green suite.
+
+⚠ **The sync was surgical, not wholesale.** `tests/AgentForge.Core.Tests/Architecture/SolutionFilterTests.cs`
+is 177 lines that exist **only** on the parked branch — it guards the two-app solution filters, which
+are correct there and absent from the one-app release branch. `git checkout <branch> -- <dir>` would
+have deleted it silently.
+
+### ⓘ Superseded: the 2026-09-18 C0 run
 
 **4,434 · 0 · 11** across 12 test projects, matching the prediction exactly. The OpenCode side
 contributes 906 (`OpenCode.Sdk` 332, `OpenCode.Avalonia` 355, `OpenCodeForge.Tests` 219).
