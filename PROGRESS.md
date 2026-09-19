@@ -316,6 +316,31 @@ conclusive. `F10` is new and is the same class.
 ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
 not an optional extra.
 
+### ⭐ Decisions taken 2026-09-19 — locked, do not relitigate
+
+- **C2 is clear to tag**, at `packages-v2026.3.918`. Every gate is green on the tagged commit, and
+  the workflow re-runs its own three gates with `GITHUB_TOKEN` before the first upload. ⓘ The tag
+  fires **only** `release-packages.yml` — `release.yml` filters `v*.*.*`, which a name starting
+  `packages-v` cannot match, so no app release and no GitHub Release is created.
+- **`F12` was NOT driven through the UI before the tag**, deliberately. It is verified by a
+  class-boundary reproduction plus a read of the shared shell's write path; `F9` additionally got a
+  UI drive. ⚠ Recorded so the asymmetry is a known choice rather than an oversight.
+- **Publishing from `release/claudeforge-on-packages` rather than `main` stands.** Plan `00003` D6
+  flags this as a decision to take *before* Phase C, and it was taken: the earlier locked decision
+  holds, split work stays out of `main` until the maintainer approves. ⭐ A tag pins its commit
+  permanently, so a later branch rewrite — one already happened on 2026-09-16 — cannot orphan it.
+  ⛔ Merging first was rejected on cost, not principle: the merge base is `3c7aaab` (2026-09-01) and
+  `main`'s paths no longer exist here, so it is `AGENTS.md`'s hand-port procedure, not `git merge`,
+  and that is a session of work in front of an irreversible step it adds no evidence to.
+- **`F11` stays open and is revisited after the release.** The sound fix spawns `git` once per known
+  project, each with a timeout, immediately in front of a destructive operation — a real runtime cost
+  and a real dependency on `git` being present. ⛔ Not folded into release week. ⓘ Nothing regresses
+  by waiting: the refusal is reported honestly, and external worktrees are only captured in Full mode.
+- **The six-RID native-host gap does not apply to C2** — settled by evidence, not judgment.
+  `release-packages.yml` states it: *"These eleven are RID-neutral libraries; the cross-platform
+  surface belongs to the apps."* The trim matrix is app-level evidence for Phase D, where
+  `release.yml` builds each RID on its native host anyway.
+
 ### ⭐ Decisions taken 2026-09-18 — locked, do not relitigate
 
 - **`F7`: restore the project entries** rather than stop capturing them. Both UI texts already
