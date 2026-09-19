@@ -132,19 +132,21 @@ resolves all eleven as `Bennewitz.Ninja.*` **packages** at that run's canary ver
 and the plan is frozen, so the correction lives here:
 
 ```
-# ⛔ WRONG — the plan's command. Matches NOTHING and returns empty.
-git diff <release> feat/agentforge-opencodeforge -- src/AgentForge src/LayeredEditors src/JsonC
-
-# ✅ RIGHT — real directory names.
+# ✅ RIGHT — real directory names, wildcarded per family.
 git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' src/JsonC
 ```
 
-**Git pathspecs match path COMPONENTS, not string prefixes.** Neither `src/AgentForge` nor
-`src/LayeredEditors` is a directory — the families are `src/AgentForge.Core`,
-`src/LayeredEditors.ViewModels` and so on — so the pathspec selected no files and the empty output
-read exactly like "identical". ⚠ The repo had already said so twice: `EveryHardcodedRepoPathInBuildFilesExists`
-**reddened CI on those two strings**, and the fix was applied to the prose without anyone noticing it
-falsified the verification.
+⛔ **The WRONG form cannot be written here, and that is itself the point.** The plan's version names
+the two families as **bare prefixes with no suffix** — the `AgentForge` and `LayeredEditors` stems on
+their own, without `.Core`, `.Sdk`, `.ViewModels`. Spelling those out under `src/` in this file
+**reds `EveryHardcodedRepoPathInBuildFilesExists`**, because they are not directories; that guard
+fired on this very paragraph's first draft. ⭐ **The guard that refuses to let the mistake be written
+down is the same guard that had already been telling us the mistake existed.**
+
+**Git pathspecs match path COMPONENTS, not string prefixes.** A bare family stem selects no files, so
+the diff came back empty and empty read exactly like "identical". ⚠ The repo had already said so
+twice before anyone noticed: that guard reddened CI on those two strings, and the fix was applied to
+the prose without anyone registering that it falsified the verification standing on them.
 
 ⛔ **The canary was broken in the same way, which is why it did not catch it.** The empty result was
 "canaried" by re-running over `src/ClaudeForge` and getting output — but that is a **different,
@@ -164,8 +166,8 @@ published, so it evidenced the wrong code.
 libraries now **verified** identical (empty diff on the corrected pathspec, canaried against
 `src/ClaudeForge`, which is non-empty).
 
-⭐ **Two findings that strengthen the neutrality evidence rather than weaken it.** `src/OpenCodeForge`
-and `src/OpenCode.*` compiled **clean** against the new shared surface — all 14 errors in the first
+⭐ **Two findings that strengthen the neutrality evidence rather than weaken it.** The parked
+branch's app and its `OpenCode.*` product libraries compiled **clean** against the new shared surface — all 14 errors in the first
 attempt were in `tests/AgentForge.Core.Tests` calling the old *internal* API. And the surface change
 itself is `BackupEngine.RestoreAsync` gaining `openProjectRoots = null`: **optional and appended**,
 so source-compatible for existing callers.
@@ -175,10 +177,16 @@ files were synced by hand and declared identical; the baseline guard then failed
 line nobody thought about. It has now paid for itself twice — the first was `F3`'s `IShareService`
 break passing a 4,367-test green suite.
 
-⚠ **The sync was surgical, not wholesale.** `tests/AgentForge.Core.Tests/Architecture/SolutionFilterTests.cs`
-is 177 lines that exist **only** on the parked branch — it guards the two-app solution filters, which
-are correct there and absent from the one-app release branch. `git checkout <branch> -- <dir>` would
-have deleted it silently.
+⚠ **The sync was surgical, not wholesale.** A `SolutionFilterTests.cs` — 177 lines, under the parked
+branch's `AgentForge.Core` test project — exists **only** there: it guards the two-app solution
+filters, which are correct on that branch and absent from this one-app one. A directory-level
+`git checkout <branch> -- <dir>` would have deleted it silently.
+
+ⓘ **Its full path cannot be written in this file either**, for the same reason as the pathspec
+above: `EveryHardcodedRepoPathInBuildFilesExists` scans root `*.md` and requires every `src/…` and
+`tests/…` it finds to exist **in this tree**, and a parked-only file does not. ⭐ Worth knowing before
+documenting cross-branch work here — the anchor can describe the other branch, but it cannot cite
+its paths.
 
 ### ⓘ Superseded: the 2026-09-18 C0 run
 
