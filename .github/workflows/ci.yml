@@ -121,7 +121,8 @@ jobs:
 
   # ── The package canary ───────────────────────────────────────────────────────
   #
-  # Eleven projects under src/ ship as private NuGet packages (plans/00001). Everything else
+  # Eleven projects under src/ ship as NuGet packages on GitHub Packages (plans/00001) — PUBLIC,
+  # though the feed still requires a token for every read. Everything else
   # consumes them as ProjectReference in development and PackageReference under
   # UseSharedPackages=true. Development mode is what every human runs, so PACKAGE mode is the
   # one that rots unobserved — and it is the mode the release publishes from.

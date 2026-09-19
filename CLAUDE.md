@@ -92,9 +92,23 @@ or a raw `<AssemblyAttribute>`, both of which were in use before the consolidati
 ## The package layer
 
 The eleven shared projects — the `AgentForge.*` and `LayeredEditors.*` families plus `JsonC` —
-are also published as **private NuGet packages**, ids prefixed `Bennewitz.Ninja.`, to this
-repository's GitHub Packages feed. See [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)
+are also published as NuGet packages, ids prefixed `Bennewitz.Ninja.`, to this repository's
+GitHub Packages feed. See [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)
 for the reasoning and the measurements.
+
+⛔ **They are PUBLIC, and this document called them "private" until the first publish measured
+otherwise.** GitHub Packages inherit the linked repository's visibility, and `JanusMael/ClaudeForge`
+is public, so all eleven report `visibility: public` — verified 2026-09-19 against
+`user/packages/nuget/…` immediately after `packages-v2026.3.918`. ⓘ Nothing is exposed that
+`git clone` does not already give away, which is why the answer was to correct the wording rather
+than to restrict the packages.
+
+⚠ **"Private feed" elsewhere in this repo means AUTHENTICATED, and that part is true.** GitHub's
+NuGet registry requires a token for reads even on public packages, which is why a credential-free
+restore 401s and why `packageSourceMapping` matters. ⛔ **Do not read those passages as a claim
+about visibility** — the two properties are independent, and conflating them is what produced the
+wrong sentence here. `plans/00001` carries the same wording in its title and is **frozen**; the
+correction lives here and in `PROGRESS.md`, never in the plan.
 
 ⭐ **There are two reference MODES, and no csproj declares both.** `UseSharedPackages` unset or
 `false` — the default, and what every human runs — means `ProjectReference`. `true` means

@@ -84,7 +84,55 @@ and fixed by the same plan.
 
 ---
 
-## ▶ RESUME HERE — plans 00003, Phase C: everything before the tag is DONE
+## ✅✅ PHASE C IS COMPLETE — the eleven packages are PUBLISHED
+
+**`packages-v2026.3.918` was pushed on 2026-09-19 and `release-packages.yml` succeeded**: the Test
+job green, then Publish with gates 1–3 passed and `Published 11`.
+
+⭐ **Verified against the feed, not against the workflow's own report.** All eleven appear under
+`user/packages/nuget/` at exactly one version, `2026.3.918`; the flat-container index returns
+`{"versions":["2026.3.918"]}`; and a package was downloaded and opened — 37,323 bytes, a valid
+NuGet archive containing `lib/net10.0/JsonC.dll` and a nuspec reading `<version>2026.3.918</version>`.
+
+⛔ **The packages are PUBLIC, and every document here said "private" until this publish measured
+it.** GitHub Packages inherit the linked repository's visibility and this repository is public, so
+all eleven report `visibility: public`. **Decision taken 2026-09-19: accept public and correct the
+wording**, because the source is public already — private packages would buy a restriction without
+buying secrecy, while wrong documentation costs the next reader real time. Corrected in `CLAUDE.md`,
+`AGENTS.md`, `nuget.config` and `ci.yml`.
+
+⚠ **"Private feed" survives in several places and is still TRUE in the sense that matters there** —
+GitHub's NuGet registry demands a token for every read, even of a public package. Requiring auth and
+being private are independent properties; conflating them is what produced the wrong sentence.
+
+⛔ **`plans/00001` is titled *"Shared libraries as private NuGet packages"* and is FROZEN.** The
+title is now inaccurate and stays that way; this is the drift record, per the never-edit-an-approved-plan
+rule.
+
+---
+
+## ▶ RESUME HERE — plans 00003, Phase D: make the release actually consume them
+
+⭐ **Phase D is the point of the entire plan.** The founding defect is that the release has never
+once been built from these packages while two comments claimed it was. They now exist, so every
+step below is finally verifiable.
+
+| Next | What proves it |
+|---|---|
+| **D1** — publish path selects package mode at `2026.3.918` | Read `source` from each `.nupkg.metadata` in the global packages folder; it must name the **github** feed, not `artifacts/localfeed`. ⚠ Confirm the file is present for all eleven — a restore writes it, a cache hit may not |
+| **D2** — `packages: read` in `release.yml` | A real workflow run restoring from the feed. Without it the restore 401s |
+| **D3** — build-time guard + recorded escape hatch | Drop package mode deliberately and watch it redden |
+| **D4** — full suite and trim gate in package mode at the published version | Green **with no local feed present** — `artifacts/localfeed` must be moved aside, or it proves nothing |
+| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | They describe what D1–D3 made true |
+| **D6** — cut the app release | The shipped artifact passes D3 |
+
+⚠ **D4 is also the first test against the PUBLISHED packages.** Everything to date — four A5 runs —
+consumed packages built locally at a throwaway version from `artifacts/localfeed`. That proves
+package *mode*; it does not prove the feed.
+
+---
+
+## Done — Phase C, and how it nearly shipped broken
 
 ⛔⛔ **CORRECTED 2026-09-19. This section claimed everything was green and only the maintainer
 remained. CI was RED at the time, on ubuntu and macOS, and had been for ~20 commits.** Two guards
