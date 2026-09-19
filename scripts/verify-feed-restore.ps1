@@ -73,6 +73,30 @@ $version = Get-PinnedVersion
 Write-Host ('Pinned SharedPackageVersion : ' + $version)
 Write-Host ('Expecting source to contain : ' + $ExpectedSource)
 
+# ⛔ A CONFIGURED LOCAL SOURCE THAT DOES NOT EXIST IS A HARD ERROR, NOT A SKIPPED ONE.
+# nuget.config maps these eleven ids to both `localfeed` and `github`. On a fresh checkout
+# artifacts/ is gitignored, so the folder is absent and the restore dies with
+#   NU1301: The local source '.../artifacts/localfeed' doesn't exist.
+# before it ever reaches the feed. ⓘ Other jobs never see this: in development mode the source
+# mapping means these ids are never requested at all, and the package canary creates the folder
+# by packing into it. Measured on this job's first CI run.
+$localFeed = Join-Path $PSScriptRoot '..' 'artifacts' 'localfeed'
+if (-not (Test-Path $localFeed)) {
+    New-Item -ItemType Directory -Path $localFeed -Force | Out-Null
+    Write-Host ('Created empty local feed      : ' + $localFeed)
+}
+
+# ⭐ And now the emptiness is EVIDENCE rather than an accident. The folder is allowed to hold
+# other versions — a developer's canary run leaves throwaway 0.0.0-local-* packages there — but
+# it must not be able to answer for the pinned version, or "resolved from the feed" would be a
+# coin toss decided by source ordering.
+$localCandidates = @(Get-ChildItem -Path $localFeed -Filter ('*' + $version + '.nupkg') -ErrorAction SilentlyContinue)
+if ($localCandidates.Count -gt 0) {
+    throw ('artifacts/localfeed holds ' + $localCandidates.Count + ' package(s) at ' + $version +
+        '. This check cannot distinguish the feed from the folder while that is true. Remove them ' +
+        'and re-run: ' + ($localCandidates.Name -join ', '))
+}
+
 $packagesRoot = $env:NUGET_PACKAGES
 if ([string]::IsNullOrWhiteSpace($packagesRoot)) {
     $home_ = if ($env:HOME) { $env:HOME } else { $env:USERPROFILE }

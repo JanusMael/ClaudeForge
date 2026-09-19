@@ -192,9 +192,12 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      # ⓘ artifacts/localfeed does not exist on a fresh checkout — it is gitignored — so the
-      # only source that can answer for these ids is the feed. The script still purges the
-      # global cache, because a runner image could in principle carry one.
+      # ⓘ The script creates artifacts/localfeed EMPTY before restoring. It is gitignored, so a
+      # fresh checkout has no such folder — and a configured local source that does not exist is
+      # a hard NU1301 error, not a skipped one, which killed this job's first run before it ever
+      # reached the feed. An empty folder satisfies NuGet and can supply nothing, so it makes the
+      # provenance conclusion stronger rather than weaker. The script also purges the global
+      # cache, because a runner image could in principle carry one.
       - name: Restore from the feed and verify provenance
         shell: pwsh
         env:
