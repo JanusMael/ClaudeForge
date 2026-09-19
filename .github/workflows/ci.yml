@@ -155,3 +155,48 @@ jobs:
       - name: Pack, build, test and publish against packages
         shell: pwsh
         run: ./scripts/package-canary.ps1 -RuntimeIdentifier linux-x64
+
+  # ── Does the app restore the eleven FROM THE PUBLISHED FEED? ────────────────
+  #
+  # plans/00003 Phase D, D1 and D2. The canary job above proves package MODE works; it packs
+  # locally and answers from artifacts/localfeed, so it says nothing about the feed. This job
+  # is the other half: the pinned SharedPackageVersion must resolve from GitHub Packages.
+  #
+  # ⛔ WHY A WHOLE JOB RATHER THAN A FLAG ON THE CANARY. To NuGet a folder source is exactly as
+  # valid as a remote one, so "the restore succeeded" is the same output either way. Measured on
+  # 2026-09-19: a restore at the pinned version reported success with all eleven resolving from
+  # artifacts/localfeed — locally-packed bytes from an earlier commit — because the global cache
+  # is keyed id+version and never re-extracts. The script therefore purges before restoring and
+  # reads `source` out of each .nupkg.metadata afterwards.
+  #
+  # ⚠ CREDENTIALS COME FROM AN ENVIRONMENT VARIABLE, NOT A CONFIG EDIT. NuGet reads
+  # NuGetPackageSourceCredentials_<sourceName>, so nothing is written to nuget.config and no
+  # token reaches the working tree. The source name must match the key in nuget.config exactly.
+  #
+  # ⚠ THIS JOB CANNOT PASS ON A FORK, and that is the same accepted cost as release.yml's
+  # packages: read — a fork's token has no read access to this repository's packages.
+  feed-restore:
+    name: Feed Restore (published packages)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # ⓘ artifacts/localfeed does not exist on a fresh checkout — it is gitignored — so the
+      # only source that can answer for these ids is the feed. The script still purges the
+      # global cache, because a runner image could in principle carry one.
+      - name: Restore from the feed and verify provenance
+        shell: pwsh
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/verify-feed-restore.ps1

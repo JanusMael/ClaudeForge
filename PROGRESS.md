@@ -489,12 +489,37 @@ not an optional extra.
 - **PR #65 was admin-merged into `main`** as `c149b82` (`AGENTS.md` only, +10/−4, all checks green).
   ⓘ It does **not** touch the release path; `main` and this branch diverged long ago.
 
-### ⚠ Two headless flakes, 2026-09-17 and 2026-09-18
+### ⛔ FOUR headless flakes — the trigger fired on 2026-09-19, and the suspect is confirmed
 
-⚠ **Different tests, same shape**: each failed exactly once inside a full run and passed both in
-isolation and on every re-run. Neither touches a path this branch changed. Two in two days is
-worth watching — if a third appears, treat the headless session's shared state as the suspect
-rather than the individual tests.
+⭐ **This section's own standing instruction — *"if a third appears, treat the headless session's
+shared state as the suspect rather than the individual tests"* — fired, and the evidence now
+supports it rather than merely suggesting it.**
+
+**2026-09-19 produced two, in CONSECUTIVE full runs, in the SAME class** — `ReloadHardeningTests`
+in `ClaudeForge.Tests` — with two *different* tests and two *different* symptoms:
+
+| Run | Test | Symptom |
+|---|---|---|
+| 1 | `LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock` | `IOException` — temp `settings.json` "used by another process" |
+| 2 | `PersistentToolVms_ProfilesVm_SurvivesReload_SameInstance` | `Dispatcher.VerifyAccess` — "the calling thread cannot access this object" |
+
+⭐ **Then the decisive measurement: the whole class runs 7/7 green, THREE times, in isolation.**
+Stable alone, unstable inside the full run. So the variable is the **full-run context**, not the
+tests — the suspect is the process-global headless session state that earlier tests leave behind,
+exactly as predicted.
+
+⚠ **`[assembly: DoNotParallelize]` does not exclude this.** It governs parallelism *within* an
+assembly; `ClaudeForge.Tests` still runs 1,742 tests sequentially in **one process** against one
+process-global Avalonia headless session, and VSTest runs separate test *assemblies* concurrently.
+Both leave room for what is being seen. ⛔ Do not re-diagnose this as "a flaky test" — two different
+tests with two different exceptions in one class, green in isolation, is not a property of either
+test.
+
+ⓘ **Not fixed, deliberately, and it did not block the Phase D work**: CI was green on all five jobs
+at `19f3885`, and the local failures were re-run green. But a local full suite can no longer be
+relied on first time, which is worth knowing before reading a single red run as a regression.
+
+ⓘ The two earlier occurrences follow, kept because the pattern is the finding.
 
 - **2026-09-18 · `GuiSave_WritesEveryProductsChanges_NotJustTheFirstSection`** — failed once in
   the full-solution run, passed in isolation immediately after and in the next full run.
