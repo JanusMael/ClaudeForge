@@ -117,18 +117,38 @@ rule.
 once been built from these packages while two comments claimed it was. They now exist, so every
 step below is finally verifiable.
 
-| Next | What proves it |
-|---|---|
-| **D1** — publish path selects package mode at `2026.3.918` | Read `source` from each `.nupkg.metadata` in the global packages folder; it must name the **github** feed, not `artifacts/localfeed`. ⚠ Confirm the file is present for all eleven — a restore writes it, a cache hit may not |
-| **D2** — `packages: read` in `release.yml` | A real workflow run restoring from the feed. Without it the restore 401s |
-| **D3** — build-time guard + recorded escape hatch | Drop package mode deliberately and watch it redden |
-| **D4** — full suite and trim gate in package mode at the published version | Green **with no local feed present** — `artifacts/localfeed` must be moved aside, or it proves nothing |
-| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | They describe what D1–D3 made true |
-| **D6** — cut the app release | The shipped artifact passes D3 |
+| Step | State | What proves it |
+|---|---|---|
+| **D1** — publish path selects package mode at `2026.3.918` | ✅ **DONE** | `source` in every `.nupkg.metadata` names the feed. Verified in CI: **11/11 from `nuget.pkg.github.com`** |
+| **D2** — `packages: read` in `release.yml` | ✅ **DONE** | The `feed-restore` job restores from the feed with exactly that scope, on every push |
+| **D3** — build-time guard + recorded escape hatch | ◀ **NEXT** | Drop package mode deliberately and watch it redden. ⚠ Must fire on a **local** publish too |
+| **D4** — full suite and trim gate at the published version | ⏸ | Green **with no local feed** — ⛔ and with the global cache **purged**, see below |
+| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ⏸ | They describe what D1–D3 made true |
+| **D6** — cut the app release | ⏸ | The shipped artifact passes D3 |
 
-⚠ **D4 is also the first test against the PUBLISHED packages.** Everything to date — four A5 runs —
-consumed packages built locally at a throwaway version from `artifacts/localfeed`. That proves
-package *mode*; it does not prove the feed.
+**What D1/D2 shipped:** `SharedPackageVersion` pinned at `2026.3.918` in the **root**
+`Directory.Build.props`; `-p:UseSharedPackages=true` on the only `dotnet publish` in the release
+chain (`Publish-Rid.ps1`); `packages: read` in `release.yml`; and a `feed-restore` CI job running
+`scripts/verify-feed-restore.ps1`.
+
+⛔⛔ **D1 caught a false success on its first run, which is why the job exists in that shape.** A
+restore at the pinned version reported success with **all eleven resolving from
+`artifacts/localfeed`** — locally-packed bytes from an earlier commit, out of a folder that no
+longer even held that version. The global cache is keyed id+version and **never re-extracts**.
+Purging and retrying returned **401**, the honest answer; with credentials, all eleven came from the
+feed. ⚠ **So D4's "no local feed present" means the CACHE too** — moving the folder is not enough.
+
+⛔ **A configured local source that does not EXIST is a hard `NU1301`, not a skipped one.** That
+killed the job's first CI run before it reached the feed. Development mode never meets it, because
+source mapping means those ids are never requested; the canary never meets it, because it creates
+the folder by packing. The script now creates it **empty**, which satisfies NuGet, can supply
+nothing, and makes the provenance conclusion stronger — and it refuses outright if that folder
+holds any package at the pinned version.
+
+⚠ **The frozen plan contradicts itself on the pin** — a committed pin in a props file is accepted
+in *Decisions* (line 87) and rejected in *Alternatives dismissed* (line 104). The pin is operative:
+`E4` depends on it, the open-questions list records it as answered, and
+`Directory.Build.targets:148` refuses an empty value, so "no pin" is not a reachable state.
 
 ---
 
