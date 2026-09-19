@@ -18,9 +18,17 @@ on:
       - 'v*.*.*'
 
 # Required to create the GitHub Release, upload assets, and read PR bodies.
+#
+# ⛔ packages: read is what lets the publish RESTORE the eleven Bennewitz.Ninja.* packages from
+# this repository's GitHub Packages feed. plans/00003, Phase D (D2). Without it every release
+# publish 401s on the feed — and before Phase D nothing asked for the packages at all, so the
+# grant was missing AND unnecessary, which is half of why the release had never once been built
+# from them. ⚠ The cost, accepted deliberately: a FORK cannot cut a release, because its token
+# has no read access to this repository's packages.
 permissions:
   contents: write
   pull-requests: read   # needed to read PR body for release notes
+  packages: read        # restore the shared packages from GitHub Packages
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true

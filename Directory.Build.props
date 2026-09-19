@@ -50,6 +50,33 @@
     </PropertyGroup>
 
     <!--
+      ══ THE VERSION OF THE ELEVEN SHARED PACKAGES THE RELEASE CONSUMES ══════════════════════
+
+      plans/00003, Phase D. This is a COMMITTED PIN, deliberately, and it belongs in the ROOT
+      props rather than src/'s: the test projects consume the packages too, and only the root
+      file reaches them.
+
+      ⭐ WHY A PIN AND NOT A DERIVED VALUE. The app release tag and the package tag are
+      independent — 'v2026.3.918' and 'packages-v2026.3.918' are separate releases on separate
+      schedules — so nothing about an app tag says which package version it should consume. An
+      explicit value also satisfies Directory.Build.targets' refusal to invent a default, makes
+      the release reproducible from its tag with no workflow inputs, and turns every version
+      move into a diff a human approves.
+
+      ⚠ THIS IS INERT UNTIL UseSharedPackages=true. In the default development mode nothing
+      reads it, the feed is never contacted, and a clone with no credentials restores normally.
+      The canary passes its own throwaway version on the command line, and a global property
+      still outranks this one.
+
+      ⛔ BUMPING THIS IS A RELEASE ACTION. It must name a version that actually exists on the
+      feed: a value pointing at an unpublished version fails the restore rather than falling
+      back, which is the intended behaviour.
+    -->
+    <PropertyGroup>
+        <SharedPackageVersion Condition="'$(SharedPackageVersion)' == ''">2026.3.918</SharedPackageVersion>
+    </PropertyGroup>
+
+    <!--
       PDB policy — applies to all projects in the solution unless a project overrides.
   
       Debug:   portable PDB (separate .pdb file alongside the assembly).

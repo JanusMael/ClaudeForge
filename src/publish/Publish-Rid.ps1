@@ -157,11 +157,18 @@ if (Test-Path $ridFolder) {
 # needed to produce the release binary. The publish stream is tee'd to a log
 # file for the warning scan below; Tee-Object does not overwrite $LASTEXITCODE
 # so we can still read the real `dotnet publish` exit code.
+# ⛔ -p:UseSharedPackages=true IS THE LINE THIS WHOLE PLAN EXISTS FOR (plans/00003, Phase D).
+# Without it the release publishes from ProjectReference while ci.yml and package-canary.ps1
+# both claim it publishes from the packages. That claim lived in two comments for the life of
+# the feature and was false for every RID of every release ever cut, because a comment is not a
+# guard. SharedPackageVersion is the committed pin in the root Directory.Build.props, so this
+# needs no input and the version moves only as a reviewed diff.
 dotnet publish "$projectPath" `
     -c Release `
     -r $Rid `
     --output "$ridFolder" `
     --self-contained true `
+    -p:UseSharedPackages=true `
     -p:IncrementalBuild=false `
     -p:BuildInParallel=false `
     -p:RunResxKeyGuard=false 2>&1 | Tee-Object -FilePath $logPath
