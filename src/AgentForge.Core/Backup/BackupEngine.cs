@@ -761,7 +761,14 @@ public sealed class BackupEngine
         await es.WriteAsync(bytes.AsMemory(), ct).ConfigureAwait(false);
     }
 
-    private static IReadOnlyList<string> CollectSettingsFilesForDiscovery(IReadOnlyList<string> explicitProjects)
+    /// <remarks>
+    /// ⭐ <b>Internal rather than private so RESTORE can ask the same question.</b> Restore has to
+    /// decide which manifest-named paths it may write to, and the only answer that cannot drift is
+    /// "the ones this machine would itself have captured" — see
+    /// <see cref="RestoreEngine.BuildAuthorisedRoots"/>. Two parallel lists that happen to agree
+    /// today is exactly how F7 happened.
+    /// </remarks>
+    internal static IReadOnlyList<string> CollectSettingsFilesForDiscovery(IReadOnlyList<string> explicitProjects)
     {
         List<string> list =
         [
@@ -1106,12 +1113,19 @@ public sealed class BackupEngine
     /// passthrough so existing consumers (notably <c>BackupClient</c>) keep
     /// compiling unchanged.
     /// </remarks>
+    /// <param name="openProjectRoots">
+    /// The project the host currently has open, when it has one. ⚠ <b>Pass it.</b> A
+    /// *Settings only* backup captures exactly the open project and nothing else on the
+    /// machine need ever have heard of it, so omitting this is what makes a restore refuse
+    /// the very project the archive was taken for — see <c>F7</c>.
+    /// </param>
     public Task<RestoreResult> RestoreAsync(
         BackupEntry entry,
         IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IReadOnlyCollection<string>? openProjectRoots = null)
     {
-        return RestoreEngine.RestoreAsync(entry, _restorableProducts, progress, ct);
+        return RestoreEngine.RestoreAsync(entry, _restorableProducts, progress, ct, openProjectRoots);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

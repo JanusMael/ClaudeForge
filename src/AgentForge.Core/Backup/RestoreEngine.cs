@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Json.Schema;
+using Serilog;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Backup;
@@ -43,11 +44,17 @@ internal static class RestoreEngine
     /// are moved aside with a <c>.pre-restore-{stamp}.bak</c> suffix before being
     /// overwritten. Returns a result summary.
     /// </summary>
+    /// <param name="openProjectRoots">
+    /// The project(s) the host currently has open, if any. Forwarded to
+    /// <see cref="BuildAuthorisedRoots"/>. ⚠ Omitting it is safe but NARROWS what can be
+    /// restored — a project no other source on this machine knows about is refused.
+    /// </param>
     internal static async Task<RestoreResult> RestoreAsync(
         BackupEntry entry,
         IReadOnlyList<ProductDescriptor>? restorableProducts = null,
         IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IReadOnlyCollection<string>? openProjectRoots = null)
     {
         ArgumentNullException.ThrowIfNull(entry);
         IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProducts;
@@ -173,8 +180,9 @@ internal static class RestoreEngine
             // Place files into real paths, with .bak sidecars.
             string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             int restored = 0;
-            List<string> skipped = new();
-            List<string> fileFailures = new();
+            RestoreJournal journal = new();
+            List<string> skipped = journal.Skipped;
+            List<string> fileFailures = journal.FileFailures;
 
             foreach (ProductDescriptor product in products)
             {
@@ -184,13 +192,13 @@ internal static class RestoreEngine
 
                     if (section.IsDirectory)
                     {
-                        (int r, List<string> errs) = RestoreDirectory(source, section.Destination(), stamp);
+                        (int r, List<string> errs) = RestoreDirectory(source, section.Destination(), stamp, journal);
                         restored += r;
                         fileFailures.AddRange(errs);
                     }
                     else
                     {
-                        (int r, string? f) = RestoreSection(source, section.Destination(), stamp);
+                        (int r, string? f) = RestoreSection(source, section.Destination(), stamp, journal);
                         restored += r;
                         if (f != null)
                         {
@@ -205,13 +213,17 @@ internal static class RestoreEngine
                 }
             }
 
-            // Per-project restore: look at the manifest to know where each project lives.
-            restored += RestoreProjects(tempRoot, entry.Manifest, stamp, skipped, fileFailures);
+            // Per-project restore: the manifest says where each project lives, and THIS machine's
+            // own project list says which of those the restore is allowed to write to. Read here
+            // rather than inside RestoreProjects so the authorisation source is visible at the
+            // call site — it is the difference between a security check and a silent scope limit.
+            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(openProjectRoots);
+            restored += RestoreProjects(tempRoot, entry.Manifest, stamp, authorisedRoots, journal);
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring projects…", totalExtracted,
                 RestoreProgressIds.Projects));
 
-            restored += RestoreWorktrees(tempRoot, stamp, skipped, fileFailures);
+            restored += RestoreWorktrees(tempRoot, stamp, journal);
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring worktrees…", totalExtracted,
                 RestoreProgressIds.Worktrees));
@@ -219,11 +231,37 @@ internal static class RestoreEngine
             progress?.Report(new BackupProgress(restored, restored,
                 "Restore complete", 0, RestoreProgressIds.Complete));
 
-            string message =
-                $"Restored {restored} item(s). Existing files were moved aside as .pre-restore-{stamp}.bak.";
+            // ⭐ Sweep the sidecars this run wrote, and ONLY when every file landed.
+            //
+            // A sidecar is the undo trail for a file the restore overwrote. Once the restore has
+            // committed cleanly there is nothing to undo TO — the content it shadowed came from a
+            // prior save that the archive itself carries — and leaving them roughly doubles the
+            // directory on disk, silently, every time. A 211 MB profile produced 5,899 of them and
+            // nothing in the product ever removed one.
+            //
+            // ⛔ Two bounds, both load-bearing:
+            //   • Only on a clean run. One file failure means the restore is PARTIAL, and a partial
+            //     restore is exactly when someone wants the previous bytes back.
+            //   • Only THIS run's sidecars, by exact path from the journal. An older restore's are
+            //     someone else's undo trail, and --cleanup-restore-sidecars remains the tool for
+            //     those — including everything written before this sweep existed.
+            int sidecarsSwept = fileFailures.Count == 0 ? SweepSidecars(journal.Sidecars) : 0;
+
+            string message = $"Restored {restored} item(s).";
+            message += sidecarsSwept > 0
+                ? $" Cleaned up {sidecarsSwept} .pre-restore-{stamp}.bak sidecar(s) written during the restore."
+                : fileFailures.Count > 0 && journal.Sidecars.Count > 0
+                    ? $" {journal.Sidecars.Count} .pre-restore-{stamp}.bak sidecar(s) were kept because"
+                      + " some files could not be restored."
+                    : $" Existing files were moved aside as .pre-restore-{stamp}.bak.";
+
             if (skipped.Count > 0)
             {
-                message += $" Skipped {skipped.Count} project/worktree(s) whose paths are not present on this machine: "
+                // ⚠ The wording used to assert the paths were "not present on this machine",
+                // which was false for every path the engine merely refused to write to — and that
+                // is the sentence that sent a user looking for a missing folder instead of a
+                // refusal. The reason now travels with each entry rather than in the preamble.
+                message += $" Skipped {skipped.Count} project/worktree(s): "
                            + string.Join(", ", skipped.Take(5))
                            + (skipped.Count > 5 ? $" … (+{skipped.Count - 5} more)" : "");
             }
@@ -292,12 +330,243 @@ internal static class RestoreEngine
     }
 
     /// <summary>
-    /// Returns <c>true</c> when <paramref name="candidate"/> is an absolute path that
-    /// lies under the current user's profile directory. The restore engine uses this
-    /// to reject manifest-provided paths like <c>C:\Windows\System32</c> or
-    /// <c>/etc</c> — an attacker who crafts a zip can put any path in the manifest,
-    /// so we cannot trust paths that fall outside the user's own files.
+    /// The set of roots this restore may write to, built from the SAME sources
+    /// <see cref="BackupEngine.CreateAsync"/> captures from — read on this machine, never from
+    /// the archive.
     /// </summary>
+    /// <param name="openProjectRoots">
+    /// The project the host currently has open, when it has one. The user chose it in this
+    /// application in this session, so it is as trustworthy as the files below and it is the case
+    /// <c>F7</c> actually reported: a *Settings only* backup captures exactly the open project,
+    /// and nothing else on the machine need ever have heard of it.
+    /// </param>
+    /// <remarks>
+    /// ⛔ <b>The first F7 fix covered only one of the three sources and would not have closed the
+    /// reported case.</b> Backup captures the explicitly-open project, the
+    /// <c>additionalDirectories</c> its settings files name, and — in Full mode — every project in
+    /// <c>~/.claude.json</c>. Authorising only the last still refuses a freshly-opened project that
+    /// Claude Code itself has never seen, which is precisely the archive the finding was written
+    /// about. Measured, not reasoned: the retest fixture was absent from a 62-entry project list.
+    /// </remarks>
+    internal static IReadOnlyCollection<string> BuildAuthorisedRoots(
+        IReadOnlyCollection<string>? openProjectRoots)
+    {
+        List<string> explicitRoots = openProjectRoots?
+                                     .Where(r => !string.IsNullOrWhiteSpace(r))
+                                     .ToList() ?? [];
+
+        HashSet<string> roots = new(OperatingSystem.IsLinux()
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase);
+
+        foreach (string r in explicitRoots)
+        {
+            roots.Add(r);
+        }
+
+        foreach (string r in KnownProjectsDiscovery
+                             .ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)
+        {
+            roots.Add(r);
+        }
+
+        // additionalDirectories, resolved from the live settings files — the user's own
+        // configuration, and the second thing a backup turns into a captured project.
+        try
+        {
+            foreach (string r in AdditionalDirectoriesResolver.Resolve(
+                         BackupEngine.CollectSettingsFilesForDiscovery(explicitRoots)))
+            {
+                roots.Add(r);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // An unreadable settings file narrows the authorised set; it must never fail the
+            // restore, which still has the other two sources and the home-folder allow.
+            Log.Debug(ex, "[Restore] Could not resolve additionalDirectories for authorisation.");
+        }
+
+        return roots;
+    }
+
+    /// <summary>
+    /// Delete the sidecars a committed restore no longer needs. Returns how many went.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort per file, like every other sidecar operation here: a locked or read-only
+    /// sidecar is left behind and the restore still reports success, because failing a completed
+    /// restore over a leftover copy would be the worse outcome. Those survivors are what
+    /// <c>--cleanup-restore-sidecars</c> is for.
+    /// </remarks>
+    internal static int SweepSidecars(IReadOnlyList<string> sidecars)
+    {
+        ArgumentNullException.ThrowIfNull(sidecars);
+        int deleted = 0;
+        foreach (string path in sidecars)
+        {
+            // Belt and braces: only ever delete something that still looks like our own
+            // output. The list is built by this engine, but a path is a path and this is
+            // the one place in the restore that removes user-visible files.
+            if (!RestoreSidecarCleanup.LooksLikeRestoreSidecar(Path.GetFileName(path)))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    deleted++;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Log.Debug(ex, "[Restore] Could not sweep sidecar {Path}", path);
+            }
+        }
+
+        return deleted;
+    }
+
+    /// <summary>
+    /// May the restore write to <paramref name="candidate"/>? True when it lies under the user's
+    /// own profile, or when this machine's own project list names it (exactly, or as an ancestor).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>The manifest proposes; this machine disposes.</b> Both allows are things a crafted
+    /// archive cannot influence: the running user's home directory, and the keys of their own
+    /// <c>~/.claude.json</c>. A zip naming <c>C:\Windows\System32</c> satisfies neither.
+    /// </para>
+    /// <para>
+    /// ⚠ An ANCESTOR match counts, so a project at <c>D:\src\app</c> authorises
+    /// <c>D:\src\app\.claude</c>. It is a prefix test on a canonicalised path with an explicit
+    /// separator appended, so <c>D:\src\app-secrets</c> does NOT match <c>D:\src\app</c> — the
+    /// same trap the gitignore glob copy fell into.
+    /// </para>
+    /// </remarks>
+    internal static bool IsAuthorisedRestoreTarget(
+        string? candidate, IReadOnlyCollection<string> knownProjectRoots)
+    {
+        ArgumentNullException.ThrowIfNull(knownProjectRoots);
+        if (IsUnderUserProfile(candidate))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(candidate) || knownProjectRoots.Count == 0)
+        {
+            return false;
+        }
+
+        // ⛔ THE UNC TEST MUST RUN ON THE RAW CANDIDATE, BEFORE NORMALISATION, and this is the
+        // whole reason it is here rather than only below. `Path.GetFullPath` preserves a UNC path
+        // on Windows, so a post-normalisation test looks correct there — but OFF Windows a
+        // backslash is an ordinary filename character, so `\\host\share` is not a rooted path at
+        // all and GetFullPath resolves it against the CURRENT DIRECTORY. The UNC shape is gone by
+        // the time the test below runs, the list comparison then matches, and the path is
+        // authorised. Measured: green on Windows, red on ubuntu and macOS, for the whole of this
+        // branch's history.
+        //
+        // ⚠ <see cref="IsUnderUserProfile"/> has always tested the raw candidate. This branch
+        // restated the rule in a place where it does not hold, which is the failure mode of
+        // restating a rule rather than sharing it.
+        if (IsUncShaped(candidate))
+        {
+            return false;
+        }
+
+        string full;
+        try
+        {
+            full = Path.GetFullPath(candidate)
+                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+        catch (Exception ex) when (ex is ArgumentException
+                                       or PathTooLongException
+                                       or NotSupportedException
+                                       or SecurityException)
+        {
+            _ = ex;
+            return false;
+        }
+
+        // Kept as well as the raw test above, not instead of it: on Windows a candidate can
+        // NORMALISE into a UNC path without looking like one (a mapped drive, a directory
+        // symlink), and only the normalised form shows that.
+        if (IsUncShaped(full))
+        {
+            return false;
+        }
+
+        // Windows and macOS compare paths case-insensitively; Linux does not, and a
+        // case-insensitive match there would authorise a genuinely different directory.
+        StringComparison cmp = OperatingSystem.IsLinux()
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+
+        foreach (string root in knownProjectRoots)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                continue;
+            }
+
+            string rootFull;
+            try
+            {
+                rootFull = Path.GetFullPath(root)
+                               .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+            catch (Exception ex) when (ex is ArgumentException
+                                           or PathTooLongException
+                                           or NotSupportedException
+                                           or SecurityException)
+            {
+                _ = ex;
+                continue;
+            }
+
+            if (string.Equals(full, rootFull, cmp)
+                || full.StartsWith(rootFull + Path.DirectorySeparatorChar, cmp))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> when <paramref name="candidate"/> is an absolute path that
+    /// lies under the current user's profile directory. ⓘ One of the two allows in
+    /// <see cref="IsAuthorisedRestoreTarget"/>, which is what callers ask — on its own this
+    /// was a scope limit wearing a security check's clothes, and it is why a project kept
+    /// outside the home directory could be backed up but never restored.
+    /// </summary>
+    /// <summary>
+    /// True when <paramref name="path"/> has the shape of a UNC / network path.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Deliberately platform-INDEPENDENT.</b> A restore archive is portable, so a
+    /// <c>projectRoot</c> written on Windows can be read on Linux. Refusing the shape everywhere
+    /// costs nothing — a leading <c>\\</c> is not a path any of these products writes on any
+    /// platform — while making the refusal conditional on the host is how the same string gets
+    /// refused on one machine and authorised on another.
+    /// <para>
+    /// ⚠ Both callers test the RAW candidate with this before normalising, because
+    /// <see cref="Path.GetFullPath(string)"/> destroys the UNC shape off Windows by resolving a
+    /// backslash-laden string against the current directory.
+    /// </para>
+    /// </remarks>
+    private static bool IsUncShaped(string path)
+    {
+        return path.StartsWith(@"\\", StringComparison.Ordinal)
+               || path.StartsWith("//", StringComparison.Ordinal);
+    }
+
     internal static bool IsUnderUserProfile(string? candidate)
     {
         if (string.IsNullOrWhiteSpace(candidate))
@@ -307,8 +576,7 @@ internal static class RestoreEngine
 
         // Reject UNC paths (\\server\share\...) — they are network locations outside
         // the user's local profile and could silently redirect writes to a remote host.
-        if (candidate.StartsWith(@"\\", StringComparison.Ordinal) ||
-            candidate.StartsWith("//", StringComparison.Ordinal))
+        if (IsUncShaped(candidate))
         {
             return false;
         }
@@ -340,7 +608,13 @@ internal static class RestoreEngine
             return false;
         }
 
-        string home = Path.GetFullPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))
+        // ⚠ PlatformPaths.UserProfile, not Environment.GetFolderPath. Every other path this
+        // engine resolves goes through PlatformPaths, which honours the test profile override;
+        // reading Environment here made this one predicate disagree with the rest of the engine
+        // under a redirected home — so the refusal path could not be exercised against a real
+        // directory at all, and the F7 repro was untestable end to end for that reason alone.
+        // Identical in production, where the override is null.
+        string home = Path.GetFullPath(PlatformPaths.UserProfile)
                           .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (string.IsNullOrEmpty(home))
         {
@@ -411,8 +685,10 @@ internal static class RestoreEngine
     /// Returns <c>(1, null)</c> on success, <c>(0, errorMessage)</c> if the file is locked
     /// or inaccessible — the caller accumulates errors rather than aborting the restore.
     /// </summary>
-    internal static (int Restored, string? Failure) RestoreSection(string srcFile, string destFile, string stamp)
+    internal static (int Restored, string? Failure) RestoreSection(
+        string srcFile, string destFile, string stamp, RestoreJournal journal)
     {
+        ArgumentNullException.ThrowIfNull(journal);
         if (!File.Exists(srcFile))
         {
             return (0, null);
@@ -433,7 +709,9 @@ internal static class RestoreEngine
                 // restore × every restored file would compound until
                 // the user runs --cleanup-restore-sidecars manually.
                 EvictOldSidecarsIfNeeded(destFile);
-                File.Copy(destFile, $"{destFile}.pre-restore-{stamp}.bak", overwrite: true);
+                string sidecar = $"{destFile}.pre-restore-{stamp}.bak";
+                File.Copy(destFile, sidecar, overwrite: true);
+                journal.Sidecars.Add(sidecar);
             }
 
             File.Copy(srcFile, destFile, overwrite: true);
@@ -573,8 +851,10 @@ internal static class RestoreEngine
     /// Per-file failures (e.g. locked files) are collected rather than aborting the whole
     /// directory — the caller aggregates them for post-restore reporting.
     /// </summary>
-    internal static (int Restored, List<string> Failures) RestoreDirectory(string srcDir, string destDir, string stamp)
+    internal static (int Restored, List<string> Failures) RestoreDirectory(
+        string srcDir, string destDir, string stamp, RestoreJournal journal)
     {
+        ArgumentNullException.ThrowIfNull(journal);
         List<string> failures = new();
         if (!Directory.Exists(srcDir))
         {
@@ -627,7 +907,9 @@ internal static class RestoreEngine
                     // file BEFORE writing the new one — same rule as
                     // RestoreSection.
                     EvictOldSidecarsIfNeeded(dest);
-                    File.Copy(dest, $"{dest}.pre-restore-{stamp}.bak", overwrite: true);
+                    string sidecar = $"{dest}.pre-restore-{stamp}.bak";
+                    File.Copy(dest, sidecar, overwrite: true);
+                    journal.Sidecars.Add(sidecar);
                 }
 
                 File.Copy(file, dest, overwrite: true);
@@ -642,9 +924,40 @@ internal static class RestoreEngine
         return (count, failures);
     }
 
+    /// <summary>
+    /// Restore each project subtree the archive carries, to the live path the manifest names.
+    /// </summary>
+    /// <param name="knownProjectRoots">
+    /// ⭐ <b>The authorisation set, read from THIS machine</b> — the keys of
+    /// <c>~/.claude.json</c>'s <c>projects</c> object, via <see cref="KnownProjectsDiscovery"/>.
+    /// <para>
+    /// ⛔ It exists because <see cref="IsUnderUserProfile"/> alone was **not** the security rule
+    /// it looked like — it was also, silently, a scope limit. Backup captures whatever project is
+    /// open; a great many people keep their repositories outside their home directory, and for
+    /// every one of those the restore refused the project, reported it as a path *"not present on
+    /// this machine"*, and returned success. The archive said the files were there, the Restore
+    /// tab said it would overwrite, and nothing put them back.
+    /// </para>
+    /// <para>
+    /// The manifest is untrusted — a crafted zip can name <c>C:\Windows\System32</c> — so the
+    /// answer is not to drop the check but to ask a source the zip cannot write. A path the user's
+    /// own Claude Code has opened is a path the user chose; <c>C:\Windows\System32</c> is not in
+    /// anybody's project list. Under-profile stays an independent allow, so a machine with no
+    /// <c>~/.claude.json</c> behaves exactly as before.
+    /// </para>
+    /// <para>
+    /// ⚠ Pass an EMPTY set, never null, to mean "authorise nothing extra". Every call site names
+    /// it, because a defaulted one is how the scope limit stayed invisible the first time.
+    /// </para>
+    /// </param>
     internal static int RestoreProjects(string tempRoot, BackupManifest manifest, string stamp,
-                                        List<string> skipped, List<string> fileFailures)
+                                        IReadOnlyCollection<string> knownProjectRoots,
+                                        RestoreJournal journal)
     {
+        ArgumentNullException.ThrowIfNull(knownProjectRoots);
+        ArgumentNullException.ThrowIfNull(journal);
+        List<string> skipped = journal.Skipped;
+        List<string> fileFailures = journal.FileFailures;
         // Folder from the descriptor, not a literal — the write side has always used it, and a
         // rename on one side only would silently stop matching rather than erroring.
         string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "projects");
@@ -668,14 +981,15 @@ internal static class RestoreEngine
             }
 
             // Defence: the path comes from the archive's manifest (untrusted when an
-            // attacker crafts a zip), so refuse to write outside the user's home.
-            if (!IsUnderUserProfile(livePath))
+            // attacker crafts a zip), so it must be one this machine independently vouches
+            // for — under the user's own home, or a project their own Claude Code has opened.
+            if (!IsAuthorisedRestoreTarget(livePath, knownProjectRoots))
             {
-                skipped.Add(name + " (path outside user profile)");
+                skipped.Add(name + " (not a path this machine recognises)");
                 continue;
             }
 
-            (int c, List<string> failures) = RestoreDirectory(projBackupDir, livePath, stamp);
+            (int c, List<string> failures) = RestoreDirectory(projBackupDir, livePath, stamp, journal);
             count += c;
             fileFailures.AddRange(failures);
         }
@@ -683,9 +997,24 @@ internal static class RestoreEngine
         return count;
     }
 
-    internal static int RestoreWorktrees(string tempRoot, string stamp,
-                                         List<string> skipped, List<string> fileFailures)
+    /// <summary>
+    /// Restore each external git worktree the archive carries.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Worktrees keep the under-profile rule, and that is a KNOWN GAP, not an oversight.</b>
+    /// The projects fix above works because this machine keeps an independent list of the paths
+    /// the user has opened; nothing equivalent exists for worktrees. The manifest's
+    /// <c>projectRoot</c> cannot serve — a crafted zip would simply name a real project beside an
+    /// arbitrary <c>worktreePath</c>, which authorises nothing. The sound source is
+    /// <see cref="WorktreeProbe"/> against the live repositories, and that means spawning
+    /// <c>git</c> per project, with a timeout each, in front of a destructive operation. That is a
+    /// decision with a cost, so it is recorded rather than taken in passing.
+    /// </remarks>
+    internal static int RestoreWorktrees(string tempRoot, string stamp, RestoreJournal journal)
     {
+        ArgumentNullException.ThrowIfNull(journal);
+        List<string> skipped = journal.Skipped;
+        List<string> fileFailures = journal.FileFailures;
         string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "worktrees");
         if (!Directory.Exists(wtDir))
         {
@@ -718,11 +1047,11 @@ internal static class RestoreEngine
                 // locations (e.g. C:\Windows\System32 or /etc).
                 if (!IsUnderUserProfile(meta.WorktreePath))
                 {
-                    skipped.Add(wtName + " (worktree path outside user profile)");
+                    skipped.Add(wtName + " (worktree path is outside your home folder)");
                     continue;
                 }
 
-                (int c, List<string> failures) = RestoreDirectory(wtBackupDir, meta.WorktreePath, stamp);
+                (int c, List<string> failures) = RestoreDirectory(wtBackupDir, meta.WorktreePath, stamp, journal);
                 count += c;
                 fileFailures.AddRange(failures);
             }

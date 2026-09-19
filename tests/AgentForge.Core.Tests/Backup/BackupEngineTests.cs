@@ -195,7 +195,7 @@ public sealed class BackupEngineTests
     }
 
     [TestMethod]
-    public async Task RoundTrip_RestoreWritesFilesBackAndCreatesBakSidecars()
+    public async Task RoundTrip_RestoreWritesFilesBackAndSweepsItsOwnSidecars()
     {
         // Name it with the "backup-*" prefix so BackupEngine.List() finds it.
         string dest = Path.Combine(_fakeHome, "backup-round.zip");
@@ -220,10 +220,25 @@ public sealed class BackupEngineTests
         string restored = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
         Assert.AreEqual(original, restored);
 
-        // A .pre-restore-*.bak file should exist alongside.
+        // ⚠ This assertion was INVERTED for F8, deliberately. It used to require exactly one
+        // surviving `.pre-restore-*.bak`; a clean restore now sweeps the sidecars it wrote,
+        // because they are the undo trail for an overwrite that has since committed and
+        // leaving them roughly doubles the directory on every restore.
         List<string> baks = Directory.EnumerateFiles(Path.Combine(_fakeHome, ".claude"),
             "settings.json.pre-restore-*.bak").ToList();
-        Assert.AreEqual(1, baks.Count, "Exactly one .bak sidecar should be written.");
+        Assert.AreEqual(0, baks.Count,
+            "F8: a restore that completed without a single file failure must leave no sidecars.");
+
+        // ⛔ Zero on its own is NOT evidence of a sweep — an engine that stopped writing
+        // sidecars at all would satisfy it just as well, and that would silently remove the
+        // undo trail a PARTIAL restore still depends on. The message count is what says one
+        // was written and then removed.
+        // Two, because the fixture has two live files the restore overwrote — the same number
+        // it reports as restored. An exact count rather than "some", so a sweep that silently
+        // started missing files would show up here.
+        StringAssert.Contains(restore.Message, "Cleaned up 2 ",
+            "The result must report the sweep, which is the only evidence distinguishing "
+            + $"'written then removed' from 'never written': {restore.Message}");
     }
 
     [TestMethod]

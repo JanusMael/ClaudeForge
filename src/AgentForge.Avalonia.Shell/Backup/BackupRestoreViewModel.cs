@@ -831,7 +831,16 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
             using CancellationTokenSource cts = new();
             _operationCts = cts;
-            RestoreResult result = await _engine.RestoreAsync(row.Entry, progress, cts.Token);
+            // ⚠ The open project must be handed over, or the restore refuses the very project
+            // the archive was taken for. A *Settings only* backup captures exactly this path and
+            // nothing else on the machine — not ~/.claude.json, not additionalDirectories — need
+            // ever have heard of it. That was F7.
+            string? openRoot = InitialProjectRoot?.Trim();
+            RestoreResult result = await _engine.RestoreAsync(
+                row.Entry,
+                progress,
+                cts.Token,
+                string.IsNullOrEmpty(openRoot) ? null : [openRoot]);
             if (result.Succeeded)
             {
                 StatusMessage = result.Message;

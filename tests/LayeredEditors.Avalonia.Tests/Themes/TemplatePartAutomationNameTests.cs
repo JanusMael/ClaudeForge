@@ -2,6 +2,7 @@ using System.Reflection;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.VisualTree;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
@@ -133,6 +134,133 @@ public sealed class TemplatePartAutomationNameTests
             WrapperStrings.LabelSpinnerDecrease,
             "Both spinner directions resolve to the same text, so a screen-reader user " +
             "cannot tell the up button from the down one.");
+    }
+
+    // ── Expander header (F10) ────────────────────────────────────────────────
+
+    /// <summary>
+    /// An <see cref="Expander"/> whose header is anything other than a plain string hands a
+    /// screen reader its template's layout type. Measured through UIA on 2026-09-18 against the
+    /// shipping build: <b>seven</b> buttons on the Environment page announcing
+    /// <c>Avalonia.Controls.Grid</c>, with nothing to tell <c>ANTHROPIC · 41</c> from
+    /// <c>OTEL · 37</c> (finding <c>F10</c>).
+    /// <para>
+    /// ⛔ The view was ALREADY doing its part — <c>PropertyEditorWrapper.axaml</c> sets
+    /// <c>AutomationProperties.Name</c> on the Expander. The name simply sat on the wrong
+    /// element: the Expander's own peer has it, while the thing that takes focus is the
+    /// <c>ExpanderHeader</c> part, which computes its own name from its content.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public Task Expander_HeaderPart_WithAComplexHeader_InheritsTheNameTheViewSet()
+    {
+        return Session.Dispatch(() =>
+        {
+            using ExpanderUnderTest subject = new(ExpanderUnderTest.HeaderKind.Complex);
+
+            Assert.AreEqual(ExpanderUnderTest.HostName, PeerName(subject.Header),
+                $"An Expander named '{ExpanderUnderTest.HostName}' has an ExpanderHeader part " +
+                $"announcing '{PeerName(subject.Header)}'. That part is what takes focus, so the " +
+                "view's name has to reach it — see the inherited-names section of " +
+                "Themes/AccessibilityNames.axaml.");
+        }, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// ⚠ <b>This test's first draft asserted the opposite, and the measurement corrected it.</b>
+    /// It claimed a plain <c>Header="..."</c> string already announced itself, so the style had to
+    /// avoid overwriting a good fallback. It does not: the theme wraps the header in a Grid either
+    /// way, so a string header announced <c>Avalonia.Controls.Grid</c> exactly like a complex one.
+    /// <para>
+    /// The real contract is simpler for it — every Expander shape needs the copy-down, not just
+    /// the seven complex ones, and there is no fallback to protect.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public Task Expander_HeaderPart_WithAStringHeader_AlsoInheritsTheHostsName()
+    {
+        return Session.Dispatch(() =>
+        {
+            using ExpanderUnderTest subject = new(ExpanderUnderTest.HeaderKind.StringWithHostName);
+
+            Assert.AreEqual(ExpanderUnderTest.HostName, PeerName(subject.Header),
+                $"An Expander with Header=\"{ExpanderUnderTest.StringHeaderText}\" named " +
+                $"'{ExpanderUnderTest.HostName}' has a header part announcing " +
+                $"'{PeerName(subject.Header)}'. A string header is NOT a working fallback — the " +
+                "template's Grid is the button's content whatever the header is.");
+        }, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// ⛔ <b>The limit of this style, asserted so it is not mistaken for coverage.</b> Binding an
+    /// unset attached property yields nothing, so the setter never applies and an Expander with no
+    /// <c>AutomationProperties.Name</c> keeps the template's type-name fallback. The style cannot
+    /// fix that case: there is no name to copy and the header's own text never reaches the peer.
+    /// <para>
+    /// ⭐ What protects it is <c>ExpanderAutomationNameTests</c>, which requires every Expander in
+    /// the solution's markup to declare a name — so no shipped Expander takes this path. That is
+    /// the pair: the style moves a name that exists, the markup guard ensures one exists.
+    /// </para>
+    /// <para>
+    /// ⓘ Deliberately NOT the same assertion as
+    /// <see cref="FocusTarget_OfAnUnnamedHost_StaysUnnamed"/>, which can require empty because a
+    /// bare <c>TextBox</c> peer has no content to fall back to. Asserting empty here would fail
+    /// for a reason that has nothing to do with the style.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public Task Expander_HeaderPart_OfAnUnnamedHost_IsNotGivenAnInventedName()
+    {
+        return Session.Dispatch(() =>
+        {
+            using ExpanderUnderTest subject = new(ExpanderUnderTest.HeaderKind.ComplexNoHostName);
+
+            Assert.AreNotEqual(ExpanderUnderTest.HostName, PeerName(subject.Header),
+                "An unnamed Expander's header part picked up another Expander's name, which means " +
+                "the binding is resolving to the wrong ancestor.");
+
+            Assert.IsTrue(
+                string.IsNullOrEmpty(PeerName(subject.Header))
+                || PeerName(subject.Header)!.StartsWith("Avalonia.", StringComparison.Ordinal),
+                $"An unnamed Expander's header part announces '{PeerName(subject.Header)}'. That " +
+                "is neither the untouched template fallback nor nothing, so something is " +
+                "inventing a name — check what else names this part before trusting it.");
+        }, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// A <b>named</b> Expander's header must never announce a framework type name, whatever shape
+    /// its header takes. Broader than the two tests above on purpose: this is the shape <c>F10</c>
+    /// took and the shape the <c>PathIcon</c> case took before it, so a third header shape added
+    /// later fails here rather than shipping silently.
+    /// <para>
+    /// ⚠ Restricted to the named kinds, because those are the ones that ship —
+    /// <c>ExpanderAutomationNameTests</c> is what makes that true, and the unnamed case has its
+    /// own test above stating exactly why the style cannot reach it.
+    /// </para>
+    /// </summary>
+    [TestMethod]
+    public Task Expander_HeaderPart_OfANamedHost_NeverAnnouncesAFrameworkTypeName()
+    {
+        return Session.Dispatch(() =>
+        {
+            ExpanderUnderTest.HeaderKind[] named =
+            [
+                ExpanderUnderTest.HeaderKind.Complex,
+                ExpanderUnderTest.HeaderKind.StringWithHostName,
+            ];
+
+            foreach (ExpanderUnderTest.HeaderKind kind in named)
+            {
+                using ExpanderUnderTest subject = new(kind);
+                string? announced = PeerName(subject.Header);
+
+                Assert.IsFalse(
+                    announced is not null && announced.StartsWith("Avalonia.", StringComparison.Ordinal),
+                    $"With header kind {kind} the Expander's header part announces '{announced}' — " +
+                    "a type name rather than words, which is finding F10 exactly.");
+            }
+        }, CancellationToken.None);
     }
 
     // ── Assertions ───────────────────────────────────────────────────────────
@@ -299,6 +427,97 @@ public sealed class TemplatePartAutomationNameTests
         public void Dispose()
         {
             _window.Close();
+        }
+    }
+
+    /// <summary>
+    /// A shown <see cref="Window"/> hosting one templated <see cref="Expander"/>, with its
+    /// header part located. Same premise discipline as <see cref="SpinnerUnderTest"/>.
+    /// </summary>
+    private sealed class ExpanderUnderTest : IDisposable
+    {
+        /// <summary>Stands in for a category title a view binds, e.g. "ANTHROPIC · 41".</summary>
+        internal const string HostName = "ANTHROPIC group";
+
+        /// <summary>A header that is already words, so its content fallback is usable.</summary>
+        internal const string StringHeaderText = "Advanced fields";
+
+        private readonly Window _window;
+
+        internal ExpanderUnderTest(HeaderKind kind)
+        {
+            Expander expander = new() { Width = 300 };
+
+            switch (kind)
+            {
+                case HeaderKind.Complex:
+                    // What the env categories do: a styled TextBlock, not a string. The peer's
+                    // content fallback then reaches the template's layout panel.
+                    expander.Header = new TextBlock { Text = "ANTHROPIC · 41" };
+                    AutomationProperties.SetName(expander, HostName);
+                    break;
+                case HeaderKind.StringWithHostName:
+                    expander.Header = StringHeaderText;
+                    AutomationProperties.SetName(expander, HostName);
+                    break;
+                case HeaderKind.ComplexNoHostName:
+                    // The uncovered corner: complex header AND no name. Nothing can produce
+                    // words here, but it must still not produce a TYPE name.
+                    expander.Header = new TextBlock { Text = "Untitled" };
+                    break;
+            }
+
+            _window = new Window { Width = 400, Height = 200, Content = expander };
+            _window.Show();
+
+            try
+            {
+                Header = FindHeaderPart(expander);
+            }
+            catch
+            {
+                _window.Close();
+                throw;
+            }
+        }
+
+        /// <summary>The three header shapes that behave differently.</summary>
+        internal enum HeaderKind
+        {
+            Complex,
+            StringWithHostName,
+            ComplexNoHostName,
+        }
+
+        internal ToggleButton Header { get; }
+
+        public void Dispose()
+        {
+            _window.Close();
+        }
+
+        /// <summary>
+        /// ⚠ <b><see cref="ToggleButton"/>, not <see cref="Button"/>.</b> A UIA walk reports this
+        /// element as <c>Button</c> — that is the peer's answer, not the element's — and a
+        /// selector written from the walk matches nothing, builds clean, and silently leaves the
+        /// part unnamed. The theme's own <c>ExpanderHeaderToggleButtonTheme</c> is the fact.
+        /// </summary>
+        private static ToggleButton FindHeaderPart(Expander host)
+        {
+            List<ToggleButton> matches = host.GetVisualDescendants()
+                                             .OfType<ToggleButton>()
+                                             .Where(t => string.Equals(t.Name, "ExpanderHeader", StringComparison.Ordinal)
+                                                         && ReferenceEquals(t.TemplatedParent, host))
+                                             .ToList();
+
+            Assert.AreEqual(1, matches.Count,
+                $"Expected exactly one ToggleButton named 'ExpanderHeader' templated by the " +
+                $"Expander, found {matches.Count}. Either the theme renamed the part or it moved " +
+                "into a nested template — either way the selector in " +
+                "Themes/AccessibilityNames.axaml no longer matches it and the header is back to " +
+                "announcing its layout type.");
+
+            return matches[0];
         }
     }
 
