@@ -105,7 +105,8 @@
         <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- =========================== BACKUP TAB =========================== -->
-            <TabItem Header="{x:Static loc:Strings.TabBackup}">
+            <TabItem Header="{x:Static loc:Strings.TabBackup}"
+                     AutomationProperties.Name="{x:Static loc:Strings.TabBackup}">
                 <ScrollViewer>
                     <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
 
@@ -266,7 +267,8 @@
             </TabItem>
 
             <!-- =========================== RESTORE TAB =========================== -->
-            <TabItem Header="{x:Static loc:Strings.TabRestore}">
+            <TabItem Header="{x:Static loc:Strings.TabRestore}"
+                     AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
                 <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
                      FileDrop is a reusable attached-property behaviour in
                      LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
@@ -504,6 +506,7 @@
 
             <!-- =========================== MSIX FIX TAB (Windows-only, conditional) =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabMsixFix}"
+                     AutomationProperties.Name="{x:Static loc:Strings.TabMsixFix}"
                      IsVisible="{Binding ShowMsixTab}">
                 <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
                     <TextBlock Text="{x:Static loc:Strings.HeadingMsixFix}"

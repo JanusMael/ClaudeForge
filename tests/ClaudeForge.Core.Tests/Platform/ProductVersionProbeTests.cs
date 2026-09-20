@@ -6,7 +6,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Platform;
 
 /// <summary>
 /// Covers the timeout-and-kill behaviour of <see cref="ProductVersionProbe.TryGetClaudeCodeVersionAsync"/>:
-/// processes that do not exit before the 2 s internal deadline must be killed by the finally
+/// processes that do not exit before the internal deadline must be killed by the finally
 /// block that calls <c>process.Kill(entireProcessTree: true)</c> (the A2 fix), and the method
 /// must return <see langword="null"/> without hanging or propagating an unhandled exception.
 /// </summary>
@@ -14,12 +14,26 @@ namespace Bennewitz.Ninja.ClaudeForge.Core.Tests.Platform;
 public sealed class ProductVersionProbeTests
 {
     /// <summary>
+    /// Probe deadline used by the slow-process test. Production uses 2 000 ms; the test
+    /// injects a far smaller one so the whole test costs two process spawns plus this,
+    /// which keeps it an order of magnitude inside any runner's scheduling noise.
+    /// </summary>
+    private const int TestProbeTimeoutMs = 250;
+
+    /// <summary>
+    /// Backstop for the polls below. Never reached in practice — a killed process
+    /// disappears within a few milliseconds — so this is sized for a badly starved
+    /// CI runner rather than for the expected cost.
+    /// </summary>
+    private static readonly TimeSpan ExitPollBudget = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// Passing a nonexistent binary path must return null promptly — either via a
     /// Win32Exception (process failed to start) or via the timeout path — without
     /// propagating an unhandled exception to the caller.
     /// </summary>
     [TestMethod]
-    [Timeout(5000)]
+    [Timeout(30000)]
     public async Task TryGetClaudeCodeVersionAsync_NonExistentBinary_ReturnsNullWithoutException()
     {
         Stopwatch sw = Stopwatch.StartNew();
@@ -30,90 +44,102 @@ public sealed class ProductVersionProbeTests
         Assert.IsNull(result,
             "A nonexistent binary must cause the probe to return null.");
 
-        // Should not take anywhere near the 5 s test timeout — a missing binary
-        // triggers a Win32Exception immediately during Process.Start.
-        Assert.IsTrue(sw.ElapsedMilliseconds < 4000,
+        // A missing binary must fail through the synchronous Win32Exception from
+        // Process.Start, not by burning the probe's 2 000 ms internal deadline.
+        // The bound discriminates between those two paths; it is not a perf budget.
+        Assert.IsTrue(sw.ElapsedMilliseconds < 2000,
             $"Probe took {sw.ElapsedMilliseconds} ms — should have failed fast.");
     }
 
     /// <summary>
-    /// Pointing the probe at a long-running process (ping on Windows, sleep on Unix)
-    /// exercises the Kill(entireProcessTree:true) path in the finally block.
-    /// The probe's internal timeout is 2 000 ms; the test grants 5 s so there is a
-    /// comfortable margin even on slow CI machines.
+    /// Pointing the probe at a command that runs for two minutes exercises the
+    /// <c>Kill(entireProcessTree: true)</c> path in the finally block: the probe must
+    /// abandon the wait at its deadline, kill what it started, and return null.
     /// </summary>
+    /// <remarks>
+    /// Determinism comes from <see cref="TestProbeTimeoutMs"/>, not from the
+    /// <c>[Timeout]</c> below. Two things are asserted independently: that the call
+    /// returned at all (the command itself would take ~120 s, so returning proves the
+    /// deadline fired) and that the process it started is actually gone (which a kill
+    /// failure would not satisfy — the probe logs and swallows that failure, so the
+    /// null result alone does not prove the kill happened).
+    ///
+    /// The command is run through a shell so there is a grandchild process and the
+    /// tree-kill code path has a tree to tear down. Going through
+    /// <see cref="ProductVersionProbe.TryGetVersionAsync"/> rather than the public
+    /// entry point means the exe/args pair can be supplied directly — no temp .bat
+    /// wrapper to write, chmod, and delete, and no extra interpreter spawn beyond the
+    /// one that makes the tree. <c>ResolveCommand</c>'s own wrapping of .cmd/.bat/.ps1
+    /// shims is covered by <see cref="ProductVersionProbeResolveCommandTests"/>.
+    ///
+    /// The <c>[Timeout]</c> is a hang backstop only: far above the sub-second cost this
+    /// test actually has, and far below the ~120 s the command would run for if the
+    /// kill silently stopped working.
+    /// </remarks>
     [TestMethod]
-    [Timeout(5000)]
-    public async Task TryGetClaudeCodeVersionAsync_SlowProcess_KilledAfterTimeoutReturnsNull()
+    [Timeout(30000)]
+    public async Task TryGetVersionAsync_SlowProcess_KilledAfterTimeoutReturnsNull()
     {
-        // Choose a binary that is guaranteed to exist and will run for well beyond the
-        // 2 000 ms probe timeout without writing a recognisable version string.
-        string slowBinary;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        ProductVersionProbe.ResolvedCommand slow =
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? new ProductVersionProbe.ResolvedCommand("cmd.exe", "/c ping -n 120 127.0.0.1")
+                : new ProductVersionProbe.ResolvedCommand("/bin/sh", "-c \"sleep 120\"");
+
+        int startedPid = 0;
+        Stopwatch sw = Stopwatch.StartNew();
+        string? result = await ProductVersionProbe.TryGetVersionAsync(
+            slow, TestProbeTimeoutMs, pid => startedPid = pid);
+        sw.Stop();
+
+        Assert.IsNull(result,
+            "Slow process must be killed after the internal timeout and the method must return null.");
+        Assert.AreNotEqual(0, startedPid,
+            "The probe should have started a process — the test seam never fired.");
+
+        // ~120 s if the deadline never fired; a small multiple of TestProbeTimeoutMs if it did.
+        Assert.IsTrue(sw.ElapsedMilliseconds < 10000,
+            $"Probe took {sw.ElapsedMilliseconds} ms — the {TestProbeTimeoutMs} ms deadline did not fire.");
+
+        Assert.IsTrue(WaitForProcessExit(startedPid, ExitPollBudget),
+            $"Process {startedPid} was still running after the probe returned — "
+            + "the Kill(entireProcessTree: true) in the finally block did not take effect.");
+    }
+
+    /// <summary>
+    /// Polls until the given process is gone, or the budget runs out. Kill is asynchronous
+    /// — TerminateProcess returns before the process is reaped — so a single immediate check
+    /// would be racy in exactly the way this test exists to remove.
+    /// </summary>
+    private static bool WaitForProcessExit(int pid, TimeSpan budget)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        while (true)
         {
-            // ping -n 30 loops for ~30 s — far longer than the 2 s probe timeout.
-            // We can't pass additional arguments through the probe API, so we use a
-            // batch wrapper written to a temp file that calls ping internally.
-            string batchPath = Path.Combine(Path.GetTempPath(), $"probe-slow-{Guid.NewGuid():N}.bat");
-            await File.WriteAllTextAsync(batchPath, "@ping -n 30 127.0.0.1 > nul\r\n");
-            slowBinary = batchPath;
             try
             {
-                string? result = await ProductVersionProbe.TryGetClaudeCodeVersionAsync(slowBinary);
-                Assert.IsNull(result,
-                    "Slow process must be killed after the internal timeout and the method must return null.");
+                // Throws ArgumentException once the PID is no longer live. PID reuse inside
+                // this window would need the OS to recycle the id within milliseconds.
+                using Process p = Process.GetProcessById(pid);
+                if (p.HasExited)
+                {
+                    return true;
+                }
             }
-            finally
+            catch (ArgumentException)
             {
-                try
-                {
-                    File.Delete(batchPath);
-                }
-                catch
-                {
-                    /* best-effort cleanup */
-                }
+                return true;
             }
-        }
-        else
-        {
-            // The original approach used `/bin/sleep` here on the assumption
-            // that `sleep --version` would block.  That's wrong: GNU coreutils'
-            // `sleep --version` follows the standard convention of printing
-            // version info and exiting immediately, which defeats the slow-
-            // process intent (no kill ever fires, and the probe returns the
-            // parsed version — making the IsNull assertion fail on Linux /
-            // macOS CI).
-            //
-            // Mirror the Windows batch-file approach instead: write a shell
-            // script that ignores its args and loops indefinitely, then use
-            // that as the slow binary.  This actually exercises the
-            // Kill(entireProcessTree:true) path on Unix.
-            string scriptPath = Path.Combine(Path.GetTempPath(), $"probe-slow-{Guid.NewGuid():N}.sh");
-            await File.WriteAllTextAsync(scriptPath,
-                "#!/usr/bin/env bash\nwhile true; do sleep 1; done\n");
-            // chmod +x — required for the probe's Process.Start to invoke the
-            // script directly without a shell wrapper.  UnixFileMode is the
-            // managed equivalent of `chmod 0700`.
-            File.SetUnixFileMode(scriptPath,
-                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-            try
+            catch (InvalidOperationException)
             {
-                string? result = await ProductVersionProbe.TryGetClaudeCodeVersionAsync(scriptPath);
-                Assert.IsNull(result,
-                    "Slow process must be killed after the internal timeout and the method must return null.");
+                return true;
             }
-            finally
+
+            if (sw.Elapsed >= budget)
             {
-                try
-                {
-                    File.Delete(scriptPath);
-                }
-                catch
-                {
-                    /* best-effort cleanup */
-                }
+                return false;
             }
+
+            Thread.Sleep(25);
         }
     }
 }

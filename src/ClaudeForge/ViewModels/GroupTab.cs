@@ -41,6 +41,21 @@ public sealed partial class GroupTab : ObservableObject
     public string? AutomationName { get; init; }
 
     /// <summary>
+    /// What a screen reader announces for this tab: the explicit
+    /// <see cref="AutomationName"/> when a customizer set one, otherwise the
+    /// visible <see cref="Header"/>.
+    /// <para>
+    /// Bound by the tab strip onto the <c>TabItem</c> CONTAINER, not the header
+    /// TextBlock inside it. UI Automation reports the container, and with no name
+    /// on it the container falls back to the bound item's <c>ToString()</c> — so
+    /// every settings page announced its tabs as
+    /// "Bennewitz.Ninja.ClaudeForge.ViewModels.GroupTab".
+    /// </para>
+    /// </summary>
+    public string AccessibleName =>
+        string.IsNullOrWhiteSpace(AutomationName) ? Header : AutomationName!;
+
+    /// <summary>
     /// When <see langword="true"/>, this tab is the group's preferred initial
     /// selection on first visit (no remembered selection yet). Lets an
     /// <see cref="IGroupTabCustomizer"/> drive the landing tab; when no tab is

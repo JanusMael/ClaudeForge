@@ -2948,9 +2948,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Dispatcher.UIThread.Post(
                 () =>
                 {
-                    if (navigable is AgentsSkillsEditorViewModel agents && pending.Segments.Count > 0)
+                    if (pending.Segments.Count > 0)
                     {
-                        agents.SelectSegment(pending.Segments[0]);
+                        navigable.ReapplyTab(pending.Segments);
                     }
                 },
                 DispatcherPriority.Loaded);
