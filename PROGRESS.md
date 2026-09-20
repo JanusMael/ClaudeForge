@@ -164,17 +164,28 @@ entry point including a bare `dotnet publish`.
 ⚠ **A `Message`, not a `Warning`.** `Directory.Build.props` sets `TreatWarningsAsErrors`; a hatch
 whose own record can be escalated into the failure it exists to avoid is not a hatch.
 
-⛔⛔ **CI CAUGHT WHAT THE LOCAL SUITE COULD NOT, for the third recorded time on this mechanism.**
-`a6fd749` went in with a green 3,551 local suite and reddened **two** CI jobs — the package canary
-and macOS — both on the same test, `EveryHardcodedRepoPathInBuildFilesExists`. A comment in
-`release.yml` named the bare directory `src/dist/logs/`. That folder is a build output and **git
-does not track empty directories**, so it exists on any machine that has ever published and on no
-CI runner. ⚠ **Local verification was structurally blind**: the test passes here whether or not the
-prose is right, so the fix had to be proven by moving `src/dist` away and re-running — it reddened,
-then went green. ⛔ **The exact boundaries, measured rather than recalled:** the regex allows `*`
-inside a segment, so `src/dist/*.zip` is skipped; a **trailing slash is not consumed**, so
-`src/dist/` is checked as bare `src/dist`; and a trailing `/*` is **trimmed back** to the bare
-directory, so that spelling fails too. A glob is only safe with a suffix after the star.
+⛔⛔ **CI CAUGHT WHAT THE LOCAL SUITE COULD NOT, twice in a row on the same mechanism.** `a6fd749`
+went in with a green 3,551 local suite and reddened **two** CI jobs — the package canary and macOS
+— both on `EveryHardcodedRepoPathInBuildFilesExists`. A comment in `release.yml` named the staging
+folder as a bare directory. It is a **build output**, and since git does not track it, it exists on
+any machine that has ever published and on no CI runner. ⛔⛔ **The fix commit then failed the same
+test again — because this very paragraph named the same directories while explaining them**, and
+the write-up of a trap is not exempt from it. ⚠ **Local verification is structurally BLIND here**:
+the test passes on a dev machine whether the prose is right or wrong, and both misses happened
+because the folder was restored *before* the final run. ⭐ **The reliable gate is to park that
+folder FIRST and leave it parked until the test is green** — not to re-read the prose.
+
+⛔ **The exact boundaries, measured rather than recalled.** Writing `src/<dir>` below as a
+placeholder, because the literal spellings are themselves the bug and the regex cannot match a `<`:
+
+| Spelling | Outcome |
+|---|---|
+| `src/<dir>/*.zip` | ✅ skipped — `*` is inside the regex char class, so the whole token matches and anything containing `*` is skipped |
+| `src/<dir>/` | ⛔ checked as bare `src/<dir>` — a **trailing slash is not consumed** |
+| `src/<dir>/*` | ⛔ also bare `src/<dir>` — a trailing `/*` is **trimmed back** before the `*` test |
+
+**A glob is safe only with a suffix after the star**, and prose about an untracked directory should
+drop the `src/` prefix entirely, which is what the regex anchors on.
 
 ⛔⛔ **The guard test was VACUOUS on its most important site and only the canary found it.** Both
 non-release publishes explain the hatch in a comment directly above the flag, so a whole-file
