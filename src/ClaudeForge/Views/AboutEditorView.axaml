@@ -132,7 +132,7 @@
                      the global settings.json?" can't tell this is it. Selectable so the path
                      can be copied. -->
                 <SelectableTextBlock Text="{Binding PrimaryConfigPath}"
-                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                      FontSize="11"
                                      Foreground="{DynamicResource AppSecondaryTextBrush}"
                                      TextWrapping="Wrap" />

@@ -52,7 +52,7 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled">
                     <TextBlock Text="{Binding CommandText}"
-                               FontFamily="Cascadia Mono,Consolas,Courier New,monospace"
+                               FontFamily="{DynamicResource AppMonoFontFamily}"
                                FontSize="12"
                                TextWrapping="NoWrap" />
                 </ScrollViewer>

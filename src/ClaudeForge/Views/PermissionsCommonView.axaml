@@ -94,7 +94,7 @@
                                        ToolTip.Tip="{Binding Kind, Converter={StaticResource ActionKindToTooltip}}" />
                         </Border>
                         <TextBlock Text="{Binding Rule}"
-                                   FontFamily="Consolas,Menlo,monospace"
+                                   FontFamily="{DynamicResource AppMonoFontFamily}"
                                    FontSize="12"
                                    VerticalAlignment="Center" />
                     </DockPanel>

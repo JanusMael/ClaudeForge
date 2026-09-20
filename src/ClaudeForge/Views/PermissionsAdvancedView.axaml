@@ -49,7 +49,7 @@
                                     CommandParameter="{Binding}"
                                     AutomationProperties.Name="{Binding StringFormat='Remove additional directory {0}'}" />
                             <TextBlock Text="{Binding}"
-                                       FontFamily="Consolas,Menlo,monospace"
+                                       FontFamily="{DynamicResource AppMonoFontFamily}"
                                        VerticalAlignment="Center" />
                         </DockPanel>
                     </DataTemplate>

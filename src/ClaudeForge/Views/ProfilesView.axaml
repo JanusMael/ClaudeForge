@@ -79,9 +79,9 @@
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
                             Named profiles store separate copies of your Claude Code settings, CLAUDE.md, and MCP server
                             definitions under
-                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="~/.claude/profiles/" />.
+                            <Run FontFamily="{DynamicResource AppMonoFontFamily}" Text="~/.claude/profiles/" />.
                             Use <Bold>Apply to CLI</Bold> to make a profile active for the Claude Code CLI.
-                            Compatible with the <Run FontFamily="Cascadia Mono,Consolas,monospace">claudectx</Run>
+                            Compatible with the <Run FontFamily="{DynamicResource AppMonoFontFamily}">claudectx</Run>
                             tool.
                         </TextBlock>
 
@@ -240,7 +240,7 @@
                         <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
                             Named profiles store separate snapshots of your
-                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="claude_desktop_config.json" />
+                            <Run FontFamily="{DynamicResource AppMonoFontFamily}" Text="claude_desktop_config.json" />
                             under the Desktop config directory. Use <Bold>Apply to Desktop</Bold> to make a
                             profile active. Claude Desktop picks up the change on its next launch.
                             Independent from CLI profiles — managed separately.

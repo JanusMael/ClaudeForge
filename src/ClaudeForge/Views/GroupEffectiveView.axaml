@@ -82,6 +82,7 @@
                                        Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                        Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                        FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
+                                       FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Margin="12,0"
@@ -117,6 +118,7 @@
                             <!-- Cell trims to width; hover pretty-prints the full JSON value. -->
                             <controls:TipCell Tip="{Binding DisplayValue, Converter={StaticResource LongValueTooltip}}">
                                 <SelectableTextBlock Text="{Binding DisplayValue}"
+                                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                                      TextTrimming="CharacterEllipsis"
                                                      VerticalAlignment="Center"
                                                      Margin="12,0" />

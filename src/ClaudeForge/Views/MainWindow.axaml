@@ -286,6 +286,7 @@
                                                                    Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                                                    Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                                                    FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
+                                                                   FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                                                    VerticalAlignment="Center"
                                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                                                    ToolTip.Tip="{Binding DangerAccessibleText}" />

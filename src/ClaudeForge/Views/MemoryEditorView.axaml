@@ -374,7 +374,7 @@
                                                            FontSize="11"
                                                            TextWrapping="NoWrap"
                                                            TextTrimming="CharacterEllipsis"
-                                                           FontFamily="Consolas, Menlo, monospace" />
+                                                           FontFamily="{DynamicResource AppMonoFontFamily}" />
                                                 <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
                                                            Text="{Binding FileCount}"
                                                            Opacity="0.8"
@@ -495,7 +495,7 @@
                                                                FontSize="11"
                                                                TextWrapping="NoWrap"
                                                                TextTrimming="CharacterEllipsis"
-                                                               FontFamily="Consolas, Menlo, monospace" />
+                                                               FontFamily="{DynamicResource AppMonoFontFamily}" />
                                                     <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
                                                                Text="{Binding FileCount}"
                                                                Opacity="0.8"

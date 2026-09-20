@@ -184,7 +184,7 @@
                                                                 <TextBox Grid.Column="0"
                                                                          Text="{Binding Key}"
                                                                          Width="180"
-                                                                         FontFamily="Consolas,Menlo,monospace"
+                                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkHookHeaderKey}" />
                                                                 <TextBox Grid.Column="1"
                                                                          Text="{Binding Value}"
@@ -207,7 +207,7 @@
                                                              Text="{Binding NewHeaderKey}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkHookHeaderKey}"
                                                              Width="180"
-                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameNewHookHeaderKey}">
                                                         <TextBox.KeyBindings>
                                                             <KeyBinding Gesture="Enter"
@@ -252,7 +252,7 @@
                                                                         CommandParameter="{Binding}"
                                                                         AutomationProperties.Name="{Binding StringFormat='{}{0}: Remove allowed environment variable'}" />
                                                                 <TextBlock Text="{Binding}"
-                                                                           FontFamily="Consolas,Menlo,monospace"
+                                                                           FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                            VerticalAlignment="Center" />
                                                             </DockPanel>
                                                         </DataTemplate>
@@ -262,7 +262,7 @@
                                                     <TextBox Text="{Binding NewAllowedEnvVar}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkHookAllowedEnvVar}"
                                                              Width="280"
-                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkHookAllowedEnvVar}">
                                                         <TextBox.KeyBindings>
                                                             <KeyBinding Gesture="Enter"
@@ -336,7 +336,7 @@
                                                                        AutomationProperties.Name="{Binding AccessibleName}">
                                                                 <TextBlock DockPanel.Dock="Left"
                                                                            Text="{Binding DisplayName}"
-                                                                           FontFamily="Consolas,Menlo,monospace"
+                                                                           FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                            MinWidth="70" />
                                                                 <TextBlock Text="{Binding Description}"
                                                                            FontSize="11"

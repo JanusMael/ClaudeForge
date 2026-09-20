@@ -1,4 +1,4 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save"
         xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
@@ -186,7 +186,7 @@
                                            FontSize="11"
                                            VerticalAlignment="Center" />
                                 <SelectableTextBlock Text="{Binding FilePath}"
-                                                     FontFamily="Consolas,Menlo,monospace"
+                                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                                      FontSize="11"
                                                      VerticalAlignment="Center"
                                                      ToolTip.Tip="{Binding FilePath}" />
@@ -271,6 +271,7 @@
                                                                    Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                                                    Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                                                    FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
+                                                                   FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                                                    VerticalAlignment="Center"
                                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                                                    ToolTip.Tip="{Binding DangerAccessibleText}" />
@@ -283,7 +284,7 @@
                                                                 AutomationProperties.Name="{Binding KindAccessibleName}">
                                                             <TextBlock Text="{Binding KindLabel}"
                                                                        Foreground="White"
-                                                                       FontFamily="Consolas,Menlo,monospace"
+                                                                       FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                        FontSize="11"
                                                                        FontWeight="SemiBold" />
                                                         </Border>

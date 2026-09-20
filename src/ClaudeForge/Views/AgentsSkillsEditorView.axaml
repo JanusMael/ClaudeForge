@@ -488,7 +488,7 @@
                              AcceptsReturn="True"
                              AcceptsTab="True"
                              TextWrapping="NoWrap"
-                             FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              MinHeight="160"
                              KeyDown="OnRawKeyDown"
                              AutomationProperties.Name="{x:Static loc:Strings.ButtonEditRawYaml}" />
@@ -508,7 +508,7 @@
                      IsVisible="{Binding IsEditing}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
-                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                     FontFamily="{DynamicResource AppMonoFontFamily}"
                      VerticalAlignment="Stretch"
                      MinHeight="300"
                      AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />

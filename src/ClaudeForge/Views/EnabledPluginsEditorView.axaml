@@ -40,7 +40,7 @@
                                       AutomationProperties.Name="{Binding PluginRef, StringFormat='Plugin enabled: {0}'}" />
                             <TextBox Text="{Binding PluginRef}"
                                      Width="480"
-                                     FontFamily="Consolas,Menlo,monospace"
+                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                      VerticalAlignment="Center"
                                      AutomationProperties.Name="{Binding PluginRef, StringFormat='Plugin reference: {0}'}" />
                             <Button Content="&#x2715;" Padding="6,2" FontSize="11"

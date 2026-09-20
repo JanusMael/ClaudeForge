@@ -76,7 +76,7 @@
                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                     <Run Text=" " />
                     <Run Text="{Binding AppVersion, Mode=OneTime}"
-                         FontFamily="Consolas,Menlo,monospace" />
+                         FontFamily="{DynamicResource AppMonoFontFamily}" />
                 </TextBlock>
                 <!-- Copyright pulled from AssemblyCopyrightAttribute via runtime
                      reflection in AboutDialog.axaml.cs.  Hidden via

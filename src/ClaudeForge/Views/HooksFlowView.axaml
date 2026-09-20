@@ -45,7 +45,7 @@
                             AutomationProperties.Name="{x:Static loc:Strings.AutoNameZoomOut}" />
                     <TextBlock x:Name="ZoomReadout" Text="100%" Width="48"
                                TextAlignment="Center" VerticalAlignment="Center"
-                               FontFamily="Consolas,Menlo,monospace" />
+                               FontFamily="{DynamicResource AppMonoFontFamily}" />
                     <Button Content="+" Click="OnZoomIn" Width="30" Padding="0"
                             Background="Transparent"
                             ToolTip.Tip="{x:Static loc:Strings.AutoNameZoomIn}"

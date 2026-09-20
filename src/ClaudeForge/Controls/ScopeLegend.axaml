@@ -56,7 +56,7 @@
             <TextBlock Grid.Row="1" Grid.Column="1"
                        Text="{Binding #LegendRoot.Items[0].Path}"
                        VerticalAlignment="Center"
-                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+                       FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11" />
             <TextBlock Grid.Row="1" Grid.Column="2"
                        Text="{Binding #LegendRoot.Items[0].Meaning}"
                        VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
@@ -72,7 +72,7 @@
             <TextBlock Grid.Row="2" Grid.Column="1"
                        Text="{Binding #LegendRoot.Items[1].Path}"
                        VerticalAlignment="Center"
-                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+                       FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11" />
             <TextBlock Grid.Row="2" Grid.Column="2"
                        Text="{Binding #LegendRoot.Items[1].Meaning}"
                        VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
@@ -88,7 +88,7 @@
             <TextBlock Grid.Row="3" Grid.Column="1"
                        Text="{Binding #LegendRoot.Items[2].Path}"
                        VerticalAlignment="Center"
-                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+                       FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11" />
             <TextBlock Grid.Row="3" Grid.Column="2"
                        Text="{Binding #LegendRoot.Items[2].Meaning}"
                        VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />
@@ -104,7 +104,7 @@
             <TextBlock Grid.Row="4" Grid.Column="1"
                        Text="{Binding #LegendRoot.Items[3].Path}"
                        VerticalAlignment="Center"
-                       FontFamily="Consolas,Menlo,monospace" FontSize="11" />
+                       FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11" />
             <TextBlock Grid.Row="4" Grid.Column="2"
                        Text="{Binding #LegendRoot.Items[3].Meaning}"
                        VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12" />

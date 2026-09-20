@@ -108,7 +108,7 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Text="{Binding UserSettingsPath}"
-                               FontFamily="Consolas,Menlo,monospace"
+                               FontFamily="{DynamicResource AppMonoFontFamily}"
                                FontSize="11"
                                Foreground="{DynamicResource AppSecondaryTextBrush}"
                                AutomationProperties.Name="{Binding UserSettingsPath, StringFormat='User settings file: {0}'}" />
@@ -128,12 +128,12 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Text="{Binding ProjectClaudeDirPath}"
-                               FontFamily="Consolas,Menlo,monospace"
+                               FontFamily="{DynamicResource AppMonoFontFamily}"
                                FontSize="11"
                                Foreground="{DynamicResource AppSecondaryTextBrush}"
                                AutomationProperties.Name="{Binding ProjectClaudeDirPath, StringFormat='Project Claude folder: {0}'}" />
                     <TextBlock Text="{Binding UserSettingsPath}"
-                               FontFamily="Consolas,Menlo,monospace"
+                               FontFamily="{DynamicResource AppMonoFontFamily}"
                                FontSize="11"
                                Foreground="{DynamicResource AppSecondaryTextBrush}"
                                AutomationProperties.Name="{Binding UserSettingsPath, StringFormat='User settings file: {0}'}" />

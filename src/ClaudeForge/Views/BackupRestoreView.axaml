@@ -533,11 +533,11 @@
                         <StackPanel Spacing="4">
                             <TextBlock Text="{x:Static loc:Strings.LabelMsixVirtualisedPath}" FontWeight="SemiBold" />
                             <TextBlock Text="{Binding MsixStatus.VirtualisedPath}"
-                                       FontFamily="Consolas,Courier New,monospace" />
+                                       FontFamily="{DynamicResource AppMonoFontFamily}" />
                             <TextBlock Text="{x:Static loc:Strings.LabelMsixStandardPath}" FontWeight="SemiBold"
                                        Margin="0,6,0,0" />
                             <TextBlock Text="{Binding MsixStatus.StandardPath}"
-                                       FontFamily="Consolas,Courier New,monospace" />
+                                       FontFamily="{DynamicResource AppMonoFontFamily}" />
                         </StackPanel>
                     </Border>
 

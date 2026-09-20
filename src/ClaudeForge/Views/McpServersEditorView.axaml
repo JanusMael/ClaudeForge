@@ -153,7 +153,7 @@
                                                        AutomationProperties.Name="{Binding AccessibleName}">
                                                 <TextBlock DockPanel.Dock="Left"
                                                            Text="{Binding Value}"
-                                                           FontFamily="Consolas,Menlo,monospace"
+                                                           FontFamily="{DynamicResource AppMonoFontFamily}"
                                                            MinWidth="50" />
                                                 <TextBlock Text="{Binding Description}"
                                                            FontSize="11"

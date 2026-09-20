@@ -116,6 +116,7 @@
                                Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                VerticalAlignment="Center"
                                AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                ToolTip.Tip="{Binding DangerAccessibleText}" />
@@ -276,6 +277,7 @@
                     <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                VerticalAlignment="Top" />
                     <TextBlock Text="{Binding Danger.Explanation}"
                                FontSize="11"
@@ -433,7 +435,7 @@
                                                          Text="{Binding Text}"
                                                          PlaceholderText="{Binding InputWatermark}"
                                                          AcceptsReturn="{Binding IsCommandKind}"
-                                                         FontFamily="Consolas, Menlo, monospace"
+                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                          FontSize="12"
                                                          MinWidth="240" />
                                             </Grid>
@@ -461,7 +463,7 @@
                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkMcpMatchPayload}"
                                              Text="{Binding NewText}"
                                              PlaceholderText="{x:Static loc:Strings.WatermarkMcpMatchPayload}"
-                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                              FontSize="12"
                                              MinWidth="240">
                                         <TextBox.KeyBindings>
@@ -517,7 +519,7 @@
                                                              AutomationProperties.Name="{Binding PrimaryValueWatermark}"
                                                              Text="{Binding PrimaryValue}"
                                                              PlaceholderText="{Binding PrimaryValueWatermark}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12"
                                                              MinWidth="240" />
                                                 </Grid>
@@ -541,7 +543,7 @@
                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplaceRef}"
                                                                  Text="{Binding Ref}"
                                                                  PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceRef}"
-                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                  FontSize="12" />
                                                         <TextBlock Grid.Row="2" Grid.Column="0"
                                                                    Text="{x:Static loc:Strings.LabelMarketplacePath}"
@@ -551,7 +553,7 @@
                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplacePath}"
                                                                  Text="{Binding Path}"
                                                                  PlaceholderText="{x:Static loc:Strings.WatermarkMarketplacePath}"
-                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                  FontSize="12" />
                                                     </Grid>
                                                 </Expander>
@@ -583,13 +585,13 @@
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderName}"
                                                                                     Text="{Binding Key}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                             <TextBox Grid.Column="2"
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderValue}"
                                                                                     Text="{Binding Value}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                         </Grid>
                                                                     </DockPanel>
@@ -609,13 +611,13 @@
                                                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderName}"
                                                                          Text="{Binding NewHeaderName}"
                                                                          PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
-                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                          FontSize="12" />
                                                                 <TextBox Grid.Column="2"
                                                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderValue}"
                                                                          Text="{Binding NewHeaderValue}"
                                                                          PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
-                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                          FontSize="12">
                                                                     <TextBox.KeyBindings>
                                                                         <KeyBinding Gesture="Enter"
@@ -655,7 +657,7 @@
                                              AutomationProperties.Name="{Binding NewPrimaryValueWatermark}"
                                              Text="{Binding NewPrimaryValue}"
                                              PlaceholderText="{Binding NewPrimaryValueWatermark}"
-                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                              FontSize="12"
                                              MinWidth="240">
                                         <TextBox.KeyBindings>
@@ -687,7 +689,7 @@
                                      AutomationProperties.Name="{x:Static loc:Strings.AutoNameRawJsonEditor}"
                                      AcceptsReturn="True"
                                      TextWrapping="NoWrap"
-                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                      FontSize="12"
                                      MinHeight="80"
                                      MaxHeight="240"
@@ -742,7 +744,7 @@
                                                     <TextBox Text="{Binding PluginId}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginId}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12"
                                                              MinWidth="280" />
                                                 </DockPanel>
@@ -769,7 +771,7 @@
                                                                         <TextBox Text="{Binding ServerName}"
                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
                                                                                 PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
-                                                                                FontFamily="Consolas, Menlo, monospace"
+                                                                                FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                 FontSize="12"
                                                                                 MinWidth="220" />
                                                                     </DockPanel>
@@ -795,13 +797,13 @@
                                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigKey}"
                                                                                             Text="{Binding Key}"
                                                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
-                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                             FontSize="12" />
                                                                                         <TextBox Grid.Column="2"
                                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigValue}"
                                                                                             Text="{Binding Value}"
                                                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
-                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                             FontSize="12" />
                                                                                     </Grid>
                                                                                 </DockPanel>
@@ -821,13 +823,13 @@
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigKey}"
                                                                                     Text="{Binding NewConfigKey}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                             <TextBox Grid.Column="2"
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigValue}"
                                                                                     Text="{Binding NewConfigValue}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12">
                                                                                 <TextBox.KeyBindings>
                                                                                     <KeyBinding Gesture="Enter"
@@ -852,7 +854,7 @@
                                                     <TextBox Text="{Binding NewServerName}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12">
                                                         <TextBox.KeyBindings>
                                                             <KeyBinding Gesture="Enter"
@@ -874,7 +876,7 @@
                                 <TextBox Text="{Binding NewPluginId}"
                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginId}"
                                          PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
-                                         FontFamily="Consolas, Menlo, monospace"
+                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                          FontSize="12">
                                     <TextBox.KeyBindings>
                                         <KeyBinding Gesture="Enter"
