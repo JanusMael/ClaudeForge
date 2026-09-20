@@ -112,11 +112,22 @@ jobs:
       # suite — one IL2026 in a JSON helper broke the Release publish for three phases while
       # thousands of Debug tests passed over it — and this job only ever covered the first app,
       # so the second could have shipped the same class of break with CI green.
+      #
+      # ⭐ -p:AllowProjectReferencePublish=true IS THE NAMED ESCAPE HATCH, and this job is the
+      # reason it exists (plans/00003, Phase D step D3). GuardShippingPublishUsesPackages fails
+      # any Release publish of a shipping app that is not in package mode, because the release
+      # claimed package mode in a comment for the life of the feature while every RID it ever cut
+      # used ProjectReference. This job must NOT be in package mode: it has no feed credentials,
+      # and a fork must run it green. ⚠ The hatch is recorded rather than silent — the guard
+      # prints "ESCAPE HATCH USED" at high importance into this job's log. What is measured here
+      # is trim analysis of THIS commit's source, which is what a fork can check and what a
+      # package-mode publish of a pinned older version could not tell you.
       - name: Publish ClaudeForge (Release, linux-x64)
         run: >
           dotnet publish src/ClaudeForge
           -c Release -r linux-x64
           --self-contained true
+          -p:AllowProjectReferencePublish=true
           -o /tmp/trim-check-claudeforge
 
   # ── The package canary ───────────────────────────────────────────────────────

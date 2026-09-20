@@ -123,9 +123,19 @@ if (-not $SkipPublish) {
     # -p:RunResxKeyGuard=false skips the dev/CI unused-resx-key guard during publish
     # (see Publish-Rid.ps1 / Directory.Build.targets) — the inline guard task can flake
     # under concurrent-build / temp-dir contention and isn't needed for the binary.
+    #
+    # ⭐ -p:AllowProjectReferencePublish=true is the NAMED escape hatch from
+    # GuardShippingPublishUsesPackages (plans/00003, Phase D step D3). That guard fails any
+    # Release publish of a shipping app that is not in package mode, because the release claimed
+    # package mode in a comment while every RID it ever cut used ProjectReference. This smoke
+    # test deliberately takes the other path: it boots THIS working tree's code to check the
+    # binary starts, and pinning it to the published package version would smoke-test a release
+    # that has already shipped instead. ⚠ The hatch is not silent — the guard prints
+    # "ESCAPE HATCH USED" at high importance, so this run says which mode produced its binary.
     & dotnet publish $projectPath `
         -c Release -r $Rid --nologo -v minimal `
-        -p:RunResxKeyGuard=false
+        -p:RunResxKeyGuard=false `
+        -p:AllowProjectReferencePublish=true
     if ($LASTEXITCODE -ne 0) {
         Write-Error "[smoke] publish failed (exit $LASTEXITCODE) — boot smoke aborted."
         exit 1

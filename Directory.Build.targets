@@ -149,6 +149,57 @@
     </Target>
 
     <!--
+      ⛔ THE RELEASE HAD NEVER ONCE BEEN BUILT FROM THE SHARED PACKAGES, and two comments said it
+      was. `.github/workflows/ci.yml` and `scripts/package-canary.ps1` both called package mode
+      "the mode the release publishes from" for the entire life of the feature; nothing set the
+      switch, so every RID of every release ever cut used ProjectReference. plans/00003 exists for
+      that defect, and this target is its Phase D guard. The claim used to live in a comment, and
+      a comment is not a guard — so it is a build error now.
+
+      ⚠ IT FIRES ON A LOCAL PUBLISH TOO, deliberately. `src/publish/publish.ps1` is the canonical
+      entry point and the same script a developer runs; guarding CI alone would rebuild the exact
+      local-versus-released divergence this plan closes.
+
+      ⭐ THE HATCH IS NAMED AND RECORDED, never silent. `AllowProjectReferencePublish=true` takes
+      the other path on purpose — the CI trim gate and the boot smoke both want a publish without
+      feed credentials — and when it is used this target says so at high importance, so the line
+      lands in the publish log `Publish-Rid.ps1` tees and in the provenance record it writes
+      beside the archives. A publish that quietly took the other path while the release claimed
+      package mode is this plan's founding defect pointed the other way.
+
+      ⚠ A Message, not a Warning, and that is not a style choice. `Directory.Build.props` sets
+      TreatWarningsAsErrors, and a hatch whose own record can be escalated into the failure it
+      exists to avoid is not a hatch. Importance="high" survives the default verbosity that
+      `Publish-Rid.ps1` and the CI logs run at.
+
+      ⛔ PACKAGE MODE ANNOUNCES ITSELF TOO, and that line is not decoration. A guard that is
+      SILENT on the good path leaves the log proving the mode only by the ABSENCE of the hatch
+      line — which is exactly what a log looks like when the guard never ran at all, when the
+      target was renamed, or when the condition stopped selecting this project. Absence is not
+      evidence, and this repo has paid for treating it as evidence before. So every publish of a
+      shipping app now states its mode positively, from any entry point including a bare
+      `dotnet publish`, and the archived log can be read without re-deriving anything.
+
+      ⚠ SCOPE IS DERIVED, NOT DECLARED. Every project under src/ is `Library` except the app, so
+      OutputType plus `IsPackable != true` selects exactly the shipping apps — and picks up a
+      second app automatically. An opt-in property would have to be remembered, and a new app that
+      forgot it would publish unguarded, silently, which is the failure mode this file keeps
+      meeting. Debug is excluded because a Debug publish ships nothing.
+    -->
+    <Target Name="GuardShippingPublishUsesPackages"
+            BeforeTargets="PrepareForPublish"
+            Condition="'$(Configuration)' == 'Release' And '$(OutputType)' != 'Library' And '$(IsPackable)' != 'true'">
+        <Error Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' != 'true'"
+               Text="Release publish of $(MSBuildProjectName) with UseSharedPackages unset. The release must be built from the eleven Bennewitz.Ninja.* packages, not from ProjectReference: that claim lived in two comments and was false for every release ever cut (plans/00003). Pass -p:UseSharedPackages=true — SharedPackageVersion is the committed pin in the root Directory.Build.props, so it needs no other input. If this publish deliberately wants project references, as the CI trim gate and the boot smoke do because neither has feed credentials, pass -p:AllowProjectReferencePublish=true; it is recorded by name in the publish log and the provenance record. See plans/00003, Phase D step D3." />
+        <Message Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' == 'true'"
+                 Importance="high"
+                 Text="ESCAPE HATCH USED: AllowProjectReferencePublish=true. $(MSBuildProjectName) is publishing $(Configuration) from ProjectReference, NOT from the Bennewitz.Ninja.* packages. Recorded deliberately — plans/00003 D3 requires a departure from package mode to name itself. A shipping release must never take this path." />
+        <Message Condition="'$(UseSharedPackages)' == 'true'"
+                 Importance="high"
+                 Text="PACKAGE MODE: $(MSBuildProjectName) is publishing $(Configuration) from the Bennewitz.Ninja.* packages at $(SharedPackageVersion). Stated positively on purpose — see the note above this target." />
+    </Target>
+
+    <!--
       Strip non-distributable files from the publish output.
   
       The publish output directory is the authoritative list of what goes into the

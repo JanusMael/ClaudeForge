@@ -32,7 +32,7 @@
 | Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
-| ⚠ Awaiting | ⛔ **NOT the maintainer yet — `A5` is stale and the tag must move.** On 2026-09-18 this cell said the maintainer was the only thing left; that was wrong, because CI was red and nobody had looked. Now: CI green at `8692b20`, `C0` re-passed for real at `0de0f4e`, `C1` gates 1–2 re-proven. ⛔ **`A5` must re-run on the final commit**, and **`packages-v2026.3.918` currently points at `b373226`, which has RED CI** — it is local-only and must be deleted and recreated. ⓘ `F12` FIXED on both branches; `F11` stays open by an earlier locked decision |
+| ⚠ Awaiting | **Nothing from the maintainer — the remaining work is the agent's.** ⓘ This cell twice carried a stale blocker. It said the maintainer was the only thing left while CI was red; then it said `packages-v2026.3.918` was local-only at `b373226` with red CI and had to be deleted and recreated. **Both are now false**: the tag is on `origin` at `19f3885`, `release-packages.yml` succeeded, and all eleven are on the feed at `2026.3.918`. ⛔ **The lesson is that a blocker cell outlives its blocker** — reconcile it against `git ls-remote --tags origin` and `gh run list`, never read it forward. ▶ Next is **D4**, then D5 and D6. ⓘ `F12` FIXED on both branches; `F11` stays open by an earlier locked decision |
 
 ---
 
@@ -121,8 +121,8 @@ step below is finally verifiable.
 |---|---|---|
 | **D1** — publish path selects package mode at `2026.3.918` | ✅ **DONE** | `source` in every `.nupkg.metadata` names the feed. Verified in CI: **11/11 from `nuget.pkg.github.com`** |
 | **D2** — `packages: read` in `release.yml` | ✅ **DONE** | The `feed-restore` job restores from the feed with exactly that scope, on every push |
-| **D3** — build-time guard + recorded escape hatch | ◀ **NEXT** | Drop package mode deliberately and watch it redden. ⚠ Must fire on a **local** publish too |
-| **D4** — full suite and trim gate at the published version | ⏸ | Green **with no local feed** — ⛔ and with the global cache **purged**, see below |
+| **D3** — build-time guard + recorded escape hatch | ✅ **DONE** | `GuardShippingPublishUsesPackages` fails a bare Release publish (exit 1, observed); the hatch publishes clean and prints `ESCAPE HATCH USED`; package mode prints `PACKAGE MODE: … at 2026.3.918`; a Release **build** stays silent. 4/4 predicted |
+| **D4** — full suite and trim gate at the published version | ◀ **NEXT** | Green **with no local feed** — ⛔ and with the global cache **purged**, see below |
 | **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ⏸ | They describe what D1–D3 made true |
 | **D6** — cut the app release | ⏸ | The shipped artifact passes D3 |
 
@@ -144,6 +144,32 @@ source mapping means those ids are never requested; the canary never meets it, b
 the folder by packing. The script now creates it **empty**, which satisfies NuGet, can supply
 nothing, and makes the provenance conclusion stronger — and it refuses outright if that folder
 holds any package at the pinned version.
+
+**What D3 shipped:** `GuardShippingPublishUsesPackages` in the **root** `Directory.Build.targets`,
+hooked `BeforeTargets="PrepareForPublish"` and scoped by `OutputType != Library` plus
+`IsPackable != true` — which selects exactly the shipping apps and picks up a second app without
+anyone remembering to opt it in. The hatch is `-p:AllowProjectReferencePublish=true`, declared by
+the two publishes that legitimately want project references (`ci.yml`'s trim gate and
+`Smoke-PublishedBinary.ps1`, neither of which has feed credentials, and the trim gate must stay
+green on a fork). `release.yml` now uploads `src/dist/logs/*.log` as `provenance-<host>`,
+`if: always()` and 90-day retention, so the record outlives the run that made it.
+
+⛔ **PACKAGE MODE ANNOUNCES ITSELF, and that line is load-bearing rather than decorative.** The
+first draft was silent on the good path, which meant an archived log proved the release's mode
+only by the **absence** of the hatch line — and that is exactly what a log looks like when the
+target was renamed, when its condition stopped selecting the project, or when the guard never ran
+at all. Absence is not evidence. Every shipping publish now states its mode positively, from any
+entry point including a bare `dotnet publish`.
+
+⚠ **A `Message`, not a `Warning`.** `Directory.Build.props` sets `TreatWarningsAsErrors`; a hatch
+whose own record can be escalated into the failure it exists to avoid is not a hatch.
+
+⛔⛔ **The guard test was VACUOUS on its most important site and only the canary found it.** Both
+non-release publishes explain the hatch in a comment directly above the flag, so a whole-file
+search matched the **prose** — the assertion passed with the live flag deleted from `ci.yml`'s
+publish command, which is the one thing it exists to catch. Predicted 4 reds, got 3; the missing
+one was the tell. Comment lines are stripped now, and the re-run produced 4/4 with the right
+names. ⓘ Suite **3,551 · 0 · 13**, predicted before the run as 3,545 + 6.
 
 ⚠ **The frozen plan contradicts itself on the pin** — a committed pin in a props file is accepted
 in *Decisions* (line 87) and rejected in *Alternatives dismissed* (line 104). The pin is operative:

@@ -210,6 +210,31 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      # ⭐ THIS IS THE ARCHIVED PROVENANCE, and plans/00003 Phase D step D3 is why it exists.
+      # There is NO artifact-level tell to find afterwards: `Directory.Build.targets` sets
+      # CopyDocumentationFilesFromPackages in package mode specifically to erase the one known
+      # difference between a PackageReference and a ProjectReference output, and the publish
+      # strip removes *.xml either way. So the shipped zip cannot be inspected to learn which
+      # mode built it — the record has to be kept at build time, which is what these logs are.
+      #
+      # GuardShippingPublishUsesPackages prints the mode into every publish at high importance:
+      # "PACKAGE MODE: ... at <version>" on the intended path, "ESCAPE HATCH USED: ..." when
+      # -p:AllowProjectReferencePublish=true deliberately took the other one. `Publish-Rid.ps1`
+      # tees the publish stream to src/dist/logs/, so the line lands here either way.
+      #
+      # ⚠ if: always() on purpose — a FAILED publish is when this evidence is worth most, and a
+      # step that only archives on success is the one that never has the log you need. ⚠ These
+      # are workflow artifacts, never release assets: `gh release create` names its six files
+      # explicitly, so nothing here can reach the published release by accident.
+      - name: Upload publish provenance (Windows)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-windows
+          path: src/dist/logs/*.log
+          retention-days: 90
+          if-no-files-found: error
+
   publish-linux:
     name: Publish (Linux)
     needs: test
@@ -241,6 +266,16 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      # The archived provenance for this host's RIDs — see the long note in the Windows job.
+      - name: Upload publish provenance (Linux)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-linux
+          path: src/dist/logs/*.log
+          retention-days: 90
+          if-no-files-found: error
+
   publish-macos:
     name: Publish (macOS)
     needs: test
@@ -270,6 +305,16 @@ jobs:
           name: dist-macos
           path: src/dist/*.tar.gz
           retention-days: 1
+          if-no-files-found: error
+
+      # The archived provenance for this host's RIDs — see the long note in the Windows job.
+      - name: Upload publish provenance (macOS)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-macos
+          path: src/dist/logs/*.log
+          retention-days: 90
           if-no-files-found: error
 
   # ── Create the GitHub Release ───────────────────────────────────────────────
