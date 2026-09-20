@@ -167,11 +167,73 @@ public sealed class BuildFilePathIntegrityTests
             + "without checking anything.");
     }
 
+    /// <summary>
+    /// Every repo-relative <c>src/</c> or <c>tests/</c> path hardcoded in a build file resolves
+    /// to something a <b>fresh checkout</b> actually has.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>"Exists" means <i>git tracks it</i>, not <i>it is on this disk</i>.</b> For three
+    /// separate incidents this guard asked the developer's filesystem, which is the one machine
+    /// where the answer is always yes. A path naming a directory git does not track passes here
+    /// and fails on every CI runner, and the gap is invisible locally precisely because the
+    /// local run is the thing that is wrong.
+    /// </para>
+    /// <para>
+    /// The most recent, 2026-09-20: a comment in <c>release.yml</c> named <c>src/dist/logs/</c>,
+    /// a gitignored publish output that is full of files on any machine that has published and
+    /// absent everywhere else. <c>a6fd749</c> was green locally at 3,551 tests and reddened
+    /// <b>all four</b> CI test jobs on this one assertion.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Emptiness was the wrong diagnosis.</b> The mitigation this replaces was
+    /// <c>find src tests -type d -empty</c>, and it cannot see this class of defect at all:
+    /// <c>src/dist/logs/</c> is not empty locally, it is <i>untracked</i>. Emptiness is only one
+    /// of the ways a directory fails to survive a clone, and it is not the one that keeps
+    /// happening.
+    /// </para>
+    /// <para>
+    /// The check is the <b>conjunction</b> — on disk <i>and</i> tracked — so it is strictly
+    /// stronger than what it replaces. Dropping the filesystem half would weaken it: a path
+    /// deleted locally but still in the index would start passing. Keeping both also closes a
+    /// Windows-only hole for free, because <see cref="Directory.Exists"/> is case-insensitive
+    /// there and git's index never is, so a path whose casing only works on Windows is now
+    /// caught on Windows.
+    /// </para>
+    /// <para>
+    /// <b>Three deliberate quirks decide what becomes a candidate</b>, and two of them read
+    /// backwards:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><description>
+    ///   <c>src/dist/*.zip</c> is <b>skipped entirely</b>. <c>*</c> is inside the regex
+    ///   character class, so it is consumed as part of a segment, the candidate still contains
+    ///   a star after glob trimming, and it is discarded as a pattern.
+    ///   </description></item>
+    ///   <item><description>
+    ///   <c>src/dist/</c> is checked as bare <c>src/dist</c>. The trailing slash is never
+    ///   matched in the first place, because the regex requires a segment after each separator
+    ///   — so writing the slash does <b>not</b> mark the name as a directory and does
+    ///   <b>not</b> exempt it.
+    ///   </description></item>
+    ///   <item><description>
+    ///   <c>src/dist/*</c> is <b>trimmed back</b> to bare <c>src/dist</c> and then checked,
+    ///   unlike the first case, which looks almost identical.
+    ///   </description></item>
+    /// </list>
+    /// <para>
+    /// The rule that falls out: a glob is only invisible to this guard when something follows
+    /// the star <i>inside the same segment</i>. <c>src/dist</c>, <c>src/dist/</c> and
+    /// <c>src/dist/*</c> are one and the same check.
+    /// </para>
+    /// </remarks>
     [TestMethod]
     public void EveryHardcodedRepoPathInBuildFilesExists()
     {
         string repoRoot = FindRepoRoot();
-        List<string> missing = [];
+        (HashSet<string> trackedFiles, HashSet<string> trackedDirectories) = GitTrackedPaths(repoRoot);
+
+        List<string> broken = [];
         int checkedCount = 0;
 
         foreach (string file in ScannedFiles(repoRoot))
@@ -195,6 +257,17 @@ public sealed class BuildFilePathIntegrityTests
                         candidate = candidate[..candidate.LastIndexOf('/')];
                     }
 
+                    // A TRAILING elision has already lost its dots to the punctuation trim
+                    // above, so `src/...` arrives here as `src/`. Normalise the separator away:
+                    // `Directory.Exists` cannot tell `src/` from `src`, but git's index can, and
+                    // it lists no entry under that spelling. Without this the git half would
+                    // redden five accurate prose references that name an area, not a path.
+                    candidate = candidate.TrimEnd('/');
+                    if (candidate.Length == 0)
+                    {
+                        continue;
+                    }
+
                     // A '*' anywhere else is a pattern we cannot resolve to one path.
                     if (candidate.Contains('*', StringComparison.Ordinal))
                     {
@@ -216,10 +289,23 @@ public sealed class BuildFilePathIntegrityTests
                     }
 
                     checkedCount++;
+
                     string absolute = Path.Combine(repoRoot, candidate.Replace('/', Path.DirectorySeparatorChar));
-                    if (!File.Exists(absolute) && !Directory.Exists(absolute))
+                    bool onDisk = File.Exists(absolute) || Directory.Exists(absolute);
+
+                    // Ordinal on purpose: git's index is case-sensitive on every platform, and
+                    // matching it loosely here would reintroduce the Windows-only pass.
+                    bool inGit = trackedFiles.Contains(candidate) || trackedDirectories.Contains(candidate);
+
+                    if (!onDisk)
                     {
-                        missing.Add($"{relativeFile}: '{candidate}'");
+                        broken.Add($"{relativeFile}: '{candidate}' — nothing at that path");
+                    }
+                    else if (!inGit)
+                    {
+                        broken.Add(
+                            $"{relativeFile}: '{candidate}' — present here, but git tracks nothing "
+                            + "at or under it, so a fresh checkout does not have it");
                     }
                 }
             }
@@ -231,12 +317,18 @@ public sealed class BuildFilePathIntegrityTests
             + "regex no longer matches how these files are written, or the paths moved out of "
             + "them — either way this test is no longer guarding anything.");
 
+        // ONE list, not two assertions. Two would mask each other: the second reason could
+        // never be reported while the first still had an entry.
         Assert.IsTrue(
-            missing.Count == 0,
-            $"{missing.Count} hardcoded path(s) in build files point at something that no longer "
-            + "exists. A stale path here fails silently — a workflow trigger simply stops firing, "
-            + "or a scheduled script breaks at an hour nobody is watching:\n  "
-            + string.Join("\n  ", missing.Distinct()));
+            broken.Count == 0,
+            $"{broken.Count} hardcoded path(s) in build files point at something a fresh checkout "
+            + "does not have. A stale path here fails silently — a workflow trigger simply stops "
+            + "firing, or a scheduled script breaks at an hour nobody is watching:\n  "
+            + string.Join("\n  ", broken.Distinct())
+            + "\n\n'present here, but git tracks nothing' means the path only survives on this "
+            + "machine: either it is gitignored build output (fix the prose, not this guard), or "
+            + "it is a new file nobody has `git add`ed yet. `git check-ignore -v <path>` says "
+            + "which.");
     }
 
     /// <summary>
@@ -389,13 +481,14 @@ public sealed class BuildFilePathIntegrityTests
             $"Found no .cs files under src/ or tests/ in '{repoRoot}'. This test would pass "
             + "without checking anything.");
 
-        (int exitCode, string output) = RunGitCheckIgnore(repoRoot, sources);
+        (int exitCode, string output, string error) = RunGit(repoRoot, "check-ignore --stdin -z", sources);
 
         // `git check-ignore --stdin` exits 0 when it matched something, 1 when it matched
         // nothing, and 128 on a real failure. Only 0 and 1 are answers.
         Assert.IsTrue(
             exitCode is 0 or 1,
-            $"git check-ignore could not run (exit {exitCode}), so this guard checked nothing:\n{output}");
+            $"git check-ignore could not run (exit {exitCode}), so this guard checked nothing:\n"
+            + output + error);
 
         List<string> ignored = [.. output
             .Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
@@ -409,8 +502,62 @@ public sealed class BuildFilePathIntegrityTests
     }
 
     /// <summary>
-    /// Ask git which of <paramref name="relativePaths"/> are ignored, feeding them on stdin so the
-    /// command-line length limit cannot truncate the list silently.
+    /// Everything git has in its index for this worktree: the tracked files, and every directory
+    /// prefix implied by them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>One invocation, matched in memory.</b> Asking git per candidate, with
+    /// <c>ls-files --error-unmatch</c>, is several hundred process launches on Windows for a
+    /// single test — which is how a guard ends up deleted or disabled for being slow.
+    /// </para>
+    /// <para>
+    /// Git has no concept of an empty directory, so the directory set has to be <i>derived</i>
+    /// from the file list: <c>src/dist</c> counts as present exactly when git tracks some file
+    /// beneath it. That derivation is the whole point — it is what makes a gitignored build
+    /// output stuffed with local files read as absent.
+    /// </para>
+    /// <para>
+    /// <c>-z</c> keeps git from quoting names it considers unusual, so the paths come back
+    /// byte-for-byte as they sit in the index. They always use forward slashes, on every
+    /// platform, which is the same spelling the candidates are normalised to.
+    /// </para>
+    /// </remarks>
+    private static (HashSet<string> Files, HashSet<string> Directories) GitTrackedPaths(string repoRoot)
+    {
+        (int exitCode, string output, string error) = RunGit(repoRoot, "ls-files -z", stdinPaths: null);
+
+        // Loud, never silent: a guard that decides "no git, nothing to check" is the decorative
+        // protection this whole file exists to avoid.
+        Assert.IsTrue(
+            exitCode == 0,
+            $"`git ls-files` could not run (exit {exitCode}), so this guard checked nothing:\n"
+            + output + error);
+
+        HashSet<string> files = new(StringComparer.Ordinal);
+        HashSet<string> directories = new(StringComparer.Ordinal);
+
+        foreach (string path in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
+        {
+            files.Add(path);
+
+            for (int slash = path.IndexOf('/'); slash >= 0; slash = path.IndexOf('/', slash + 1))
+            {
+                directories.Add(path[..slash]);
+            }
+        }
+
+        Assert.IsTrue(
+            files.Count > 0,
+            $"`git ls-files` reported no tracked files in '{repoRoot}'. Every path would be "
+            + "reported as missing, so this is a broken guard rather than a broken repository.");
+
+        return (files, directories);
+    }
+
+    /// <summary>
+    /// Run git in <paramref name="repoRoot"/>, optionally feeding <paramref name="stdinPaths"/> on
+    /// stdin so the command-line length limit cannot truncate a long path list silently.
     /// </summary>
     /// <remarks>
     /// ⚠ <b><c>-z</c> is load-bearing on Windows, not tidiness.</b> Without it the paths are
@@ -421,10 +568,10 @@ public sealed class BuildFilePathIntegrityTests
     /// silently</b> and the guard would have reported all-clear. NUL separation removes the
     /// question, and also stops git quoting names it thinks are unusual.
     /// </remarks>
-    private static (int ExitCode, string Output) RunGitCheckIgnore(
-        string repoRoot, IReadOnlyList<string> relativePaths)
+    private static (int ExitCode, string Output, string Error) RunGit(
+        string repoRoot, string arguments, IReadOnlyList<string>? stdinPaths)
     {
-        System.Diagnostics.ProcessStartInfo info = new("git", "check-ignore --stdin -z")
+        System.Diagnostics.ProcessStartInfo info = new("git", arguments)
         {
             WorkingDirectory = repoRoot,
             RedirectStandardInput = true,
@@ -438,7 +585,7 @@ public sealed class BuildFilePathIntegrityTests
             using System.Diagnostics.Process process = System.Diagnostics.Process.Start(info)
                 ?? throw new InvalidOperationException("git did not start.");
 
-            foreach (string path in relativePaths)
+            foreach (string path in stdinPaths ?? [])
             {
                 // NOT WriteLine: see the -z note above.
                 process.StandardInput.Write(path);
@@ -447,15 +594,18 @@ public sealed class BuildFilePathIntegrityTests
 
             process.StandardInput.Close();
 
+            // stdout is drained to completion first and deliberately: `ls-files` writes far more
+            // than a pipe buffer holds, while stderr stays empty on every path that returns an
+            // answer rather than an error.
             string output = process.StandardOutput.ReadToEnd();
             string error = process.StandardError.ReadToEnd();
             process.WaitForExit(milliseconds: 60_000);
 
-            return (process.ExitCode, process.ExitCode is 0 or 1 ? output : output + error);
+            return (process.ExitCode, output, error);
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            return (128, $"git could not be started: {ex.Message}");
+            return (128, string.Empty, $"git could not be started: {ex.Message}");
         }
     }
 }
