@@ -119,7 +119,28 @@ rule.
 
 ---
 
-## ▶ RESUME HERE — plans 00003, Phase D: make the release actually consume them
+## ▶ RESUME HERE — Phase D is DONE; next is Phase E (plan 00002)
+
+✅ **`v2026.3.920` is released and signed** — six assets, Windows Authenticode-signed and
+timestamped (verified by downloading both zips and reading the signature, not by trusting the
+signing script), macOS still unsigned by design. winget deliberately skipped; see the row above.
+
+▶ **Phase E is the agent's and is now unblocked**, having been sequenced behind the first release
+precisely so a Phase D failure could not have two candidate causes. Its steps are in
+[`plans/00003`](./plans/00003-release-built-from-shared-packages.md) and the work itself in
+[`plans/00002`](./plans/00002-claude-code-real-config-locations.md). ⚠ **`E4`'s package tag must fall
+on a DIFFERENT CALENDAR DAY from `2026.3.920`** — day-resolution CalVer allows one package release
+per day, and a second today would collide with an immutable version.
+
+ⓘ **`F11` (external worktrees) is now eligible**, having been parked explicitly until after the
+release rather than rejected.
+
+ⓘ **Still open and still not decided: this branch has no PR and is not merged to `main`.** `main` is
+at `v2026.3.916` and knows nothing of the package pipeline, the bundled font or Phase D.
+
+---
+
+## Done — plans 00003, Phase D: make the release actually consume them
 
 ⭐ **Phase D is the point of the entire plan.** The founding defect is that the release has never
 once been built from these packages while two comments claimed it was. They now exist, so every
@@ -134,6 +155,7 @@ step below is finally verifiable.
 | **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ✅ **DONE** | Both now say the clause was false when written, name the guard that defends it, and state that neither touches the feed — the `published-version` job does |
 | ⛔ **D6a** — the release publish creates `artifacts/localfeed` **empty** | ✅ **DONE** | **Release attempt 1 died here, on all three publish hosts at once.** A configured local NuGet source that does not exist is a hard `NU1301`, not a skipped one. `verify-feed-restore.ps1` has carried the identical block since D1, and its comment even says *other jobs never see this*: development mode never requests these ids, and the canary creates the folder by packing into it. The release publish did neither — and it is the only path whose **first clean-runner execution IS the release**. Fixed in `Publish-Rid.ps1` rather than `release.yml`, so a local publish on a fresh clone behaves the same |
 | ⛔⛔ **D6b** — the publish hands NuGet the feed **credentials** | ✅ **DONE** | **Release attempt 2 died here.** `packages: read` only makes the token *allowed* to read the feed; NuGet still has to be handed it. `ci.yml` sets `NuGetPackageSourceCredentials_github` on every step that touches the feed; `release.yml` set it on none, so the restore reached the feed and **401'd**. ⭐ **The founding defect's own shape, repeating**: plan 00003 opens by naming *"two independent halves, both missing"* — D2 added the permission half, verified it, and left the credential half unwritten |
+| ⓘ **winget — DELIBERATELY SKIPPED for `2026.3.920`** | ✅ decided 2026-09-20 | ⛔ **Not an oversight, and not to be "fixed" later by a late submission.** The maintainer skipped it on the judgement that too little is new to be worth a manifest. ⓘ The consequence, stated: winget users stay on **`2026.3.916`** (last submitted 2026-09-16) while the GitHub release is `2026.3.920`, so the next submission jumps them across both. Nothing breaks — a skipped submission just means no new manifest |
 | **D6** — cut the app release | ✅ **DONE — `v2026.3.920`, 2026-09-20** | ⭐⭐ **The first ClaudeForge release ever built from the published packages**, which is the whole point of plan 00003. Six assets on the GitHub Release, and the mode was **read from the archived provenance** rather than taken from the workflow: every RID log carries `PACKAGE MODE … at 2026.3.920` and **zero** `ESCAPE HATCH` lines. ⛔ **It took THREE attempts, and the first two failed for two independent halves of the same missing thing** — see the two rows below. Previously: The shipped artifact passes D3. ✅ **A release-path binary has now been BUILT AND RUN — 2026-09-20.** `Publish-Rid.ps1 -Rid win-x64` produced a single-file 26.5 MB self-contained build, exit 0, **0 warnings**, log carrying `PACKAGE MODE … at 2026.3.918` and **zero** `ESCAPE HATCH` lines. ⭐ **Provenance was read, not assumed**: all eleven `.nupkg.metadata` name `nuget.pkg.github.com`, so this consumed the **published** bytes rather than `artifacts/localfeed` or a stale cache. It launches clean — the log's own `Starting ClaudeForge v2026.3.920.1059` matches the binary just built, schemas **fetched** from schemastore at runtime, no `[ERR]` or `[FTL]`, and the single `[WRN]` is the app's designed heads-up that the fetched schema carries settings newer than its structured editors. ⚠ **The earlier hand-driven retest (2026-09-18, `v2026.3.918.839`) was package mode from LOCALLY-PACKED bytes and predates `6910ffc`**, the commit that made the release path itself select package mode — so this is the first time the actual release chain's output has been run. ⭐ **Scope is written down**: [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md) states what the tag produces, what ships, what is deliberately left out, and the three decisions that are the maintainer's. ⛔ **The release notes do NOT come from `CHANGELOG.md`** — `release.yml` reads the merged PR's body, else the tagged commit's message body, else auto-generated notes. This branch has no PR, so the curated `## [Unreleased]` section reaches the release only if it is put into the tagged commit's body or a PR |
 
 **What D1/D2 shipped:** `SharedPackageVersion` pinned at `2026.3.918` in the **root**
