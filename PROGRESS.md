@@ -164,6 +164,18 @@ entry point including a bare `dotnet publish`.
 ⚠ **A `Message`, not a `Warning`.** `Directory.Build.props` sets `TreatWarningsAsErrors`; a hatch
 whose own record can be escalated into the failure it exists to avoid is not a hatch.
 
+⛔⛔ **CI CAUGHT WHAT THE LOCAL SUITE COULD NOT, for the third recorded time on this mechanism.**
+`a6fd749` went in with a green 3,551 local suite and reddened **two** CI jobs — the package canary
+and macOS — both on the same test, `EveryHardcodedRepoPathInBuildFilesExists`. A comment in
+`release.yml` named the bare directory `src/dist/logs/`. That folder is a build output and **git
+does not track empty directories**, so it exists on any machine that has ever published and on no
+CI runner. ⚠ **Local verification was structurally blind**: the test passes here whether or not the
+prose is right, so the fix had to be proven by moving `src/dist` away and re-running — it reddened,
+then went green. ⛔ **The exact boundaries, measured rather than recalled:** the regex allows `*`
+inside a segment, so `src/dist/*.zip` is skipped; a **trailing slash is not consumed**, so
+`src/dist/` is checked as bare `src/dist`; and a trailing `/*` is **trimmed back** to the bare
+directory, so that spelling fails too. A glob is only safe with a suffix after the star.
+
 ⛔⛔ **The guard test was VACUOUS on its most important site and only the canary found it.** Both
 non-release publishes explain the hatch in a comment directly above the flag, so a whole-file
 search matched the **prose** — the assertion passed with the live flag deleted from `ci.yml`'s

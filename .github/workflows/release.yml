@@ -220,7 +220,16 @@ jobs:
       # GuardShippingPublishUsesPackages prints the mode into every publish at high importance:
       # "PACKAGE MODE: ... at <version>" on the intended path, "ESCAPE HATCH USED: ..." when
       # -p:AllowProjectReferencePublish=true deliberately took the other one. `Publish-Rid.ps1`
-      # tees the publish stream to src/dist/logs/, so the line lands here either way.
+      # tees the publish stream to src/dist/logs/*.log, so the line lands here either way.
+      #
+      # ⚠ Spelled with the glob on purpose, and NOT as the bare directory. That staging folder is
+      # a build output, and git does not track empty directories — so it exists on any machine
+      # that has ever published and never in a fresh checkout. BuildFilePathIntegrityTests
+      # resolves a bare repo-relative path but skips one containing '*', so the directory form
+      # passes locally and fails on every CI runner, which is exactly what it did here.
+      #
+      # ⛔ The glob must keep a suffix after the star. A trailing '/*' is trimmed back to the bare
+      # directory before the check, so that spelling fails the same way the directory does.
       #
       # ⚠ if: always() on purpose — a FAILED publish is when this evidence is worth most, and a
       # step that only archives on success is the one that never has the log you need. ⚠ These
