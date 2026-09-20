@@ -78,20 +78,32 @@ public sealed class AppSeverityToGlyphConverter : IValueConverter
     /// and the probe could only report "not disproven". Naming the face is what was measured.
     /// </para>
     /// <para>
-    /// ⭐ <b>The font is BUNDLED, not named, so the answer is the same on every platform.</b>
-    /// An earlier fix named a per-platform stack — Segoe UI Symbol, Apple Symbols, DejaVu
-    /// Sans — which is correct on Windows and merely *probable* elsewhere. JetBrains Mono NL
-    /// carries all four codepoints as outlines, so there is no fallback to be wrong about.
-    /// Measured in it: Caution 10.360, Critical/Info/Neutral 8.680 each, which under the
-    /// existing scales puts Critical at <b>1.129×</b> Caution with the quiet tiers below both.
+    /// ⛔⛔ <b>NOT the bundled monospace font, and that was tried first.</b> JetBrains Mono NL
+    /// carries all four codepoints as outlines and ranks them correctly, so it looked like the
+    /// answer — one bundled file, identical everywhere. It draws the triangle WRONG, because
+    /// it is monospace: every glyph is forced into one advance width, and <c>⚠</c> is naturally
+    /// wider than it is tall. Measured width÷height, at both tiers identically:
+    /// <c>⚠</c> <b>0.838</b> in JetBrains Mono NL against <b>1.116</b> in Segoe UI Symbol — the
+    /// triangle pinched inward by a third. The circles are untouched at 1.000, which is why
+    /// only the triangle read as squashed.
     /// </para>
     /// <para>
-    /// ⚠ <b>The trailing families are a floor, not a plan.</b> They matter only if the
-    /// embedded resource fails to load, which would itself be the bug worth finding.
+    /// ⭐ <b>So this is a PROPORTIONAL symbol stack, deliberately, while monospace TEXT uses the
+    /// bundled font.</b> Ink height still ranks correctly here: Critical 13.213 against Caution
+    /// 12.303 at the 14 tier, <b>1.074×</b>. The two choices are independent — a font good for
+    /// columns of code is not automatically good for a symbol.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>What this gives up, stated plainly:</b> a bundled file is a guarantee and a stack is
+    /// a request. The defect actually reported — the emoji fallback and its inverted ranking —
+    /// is fixed on every platform that has any of these three, and all three carry the four
+    /// codepoints as outlines. A platform with none of them falls back to the default face and
+    /// could reach the emoji font again. Bundling a PROPORTIONAL symbol face would close that,
+    /// at the cost of another embedded font.
     /// </para>
     /// </remarks>
     public static readonly FontFamily GlyphFontFamily =
-        new("avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL");
+        new("Segoe UI Symbol, Apple Symbols, DejaVu Sans, sans-serif");
 
     /// <summary>The glyph for one severity.</summary>
     public static string GlyphFor(AppSeverity severity) => severity switch
