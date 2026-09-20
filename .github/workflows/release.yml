@@ -189,6 +189,14 @@ jobs:
 
       - name: Publish (win-x64, win-arm64)
         shell: pwsh
+        # ⛔⛔ THE CREDENTIALS, WHICH ARE A SEPARATE HALF FROM THE PERMISSION. `packages: read`
+        # in the permissions block only makes the token ALLOWED to read the feed; NuGet still
+        # has to be handed it. Without this the restore reaches the feed and 401s, which is
+        # exactly how the first two attempts at this release died — after the permission had
+        # been added and verified. ci.yml sets the identical variable on every step that touches
+        # the feed. ⚠ The `_github` suffix must match the source key in nuget.config exactly.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
         # `shell: pwsh` already runs this `run:` block inside pwsh, so an
         # inner `pwsh src/publish/publish.ps1 ...` invocation nests pwsh
         # twice.  The outer pwsh tokenises the inner command line and
@@ -264,7 +272,10 @@ jobs:
       - name: Publish (linux-x64, linux-arm64)
         shell: pwsh
         # See the comment on the corresponding Windows step for why we call
-        # the script directly instead of via an inner `pwsh` invocation.
+        # the script directly instead of via an inner `pwsh` invocation, and
+        # why the feed credentials are a separate half from `packages: read`.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
         run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids linux-x64,linux-arm64
 
       - name: Upload Linux artifacts
@@ -305,7 +316,10 @@ jobs:
       - name: Publish (osx-x64, osx-arm64)
         shell: pwsh
         # See the comment on the Windows publish step for why we call the
-        # script directly instead of via an inner `pwsh` invocation.
+        # script directly instead of via an inner `pwsh` invocation, and why
+        # the feed credentials are a separate half from `packages: read`.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
         run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids osx-x64,osx-arm64
 
       - name: Upload macOS artifacts
