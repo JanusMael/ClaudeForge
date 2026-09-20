@@ -123,8 +123,8 @@ step below is finally verifiable.
 | **D2** — `packages: read` in `release.yml` | ✅ **DONE** | The `feed-restore` job restores from the feed with exactly that scope, on every push |
 | **D3** — build-time guard + recorded escape hatch | ✅ **DONE** | `GuardShippingPublishUsesPackages` fails a bare Release publish (exit 1, observed); the hatch publishes clean and prints `ESCAPE HATCH USED`; package mode prints `PACKAGE MODE: … at 2026.3.918`; a Release **build** stays silent. 4/4 predicted |
 | **D4** — full suite and trim gate at the published version | ✅ **DONE** | CI job `published-version`: suite **3,541 · 0 · 23** in package mode plus a trimmed publish, empty local feed, no cache. Locally **6/6 RIDs, zero IL diagnostics**, every log naming `PACKAGE MODE … 2026.3.918` and none naming the hatch |
-| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ◀ **NEXT** | They describe what D1–D3 made true |
-| **D6** — cut the app release | ⏸ | The shipped artifact passes D3 |
+| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ✅ **DONE** | Both now say the clause was false when written, name the guard that defends it, and state that neither touches the feed — the `published-version` job does |
+| **D6** — cut the app release | ◀ **NEXT** | The shipped artifact passes D3 |
 
 **What D1/D2 shipped:** `SharedPackageVersion` pinned at `2026.3.918` in the **root**
 `Directory.Build.props`; `-p:UseSharedPackages=true` on the only `dotnet publish` in the release
@@ -144,6 +144,25 @@ source mapping means those ids are never requested; the canary never meets it, b
 the folder by packing. The script now creates it **empty**, which satisfies NuGet, can supply
 nothing, and makes the provenance conclusion stronger — and it refuses outright if that folder
 holds any package at the pinned version.
+
+**What D5 corrected, and one thing it found on the way.** Both comments now say the clause was
+**false when it was written**, name `GuardShippingPublishUsesPackages` as what defends it, and add
+the limit neither of them stated: **neither the canary nor its CI job ever contacts the feed**, so
+`published-version` is the one consuming what a release actually ships against. ⚠ Keeping the claim
+and the guard in the same breath is deliberate — a claim about the release that only a comment
+defends is the precise defect this plan exists to close.
+
+⛔ **`package-canary.ps1` still called the packages "private", and Phase C's sweep missed it.** That
+correction landed in `CLAUDE.md`, `AGENTS.md`, `nuget.config` and `ci.yml`; the script was not on the
+list and nothing would ever have failed over it. ⓘ It is the last non-frozen place carrying the
+wrong word — `plans/00001` keeps it in a **frozen** title, by the never-edit-an-approved-plan rule.
+
+ⓘ **Three stale directories under `tests/` are untracked build-output leftovers** from the Phase 0
+subtraction — `OpenCode.Avalonia.Tests`, `OpenCode.Sdk.Tests` and `OpenCodeForge.Tests`, each
+holding only `bin/` and `obj/` with no csproj and nothing tracked. Harmless, and the "nine test
+projects" figure in the canary header is correct despite twelve directories on disk. ⚠ They are
+worth clearing before they read as a half-finished extraction to someone — which is exactly how the
+first instance of the untracked-directory trap presented.
 
 **What D4 proved, and why it took two halves.** The CI job `published-version` runs the whole suite
 and a real trimmed publish in package mode at the pinned version, restoring from the feed with

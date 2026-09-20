@@ -138,6 +138,19 @@ jobs:
   # UseSharedPackages=true. Development mode is what every human runs, so PACKAGE mode is the
   # one that rots unobserved — and it is the mode the release publishes from.
   #
+  # ⛔ THAT LAST CLAUSE WAS FALSE WHEN IT WAS WRITTEN, for the entire life of the feature, and
+  # plans/00003 names this comment as one of the two that asserted it. Nothing set the switch on
+  # the release path, so every RID of every release ever cut used ProjectReference. It is true as
+  # of Phase D (D1), and it is now GUARDED rather than merely asserted:
+  # GuardShippingPublishUsesPackages fails a Release publish of a shipping app that is not in
+  # package mode. ⚠ Keep the clause and the guard together — a claim about the release that only
+  # a comment defends is the exact defect this plan exists to close.
+  #
+  # ⚠ THIS JOB NEVER CONTACTS THE FEED. It packs THIS COMMIT at a throwaway version into a local
+  # folder, which proves the PackageReference mechanics and nothing about the published bytes.
+  # The `published-version` job below is the one that consumes what a release actually ships
+  # against; the two are not interchangeable and neither replaces the other.
+  #
   # ⛔ The two modes are not equivalent, which is the whole reason this job exists rather than
   # being assumed. Its first run found a real difference: a ProjectReference copies the
   # referenced project's XML documentation file into the output directory and a PackageReference

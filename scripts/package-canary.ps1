@@ -2,12 +2,29 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# Eleven projects under src/ are published as private NuGet packages (plans/00001). Everything
-# else — the app, its two product-specific libraries, the sample and all nine test projects
-# — consumes them one of two ways:
+# Eleven projects under src/ are published as NuGet packages on GitHub Packages (plans/00001).
+# ⚠ They are PUBLIC — they inherit this repository's visibility, measured after the first publish
+# rather than assumed — though the feed still demands a token for every read. Requiring auth and
+# being private are independent properties and only the first is true here; this header said
+# "private" until Phase C measured otherwise. Everything else — the app, its two product-specific
+# libraries, the sample and all nine test projects — consumes them one of two ways:
 #
 #     UseSharedPackages unset/false  ->  ProjectReference   (development: the editor, the suite)
 #     UseSharedPackages=true         ->  PackageReference   (this canary, and the release)
+#
+# ⛔ THE SECOND LINE WAS FALSE FOR THE ENTIRE LIFE OF THE FEATURE, and plans/00003 names this
+# comment as one of the two that said it. Nothing ever set the switch on the release path, so
+# every RID of every release ever cut used ProjectReference while this file asserted otherwise.
+# It became true in Phase D (D1) and — the part that matters — it is now GUARDED:
+# GuardShippingPublishUsesPackages in the root Directory.Build.targets fails a Release publish of
+# a shipping app that is not in package mode. A comment is not a guard, which is precisely what
+# this line spent the feature's lifetime demonstrating.
+#
+# ⚠ THIS CANARY NEVER TOUCHES THE FEED, and that limit is why the `published-version` CI job
+# exists separately. This script packs THIS COMMIT at a throwaway version into a local folder:
+# it proves the PackageReference mechanics and says nothing whatever about the bytes actually
+# published. Packages built from an older commit are exactly the case it cannot see, and a
+# published version can never be replaced once it exists.
 #
 # Development mode is what everyone runs, so the package mode is the one that rots unobserved.
 # This script is the observation: pack at a throwaway version, restore into a throwaway package
