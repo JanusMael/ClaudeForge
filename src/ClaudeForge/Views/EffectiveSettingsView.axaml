@@ -79,7 +79,8 @@
         <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- Property table -->
-            <TabItem Header="{x:Static loc:Strings.TabProperties}">
+            <TabItem Header="{x:Static loc:Strings.TabProperties}"
+                     AutomationProperties.Name="{x:Static loc:Strings.TabProperties}">
                 <DockPanel>
                     <!-- Filter bar -->
                     <Border DockPanel.Dock="Top" Padding="8,6"
@@ -229,7 +230,8 @@
             </TabItem>
 
             <!-- Raw JSON with syntax highlighting -->
-            <TabItem Header="{x:Static loc:Strings.TabJson}">
+            <TabItem Header="{x:Static loc:Strings.TabJson}"
+                     AutomationProperties.Name="{x:Static loc:Strings.TabJson}">
                 <DockPanel>
                     <!-- Copy button -->
                     <Button DockPanel.Dock="Top"

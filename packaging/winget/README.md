@@ -102,10 +102,18 @@ two PRs against the same manifest, which winget-pkgs asks contributors not to do
 |---|---|---|
 | `packaging/sign-release.ps1` | **Dispatches the workflow itself** at the end, unless `-SkipWinget` | yes |
 | `.github/workflows/winget-submit.yml` | `gh workflow run winget-submit.yml -f version=<ver>` | yes |
-| `packaging/Submit-Winget.ps1` | run locally; submits straight from your machine | **no** |
+| `packaging/Resubmit-Winget.ps1` | run locally with `-Force`; submits straight from your machine | **no** |
 
 **The normal release is: run `sign-release.ps1` and stop — it already submits.** The
 other two are for re-submitting after a failure, or when you passed `-SkipWinget`.
+
+`Resubmit-Winget.ps1` is named for the only job it has and refuses to run without
+`-Force`, because the failure it guards against is silent: reaching for it after a
+submission that already happened opens a second PR, and you find out from
+winget-pkgs rather than from your own tooling.
+
+Neither is the script for standing up a **new** winget package — that is the
+`wingetcreate new` interactive wizard, written up in `packaging/BBWinget.md`.
 
 Both submit paths refuse to run when an open winget-pkgs PR already exists for that
 package + version.

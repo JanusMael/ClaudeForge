@@ -84,6 +84,13 @@ public sealed class AxamlAccessibilityCoverageTests
         "TimePicker",
         "CalendarDatePicker",
         "MenuItem",
+
+        // A TabItem is focusable and selectable, so a screen-reader user lands on
+        // it. Unnamed, UI Automation falls back to the bound item's ToString() —
+        // every settings page announced its tabs as the GroupTab type name, and
+        // Agents & Skills announced its own as "Avalonia.Controls.ScrollViewer".
+        // Absent from this list, the guard never looked.
+        "TabItem",
     };
 
     /// <summary>The assemblies that carry AXAML, relative to the repo root.</summary>

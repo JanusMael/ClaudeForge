@@ -145,8 +145,11 @@ $RECYCLE.BIN/
 *.log
 
 
-packaging/sign-release.ps1
-
+# Signing SETUP notes — the PKCS#11 / SimplySign walkthrough. Still excluded
+# only because nobody has checked it for a PIN or account identifier; if it turns
+# out to hold neither, commit it too. The script it documents
+# (packaging/sign-release.ps1) IS committed: it carries no secrets, because every
+# sensitive value is a runtime parameter rather than a default.
 packaging/SIGNING.md
 
 # Personal winget submission notes / command transcripts (may contain PATs).

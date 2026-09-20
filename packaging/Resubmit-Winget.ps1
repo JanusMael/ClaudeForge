@@ -1,9 +1,26 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Submit the ClaudeForge winget manifest to microsoft/winget-pkgs (local, interactive).
+    FALLBACK winget submission. The normal release does NOT run this — sign-release.ps1
+    already submits. Requires -Force.
 
 .DESCRIPTION
+    NOT PART OF THE NORMAL RELEASE. Run `sign-release.ps1` and stop: it signs the
+    Windows zips, re-uploads them in place, and dispatches winget-submit.yml itself
+    unless you passed -SkipWinget.
+
+    Reach for this script in exactly two situations:
+      * the dispatched submission failed and you are re-submitting, or
+      * you ran sign-release.ps1 with -SkipWinget and are submitting by hand.
+
+    Running it ON TOP of a submission that already happened opens a SECOND PR
+    against the same manifest, which winget-pkgs explicitly asks contributors not
+    to do. 2026.3.810 did exactly that. Hence -Force: there is no way to reach the
+    submission by accident.
+
+    This is NOT the script for standing up a brand-new winget package — that is the
+    `wingetcreate new` interactive wizard, written up in packaging/BBWinget.md.
+
     Local counterpart to .github/workflows/winget-submit.yml. Builds the COMPLETE
     manifest from the templates in packaging/winget/*.yaml (the single source of
     truth, carrying the full catalog metadata), fills in the version + freshly
@@ -28,17 +45,43 @@
     uses $env:WINGET_TOKEN; if that is also empty, wingetcreate falls back to an
     interactive GitHub login (no token on the command line — the safer option).
 
+.PARAMETER Force
+    Required. Acknowledges that sign-release.ps1 has NOT already submitted this
+    version. Without it the script refuses to run, so reaching for the wrong script
+    is an error you read rather than a duplicate PR you discover later.
+
 .EXAMPLE
-    .\Submit-Winget.ps1
-    .\Submit-Winget.ps1 -Version 2026.3.725
+    .\Resubmit-Winget.ps1 -Force
+    .\Resubmit-Winget.ps1 -Version 2026.3.725 -Force
 #>
 [CmdletBinding()]
 param(
     [string]$Version,
-    [string]$Token = $env:WINGET_TOKEN
+    [string]$Token = $env:WINGET_TOKEN,
+    [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
+
+# The normal release never reaches this script, so make the wrong turn loud rather
+# than silent. The duplicate-PR check further down catches the case where a PR is
+# already OPEN; this catches the window before it appears — a dispatched workflow
+# still running, which is precisely how 2026.3.810 ended up with two.
+if (-not $Force) {
+    throw @'
+Resubmit-Winget.ps1 is the FALLBACK submission path and needs -Force.
+
+The normal release is:  run sign-release.ps1 and stop — it already submits.
+
+Use this script only when:
+  * the dispatched submission failed and you are re-submitting, or
+  * you ran sign-release.ps1 -SkipWinget and are submitting by hand.
+
+Running it after a submission that already happened opens a second PR against the
+same manifest (see 2026.3.810). If that is genuinely what you want, re-run with
+-Force.
+'@
+}
 
 # Decode child-process stdout as UTF-8. `gh` emits UTF-8; without this PowerShell
 # decodes it using the console's OEM code page, so any non-ASCII character in the
