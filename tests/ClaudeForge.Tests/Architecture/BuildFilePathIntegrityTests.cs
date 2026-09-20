@@ -346,6 +346,36 @@ public sealed class BuildFilePathIntegrityTests
     }
 
     /// <summary>
+    /// The documents whose Markdown links must resolve: everything the sibling guard already
+    /// reads, plus <c>docs/</c>, and never <c>plans/</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Separate from <see cref="ScannedFiles"/> on purpose.</b> Adding <c>docs/</c> there
+    /// would widen the prose-path guard too, which must keep excluding it — a plan document names
+    /// paths in prose that do not exist yet, and asserting against those would be wrong rather
+    /// than merely noisy. Only the <i>link</i> rule extends.
+    /// </remarks>
+    private static IEnumerable<string> MarkdownFilesForLinkScan(string repoRoot)
+    {
+        foreach (string f in ScannedFiles(repoRoot)
+                     .Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)))
+        {
+            yield return f;
+        }
+
+        string docs = Path.Combine(repoRoot, "docs");
+        if (!Directory.Exists(docs))
+        {
+            yield break;
+        }
+
+        foreach (string f in Directory.GetFiles(docs, "*.md", SearchOption.AllDirectories))
+        {
+            yield return f;
+        }
+    }
+
+    /// <summary>
     /// Every relative Markdown link in the guidance docs resolves to something git tracks.
     /// </summary>
     /// <remarks>
@@ -365,17 +395,21 @@ public sealed class BuildFilePathIntegrityTests
     /// and this repo has already paid for a guard that accuses the innocent.
     /// </para>
     /// <para>
-    /// ⚠ <b>The scan set is inherited, not redeclared.</b> It is <see cref="ScannedFiles"/>
-    /// filtered to <c>.md</c>, so <c>docs/</c> and <c>CHANGELOG.md</c> stay excluded for the
-    /// reasons recorded there — plan documents legitimately name files that do not exist yet, and
-    /// a changelog entry describes the tree as it was at that release. Duplicating the selection
-    /// would let the two drift, and the exclusions are the subtle part.
+    /// ⚠ <b>The scan set is <see cref="ScannedFiles"/> filtered to <c>.md</c>, PLUS
+    /// <c>docs/</c>.</b> The sibling guard excludes <c>docs/</c> because a document may
+    /// legitimately name a path in <i>prose</i> that does not exist yet — a future assembly, or a
+    /// path as it was before a rename. ⭐ <b>That reasoning does not transfer to a link.</b>
+    /// <c>[text](./path)</c> is a promise of navigability whenever it is written, and one of the
+    /// four dead references that prompted this guard lived in <c>docs/</c>. So the exclusion is
+    /// deliberately NOT inherited here — and <c>ScannedFiles</c> is left alone, because widening
+    /// it would change what the prose guard asserts.
     /// </para>
     /// <para>
     /// ⛔ <b><c>plans/</c> is never scanned, and that is a rule rather than an oversight.</b> An
     /// approved plan is frozen: its internal links are specification, not navigation, and are left
     /// alone when they stop resolving. A guard reddening on them would force the very edit the
-    /// freeze forbids.
+    /// freeze forbids. ⓘ <c>CHANGELOG.md</c> stays out for the sibling's reason, which does
+    /// transfer: an entry describes the tree as it was at that release.
     /// </para>
     /// <para>
     /// ⚠ <b>Tracked, not merely present</b> — the same conjunction the sibling guard uses, for the
@@ -391,8 +425,7 @@ public sealed class BuildFilePathIntegrityTests
         List<string> broken = [];
         int checkedCount = 0;
 
-        foreach (string file in ScannedFiles(repoRoot)
-                     .Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)))
+        foreach (string file in MarkdownFilesForLinkScan(repoRoot))
         {
             string relativeFile = Path.GetRelativePath(repoRoot, file);
             string fileDirectory = Path.GetDirectoryName(file)!;

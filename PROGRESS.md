@@ -583,6 +583,13 @@ not an optional extra.
   which has no PR.
 - ⛔ **This remote refuses a push that updates more than TWO refs**, and says so only in the
   `remote:` lines. Recorded in `AGENTS.md` under *Pushing more than two refs at once*.
+- **A dead Markdown link is a failing test now**, and the LINK rule covers `docs/` while the
+  PROSE-PATH rule still does not. ⭐ The exclusion was reasoned for prose — a document may name a
+  path that does not exist yet — and **that reasoning does not transfer to a link**, which promises
+  navigability whenever it is written; one of the four dead references lived in `docs/`.
+  ⛔ **`plans/` is never scanned**: an approved plan is frozen, its links are specification, and a
+  guard reddening on them would force the edit the freeze forbids. Proven by canary, not asserted —
+  a planted dead link in `docs/` reddened and one in `plans/` did not.
 
 ### ⭐ Decisions taken 2026-09-19 — locked, do not relitigate
 
