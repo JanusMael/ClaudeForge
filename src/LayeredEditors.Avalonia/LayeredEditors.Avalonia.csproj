@@ -21,6 +21,58 @@
         <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
     </ItemGroup>
 
+    <!--
+        JetBrains Mono NL, bundled rather than named.
+
+        ⛔ WHY BUNDLED: a font STACK is a request, not a guarantee. The same markup rendered
+        three different faces across the three platforms, and on Windows the severity glyphs
+        resolved to TWO faces at once — U+26A0 to Segoe UI Emoji (a COLOUR BITMAP, which also
+        ignores Foreground outright) and U+2297 to Segoe UI Symbol. Shipping the file is the
+        only way the drawn result is the same everywhere.
+
+        ⭐ NL = the no-ligature cut, and that is a correctness choice, not a taste one. This
+        app's monospace surfaces show the literal bytes of a config file, a path or a command;
+        a ligature would compose `!=` or `->` into one glyph, so what the user reads would stop
+        matching what the file contains. Prose keeps the proportional UI font and its ordinary
+        typographic ligatures.
+
+        ⭐ BOTH CUTS SHIP, and they are not interchangeable:
+
+          • JetBrains Mono NL  — no ligatures. Every surface that shows the literal contents
+            of a file: config values, JSON, paths, commands, permission rules, markdown code
+            blocks. This is the default, and AppMonoFontFamily points at it.
+          • JetBrains Mono     — ligatures. For surfaces read for COMPREHENSION rather than
+            byte-fidelity. Reserved for the log viewer's planned readable/byte-exact toggle;
+            no surface binds it yet, which is deliberate rather than an oversight.
+
+        ⚠ ASYMMETRIC WEIGHTS, on purpose. NL ships Regular, SemiBold and Bold because markup
+        asks for exactly those three. The ligature cut ships Regular and Bold only, because
+        nothing asks for its SemiBold — a weight nothing requests costs every RID archive
+        ~270 KB to sit unused. Add one when a surface actually needs it.
+
+        ⚠ COST, stated rather than discovered: five files, ~1.2 MB uncompressed, embedded in a
+        library that is also a published NuGet package.
+
+        ⭐ TRIM-SAFE by construction: AvaloniaResource embeds these as resources, which ILLink
+        does not strip, and nothing here is reached by reflection — the URI is resolved by
+        Avalonia's asset loader against an assembly that is plainly referenced. Avalonia.Fonts.Inter
+        already rides the same mechanism through this repo's trimmed six-RID publish.
+
+        ⚠ OFL 1.1 requires the licence to travel with the font, so OFL.txt is embedded beside
+        it rather than left in the source tree only — the app publishes as a SINGLE FILE, so a
+        loose sibling file would not reach the user at all.
+    -->
+    <ItemGroup>
+        <!-- Byte-exact cut: the default for every literal-value surface. -->
+        <AvaloniaResource Include="Assets/Fonts/JetBrainsMonoNL-Regular.ttf" />
+        <AvaloniaResource Include="Assets/Fonts/JetBrainsMonoNL-SemiBold.ttf" />
+        <AvaloniaResource Include="Assets/Fonts/JetBrainsMonoNL-Bold.ttf" />
+        <!-- Ligature cut: bound by nothing yet, held for the log viewer's reading mode. -->
+        <AvaloniaResource Include="Assets/Fonts/JetBrainsMono-Regular.ttf" />
+        <AvaloniaResource Include="Assets/Fonts/JetBrainsMono-Bold.ttf" />
+        <AvaloniaResource Include="Assets/Fonts/OFL.txt" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />

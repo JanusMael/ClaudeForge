@@ -63,6 +63,7 @@
                                Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static conv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                VerticalAlignment="Center"
                                AutomationProperties.HelpText="{Binding DangerAccessibleText}"
                                ToolTip.Tip="{Binding DangerAccessibleText}" />
@@ -188,6 +189,7 @@
                     <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
                                Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
                                FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static conv:AppSeverityToGlyphConverter.GlyphFontFamily}"
                                VerticalAlignment="Top" />
                     <TextBlock Text="{Binding Danger.Explanation}"
                                FontSize="11"

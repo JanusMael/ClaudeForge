@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
@@ -38,6 +39,59 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
 public sealed class AppSeverityToGlyphConverter : IValueConverter
 {
     public static readonly AppSeverityToGlyphConverter Instance = new();
+
+    /// <summary>
+    /// The face every severity glyph is drawn in. Bind it with
+    /// <c>FontFamily="{x:Static …:AppSeverityToGlyphConverter.GlyphFontFamily}"</c> at every
+    /// site that draws one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>Without this, the four glyphs do not come from one font, and the size scales
+    /// in <see cref="AppSeverityToFontSizeConverter"/> are therefore meaningless.</b> Measured
+    /// on Windows through Skia's own fallback: <c>⚠</c> resolves to <b>Segoe UI Emoji</b> and
+    /// <c>⊗</c> to <b>Segoe UI Symbol</b>. Two faces, two metrics — and <c>⚠</c> arrives as a
+    /// COLOUR BITMAP, which is a third difference again.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The numbers, because the ratio is the whole argument.</b> Ink heights at the 14
+    /// tier: Caution 15.000 (bitmap), Critical 13.213 — Critical is <b>0.881×</b> Caution, and
+    /// at the 11 tier <b>0.865×</b>. So the loudest tier drew SMALLER than the next one down,
+    /// worse at the smaller tier, which is exactly how it was reported. Pinned to Segoe UI
+    /// Symbol the same scales give Critical <b>1.074×</b> Caution, with Info and Neutral at
+    /// 0.824× below both — the ranking the scales were tuned for.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>A colour bitmap glyph also IGNORES <c>Foreground</c>.</b> So before this, the
+    /// Caution glyph was not tinted by the severity brush at all — it drew in the emoji font's
+    /// own yellow on every surface, silently, while the markup said otherwise.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><see cref="AppSeverityToFontSizeConverter"/> states that both glyphs "resolve
+    /// through the same font fallback".</b> That premise was false on Windows and is what this
+    /// member establishes. Do not remove it and keep the scales.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>U+FE0E (text-presentation selector) was tried first and is NOT what fixed it.</b>
+    /// It is the standards-based answer and names no platform font, but it could not be shown
+    /// to work: font matching is codepoint-based, so a variation selector is invisible to it,
+    /// and the probe could only report "not disproven". Naming the face is what was measured.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>The font is BUNDLED, not named, so the answer is the same on every platform.</b>
+    /// An earlier fix named a per-platform stack — Segoe UI Symbol, Apple Symbols, DejaVu
+    /// Sans — which is correct on Windows and merely *probable* elsewhere. JetBrains Mono NL
+    /// carries all four codepoints as outlines, so there is no fallback to be wrong about.
+    /// Measured in it: Caution 10.360, Critical/Info/Neutral 8.680 each, which under the
+    /// existing scales puts Critical at <b>1.129×</b> Caution with the quiet tiers below both.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The trailing families are a floor, not a plan.</b> They matter only if the
+    /// embedded resource fails to load, which would itself be the bug worth finding.
+    /// </para>
+    /// </remarks>
+    public static readonly FontFamily GlyphFontFamily =
+        new("avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL");
 
     /// <summary>The glyph for one severity.</summary>
     public static string GlyphFor(AppSeverity severity) => severity switch

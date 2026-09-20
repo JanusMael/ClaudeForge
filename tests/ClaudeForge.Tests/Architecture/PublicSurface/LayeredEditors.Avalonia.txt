@@ -53,6 +53,7 @@ class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToGlyphConve
     .ctor()
     System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
     System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Avalonia.Media.FontFamily GlyphFontFamily
     static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToGlyphConverter Instance
     static System.String GlyphFor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity severity)
 class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToTintBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
