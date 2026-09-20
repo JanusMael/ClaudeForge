@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;

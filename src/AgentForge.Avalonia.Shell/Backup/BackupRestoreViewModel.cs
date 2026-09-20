@@ -10,7 +10,7 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;

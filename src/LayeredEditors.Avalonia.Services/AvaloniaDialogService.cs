@@ -10,7 +10,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 

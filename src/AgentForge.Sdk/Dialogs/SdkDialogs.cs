@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Dialogs;
 

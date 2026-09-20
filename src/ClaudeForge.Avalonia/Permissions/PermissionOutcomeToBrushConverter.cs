@@ -3,7 +3,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Services.Converters;
+namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
 
 /// <summary>
 /// Maps a <see cref="PermissionOutcome"/> to a status brush for a tester verdict:

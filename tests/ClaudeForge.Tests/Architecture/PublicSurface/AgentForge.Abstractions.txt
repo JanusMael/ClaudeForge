@@ -85,44 +85,6 @@ class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir
     System.Void Deconstruct(out System.String Name, out System.String Reason, out System.Boolean IncludedInFullBackup)
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir right)
-enum Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogCategory : System.Int32
-    Confirmation = 1
-    Destructive = 2
-    Error = 3
-    Information = 0
-    Input = 4
-class Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage [sealed]
-    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment> segments)
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment> Segments { get; }
-    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage Plain(System.String text)
-    static Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Builder()
-class Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder [sealed]
-    .ctor()
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessage Build()
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Bold(System.String s)
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Code(System.String s)
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Hyperlink(System.String label, System.String url)
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Path(System.String path)
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogMessageBuilder Text(System.String s)
-class Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment>
-    .ctor(Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegmentKind Kind, System.String Value, System.String Url = null)
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment <Clone>$()
-    Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegmentKind Kind { get;init; }
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment other)
-    System.Boolean Equals(System.Object obj)
-    System.Int32 GetHashCode()
-    System.String ToString()
-    System.String Url { get;init; }
-    System.String Value { get;init; }
-    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegmentKind Kind, out System.String Value, out System.String Url)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment left, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment left, Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegment right)
-enum Bennewitz.Ninja.AgentForge.Abstractions.Dialogs.DialogSegmentKind : System.Int32
-    Bold = 1
-    Code = 4
-    Hyperlink = 3
-    Path = 2
-    Text = 0
 enum Bennewitz.Ninja.AgentForge.Abstractions.Permissions.PermissionOutcome : System.Int32
     Allow = 1
     Ask = 2

@@ -22,7 +22,7 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;

@@ -3,7 +3,7 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Profile;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

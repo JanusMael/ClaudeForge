@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;

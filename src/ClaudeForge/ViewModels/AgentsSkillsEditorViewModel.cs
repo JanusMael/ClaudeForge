@@ -3,7 +3,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;

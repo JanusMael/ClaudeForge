@@ -40,6 +40,25 @@
              Claude-specific SDK purely to name four primitives. Splitting them into the
              abstractions assembly removes the violation with no added indirection —
              this library uses exactly those four types and never SdkDialogs. -->
-        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
+        <!--
+            ⭐ THE EDGE THAT USED TO POINT AT AgentForge, AND NOW DOES NOT.
+
+            This was the ONLY reference from the LayeredEditors family into AgentForge, and it
+            was what stopped the editor libraries being liftable into their own repository: a
+            generic services package cannot ship without dragging agent-configuration contracts
+            with it. Two types crossed here, and they needed opposite fixes:
+
+              • DialogMessage & friends — genuinely generic UI contract, whose own remarks said
+                "nothing here knows which product it is serving". MOVED to
+                LayeredEditors.Abstractions, where a host-agnostic contract belongs.
+              • PermissionOutcome — genuinely agent-domain vocabulary (allow / ask / deny), shared
+                because BOTH agent products spell those three answers the same way. It stayed put;
+                what moved was PermissionOutcomeToBrushConverter, which had no business being in a
+                generic services package and had exactly one consumer, a ClaudeForge view.
+
+            ⚠ The direction of travel is the point: the product repo may depend on the library
+            repo, never the reverse.
+        -->
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Abstractions.Dialogs;
+namespace Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 
 /// <summary>
 /// Visual + behavioural category that dialog-aware hosts use to pick header colour,
