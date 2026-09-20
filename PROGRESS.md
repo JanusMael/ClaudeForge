@@ -627,6 +627,63 @@ conclusive. `F10` is new and is the same class.
 ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
 not an optional extra.
 
+### ⭐ Decisions taken 2026-09-20, second batch — Phase E step 3, locked
+
+Five decisions, all taken interactively. ⭐ **The through-line is COMPILE-ENFORCEMENT OVER GUARDS:**
+where a wrong value could be supplied silently, the answer was to make the wrong call impossible to
+write rather than to add a scan that catches it afterwards. A guard is a thing that can be written
+too narrowly, and this repository has shipped exactly that failure twice.
+
+- **The resolved home is threaded as a REQUIRED parameter, never a process-wide static.**
+  `PlatformPaths.ClaudeHome` and thirteen members derived from it became methods taking
+  `ClaudeEnvironment`. ⭐ Required is the entire mechanism: it turns every stale call site into a
+  compile error, and an optional parameter would have found none of them. ⛔ The rejected
+  alternative was a set-once static holder consulted after the `AsyncLocal` test override — cheaper
+  by ~90 call sites, and rejected because a site that forgot it would resolve the *old* tree with
+  no error and no failing test.
+
+- **`BackupEngine` takes the environment as a REQUIRED constructor argument, and
+  `BackupEngine.Default` is DELETED.** ⛔ The parameterless `Default` static was the one remaining
+  way to obtain an engine pointed at the default home, so removing it is the point rather than a
+  side effect. ⚠ The environment must not cross into `IBackupClient`, which is product-neutral and
+  which OpenCode implements — binding it to the engine instance is what stops `ClaudeEnvironment`
+  reaching that interface.
+
+- **`SchemaRegistry.ClaudeCodeProduct` is de-statified; `ClaudeCodeProductFor(env)` is the only
+  way to obtain the descriptor.** ⛔ **The cheaper split was measured and REFUSED.** Keeping a
+  static for identity (~90 sites read only `Id` / `ArchiveFolder`) and env-binding just the layout
+  looked free, until `ProductDescriptor.Backup` was read: it is
+  `BackupLayout ?? ProductBackupLayout.Empty`, so a descriptor with no layout yields **zero
+  sections** and an archive that writes nothing while reporting success. ⚠ A null layout is
+  therefore not a loud failure and cannot be used as one. Equality was never the hazard —
+  `BackupRequest.Includes` compares on `Id` precisely so a separately-constructed descriptor still
+  matches.
+
+- **The two direct `Environment.SpecialFolder.UserProfile` reads are routed through
+  `PlatformPaths.UserProfile`** — `AdditionalDirectoriesResolver.ExpandTilde` and
+  `PermissionMatchContext.FromEnvironment`. ⓘ **Not a `CLAUDE_CONFIG_DIR` defect**: the variable
+  moves the config directory, not the profile, and both sites want the profile. They are fixed for
+  a different reason — they bypassed the `AsyncLocal` sandbox, so a test that relocated the profile
+  still resolved `~` to the developer's real home. ⭐ Production behaviour is unchanged by
+  construction (the override is null outside tests), and the step-5 guard now ships with **zero**
+  allow-list entries for these, which is what makes it strong.
+
+- **The refactor lands as staged commits, each building, each with its own verification** — Core
+  threading, then the descriptor and app composition, then tests green with the parity guard and
+  its canary, then the step-5 bypass guard, then baselines and CHANGELOG. ⚠ Slices one and two are
+  individually non-runnable: the suite does not compile until the third.
+
+- **A PR is opened against `main` now and merged after Phase E lands.** ⭐ Two reasons, and the
+  second is the one that is easy to miss: it stops `main` drifting further from what actually
+  shipped, and **`release.yml` reads the merged PR's body for release notes** — with no PR the
+  curated `## [Unreleased]` section cannot reach a release except by being pasted into the tag
+  message. ⛔ Merging is still **not** a plain `git merge`: the merge base is `3c7aaab`
+  (2026-09-01) and `main`'s paths no longer exist here, so the hand-port procedure in `AGENTS.md`
+  governs, exactly as it did on 2026-09-16.
+
+ⓘ **`F11` (external worktrees) was NOT among these and stays open**, by the earlier locked decision
+that parked it until after the release rather than rejecting it.
+
 ### ⭐ Decisions taken 2026-09-20 — locked, do not relitigate
 
 - **`D6` is prepared but NOT cut by the agent, and the CHANGELOG is the maintainer's too.** The

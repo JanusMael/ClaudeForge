@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
@@ -49,7 +50,10 @@ public sealed record PermissionMatchContext(
     public static PermissionMatchContext FromEnvironment()
     {
         string cwd = Directory.GetCurrentDirectory();
-        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        // ⚠ Through PlatformPaths, not Environment directly, so the AsyncLocal test override
+        // is honoured. Identical in production, where the override is null; the difference is
+        // that a test which relocated the profile no longer expands ~ to the real home.
+        string home = PlatformPaths.UserProfile;
         return new PermissionMatchContext(cwd, cwd, home);
     }
 }

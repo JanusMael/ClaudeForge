@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 
@@ -160,7 +161,10 @@ public static class AdditionalDirectoriesResolver
             return path;
         }
 
-        string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        // ⚠ Through PlatformPaths, not Environment directly, so the AsyncLocal test override
+        // is honoured. Identical in production, where the override is null; the difference is
+        // that a test which relocated the profile no longer expands ~ to the real home.
+        string home = PlatformPaths.UserProfile;
         if (path.Length == 1)
         {
             return home;

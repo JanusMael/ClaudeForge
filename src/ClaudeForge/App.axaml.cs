@@ -69,8 +69,21 @@ public class App : Application
             // registry writes the resolved schema artifact here, and ~/.claude is Claude's answer
             // to that question, not OpenCode's. A null directory means no disk cache at all,
             // which is what keeps every test off a real profile.
+            // ⭐ THE composition root for the environment: read from the process exactly once,
+            // here, and passed down as a value. Every path the app resolves hangs off this one
+            // call, so a session cannot change its mind about where the config directory is
+            // half way through — which is what a re-read per accessor would allow, and what a
+            // save in flight cannot survive.
+            ClaudeEnvironment claudeEnvironment = ClaudeEnvironment.FromProcess();
+
+            // ⛔ Must happen before any update check. AppUpdateService is a static whose
+            // coordinator reads the auto-check preference from the persisted UI state, and it
+            // throws rather than falling back to the default home if this is skipped.
+            AppUpdateService.Initialize(claudeEnvironment);
+
             SchemaRegistry schemaRegistry = SchemaRegistry.CreateWithNetwork(
-                cacheDirectory: Path.Combine(PlatformPaths.ClaudeHome, "cache", "schemas"));
+                cacheDirectory: Path.Combine(
+                    PlatformPaths.ClaudeHome(claudeEnvironment), "cache", "schemas"));
             AvaloniaDialogService dialogService = new();
             // The DialogAppIcon assignment below uses SmallInstance (64-px
             // render of the simplified small SVG) instead of Instance (256-px
@@ -120,7 +133,8 @@ public class App : Application
             // has ever compiled — see DefaultShareService's remarks.
             IShareService shareService = new DefaultShareService();
 
-            MainWindowViewModel mainVm = new(schemaRegistry, dialogService, shareService);
+            MainWindowViewModel mainVm = new(
+                claudeEnvironment, schemaRegistry, dialogService, shareService);
 
             mainWindow.DataContext = mainVm;
             desktop.MainWindow = mainWindow;

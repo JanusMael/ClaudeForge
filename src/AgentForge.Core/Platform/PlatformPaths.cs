@@ -45,16 +45,48 @@ public static class PlatformPaths
     public static string UserProfile =>
         TestUserProfileOverride ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-    /// <summary>~/.claude/</summary>
-    public static string ClaudeHome => Path.Combine(UserProfile, ".claude");
+    /// <summary>
+    /// The user config directory — <c>$CLAUDE_CONFIG_DIR</c> when set, otherwise
+    /// <c>~/.claude/</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>A METHOD rather than a property, and the parameter is REQUIRED on purpose.</b>
+    /// Every path below derives from this one, so a call site that kept reading a parameterless
+    /// property would silently resolve the <i>old</i> tree for any user who set the variable —
+    /// no error, no failing test, just an editor reading a different directory than the agent.
+    /// Requiring the argument turns all 104 call sites into compile errors, which is the only
+    /// mechanism that finds them all. An optional parameter would have found none of them.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Precedence is fixed by <c>plans/00002</c> step 3 and the order is load-bearing:</b>
+    /// <see cref="TestUserProfileOverride"/> first, then
+    /// <see cref="ClaudeEnvironment.ResolvedConfigDir"/>, then the default under
+    /// <see cref="UserProfile"/>. The test override wins because it is how the suite sandboxes
+    /// itself; a real <c>CLAUDE_CONFIG_DIR</c> on the developer's machine must not be able to
+    /// pull a sandboxed test back out into their own config.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>This does NOT move managed policy.</b> See <see cref="ManagedSettingsRoot"/>: policy
+    /// lives outside the config directory precisely so a user-settable variable cannot escape it.
+    /// </para>
+    /// </remarks>
+    public static string ClaudeHome(ClaudeEnvironment env)
+    {
+        ArgumentNullException.ThrowIfNull(env);
 
-    /// <summary>~/.claude/settings.json — User scope for Claude Code settings.</summary>
-    public static string UserSettingsPath =>
-        Path.Combine(ClaudeHome, "settings.json");
+        return TestUserProfileOverride is { } sandbox
+            ? Path.Combine(sandbox, ".claude")
+            : env.ResolvedConfigDir ?? Path.Combine(UserProfile, ".claude");
+    }
 
-    /// <summary>~/.claude/mcp.json — User-level MCP server overrides.</summary>
-    public static string UserMcpPath =>
-        Path.Combine(ClaudeHome, "mcp.json");
+    /// <summary>settings.json in the resolved home — User scope for Claude Code settings.</summary>
+    public static string UserSettingsPath(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), "settings.json");
+
+    /// <summary>mcp.json in the resolved home — User-level MCP server overrides.</summary>
+    public static string UserMcpPath(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), "mcp.json");
 
     /// <summary>
     /// The per-OS SYSTEM directory Claude Code reads enterprise / MDM policy from.
@@ -134,25 +166,45 @@ public static class PlatformPaths
     public static string ManagedMcpPath =>
         Path.Combine(ManagedSettingsRoot, "managed-mcp.json");
 
-    /// <summary>~/.claude/profiles/ — Named profile directories.</summary>
-    public static string ProfilesDirectory =>
-        Path.Combine(ClaudeHome, "profiles");
+    /// <summary><c>profiles/</c> in the resolved home — Named profile directories.</summary>
+    public static string ProfilesDirectory(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), "profiles");
 
 
     /// <summary>
-    /// ~/claude-backups/ — Default location for backup <c>.zip</c> archives written
-    /// by the Backup / Restore feature.
+    /// <c>claude-backups/</c> beside the resolved home — default location for backup
+    /// <c>.zip</c> archives written by the Backup / Restore feature.
     /// <para>
-    /// Stored <em>next to</em> <see cref="ClaudeHome"/> rather than inside it so that
-    /// a catastrophic loss of <c>~/.claude/</c> (accidental deletion, failed uninstall,
+    /// Stored <em>next to</em> the home directory rather than inside it so that
+    /// a catastrophic loss of the config directory (accidental deletion, failed uninstall,
     /// etc.) does not simultaneously destroy the backups. The engine also explicitly
-    /// skips any <c>backups/</c> subdirectory it encounters inside ClaudeHome, so even
-    /// if the user points the directory picker back into <c>~/.claude/</c>, the output
+    /// skips any <c>backups/</c> subdirectory it encounters inside the home, so even
+    /// if the user points the directory picker back into it, the output
     /// folder is never recursively included in subsequent archives.
     /// </para>
     /// </summary>
-    public static string DefaultBackupDirectory =>
-        Path.Combine(UserProfile, "claude-backups");
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>A SIBLING of the resolved home, computed rather than fixed.</b> When
+    /// <c>CLAUDE_CONFIG_DIR</c> is unset this is exactly the old <c>~/claude-backups</c>; when it
+    /// is set, the backups follow. A hardcoded path under <see cref="UserProfile"/> would break
+    /// the "next to" rationale above the moment the home moved, and would write into the user's
+    /// real profile from a session that had relocated everything else out of it.
+    /// </para>
+    /// <para>
+    /// ⚠ The fallback covers a home with no parent (a filesystem root), which
+    /// <see cref="Directory.GetParent(string)"/> reports as <see langword="null"/>. It is not
+    /// reachable from the default layout, but a hand-set <c>CLAUDE_CONFIG_DIR</c> can produce it
+    /// and a null dereference in a path accessor would take down startup.
+    /// </para>
+    /// </remarks>
+    public static string DefaultBackupDirectory(ClaudeEnvironment env)
+    {
+        string home = ClaudeHome(env);
+        string? parent = Directory.GetParent(home)?.FullName;
+
+        return Path.Combine(parent ?? UserProfile, "claude-backups");
+    }
 
     /// <summary>
     /// Claude Desktop log directory (platform-specific).
@@ -242,10 +294,10 @@ public static class PlatformPaths
     /// <summary>~/.claude.json — Claude Code global config file (home dir, not inside .claude/).</summary>
     public static string ClaudeJsonPath => Path.Combine(UserProfile, ".claude.json");
 
-    /// <summary>~/.claude/.credentials.json — Claude Code credentials (Windows/Linux).
-    /// On macOS this file does not exist; credentials live in Keychain.</summary>
-    public static string CredentialsPath =>
-        Path.Combine(ClaudeHome, ".credentials.json");
+    /// <summary><c>.credentials.json</c> in the resolved home — Claude Code credentials
+    /// (Windows/Linux). On macOS this file does not exist; credentials live in Keychain.</summary>
+    public static string CredentialsPath(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), ".credentials.json");
 
     /// <summary>
     /// Short platform identifier written into backup manifests:
@@ -337,34 +389,34 @@ public static class PlatformPaths
         return Path.Combine(projectRoot, ".mcp.json");
     }
 
-    /// <summary>~/.claude/CLAUDE.md — global instruction file for Claude Code.</summary>
-    public static string ClaudeMdPath =>
-        Path.Combine(ClaudeHome, "CLAUDE.md");
+    /// <summary><c>CLAUDE.md</c> in the resolved home — global instruction file for Claude Code.</summary>
+    public static string ClaudeMdPath(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), "CLAUDE.md");
 
     /// <summary>
-    /// ~/.claude/.claudectx-current — plain-text file containing the name of the
+    /// <c>.claudectx-current</c> in the resolved home — plain-text file containing the name of the
     /// active profile (written by both claudectx CLI and ClaudeForge). Absent when
     /// no profile has ever been activated via Apply.
     /// </summary>
-    public static string CurrentProfileFilePath =>
-        Path.Combine(ClaudeHome, ".claudectx-current");
+    public static string CurrentProfileFilePath(ClaudeEnvironment env) =>
+        Path.Combine(ClaudeHome(env), ".claudectx-current");
 
     /// <summary>Profile settings.json for the given profile name.</summary>
-    public static string ProfileSettingsPath(string profileName)
+    public static string ProfileSettingsPath(ClaudeEnvironment env, string profileName)
     {
-        return Path.Combine(ProfilesDirectory, profileName, "settings.json");
+        return Path.Combine(ProfilesDirectory(env), profileName, "settings.json");
     }
 
     /// <summary>Profile CLAUDE.md for the given profile name.</summary>
-    public static string ProfileClaudeMdPath(string profileName)
+    public static string ProfileClaudeMdPath(ClaudeEnvironment env, string profileName)
     {
-        return Path.Combine(ProfilesDirectory, profileName, "CLAUDE.md");
+        return Path.Combine(ProfilesDirectory(env), profileName, "CLAUDE.md");
     }
 
     /// <summary>Profile mcp.json for the given profile name.</summary>
-    public static string ProfileMcpPath(string profileName)
+    public static string ProfileMcpPath(ClaudeEnvironment env, string profileName)
     {
-        return Path.Combine(ProfilesDirectory, profileName, "mcp.json");
+        return Path.Combine(ProfilesDirectory(env), profileName, "mcp.json");
     }
 
     /// <summary>
@@ -409,8 +461,18 @@ public static class PlatformPaths
     /// present set <see cref="TestSuppressClaudeCodeBinaryProbe"/> instead.
     /// </para>
     /// </summary>
-    public static ClaudeCodeLocation? TryFindClaudeCodeBinary()
+    /// <remarks>
+    /// ⚠ <b>The cache is keyed on nothing, including not on <paramref name="env"/>.</b> That is
+    /// unchanged behaviour, not a regression the parameter introduced: it was already blind to the
+    /// <see cref="AsyncLocal{T}"/> sandbox override, which moves the same candidate paths. It is
+    /// sound because a process resolves exactly one environment at composition and never a second.
+    /// A caller that genuinely needs a different one must call <see cref="InvalidatePathCache"/>,
+    /// exactly as the About page's "Add to PATH" command already does.
+    /// </remarks>
+    public static ClaudeCodeLocation? TryFindClaudeCodeBinary(ClaudeEnvironment env)
     {
+        ArgumentNullException.ThrowIfNull(env);
+
         if (TestSuppressClaudeCodeBinaryProbe)
         {
             return null;
@@ -424,7 +486,7 @@ public static class PlatformPaths
             return _claudeCodeLocationCache;
         }
 
-        ClaudeCodeLocation? result = TryFindClaudeCodeBinaryUncached();
+        ClaudeCodeLocation? result = TryFindClaudeCodeBinaryUncached(env);
         _claudeCodeLocationCache = result;
         _claudeCodeLocationCacheValid = true;
         return result;
@@ -433,7 +495,7 @@ public static class PlatformPaths
     private static volatile bool _claudeCodeLocationCacheValid;
     private static ClaudeCodeLocation? _claudeCodeLocationCache;
 
-    private static ClaudeCodeLocation? TryFindClaudeCodeBinaryUncached()
+    private static ClaudeCodeLocation? TryFindClaudeCodeBinaryUncached(ClaudeEnvironment env)
     {
         string? pathHit = FindFirstOnPath("claude");
         if (pathHit != null)
@@ -441,7 +503,7 @@ public static class PlatformPaths
             return new ClaudeCodeLocation(pathHit, IsOnPath: true);
         }
 
-        foreach (string candidate in CanonicalClaudeCodeCandidates())
+        foreach (string candidate in CanonicalClaudeCodeCandidates(env))
         {
             if (File.Exists(candidate))
             {
@@ -458,9 +520,9 @@ public static class PlatformPaths
     /// installs coexist. Self-contained <c>~/.claude/local/</c> comes first
     /// because it is the most specific signal of an intentional install.
     /// </summary>
-    private static IEnumerable<string> CanonicalClaudeCodeCandidates()
+    private static IEnumerable<string> CanonicalClaudeCodeCandidates(ClaudeEnvironment env)
     {
-        string localDir = Path.Combine(ClaudeHome, "local");
+        string localDir = Path.Combine(ClaudeHome(env), "local");
         if (OperatingSystem.IsWindows())
         {
             yield return Path.Combine(localDir, "claude.exe");
@@ -525,12 +587,16 @@ public static class PlatformPaths
     /// 2. At any canonical disk location known to <see cref="TryFindClaudeCodeBinary"/>
     ///    — this catches the "installed but PATH not updated" case, including the
     ///    Windows-ARM64-npm-global scenario.
-    /// 3. <c>~/.claude/settings.json</c> exists (CLI was run at least once from
+    /// 3. <c>settings.json</c> exists in the resolved home (CLI was run at least once from
     ///    somewhere we no longer recognise — belt-and-braces fallback).
     /// </summary>
-    public static bool IsClaudeCodeInstalled =>
-        TryFindClaudeCodeBinary() is not null ||
-        File.Exists(UserSettingsPath);
+    /// <remarks>
+    /// ⓘ <b><see cref="IsClaudeCodeOnPath"/> deliberately takes no environment</b>, because it asks
+    /// only about <c>PATH</c>. This one consults the resolved home for its third signal, so it does.
+    /// </remarks>
+    public static bool IsClaudeCodeInstalled(ClaudeEnvironment env) =>
+        TryFindClaudeCodeBinary(env) is not null ||
+        File.Exists(UserSettingsPath(env));
 
     /// <summary>
     /// Returns true when Claude Desktop appears to be installed on this machine.
@@ -676,17 +742,18 @@ public static class PlatformPaths
         return null;
     }
 
-    /// <summary>All profile names (subdirectory names under ~/.claude/profiles/).</summary>
-    public static IReadOnlyList<string> DiscoverProfiles()
+    /// <summary>All profile names (subdirectory names under the resolved home's profiles/).</summary>
+    public static IReadOnlyList<string> DiscoverProfiles(ClaudeEnvironment env)
     {
-        if (!Directory.Exists(ProfilesDirectory))
+        string profilesDirectory = ProfilesDirectory(env);
+        if (!Directory.Exists(profilesDirectory))
         {
             return [];
         }
 
         try
         {
-            return Directory.GetDirectories(ProfilesDirectory)
+            return Directory.GetDirectories(profilesDirectory)
                             .Select(Path.GetFileName)
                             .Where(n => n != null)
                             .Cast<string>()

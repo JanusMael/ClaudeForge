@@ -80,4 +80,38 @@ public sealed record ProductDescriptor(
     /// nothing" rather than as a crash on the first product that lacks one.
     /// </remarks>
     public ProductBackupLayout Backup => BackupLayout ?? ProductBackupLayout.Empty;
+
+    /// <summary>
+    /// Two descriptors are the same product when their <see cref="Id"/> matches. Nothing else is
+    /// compared.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>The synthesized record equality was never meaningful for this type, and relying on
+    /// it silently stopped working when the Claude Code descriptor became environment-bound.</b>
+    /// <see cref="ProductBackupLayout"/> holds <c>Func</c> destinations, and delegates compare by
+    /// REFERENCE — so two descriptors built from identical inputs, one line apart, were already
+    /// unequal. That was harmless only while each product was a single static instance, where
+    /// reference equality happened to give the right answer by accident.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>This states the contract the codebase already assumed.</b> Both places that needed to
+    /// match products — <c>BackupRequest.Includes</c> and the navigation's <c>SectionFor</c> —
+    /// compared <see cref="Id"/> by hand and said in their remarks that a separately-constructed
+    /// descriptor must still match. Anything reaching for <c>==</c>,
+    /// <see cref="System.Linq.Enumerable.Contains{T}(IEnumerable{T}, T)"/>, <c>Distinct</c> or a
+    /// dictionary key now gets that same answer instead of a silent miss.
+    /// </para>
+    /// <para>
+    /// ⚠ The consequence, stated plainly: two descriptors for one product that differ in
+    /// <see cref="BackupLayout"/> or <see cref="SchemaUrl"/> ARE equal. That is intended — they
+    /// are the same product configured differently — but it means equality cannot be used to
+    /// detect such a difference. Compare the member you care about.
+    /// </para>
+    /// </remarks>
+    public bool Equals(ProductDescriptor? other) =>
+        other is not null && string.Equals(Id, other.Id, StringComparison.Ordinal);
+
+    /// <inheritdoc cref="Equals(ProductDescriptor)"/>
+    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Id);
 }

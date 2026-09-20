@@ -34,12 +34,16 @@ namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 /// </remarks>
 public sealed class BackupEngine
 {
-    /// <summary>Shared instance.</summary>
-    public static readonly BackupEngine Default = new();
+    // ⛔ There is deliberately NO parameterless `Default` instance any more. It was the one
+    // remaining way to obtain an engine pointed at the DEFAULT home, so on a machine with
+    // CLAUDE_CONFIG_DIR set it would archive an empty ~/.claude and report success. Removing it
+    // is the point rather than a side effect: every engine must now name the environment it
+    // resolves against, and the compiler is what enforces that.
 
     private readonly WorktreeProbe _worktreeProbe;
     private readonly IBackupFileSystem _fs;
     private readonly IReadOnlyList<ProductDescriptor>? _restorableProducts;
+    private readonly ClaudeEnvironment _env;
 
     /// <summary>
     /// Construct with custom collaborators (used by tests).
@@ -66,14 +70,27 @@ public sealed class BackupEngine
     /// passes here.
     /// </para>
     /// </param>
+    /// <param name="environment">
+    /// The resolved Claude environment every path in this engine is relative to.
+    /// <para>
+    /// ⛔ <b>Required, and first, on purpose.</b> An optional one defaulting to
+    /// <see cref="ClaudeEnvironment.Empty"/> would let a composition root silently archive the
+    /// wrong directory, which no test and no error would report. Tests that do not care pass
+    /// <see cref="ClaudeEnvironment.Empty"/> explicitly, which says so at the call site.
+    /// </para>
+    /// </param>
     public BackupEngine(
+        ClaudeEnvironment environment,
         WorktreeProbe? worktreeProbe = null,
         IBackupFileSystem? fileSystem = null,
         IReadOnlyList<ProductDescriptor>? restorableProducts = null)
     {
+        ArgumentNullException.ThrowIfNull(environment);
+
         _worktreeProbe = worktreeProbe ?? new WorktreeProbe();
         _fs = fileSystem ?? RealBackupFileSystem.Instance;
         _restorableProducts = restorableProducts;
+        _env = environment;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -95,7 +112,8 @@ public sealed class BackupEngine
         // resolve project set + worktrees.
         progress?.Report(new BackupProgress(
             0, 0, "Discovering projects…", 0, BackupProgressIds.DiscoveringProjects));
-        IReadOnlyList<string> settingsFilesForDiscovery = CollectSettingsFilesForDiscovery(request.ExplicitProjectDirs);
+        IReadOnlyList<string> settingsFilesForDiscovery =
+            CollectSettingsFilesForDiscovery(_env, request.ExplicitProjectDirs);
         IReadOnlyList<string> discovered = AdditionalDirectoriesResolver.Resolve(settingsFilesForDiscovery);
         IReadOnlyList<string> projects = MergeExplicitAndDiscovered(request.ExplicitProjectDirs, discovered);
 
@@ -330,7 +348,7 @@ public sealed class BackupEngine
             // manifest's project list and by git worktree discovery, not by a fixed archive path,
             // so there is no section that describes them. OpenCode's equivalent — if it has one —
             // will not be a directory-per-project either.
-            if (request.Includes(SchemaRegistry.ClaudeCodeProduct))
+            if (request.Includes(SchemaRegistry.ClaudeCodeProductFor(_env)))
             {
                 foreach (string projectRoot in projects)
                 {
@@ -342,7 +360,7 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/projects/{name}");
+                    AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");
                 }
 
                 foreach (BackupWorktreeEntry wt in worktrees)
@@ -355,11 +373,11 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/worktrees/{wtName}");
+                    AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");
                     // Stash the worktree's project-root mapping so restore can re-locate it.
                     BackupWorktreeEntry meta = new() { ProjectRoot = wt.ProjectRoot, WorktreePath = wt.WorktreePath };
                     string metaJson = JsonSerializer.Serialize(meta, BackupJsonContext.Default.BackupWorktreeEntry);
-                    writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeProduct.ArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
+                    writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
                 }
             }
 
@@ -692,7 +710,7 @@ public sealed class BackupEngine
     }
 
     /// <summary>
-    /// Whether the walk of <see cref="SchemaRegistry.ClaudeCodeProduct"/>'s home skips
+    /// Whether the walk of the Claude Code product's home skips
     /// <paramref name="dirName"/>.
     /// </summary>
     /// <remarks>
@@ -768,12 +786,14 @@ public sealed class BackupEngine
     /// <see cref="RestoreEngine.BuildAuthorisedRoots"/>. Two parallel lists that happen to agree
     /// today is exactly how F7 happened.
     /// </remarks>
-    internal static IReadOnlyList<string> CollectSettingsFilesForDiscovery(IReadOnlyList<string> explicitProjects)
+    internal static IReadOnlyList<string> CollectSettingsFilesForDiscovery(
+        ClaudeEnvironment env,
+        IReadOnlyList<string> explicitProjects)
     {
         List<string> list =
         [
-            PlatformPaths.UserSettingsPath,
-            Path.Combine(PlatformPaths.ClaudeHome, "settings.local.json"),
+            PlatformPaths.UserSettingsPath(env),
+            Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),
         ];
         foreach (string p in explicitProjects)
         {
@@ -1125,7 +1145,7 @@ public sealed class BackupEngine
         CancellationToken ct = default,
         IReadOnlyCollection<string>? openProjectRoots = null)
     {
-        return RestoreEngine.RestoreAsync(entry, _restorableProducts, progress, ct, openProjectRoots);
+        return RestoreEngine.RestoreAsync(_env, entry, _restorableProducts, progress, ct, openProjectRoots);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

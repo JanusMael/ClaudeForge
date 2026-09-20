@@ -38,15 +38,15 @@ public static class ProfileEngine
     /// <c>~/.claude/profiles/</c> that contains a <c>settings.json</c>).
     /// Sorted alphabetically by name.
     /// </summary>
-    public static IReadOnlyList<ProfileInfo> DiscoverProfiles()
+    public static IReadOnlyList<ProfileInfo> DiscoverProfiles(ClaudeEnvironment env)
     {
-        string dir = PlatformPaths.ProfilesDirectory;
+        string dir = PlatformPaths.ProfilesDirectory(env);
         if (!Directory.Exists(dir))
         {
             return [];
         }
 
-        string? cliActive = ReadCurrentProfileName();
+        string? cliActive = ReadCurrentProfileName(env);
 
         try
         {
@@ -83,9 +83,9 @@ public static class ProfileEngine
     /// Returns <c>null</c> when the file is absent or empty (meaning the CLI is using
     /// the live <c>~/.claude/settings.json</c> directly, i.e. the "(global)" state).
     /// </summary>
-    public static string? ReadCurrentProfileName()
+    public static string? ReadCurrentProfileName(ClaudeEnvironment env)
     {
-        string path = PlatformPaths.CurrentProfileFilePath;
+        string path = PlatformPaths.CurrentProfileFilePath(env);
         if (!File.Exists(path))
         {
             return null;
@@ -107,9 +107,9 @@ public static class ProfileEngine
     /// Pass <c>null</c> to remove the file (represents "no active profile" / global mode).
     /// Uses an atomic write (temp → rename) so a crash mid-write never leaves a partial file.
     /// </summary>
-    public static void WriteCurrentProfileName(string? name)
+    public static void WriteCurrentProfileName(ClaudeEnvironment env, string? name)
     {
-        string path = PlatformPaths.CurrentProfileFilePath;
+        string path = PlatformPaths.CurrentProfileFilePath(env);
         if (name == null)
         {
             if (File.Exists(path))
@@ -120,7 +120,7 @@ public static class ProfileEngine
             return;
         }
 
-        Directory.CreateDirectory(PlatformPaths.ClaudeHome);
+        Directory.CreateDirectory(PlatformPaths.ClaudeHome(env));
         WriteAtomicText(path, name);
     }
 
@@ -137,11 +137,11 @@ public static class ProfileEngine
     /// name already exists (caller should validate beforehand via
     /// <see cref="PlatformPaths.ProfilesDirectory"/>).
     /// </returns>
-    public static async Task<bool> CreateFromLiveAsync(string name, CancellationToken ct = default)
+    public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(env), name);
         if (Directory.Exists(profileDir))
         {
             return false;
@@ -150,7 +150,7 @@ public static class ProfileEngine
         Directory.CreateDirectory(profileDir);
 
         // If live settings exist, seed from them; otherwise write a minimal {}.
-        string liveSettings = PlatformPaths.UserSettingsPath;
+        string liveSettings = PlatformPaths.UserSettingsPath(env);
         if (File.Exists(liveSettings))
         {
             await CopyFileAsync(liveSettings, Path.Combine(profileDir, "settings.json"), ct);
@@ -161,9 +161,9 @@ public static class ProfileEngine
         }
 
         // CLAUDE.md is optional — only copy if present.
-        if (File.Exists(PlatformPaths.ClaudeMdPath))
+        if (File.Exists(PlatformPaths.ClaudeMdPath(env)))
         {
-            await CopyFileAsync(PlatformPaths.ClaudeMdPath, Path.Combine(profileDir, "CLAUDE.md"), ct);
+            await CopyFileAsync(PlatformPaths.ClaudeMdPath(env), Path.Combine(profileDir, "CLAUDE.md"), ct);
         }
 
         // Extract mcpServers from ~/.claude.json into a standalone mcp.json.
@@ -196,13 +196,14 @@ public static class ProfileEngine
     /// <c>~/.claude/settings.json</c> outside the GUI.
     /// </param>
     public static async Task ApplyProfileToLiveAsync(
+        ClaudeEnvironment env,
         string name,
         bool autoSync = true,
         CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(env), name);
         string settingsSrc = Path.Combine(profileDir, "settings.json");
         if (!File.Exists(settingsSrc))
         {
@@ -213,27 +214,27 @@ public static class ProfileEngine
         // Auto-sync the current CLI-active profile so no external edits are lost.
         if (autoSync)
         {
-            string? current = ReadCurrentProfileName();
+            string? current = ReadCurrentProfileName(env);
             if (!string.IsNullOrEmpty(current) &&
                 !string.Equals(current, name, StringComparison.OrdinalIgnoreCase))
             {
-                await SyncFromLiveAsync(current, ct);
+                await SyncFromLiveAsync(env, current, ct);
             }
         }
 
         // 1. settings.json
-        Directory.CreateDirectory(PlatformPaths.ClaudeHome);
-        await CopyFileAsync(settingsSrc, PlatformPaths.UserSettingsPath, ct);
+        Directory.CreateDirectory(PlatformPaths.ClaudeHome(env));
+        await CopyFileAsync(settingsSrc, PlatformPaths.UserSettingsPath(env), ct);
 
         // 2. CLAUDE.md
         string profileMd = Path.Combine(profileDir, "CLAUDE.md");
         if (File.Exists(profileMd))
         {
-            await CopyFileAsync(profileMd, PlatformPaths.ClaudeMdPath, ct);
+            await CopyFileAsync(profileMd, PlatformPaths.ClaudeMdPath(env), ct);
         }
-        else if (File.Exists(PlatformPaths.ClaudeMdPath))
+        else if (File.Exists(PlatformPaths.ClaudeMdPath(env)))
         {
-            File.Delete(PlatformPaths.ClaudeMdPath);
+            File.Delete(PlatformPaths.ClaudeMdPath(env));
         }
 
         // 3. mcpServers → ~/.claude.json
@@ -248,7 +249,7 @@ public static class ProfileEngine
         }
 
         // 4. Update the .claudectx-current pointer.
-        WriteCurrentProfileName(name);
+        WriteCurrentProfileName(env, name);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -260,17 +261,17 @@ public static class ProfileEngine
     /// whatever the profile previously stored. Useful for capturing external edits made
     /// directly to <c>~/.claude/settings.json</c> (e.g. via the Claude Code CLI itself).
     /// </summary>
-    public static async Task SyncFromLiveAsync(string name, CancellationToken ct = default)
+    public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(env), name);
         Directory.CreateDirectory(profileDir);
 
         // settings.json is always written (even if live is absent — write {}).
-        if (File.Exists(PlatformPaths.UserSettingsPath))
+        if (File.Exists(PlatformPaths.UserSettingsPath(env)))
         {
-            await CopyFileAsync(PlatformPaths.UserSettingsPath, Path.Combine(profileDir, "settings.json"), ct);
+            await CopyFileAsync(PlatformPaths.UserSettingsPath(env), Path.Combine(profileDir, "settings.json"), ct);
         }
         else
         {
@@ -279,9 +280,9 @@ public static class ProfileEngine
 
         // CLAUDE.md: copy if present; remove from profile if absent.
         string profileMd = Path.Combine(profileDir, "CLAUDE.md");
-        if (File.Exists(PlatformPaths.ClaudeMdPath))
+        if (File.Exists(PlatformPaths.ClaudeMdPath(env)))
         {
-            await CopyFileAsync(PlatformPaths.ClaudeMdPath, profileMd, ct);
+            await CopyFileAsync(PlatformPaths.ClaudeMdPath(env), profileMd, ct);
         }
         else if (File.Exists(profileMd))
         {
@@ -637,6 +638,7 @@ public static class ProfileEngine
     /// does not exist.
     /// </exception>
     public static async Task ExportProfileAsync(
+        ClaudeEnvironment env,
         string name,
         string destPath,
         CancellationToken ct = default)
@@ -644,7 +646,7 @@ public static class ProfileEngine
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(destPath);
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(env), name);
         string settingsPath = Path.Combine(profileDir, "settings.json");
         string claudeMdPath = Path.Combine(profileDir, "CLAUDE.md");
         string mcpPath = Path.Combine(profileDir, "mcp.json");
@@ -718,6 +720,7 @@ public static class ProfileEngine
     /// overwrite (mirrors claudectx's "profile %q already exists" guard).
     /// </exception>
     public static async Task<string> ImportProfileAsync(
+        ClaudeEnvironment env,
         string sourcePath,
         string? overrideName = null,
         CancellationToken ct = default)
@@ -771,7 +774,7 @@ public static class ProfileEngine
         // platform-specific edge cases like Windows drive letters and
         // backslash separators in attacker-supplied names).  See
         // docs/CLAUDECTX-COMPATIBILITY.md.
-        string profileDir = ResolveProfileDirSecurely(targetName);
+        string profileDir = ResolveProfileDirSecurely(env, targetName);
         if (Directory.Exists(profileDir))
         {
             throw new IOException($"Profile '{targetName}' already exists.");
@@ -842,7 +845,7 @@ public static class ProfileEngine
     /// validation errors (version mismatch, missing settings, etc.).
     /// </para>
     /// </summary>
-    private static string ResolveProfileDirSecurely(string profileName)
+    private static string ResolveProfileDirSecurely(ClaudeEnvironment env, string profileName)
     {
         if (profileName is "." or ".."
             || profileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
@@ -855,7 +858,7 @@ public static class ProfileEngine
                 "(must not contain path separators, '..', or absolute-path components).");
         }
 
-        string profilesRoot = Path.GetFullPath(PlatformPaths.ProfilesDirectory);
+        string profilesRoot = Path.GetFullPath(PlatformPaths.ProfilesDirectory(env));
         string resolved = Path.GetFullPath(Path.Combine(profilesRoot, profileName));
 
         // Belt-and-suspenders: reject if the resolved path doesn't sit

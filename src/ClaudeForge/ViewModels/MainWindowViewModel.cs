@@ -79,8 +79,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // ClaudeForge saying ~/.claude is Claude's answer instead of AgentForge.Core assuming it.
     // ⚠ A target-typed `new()` also makes a call site invisible to any search for the type name,
     // which is how this one was nearly missed. See NeutralLayerDefaultsTests.
-    private readonly SchemaSnapshotService _snapshotService =
-        new(Path.Combine(PlatformPaths.ClaudeHome, "cache"));
+    // ⛔ Assigned in the constructor, NOT here. A field initializer runs before the constructor
+    // body, so it cannot see _env — and the compiler says so (CS0236) rather than silently
+    // resolving the default home, which is the one mercy in this whole refactor.
+    private readonly SchemaSnapshotService _snapshotService;
 
     private ConfigFileWatcher? _watcher;
 
@@ -117,9 +119,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // disagree about which product's threat model applies. Claude Desktop gets none on purpose:
     // nobody has triaged its keys, and Claude Code's table would be a false claim rather than a
     // shortcut (the schemas barely overlap, and `env` is in both).
-    private readonly List<ProductSection> _sections =
+    // ⛔ Assigned in the constructor for the same reason as _snapshotService above: the Claude
+    // Code descriptor is now built from the environment, which no field initializer can see.
+    private readonly List<ProductSection> _sections;
+
+    private static List<ProductSection> BuildSections(ClaudeEnvironment env) =>
     [
-        new(SchemaRegistry.ClaudeCodeProduct, NavTitleClaudeCode,
+        new(SchemaRegistry.ClaudeCodeProductFor(env), NavTitleClaudeCode,
             () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json",
             ClaudeDangerTable.Settings),
         new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
@@ -133,7 +139,24 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private ProductSection SectionFor(ProductDescriptor product)
     {
-        return _sections.Single(s => string.Equals(s.Product.Id, product.Id, StringComparison.Ordinal));
+        return SectionFor(product.Id);
+    }
+
+    /// <summary>
+    /// The section for a product id.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>An id overload so a caller that only wants its own section need not build a
+    /// descriptor.</b> Since the Claude Code descriptor became environment-bound, the obvious
+    /// <c>SectionFor(ClaudeCodeProductFor(_env))</c> would allocate a fresh record on every
+    /// property read. ⓘ Matching was already on <see cref="ProductDescriptor.Id"/>, which is why
+    /// a per-call descriptor would have worked at all: two instances built from the same
+    /// environment are NOT record-equal, because their destination factories are distinct
+    /// delegates.
+    /// </remarks>
+    private ProductSection SectionFor(string productId)
+    {
+        return _sections.Single(s => string.Equals(s.Product.Id, productId, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -157,8 +180,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // miss the other.
     internal ClaudeConfigClientBase? ClaudeCodeSdk
     {
-        get => SectionFor(SchemaRegistry.ClaudeCodeProduct).Client;
-        private set => SectionFor(SchemaRegistry.ClaudeCodeProduct).Client = value;
+        get => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client;
+        private set => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client = value;
     }
 
     internal ClaudeConfigClientBase? ClaudeDesktopSdk
@@ -476,10 +499,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private const string NavDescWelcome =
         "Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch.";
 
-    public MainWindowViewModel(SchemaRegistry schemaRegistry, IDialogService dialogService,
+    /// <summary>
+    /// The resolved Claude environment, supplied by <c>App</c>'s composition root and used for
+    /// every path this view-model and its children resolve.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>One value, shared with both SDK clients</b>, for the same reason the schema registry
+    /// is shared: two environments in one process would let the pages read one config tree while
+    /// a save validated against another, and no surface anywhere would disagree.
+    /// </remarks>
+    private readonly ClaudeEnvironment _env;
+
+    public MainWindowViewModel(ClaudeEnvironment env,
+                               SchemaRegistry schemaRegistry, IDialogService dialogService,
                                IShareService? shareService = null,
                                TimeProvider? timeProvider = null)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
+
+        // Both of these were field initializers until the home became environment-bound. They
+        // have to run after _env is assigned, and the compiler enforces that rather than
+        // letting them quietly resolve the default home.
+        _snapshotService = new(Path.Combine(PlatformPaths.ClaudeHome(env), "cache"));
+        _sections = BuildSections(env);
+        UpdateBanner = new UpdateBannerViewModel(env);
         _timeProvider = timeProvider ?? TimeProvider.System;
         _schemaRegistry = schemaRegistry;
         DialogServiceForViewAccess = dialogService;
@@ -498,7 +542,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // Restore persisted state — single hydrate per session. Subsequent saves
         // mutate _cachedState in place rather than re-reading from disk.
-        _cachedState = WindowStateService.Load();
+        _cachedState = WindowStateService.Load(_env);
         _projectRoot = _cachedState.ProjectRoot;
         _isFollowingSystem = _cachedState.Theme == "System";
         _isDarkTheme = _cachedState.Theme == "Dark"; // false when "System" — corrected in ApplyRestoredTheme
@@ -964,7 +1008,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// on the current OS). Bound by the Welcome page's "What you're editing
     /// now" panel as the always-active User-scope target.
     /// </summary>
-    public string UserSettingsPath => PlatformPaths.UserSettingsPath;
+    public string UserSettingsPath => PlatformPaths.UserSettingsPath(_env);
 
     /// <summary>
     /// One-line summary of the current editing context, formatted for the
@@ -1237,7 +1281,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
         if (Directory.Exists(profileDir))
         {
             DialogMessage existsMsg = DialogMessage.Builder()
@@ -1253,7 +1297,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // Seed from the current live ~/.claude/settings.json (+ CLAUDE.md + mcpServers)
             // so the profile starts from real state rather than an empty object.
             // CreateFromLiveAsync falls back to writing {} when the live file is absent.
-            await ProfileEngine.CreateFromLiveAsync(name);
+            await ProfileEngine.CreateFromLiveAsync(_env, name);
 
             // Refresh the ComboBox first so the new item is visible when the
             // binding updates SelectedProfile.
@@ -1318,7 +1362,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
         try
         {
             if (Directory.Exists(profileDir))
@@ -1328,9 +1372,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
             // Clear the .claudectx-current pointer if it pointed to this profile,
             // so the CLI active badge disappears and we don't reference a deleted profile.
-            if (string.Equals(ProfileEngine.ReadCurrentProfileName(), name, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(ProfileEngine.ReadCurrentProfileName(_env), name, StringComparison.OrdinalIgnoreCase))
             {
-                ProfileEngine.WriteCurrentProfileName(null);
+                ProfileEngine.WriteCurrentProfileName(_env, null);
                 CliActiveProfileName = null;
             }
 
@@ -1462,7 +1506,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// resolves with an UpdateAvailable result that hasn't been
     /// previously dismissed.
     /// </summary>
-    public UpdateBannerViewModel UpdateBanner { get; } = new();
+    // ⛔ Assigned in the constructor, not here: a property initializer runs before the
+    // constructor body and so cannot see _env. Same ordering rule as _sections above.
+    public UpdateBannerViewModel UpdateBanner { get; }
 
     /// <summary>
     /// Process-static latch: <see langword="true"/> once the
@@ -1729,7 +1775,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         get
         {
-            HashSet<string> cliNames = new(PlatformPaths.DiscoverProfiles(), StringComparer.OrdinalIgnoreCase);
+            HashSet<string> cliNames = new(PlatformPaths.DiscoverProfiles(_env), StringComparer.OrdinalIgnoreCase);
             HashSet<string> dtNames = new(PlatformPaths.DiscoverDesktopProfiles(), StringComparer.OrdinalIgnoreCase);
 
             List<UnifiedProfileEntry> entries = [UnifiedProfileEntry.Global];
@@ -2272,7 +2318,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // process actually exits.
         _suppressStateSave = true;
 
-        string path = WindowStateService.Delete();
+        string path = WindowStateService.Delete(_env);
         string logsDir = PlatformPaths.AppLogsDirectory;
         Log.Information(
             "[ClearAppData] deleted persisted UI state at {Path}; purging {LogDir} and exiting",
@@ -3526,7 +3572,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _cachedState.LastBackupUtc = _backupVm.LastBackupUtc;
         }
 
-        WindowStateService.Save(_cachedState);
+        WindowStateService.Save(_env, _cachedState);
     }
 
     public SavedWindowGeometry GetSavedGeometry()
@@ -3610,7 +3656,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // above.  Even if THIS task is cancelled, the cache mutation
                 // already happened, and any subsequent SaveWindowState() (or
                 // the OnClosed shutdown hook) will persist the correct value.
-                WindowStateService.Save(_cachedState);
+                WindowStateService.Save(_env, _cachedState);
             }
             catch (OperationCanceledException)
             {
@@ -3954,8 +4000,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // contribute to each workspace given the active profile).
         string? cliProfile = (!entry.IsGlobal && entry.HasCli) ? entry.Name : null;
         IReadOnlyList<DiscoveredFile> settingsFiles =
-            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ProjectRoot, cliProfile);
-        IReadOnlyList<DiscoveredFile> mcpFiles = ConfigFileDiscoverer.DiscoverMcpFiles(ProjectRoot, cliProfile);
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(_env, ProjectRoot, cliProfile);
+        IReadOnlyList<DiscoveredFile> mcpFiles = ConfigFileDiscoverer.DiscoverMcpFiles(_env, ProjectRoot, cliProfile);
         IReadOnlyList<DiscoveredFile> ccFiles = (IReadOnlyList<DiscoveredFile>)[..settingsFiles, ..mcpFiles];
 
         string? dtProfile = (!entry.IsGlobal && entry.HasDesktop) ? entry.Name : null;
@@ -4035,7 +4081,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         ClaudeCodeSdk?.Dispose();
         ClaudeCodeSdk = ClaudeCodeClient.FromExistingWorkspace(
-            ccCandidate, ConfigScope.User, _schemaRegistry, writer);
+            _env, ccCandidate, ConfigScope.User, _schemaRegistry, writer);
 
         ClaudeDesktopSdk?.Dispose();
         ClaudeDesktopSdk = ClaudeDesktopClient.FromExistingWorkspace(
@@ -4055,7 +4101,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         //
         // The --showInstallBanner debug flag forces the banner on unconditionally
         // (useful for UI testing the banner on a machine with Claude installed).
-        bool neitherInstalled = !PlatformPaths.IsClaudeCodeInstalled && !PlatformPaths.IsDesktopInstalled;
+        bool neitherInstalled = !PlatformPaths.IsClaudeCodeInstalled(_env) && !PlatformPaths.IsDesktopInstalled;
         if (!neitherInstalled)
         {
             _bannerDismissedByUser = false; // product detected — reset so banner can re-show later
@@ -4065,7 +4111,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                             || (neitherInstalled && !_bannerDismissedByUser);
 
         // Refresh the active-profile badges so they reflect the current pointer files.
-        CliActiveProfileName = ProfileEngine.ReadCurrentProfileName();
+        CliActiveProfileName = ProfileEngine.ReadCurrentProfileName(_env);
         DesktopActiveProfileName = ProfileEngine.ReadCurrentDesktopProfileName();
 
         // Update the editing-scope selector to only show scopes with loaded documents.
@@ -4437,7 +4483,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     // silently blank for most keys, confidently wrong on any that collide.
                     ? NavigationTreeBuilder.BuildGroups(
                         ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes,
-                        SectionFor(SchemaRegistry.ClaudeCodeProduct).Danger)
+                        SectionFor(SchemaRegistry.ClaudeCodeProductId).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
                 dtWorkspace is not null && dtSdk is not null
                     ? NavigationTreeBuilder.BuildGroups(
@@ -4476,6 +4522,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // H-2: persistent About VM (lazy-init once, reuse across reloads).
         _aboutCodeVm ??= new AboutEditorViewModel(
+            _env,
             AboutProduct.ClaudeCode,
             dialogService: DialogServiceForViewAccess,
             shareService: _shareService)
@@ -4493,7 +4540,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutCodeVm,
         });
 
-        ApplyProvenanceBadge(ccHeader, _schemaRegistry, SchemaRegistry.ClaudeCodeProduct);
+        ApplyProvenanceBadge(ccHeader, _schemaRegistry, SchemaRegistry.ClaudeCodeProductFor(_env));
         NavigationTree.Add(ccHeader);
 
         // --- Claude Desktop section ---
@@ -4523,6 +4570,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // H-2: persistent About VM (lazy-init once, reuse across reloads).
         _aboutDesktopVm ??= new AboutEditorViewModel(
+            _env,
             AboutProduct.ClaudeDesktop,
             dialogService: DialogServiceForViewAccess,
             shareService: _shareService)
@@ -4574,7 +4622,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // so the disk-backed list reflects post-reload state.
         if (_profilesVm is null)
         {
-            _profilesVm = new ProfilesViewModel(DialogServiceForViewAccess);
+            _profilesVm = new ProfilesViewModel(_env, DialogServiceForViewAccess);
             _profilesVm.OnProfileApplied = async appliedName =>
             {
                 // Sync the toolbar ComboBox so the GUI now edits the same profile the CLI uses.
@@ -4622,7 +4670,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
                 // The CLI-active badge is already cleared inside ProfilesViewModel.DeleteAsync
                 // when the deleted profile was CLI-active; re-read to be safe.
-                CliActiveProfileName = ProfileEngine.ReadCurrentProfileName();
+                CliActiveProfileName = ProfileEngine.ReadCurrentProfileName(_env);
             };
             _profilesVm.OnProfileCreated = createdName =>
             {
@@ -4684,7 +4732,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Log.Information(
             "[Profiles] After load: {Count} unified entries discovered (CLI: {CliCount}, Desktop: {DesktopCount})",
             AvailableProfileEntries.Count,
-            PlatformPaths.DiscoverProfiles().Count,
+            PlatformPaths.DiscoverProfiles(_env).Count,
             PlatformPaths.DiscoverDesktopProfiles().Count);
 
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleProfiles, "👤", NavDescProfiles)
@@ -4714,7 +4762,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // user can back up.
             _backupVm = new BackupRestoreViewModel(
                 DialogServiceForViewAccess,
-                ClaudeBackupPage.Options(_sections.Select(s => s.Product).ToList()),
+                ClaudeBackupPage.Options(_env, _sections.Select(s => s.Product).ToList()),
                 _shareService)
             {
                 CredentialsPreference = _cachedState.IncludeCredentialsInBackup,

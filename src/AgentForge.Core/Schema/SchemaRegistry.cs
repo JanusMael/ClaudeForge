@@ -199,17 +199,58 @@ public sealed class SchemaRegistry : IDisposable
     /// that knowledge so the eventual product/shared split has one thing to move rather
     /// than five branches to find.
     /// </remarks>
-    public static readonly ProductDescriptor ClaudeCodeProduct =
-        new("claude-code", "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",
-            ArchiveFolder: "ClaudeCode",
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>There is deliberately NO static <c>ClaudeCodeProduct</c>, and the cheaper design was
+    /// measured before being refused.</b> Splitting identity from layout — a static field for the
+    /// ~90 sites that read only <see cref="ProductDescriptor.Id"/> or
+    /// <see cref="ProductDescriptor.ArchiveFolder"/>, and this method for the two engines that
+    /// need destinations — looked free. It is not: <see cref="ProductDescriptor.Backup"/> is
+    /// <c>BackupLayout ?? ProductBackupLayout.Empty</c>, so a descriptor that lost its layout
+    /// yields <b>zero sections</b>, and an archive written from it contains nothing while every
+    /// surface reports success. A null layout cannot be used as a loud failure because it is not
+    /// one.
+    /// </para>
+    /// <para>
+    /// ⚠ So the environment is required to obtain the descriptor at all, and the compiler is what
+    /// enforces it. <c>ClaudeDesktopProduct</c> stays a static field by contrast, because none of
+    /// its paths live under the Claude home and <c>CLAUDE_CONFIG_DIR</c> cannot move them.
+    /// </para>
+    /// <para>
+    /// ⓘ Equality was never the hazard: <c>BackupRequest.Includes</c> compares on
+    /// <see cref="ProductDescriptor.Id"/> precisely so a separately-constructed descriptor for the
+    /// same product still matches.
+    /// </para>
+    /// </remarks>
+    /// <summary>The archive folder Claude Code's sections live under.</summary>
+    /// <remarks>
+    /// ⭐ <b>A constant so an identity-only caller never has to conjure a descriptor.</b> Several
+    /// sites want nothing but this string — they are naming a path inside the archive, which no
+    /// environment can move. Building a whole <see cref="ProductDescriptor"/> to read it would
+    /// force an environment on code that has none, and the tempting shortcut there is an
+    /// <see cref="ClaudeEnvironment.Empty"/> descriptor that later reaches a backup engine.
+    /// </remarks>
+    /// <remarks>
+    /// ⚠ <see cref="ClaudeCodeProductFor"/> is built FROM this, so the two cannot drift.
+    /// </remarks>
+    public const string ClaudeCodeArchiveFolder = "ClaudeCode";
+
+    /// <summary>The stable id of the Claude Code product, for identity comparisons.</summary>
+    /// <remarks>Same reasoning as <see cref="ClaudeCodeArchiveFolder"/>, and the descriptor is
+    /// built from it.</remarks>
+    public const string ClaudeCodeProductId = "claude-code";
+
+    public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>
+        new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",
+            ArchiveFolder: ClaudeCodeArchiveFolder,
             BackupLayout: new ProductBackupLayout(
                 Sections:
                 [
                     ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,
                         "Restoring claude.json…"),
                     // Home, not Directory: this walk honours SkippedSubdirs below.
-                    ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome,
-                        "Restoring ~/.claude/…"),
+                    ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome(env),
+                        "Restoring the Claude home directory…"),
                 ],
                 SkippedSubdirs:
                 [
@@ -270,7 +311,9 @@ public sealed class SchemaRegistry : IDisposable
 
     public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)
     {
-        return GetSettingsNodeAsync(ClaudeCodeProduct, ct);
+        // Schema only: nothing here resolves a path, so the environment cannot matter and the
+        // descriptor never escapes this call.
+        return GetSettingsNodeAsync(ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct);
     }
 
     /// <summary>
@@ -1252,7 +1295,11 @@ public sealed class SchemaRegistry : IDisposable
         bool isClaudeCode,
         CancellationToken ct = default)
     {
-        return ValidateWorkspaceAsync(workspace, isClaudeCode ? ClaudeCodeProduct : ClaudeDesktopProduct, ct);
+        // Schema only, as above: validation reads SchemaUrl and SchemaFileName, never a path.
+        return ValidateWorkspaceAsync(
+            workspace,
+            isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,
+            ct);
     }
 
     /// <inheritdoc cref="ValidateWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>
@@ -1386,7 +1433,11 @@ public sealed class SchemaRegistry : IDisposable
         bool isClaudeCode,
         CancellationToken ct = default)
     {
-        return ValidateAllWorkspaceAsync(workspace, isClaudeCode ? ClaudeCodeProduct : ClaudeDesktopProduct, ct);
+        // Schema only, as above.
+        return ValidateAllWorkspaceAsync(
+            workspace,
+            isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,
+            ct);
     }
 
     /// <inheritdoc cref="ValidateAllWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>

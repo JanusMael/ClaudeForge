@@ -184,7 +184,7 @@ public sealed class ExportManifest
         List<string> folders = new(2);
         if (manifest.LegacyIncludesClaudeCode == true)
         {
-            folders.Add(SchemaRegistry.ClaudeCodeProduct.ArchiveFolder);
+            folders.Add(SchemaRegistry.ClaudeCodeArchiveFolder);
         }
 
         if (manifest.LegacyIncludesClaudeDesktop == true)

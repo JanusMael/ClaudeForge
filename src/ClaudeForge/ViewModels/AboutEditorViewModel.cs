@@ -31,6 +31,13 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     private readonly Func<string?> _logPathProvider;
     private readonly PlatformPaths.ClaudeCodeLocation? _claudeCodeLocation;
 
+    /// <summary>
+    /// The resolved Claude environment. ⓘ Used only on the Claude Code side: the Desktop arm of
+    /// <see cref="PrimaryConfigPath"/> reads an OS application-data path that
+    /// <c>CLAUDE_CONFIG_DIR</c> cannot move.
+    /// </summary>
+    private readonly ClaudeEnvironment _env;
+
     // Default log-path factory used in production.  Extracted as a static so
     // the lambda allocation happens once, not on every constructor call.
     private static readonly Func<string?> _defaultLogPathProvider =
@@ -161,10 +168,11 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     /// correct — no change notification needed.
     /// </remarks>
     public string PrimaryConfigPath => Product == AboutProduct.ClaudeCode
-        ? PlatformPaths.UserSettingsPath
+        ? PlatformPaths.UserSettingsPath(_env)
         : PlatformPaths.DesktopConfigPath;
 
     public AboutEditorViewModel(
+        ClaudeEnvironment env,
         AboutProduct product,
         IShellLauncher? shellLauncher = null,
         IDialogService? dialogService = null,
@@ -172,6 +180,8 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         IShareService? shareService = null,
         Func<string?>? logPathProvider = null)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
         Product = product;
         _shellLauncher = shellLauncher ?? ShellLauncher.Instance;
         _dialogService = dialogService;
@@ -185,7 +195,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         // IsClaudeCodeOnPath / ShowClaudeCodePathWarning and is forwarded to
         // LoadVersionsAsync so the version probe uses the exact binary we
         // located rather than depending on a PATH lookup the user may not have.
-        _claudeCodeLocation = PlatformPaths.TryFindClaudeCodeBinary();
+        _claudeCodeLocation = PlatformPaths.TryFindClaudeCodeBinary(env);
 
         // Seed install panels only for the products that are not currently
         // detected — when a product is installed we hide its entire row, so

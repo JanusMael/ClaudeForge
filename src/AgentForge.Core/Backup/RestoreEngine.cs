@@ -50,6 +50,7 @@ internal static class RestoreEngine
     /// restored — a project no other source on this machine knows about is refused.
     /// </param>
     internal static async Task<RestoreResult> RestoreAsync(
+        ClaudeEnvironment env,
         BackupEntry entry,
         IReadOnlyList<ProductDescriptor>? restorableProducts = null,
         IProgress<BackupProgress>? progress = null,
@@ -57,7 +58,7 @@ internal static class RestoreEngine
         IReadOnlyCollection<string>? openProjectRoots = null)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProducts;
+        IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProductsFor(env);
         if (entry.IsCorrupt || entry.Manifest == null)
         {
             return new RestoreResult(false, "Backup is corrupt or missing a manifest.", 0);
@@ -217,7 +218,7 @@ internal static class RestoreEngine
             // own project list says which of those the restore is allowed to write to. Read here
             // rather than inside RestoreProjects so the authorisation source is visible at the
             // call site — it is the difference between a security check and a silent scope limit.
-            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(openProjectRoots);
+            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(env, openProjectRoots);
             restored += RestoreProjects(tempRoot, entry.Manifest, stamp, authorisedRoots, journal);
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring projects…", totalExtracted,
@@ -349,6 +350,7 @@ internal static class RestoreEngine
     /// about. Measured, not reasoned: the retest fixture was absent from a 62-entry project list.
     /// </remarks>
     internal static IReadOnlyCollection<string> BuildAuthorisedRoots(
+        ClaudeEnvironment env,
         IReadOnlyCollection<string>? openProjectRoots)
     {
         List<string> explicitRoots = openProjectRoots?
@@ -375,7 +377,7 @@ internal static class RestoreEngine
         try
         {
             foreach (string r in AdditionalDirectoriesResolver.Resolve(
-                         BackupEngine.CollectSettingsFilesForDiscovery(explicitRoots)))
+                         BackupEngine.CollectSettingsFilesForDiscovery(env, explicitRoots)))
             {
                 roots.Add(r);
             }
@@ -960,7 +962,7 @@ internal static class RestoreEngine
         List<string> fileFailures = journal.FileFailures;
         // Folder from the descriptor, not a literal — the write side has always used it, and a
         // rename on one side only would silently stop matching rather than erroring.
-        string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "projects");
+        string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "projects");
         if (!Directory.Exists(projectsDir))
         {
             return 0;
@@ -1015,7 +1017,7 @@ internal static class RestoreEngine
         ArgumentNullException.ThrowIfNull(journal);
         List<string> skipped = journal.Skipped;
         List<string> fileFailures = journal.FileFailures;
-        string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeProduct.ArchiveFolder, "worktrees");
+        string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "worktrees");
         if (!Directory.Exists(wtDir))
         {
             return 0;
@@ -1332,16 +1334,29 @@ internal static class RestoreEngine
     /// even if it wanted to.
     /// </para>
     /// <para>
-    /// ⚠ <b>Claude's two stay the default deliberately.</b> Every existing caller —
-    /// <c>BackupEngine.Default</c> included — keeps restoring exactly what it restored before,
-    /// which is what makes the frozen v1 fixture still pass.
+    /// ⚠ <b>Claude's two stay the default deliberately.</b> Every existing caller keeps restoring
+    /// exactly what it restored before, which is what makes the frozen v1 fixture still pass.
     /// </para>
     /// </remarks>
-    internal static readonly IReadOnlyList<ProductDescriptor> DefaultRestorableProducts =
+    internal static IReadOnlyList<ProductDescriptor> DefaultRestorableProductsFor(ClaudeEnvironment env) =>
     [
-        SchemaRegistry.ClaudeCodeProduct,
+        SchemaRegistry.ClaudeCodeProductFor(env),
         SchemaRegistry.ClaudeDesktopProduct,
     ];
+
+    /// <summary>
+    /// A Claude Code descriptor for reading files <b>inside an archive</b>, where no destination
+    /// on the user's disk is ever resolved.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Deliberately built with <see cref="ClaudeEnvironment.Empty"/>, and safe only because
+    /// of what it is used for.</b> <see cref="ValidatableConfigs"/> walks paths under the
+    /// extracted temp root, so every path it forms is archive-relative and no user home takes
+    /// part. ⛔ Do not hand this to a backup or restore <i>destination</i>: it resolves the
+    /// default home, which is the wrong tree for anyone who has set <c>CLAUDE_CONFIG_DIR</c>.
+    /// </remarks>
+    private static readonly ProductDescriptor ArchiveOnlyClaudeCode =
+        SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
     /// <summary>
     /// Which config files a backup archive can contain, as data: each row pairs the product
@@ -1371,11 +1386,11 @@ internal static class RestoreEngine
         [
             // Claude Code: claude.json at the product root — deliberately NOT recursive, or a
             // claude.json captured under projects/ would be validated as a settings file.
-            (SchemaRegistry.ClaudeCodeProduct, [], ["claude.json"],
+            (ArchiveOnlyClaudeCode, [], ["claude.json"],
                 SearchOption.TopDirectoryOnly),
 
             // Claude Code: settings.json / settings.local.json anywhere under claude-dir.
-            (SchemaRegistry.ClaudeCodeProduct, ["claude-dir"],
+            (ArchiveOnlyClaudeCode, ["claude-dir"],
                 ["settings.json", "settings.local.json"], SearchOption.AllDirectories),
 
             // Claude Desktop: the main config.

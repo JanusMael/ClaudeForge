@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Updates;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
@@ -40,6 +41,36 @@ internal static class AppUpdateService
     /// own. A later app in this repository takes a prefix instead; see
     /// <see cref="ReleaseTagScheme.Unprefixed"/>.
     /// </remarks>
+    /// <summary>
+    /// The resolved Claude environment, supplied once by the composition root.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>An app-level holder, and it THROWS rather than defaulting.</b> This is a static
+    /// service whose coordinator is built from a deferred predicate, so there is no parameter to
+    /// thread and no instance to construct. The one thing it must never do is fall back to
+    /// <see cref="ClaudeEnvironment.Empty"/>: that would read the auto-check preference out of
+    /// the default home for a user who had relocated it, and report a plausible wrong answer.
+    /// </para>
+    /// <para>
+    /// ⚠ Scope: the APP's composition root, the same shape as <c>DebugFlags.Initialize</c>. It is
+    /// not the pattern the shared libraries use, where the environment is a required parameter.
+    /// </para>
+    /// </remarks>
+    private static ClaudeEnvironment? _env;
+
+    /// <summary>Supply the resolved environment. Called once, from the composition root.</summary>
+    internal static void Initialize(ClaudeEnvironment env)
+    {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
+    }
+
+    private static ClaudeEnvironment Env =>
+        _env ?? throw new InvalidOperationException(
+            "AppUpdateService.Initialize has not been called. The composition root must supply " +
+            "the resolved ClaudeEnvironment before any update check runs.");
+
     private static readonly AppUpdateCoordinator Coordinator = new(
         new AppUpdateOptions(
             ProductName: "ClaudeForge",
@@ -47,7 +78,9 @@ internal static class AppUpdateService
             ReleaseTagUrlFormat: "https://github.com/JanusMael/ClaudeForge/releases/tag/{0}",
             // Read fresh on every automatic check, so toggling the Essentials card takes effect
             // without a restart.
-            IsAutoCheckEnabled: () => WindowStateService.Load().CheckForUpdatesOnLaunch,
+            // Deferred, so Env is read when a check runs rather than at type-initialisation —
+            // which is what lets a static field depend on a value the composition root supplies.
+            IsAutoCheckEnabled: () => WindowStateService.Load(Env).CheckForUpdatesOnLaunch,
             IsSimulatingUpdate: () => DebugFlags.SimulateUpdate),
         AppUpdateCoordinator.VersionOf(Assembly.GetExecutingAssembly()));
 

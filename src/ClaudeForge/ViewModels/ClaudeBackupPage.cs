@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 
@@ -35,8 +36,8 @@ internal static class ClaudeBackupPage
     /// usual path — it exists so a caller without a window (tests, tooling) still gets Claude's two
     /// rather than an empty page.
     /// </remarks>
-    internal static IReadOnlyList<ProductDescriptor> DefaultProducts { get; } =
-        [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct];
+    internal static IReadOnlyList<ProductDescriptor> DefaultProductsFor(ClaudeEnvironment env) =>
+        [SchemaRegistry.ClaudeCodeProductFor(env), SchemaRegistry.ClaudeDesktopProduct];
 
     /// <summary>
     /// Options for the shell's Backup / Restore page.
@@ -46,13 +47,19 @@ internal static class ClaudeBackupPage
     /// drift: a product this window hosts is a product the user can back up.
     /// </param>
     /// <remarks>
-    /// ⚠ <c>BackupEngine.Default</c> is correct <i>here</i> and only here: its restorable products
-    /// are Claude Code and Claude Desktop. A host whose products differ must pass an engine that
-    /// matches, or it writes archives it cannot restore.
+    /// ⚠ The engine is built here rather than shared, and its restorable products are Claude Code
+    /// and Claude Desktop. A host whose products differ must pass an engine that matches, or it
+    /// writes archives it cannot restore.
+    /// <para>
+    /// ⛔ The engine takes the same <paramref name="env"/> the products were built from. Handing it
+    /// a different one would archive a directory the page is not showing.
+    /// </para>
     /// </remarks>
-    internal static BackupPageOptions Options(IReadOnlyList<ProductDescriptor> products) => new()
+    internal static BackupPageOptions Options(
+        ClaudeEnvironment env,
+        IReadOnlyList<ProductDescriptor> products) => new()
     {
-        Engine = BackupEngine.Default,
+        Engine = new BackupEngine(env),
         Products = products,
 
         // Claude Code's CLI and the Desktop app. Advisory only — the engine still handles
@@ -67,7 +74,7 @@ internal static class ClaudeBackupPage
         // are a lookup rather than the descriptor's own name.
         ProductCheckboxLabel = static product =>
         {
-            if (string.Equals(product.Id, SchemaRegistry.ClaudeCodeProduct.Id, StringComparison.Ordinal))
+            if (string.Equals(product.Id, SchemaRegistry.ClaudeCodeProductId, StringComparison.Ordinal))
             {
                 return Strings.CheckboxClaudeCode;
             }
@@ -87,7 +94,7 @@ internal static class ClaudeBackupPage
             // values are unchanged, so the cell still reads "Code+Desktop".
             ClientAbbreviations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                [SchemaRegistry.ClaudeCodeProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeCode,
+                [SchemaRegistry.ClaudeCodeArchiveFolder] = Strings.LabelClientAbbrevClaudeCode,
                 [SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeDesktop,
             },
 

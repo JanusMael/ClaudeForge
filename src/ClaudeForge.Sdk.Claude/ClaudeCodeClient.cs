@@ -1,6 +1,7 @@
 ﻿using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -22,6 +23,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 /// </remarks>
 public sealed class ClaudeCodeClient : ClaudeConfigClientBase
 {
+    /// <summary>
+    /// The resolved Claude environment every path this client reads is relative to.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Required on every constructor rather than defaulted.</b> This client decides which
+    /// <c>settings.json</c> the user is editing; one built without the environment would edit the
+    /// default tree while the agent read a relocated one, and nothing would report the mismatch.
+    /// </remarks>
+    private readonly ClaudeEnvironment _env;
+
     /// <summary>Construct a client whose mutations target <see cref="ConfigScope.User"/>.</summary>
     /// <remarks>
     /// An overload rather than a defaulted parameter: <see cref="ConfigScope"/> became a
@@ -29,19 +40,26 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     /// which a static property never is. Do not "simplify" this pair back into
     /// <c>ConfigScope defaultScope = ConfigScope.User</c> — it cannot compile.
     /// </remarks>
-    public ClaudeCodeClient()
-        : this(ConfigScope.User)
+    public ClaudeCodeClient(ClaudeEnvironment env)
+        : this(env, ConfigScope.User)
     {
     }
 
     /// <summary>Construct a client whose mutations target <paramref name="defaultScope"/> by default.</summary>
+    /// <param name="env">
+    /// The resolved Claude environment: which config directory this client reads and writes.
+    /// Production passes <see cref="ClaudeEnvironment.FromProcess"/>'s result from the
+    /// composition root; a test that does not care passes <see cref="ClaudeEnvironment.Empty"/>.
+    /// </param>
     /// <param name="defaultScope">
     /// Scope used by accessor mutations and unscoped <see cref="IAgentConfigClient.SetValue{T}(string, T)"/>
     /// calls. Per-call overrides go through the explicit-scope overload.
     /// </param>
-    public ClaudeCodeClient(ConfigScope defaultScope)
+    public ClaudeCodeClient(ClaudeEnvironment env, ConfigScope defaultScope)
         : base(defaultScope, schemaRegistry: null)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
     }
 
     /// <summary>
@@ -49,9 +67,11 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     /// <see cref="SchemaRegistry"/> instance (e.g. one preloaded with bundled
     /// schemas). The public constructor creates a fresh registry per client.
     /// </summary>
-    internal ClaudeCodeClient(ConfigScope defaultScope, SchemaRegistry schemaRegistry)
+    internal ClaudeCodeClient(ClaudeEnvironment env, ConfigScope defaultScope, SchemaRegistry schemaRegistry)
         : base(defaultScope, schemaRegistry)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
     }
 
     /// <summary>
@@ -67,18 +87,21 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     /// re-load via the standard path.
     /// </remarks>
     internal static ClaudeCodeClient FromExistingWorkspace(
+        ClaudeEnvironment env,
         SettingsWorkspace workspace,
         ConfigScope defaultScope,
         SchemaRegistry schemaRegistry,
         IConfigWriter? configWriter = null)
     {
-        return new ClaudeCodeClient(defaultScope, schemaRegistry, workspace, configWriter);
+        return new ClaudeCodeClient(env, defaultScope, schemaRegistry, workspace, configWriter);
     }
 
-    private ClaudeCodeClient(ConfigScope defaultScope, SchemaRegistry schemaRegistry,
+    private ClaudeCodeClient(ClaudeEnvironment env, ConfigScope defaultScope, SchemaRegistry schemaRegistry,
                              SettingsWorkspace preLoaded, IConfigWriter? configWriter)
         : base(defaultScope, schemaRegistry, preLoaded, configWriter)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
     }
 
     /// <inheritdoc/>
@@ -89,19 +112,22 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
         // profileName=null — profile-aware loading is post-v1 SDK work; for now
         // the SDK always operates against the global ~/.claude/ tree.
         IReadOnlyList<DiscoveredFile> settings =
-            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(projectRoot, profileName: null);
-        IReadOnlyList<DiscoveredFile> mcp = ConfigFileDiscoverer.DiscoverMcpFiles(projectRoot, profileName: null);
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(_env, projectRoot, profileName: null);
+        IReadOnlyList<DiscoveredFile> mcp = ConfigFileDiscoverer.DiscoverMcpFiles(_env, projectRoot, profileName: null);
         return [.. settings, .. mcp];
     }
 
     /// <inheritdoc/>
-    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
+    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(_env);
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
         // This client's own descriptor — the product it already declares as
         // Product, rather than a boolean pair restating it.
-        return new BackupClient(BackupEngine.Default, [Product]);
+        //
+        // The engine is constructed here rather than shared: an engine must name the environment
+        // its destinations resolve against, and this client is the thing that knows it.
+        return new BackupClient(new BackupEngine(_env), [Product]);
     }
 }

@@ -277,7 +277,11 @@ internal sealed class Program
         // Named once, then both reported and walked. The cleanup used to resolve its own home
         // from a null default, so the directory in this message and the directory it deleted
         // from were two independent lookups that happened to agree.
-        string claudeHome = PlatformPaths.ClaudeHome;
+        // ⓘ This CLI-bypass tool never starts Avalonia, so it never reaches App's composition
+        // root and has to resolve the environment itself. That is correct rather than a
+        // duplicate: it is its own one-shot composition root, and it still reads the process
+        // exactly once.
+        string claudeHome = PlatformPaths.ClaudeHome(ClaudeEnvironment.FromProcess());
 
         Console.Error.WriteLine($"[ClaudeForge] Cleaning up *.bak restore sidecars under {claudeHome}…");
         Log.Information("[Cleanup] Restore-sidecar cleanup invoked via --cleanup-restore-sidecars");

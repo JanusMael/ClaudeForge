@@ -49,9 +49,12 @@ internal sealed class BackupClient : IBackupClient
 
     /// <summary>
     /// Construct a backup client that produces archives covering the requested
-    /// product set. Pass <see cref="CoreBackup.BackupEngine.Default"/> for the
-    /// production engine; tests may pass a custom <see cref="CoreBackup.BackupEngine"/>
-    /// constructed with stub collaborators.
+    /// product set. Pass a <see cref="CoreBackup.BackupEngine"/> built with the resolved
+    /// environment; tests may pass one constructed with stub collaborators.
+    /// <para>
+    /// ⚠ There is no shared default engine to reach for any more: an engine must name the
+    /// environment its paths resolve against, so the caller that knows it constructs one.
+    /// </para>
     /// </summary>
     /// <param name="engine">The engine that writes archives.</param>
     /// <param name="products">

@@ -39,6 +39,7 @@ public static class ConfigFileDiscoverer
     ///   </para>
     /// </param>
     public static IReadOnlyList<DiscoveredFile> DiscoverClaudeCodeSettings(
+        ClaudeEnvironment env,
         string? projectRoot = null,
         string? profileName = null,
         string? managedRoot = null)
@@ -81,8 +82,8 @@ public static class ConfigFileDiscoverer
         // exclusive — loading both would create two User-scope entries and cause
         // merge ambiguity in SettingsWorkspace.
         string userPath = string.IsNullOrEmpty(profileName)
-            ? PlatformPaths.UserSettingsPath
-            : PlatformPaths.ProfileSettingsPath(profileName);
+            ? PlatformPaths.UserSettingsPath(env)
+            : PlatformPaths.ProfileSettingsPath(env, profileName);
         files.Add(Describe(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, userPath, readOnly: false));
 
         // Project + Local scopes (only when a project root is provided)
@@ -120,12 +121,13 @@ public static class ConfigFileDiscoverer
     ///   When provided, loads the profile-specific mcp.json instead of the global one.
     /// </param>
     public static IReadOnlyList<DiscoveredFile> DiscoverMcpFiles(
+        ClaudeEnvironment env,
         string? projectRoot = null,
         string? profileName = null)
     {
         string userMcpPath = string.IsNullOrEmpty(profileName)
-            ? PlatformPaths.UserMcpPath
-            : PlatformPaths.ProfileMcpPath(profileName);
+            ? PlatformPaths.UserMcpPath(env)
+            : PlatformPaths.ProfileMcpPath(env, profileName);
 
         List<DiscoveredFile> files =
         [
@@ -144,24 +146,24 @@ public static class ConfigFileDiscoverer
     /// <summary>
     /// Returns all profile config files for all discovered profiles.
     /// </summary>
-    public static IReadOnlyList<DiscoveredFile> DiscoverProfiles()
+    public static IReadOnlyList<DiscoveredFile> DiscoverProfiles(ClaudeEnvironment env)
     {
         List<DiscoveredFile> files = [];
-        foreach (string profile in PlatformPaths.DiscoverProfiles())
+        foreach (string profile in PlatformPaths.DiscoverProfiles(env))
         {
             files.Add(new DiscoveredFile(
                 ConfigScope.User,
                 ConfigFileType.ProfileSettings,
-                PlatformPaths.ProfileSettingsPath(profile),
-                File.Exists(PlatformPaths.ProfileSettingsPath(profile)),
+                PlatformPaths.ProfileSettingsPath(env, profile),
+                File.Exists(PlatformPaths.ProfileSettingsPath(env, profile)),
                 IsReadOnly: false,
                 ProfileName: profile));
 
             files.Add(new DiscoveredFile(
                 ConfigScope.User,
                 ConfigFileType.ProfileMcp,
-                PlatformPaths.ProfileMcpPath(profile),
-                File.Exists(PlatformPaths.ProfileMcpPath(profile)),
+                PlatformPaths.ProfileMcpPath(env, profile),
+                File.Exists(PlatformPaths.ProfileMcpPath(env, profile)),
                 IsReadOnly: false,
                 ProfileName: profile));
         }
