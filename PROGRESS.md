@@ -25,7 +25,7 @@
 | Suite | ⭐ **3,545 passed · 0 failed · 13 skipped**, Debug — verified 2026-09-18 after the `F12` fix. ⓘ **+5 over 3,540**, the `F12` guards; **+36 over the 2026-09-17 figure of 3,509**, the rest being the `F7`/`F8`/`F9`/`F10` guards; each run was predicted before it was taken. The 2026-09-17 note follows because the *drop* it explains still matters: ⚠ **The drop from 4,429 is the OpenCodeForge extraction, not a regression**: ~941 tests left with the six projects, and the figure was **predicted at ≈3,490 before the run** precisely so a smaller drop would have been legible as "something is still being built". ⛔ **Skipped moved 11→13 deliberately** — two cross-app guards now return `Assert.Inconclusive` rather than pass vacuously, because a drift check between one app and itself reports success without taking a measurement. ⓘ The parked branch's figures are below and are the ones the *next* sentence describes |
 | **CI on this branch** | ✅ **GREEN at `8692b20`** — all five jobs (ubuntu, macOS, windows, package canary, trim check). ⛔⛔ **It had been RED for roughly twenty consecutive commits before that, and this table had no row for it.** Every local gate was green throughout: the Windows suite, the six-RID trim matrix, the package canary. ⚠ **A green local suite on ONE platform is not the gate, and this row exists so the next reader checks `gh run list` rather than trusting the rows above it.** The two defects it was hiding are in the Done section |
 | Suite (parked branch) | **4,453 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-19 at `0de0f4e`, after the shared libraries were resynced from the release branch (`+19` over 4,434: the `F7`/`F8` and template-part guards that arrived with the sync). ⛔ The 4,434 and 4,429 figures below are **superseded** — both ran against an older `AgentForge.Core` than the release branch's; see the C0 correction under *RESUME HERE*. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
-| Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics — RE-RUN 2026-09-18, immediately before the tag** (linux-x64/arm64, win-x64/arm64, osx-x64/arm64). ⭐ **Zero was proven to mean "looked and found nothing"**: the detector was canaried against planted `IL2026` and `NETSDK1144` lines and matched 2 of 2, and each RID really trimmed — ILLink's *"Optimizing assemblies for size"* appears once per log and every RID produced a single-file exe of 26.8–29.8 MB. ⛔ **This row previously claimed A5 would re-cover the matrix. It does not** — A5 publishes **win-x64 only**, which is why this was re-run separately. ⚠ **Cross-published from Windows**, whereas `release.yml` builds each RID on its native host so the dylibs match; this gate therefore measures **trim analysis**, not native-payload correctness. Phase D's `D3` is where a shipped artifact is measured. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
+| Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics — RE-RUN 2026-09-20 in PACKAGE MODE at `2026.3.918`** (linux-x64/arm64, win-x64/arm64, osx-x64/arm64). ⭐ **This is the first run that measured the PACKAGES rather than project-built code.** The 2026-09-18 run predates `D1`, so its evidence was project-mode however green it looked — the publish path only began selecting package mode when `Publish-Rid.ps1` gained the flag. ⭐ **The mode is READ, not assumed**: every one of the six logs carries `PACKAGE MODE: … at 2026.3.918` and none carries `ESCAPE HATCH`, and each log restores only the **three** product-specific projects, because the eleven arrived as packages. ⭐ **Zero was proven to mean "looked and found nothing"**: the detector was canaried 2026-09-18 against planted `IL2026` and `NETSDK1144` lines and matched 2 of 2, and each RID really trimmed — ILLink's *"Optimizing assemblies for size"* appears once per log; the six archives are 19.6–22.2 MB compressed. ⛔ **This row once claimed A5 would re-cover the matrix. It does not** — A5 publishes **win-x64 only**. ⚠ **Cross-published from Windows**, whereas `release.yml` builds each RID on its native host so the dylibs match; this gate therefore measures **trim analysis**, not native-payload correctness — `D6` is where a shipped artifact is measured. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
@@ -122,8 +122,8 @@ step below is finally verifiable.
 | **D1** — publish path selects package mode at `2026.3.918` | ✅ **DONE** | `source` in every `.nupkg.metadata` names the feed. Verified in CI: **11/11 from `nuget.pkg.github.com`** |
 | **D2** — `packages: read` in `release.yml` | ✅ **DONE** | The `feed-restore` job restores from the feed with exactly that scope, on every push |
 | **D3** — build-time guard + recorded escape hatch | ✅ **DONE** | `GuardShippingPublishUsesPackages` fails a bare Release publish (exit 1, observed); the hatch publishes clean and prints `ESCAPE HATCH USED`; package mode prints `PACKAGE MODE: … at 2026.3.918`; a Release **build** stays silent. 4/4 predicted |
-| **D4** — full suite and trim gate at the published version | ◀ **NEXT** | Green **with no local feed** — ⛔ and with the global cache **purged**, see below |
-| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ⏸ | They describe what D1–D3 made true |
+| **D4** — full suite and trim gate at the published version | ✅ **DONE** | CI job `published-version`: suite **3,541 · 0 · 23** in package mode plus a trimmed publish, empty local feed, no cache. Locally **6/6 RIDs, zero IL diagnostics**, every log naming `PACKAGE MODE … 2026.3.918` and none naming the hatch |
+| **D5** — correct `ci.yml:132` and `package-canary.ps1:10` | ◀ **NEXT** | They describe what D1–D3 made true |
 | **D6** — cut the app release | ⏸ | The shipped artifact passes D3 |
 
 **What D1/D2 shipped:** `SharedPackageVersion` pinned at `2026.3.918` in the **root**
@@ -144,6 +144,28 @@ source mapping means those ids are never requested; the canary never meets it, b
 the folder by packing. The script now creates it **empty**, which satisfies NuGet, can supply
 nothing, and makes the provenance conclusion stronger — and it refuses outright if that folder
 holds any package at the pinned version.
+
+**What D4 proved, and why it took two halves.** The CI job `published-version` runs the whole suite
+and a real trimmed publish in package mode at the pinned version, restoring from the feed with
+`packages: read`. ⛔ **It is deliberately NOT the package canary**, and treating the two as
+equivalent is the easy mistake: the canary packs *this commit* at a throwaway version into a local
+folder, which proves the `PackageReference` mechanics and says nothing whatever about the bytes on
+the feed. Packages published from an older commit are exactly the case no local gate would notice,
+and a published version can never be replaced. ⭐ **Two of D4's conditions come FREE on a hosted
+runner and cannot be had locally at all** — no local feed, and no global NuGet cache. The cache is
+keyed id+version and never re-extracts, so a developer "proving" this locally is at the mercy of
+whatever it already holds.
+
+⭐ **The premise was checked rather than assumed**: no shared-library source has changed since
+`19f3885`, the commit the packages were built from, so the published bytes still correspond to this
+tree's shared sources. Everything since is build files, docs, scripts and tests. Had that not held,
+a red D4 would have been drift rather than a defect, and the two are worth telling apart *before*
+the run.
+
+⚠ **The suite reads 3,541 · 0 · 23 in that job against 3,551 · 0 · 13 locally, and the TOTAL is
+3,564 both ways.** Ten tests move from passed to skipped, not out of existence: the local-feed
+guards return `Assert.Inconclusive` rather than pass vacuously when `artifacts/localfeed` is empty,
+which is the correct answer on a runner and the reason the totals are the number to compare.
 
 **What D3 shipped:** `GuardShippingPublishUsesPackages` in the **root** `Directory.Build.targets`,
 hooked `BeforeTargets="PrepareForPublish"` and scoped by `OutputType != Library` plus
