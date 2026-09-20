@@ -52,12 +52,43 @@ public sealed class ManagedSettingsLocationTests
         StringAssert.EndsWith(Normalize(PlatformPaths.ManagedSettingsRoot), "/etc/claude-code");
     }
 
+    /// <summary>
+    /// ⚠ <b>Split in two, because only half of this is platform-independent.</b> Emulation flips
+    /// which BRANCH runs, but the host's <see cref="Environment.SpecialFolder"/> lookups still
+    /// answer for the real operating system — which <see cref="PlatformPaths.ManagedSettingsRoot"/>
+    /// says in its own remarks, and which the first version of this test then ignored.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>It passed on Windows and Linux and failed on macOS, which is the worst distribution.</b>
+    /// Windows returns a real Program Files; Linux returns empty, so the literal fallback fires and
+    /// happens to contain the expected text; macOS returns something non-empty and unrelated. Two
+    /// green platforms out of three is exactly enough to look deliberate.
+    /// </remarks>
     [TestMethod]
-    public void OnWindows_PolicyLivesUnderProgramFiles()
+    public void OnWindows_PolicyIsAClaudeCodeFolder()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
 
+        // True on every host: the branch selected is the Windows one, whatever root it resolves.
         StringAssert.EndsWith(Normalize(PlatformPaths.ManagedSettingsRoot), "/ClaudeCode");
+    }
+
+    /// <summary>
+    /// The Program Files half, asserted only where <see cref="Environment.SpecialFolder"/> can
+    /// answer for it — which is the same host the claim is about.
+    /// </summary>
+    [TestMethod]
+    public void OnARealWindowsHost_PolicyLivesUnderProgramFiles()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Inconclusive(
+                "Only meaningful on Windows: SpecialFolder.ProgramFiles answers for the HOST, not "
+                + "for the emulated platform, so this says nothing when run elsewhere.");
+        }
+
+        PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
+
         StringAssert.Contains(
             Normalize(PlatformPaths.ManagedSettingsRoot),
             "Program Files",
