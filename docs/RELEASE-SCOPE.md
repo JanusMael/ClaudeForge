@@ -160,6 +160,32 @@ point is a **recorded SHA**, kept in [`PROGRESS.md`](../PROGRESS.md); compare ag
 | Decide where the release notes come from — see the three options above | maintainer |
 | Push the tag. ⛔ **Irreversible**, and it publishes to every installed copy's update check | maintainer |
 
+### Getting the curated notes into the release
+
+The notes body is the `## [Unreleased]` section with its heading removed. Extract it from whatever
+the file says **at tag time** rather than from a snapshot, which goes stale the moment the changelog
+moves:
+
+```bash
+awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > /tmp/release-notes.md
+```
+
+Then either put it in the tagged commit's message body —
+
+```bash
+git commit -F /tmp/release-notes.md --allow-empty
+```
+
+— editing the first line into a subject first, since `git` takes line 1 as the subject and the body
+is what `release.yml` reads; or paste it into a pull request and tag that PR's merge commit.
+
+⚠ **Verify before pushing the tag**, because the notes are resolved from the commit the tag points
+at and cannot be corrected by re-tagging:
+
+```bash
+git log -1 --format='%b' | head -20
+```
+
 ⚠ **The tag points at this branch, not `main`.** A locked decision keeps split work out of `main`
 until the maintainer approves, so this release is cut from a feature branch. That is a departure
 worth stating rather than discovering.
