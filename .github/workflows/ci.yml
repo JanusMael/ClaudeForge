@@ -214,3 +214,71 @@ jobs:
         env:
           NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
         run: ./scripts/verify-feed-restore.ps1
+
+  # ── The published version, end to end ───────────────────────────────────────
+  #
+  # plans/00003, Phase D step D4. `feed-restore` proves the eleven RESOLVE from the feed; this
+  # job proves the repository still WORKS when they do — the whole suite plus a real trimmed
+  # publish, in package mode, at the version pinned in the root Directory.Build.props.
+  #
+  # ⛔ THIS IS NOT THE PACKAGE CANARY, and the difference is the whole point. `package-canary`
+  # packs THIS COMMIT at a throwaway version into a local folder and consumes that, which proves
+  # the PackageReference mechanics and says nothing whatever about the bytes on the feed. This
+  # job consumes the immutable PUBLISHED bytes, which is what a release actually ships against.
+  # The two can disagree — packages published from an older commit are exactly the case no local
+  # gate would notice, and a published version can never be replaced once it exists.
+  #
+  # ⚠ NO LOCAL FEED, AND THE FOLDER STILL HAS TO EXIST. A configured local source that does not
+  # exist is a hard NU1301, not a skipped one; that killed `feed-restore`'s first run before it
+  # ever reached the feed. Creating it empty satisfies NuGet, can supply nothing, and therefore
+  # makes the conclusion stronger rather than weaker.
+  #
+  # ⓘ "With the global cache purged" needs no arranging here: a hosted runner starts without one
+  # and this workflow configures no NuGet caching. That is precisely the condition a developer
+  # machine cannot offer, because the cache is keyed id+version and never re-extracts.
+  #
+  # ⚠ Like `feed-restore`, THIS JOB CANNOT PASS ON A FORK — a fork's token has no read access to
+  # this repository's packages. Same accepted cost as `release.yml`'s `packages: read`.
+  published-version:
+    name: Published Version (suite + trim, Release)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # Gitignored, so a fresh checkout has none. See the NU1301 note above.
+      - name: Create an empty local feed
+        run: mkdir -p artifacts/localfeed
+
+      # ⚠ Credentials arrive as an environment variable, never a config edit: NuGet reads
+      # NuGetPackageSourceCredentials_<sourceName>, so no token reaches the working tree. The
+      # suffix must match the source key in nuget.config exactly.
+      - name: Test the solution against the published packages
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: dotnet test ClaudeForge.slnx -c Release -p:UseSharedPackages=true
+
+      # ⭐ A real trimmed publish, so ILLink's whole-program pass runs over the PACKAGED shared
+      # libraries rather than the project-built ones. It fails on NETSDK1144 for any IL2xxx that
+      # is neither fixed nor suppressed, which is the gate. ⓘ It also exercises
+      # GuardShippingPublishUsesPackages on its intended path: the guard prints the mode, and
+      # this is the one job whose publish is in package mode without an escape hatch.
+      - name: Publish (trim gate) against the published packages
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: >
+          dotnet publish src/ClaudeForge
+          -c Release -r linux-x64
+          --self-contained true
+          -p:UseSharedPackages=true
+          -o /tmp/published-version-trim
