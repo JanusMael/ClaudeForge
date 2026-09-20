@@ -119,6 +119,24 @@ rule.
 
 ---
 
+## ⛔ CI IS RED ON ONE JOB, BY CONSTRUCTION — read this before "fixing" it
+
+**`Published Version` fails, and every other job is green (6/7).** It builds the suite against the
+**published** packages at `2026.3.920`, and this branch has since changed packable libraries:
+`ClaudeEnvironment`, `PlatformPaths.ManagedSettingsRoot` / `ManagedMcpPath`, and the `DialogMessage`
+family moving from `AgentForge.Abstractions` to `LayeredEditors.Abstractions`. The feed cannot know
+about any of it.
+
+⛔ **There is no source fix.** The job goes green when a **new package version is published**, and
+not before. ⚠ Day-resolution CalVer means `2026.3.920` is spent, so the earliest is **`2026.3.921`**
+— a second tag on the same date collides with an immutable version.
+
+⭐ **This is the pipeline working, not failing.** The whole point of Phase D is that the release
+consumes published bytes; a job that stayed green while shared source drifted from the feed would be
+the defect.
+
+---
+
 ## ▶ RESUME HERE — Phase D is DONE; next is Phase E (plan 00002)
 
 ✅ **`v2026.3.920` is released and signed** — six assets, Windows Authenticode-signed and
@@ -137,6 +155,20 @@ release rather than rejected.
 
 ⓘ **Still open and still not decided: this branch has no PR and is not merged to `main`.** `main` is
 at `v2026.3.916` and knows nothing of the package pipeline, the bundled font or Phase D.
+
+### What landed after the release, 2026-09-20
+
+- ✅ **Phase E steps 1–3** — `ClaudeEnvironment` (`CLAUDE_CONFIG_DIR` as a value, mirroring
+  `OpenCodeEnvironment`), managed policy resolved from the per-OS **system** directory in **both**
+  path implementations, and the discoverer given an injected `managedRoot` so the check is runnable
+  without elevation. ⚠ **Nothing consumes `ClaudeEnvironment` yet** — that is step 3 proper, and
+  steps 4–6 (`DefaultBackupDirectory`, the bypass guard, the changelog entry) are untouched.
+- ✅ **The one edge from `LayeredEditors.*` into `AgentForge.*` is severed**, which is what makes the
+  editor libraries liftable into their own repository. `DialogMessage` moved to
+  `LayeredEditors.Abstractions`; `PermissionOutcome` stayed (it is agent vocabulary) and its
+  **converter** moved to `ClaudeForge.Avalonia`, which had the only consumer.
+- ⛔ **`ExpanderAutomationNameTests` is now DUPLICATED** with `XQ1001` in the new XamlQuality
+  repository. Deliberate but temporary — see the next steps in the memory anchor.
 
 ---
 
