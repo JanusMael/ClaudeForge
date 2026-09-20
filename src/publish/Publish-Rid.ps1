@@ -157,6 +157,28 @@ if (Test-Path $ridFolder) {
 # needed to produce the release binary. The publish stream is tee'd to a log
 # file for the warning scan below; Tee-Object does not overwrite $LASTEXITCODE
 # so we can still read the real `dotnet publish` exit code.
+# ⛔⛔ A CONFIGURED LOCAL NUGET SOURCE THAT DOES NOT EXIST IS A HARD NU1301, NOT A SKIPPED ONE.
+# nuget.config maps the eleven shared ids to BOTH `localfeed` and `github`, and artifacts/ is
+# gitignored — so on any clean checkout the folder is absent and a package-mode restore dies
+# with "The local source '.../artifacts/localfeed' doesn't exist" before it ever reaches the
+# feed. Creating it EMPTY satisfies NuGet and can supply nothing, so the packages still have to
+# come from the feed.
+#
+# ⛔ THIS KILLED THE FIRST REAL RELEASE, on all three publish hosts at once, and every other
+# gate was green. verify-feed-restore.ps1 carries the identical block and its comment even says
+# "other jobs never see this" — development mode never requests these ids, and the canary creates
+# the folder by packing into it. The release publish was the one path that did neither, and it is
+# the only one whose first clean-runner execution IS the release. The fix belongs here rather than
+# in release.yml so a local `publish.ps1` on a fresh clone behaves the same way.
+# ⚠ $srcRoot is src/, so the repo root is one above it. An undefined variable is $null in
+# PowerShell, and Join-Path would then have produced a path relative to the caller's cwd —
+# creating the folder somewhere harmless and leaving the restore to fail exactly as before.
+$localFeed = Join-Path (Split-Path $srcRoot -Parent) 'artifacts' 'localfeed'
+if (-not (Test-Path $localFeed)) {
+    New-Item -ItemType Directory -Path $localFeed -Force | Out-Null
+    Write-Host ('[' + $Rid + '] Created empty local feed for NuGet: ' + $localFeed)
+}
+
 # ⛔ -p:UseSharedPackages=true IS THE LINE THIS WHOLE PLAN EXISTS FOR (plans/00003, Phase D).
 # Without it the release publishes from ProjectReference while ci.yml and package-canary.ps1
 # both claim it publishes from the packages. That claim lived in two comments for the life of
