@@ -326,7 +326,7 @@ class Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo [sealed] implements Syst
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo right)
 class Bennewitz.Ninja.AgentForge.Core.FileIO.ConfigFileDiscoverer
     static Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile DiscoverDesktopConfig(System.String profileName = null)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverClaudeCodeSettings(System.String projectRoot = null, System.String profileName = null)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverClaudeCodeSettings(System.String projectRoot = null, System.String profileName = null, System.String managedRoot = null)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverMcpFiles(System.String projectRoot = null, System.String profileName = null)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverProfiles()
 class Bennewitz.Ninja.AgentForge.Core.FileIO.ConfigFileLoader
@@ -376,6 +376,20 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeDesktopVersionProbe
     static System.String TryGetVersionFromSquirrel()
     static System.String TryGetVersionFromWindowsApps()
     static System.Void ResetCache()
+class Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment>
+    .ctor(System.String ConfigDir = null)
+    Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String ConfigDir { get;init; }
+    System.String ResolvedConfigDir { get; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String ConfigDir)
+    static Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment Empty { get; }
+    static Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment FromProcess()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment left, Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment left, Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment right)
 class Bennewitz.Ninja.AgentForge.Core.Platform.EmulatedPlatformInfo [sealed] implements Bennewitz.Ninja.AgentForge.Core.Platform.IPlatformInfo
     System.Boolean IsLinux { get; }
     System.Boolean IsMacOS { get; }
@@ -418,8 +432,10 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths
     static System.String DesktopProfileConfigPath(System.String profileName)
     static System.String DesktopProfilesDirectory { get; }
     static System.String LocalSettingsPath(System.String projectRoot)
+    static System.String ManagedMcpPath { get; }
     static System.String ManagedSettingsDropInDir { get; }
     static System.String ManagedSettingsPath { get; }
+    static System.String ManagedSettingsRoot { get; }
     static System.String PlatformId { get; }
     static System.String ProfileClaudeMdPath(System.String profileName)
     static System.String ProfileMcpPath(System.String profileName)

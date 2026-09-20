@@ -22,31 +22,52 @@ public static class ConfigFileDiscoverer
     ///   <em>instead of</em> the global <c>~/.claude/settings.json</c>.
     ///   This mirrors how the Claude Code CLI behaves with <c>--profile &lt;name&gt;</c>.
     /// </param>
+    /// <param name="managedRoot">
+    ///   The directory managed (enterprise / MDM) policy is read from. Defaults to
+    ///   <see cref="PlatformPaths.ManagedSettingsRoot"/>, which is the per-OS system directory.
+    ///   <para>
+    ///   ⛔ <b>A seam for tests, and it has to exist.</b> The real location is
+    ///   <c>C:\Program Files\ClaudeCode\</c> or <c>/etc/claude-code/</c>, both of which need
+    ///   elevation to write — so "place a policy file and see it discovered" cannot run on a normal
+    ///   CI agent or developer machine. Without an injection point that check would be quietly
+    ///   skipped, or quietly run as admin, and neither is evidence.
+    ///   </para>
+    ///   <para>
+    ///   ⚠ <b>A parameter, not ambient state</b>, so it is the same shape as
+    ///   <see cref="Platform.ClaudeEnvironment"/> rather than a second mechanism — and a caller
+    ///   that forgets it gets the production answer rather than a sandbox.
+    ///   </para>
+    /// </param>
     public static IReadOnlyList<DiscoveredFile> DiscoverClaudeCodeSettings(
         string? projectRoot = null,
-        string? profileName = null)
+        string? profileName = null,
+        string? managedRoot = null)
     {
         List<DiscoveredFile> files = [];
 
+        string policyRoot = managedRoot ?? PlatformPaths.ManagedSettingsRoot;
+        string managedSettings = Path.Combine(policyRoot, "managed-settings.json");
+        string managedDropIn = Path.Combine(policyRoot, "managed-settings.d");
+
         // Managed scope — read all managed settings files (unaffected by profile)
-        if (File.Exists(PlatformPaths.ManagedSettingsPath))
+        if (File.Exists(managedSettings))
         {
             files.Add(Describe(ConfigScope.Managed, ConfigFileType.ClaudeCodeSettings,
-                PlatformPaths.ManagedSettingsPath, readOnly: true));
+                managedSettings, readOnly: true));
         }
 
         // Managed drop-in directory — skip gracefully if unreadable (e.g. enterprise policy dir).
-        if (Directory.Exists(PlatformPaths.ManagedSettingsDropInDir))
+        if (Directory.Exists(managedDropIn))
         {
             IEnumerable<string> dropIns = [];
             try
             {
-                dropIns = Directory.GetFiles(PlatformPaths.ManagedSettingsDropInDir, "*.json").OrderBy(x => x);
+                dropIns = Directory.GetFiles(managedDropIn, "*.json").OrderBy(x => x);
             }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
             {
                 Log.Warning(ex, "[Discoverer] Cannot read managed drop-in directory {Dir}",
-                    PlatformPaths.ManagedSettingsDropInDir);
+                    managedDropIn);
             }
 
             foreach (string f in dropIns)

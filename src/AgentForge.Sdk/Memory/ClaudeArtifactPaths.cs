@@ -61,11 +61,38 @@ public sealed class ClaudeArtifactPaths(string userProfile)
     /// <summary><c>~/.claude/mcp.json</c> — user-level MCP server overrides.</summary>
     public string UserMcpPath => Path.Combine(ClaudeHome, "mcp.json");
 
-    /// <summary><c>~/.claude/managed-settings.json</c> — enterprise / MDM policy.</summary>
-    public string ManagedSettingsPath => Path.Combine(ClaudeHome, "managed-settings.json");
+    /// <summary>
+    /// <c>managed-settings.json</c> in the per-OS SYSTEM policy directory — enterprise / MDM policy.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>NOT rooted at <see cref="UserProfile"/>, and that is the one place this type
+    /// deliberately ignores its own root.</b> Managed policy is a system-wide location that every
+    /// user on the machine shares; deriving it from this instance's root would mean a profile
+    /// override silently relocated enterprise policy, which is a policy-escape hatch rather than a
+    /// path bug. Every other member here is root-relative precisely so tests can sandbox them —
+    /// this one must not be.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Delegated rather than restated.</b> The rest of this type intentionally repeats
+    /// <c>PlatformPaths</c>' literals, with a parity test as the price. The managed root is not
+    /// repeated, because there is no root argument that could make the two agree — so the only way
+    /// they can agree is to be one expression.
+    /// </para>
+    /// </remarks>
+    public string ManagedSettingsPath => PlatformPaths.ManagedSettingsPath;
 
-    /// <summary><c>~/.claude/managed-settings.d/</c> — admin-populated policy fragments.</summary>
-    public string ManagedSettingsDropInDir => Path.Combine(ClaudeHome, "managed-settings.d");
+    /// <summary>
+    /// <c>managed-settings.d/</c> in the per-OS system policy directory — admin-populated policy
+    /// fragments. See <see cref="ManagedSettingsPath"/> for why this is not root-relative.
+    /// </summary>
+    public string ManagedSettingsDropInDir => PlatformPaths.ManagedSettingsDropInDir;
+
+    /// <summary>
+    /// <c>managed-mcp.json</c> in the per-OS system policy directory — managed MCP server policy.
+    /// See <see cref="ManagedSettingsPath"/> for why this is not root-relative.
+    /// </summary>
+    public string ManagedMcpPath => PlatformPaths.ManagedMcpPath;
 
     /// <summary>
     /// <c>~/.claude.json</c> — Claude Code's global config, which lives in the profile root rather

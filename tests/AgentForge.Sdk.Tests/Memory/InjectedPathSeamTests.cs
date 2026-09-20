@@ -29,8 +29,30 @@ public sealed class InjectedPathSeamTests
     /// </summary>
     private static readonly Dictionary<string, string[]> Allowed = new(StringComparer.Ordinal)
     {
-        // The single documented place the process-global default enters the surface.
-        ["ClaudeArtifactPaths.cs"] = ["UserProfile"],
+        // The documented places the process-global default enters the surface.
+        //
+        // UserProfile — the single root default. Everything else in that type is derived from the
+        // instance root, which is the whole point of the seam.
+        //
+        // ⛔⛔ The three Managed* members are the DELIBERATE EXCEPTION, and the reason is the
+        // opposite of the rule. Enterprise / MDM policy lives in a per-OS SYSTEM directory that
+        // every user on the machine shares — it is not derived from any profile root, so there is
+        // no injected value that could make it correct. Worse, if it WERE root-relative, pointing
+        // the instance at another directory would relocate enterprise policy, which is a
+        // policy-escape hatch rather than a testing seam.
+        //
+        // ⚠ So the exemption is narrow ON PURPOSE: these three member names, not the file. A
+        // fourth managed path added later has to come here and justify itself, and any ordinary
+        // root-relative path that drifts back to a static still fails.
+        // ⓘ Tests reach managed discovery through ConfigFileDiscoverer's managedRoot parameter,
+        // which is a value rather than ambient state — that is where the sandbox seam lives.
+        ["ClaudeArtifactPaths.cs"] =
+        [
+            "UserProfile",
+            "ManagedSettingsPath",
+            "ManagedSettingsDropInDir",
+            "ManagedMcpPath",
+        ],
 
         // Pure functions of a project root the caller already supplies — no static root to inject.
         ["ClaudeArtifactSources.cs"] = ["ProjectSettingsPath", "LocalSettingsPath", "ProjectMcpPath"],

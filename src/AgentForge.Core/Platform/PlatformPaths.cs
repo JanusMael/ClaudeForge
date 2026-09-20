@@ -56,13 +56,83 @@ public static class PlatformPaths
     public static string UserMcpPath =>
         Path.Combine(ClaudeHome, "mcp.json");
 
-    /// <summary>~/.claude/managed-settings.json — Managed (enterprise/MDM) policy file.</summary>
-    public static string ManagedSettingsPath =>
-        Path.Combine(ClaudeHome, "managed-settings.json");
+    /// <summary>
+    /// The per-OS SYSTEM directory Claude Code reads enterprise / MDM policy from.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b>This is NOT under <see cref="ClaudeHome"/>, and believing it was is the defect this
+    /// member exists to fix.</b> Every managed path here resolved to <c>~/.claude/</c>, which
+    /// Claude Code never reads. It failed in BOTH directions, silently: a machine with policy
+    /// deployed showed <b>no managed layer at all</b>, so the effective view told the user their
+    /// own value won where policy actually overrode it; and a file the user placed at
+    /// <c>~/.claude/managed-settings.json</c> displayed as <b>enforced</b> while doing nothing.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>A user-settable variable must never move this.</b> <c>CLAUDE_CONFIG_DIR</c> relocates
+    /// the config directory; policy lives outside it precisely so exporting a variable cannot
+    /// escape policy. See <see cref="ClaudeEnvironment"/>.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The legacy Windows location is deliberately not read.</b>
+    /// <c>C:\ProgramData\ClaudeCode\managed-settings.json</c> is explicitly not a location Claude
+    /// Code consults, so reading it would reintroduce the confidently-wrong display in a new place.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Windows resolves through <c>SpecialFolder.ProgramFiles</c>, not a hardcoded
+    /// <c>C:\</c></b>, because the drive and the folder's display name are both installable
+    /// choices. The literal is only the fallback for when that lookup returns nothing — which is
+    /// exactly what happens when <c>--windows</c> emulates Windows on a non-Windows host, since
+    /// emulation flips the branch but the host's <see cref="Environment.SpecialFolder"/> lookups
+    /// still answer for the real OS.
+    /// </para>
+    /// </remarks>
+    public static string ManagedSettingsRoot
+    {
+        get
+        {
+            if (PlatformInfo.Current.IsWindows)
+            {
+                string programFiles =
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-    /// <summary>~/.claude/managed-settings.d/ — Drop-in managed settings directory.</summary>
+                return string.IsNullOrEmpty(programFiles)
+                    ? Path.Combine("C:", "Program Files", "ClaudeCode")
+                    : Path.Combine(programFiles, "ClaudeCode");
+            }
+
+            if (PlatformInfo.Current.IsMacOS)
+            {
+                return Path.Combine("/", "Library", "Application Support", "ClaudeCode");
+            }
+
+            // Linux and WSL.
+            return Path.Combine("/", "etc", "claude-code");
+        }
+    }
+
+    /// <summary>
+    /// <c>managed-settings.json</c> in the system policy directory — the managed (enterprise/MDM)
+    /// policy file. See <see cref="ManagedSettingsRoot"/> for why this is not under the home.
+    /// </summary>
+    public static string ManagedSettingsPath =>
+        Path.Combine(ManagedSettingsRoot, "managed-settings.json");
+
+    /// <summary>
+    /// <c>managed-settings.d/</c> in the system policy directory — the drop-in policy directory.
+    /// </summary>
     public static string ManagedSettingsDropInDir =>
-        Path.Combine(ClaudeHome, "managed-settings.d");
+        Path.Combine(ManagedSettingsRoot, "managed-settings.d");
+
+    /// <summary>
+    /// <c>managed-mcp.json</c> in the system policy directory — managed MCP server policy.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Previously not handled anywhere in the product, in any location. Added here so the path
+    /// exists and is named; wiring it into discovery is its own change.
+    /// </remarks>
+    public static string ManagedMcpPath =>
+        Path.Combine(ManagedSettingsRoot, "managed-mcp.json");
 
     /// <summary>~/.claude/profiles/ — Named profile directories.</summary>
     public static string ProfilesDirectory =>

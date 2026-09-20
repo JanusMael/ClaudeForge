@@ -315,9 +315,15 @@ public class UserMemoryServiceTests
     {
         Write("settings.json", "{}");
         Write("mcp.json", "{}");
+        File.WriteAllText(Path.Combine(_fakeHome, ".claude.json"), "{}");
+
+        // ⛔ Written deliberately, and deliberately NOT expected below. Managed policy moved to
+        // the per-OS system directory, where Claude Code actually reads it — so a file sitting at
+        // ~/.claude/managed-settings.json is no longer a config file this product models. It used
+        // to be listed here, which is the same wrong belief that made the settings pages show it
+        // as enforced policy while the agent ignored it.
         Write("managed-settings.json", "{}");
         Write(Path.Combine("managed-settings.d", "10-policy.json"), "{}");
-        File.WriteAllText(Path.Combine(_fakeHome, ".claude.json"), "{}");
 
         string[] names = UserMemoryService.SnapshotFiles()
             .Where(f => f.Category == UserMemoryCategory.Configuration)
@@ -326,9 +332,10 @@ public class UserMemoryServiceTests
             .ToArray();
 
         CollectionAssert.AreEquivalent(
-            new[] { ".claude.json", "managed-settings.d/10-policy.json", "managed-settings.json", "mcp.json", "settings.json" },
+            new[] { ".claude.json", "mcp.json", "settings.json" },
             names,
-            "Every user-scope config file (including managed-settings.d drop-ins) must be discoverable.");
+            "Every USER-scope config file must be discoverable — and managed policy is not one, "
+            + "because it lives in a system directory shared by every user on the machine.");
     }
 
     [TestMethod]

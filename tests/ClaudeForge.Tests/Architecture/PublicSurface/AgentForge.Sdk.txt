@@ -310,6 +310,7 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths [sealed]
     System.String ClaudeHome { get; }
     System.String ClaudeJsonPath { get; }
     System.String CredentialsPath { get; }
+    System.String ManagedMcpPath { get; }
     System.String ManagedSettingsDropInDir { get; }
     System.String ManagedSettingsPath { get; }
     System.String UserMcpPath { get; }

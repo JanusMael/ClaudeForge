@@ -9,12 +9,31 @@ public class ConfigFileDiscovererTests
 {
     private string _sandbox = null!;
 
+    /// <summary>
+    /// A scratch stand-in for the per-OS system policy directory.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>These tests used to write to <c>PlatformPaths.ManagedSettingsPath</c> directly, and
+    /// that stopped being safe the moment managed policy moved where Claude Code actually reads
+    /// it.</b> That path is now <c>C:\Program Files\ClaudeCode\</c> or <c>/etc/claude-code/</c> —
+    /// so the old line either throws <see cref="UnauthorizedAccessException"/>, or, on an elevated
+    /// run, <b>writes a policy file into the machine's real system directory</b>. The injected
+    /// root exists so the check stays runnable without either outcome.
+    /// </remarks>
+    private string _managedRoot = null!;
+
     [TestInitialize]
     public void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
+
+        // Deliberately OUTSIDE the fake home: managed policy is a system location, and putting it
+        // under the home here would let a regression that reads the home go on passing.
+        _managedRoot = Path.Combine(_sandbox, "..", "policy-" + Guid.NewGuid().ToString("N"));
+        _managedRoot = Path.GetFullPath(_managedRoot);
+        Directory.CreateDirectory(_managedRoot);
     }
 
     [TestCleanup]
@@ -24,6 +43,10 @@ public class ConfigFileDiscovererTests
         if (Directory.Exists(_sandbox))
         {
             Directory.Delete(_sandbox, recursive: true);
+        }
+        if (Directory.Exists(_managedRoot))
+        {
+            Directory.Delete(_managedRoot, recursive: true);
         }
     }
 
@@ -56,9 +79,10 @@ public class ConfigFileDiscovererTests
     [TestMethod]
     public void DiscoverClaudeCodeSettings_NoProjectRoot_WithManagedFile_ReturnsTwoEntries()
     {
-        Touch(PlatformPaths.ManagedSettingsPath);
+        Touch(Path.Combine(_managedRoot, "managed-settings.json"));
 
-        IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings();
+        IReadOnlyList<DiscoveredFile> files =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(managedRoot: _managedRoot);
 
         Assert.AreEqual(2, files.Count);
         Assert.AreEqual(ConfigScope.Managed, files[0].Scope);
@@ -83,11 +107,12 @@ public class ConfigFileDiscovererTests
     [TestMethod]
     public void DiscoverClaudeCodeSettings_WithProjectRoot_AndManagedFile_ReturnsFourEntries()
     {
-        Touch(PlatformPaths.ManagedSettingsPath);
+        Touch(Path.Combine(_managedRoot, "managed-settings.json"));
         string projectRoot = Path.Combine(_sandbox, "myproject");
         Directory.CreateDirectory(projectRoot);
 
-        IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(projectRoot: projectRoot);
+        IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(
+            projectRoot: projectRoot, managedRoot: _managedRoot);
 
         Assert.AreEqual(4, files.Count);
         Assert.AreEqual(ConfigScope.Managed, files[0].Scope);
@@ -125,12 +150,13 @@ public class ConfigFileDiscovererTests
     [TestMethod]
     public void DiscoverClaudeCodeSettings_DropInDir_AddsOneManagedEntryPerJsonFile()
     {
-        string dropDir = PlatformPaths.ManagedSettingsDropInDir;
+        string dropDir = Path.Combine(_managedRoot, "managed-settings.d");
         Directory.CreateDirectory(dropDir);
         Touch(Path.Combine(dropDir, "a-policy.json"));
         Touch(Path.Combine(dropDir, "b-policy.json"));
 
-        IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings();
+        IReadOnlyList<DiscoveredFile> files =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(managedRoot: _managedRoot);
 
         List<DiscoveredFile> managed = files.Where(f => f.Scope == ConfigScope.Managed).ToList();
         Assert.AreEqual(2, managed.Count);
@@ -139,6 +165,49 @@ public class ConfigFileDiscovererTests
         // Sorted by name
         Assert.IsTrue(managed[0].FilePath.EndsWith("a-policy.json"));
         Assert.IsTrue(managed[1].FilePath.EndsWith("b-policy.json"));
+    }
+
+    /// <summary>
+    /// ⛔⛔ <b>The negative, and it is the half that a new-location-only test passes without.</b>
+    /// Adding the system directory while still reading <c>~/.claude/managed-settings.json</c>
+    /// would leave the confidently-wrong display in place for exactly the users who already have
+    /// such a file — it shows as enforced policy and does nothing.
+    /// </summary>
+    [TestMethod]
+    public void AManagedFileInTheOldHomeLocation_IsNotDiscovered()
+    {
+        string legacy = Path.Combine(_sandbox, ".claude", "managed-settings.json");
+        Touch(legacy);
+
+        // Assert the premise, or the claim below is about a file that was never written.
+        Assert.IsTrue(File.Exists(legacy), "Precondition: the legacy file must exist.");
+
+        IReadOnlyList<DiscoveredFile> files =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(managedRoot: _managedRoot);
+
+        Assert.IsFalse(
+            files.Any(f => f.Scope == ConfigScope.Managed),
+            "A managed-settings.json under the user home was discovered as policy. Claude Code " +
+            "never reads that location, so showing it as enforced is the original defect.");
+    }
+
+    /// <summary>
+    /// The drop-in directory has the same failure mode as the file beside it, and a sweep that
+    /// fixed only the file would leave this one reading the home.
+    /// </summary>
+    [TestMethod]
+    public void ADropInDirectoryInTheOldHomeLocation_IsNotDiscovered()
+    {
+        string legacyDropIn = Path.Combine(_sandbox, ".claude", "managed-settings.d");
+        Directory.CreateDirectory(legacyDropIn);
+        Touch(Path.Combine(legacyDropIn, "policy.json"));
+
+        IReadOnlyList<DiscoveredFile> files =
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(managedRoot: _managedRoot);
+
+        Assert.IsFalse(
+            files.Any(f => f.Scope == ConfigScope.Managed),
+            "A managed-settings.d under the user home was discovered as policy.");
     }
 
     [TestMethod]
