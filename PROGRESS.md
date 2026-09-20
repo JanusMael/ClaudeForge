@@ -8,8 +8,10 @@
 > acting: `git log`, `git status`, the test suite. Let reality win on any conflict.
 >
 > For the *why* behind the architecture see [`CLAUDE.md`](./CLAUDE.md); for enforceable rules see
-> [`AGENTS.md`](./AGENTS.md); for phase-by-phase detail and every measurement see
-> [`docs/OPENCODEFORGE-PLAN.md`](./docs/OPENCODEFORGE-PLAN.md).
+> [`AGENTS.md`](./AGENTS.md). ⛔ For phase-by-phase detail see `docs/OPENCODEFORGE-PLAN.md`, which
+> is **deliberately absent from this branch** — [`plans/00003`](./plans/00003-release-built-from-shared-packages.md)
+> step 0e deleted it here because it is entirely about OpenCodeForge. It survives on the parked
+> `feat/agentforge-opencodeforge` branch: `git show feat/agentforge-opencodeforge:docs/OPENCODEFORGE-PLAN.md`.
 
 ---
 
@@ -561,6 +563,26 @@ conclusive. `F10` is new and is the same class.
 
 ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
 not an optional extra.
+
+### ⭐ Decisions taken 2026-09-20 — locked, do not relitigate
+
+- **`D6` is prepared but NOT cut by the agent, and the CHANGELOG is the maintainer's too.** The
+  agent verifies the gates and reports readiness; the `[Unreleased]` section and the `v*.*.*` tag
+  are both written and pushed by a human. ⓘ Narrower than the earlier split, deliberately: the
+  release notes are the maintainer's voice, not a generated artifact.
+- **The four dangling references to `OPENCODEFORGE-PLAN.md` are corrected in place**, each saying
+  the document is deliberately absent here and naming the parked branch that still has it.
+  ⛔ **Nothing guards this class**: the path guard scans `src`/`tests` prefixes only, so a broken
+  link under `docs/` or a bare filename reference is invisible to CI. Found by auditing a branch,
+  not by a test.
+- **Merged local branches are deleted once their content is located in the tree**, never on
+  ancestry — squash merges make ancestry lie. ⭐ **`backup/pre-trailer-rewrite-20260916` STAYS**:
+  it is the only copy of the pre-rewrite history and the one thing here that is not recoverable.
+- **`delete_branch_on_merge` is ON** (set 2026-09-20), so this cleanup is the last manual one. It
+  affects only branches merged via PR afterwards and can never catch `feat/agentforge-opencodeforge`,
+  which has no PR.
+- ⛔ **This remote refuses a push that updates more than TWO refs**, and says so only in the
+  `remote:` lines. Recorded in `AGENTS.md` under *Pushing more than two refs at once*.
 
 ### ⭐ Decisions taken 2026-09-19 — locked, do not relitigate
 

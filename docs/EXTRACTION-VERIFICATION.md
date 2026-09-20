@@ -178,7 +178,8 @@ That is not hypothetical. `AgentConfigClientCore.FootprintService` returned
 neither OpenCode client overrode it — so both reported **Claude's** footprint as their own, and a
 delete would have removed the other agent's data. Fixed this session in `765648a`.
 
-⭐ **The plan predicted it exactly, including the trigger** (`docs/OPENCODEFORGE-PLAN.md`):
+⭐ **The plan predicted it exactly, including the trigger** (`OPENCODEFORGE-PLAN.md`, which
+plans/00003 step 0e removed from this branch; it is on the parked `feat/agentforge-opencodeforge`):
 
 > `AgentConfigClientCore.FootprintService` also still does `new FootprintService()` — the neutral
 > core defaulting to Claude's catalog … **Harmless while only ClaudeForge reads footprints; it
