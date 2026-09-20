@@ -14,7 +14,7 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
-## [Unreleased]
+## [2026.3.920] - 2026-09-20
 
 ### Added
 
@@ -58,6 +58,13 @@ reconcile them against and renumbering them would be guesswork.
 - **The accent colour and the "✨ NEW" badge are owned rather than borrowed.** The badge
   is a tint pill rather than a solid chip, and the accent no longer depends on an
   undefined system brush that rendered differently across platforms.
+- **Monospace text now ships with the app instead of borrowing whatever the system has.**
+  Config values, paths, commands, permission rules and code blocks are drawn in a bundled
+  JetBrains Mono, so they look the same on Windows, macOS and Linux. Previously six
+  different font stacks were spelled out across the app, two of which picked a different
+  typeface from their neighbours on the same screen. The bundled cut has **no ligatures**,
+  deliberately: what you read now matches the bytes in your file, where before a sequence
+  like `!=` or `->` could be drawn as a single composed character.
 
 ### Fixed
 
@@ -107,6 +114,14 @@ reconcile them against and renumbering them would be guesswork.
 - **A config that fails to parse is no longer installed by a reload**, and overlapping
   reloads are serialized rather than each guarding itself.
 - **Backup patterns: `/foo` matched nothing and `**/foo` matched too much.**
+- **The Critical severity marker drew smaller than the Caution one**, so the loudest tier
+  looked like the quietest — worst on the Effective Settings grid, where the markers are
+  smallest. The two markers were being drawn from two different system fonts, and the
+  warning triangle was arriving as a colour emoji, which is also why it **ignored the
+  theme's caution colour entirely** and stayed yellow in both light and dark. Both markers
+  now come from one face and rank by size the way they were meant to.
+- **Effective Settings showed values in the regular interface font** while the same JSON on
+  a settings page was monospace, so one screen displayed one value two different ways.
 
 
 ## [2026.3.916] - 2026-09-16
