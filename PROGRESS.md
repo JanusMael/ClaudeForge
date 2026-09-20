@@ -212,7 +212,7 @@ went in with a green 3,551 local suite and reddened **all four** CI test jobs �
 and every `Build & Test` platform — on `EveryHardcodedRepoPathInBuildFilesExists`. A comment in
 `release.yml` named the staging folder as a bare directory. It is a **build output**, and since git
 does not track it, it exists on any machine that has ever published and on no CI runner. ⛔⛔ **The
-fix commit then failed the same test again — because this section named the same directories while
+fix commit then failed the same test again, **four jobs again** — because this section named the same directories while
 explaining them**, and the write-up of a trap is not exempt from it. `dc418bd` closed it.
 
 ✅ **The guard no longer has the blind spot: it asks GIT, not the filesystem.**

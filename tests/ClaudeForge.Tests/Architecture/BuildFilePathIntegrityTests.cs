@@ -52,6 +52,20 @@ public sealed class BuildFilePathIntegrityTests
         @"(?<path>(?:src|tests)/[A-Za-z0-9._*-]+(?:/[A-Za-z0-9._*-]+)*)",
         RegexOptions.Compiled);
 
+    /// <summary>
+    /// An inline Markdown link: <c>[text](target)</c>, with an optional quoted title.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <c>[^)\s]+</c> for the target on purpose. A path containing a space would need angle
+    /// brackets in Markdown anyway, and stopping at whitespace is what lets the optional
+    /// <c>"title"</c> suffix be discarded instead of swallowed into the path.
+    /// ⓘ Reference-style links (<c>[text][label]</c>) are not matched. Nothing here uses them;
+    /// if that changes, this regex is where it would be noticed.
+    /// </remarks>
+    private static readonly Regex MarkdownLinkRegex = new(
+        @"\[(?<text>[^\]]*)\]\((?<target>[^)\s]+)(?:\s+""[^""]*"")?\)",
+        RegexOptions.Compiled);
+
     private static string FindRepoRoot()
     {
         string? dir = AppContext.BaseDirectory;
@@ -329,6 +343,137 @@ public sealed class BuildFilePathIntegrityTests
             + "machine: either it is gitignored build output (fix the prose, not this guard), or "
             + "it is a new file nobody has `git add`ed yet. `git check-ignore -v <path>` says "
             + "which.");
+    }
+
+    /// <summary>
+    /// Every relative Markdown link in the guidance docs resolves to something git tracks.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This class's other guard cannot see a dead link, and four of them proved it.</b>
+    /// <see cref="RepoPathRegex"/> only matches paths beginning <c>src/</c> or <c>tests/</c>, so
+    /// when <c>plans/00003</c> step 0e deliberately deleted <c>OPENCODEFORGE-PLAN.md</c> from this
+    /// branch, the documents still linking to it stayed green — <c>CLAUDE.md</c>'s where-to-look
+    /// table, <c>PROGRESS.md</c>'s header, an <c>AGENTS.md</c> citation. They were found by
+    /// auditing a branch for deletion safety, not by any test.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>A Markdown link is a different kind of claim from a path in prose</b>, which is why
+    /// this is a separate assertion rather than a widened regex. Prose naming an area ("everything
+    /// under <c>src/</c>") promises nothing about navigability; <c>[text](./path)</c> does.
+    /// Widening the other regex to every path-shaped token would make it reject accurate prose,
+    /// and this repo has already paid for a guard that accuses the innocent.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The scan set is inherited, not redeclared.</b> It is <see cref="ScannedFiles"/>
+    /// filtered to <c>.md</c>, so <c>docs/</c> and <c>CHANGELOG.md</c> stay excluded for the
+    /// reasons recorded there — plan documents legitimately name files that do not exist yet, and
+    /// a changelog entry describes the tree as it was at that release. Duplicating the selection
+    /// would let the two drift, and the exclusions are the subtle part.
+    /// </para>
+    /// <para>
+    /// ⛔ <b><c>plans/</c> is never scanned, and that is a rule rather than an oversight.</b> An
+    /// approved plan is frozen: its internal links are specification, not navigation, and are left
+    /// alone when they stop resolving. A guard reddening on them would force the very edit the
+    /// freeze forbids.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Tracked, not merely present</b> — the same conjunction the sibling guard uses, for the
+    /// same reason: a link that resolves only on the author's machine is dead everywhere else.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public void EveryRelativeMarkdownLinkInGuidanceDocsResolves()
+    {
+        string repoRoot = FindRepoRoot();
+        (HashSet<string> trackedFiles, HashSet<string> trackedDirectories) = GitTrackedPaths(repoRoot);
+
+        List<string> broken = [];
+        int checkedCount = 0;
+
+        foreach (string file in ScannedFiles(repoRoot)
+                     .Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)))
+        {
+            string relativeFile = Path.GetRelativePath(repoRoot, file);
+            string fileDirectory = Path.GetDirectoryName(file)!;
+
+            foreach (Match match in MarkdownLinkRegex.Matches(File.ReadAllText(file)))
+            {
+                string original = match.Groups["target"].Value.Trim();
+                string target = original;
+
+                // An anchor into the same document, an external URL, or a mail link. None of
+                // these is a claim about a file in this repository.
+                if (target.Length == 0
+                    || target.StartsWith('#')
+                    || target.StartsWith("//", StringComparison.Ordinal)
+                    || target.Contains("://", StringComparison.Ordinal)
+                    || target.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Drop a fragment or query: `./AGENTS.md#section` names AGENTS.md.
+                int cut = target.IndexOfAny(['#', '?']);
+                if (cut >= 0)
+                {
+                    target = target[..cut];
+                }
+
+                // A percent-escape means this was written as a URL rather than a path, and
+                // decoding it correctly is more machinery than the case is worth.
+                if (target.Length == 0 || target.Contains('%', StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string absolute = Path.GetFullPath(
+                    Path.Combine(fileDirectory, target.Replace('/', Path.DirectorySeparatorChar)));
+
+                // A link climbing out of the repository is not this guard's business.
+                string relative = Path.GetRelativePath(repoRoot, absolute);
+                if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative))
+                {
+                    continue;
+                }
+
+                checkedCount++;
+
+                string gitSpelling = relative.Replace(Path.DirectorySeparatorChar, '/').TrimEnd('/');
+                bool onDisk = File.Exists(absolute) || Directory.Exists(absolute);
+                bool inGit = trackedFiles.Contains(gitSpelling)
+                    || trackedDirectories.Contains(gitSpelling);
+
+                if (!onDisk)
+                {
+                    broken.Add($"{relativeFile}: ({original}) — nothing at that path");
+                }
+                else if (!inGit)
+                {
+                    broken.Add(
+                        $"{relativeFile}: ({original}) — present here, but git tracks nothing at "
+                        + "that path, so the link is dead in a fresh checkout");
+                }
+            }
+        }
+
+        // ⛔ Without this, deleting every guidance doc — or breaking the regex — reads as a pass.
+        // The sibling guard carries the same assertion for the same reason.
+        Assert.IsTrue(
+            checkedCount > 0,
+            "No relative Markdown links were found in any guidance document. Either the docs "
+            + "stopped using Markdown links, or MarkdownLinkRegex no longer matches how they are "
+            + "written — either way this guard is no longer looking at anything.");
+
+        Assert.IsTrue(
+            broken.Count == 0,
+            $"{broken.Count} Markdown link(s) in the guidance docs point at nothing a fresh "
+            + "checkout has. A reader following one gets an error, and every such link makes the "
+            + "surrounding document a little less worth trusting:\n  "
+            + string.Join("\n  ", broken.Distinct())
+            + "\n\nIf the target was deleted on purpose — as plans/00003 step 0e deleted "
+            + "OPENCODEFORGE-PLAN.md from this branch — say so in the text and name where it now "
+            + "lives, rather than leaving a link that cannot resolve.");
     }
 
     /// <summary>
