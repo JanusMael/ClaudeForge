@@ -802,15 +802,19 @@ dotnet test --no-build
 # Expected: 0 failed. The total / skip counts drift per release; the green
 # baseline is whatever the most recent successful run on main reported.
 
-# 2b. A LOCAL green is weaker than CI's, and predictably so.
-#     BuildFilePathIntegrityTests checks that hardcoded paths still resolve.
-#     Git does not track EMPTY directories, so a doc path naming a directory
-#     that exists only as an empty leftover on your machine passes here and
-#     fails in a fresh checkout. This has now bitten twice.
-find src tests -type d -empty        # any output = a path guard you cannot trust
+# 2b. The path guard now asks GIT, not your filesystem, so there is no manual
+#     sweep to remember. BuildFilePathIntegrityTests requires every hardcoded
+#     repo-relative path in a build file to be BOTH present on disk AND tracked
+#     by git, which means a doc or comment naming a build output reddens here
+#     exactly as it does on a CI runner.
+#     ⛔ The advice this replaces was `find src tests -type d -empty`, and it
+#     could not see the defect that bit three times: the directory was FULL of
+#     files locally, merely untracked. Emptiness was never the property that
+#     mattered; "survives a fresh clone" is.
+#     ⓘ A path you have only just created reddens until you `git add` it. That
+#     is correct rather than annoying — CI cannot see it either.
 git status --porcelain --ignored=no  # untracked files a fresh clone will not have
-# Expected: no empty directories under src/ or tests/. Delete them, then re-run
-# step 2 before believing it.
+# Expected: nothing here that a build file already points at.
 
 # 3. Trim-safe publish — required after touching anything reflection-y, JSON
 #    serialization, AXAML DataTemplate/UserControl, or third-party deps.

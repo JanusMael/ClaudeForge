@@ -206,15 +206,32 @@ entry point including a bare `dotnet publish`.
 whose own record can be escalated into the failure it exists to avoid is not a hatch.
 
 ⛔⛔ **CI CAUGHT WHAT THE LOCAL SUITE COULD NOT, twice in a row on the same mechanism.** `a6fd749`
-went in with a green 3,551 local suite and reddened **two** CI jobs — the package canary and macOS
-— both on `EveryHardcodedRepoPathInBuildFilesExists`. A comment in `release.yml` named the staging
-folder as a bare directory. It is a **build output**, and since git does not track it, it exists on
-any machine that has ever published and on no CI runner. ⛔⛔ **The fix commit then failed the same
-test again — because this very paragraph named the same directories while explaining them**, and
-the write-up of a trap is not exempt from it. ⚠ **Local verification is structurally BLIND here**:
-the test passes on a dev machine whether the prose is right or wrong, and both misses happened
-because the folder was restored *before* the final run. ⭐ **The reliable gate is to park that
-folder FIRST and leave it parked until the test is green** — not to re-read the prose.
+went in with a green 3,551 local suite and reddened **all four** CI test jobs — the package canary
+and every `Build & Test` platform — on `EveryHardcodedRepoPathInBuildFilesExists`. A comment in
+`release.yml` named the staging folder as a bare directory. It is a **build output**, and since git
+does not track it, it exists on any machine that has ever published and on no CI runner. ⛔⛔ **The
+fix commit then failed the same test again — because this section named the same directories while
+explaining them**, and the write-up of a trap is not exempt from it. `dc418bd` closed it.
+
+✅ **The guard no longer has the blind spot: it asks GIT, not the filesystem.**
+`EveryHardcodedRepoPathInBuildFilesExists` reads one `git ls-files -z`, derives from it the set of
+directory prefixes git implies, and requires every candidate to be **both** present on disk **and**
+tracked. The conjunction is deliberate: it is strictly stronger than the filesystem check it
+replaces, so a path that is in the index but deleted locally cannot start passing. It also closes a
+Windows-only hole for free, because `Directory.Exists` is case-insensitive there and git's index
+never is.
+
+⭐ **That retires the procedural workaround.** The gate recorded above was to *park the staging
+folder first and leave it parked until the test is green*, and it existed only because a dev machine
+could not reproduce the failure at all. It reproduces directly now: with the folder **present and
+full on disk** and nothing moved aside, the old guard passed 4/4 while CI reddened on the identical
+tree, and the strengthened guard failed on exactly the two predicted names, each reported as
+*present here, but git tracks nothing at or under it*.
+
+⛔ **"Empty" was never the property that mattered**, which is why the mitigation on record never
+fired. The root `AGENTS.md` said to sweep with `find src tests -type d -empty`, and the folder is
+**full of files** locally, merely untracked. That checklist step is replaced by a note that the
+guard now covers this without a manual sweep.
 
 ⛔ **The exact boundaries, measured rather than recalled.** Writing `src/<dir>` below as a
 placeholder, because the literal spellings are themselves the bug and the regex cannot match a `<`:
@@ -226,7 +243,8 @@ placeholder, because the literal spellings are themselves the bug and the regex 
 | `src/<dir>/*` | ⛔ also bare `src/<dir>` — a trailing `/*` is **trimmed back** before the `*` test |
 
 **A glob is safe only with a suffix after the star**, and prose about an untracked directory should
-drop the `src/` prefix entirely, which is what the regex anchors on.
+drop the `src/` prefix entirely, which is what the regex anchors on. All three are now carried in
+the test's own remarks, where the next reader of the guard will find them.
 
 ⛔⛔ **The guard test was VACUOUS on its most important site and only the canary found it.** Both
 non-release publishes explain the hatch in a comment directly above the flag, so a whole-file
