@@ -32,8 +32,8 @@ Two defects found on 2026-09-17, both silent, neither reported by anything:
    effective view told the user their own value won where policy overrides it — and a file the
    user placed in `~/.claude/` displayed as enforced while doing nothing.
 
-Plans: [`plans/00002`](plans/00002-claude-code-real-config-locations.md),
-[`plans/00003`](plans/00003-release-built-from-shared-packages.md).
+Plans: [`plans/00002`](https://github.com/JanusMael/ClaudeForge/blob/main/plans/00002-claude-code-real-config-locations.md),
+[`plans/00003`](https://github.com/JanusMael/ClaudeForge/blob/main/plans/00003-release-built-from-shared-packages.md).
 
 ## Changes
 
