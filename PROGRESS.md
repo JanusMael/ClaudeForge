@@ -165,6 +165,10 @@ plans/00002 steps 3–6, plus two defects the work exposed.
   `AgentConfigClientCore.MemoryEnvironment` seam to supply it; without that override the whole
   thread would be decorative.
 - **The parity and equality guards** (steps 3 and 4), and **`ResolvedHomeBypassTests`** (step 5).
+- ⭐ **`ProductionClaudeEnvironmentTests`, which step 5 did not ask for.** The composition root calls
+  `ClaudeEnvironment.FromProcess()` and nothing said it had to — flipping that one line to `Empty`
+  compiles, passes everything else, and silently ignores `CLAUDE_CONFIG_DIR` again. It is the exact
+  shape `ProductionSchemaRegistryTests` exists for, and it was an open gap until now.
 - **Baselines and CHANGELOG** (step 6). The public surface change is **breaking** and lands on an
   immutable feed.
 
