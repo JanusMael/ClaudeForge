@@ -120,6 +120,17 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     /// <inheritdoc/>
     protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(_env);
 
+    /// <summary>
+    /// The Tier 1 memory inventory reads the home this client resolved, not the default one.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Without this override the memory surfaces read <c>~/.claude</c> while the settings
+    /// pages read the relocated home</b> — the exact split plan 00002 names as the reason BOTH
+    /// path implementations had to take the resolved values. The base is neutral and cannot hold
+    /// a <c>ClaudeEnvironment</c>, so the Claude client is where the answer is supplied.
+    /// </remarks>
+    protected override ClaudeEnvironment MemoryEnvironment => _env;
+
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {

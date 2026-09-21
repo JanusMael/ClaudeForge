@@ -1,8 +1,10 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
 /// One discovered agent / skill / slash-command file, scope-tagged for the
-/// editing surface.  Produced by <see cref="EditableMemoryService.Snapshot(string)"/>.
+/// editing surface.  Produced by <see cref="EditableMemoryService.Snapshot(ClaudeEnvironment, string)"/>.
 ///
 /// <para>
 /// Enumeration is <b>stat-only</b> — no file contents are read during

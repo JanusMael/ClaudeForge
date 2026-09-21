@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -1482,8 +1483,29 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
             projectRoot = _projectRoot;
         }
 
-        return UserMemoryService.SnapshotFiles(projectRoot);
+        return UserMemoryService.SnapshotFiles(MemoryEnvironment, projectRoot);
     }
+
+    /// <summary>
+    /// The Claude environment the Tier 1 memory inventory resolves against.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>A seam, not a field, because this class is product-NEUTRAL.</b> A
+    /// <c>ClaudeEnvironment</c> stored here would cross an interface OpenCode also implements,
+    /// which is the same reason <c>BackupEngine.Default</c> was deleted rather than kept. The
+    /// base answer is <see cref="ClaudeEnvironment.Empty"/> — exactly the behaviour every caller
+    /// had before the environment existed — and <c>ClaudeCodeClient</c> overrides it with the one
+    /// its composition root resolved.
+    /// </para>
+    /// <para>
+    /// ⓘ It sits beside the <c>FootprintService</c> default in
+    /// <c>NeutralLayerDefaultsTests.KnownSites</c>: a neutral base that still resolves Claude's
+    /// tree when nobody overrides it. Making the inventory itself neutral is the separate
+    /// refactor that entry describes.
+    /// </para>
+    /// </remarks>
+    protected virtual ClaudeEnvironment MemoryEnvironment => ClaudeEnvironment.Empty;
 
     /// <inheritdoc/>
     public Task<string?> ReadMemoryFileAsync(string absolutePath, CancellationToken ct)

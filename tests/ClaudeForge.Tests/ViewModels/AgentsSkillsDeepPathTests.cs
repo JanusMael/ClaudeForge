@@ -67,7 +67,7 @@ public sealed class AgentsSkillsDeepPathTests
 
     private async Task<AgentsSkillsEditorViewModel> LoadedVmAsync()
     {
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         vm.Refresh();
         if (vm.LastRefresh is { } r)
         {

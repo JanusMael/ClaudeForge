@@ -916,7 +916,7 @@ public sealed class MemoryEditorViewModelTests
         // ── Memory + footprint methods (delegate to the static SDK helpers) ─
         public IReadOnlyList<UserMemoryFile> SnapshotUserMemoryFiles(string? projectRoot = null)
         {
-            return UserMemoryService.SnapshotFiles(projectRoot);
+            return UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
         }
 
         public Task<string?> ReadMemoryFileAsync(string absolutePath, CancellationToken ct)

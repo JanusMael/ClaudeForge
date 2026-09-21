@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
@@ -10,7 +11,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// <c>docs/SKILLS-AGENTS-COMMANDS-PLAN.md</c>, group #2).
 ///
 /// <para>
-/// <b>Stat-only enumeration:</b> <see cref="Snapshot(string)"/> reads no file
+/// <b>Stat-only enumeration:</b> <see cref="Snapshot(ClaudeEnvironment, string)"/> reads no file
 /// contents — it only walks directories and stats files — so it returns fast
 /// even with many plugins.  The front-matter <c>description</c> subtitle is
 /// loaded lazily by the UI via <see cref="LoadDescription"/> once a row is
@@ -42,9 +43,10 @@ public static class EditableMemoryService
     /// Which one Claude actually runs is a separate question the resolver deliberately does not
     /// answer; see <see cref="ClaudeScopes"/>.
     /// </remarks>
-    public static IReadOnlyList<EditableMemoryEntry> Snapshot(string? projectRoot = null)
+    public static IReadOnlyList<EditableMemoryEntry> Snapshot(
+        ClaudeEnvironment env, string? projectRoot = null)
     {
-        return Snapshot(ClaudeArtifactPaths.Default, projectRoot);
+        return Snapshot(ClaudeArtifactPaths.DefaultFor(env), projectRoot);
     }
 
     /// <summary>
@@ -56,7 +58,7 @@ public static class EditableMemoryService
     /// </param>
     /// <remarks>
     /// ⭐ The real entry point; the single-argument overload is a thin wrapper over
-    /// <see cref="ClaudeArtifactPaths.Default"/>. See <see cref="UserMemoryService.SnapshotFiles(ClaudeArtifactPaths, string)"/>
+    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>. See <see cref="UserMemoryService.SnapshotFiles(ClaudeArtifactPaths, string)"/>
     /// for why the static wrapper stays.
     /// </remarks>
     public static IReadOnlyList<EditableMemoryEntry> Snapshot(

@@ -71,7 +71,7 @@ public sealed class ClaudeArtifactPathsTests
         // ".claude.json" and ".credentials.json" so that a different root is a constructor argument
         // rather than a mutation of a process-wide static — and the cost of that choice is exactly
         // one way to drift. This is it. If PlatformPaths renames a file, this fails and names it.
-        var paths = new ClaudeArtifactPaths(_profile);
+        var paths = new ClaudeArtifactPaths(_profile, ClaudeEnvironment.Empty);
 
         Assert.AreEqual(PlatformPaths.UserProfile, paths.UserProfile, nameof(paths.UserProfile));
         Assert.AreEqual(PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty), paths.ClaudeHome, nameof(paths.ClaudeHome));
@@ -91,7 +91,7 @@ public sealed class ClaudeArtifactPathsTests
     {
         // ⭐ Two of these sit BESIDE ~/.claude rather than inside it, which is why the root is the
         // profile: a ClaudeHome-rooted provider could produce neither.
-        var paths = new ClaudeArtifactPaths(_profile);
+        var paths = new ClaudeArtifactPaths(_profile, ClaudeEnvironment.Empty);
 
         Assert.AreEqual(Path.Combine(_profile, ".claude.json"), paths.ClaudeJsonPath);
         Assert.AreEqual(Path.Combine(_profile, ".claude"), paths.ClaudeHome);
@@ -105,10 +105,10 @@ public sealed class ClaudeArtifactPathsTests
         // underlying profile is AsyncLocal-backed, so a cached instance would freeze whichever
         // sandbox was current when it was first touched — and that failure presents as flakiness
         // in an unrelated test rather than as a stale cache here.
-        Assert.AreEqual(_profile, ClaudeArtifactPaths.Default.UserProfile);
+        Assert.AreEqual(_profile, ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty).UserProfile);
 
         PlatformPaths.TestUserProfileOverride = _other;
-        Assert.AreEqual(_other, ClaudeArtifactPaths.Default.UserProfile);
+        Assert.AreEqual(_other, ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty).UserProfile);
 
         PlatformPaths.TestUserProfileOverride = _profile;
     }
@@ -124,7 +124,7 @@ public sealed class ClaudeArtifactPathsTests
         Write(Path.Combine(_other, ".claude", "CLAUDE.md"), "# injected profile");
 
         IReadOnlyList<UserMemoryFile> files =
-            UserMemoryService.SnapshotFiles(new ClaudeArtifactPaths(_other), projectRoot: null);
+            UserMemoryService.SnapshotFiles(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null);
 
         UserMemoryFile claudeMd = files.Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
         StringAssert.StartsWith(claudeMd.AbsolutePath, _other);
@@ -137,7 +137,7 @@ public sealed class ClaudeArtifactPathsTests
         Write(Path.Combine(_other, ".claude", "agents", "from-injected.md"));
 
         IReadOnlyList<EditableMemoryEntry> entries =
-            EditableMemoryService.Snapshot(new ClaudeArtifactPaths(_other), projectRoot: null);
+            EditableMemoryService.Snapshot(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null);
 
         Assert.AreEqual("from-injected", entries.Single().DisplayName);
     }
@@ -153,7 +153,7 @@ public sealed class ClaudeArtifactPathsTests
         Write(Path.Combine(_other, ".claude.json"), "{}");
 
         string[] names = [.. UserMemoryService
-            .SnapshotFiles(new ClaudeArtifactPaths(_other), projectRoot: null)
+            .SnapshotFiles(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null)
             .Where(f => f.Category == UserMemoryCategory.Configuration)
             .Select(f => f.DisplayName)];
 
@@ -164,7 +164,7 @@ public sealed class ClaudeArtifactPathsTests
     public async Task FootprintService_ResolvesItsDefaultLazily_NotAtConstruction()
     {
         // ⛔ The service is cached for the lifetime of an AgentConfigClientCore, so capturing
-        // ClaudeArtifactPaths.Default in the constructor would pin whichever sandbox was current
+        // ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty) in the constructor would pin whichever sandbox was current
         // when the client was first built. A test that set its override afterwards would then read
         // another test's directory — which reads as flakiness, not as a stale cache.
         //
@@ -198,7 +198,7 @@ public sealed class ClaudeArtifactPathsTests
         Write(Path.Combine(_other, ".claude", "projects", "proj-a", "session.jsonl"), "{}");
 
         string resolved = FootprintService.ResolveCategoryPath(
-            new ClaudeArtifactPaths(_other), FootprintCategory.SessionTranscripts);
+            new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), FootprintCategory.SessionTranscripts);
 
         Assert.AreEqual(Path.Combine(_other, ".claude", "projects"), resolved);
     }
@@ -212,7 +212,7 @@ public sealed class ClaudeArtifactPathsTests
         // The long-standing guard searches each row for the substring "credentials" — that passes
         // for the wrong reasons (any path containing the word) and would fail for them too (a
         // sandbox called C:\credentials-test). This one cannot.
-        var paths = new ClaudeArtifactPaths(_other);
+        var paths = new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty);
         Write(paths.CredentialsPath, "{\"token\":\"secret\"}");
         Write(paths.UserSettingsPath, "{}");
 
@@ -223,5 +223,87 @@ public sealed class ClaudeArtifactPathsTests
         Assert.IsFalse(
             files.Any(f => string.Equals(f.AbsolutePath, paths.CredentialsPath, StringComparison.Ordinal)),
             "The credentials file must never be surfaced in a browsable inventory.");
+    }
+
+    // ── A relocated home ─────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ARelocatedEnvironment_MovesTheHomeAndEverythingUnderIt()
+    {
+        // ⭐ The case the type could not express before: CLAUDE_CONFIG_DIR is documented as
+        // "every ~/.claude path lives under that directory instead", and this provider hardcoded
+        // Path.Combine(UserProfile, ".claude"). The Memory and Agents & Skills pages therefore
+        // read ~/.claude while the settings pages read the relocated tree, with nothing failing.
+        string relocated = Path.Combine(_other, "relocated-claude");
+        var paths = new ClaudeArtifactPaths(_profile, new ClaudeEnvironment(relocated));
+
+        Assert.AreEqual(relocated, paths.ClaudeHome, nameof(paths.ClaudeHome));
+        Assert.AreEqual(
+            Path.Combine(relocated, "settings.json"), paths.UserSettingsPath,
+            nameof(paths.UserSettingsPath));
+        Assert.AreEqual(
+            Path.Combine(relocated, "mcp.json"), paths.UserMcpPath, nameof(paths.UserMcpPath));
+        Assert.AreEqual(
+            Path.Combine(relocated, ".credentials.json"), paths.CredentialsPath,
+            nameof(paths.CredentialsPath));
+    }
+
+    [TestMethod]
+    public void ARelocatedEnvironment_LeavesClaudeJsonBesideTheProfile()
+    {
+        // ⛔ NOT a "~/.claude path". ~/.claude.json is Claude Code's global config file sitting
+        // BESIDE the home, so relocating the home must not move it — plans/00002 settles this
+        // explicitly, and moving it would point the app at a file Claude Code never reads.
+        string relocated = Path.Combine(_other, "relocated-claude");
+        var paths = new ClaudeArtifactPaths(_profile, new ClaudeEnvironment(relocated));
+
+        Assert.AreEqual(Path.Combine(_profile, ".claude.json"), paths.ClaudeJsonPath);
+    }
+
+    [TestMethod]
+    public void ARelocatedHome_AgreesWithPlatformPaths()
+    {
+        // ⛔ The drift guard above only ever compares the EMPTY environment, so it could not see
+        // a relocation disagreement at all. This is that half.
+        //
+        // ⚠ The override has to be cleared first: PlatformPaths gives TestUserProfileOverride
+        // priority over the environment by design, so with it set the left-hand side is the
+        // sandbox no matter what the environment says — the assertion would pass while proving
+        // nothing about relocation.
+        string relocated = Path.Combine(_other, "relocated-claude");
+        var env = new ClaudeEnvironment(relocated);
+
+        PlatformPaths.TestUserProfileOverride = null;
+        try
+        {
+            var paths = new ClaudeArtifactPaths(PlatformPaths.UserProfile, env);
+
+            Assert.AreEqual(PlatformPaths.ClaudeHome(env), paths.ClaudeHome, nameof(paths.ClaudeHome));
+            Assert.AreEqual(
+                PlatformPaths.UserSettingsPath(env), paths.UserSettingsPath, nameof(paths.UserSettingsPath));
+            Assert.AreEqual(PlatformPaths.UserMcpPath(env), paths.UserMcpPath, nameof(paths.UserMcpPath));
+            Assert.AreEqual(
+                PlatformPaths.CredentialsPath(env), paths.CredentialsPath, nameof(paths.CredentialsPath));
+        }
+        finally
+        {
+            PlatformPaths.TestUserProfileOverride = _profile;
+        }
+    }
+
+    [TestMethod]
+    public void DefaultFor_CarriesTheEnvironmentThrough()
+    {
+        // ⭐ DefaultFor is what every static convenience overload resolves through, so if it
+        // dropped the environment the whole thread would be decorative — the services would
+        // compile, pass, and read ~/.claude. It reads PlatformPaths.UserProfile for the root and
+        // must carry the environment it was handed verbatim.
+        string relocated = Path.Combine(_other, "relocated-claude");
+        var env = new ClaudeEnvironment(relocated);
+
+        ClaudeArtifactPaths paths = ClaudeArtifactPaths.DefaultFor(env);
+
+        Assert.AreSame(env, paths.Env, "DefaultFor must carry the environment, not replace it.");
+        Assert.AreEqual(relocated, paths.ClaudeHome);
     }
 }

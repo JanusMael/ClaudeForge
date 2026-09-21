@@ -4858,7 +4858,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
         {
             NodeId = NavIdAgentsSkills,
-            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess)
+            Editor = new AgentsSkillsEditorViewModel(
+                _env, ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess)
             {
                 // The page can only build a full deep link if it knows the node it
                 // is hosted under; passing it in beats hardcoding the id twice.

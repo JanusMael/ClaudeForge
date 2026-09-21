@@ -28,7 +28,7 @@ public sealed class ClaudeArtifactSourcesTests
     private string ClaudeHome => Path.Combine(_fakeHome, ".claude");
 
     /// <summary>The sandbox, addressed the way production addresses a real profile.</summary>
-    private ClaudeArtifactPaths Paths => new(_fakeHome);
+    private ClaudeArtifactPaths Paths => new(_fakeHome, ClaudeEnvironment.Empty);
 
     [TestInitialize]
     public void Setup()
@@ -221,7 +221,7 @@ public sealed class ClaudeArtifactSourcesTests
         Directory.CreateDirectory(projectRoot);
         File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# project");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(projectRoot);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
 
         Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.PrimaryMemory));
         Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.ProjectMemory));
@@ -244,7 +244,7 @@ public sealed class ClaudeArtifactSourcesTests
         Write(Path.Combine("hooks", "precommit.sh"));
         Write(Path.Combine("hooks", "precommit.sh.bak"));
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles();
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
 
         Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.Hook));
         Assert.IsFalse(files.Any(f => f.AbsolutePath.EndsWith(".bak", StringComparison.Ordinal)));
@@ -262,7 +262,7 @@ public sealed class ClaudeArtifactSourcesTests
 
         List<UserMemoryFile> cross =
         [
-            .. UserMemoryService.SnapshotFiles()
+            .. UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                 .Where(f => f.Category == UserMemoryCategory.CrossToolMemory),
         ];
 

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
@@ -84,7 +84,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "plugins", "mkt", "plug", "skills", "widget", "SKILL.md"),
             "---\nname: widget\ndescription: Plugin skill\n---\n\nPlugin body.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         // Agents: user reviewer + project proj-agent.
@@ -107,7 +107,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "skills", "user-skill", "SKILL.md"), "---\nname: user-skill\n---\n\nB.\n");
         Write(Path.Combine(Home, "plugins", "mkt", "skills", "plug-skill", "SKILL.md"), "---\nname: plug-skill\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         // Expected flat shape: [Yours header, user-skill row, Plugin header, plug-skill row].
@@ -131,7 +131,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         // Only user items → no Plugin header.
         Write(Path.Combine(Home, "agents", "only-user.md"), "---\nname: only-user\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         Assert.IsFalse(vm.AgentItems.OfType<ArtifactSectionHeaderViewModel>().Any(h => h.Header == "Plugin"),
@@ -145,7 +145,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "plugins", "everything-claude-code", "skills", "widget", "SKILL.md"),
             "---\nname: widget\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         ArtifactRowViewModel row = SkillRows(vm).Single(r => r.DisplayName == "widget");
@@ -159,7 +159,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "agents", "a.md"), "---\nname: a\ndescription: has desc\n---\n\nB.\n");
         Write(Path.Combine(Home, "agents", "b.md"), "---\nname: b\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         // Rows are present immediately (stat-only) — subtitles fill in via the
@@ -177,7 +177,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "plugins", "mkt", "plug", "skills", "widget", "SKILL.md"),
             "---\nname: widget\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         ArtifactRowViewModel widget = SkillRows(vm).Single(s => s.DisplayName == "widget");
@@ -192,7 +192,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "agents", "reviewer.md"),
             "---\nname: reviewer\ndescription: Reviews code\ntools: Read, Grep, Bash\nmodel: sonnet\n---\n\nYou are a reviewer.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         ArtifactRowViewModel row = AgentRows(vm).Single();
 
@@ -219,7 +219,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "commands", "summarise.md"),
             "---\ndescription: Summarise the PR\n---\n\nPrompt template.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(CommandRows(vm).Single());
 
@@ -234,7 +234,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"),
             "---\nname: pdf\ndescription: PDF tools\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
         Assert.IsTrue(vm.IsViewerVisible);
@@ -253,7 +253,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "ghost.md");
         Write(path, "---\nname: ghost\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         // Drain the background description fill so no read handle is open when
         // we delete the file below.
@@ -279,7 +279,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "agents", "reviewer.md"),
             "---\nname: reviewer\ndescription: Reviews code\ntools: Read, Grep\nmodel: sonnet\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
 
@@ -299,7 +299,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "plugins", "p", "skills", "w", "SKILL.md"),
             "---\nname: w\ndescription: plugin\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
 
@@ -315,7 +315,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ndescription: old desc\ntools: Read\nmodel: sonnet\n---\n\nOriginal body.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -347,7 +347,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ndescription: old desc\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is { } fill)
         {
@@ -375,7 +375,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ndescription: old desc\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is { } fill)
         {
@@ -403,7 +403,7 @@ public sealed class AgentsSkillsEditorViewModelTests
             "description: old\n" +
             "---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -426,7 +426,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "skills", "s", "SKILL.md");
         Write(path, "---\nname: s\ndescription: d\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -443,7 +443,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ndescription: keep\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -464,7 +464,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ntools: Read, Grep\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -483,7 +483,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "agents", "reviewer.md"),
             "---\nname: reviewer\ndescription: orig\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -508,7 +508,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "reviewer.md");
         Write(path, "---\nname: reviewer\ndescription: orig\n---\n\nOriginal body.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -537,7 +537,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(Path.Combine(Home, "agents", "reviewer.md"),
             "---\nname: reviewer\ndescription: orig\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
         vm.BeginEditCommand.Execute(null);
@@ -558,7 +558,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     {
         Write(Path.Combine(Home, "plugins", "p", "skills", "w", "SKILL.md"), "---\nname: w\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
 
@@ -573,7 +573,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     {
         // Fresh sandbox, nothing under ~/.claude — refresh must not throw and
         // the segment lists end up empty.
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         Assert.AreEqual(0, vm.AgentItems.Count);
@@ -590,7 +590,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "broken.md");
         Write(path, "---\nname: broken\nthis never closes the front-matter block\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -622,7 +622,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string path = Path.Combine(Home, "agents", "ro.md");
         Write(path, "---\nname: ro\ndescription: d\n---\n\nBody.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -654,7 +654,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     public async Task DeleteArtifact_NullRow_NoOp()
     {
         StubDialogService dlg = new();
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.DeleteArtifactAsync(null);
         Assert.AreEqual(0, dlg.ConfirmCalls);
     }
@@ -666,7 +666,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(skillMd, "---\nname: widget\n---\n\nBody.\n");
 
         StubDialogService dlg = new() { ConfirmReturns = true };
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -689,7 +689,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(path, "---\nname: reviewer\n---\n\nBody.\n");
 
         StubDialogService dlg = new() { ConfirmReturns = true };
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -715,7 +715,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         string skillDir = Path.Combine(Home, "skills", "pdf");
 
         StubDialogService dlg = new() { ConfirmReturns = true };
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -738,7 +738,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(path, "---\ndescription: Summarise\n---\n\nBody.\n");
 
         StubDialogService dlg = new() { ConfirmReturns = false };
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -760,7 +760,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Write(path, "---\nname: reviewer\n---\n\nBody.\n");
 
         StubDialogService dlg = new() { ConfirmReturns = true };
-        var vm = new AgentsSkillsEditorViewModel(_project, shellLauncher: null, dialogService: dlg);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.RefreshAsync();
         if (vm.LastDescriptionFill is not null)
         {
@@ -800,7 +800,7 @@ public sealed class AgentsSkillsEditorViewModelTests
             "\n" +
             "Body.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LastDescriptionFill!;
 
@@ -830,7 +830,7 @@ public sealed class AgentsSkillsEditorViewModelTests
             "\n" +
             "Body.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LastDescriptionFill!;
 

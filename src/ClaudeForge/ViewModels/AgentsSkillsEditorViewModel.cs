@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Globalization;
 using System.Security;
@@ -109,9 +110,21 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     // land after the user has already moved on and overwrite the selection.
     private CancellationTokenSource _loadCts = new();
 
+    /// <summary>The resolved environment this page's disk walk is rooted at.</summary>
+    /// <remarks>
+    /// ⚠ Required rather than optional: an omitted environment would resolve <c>~/.claude</c> and
+    /// list a relocated user's agents and skills from a directory Claude Code is not reading.
+    /// </remarks>
+    private readonly ClaudeEnvironment _env;
+
     public AgentsSkillsEditorViewModel(
-        string? projectRoot, IShellLauncher? shellLauncher, IDialogService? dialogService)
+        ClaudeEnvironment env,
+        string? projectRoot,
+        IShellLauncher? shellLauncher,
+        IDialogService? dialogService)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
         _projectRoot = projectRoot;
         _shellLauncher = shellLauncher;
         _dialogService = dialogService;
@@ -124,14 +137,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     }
 
     /// <summary>Convenience ctor — shell-launch but no dialog plumbing.</summary>
-    public AgentsSkillsEditorViewModel(string? projectRoot, IShellLauncher? shellLauncher)
-        : this(projectRoot, shellLauncher, dialogService: null)
+    public AgentsSkillsEditorViewModel(
+        ClaudeEnvironment env, string? projectRoot, IShellLauncher? shellLauncher)
+        : this(env, projectRoot, shellLauncher, dialogService: null)
     {
     }
 
     /// <summary>Test/fixture convenience ctor — no shell-launch / dialog plumbing.</summary>
-    public AgentsSkillsEditorViewModel(string? projectRoot)
-        : this(projectRoot, shellLauncher: null, dialogService: null)
+    public AgentsSkillsEditorViewModel(ClaudeEnvironment env, string? projectRoot)
+        : this(env, projectRoot, shellLauncher: null, dialogService: null)
     {
     }
 
@@ -665,7 +679,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
                 // Fast, stat-only walk on the thread pool — no file contents
                 // read here, so the lists can render immediately.
                 IReadOnlyList<EditableMemoryEntry> entries =
-                    await Task.Run(() => EditableMemoryService.Snapshot(_projectRoot)).ConfigureAwait(true);
+                    await Task.Run(() => EditableMemoryService.Snapshot(_env, _projectRoot)).ConfigureAwait(true);
 
                 var rows = new List<ArtifactRowViewModel>();
                 FillGrouped(AgentItems, entries, UserMemoryCategory.Subagent, rows);

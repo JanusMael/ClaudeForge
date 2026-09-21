@@ -22,7 +22,7 @@ public sealed class ClaudeEditableArtifactSourcesTests
     private string Home => Path.Combine(_sandbox, ".claude");
 
     /// <summary>The sandbox, addressed the way production addresses a real profile.</summary>
-    private ClaudeArtifactPaths Paths => new(_sandbox);
+    private ClaudeArtifactPaths Paths => new(_sandbox, ClaudeEnvironment.Empty);
 
     [TestInitialize]
     public void Setup()
@@ -127,7 +127,7 @@ public sealed class ClaudeEditableArtifactSourcesTests
         Write(Path.Combine(Home, "plugins", "some-plugin", "agents", "reviewer.md"));
 
         List<EditableMemoryEntry> rows =
-            [.. EditableMemoryService.Snapshot().Where(e => e.DisplayName == "reviewer")];
+            [.. EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Where(e => e.DisplayName == "reviewer")];
 
         Assert.AreEqual(2, rows.Count);
         Assert.IsTrue(rows.Any(r => r is { Scope: EditableMemoryScope.User, IsWritable: true }));

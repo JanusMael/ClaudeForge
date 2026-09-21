@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 
@@ -46,7 +47,7 @@ public sealed class FootprintService
     /// <param name="fs">File-system seam; defaults to the real one.</param>
     /// <param name="paths">
     /// Where this profile's Claude files live. Defaults to
-    /// <see cref="ClaudeArtifactPaths.Default"/>, resolved per use rather than captured here.
+    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>, resolved per use rather than captured here.
     /// </param>
     /// <param name="catalog">
     /// The product's category set. Defaults to <see cref="FootprintCatalog.Default"/> — Claude's
@@ -78,15 +79,25 @@ public sealed class FootprintService
     /// The paths this instance reads, resolving the default lazily.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// ⛔ <b>Resolved per use, never captured in the constructor.</b>
-    /// <see cref="ClaudeArtifactPaths.Default"/> reads
+    /// <see cref="ClaudeArtifactPaths.DefaultFor"/> reads
     /// <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override — and
     /// this service is cached for the lifetime of an <c>AgentConfigClientCore</c>. Capturing the
     /// default at construction would freeze whichever sandbox was current when the client first
     /// touched it, so a test that sets its override after the client exists would silently read
     /// another test's directory. That reads as flakiness, not as a stale cache.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The fallback resolves the DEFAULT home, and that is this type's known
+    /// Claude-defaulting site rather than an oversight.</b> It is the entry
+    /// <c>NeutralLayerDefaultsTests.KnownSites</c> holds, recorded there with its reason; a
+    /// caller that has an environment passes <c>paths</c> instead, which is what
+    /// <c>ClaudeCodeClient</c> does. Making the fallback itself neutral is the separate refactor
+    /// that entry describes, not something to slip in here.
+    /// </para>
     /// </remarks>
-    private ClaudeArtifactPaths Paths => _paths ?? ClaudeArtifactPaths.Default;
+    private ClaudeArtifactPaths Paths => _paths ?? ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty);
 
     /// <summary>The named roots, resolved per use for the reason the constructor documents.</summary>
     private FootprintRoots Roots =>
@@ -441,9 +452,9 @@ public sealed class FootprintService
     /// <see cref="FootprintCategory.SessionMetadata"/>, this is the parent
     /// (<c>~/.claude</c>) so the user can see all three siblings at once.
     /// </summary>
-    public static string ResolveCategoryPath(FootprintCategory category)
+    public static string ResolveCategoryPath(ClaudeEnvironment env, FootprintCategory category)
     {
-        return ResolveCategoryPath(ClaudeArtifactPaths.Default, category);
+        return ResolveCategoryPath(ClaudeArtifactPaths.DefaultFor(env), category);
     }
 
     /// <summary>

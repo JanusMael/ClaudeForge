@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
@@ -40,9 +41,10 @@ public static class UserMemoryService
     /// <see cref="UserMemoryCategory.ProjectMemory"/> contributes zero
     /// entries.
     /// </summary>
-    public static IReadOnlyList<UserMemoryFile> SnapshotFiles(string? projectRoot = null)
+    public static IReadOnlyList<UserMemoryFile> SnapshotFiles(
+        ClaudeEnvironment env, string? projectRoot = null)
     {
-        return SnapshotFiles(ClaudeArtifactPaths.Default, projectRoot);
+        return SnapshotFiles(ClaudeArtifactPaths.DefaultFor(env), projectRoot);
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ public static class UserMemoryService
     /// </param>
     /// <remarks>
     /// ⭐ <b>This is the real entry point; the parameterless overload is a thin wrapper over
-    /// <see cref="ClaudeArtifactPaths.Default"/>.</b> Keeping the static wrapper is deliberate:
+    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>.</b> Keeping the static wrapper is deliberate:
     /// converting the whole surface to instances would rewrite the 25 existing tests that are this
     /// extraction's faithfulness proof, and a proof you had to edit proves nothing. Same call the
     /// scope model made in Phase 3.
