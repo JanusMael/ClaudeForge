@@ -704,6 +704,36 @@ conclusive. `F10` is new and is the same class.
 ⓘ **A5 re-runs immediately before the C2 tag**, on the commit actually tagged — a locked decision,
 not an optional extra.
 
+### ⭐ Decisions taken 2026-09-21 — locked, do not relitigate
+
+1. ⛔ **`LayeredEditors.*` does NOT go public on nuget.org. The direction is DISCARDED**, and with it
+   the draft `plans/00004-layerededitors-goes-public-on-nuget.md`, which was deleted while still
+   untracked. **`00004` is free for the next plan** — nothing was committed, so the number was never
+   consumed. ⚠ The proposal reached this repository **second-hand**, written into the working tree
+   by a peer session relaying a decision the maintainer had not given here; it was held untracked
+   precisely so that discarding it cost one `rm`. ⭐ **A plan that is only a draft is deleted, not
+   superseded** — the *new number referencing the old* rule governs plans that were **approved**,
+   and applying it to a draft would have permanently spent a number on a direction nobody took.
+   ⓘ The eleven ids keep publishing exactly as they do today: GitHub Packages, authenticated reads,
+   `scripts/Publish-Packages.ps1`.
+2. ⭐ **Pushing a fast-forward commit to `main` is ordinary work, not a disturbance.** The standing
+   bound is on **rewriting** `origin/main` — force-pushes and history surgery — not on landing an
+   ordinary commit. ⚠ **`git push origin main` prints `remote: - Changes must be made through a pull
+   request.` and then SUCCEEDS** for the repository owner. That line reads exactly like a rejection
+   and is not one: read the ref update (`6a5c3c5..a987357  main -> main`) and `git rev-list --count
+   @{u}..HEAD`, never the `remote:` prose. Same lesson as the 2-ref push cap — the `remote:` lines
+   are advisory and the **effect** is what must be measured.
+
+ⓘ **Measured while reconciling, and worth keeping even though the plan is gone.** 00001 gates public
+publication on *"ClaudeForge, continuing OpenCodeForge work, and a third project"* having exercised
+these libraries. The third project exists — **DiffView** (`C:/c/cl/Bennewitz.Ninja.DiffView`) — but it
+consumes the **unprefixed** id `LayeredEditors.Avalonia.Diagnostics` at `1.0.1`, hand-packed from a
+ClaudeForge checkout into the sibling folder feed `../nuget-local`. ⛔ **It has exercised the CODE and
+never the `Bennewitz.Ninja.*` PACKAGES**, and its own `packageSourceMapping` matches `LayeredEditors.*`,
+which does **not** match `Bennewitz.Ninja.LayeredEditors.*`. So any future public publication of these
+ids would neither break DiffView nor reach it — it would keep resolving `1.0.1` from a folder. **Read
+00001's gate as met by the library and not by the packaging**, whenever it is next picked up.
+
 ### ⭐ Decisions taken 2026-09-20, second batch — Phase E step 3, locked
 
 Five decisions, all taken interactively. ⭐ **The through-line is COMPILE-ENFORCEMENT OVER GUARDS:**
