@@ -14,6 +14,29 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
+## [Unreleased]
+
+### Fixed
+
+- **Enterprise policy is read from the directory Claude Code actually reads it from.**
+  ClaudeForge looked for `managed-settings.json` in `~/.claude/`; Claude Code reads it from
+  a per-OS *system* directory — `C:\Program Files\ClaudeCode\` on Windows,
+  `/Library/Application Support/ClaudeCode/` on macOS, `/etc/claude-code/` on Linux and
+  WSL. It failed both ways and silently: a machine with real policy showed **no managed
+  layer**, so the effective view told you your own value won where policy actually
+  overrides it; and a file you placed at `~/.claude/managed-settings.json` displayed as
+  enforced while doing nothing. `managed-mcp.json` is now handled as well.
+- **`CLAUDE_CONFIG_DIR` is honoured.** The app documented this variable in its own tooltips
+  and then ignored it, so anyone who had relocated their Claude home was shown — and was
+  editing — the settings in `~/.claude` instead. Every path derived from the home now
+  resolves through it, including the ones behind the Memory and Agents &amp; Skills pages,
+  which previously read a different tree than the settings pages did. `~/.claude.json` is
+  deliberately unaffected: it sits beside the home rather than inside it, so Claude Code
+  does not move it either.
+- **The restore progress bar no longer names `~/.claude/` when the home is somewhere else.**
+  The label said `Restoring ~/.claude/…` in all nine languages regardless of where the
+  restore was actually writing.
+
 ## [2026.3.920] - 2026-09-20
 
 ### Added

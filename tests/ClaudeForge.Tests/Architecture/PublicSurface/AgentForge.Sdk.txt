@@ -3,6 +3,7 @@ class Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore [abstract] implements
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter ConfigWriter { get; }
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IMergePolicy MergePolicy { get; }
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor Product { get; }
+    Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment MemoryEnvironment { get; }
     Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry SchemaRegistryInstance { get; }
     Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope DefaultScope { get; }
     Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder Scopes { get; }
@@ -306,7 +307,8 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle [sealed] implements
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle left, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle left, Bennewitz.Ninja.AgentForge.Sdk.Memory.BlockScalarStyle right)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths [sealed]
-    .ctor(System.String userProfile)
+    .ctor(System.String userProfile, Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
+    Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment Env { get; }
     System.String ClaudeHome { get; }
     System.String ClaudeJsonPath { get; }
     System.String CredentialsPath { get; }
@@ -316,7 +318,7 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths [sealed]
     System.String UserMcpPath { get; }
     System.String UserProfile { get; }
     System.String UserSettingsPath { get; }
-    static Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths Default { get; }
+    static Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths DefaultFor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry>
     .ctor(System.String AbsolutePath, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryCategory Category, Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope Scope, System.String DisplayName, System.String Source, System.Boolean IsWritable, System.Int64 SizeBytes, System.DateTime LastWriteUtc)
     Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry <Clone>$()
@@ -340,8 +342,8 @@ enum Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryScope : System.Int32
     Project = 1
     User = 0
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryService
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry> Snapshot(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String projectRoot = null)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry> Snapshot(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, System.String projectRoot)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.EditableMemoryEntry> Snapshot(System.String projectRoot = null)
     static System.String LoadDescription(System.String absolutePath)
     static System.Threading.Tasks.Task<System.String> ReadAsync(System.String absolutePath, System.Threading.CancellationToken ct)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog [sealed]
@@ -414,8 +416,8 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintService [sealed]
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>> GetStatsAsync(System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(System.Threading.CancellationToken ct)
     static System.Boolean IsInStandardBackup(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
+    static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
     static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
-    static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
     static System.String ResolveCategoryPath(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots roots, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category)
 struct Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource implements System.IEquatable<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintSource>
     .ctor(System.String RootKey, System.String RelativePath, System.String Pattern = "*", System.Boolean Recursive = true, System.Boolean IsFile = false)
@@ -597,8 +599,8 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile [sealed] implements S
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile left, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile left, Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile right)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryService
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotFiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String projectRoot = null)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotFiles(Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths, System.String projectRoot)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.UserMemoryFile> SnapshotFiles(System.String projectRoot = null)
     static System.Threading.Tasks.Task<System.String> ReadAsync(System.String absolutePath, System.Threading.CancellationToken ct)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.YamlFrontMatter
     static Bennewitz.Ninja.AgentForge.Sdk.Memory.FrontMatter Parse(System.String text)

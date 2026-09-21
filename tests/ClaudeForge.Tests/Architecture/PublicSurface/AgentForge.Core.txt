@@ -1,13 +1,12 @@
 class Bennewitz.Ninja.AgentForge.Core.Backup.AdditionalDirectoriesResolver
     static System.Collections.Generic.IReadOnlyList<System.String> Resolve(System.Collections.Generic.IEnumerable<System.String> settingsFilePaths)
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine [sealed]
-    .ctor(Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts = null)
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment environment, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts = null)
     Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry TryReadEntry(System.String archivePath)
     System.Boolean Delete(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry)
     System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry> List(System.String backupDirectory)
     System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Core.Backup.BackupResult> CreateAsync(Bennewitz.Ninja.AgentForge.Core.Backup.BackupRequest request, System.IProgress<Bennewitz.Ninja.AgentForge.Core.Backup.BackupProgress> progress = null, System.Threading.CancellationToken ct = null)
     System.Threading.Tasks.Task<Bennewitz.Ninja.AgentForge.Core.Backup.RestoreResult> RestoreAsync(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry, System.IProgress<Bennewitz.Ninja.AgentForge.Core.Backup.BackupProgress> progress = null, System.Threading.CancellationToken ct = null, System.Collections.Generic.IReadOnlyCollection<System.String> openProjectRoots = null)
-    static Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine Default
     static System.Void InvalidateListCache()
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry>
     .ctor()
@@ -326,9 +325,9 @@ class Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo [sealed] implements Syst
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo right)
 class Bennewitz.Ninja.AgentForge.Core.FileIO.ConfigFileDiscoverer
     static Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile DiscoverDesktopConfig(System.String profileName = null)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverClaudeCodeSettings(System.String projectRoot = null, System.String profileName = null, System.String managedRoot = null)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverMcpFiles(System.String projectRoot = null, System.String profileName = null)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverProfiles()
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverClaudeCodeSettings(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String projectRoot = null, System.String profileName = null, System.String managedRoot = null)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverMcpFiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String projectRoot = null, System.String profileName = null)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverProfiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
 class Bennewitz.Ninja.AgentForge.Core.FileIO.ConfigFileLoader
     static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter DefaultWriter { get; }
     static System.Threading.Tasks.Task SaveAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsDocument document, System.String headerComment = null, System.Threading.CancellationToken ct = null, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter writer = null)
@@ -412,19 +411,19 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformInfo
     static System.Void OverrideForDebug(Bennewitz.Ninja.AgentForge.Core.Platform.IPlatformInfo info)
     static System.Void ResetForTesting()
 class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths
-    static Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation TryFindClaudeCodeBinary()
-    static System.Boolean IsClaudeCodeInstalled { get; }
+    static Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation TryFindClaudeCodeBinary(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
+    static System.Boolean IsClaudeCodeInstalled(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.Boolean IsClaudeCodeOnPath { get; }
     static System.Boolean IsDesktopInstalled { get; }
     static System.Collections.Generic.IReadOnlyList<System.String> DiscoverDesktopProfiles()
-    static System.Collections.Generic.IReadOnlyList<System.String> DiscoverProfiles()
+    static System.Collections.Generic.IReadOnlyList<System.String> DiscoverProfiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String AppLogsDirectory { get; }
-    static System.String ClaudeHome { get; }
+    static System.String ClaudeHome(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String ClaudeJsonPath { get; }
-    static System.String ClaudeMdPath { get; }
-    static System.String CredentialsPath { get; }
-    static System.String CurrentProfileFilePath { get; }
-    static System.String DefaultBackupDirectory { get; }
+    static System.String ClaudeMdPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
+    static System.String CredentialsPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
+    static System.String CurrentProfileFilePath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
+    static System.String DefaultBackupDirectory(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String DesktopConfigDir { get; }
     static System.String DesktopConfigPath { get; }
     static System.String DesktopCurrentProfileFilePath { get; }
@@ -437,16 +436,16 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths
     static System.String ManagedSettingsPath { get; }
     static System.String ManagedSettingsRoot { get; }
     static System.String PlatformId { get; }
-    static System.String ProfileClaudeMdPath(System.String profileName)
-    static System.String ProfileMcpPath(System.String profileName)
-    static System.String ProfileSettingsPath(System.String profileName)
-    static System.String ProfilesDirectory { get; }
+    static System.String ProfileClaudeMdPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String profileName)
+    static System.String ProfileMcpPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String profileName)
+    static System.String ProfileSettingsPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String profileName)
+    static System.String ProfilesDirectory(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String ProjectMcpPath(System.String projectRoot)
     static System.String ProjectSettingsPath(System.String projectRoot)
     static System.String TestUserProfileOverride { get;set; }
-    static System.String UserMcpPath { get; }
+    static System.String UserMcpPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String UserProfile { get; }
-    static System.String UserSettingsPath { get; }
+    static System.String UserSettingsPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.Void InvalidatePathCache()
 class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation>
     .ctor(System.String BinaryPath, System.Boolean IsOnPath)
@@ -505,19 +504,19 @@ class Bennewitz.Ninja.AgentForge.Core.Profile.ExportedProfileFormat
     const System.String CurrentVersion
 class Bennewitz.Ninja.AgentForge.Core.Profile.ProfileEngine
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Profile.DesktopProfileInfo> DiscoverDesktopProfiles()
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Profile.ProfileInfo> DiscoverProfiles()
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Profile.ProfileInfo> DiscoverProfiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String ReadCurrentDesktopProfileName()
-    static System.String ReadCurrentProfileName()
+    static System.String ReadCurrentProfileName(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.Threading.Tasks.Task ApplyDesktopProfileToLiveAsync(System.String name, System.Boolean autoSync = true, System.Threading.CancellationToken ct = null)
-    static System.Threading.Tasks.Task ApplyProfileToLiveAsync(System.String name, System.Boolean autoSync = true, System.Threading.CancellationToken ct = null)
-    static System.Threading.Tasks.Task ExportProfileAsync(System.String name, System.String destPath, System.Threading.CancellationToken ct = null)
+    static System.Threading.Tasks.Task ApplyProfileToLiveAsync(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String name, System.Boolean autoSync = true, System.Threading.CancellationToken ct = null)
+    static System.Threading.Tasks.Task ExportProfileAsync(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String name, System.String destPath, System.Threading.CancellationToken ct = null)
     static System.Threading.Tasks.Task SyncDesktopFromLiveAsync(System.String name, System.Threading.CancellationToken ct = null)
-    static System.Threading.Tasks.Task SyncFromLiveAsync(System.String name, System.Threading.CancellationToken ct = null)
+    static System.Threading.Tasks.Task SyncFromLiveAsync(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String name, System.Threading.CancellationToken ct = null)
     static System.Threading.Tasks.Task<System.Boolean> CreateDesktopProfileFromLiveAsync(System.String name, System.Threading.CancellationToken ct = null)
-    static System.Threading.Tasks.Task<System.Boolean> CreateFromLiveAsync(System.String name, System.Threading.CancellationToken ct = null)
-    static System.Threading.Tasks.Task<System.String> ImportProfileAsync(System.String sourcePath, System.String overrideName = null, System.Threading.CancellationToken ct = null)
+    static System.Threading.Tasks.Task<System.Boolean> CreateFromLiveAsync(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String name, System.Threading.CancellationToken ct = null)
+    static System.Threading.Tasks.Task<System.String> ImportProfileAsync(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String sourcePath, System.String overrideName = null, System.Threading.CancellationToken ct = null)
     static System.Void WriteCurrentDesktopProfileName(System.String name)
-    static System.Void WriteCurrentProfileName(System.String name)
+    static System.Void WriteCurrentProfileName(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String name)
 class Bennewitz.Ninja.AgentForge.Core.Profile.ProfileInfo [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Profile.ProfileInfo>
     .ctor(System.String Name, System.Boolean HasSettings, System.Boolean HasClaudeMd, System.Boolean HasMcp, System.Boolean IsCliActive)
     Bennewitz.Ninja.AgentForge.Core.Profile.ProfileInfo <Clone>$()
@@ -652,13 +651,15 @@ class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry [sealed] implements 
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, System.Boolean isClaudeCode, System.Threading.CancellationToken ct = null)
     System.Void Dispose()
     const System.String ClaudeCodeSettingsSchemaUrl
-    static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeCodeProduct
+    static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeCodeProductFor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeDesktopProduct
     static Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry CreateWithNetwork(System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> sourceOverride = null, System.String cacheDirectory = null)
     static System.Collections.Generic.IReadOnlyDictionary<System.String, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>> GetEnumDescriptions(System.String cacheFileName)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariants(System.String cacheFileName)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEvents(System.String cacheFileName)
     static System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> ProcessSourceOverride { get;set; }
+    static System.String ClaudeCodeArchiveFolder
+    static System.String ClaudeCodeProductId
 class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSnapshotService [sealed]
     .ctor(System.String directory)
     System.Collections.Generic.HashSet<System.String> LoadSnapshot(System.String schemaName)
