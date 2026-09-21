@@ -42,7 +42,7 @@ pwsh -NoProfile -File scripts/retest/New-SafetyBackup.ps1
 
 ---
 
-## ⛔ Nine things that cost real time before they were written down
+## ⛔ Ten things that cost real time before they were written down
 
 **1 · A fixed sleep is not a measurement.** Measured on one cold single-file launch:
 72 descendants at 5.3s, a COMException at 7.1s, 168 at 8.0s. Always go through
@@ -107,6 +107,24 @@ The first invoke of a virtualised list row's *Restore* button returned cleanly a
 no log line; re-resolving the element after the tree stabilised worked. ⚠ This is lesson
 4 wearing a different coat — confirm against the app's **own log**, not the pattern's
 return value.
+
+**10 · `git push` can start failing mid-session with `Permission denied (publickey)`.** The SSH
+key here is served by an agent rather than a file — there is a `~/.ssh/agent/` directory and no
+private key — and the Windows `ssh-agent` service is Stopped and Disabled, which is correct when
+1Password owns the agent. When 1Password stops exposing `\\.\pipe\openssh-ssh-agent`, Windows
+OpenSSH has nothing to ask and every push dies. ⭐ **Workaround that changes no config and does not
+touch the user's credentials**: `gh` is already authenticated, so push once over HTTPS with an
+inline helper rather than `git remote set-url` —
+`git -c credential.helper='!f(){ echo username=x-access-token; echo password=$(gh auth token); };f' push https://github.com/<owner>/<repo>.git <branch>:<branch>`.
+⚠ `git ls-remote origin` keeps failing afterwards because it still uses SSH; verify the push
+landed with `gh api repos/<owner>/<repo>/branches/<url-encoded-branch>` instead. ⓘ The durable fix
+is `git config --global url."https://github.com/".insteadOf "git@github.com:"`, which takes SSH out
+of git's path entirely while leaving 1Password for interactive work.
+
+⚠ **Unrelated but adjacent: a `.bashrc` that runs `eval $(ssh-agent)` per shell is a red herring
+here.** It produces MSYS unix-domain sockets under `~/.ssh/agent/` — seven accumulated in one day
+— and Windows OpenSSH cannot use any of them, so they look like a working agent while serving
+nothing.
 
 **9 · `~/.claude` is NOT quiescent, so a whole-home before/after diff proves nothing.**
 Measured with a control window and **no app running at all**: 8 changes in 25 seconds — five
