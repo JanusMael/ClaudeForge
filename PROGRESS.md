@@ -198,9 +198,9 @@ it, both worth keeping:
 
 ### Next, in order
 
-1. ✅ **PR #68 IS OPEN** — `release/claudeforge-on-packages` → `main`, body from
+1. ✅✅ **PR #68 IS MERGED** (`3de807d`, 2026-09-21) — `release/claudeforge-on-packages` → `main`, body from
    [`docs/PR-BODY-release-on-packages.md`](docs/PR-BODY-release-on-packages.md).
-   ⛔⛔ **It reports CONFLICTING: 60 conflicts — and they are a HISTORY-REWRITE ARTIFACT, not real
+   ⓘ **It reported CONFLICTING before the merge: 60 conflicts — a HISTORY-REWRITE ARTIFACT, not real
    divergence.** The merge base is `3c7aaab` (2026-09-01), so git re-litigates three weeks of work
    already hand-integrated, plus the `ClaudeForge.Sdk` → `AgentForge.Sdk` renames. `main` is only
    **4 commits** past the recorded integration point `52f604d`, and all four are accounted for: the
@@ -2041,6 +2041,14 @@ pass, not a fix.
 ## 🔒 Locked decisions — do not relitigate
 
 **Decided 2026-09-21, in a choices pass — each was a question and is now settled:**
+
+- ✅✅ **PR #68 IS MERGED — 2026-09-21, merge commit `3de807d`.** Merged with admin at the
+  maintainer's instruction, over the two known reds. ⭐ **`main`'s tree is byte-identical to
+  `release/claudeforge-on-packages`**, verified by an empty `git diff origin/main
+  origin/release/claudeforge-on-packages` — not inferred from the merge succeeding.
+  ⓘ A MERGE COMMIT, not a squash, though this repo squashes by default: squashing would have
+  collapsed the deliberate `-s ours` lineage and discarded 100 commit messages carrying the
+  measurements and corrections. ⛔ **The branch is NOT deleted** — it is the release line.
 
 - ✅ **NO app release is cut for this work, and none is needed.** Decided 2026-09-21: the changes
   are entirely structural, and an app release would only be deleted again afterwards. ⭐ Nothing
