@@ -14,6 +14,13 @@ verified items are listed once at the end and should not be repeated. Findings g
 | Date the binary before trusting a run | The version stamp encodes **build** time — `Starting ClaudeForge v2026.3.<MMDD>.<HHmm>` in `logs/app-*.txt`. Read it first on any "I don't see the fix" result, to separate a real defect from a stale exe |
 | Logs | `logs/app-*.txt` and `logs/events-*.txt` **beside each exe** |
 
+⭐⭐ **E1–E3 can now be driven against a SCRATCH HOME, and that is verified rather than assumed.** Set `CLAUDE_CONFIG_DIR` on the child process and ClaudeForge reads and writes there instead of `~/.claude` — the dividend plans/00002 predicted. Proven 2026-09-21 with
+`pwsh -NoProfile -File scripts/retest/Test-ScratchHomeIsolation.ps1`: **7/7** of ClaudeForge's artifacts landed in the scratch home and **0** of its copies in the real home were touched, with all 7 present there beforehand so the comparison could not pass vacuously.
+
+⛔ **The run that proved it was a `ProjectReference` build, NOT package mode, and the row above is still right that package mode is what a release retest needs.** It could not be otherwise today: this branch adds `ClaudeEnvironment` to the shared libraries and the published `2026.3.918` packages have no such type, so package mode cannot build at all. What is proven is the **mechanism** — the composition root reads the variable and every home-derived path follows it. Re-run this against a package-mode build once `2026.3.921` is published; it is one command.
+
+⚠ **A whole-home before/after diff cannot be used to check the real home**, and that was measured: a control window with no app running at all showed **8 changes in 25 seconds** (session transcripts, a `~/.claude.json` backup rotation, a `file-history/` entry). Scope any such check to the files the app itself writes. See lesson 9 in [`scripts/retest/README.md`](../scripts/retest/README.md).
+
 ⚠ **Use a scratch project for anything that writes.** E1–E3 modify config; a throwaway directory
 with its own `.claude/settings.json` keeps a mistake cheap.
 

@@ -203,10 +203,15 @@ it, both worth keeping:
    `Published Version` red and carries Phase E's breaking surface change. ⛔ A published version can
    never be replaced, and under day-resolution CalVer a second attempt on one day collides with an
    immutable version — the recovery is tomorrow.
-3. **`E1` end to end against a scratch home**, per plan 00002 step 6: set `CLAUDE_CONFIG_DIR` on the
-   child process and prove the real `~/.claude` is untouched by a **before/after listing**, not by
-   reasoning about which code paths ran. ⚠ Measure the **peak during**, not the final count — a
-   final `0` is satisfied by "never created" as well as by "created then cleaned up".
+3. ✅ **DONE — the scratch-home dividend is verified.** `scripts/retest/Test-ScratchHomeIsolation.ps1`
+   run 2026-09-21: **7/7** of ClaudeForge's artifacts landed in the scratch home, **0** of its copies
+   in the real `~/.claude` were touched, and all 7 were present there beforehand so the check could
+   not pass vacuously. Canaried — pointed at an exe that writes nothing it reports FAIL and exits 1.
+   ⛔ **The build was `ProjectReference`, not package mode**, and it could not be otherwise: the
+   published `2026.3.918` packages have no `ClaudeEnvironment`. The **mechanism** is proven; re-run it
+   against a package-mode build once `2026.3.921` exists. ⚠ **A whole-home diff cannot be used** — a
+   control with no app running showed **8 changes in 25s**, and the first draft reported a confident
+   false FAIL on exactly that churn.
 4. ⓘ **`FootprintService`'s Claude-shaped default stays open**, and deliberately. It is the entry
    `NeutralLayerDefaultsTests.KnownSites` holds, with its reason; `AgentConfigClientCore`'s
    `MemoryEnvironment` default now sits beside it. Making them neutral is the separate refactor

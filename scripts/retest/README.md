@@ -25,6 +25,7 @@ They are meant to be edited and extended during a retest, and the lessons kept.
 | `Get-BackupState.ps1` | The Backup page's *real* state — which mode radio is armed, which targets are ticked, what is in flight. |
 | `New-SafetyBackup.ps1` | Copies the `~/.claude` config surface somewhere outside the testing zone before a destructive item. Excludes `.credentials.json` deliberately. |
 | `Get-BackupArchiveInfo.ps1` | Reads a backup `.zip`: roots, sizes, whether credentials leaked in, whether a given project is present. |
+| `Test-ScratchHomeIsolation.ps1` | Proves a run honours `CLAUDE_CONFIG_DIR`: ClaudeForge's artifacts appear in a scratch home and its copies in the real `~/.claude` are untouched. ⭐ **With this green, E1–E3 can be driven against a scratch home instead of the tester's own config.** |
 
 ## Typical session
 
@@ -41,7 +42,7 @@ pwsh -NoProfile -File scripts/retest/New-SafetyBackup.ps1
 
 ---
 
-## ⛔ Five things that cost real time before they were written down
+## ⛔ Nine things that cost real time before they were written down
 
 **1 · A fixed sleep is not a measurement.** Measured on one cold single-file launch:
 72 descendants at 5.3s, a COMException at 7.1s, 168 at 8.0s. Always go through
@@ -106,6 +107,15 @@ The first invoke of a virtualised list row's *Restore* button returned cleanly a
 no log line; re-resolving the element after the tree stabilised worked. ⚠ This is lesson
 4 wearing a different coat — confirm against the app's **own log**, not the pattern's
 return value.
+
+**9 · `~/.claude` is NOT quiescent, so a whole-home before/after diff proves nothing.**
+Measured with a control window and **no app running at all**: 8 changes in 25 seconds — five
+session transcripts under `projects/`, a `~/.claude.json` backup rotation, and a `file-history/`
+entry, all written by Claude Code itself. The first draft of
+`Test-ScratchHomeIsolation.ps1` diffed the whole home and reported a confident **FAIL** on that
+churn. ⭐ **Run the control before trusting an attribution**: scope the comparison to the files
+the app under test actually writes, by name. ⚠ `cache/model-catalog/tok-*-ccd.json` looks like
+ClaudeForge's and is not — one landed **75 seconds before** the app was launched.
 
 ---
 
