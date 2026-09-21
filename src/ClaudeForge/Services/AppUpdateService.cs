@@ -101,8 +101,21 @@ internal static class AppUpdateService
     /// <see cref="CheckOncePerLaunchAsync"/> in a clean state after a previous test fired it.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Production code MUST NOT call this — the latch is load-bearing for the "fires exactly
     /// once per launch" contract.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>It clears the resolved environment too, and that is deliberate.</b> Both are
+    /// process-statics, so a fixture that sets one and resets only the other leaves the service
+    /// initialised for whatever runs next — and a later test asserting the uninitialised throw
+    /// would then pass or fail on test ORDER rather than on behaviour. Resetting returns the
+    /// service to its real pre-composition-root state.
+    /// </para>
     /// </remarks>
-    internal static void ResetForTesting() => Coordinator.ResetLatchForTesting();
+    internal static void ResetForTesting()
+    {
+        Coordinator.ResetLatchForTesting();
+        _env = null;
+    }
 }

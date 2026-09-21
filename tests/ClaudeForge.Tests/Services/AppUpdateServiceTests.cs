@@ -39,6 +39,11 @@ public sealed class AppUpdateServiceTests
         PlatformPaths.TestUserProfileOverride = _sandbox;
         // Latch is process-static; reset for clean isolation per test.
         AppUpdateService.ResetForTesting();
+        // The service reads the auto-check preference out of a resolved home and THROWS rather
+        // than defaulting, so the composition root's Initialize has to be stood in for here.
+        // Empty is right because the sandbox arrives via TestUserProfileOverride, which wins
+        // over the environment — every path these tests touch is _sandbox either way.
+        AppUpdateService.Initialize(ClaudeEnvironment.Empty);
     }
 
     [TestCleanup]
@@ -83,7 +88,7 @@ public sealed class AppUpdateServiceTests
         // User toggled the Essentials card off — even with simulate-update
         // set, the check must be skipped.  This protects the contract
         // "if I turned it off, I get no banner".
-        WindowStateService.Save(new WindowState { CheckForUpdatesOnLaunch = false });
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
         UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
@@ -185,7 +190,7 @@ public sealed class AppUpdateServiceTests
     {
         // User has the Essentials toggle OFF.  The auto path would skip;
         // the manual path must still run.
-        WindowStateService.Save(new WindowState { CheckForUpdatesOnLaunch = false });
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
         UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
@@ -263,7 +268,7 @@ public sealed class AppUpdateServiceTests
         // User has the Essentials toggle OFF.  Unlike the manual button, the
         // periodic timer is not explicit consent — it must skip, like the launch
         // check does.
-        WindowStateService.Save(new WindowState { CheckForUpdatesOnLaunch = false });
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
         UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
