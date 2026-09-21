@@ -209,9 +209,15 @@ it, both worth keeping:
    contradicts the locked decision that `git merge origin/main` is the wrong tool here; ports go
    through `AGENTS.md` §*Hand-porting a fix*. **How to land this is a maintainer decision.**
    ⓘ PR checks: 7 green (all three platforms, canary, trim, feed restore). Two red —
-   `Published Version` (structural, cured only by `2026.3.921`) and a **6-second** `CodeQL`
-   setup-level failure; the real `Analyze (C#)` passed in 4m, and CodeQL was green on the branch
-   itself, so that red is most likely the conflict denying it a merge commit.
+   `Published Version` (structural, cured only by `2026.3.921`) and `CodeQL`.
+   ⓘ **CORRECTED — the CodeQL red was first written here as “probably the conflict denying it a
+   merge commit”. That was wrong.** It reports *328 new alerts including 1 high severity*. The
+   count is an artifact of the diff being the whole branch (885 files) so everything reads as new;
+   the **high-severity one is `cs/zipslip` in `RestoreEngine`, and it is on `refs/heads/main`,
+   not here.** ⭐ This branch has **zero** high or critical alerts (72 note, 28 warning) and
+   **zero** `cs/zipslip` — its `RestoreEngine` does the canonical containment check
+   (`Path.GetFullPath` then `StartsWith(root + separator)`), plus UNC handling. **So the PR
+   REMOVES a live high-severity vulnerability from `main` rather than adding one.**
    ⛔ The release notes do **not** come from `CHANGELOG.md`: `release.yml` reads the merged PR's
    body, else the tagged commit's message body. So the curated `## [Unreleased]` section reaches a
    release only through one of those two, which is a reason to open the PR before tagging rather
