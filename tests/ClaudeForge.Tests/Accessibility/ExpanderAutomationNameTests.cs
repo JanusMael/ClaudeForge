@@ -1,4 +1,5 @@
-using System.Xml.Linq;
+using Bennewitz.Ninja.XamlQuality;
+using Bennewitz.Ninja.XamlQuality.Rules;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 
@@ -33,73 +34,64 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// CAN do is verify the input the template-level fix depends on.
 /// </para>
 /// </summary>
+/// <remarks>
+/// <para>
+/// ⭐⭐ <b>The scan itself now comes from <c>Bennewitz.Ninja.XamlQuality</c> (<c>XQ1001</c>); this
+/// class supplies the repository's scope and the assertion.</b> The 126 lines it replaced walked
+/// <c>src/</c>, parsed each <c>.axaml</c> and checked attributes by hand. Keeping that copy meant
+/// maintaining a second implementation of a rule another repository already had to fix.
+/// </para>
+/// <para>
+/// ⛔ <b>It is also STRICTER than what it replaced, which is the reason to adopt rather than a
+/// bonus.</b> The old scan looked only at <c>el.Attributes()</c>. An attached property has two
+/// spellings — the attribute form and the property-ELEMENT form
+/// (<c>&lt;AutomationProperties.Name&gt;…&lt;/&gt;</c>) — and the element form is the one that goes
+/// unnoticed, because the common case hides it. A correctly-named Expander written that way was
+/// reported as an offender by the old scan and is handled by the rule.
+/// </para>
+/// <para>
+/// ⚠ <b>The library reports; it does not assert.</b> A rule returns findings rather than throwing,
+/// so the consumer keeps the choice of severity and test framework. The assertion below is
+/// therefore ours, and so is the premise check — the rule cannot know what "enough" means here.
+/// </para>
+/// <para>
+/// ⓘ <b>The rule catalogue is ONE rule today.</b> <c>XQ1001</c> is the whole of it; the
+/// <c>IXamlRule</c> extension point is real and tested but the library of rules is not. Adopted
+/// here for this guard and as somewhere to put rules that would otherwise be written inline —
+/// not as a linter.
+/// </para>
+/// </remarks>
 [TestClass]
 public sealed class ExpanderAutomationNameTests
 {
-    private const string AutomationNameAttribute = "AutomationProperties.Name";
-
     [TestMethod]
     public void EveryExpanderInMarkup_DeclaresAnAutomationName()
     {
         string repoRoot = FindRepoRoot();
         string srcRoot = Path.Combine(repoRoot, "src");
 
-        List<string> offenders = [];
-        int expandersSeen = 0;
+        // bin/obj are skipped by default, and that is not a performance question: a build copies
+        // markup into obj, so including them reports every violation twice and keeps reporting one
+        // after the source is fixed.
+        XamlScanContext context = XamlScanContext.Load(srcRoot);
+        XamlRuleResult result = new ExpanderAutomationNameRule().Analyze(context);
 
-        foreach (string path in Directory.EnumerateFiles(srcRoot, "*.axaml", SearchOption.AllDirectories))
-        {
-            if (path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                || path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            XDocument doc;
-            try
-            {
-                doc = XDocument.Load(path, LoadOptions.SetLineInfo);
-            }
-            catch (System.Xml.XmlException)
-            {
-                // A file this scan cannot parse is the build's problem, not this guard's.
-                continue;
-            }
-
-            foreach (XElement el in doc.Descendants())
-            {
-                if (!string.Equals(el.Name.LocalName, "Expander", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                expandersSeen++;
-                if (el.Attributes().Any(a =>
-                        string.Equals(a.Name.LocalName, AutomationNameAttribute, StringComparison.Ordinal)
-                        || a.Name.LocalName.EndsWith(".Name", StringComparison.Ordinal)
-                           && a.Name.LocalName.StartsWith("AutomationProperties", StringComparison.Ordinal)))
-                {
-                    continue;
-                }
-
-                int line = (el as System.Xml.IXmlLineInfo)?.LineNumber ?? 0;
-                offenders.Add($"{Path.GetRelativePath(repoRoot, path)}:{line}");
-            }
-        }
-
-        // ⛔ The premise, asserted rather than assumed. A scan that found no Expanders would
-        // report success having measured nothing — the exact shape of a guard that passes
-        // because its input vanished (a moved folder, a renamed element, a broken glob).
-        Assert.IsTrue(expandersSeen > 0,
+        // ⛔ The premise, asserted rather than assumed. A scan that found no Expanders would report
+        // success having measured nothing — the exact shape of a guard that passes because its
+        // input vanished (a moved folder, a renamed element, a broken glob). `Inspected` exists on
+        // the result for precisely this, so the check survives the rule moving out of this repo.
+        Assert.IsTrue(
+            result.Inspected > 0,
             "This scan found no <Expander> elements at all under src/. Either the markup moved or "
             + "the scan is looking in the wrong place; a green result here would mean nothing.");
 
-        Assert.AreEqual(0, offenders.Count,
-            $"{offenders.Count} of {expandersSeen} Expander(s) declare no {AutomationNameAttribute}. "
+        Assert.AreEqual(
+            0, result.Findings.Count,
+            $"{result.Findings.Count} of {result.Inspected} Expander(s) declare no automation name. "
             + "Each one's header part will announce 'Avalonia.Controls.Grid' to a screen reader, "
             + "because the inherited-name style in Themes/AccessibilityNames.axaml has no name to "
             + $"copy and applies nothing. Offenders:{Environment.NewLine}"
-            + string.Join(Environment.NewLine, offenders));
+            + string.Join(Environment.NewLine, result.Findings));
     }
 
     /// <summary>
