@@ -6,6 +6,7 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -121,15 +122,30 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(_env);
 
     /// <summary>
-    /// The Tier 1 memory inventory reads the home this client resolved, not the default one.
+    /// The memory and footprint surfaces read the home this client resolved, not the default one.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// ⛔ <b>Without this override the memory surfaces read <c>~/.claude</c> while the settings
     /// pages read the relocated home</b> — the exact split plan 00002 names as the reason BOTH
     /// path implementations had to take the resolved values. The base is neutral and cannot hold
     /// a <c>ClaudeEnvironment</c>, so the Claude client is where the answer is supplied.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>A fresh instance per read, deliberately.</b> <c>ClaudeArtifactPaths.DefaultFor</c>
+    /// reads <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override;
+    /// caching one here would pin whichever sandbox was current when this client was first built.
+    /// </para>
     /// </remarks>
-    protected override ClaudeEnvironment MemoryEnvironment => _env;
+    protected override ClaudeArtifactPaths ArtifactPaths => ClaudeArtifactPaths.DefaultFor(_env);
+
+    /// <summary>Claude Code's own seven footprint categories.</summary>
+    /// <remarks>
+    /// ⚠ <b>Stated here rather than inherited.</b> The neutral base reports no footprint at all
+    /// unless a client names its categories, because the defect this replaced was a second
+    /// product silently reporting — and offering to delete — Claude's.
+    /// </remarks>
+    protected override FootprintCatalog FootprintCategories => FootprintCatalog.Default;
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()

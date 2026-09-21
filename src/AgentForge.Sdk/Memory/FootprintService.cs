@@ -40,64 +40,64 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 public sealed class FootprintService
 {
     private readonly IBackupFileSystem _fs;
-    private readonly ClaudeArtifactPaths? _paths;
+    private readonly Func<ClaudeArtifactPaths> _paths;
     private readonly FootprintCatalog _catalog;
     private readonly Func<FootprintRoots>? _roots;
 
-    /// <param name="fs">File-system seam; defaults to the real one.</param>
     /// <param name="paths">
-    /// Where this profile's Claude files live. Defaults to
-    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>, resolved per use rather than captured here.
+    /// Where this profile's files live. ⛔ <b>Required, and that is the point of this type's
+    /// shape.</b> It defaulted to Claude's home, which meant a neutral caller that said nothing
+    /// got Claude's data — see the remarks on the class.
+    /// <para>
+    /// ⛔ <b>A FACTORY, not an instance — the same call this type already makes for
+    /// <paramref name="roots"/>, for the same measured reason.</b> The paths derive from
+    /// <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override, and
+    /// this service is cached for the lifetime of a client. Taking an instance pins whichever
+    /// sandbox was current when the client first touched it, so a test that sets its override
+    /// afterwards silently reads another test's directory. ⚠ Making <c>paths</c> required was
+    /// first written taking an instance, and <c>FootprintService_ResolvesItsDefaultLazily</c>
+    /// caught exactly that.
+    /// </para>
     /// </param>
     /// <param name="catalog">
-    /// The product's category set. Defaults to <see cref="FootprintCatalog.Default"/> — Claude's
-    /// seven — so every existing call site keeps its behaviour.
+    /// The product's category set. ⛔ <b>Also required, for the same reason</b>: it defaulted to
+    /// <see cref="FootprintCatalog.Default"/>, Claude's seven, so a product with a different
+    /// footprint reported Claude's categories as its own.
     /// </param>
+    /// <param name="fs">File-system seam; defaults to the real one. Not product-shaped.</param>
     /// <param name="roots">
     /// Factory for the named roots the catalog is expressed against. Defaults to the single
     /// <c>"home"</c> root taken from <paramref name="paths"/>.
     /// <para>
     /// ⛔ <b>A factory, not an instance.</b> The roots derive from <c>PlatformPaths.UserProfile</c>,
     /// which honours an <c>AsyncLocal</c> test override; capturing them would pin whichever
-    /// sandbox was current when the client was first built. Same reason
-    /// <see cref="Paths"/> resolves lazily.
+    /// sandbox was current when the client was first built.
     /// </para>
     /// </param>
     public FootprintService(
+        Func<ClaudeArtifactPaths> paths,
+        FootprintCatalog catalog,
         IBackupFileSystem? fs = null,
-        ClaudeArtifactPaths? paths = null,
-        FootprintCatalog? catalog = null,
         Func<FootprintRoots>? roots = null)
     {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(catalog);
+
         _fs = fs ?? RealBackupFileSystem.Instance;
         _paths = paths;
-        _catalog = catalog ?? FootprintCatalog.Default;
+        _catalog = catalog;
         _roots = roots;
     }
 
-    /// <summary>
-    /// The paths this instance reads, resolving the default lazily.
-    /// </summary>
+    /// <summary>The paths this instance reads — supplied at construction, never defaulted.</summary>
     /// <remarks>
-    /// <para>
-    /// ⛔ <b>Resolved per use, never captured in the constructor.</b>
-    /// <see cref="ClaudeArtifactPaths.DefaultFor"/> reads
-    /// <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override — and
-    /// this service is cached for the lifetime of an <c>AgentConfigClientCore</c>. Capturing the
-    /// default at construction would freeze whichever sandbox was current when the client first
-    /// touched it, so a test that sets its override after the client exists would silently read
-    /// another test's directory. That reads as flakiness, not as a stale cache.
-    /// </para>
-    /// <para>
-    /// ⚠ <b>The fallback resolves the DEFAULT home, and that is this type's known
-    /// Claude-defaulting site rather than an oversight.</b> It is the entry
-    /// <c>NeutralLayerDefaultsTests.KnownSites</c> holds, recorded there with its reason; a
-    /// caller that has an environment passes <c>paths</c> instead, which is what
-    /// <c>ClaudeCodeClient</c> does. Making the fallback itself neutral is the separate refactor
-    /// that entry describes, not something to slip in here.
-    /// </para>
+    /// ⛔ <b>This used to fall back to Claude's home when nothing was supplied</b>, which is the
+    /// entry <c>NeutralLayerDefaultsTests.KnownSites</c> held. A neutral type that resolves one
+    /// product's data by omission shipped exactly that defect once: both OpenCode clients reported
+    /// <b>Claude's</b> disk footprint as their own, and a delete would have removed the other
+    /// agent's data. Requiring the argument makes it unrepresentable rather than detectable.
     /// </remarks>
-    private ClaudeArtifactPaths Paths => _paths ?? ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty);
+    private ClaudeArtifactPaths Paths => _paths();
 
     /// <summary>The named roots, resolved per use for the reason the constructor documents.</summary>
     private FootprintRoots Roots =>

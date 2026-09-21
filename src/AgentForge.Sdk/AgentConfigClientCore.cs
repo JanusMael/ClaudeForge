@@ -1462,14 +1462,69 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     private FootprintService? _footprintService;
 
     /// <summary>
-    /// Cached <see cref="FootprintService"/>. Created on first access using
-    /// the production filesystem (<c>RealBackupFileSystem.Instance</c>);
-    /// tests can swap it via the protected setter.
+    /// The artifact paths this client's memory and footprint surfaces read, or
+    /// <see langword="null"/> when this client has none.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔⛔ <b><see langword="null"/> is the neutral answer, and the whole point.</b> This class is
+    /// product-NEUTRAL, so the one thing it must never do is resolve a particular product's data
+    /// because nobody said otherwise. That is not hypothetical: <c>FootprintService</c> used to
+    /// default its paths AND its catalog to Claude's, neither OpenCode client overrode them, and
+    /// both reported <b>Claude's</b> disk footprint as their own — where a delete would have
+    /// removed the other agent's data.
+    /// </para>
+    /// <para>
+    /// ⭐ A client that has paths says so by overriding this. A client that does not gets an empty
+    /// inventory and no footprint service, which is the honest answer rather than a wrong one.
+    /// </para>
+    /// </remarks>
+    protected virtual ClaudeArtifactPaths? ArtifactPaths => null;
+
+    /// <summary>
+    /// The category set this client's footprint is expressed in, or <see langword="null"/> when
+    /// this client reports no footprint.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Separate from <see cref="ArtifactPaths"/> because they failed separately.</b> The
+    /// original defect needed both: the right categories against another product's root, or one
+    /// product's categories against the right root, are each wrong in their own way.
+    /// </remarks>
+    protected virtual FootprintCatalog? FootprintCategories => null;
+
+    /// <summary>
+    /// Cached <see cref="FootprintService"/>, built from this client's own paths and catalog.
+    /// Tests can swap it via the protected setter.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// This client declares no <see cref="ArtifactPaths"/> or no <see cref="FootprintCategories"/>.
+    /// ⭐ Throwing is deliberate: the alternative is returning a service pointed at some other
+    /// product's files, which is precisely the defect this shape exists to prevent. A loud failure
+    /// at the seam beats a quiet one over the wrong directory.
+    /// </exception>
     protected FootprintService FootprintService
     {
-        get => _footprintService ??= new FootprintService();
+        get => _footprintService ??= BuildFootprintService();
         set => _footprintService = value;
+    }
+
+    private FootprintService BuildFootprintService()
+    {
+        // Checked here so a client that declares no paths fails at the seam, loudly, rather than
+        // inside a walk. The FACTORY below is what is handed on, not this instance.
+        _ = ArtifactPaths
+            ?? throw new InvalidOperationException(
+                $"{GetType().Name} exposes a footprint but declares no ArtifactPaths. Override it, "
+                + "or do not surface the footprint for this product.");
+        FootprintCatalog catalog = FootprintCategories
+            ?? throw new InvalidOperationException(
+                $"{GetType().Name} exposes a footprint but declares no FootprintCategories. "
+                + "Override it with this product's own category set.");
+
+        // ⛔ A factory, re-read on every use. This service is CACHED for the client's lifetime, so
+        // passing today's instance would pin whichever profile was current when the footprint page
+        // was first opened — and PlatformPaths.UserProfile honours an AsyncLocal override.
+        return new FootprintService(() => ArtifactPaths!, catalog);
     }
 
     /// <inheritdoc/>
@@ -1483,29 +1538,12 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
             projectRoot = _projectRoot;
         }
 
-        return UserMemoryService.SnapshotFiles(MemoryEnvironment, projectRoot);
+        // ⭐ Empty, not Claude's inventory, when this client declares no paths. An inventory can
+        // legitimately be empty; it can never legitimately be another product's.
+        return ArtifactPaths is { } paths
+            ? UserMemoryService.SnapshotFiles(paths, projectRoot)
+            : [];
     }
-
-    /// <summary>
-    /// The Claude environment the Tier 1 memory inventory resolves against.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// ⚠ <b>A seam, not a field, because this class is product-NEUTRAL.</b> A
-    /// <c>ClaudeEnvironment</c> stored here would cross an interface OpenCode also implements,
-    /// which is the same reason <c>BackupEngine.Default</c> was deleted rather than kept. The
-    /// base answer is <see cref="ClaudeEnvironment.Empty"/> — exactly the behaviour every caller
-    /// had before the environment existed — and <c>ClaudeCodeClient</c> overrides it with the one
-    /// its composition root resolved.
-    /// </para>
-    /// <para>
-    /// ⓘ It sits beside the <c>FootprintService</c> default in
-    /// <c>NeutralLayerDefaultsTests.KnownSites</c>: a neutral base that still resolves Claude's
-    /// tree when nobody overrides it. Making the inventory itself neutral is the separate
-    /// refactor that entry describes.
-    /// </para>
-    /// </remarks>
-    protected virtual ClaudeEnvironment MemoryEnvironment => ClaudeEnvironment.Empty;
 
     /// <inheritdoc/>
     public Task<string?> ReadMemoryFileAsync(string absolutePath, CancellationToken ct)

@@ -926,22 +926,22 @@ public sealed class MemoryEditorViewModelTests
 
         public Task<IReadOnlyList<FootprintCategoryStats>> GetFootprintStatsAsync(CancellationToken ct)
         {
-            return new FootprintService().GetStatsAsync(ct);
+            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).GetStatsAsync(ct);
         }
 
         public Task DeleteFootprintCategoryAsync(FootprintCategory category, CancellationToken ct)
         {
-            return new FootprintService().DeleteAsync(category, ct);
+            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).DeleteAsync(category, ct);
         }
 
         public Task<IReadOnlyList<ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(CancellationToken ct)
         {
-            return new FootprintService().GetProjectTranscriptStatsAsync(ct);
+            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).GetProjectTranscriptStatsAsync(ct);
         }
 
         public Task DeleteProjectTranscriptsAsync(string mangledName, CancellationToken ct)
         {
-            return new FootprintService().DeleteProjectTranscriptsAsync(mangledName, ct);
+            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).DeleteProjectTranscriptsAsync(mangledName, ct);
         }
 
         // ── Everything else: throw — these tests don't touch the rest of the surface. ─

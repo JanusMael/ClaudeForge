@@ -171,7 +171,7 @@ public sealed class ClaudeArtifactPathsTests
         // ⚠ This must exercise an INSTANCE method. An earlier draft constructed the service and
         // then asserted through the STATIC ResolveCategoryPath wrapper, which never touches the
         // instance's field at all — it passed whether the constructor captured or not.
-        var service = new FootprintService();
+        var service = new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default);
 
         // Only the OTHER profile has transcripts, and the service was built while _profile was current.
         Write(Path.Combine(_other, ".claude", "projects", "proj-a", "session.jsonl"), "{}");

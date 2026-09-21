@@ -60,31 +60,25 @@ public sealed class NeutralLayerDefaultsTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⛔ <b><c>FootprintService</c> is the type whose Claude-shaped default already shipped a
-    /// defect, and the default is still there.</b> The audit records it as *"Fixed this session in
-    /// <c>765648a</c>"*, and that fix was at the CALL SITES — both OpenCode clients now pass their
-    /// own paths and catalog. The default itself was never removed, so
-    /// <c>AgentConfigClientCore.FootprintService</c> still reads
-    /// <c>_footprintService ??= new FootprintService()</c> and a third client that forgets to
-    /// override gets Claude's footprint exactly as the first two did.
+    /// ✅ <b>EMPTY, as of 2026-09-21 — and it held <c>FootprintService.cs</c> for a long time.</b>
+    /// That entry recorded a neutral type whose paths AND catalog both defaulted to Claude's, with
+    /// the honest note that fixing it was a real refactor rather than a tidy-up. Both arguments are
+    /// now REQUIRED, so <c>new FootprintService()</c> does not compile and the default it warned
+    /// about is unrepresentable rather than merely detected.
     /// </para>
     /// <para>
-    /// ⚠ <b>Why it is allowed here rather than fixed.</b> Making it neutral is not a default
-    /// change: the service is <c>ClaudeArtifactPaths</c>-typed throughout, so it is a real
-    /// refactor of a feature that is currently awaiting a manual retest. Allowed deliberately, in
-    /// front of a reader, rather than fixed hastily under an unverified app — and recorded in
-    /// <c>PROGRESS.md</c> as the next move rather than left in a test file.
+    /// ⚠ <b>The second-order form it also warned about is gone with it.</b>
+    /// <c>AgentConfigClientCore</c> built one with <c>new FootprintService()</c> and carried no
+    /// Claude token at all, so it appeared in no scan; it now exposes <c>ArtifactPaths</c> and
+    /// <c>FootprintCategories</c> seams that default to <see langword="null"/>, and a client
+    /// wanting a footprint says so.
     /// </para>
     /// <para>
-    /// ⓘ The second-order form — <c>new FootprintService()</c> in
-    /// <c>AgentConfigClientCore</c> — carries no Claude token at all and so appears in no scan.
-    /// It is the reason this entry is worth being uncomfortable about.
+    /// ⓘ Keeping the array rather than deleting it: the guard's shape is the point, and the next
+    /// genuine exception needs somewhere to be justified in front of a reader.
     /// </para>
     /// </remarks>
-    private static readonly string[] KnownSites =
-    [
-        Path.Combine("src", "AgentForge.Sdk", "Memory", "FootprintService.cs"),
-    ];
+    private static readonly string[] KnownSites = [];
 
     [TestMethod]
     public void NoNeutralSourceResolvesToClaudeDataByDefault()

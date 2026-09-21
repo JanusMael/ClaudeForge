@@ -3,7 +3,6 @@ class Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore [abstract] implements
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IConfigWriter ConfigWriter { get; }
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.IMergePolicy MergePolicy { get; }
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor Product { get; }
-    Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment MemoryEnvironment { get; }
     Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry SchemaRegistryInstance { get; }
     Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope DefaultScope { get; }
     Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder Scopes { get; }
@@ -11,6 +10,8 @@ class Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore [abstract] implements
     Bennewitz.Ninja.AgentForge.Sdk.Backup.IBackupClient CreateBackupClient()
     Bennewitz.Ninja.AgentForge.Sdk.Env.IEnvAccessor Env { get; }
     Bennewitz.Ninja.AgentForge.Sdk.McpServers.IMcpServersAccessor McpServers { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths ArtifactPaths { get; }
+    Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog FootprintCategories { get; }
     Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintService FootprintService { get;set; }
     System.Boolean AutoSave { get;set; }
     System.Boolean HasUnsavedChanges { get; }
@@ -410,7 +411,7 @@ class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots [sealed]
     const System.String Home
     static Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots Single(System.String key, System.String absolutePath)
 class Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintService [sealed]
-    .ctor(Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fs = null, Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths paths = null, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog catalog = null, System.Func<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots> roots = null)
+    .ctor(System.Func<Bennewitz.Ninja.AgentForge.Sdk.Memory.ClaudeArtifactPaths> paths, Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog catalog, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fs = null, System.Func<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintRoots> roots = null)
     System.Threading.Tasks.Task DeleteAsync(Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategory category, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task DeleteProjectTranscriptsAsync(System.String mangledName, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCategoryStats>> GetStatsAsync(System.Threading.CancellationToken ct)

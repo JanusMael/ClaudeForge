@@ -45,7 +45,7 @@ public class FootprintServiceTests
 
     private static FootprintService NewService()
     {
-        return new FootprintService();
+        return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default);
     }
 
     // -----------------------------------------------------------------------
@@ -140,7 +140,7 @@ public class FootprintServiceTests
     {
         // Inject a fake IBackupFileSystem that throws on DeleteFile.
         ThrowingDeleteFileSystem fake = new(_claudeHome);
-        FootprintService svc = new(fake);
+        FootprintService svc = new(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default, fake);
         WriteUnder("history.jsonl");
 
         await Assert.ThrowsExactlyAsync<IOException>(() =>
