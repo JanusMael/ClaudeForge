@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -161,7 +162,7 @@ public sealed class ShareOutcomeTests
     private static AgentConfigClientCore MakeClient()
     {
         SettingsWorkspace ws = new([], ClaudeMergePolicy.Instance);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 

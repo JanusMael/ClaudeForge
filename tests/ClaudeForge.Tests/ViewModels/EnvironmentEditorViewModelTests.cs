@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Collections;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -76,7 +77,7 @@ public class EnvironmentEditorViewModelTests
     private static AgentConfigClientCore MakeClient(string userJson = "{}")
     {
         SettingsWorkspace ws = MakeWorkspace(userJson);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 

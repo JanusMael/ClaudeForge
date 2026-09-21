@@ -68,11 +68,11 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_SettingsOnly_ExcludesProjectsDirectory()
     {
         string dest = Path.Combine(_fakeHome, "backup.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -91,11 +91,11 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_Full_IncludesProjectsDirectory()
     {
         string dest = Path.Combine(_fakeHome, "full.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -108,11 +108,11 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_ManifestIsReadableAndCorrect()
     {
         string dest = Path.Combine(_fakeHome, "manifest-check.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -141,22 +141,22 @@ public sealed class BackupEngineTests
         first = Path.Combine(_fakeHome, "backup-20300101-000000.zip");
         second = Path.Combine(_fakeHome, "backup-20300101-000001.zip");
 
-        await BackupEngine.Default.CreateAsync(new BackupRequest
+        await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = first,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        await BackupEngine.Default.CreateAsync(new BackupRequest
+        await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = second,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         // Force the second one to have a later LastWriteTime.
         File.SetLastWriteTimeUtc(first, DateTime.UtcNow.AddSeconds(-10));
         File.SetLastWriteTimeUtc(second, DateTime.UtcNow);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(2, entries.Count);
         Assert.AreEqual(Path.GetFileName(second), entries[0].FileName);
         Assert.AreEqual(Path.GetFileName(first), entries[1].FileName);
@@ -172,20 +172,20 @@ public sealed class BackupEngineTests
         for (int i = 0; i < 5; i++)
         {
             string path = Path.Combine(backupDir, $"backup-2030010{i}-000000.zip");
-            await BackupEngine.Default.CreateAsync(new BackupRequest
+            await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = path,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
             File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddDays(-5 + i));
         }
 
         // Trigger retention via a 6th backup with KeepLast=2.
         string trigger = Path.Combine(backupDir, "backup-20300106-000000.zip");
-        await BackupEngine.Default.CreateAsync(new BackupRequest
+        await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = trigger,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             KeepLast = 2,
         });
 
@@ -201,20 +201,20 @@ public sealed class BackupEngineTests
         string dest = Path.Combine(_fakeHome, "backup-round.zip");
         string original = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
 
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
         // Mutate the live settings — restore should roll it back.
         await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), "{\"theme\":\"light\"}");
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(1, entries.Count);
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded, restore.Message);
 
         string restored = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
@@ -263,11 +263,11 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(nested, "fake zip contents");
 
         string dest = Path.Combine(_fakeHome, "top.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -288,11 +288,11 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(Path.Combine(cacheDir, "other.dat"), "blob");
 
         string dest = Path.Combine(_fakeHome, "no-cache.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -334,11 +334,11 @@ public sealed class BackupEngineTests
             "(editor-style bak)");
 
         string dest = Path.Combine(_fakeHome, "bak-excluded.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -363,15 +363,15 @@ public sealed class BackupEngineTests
         string backupDest = Path.Combine(backupDir,
             $"backup-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
 
-        BackupResult createResult = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult createResult = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = backupDest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(createResult.Succeeded, createResult.Message);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(backupDir);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
         Assert.AreEqual(1, entries.Count);
 
         // Collect all progress reports emitted during restore.
@@ -388,7 +388,7 @@ public sealed class BackupEngineTests
         List<BackupProgress> reports = new();
         SyncProgress<BackupProgress> progress = new(p => reports.Add(p));
 
-        RestoreResult restoreResult = await BackupEngine.Default.RestoreAsync(entries[0], progress);
+        RestoreResult restoreResult = await TestBackupEngine.Default.RestoreAsync(entries[0], progress);
         Assert.IsTrue(restoreResult.Succeeded, restoreResult.Message);
 
         // Find "Applying restore…" and count distinct reports that come after it.
@@ -449,11 +449,11 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(Path.Combine(cacheDir, "schema.json"), """{"cached":true}""");
 
         string dest = Path.Combine(_fakeHome, "no-runtime.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -493,7 +493,7 @@ public sealed class BackupEngineTests
         // Argument validation is contract — null request is a programmer
         // error, not a runtime "expected failure", and is allowed to throw.
         await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
-            BackupEngine.Default.CreateAsync(null!));
+            TestBackupEngine.Default.CreateAsync(null!));
     }
 
     [TestMethod]
@@ -507,7 +507,7 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(desktopCfg, """{"theme":"system"}""");
 
         string dest = Path.Combine(_fakeHome, "desktop-only.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
@@ -541,7 +541,7 @@ public sealed class BackupEngineTests
             PlatformPaths.DesktopCurrentProfileFilePath, "work");
 
         string dest = Path.Combine(_fakeHome, "desktop-profiles.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
@@ -578,7 +578,7 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "work");
 
         string dest = Path.Combine(_fakeHome, "backup-desktop-roundtrip.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
@@ -590,10 +590,10 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(profileConfig, """{"profile":"CLOBBERED"}""");
         await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "clobbered");
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(1, entries.Count);
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded, restore.Message);
 
         StringAssert.Contains(await File.ReadAllTextAsync(profileConfig), "\"work\"",
@@ -614,11 +614,11 @@ public sealed class BackupEngineTests
         Directory.CreateDirectory(_fakeHome);
 
         string dest = Path.Combine(_fakeHome, "empty.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -641,7 +641,7 @@ public sealed class BackupEngineTests
         // the contract is permissive — we don't reject the request as a
         // programmer error.
         string dest = Path.Combine(_fakeHome, "no-products.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
@@ -663,11 +663,11 @@ public sealed class BackupEngineTests
         // contract — the caller passes a path and gets back a working
         // archive without intermediate Directory.CreateDirectory calls.
         string dest = Path.Combine(_fakeHome, "subdir1", "subdir2", "out.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -692,12 +692,12 @@ public sealed class BackupEngineTests
 
         try
         {
-            BackupResult result = await BackupEngine.Default.CreateAsync(
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(
                 new BackupRequest
                 {
                     DestinationZipPath = dest,
                     Mode = BackupMode.SettingsOnly,
-                    Products = [SchemaRegistry.ClaudeCodeProduct],
+                    Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 },
                 ct: ct);
 
@@ -739,17 +739,17 @@ public sealed class BackupEngineTests
             "{\"cleanupPeriodDays\":\"not-a-number\"}");
 
         string dest = Path.Combine(_fakeHome, "backup-violation.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(1, entries.Count);
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded,
             "Restore must succeed even when validation finds violations — "
             + "validation is informational, not gating.");
@@ -768,15 +768,15 @@ public sealed class BackupEngineTests
         // schema-valid for ClaudeCode (theme is a free property allowed
         // anywhere in the schema). Roundtrip backup → restore.
         string dest = Path.Combine(_fakeHome, "backup-clean.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
 
         Assert.IsTrue(restore.Succeeded);
         // ValidationWarnings is null OR empty when nothing violates.
@@ -800,18 +800,18 @@ public sealed class BackupEngineTests
             "{\"cleanupPeriodDays\":\"would-violate-but-no-schema\"}");
 
         string dest = Path.Combine(_fakeHome, "backup-noschemas.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded);
 
         // Strip every Schemas/ entry from the zip after creation.
         StripZipEntries(dest, e => e.FullName.StartsWith("Schemas/", StringComparison.Ordinal));
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded,
             "Restore from a pre-Schemas backup must still succeed — old backups are valid.");
 
@@ -830,10 +830,10 @@ public sealed class BackupEngineTests
         // schemaByName loop — a single bad entry must not prevent the
         // others from loading or the restore from succeeding.
         string dest = Path.Combine(_fakeHome, "backup-badschema.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -841,8 +841,8 @@ public sealed class BackupEngineTests
         OverwriteZipEntry(dest, "Schemas/claude-code-settings.json",
             "{ this is not / valid : JSON ");
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded,
             "A corrupt bundled schema must not abort the restore — validation is informational.");
     }
@@ -857,10 +857,10 @@ public sealed class BackupEngineTests
         // case (System.Text.Json.JsonException). The validator must catch it too and skip the bad
         // entry rather than letting it abort the whole restore. Pins the latent-crash fix.
         string dest = Path.Combine(_fakeHome, "backup-invalidschema.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -869,8 +869,8 @@ public sealed class BackupEngineTests
         OverwriteZipEntry(dest, "Schemas/claude-code-settings.json",
             """{ "$schema": "http://json-schema.org/draft-07/schema#", "type": 12345 }""");
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded,
             "A bundled schema that is valid JSON but an invalid JSON-Schema must not abort the restore.");
     }
@@ -883,10 +883,10 @@ public sealed class BackupEngineTests
         // because applying a malformed file is a separate path (the apply
         // phase swallows it as a file-failure rather than aborting).
         string dest = Path.Combine(_fakeHome, "backup-badsettings.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded);
 
@@ -895,8 +895,8 @@ public sealed class BackupEngineTests
         OverwriteZipEntry(dest, "ClaudeCode/claude-dir/settings.json",
             "{ corrupt JSON without close brace");
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded,
             "Restore must tolerate a corrupt settings file in the backup — validation skips it silently.");
 
@@ -947,16 +947,16 @@ public sealed class BackupEngineTests
             violatesDesktop);
 
         string dest = Path.Combine(_fakeHome, "backup-both-products.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
         Assert.IsTrue(restore.Succeeded, "Validation is informational — restore must still succeed.");
         Assert.IsNotNull(restore.ValidationWarnings, "Five violating config files must produce warnings.");
 
@@ -1006,14 +1006,14 @@ public sealed class BackupEngineTests
         // Deliberately a value-pinning test. These two strings are baked into every archive
         // ClaudeForge has ever written; they are not free to change, and the only way to say
         // so is to write them down somewhere a change has to walk past.
-        Assert.AreEqual("ClaudeCode", SchemaRegistry.ClaudeCodeProduct.ArchiveFolder);
+        Assert.AreEqual("ClaudeCode", SchemaRegistry.ClaudeCodeArchiveFolder);
         Assert.AreEqual("ClaudeDesktop", SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
 
         // Not derived from Id, and must not be "fixed" to match it: the ids were chosen for
         // code, the folder names were already on disk.
         Assert.AreNotEqual(
-            SchemaRegistry.ClaudeCodeProduct.Id,
-            SchemaRegistry.ClaudeCodeProduct.ArchiveFolder,
+            SchemaRegistry.ClaudeCodeProductId,
+            SchemaRegistry.ClaudeCodeArchiveFolder,
             "The two vocabularies differ on purpose — claude-code vs ClaudeCode. Collapsing "
             + "them would orphan every existing archive.");
     }
@@ -1029,11 +1029,11 @@ public sealed class BackupEngineTests
         await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
 
         string dest = Path.Combine(_fakeHome, "clients-manifest.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
         Assert.IsNotNull(create.Manifest);
@@ -1062,11 +1062,11 @@ public sealed class BackupEngineTests
         // Counter-direction: without this, a BuildClientList that ignored the request and
         // always listed both products would satisfy the test above.
         string dest = Path.Combine(_fakeHome, "clients-manifest-cc-only.zip");
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
@@ -1106,18 +1106,18 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_BundlesOnlyTheRequestedProductsSchemas()
     {
         string dest = Path.Combine(_fakeHome, "one-product.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
 
-        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProduct.SchemaFileName,
+        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName,
             "A backup must carry the schema its own config is validated against.");
         CollectionAssert.DoesNotContain(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
             "A Claude Code-only archive must not carry another product's schema. That file "
@@ -1135,11 +1135,11 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_BundlesEachSchemasOverlayAlongsideIt()
     {
         string dest = Path.Combine(_fakeHome, "overlay.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -1147,7 +1147,7 @@ public sealed class BackupEngineTests
         // Claude Code is the product that actually has an overlay resource; asserting the
         // pairing on a product without one would prove nothing.
         string overlay = SchemaRegistry.OverlayFileNameFor(
-            SchemaRegistry.ClaudeCodeProduct.SchemaFileName);
+            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
         CollectionAssert.Contains(ListBundledSchemas(dest), overlay,
             $"'{overlay}' is merged onto the base schema at load time, so it has to be in "
             + "the archive too or restore validates against rules the app does not use.");
@@ -1162,17 +1162,17 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_BundlesEveryRequestedProductsSchema_NotJustTheFirst()
     {
         string dest = Path.Combine(_fakeHome, "two-products.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProduct, SchemaRegistry.ClaudeDesktopProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
 
         Assert.IsTrue(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
-        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProduct.SchemaFileName);
+        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
         CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
             "The second requested product's schema is missing — a loop that stops after the "
             + "first product looks identical to a correct one in every single-product test.");
@@ -1228,11 +1228,11 @@ public sealed class BackupEngineTests
                                                                           """);
 
         string dest = Path.Combine(_fakeHome, "sanitized.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -1265,11 +1265,11 @@ public sealed class BackupEngineTests
             """{"token": "anthropic-oauth-token-abc"}""");
 
         string dest = Path.Combine(_fakeHome, "sanitized-no-creds.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             IncludeCredentials = true, // user opted in — sanitized still wins
         });
         Assert.IsTrue(result.Succeeded, result.Message);
@@ -1294,11 +1294,11 @@ public sealed class BackupEngineTests
     public async Task CreateAsync_Sanitized_AddsManifestSharingWarning()
     {
         string dest = Path.Combine(_fakeHome, "sanitized-warning.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded);
 
@@ -1328,19 +1328,19 @@ public sealed class BackupEngineTests
         string backupDest = Path.Combine(backupDir,
             $"backup-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
 
-        BackupResult create = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = backupDest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(create.Succeeded, create.Message);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(backupDir);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
         Assert.AreEqual(1, entries.Count);
         Assert.AreEqual(BackupMode.Sanitized, entries[0].Manifest!.Mode);
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
 
         Assert.IsFalse(restore.Succeeded, "Sanitized backups must not be restorable.");
         Assert.IsTrue(restore.Message.Contains("sanitized", StringComparison.OrdinalIgnoreCase),
@@ -1393,11 +1393,11 @@ public sealed class BackupEngineTests
             "#!/bin/bash\nexport ANTHROPIC_API_KEY=sk-ant-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
 
         string dest = Path.Combine(_fakeHome, "sanitized-with-hook.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, result.Message);
 
@@ -1634,11 +1634,11 @@ public sealed class BackupEngineTests
             File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# Project memory");
 
             string dest = Path.Combine(_fakeHome, "with-project.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 
@@ -1725,11 +1725,11 @@ public sealed class BackupEngineTests
             WriteFakeClaudeJson(projA, projB);
 
             string dest = Path.Combine(_fakeHome, "full-multi.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 // NO explicit project — exercises the "Full backup with no
                 // project selected" path the user asked about.
             });
@@ -1781,11 +1781,11 @@ public sealed class BackupEngineTests
             WriteFakeClaudeJson(projExisting, projGhost);
 
             string dest = Path.Combine(_fakeHome, "full-with-ghost.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
 
             Assert.IsTrue(result.Succeeded, result.Message);
@@ -1827,11 +1827,11 @@ public sealed class BackupEngineTests
             WriteFakeClaudeJson(projKnown);
 
             string dest = Path.Combine(_fakeHome, "settings-only.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
 
             Assert.IsTrue(result.Succeeded, result.Message);
@@ -1867,11 +1867,11 @@ public sealed class BackupEngineTests
             WriteFakeClaudeJson(projShared);
 
             string dest = Path.Combine(_fakeHome, "full-dedup.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
             });
 
@@ -1930,11 +1930,11 @@ public sealed class BackupEngineTests
             File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.json"), settingsJson);
 
             string dest = Path.Combine(_fakeHome, "with-addtl.zip");
-            BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 

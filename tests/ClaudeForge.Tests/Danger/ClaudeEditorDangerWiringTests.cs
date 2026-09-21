@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
@@ -38,7 +39,7 @@ public sealed class ClaudeEditorDangerWiringTests
     {
         SchemaRegistry registry = new();
         var root = await registry
-            .GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProduct, CancellationToken.None)
+            .GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), CancellationToken.None)
             .ConfigureAwait(false);
         return SchemaTreeBuilder.BuildTopLevel(root);
     }

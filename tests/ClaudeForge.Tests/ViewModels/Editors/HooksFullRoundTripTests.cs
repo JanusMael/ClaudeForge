@@ -1,4 +1,4 @@
-﻿// comprehensive disk → SDK → editor →
+// comprehensive disk → SDK → editor →
 // user-mutation → SDK → disk round-trip suite for the Hooks editor.
 //
 // What this file tests that the existing HooksRoundTripTests does not:
@@ -18,6 +18,7 @@
 //      model (async / statusMessage / model), mutate other fields,
 //      verify preserved fields persist verbatim across save+reload.
 
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -67,7 +68,7 @@ public class HooksFullRoundTripTests
 
             SettingsDocument doc = new(ConfigScope.User, "settings.json", rootObj, isReadOnly: false);
             SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-            ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+            ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
                 ws, ConfigScope.User,
                 new SchemaRegistry());
             HooksFixture fx = new(doc, ws, client);

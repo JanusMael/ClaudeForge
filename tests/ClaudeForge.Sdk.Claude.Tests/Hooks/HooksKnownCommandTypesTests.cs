@@ -46,7 +46,7 @@ public sealed class HooksKnownCommandTypesTests
     [TestMethod]
     public async Task KnownCommandTypes_ExposesSchemaVariants()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         List<string> types = client.Hooks.KnownCommandTypes.Select(v => v.Type).ToList();
@@ -63,7 +63,7 @@ public sealed class HooksKnownCommandTypesTests
     {
         // Headless consumers get the schema DESCRIPTIONS too — the per-type help text
         // and the per-field tooltip text — not just the type name.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         HookCommandVariantInfo command = client.Hooks.KnownCommandTypes.First(v => v.Type == "command");
@@ -80,7 +80,7 @@ public sealed class HooksKnownCommandTypesTests
         // Unlike the lifecycle events (which read the cached schema node and so need an
         // open), the command variants read the bundled schema directly, so a headless
         // caller gets a usable list even before OpenAsync.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         Assert.IsTrue(client.Hooks.KnownCommandTypes.Any(v => v.Type == "command"));
     }
 }

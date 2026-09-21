@@ -148,7 +148,7 @@ public sealed class DangerWiringEndToEndTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        return new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     /// <summary>Inert dialog service — these tests never open anything.</summary>

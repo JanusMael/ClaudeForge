@@ -106,7 +106,7 @@ public sealed class SchemaCheckActionTests
 
     private static async Task<MainWindowViewModel> LoadedAsync(HttpMessageHandler handler)
     {
-        MainWindowViewModel vm = new(new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
         await vm.LoadAllWorkspacesAsync();
         return vm;
     }

@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -113,7 +114,7 @@ public sealed class FileShareStatusTests
     public async Task ShareLog_ReportsTheOutcome_RatherThanCompletingSilently()
     {
         OutcomeShareService svc = new(ShareOutcome.RevealedInFileManager);
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: static () => @"C:/logs/claudeforge.log");
@@ -134,7 +135,7 @@ public sealed class FileShareStatusTests
     public async Task ShareLog_WhenTheServiceCannotAct_SaysSo()
     {
         OutcomeShareService svc = new(ShareOutcome.Unavailable);
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: static () => @"C:/logs/claudeforge.log");

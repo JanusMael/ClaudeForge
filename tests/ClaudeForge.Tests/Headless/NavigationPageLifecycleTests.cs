@@ -140,7 +140,7 @@ public sealed class NavigationPageLifecycleTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        return new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     private static NavigationNodeViewModel Attach(

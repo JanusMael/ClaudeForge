@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -195,7 +196,7 @@ public sealed class NeutralLayerDefaultsTests
 
         Assert.IsFalse(home.IsOptional,
             $"RestoreSidecarCleanup.Run's '{home.Name}' parameter is optional again. It used to "
-            + "default to PlatformPaths.ClaudeHome when null, so the caller could delete files "
+            + "default to PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty) when null, so the caller could delete files "
             + "from Claude's home without ever naming it — and ClaudeForge's own console message "
             + "resolved that path a second time, independently of the walk it described.");
     }

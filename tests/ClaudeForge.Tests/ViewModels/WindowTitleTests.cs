@@ -26,7 +26,7 @@ public sealed class WindowTitleTests
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     [TestCleanup]

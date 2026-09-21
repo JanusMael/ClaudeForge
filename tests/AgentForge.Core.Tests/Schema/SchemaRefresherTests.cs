@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
@@ -27,7 +28,7 @@ public sealed class SchemaRefresherTests
 {
     public required TestContext TestContext { get; set; }
 
-    private static readonly ProductDescriptor Checkable = SchemaRegistry.ClaudeCodeProduct;
+    private static readonly ProductDescriptor Checkable = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
     private static readonly ProductDescriptor NoUpstream = SchemaRegistry.ClaudeDesktopProduct;
 
     private static string Doc(string marker) =>

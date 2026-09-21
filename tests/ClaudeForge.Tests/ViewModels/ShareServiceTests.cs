@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -180,7 +181,7 @@ public class EffectiveSettingsShareCommandTests
         // TestUserProfileOverride leakage across tests. The grant lives
         // in AgentForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
         SettingsWorkspace ws = new([], ClaudeMergePolicy.Instance);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
@@ -242,7 +243,7 @@ public class AboutShareLogCommandTests
     public void ShareLog_NullService_CommandCannotExecute()
     {
         // No share service → CanExecute must be false regardless of log path.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: null,
             logPathProvider: () => FakeLogPath);
@@ -256,7 +257,7 @@ public class AboutShareLogCommandTests
     {
         RecordingShareService svc = new();
         // Log path provider returns null → CanExecute must be false.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => null);
@@ -269,7 +270,7 @@ public class AboutShareLogCommandTests
     public void ShareLog_BothPrerequisitesMet_CommandCanExecute()
     {
         RecordingShareService svc = new();
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => FakeLogPath);
@@ -282,7 +283,7 @@ public class AboutShareLogCommandTests
     public async Task ShareLog_CallsServiceWithLogPath()
     {
         RecordingShareService svc = new();
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => FakeLogPath);
@@ -299,7 +300,7 @@ public class AboutShareLogCommandTests
     public async Task ShareLog_NullService_IsNoOp()
     {
         // Even when forced to execute, the command must not throw with no service.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: null,
             logPathProvider: () => FakeLogPath);

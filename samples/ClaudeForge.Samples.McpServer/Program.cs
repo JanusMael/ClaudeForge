@@ -1,4 +1,5 @@
 using System.Text;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -59,7 +60,7 @@ internal static class Program
             ctsRoot.Cancel();
         };
 
-        using ClaudeCodeClient client = new(defaultScope: ConfigScope.User);
+        using ClaudeCodeClient client = new(ClaudeEnvironment.FromProcess(), defaultScope: ConfigScope.User);
 
         try
         {

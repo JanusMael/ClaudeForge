@@ -556,7 +556,7 @@ public class McpServersEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.McpServers.Set(
@@ -639,7 +639,7 @@ public class McpServersEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             client.OpenAsync(projectRoot: null, ct: CancellationToken.None).GetAwaiter().GetResult();
 
             client.McpServers.Set("api",

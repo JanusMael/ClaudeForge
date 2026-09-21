@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
@@ -28,7 +29,7 @@ public sealed class TypedSurfaceStopBTests
 
     private static ClaudeCodeClient MakeClient(SettingsWorkspace ws)
     {
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
     }
 

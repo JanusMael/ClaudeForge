@@ -1,4 +1,5 @@
-﻿using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
@@ -19,7 +20,7 @@ public sealed class EssentialsModelEffortConstraintTests
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        return ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
     private static async Task<(EssentialsViewModel vm, ClaudeConfigClientBase client)> OpenAsync(string userJson)

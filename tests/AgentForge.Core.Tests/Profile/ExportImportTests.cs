@@ -96,7 +96,7 @@ public sealed class ExportImportTests
             mcpJson: """{"context7":{"command":"npx","args":["-y","@upstash/context7-mcp"]}}""");
 
         string dest = Path.Combine(_sandbox, "work.json");
-        await ProfileEngine.ExportProfileAsync("work", dest);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "work", dest);
 
         Assert.IsTrue(File.Exists(dest), "Export must produce a file at the destination path.");
 
@@ -127,7 +127,7 @@ public sealed class ExportImportTests
         // ',omitempty' Go behaviour mirrored: claude_md key absent when empty.
         SeedProfile("minimal", claudeMd: null);
         string dest = Path.Combine(_sandbox, "minimal.json");
-        await ProfileEngine.ExportProfileAsync("minimal", dest);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "minimal", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
         Assert.IsFalse(root.TryGetProperty("claude_md", out JsonElement _),
@@ -139,7 +139,7 @@ public sealed class ExportImportTests
     {
         SeedProfile("nomcp", mcpJson: null);
         string dest = Path.Combine(_sandbox, "nomcp.json");
-        await ProfileEngine.ExportProfileAsync("nomcp", dest);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "nomcp", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
         Assert.IsFalse(root.TryGetProperty("mcp_servers", out JsonElement _),
@@ -152,7 +152,7 @@ public sealed class ExportImportTests
         // mcp.json containing an empty object {} should not appear on the wire.
         SeedProfile("emptymcp", mcpJson: "{}");
         string dest = Path.Combine(_sandbox, "emptymcp.json");
-        await ProfileEngine.ExportProfileAsync("emptymcp", dest);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "emptymcp", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
         Assert.IsFalse(root.TryGetProperty("mcp_servers", out JsonElement _),
@@ -164,7 +164,7 @@ public sealed class ExportImportTests
     {
         string dest = Path.Combine(_sandbox, "nope.json");
         await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
-            ProfileEngine.ExportProfileAsync("nonexistent", dest));
+            ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "nonexistent", dest));
     }
 
     // ── Import ─────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "old.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
         StringAssert.Contains(ex.Message, "Incompatible export version",
             "Error message must surface the version mismatch clearly.");
     }
@@ -205,7 +205,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "exists.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        IOException ex = await Assert.ThrowsExactlyAsync<IOException>(() => ProfileEngine.ImportProfileAsync(path));
+        IOException ex = await Assert.ThrowsExactlyAsync<IOException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
         StringAssert.Contains(ex.Message, "already exists",
             "Error must mirror claudectx's 'profile %q already exists' phrasing.");
     }
@@ -224,7 +224,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "fixture.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        string landed = await ProfileEngine.ImportProfileAsync(path, overrideName: "renamed");
+        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, overrideName: "renamed");
 
         Assert.AreEqual("renamed", landed);
         Assert.IsTrue(File.Exists(ProfileSettings("renamed")));
@@ -245,7 +245,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "nosettings.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     [TestMethod]
@@ -254,7 +254,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "broken.json");
         await File.WriteAllTextAsync(path, "{ this is not valid json ");
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     // ── Path-traversal guards (security regressions) ───────────────────────
@@ -277,7 +277,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "traversal.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
         StringAssert.Contains(ex.Message, "not a valid",
             "Error message must surface the rejection clearly.");
 
@@ -312,7 +312,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "abs.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     [TestMethod]
@@ -345,7 +345,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "backslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     [TestMethod]
@@ -362,7 +362,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "fslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     [TestMethod]
@@ -381,7 +381,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "dotdot.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(path));
+        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     [TestMethod]
@@ -390,10 +390,10 @@ public sealed class ExportImportTests
         // The override-name path also flows through the resolver.
         SeedProfile("legitimate");
         string json = Path.Combine(_sandbox, "src.json");
-        await ProfileEngine.ExportProfileAsync("legitimate", json);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "legitimate", json);
 
         await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
-            ProfileEngine.ImportProfileAsync(json, overrideName: "../escape"));
+            ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "../escape"));
     }
 
     // ── Partial-write cleanup ───────────────────────────────────────────────
@@ -421,8 +421,8 @@ public sealed class ExportImportTests
         // round-trip cycle.
         SeedProfile("origin");
         string json = Path.Combine(_sandbox, "origin.json");
-        await ProfileEngine.ExportProfileAsync("origin", json);
-        string landed = await ProfileEngine.ImportProfileAsync(json, overrideName: "fresh");
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "origin", json);
+        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "fresh");
         Assert.AreEqual("fresh", landed);
         Assert.IsTrue(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "fresh")));
     }
@@ -439,10 +439,10 @@ public sealed class ExportImportTests
             mcpJson: """{"server":{"command":"node","args":["index.js"]}}""");
 
         string json = Path.Combine(_sandbox, "trip.json");
-        await ProfileEngine.ExportProfileAsync("src", json);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "src", json);
 
         // Import under a NEW name — must not collide with the source.
-        string landed = await ProfileEngine.ImportProfileAsync(json, overrideName: "dst");
+        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "dst");
         Assert.AreEqual("dst", landed);
 
         // settings.json — structurally equal.
@@ -500,7 +500,7 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "from-claudectx.json");
         await File.WriteAllTextAsync(path, claudectxStyle);
 
-        string landed = await ProfileEngine.ImportProfileAsync(path);
+        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path);
         Assert.AreEqual("shared", landed);
 
         // Verify all three files landed correctly.

@@ -27,7 +27,7 @@ public sealed class ProductBackupLayoutTests
 
         CollectionAssert.AreEqual(
             expected,
-            SchemaRegistry.ClaudeCodeProduct.Backup.SkippedSubdirs.Select(r => r.Name).ToArray());
+            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Select(r => r.Name).ToArray());
     }
 
     [TestMethod]
@@ -38,7 +38,7 @@ public sealed class ProductBackupLayoutTests
         // if they ever disagree, the page's "In Standard backup?" badge is lying to the user.
         ProductSkippedSubdir[] fullOnly =
         [
-            .. SchemaRegistry.ClaudeCodeProduct.Backup.SkippedSubdirs.Where(r => r.IncludedInFullBackup)
+            .. SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Where(r => r.IncludedInFullBackup)
         ];
 
         Assert.AreEqual(1, fullOnly.Length);
@@ -50,7 +50,7 @@ public sealed class ProductBackupLayoutTests
     {
         // The reason is what a maintainer reads when a user asks why something is missing from
         // their archive. A blank one makes the rule unexplainable without git archaeology.
-        foreach (ProductSkippedSubdir rule in SchemaRegistry.ClaudeCodeProduct.Backup.SkippedSubdirs)
+        foreach (ProductSkippedSubdir rule in SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(rule.Reason), $"Rule '{rule.Name}' has no reason.");
         }
@@ -65,7 +65,7 @@ public sealed class ProductBackupLayoutTests
         // BackupArchiveCompatibilityTests proves they are what a shipped build actually wrote.
         CollectionAssert.AreEqual(
             new[] { "claude.json", "claude-dir" },
-            SchemaRegistry.ClaudeCodeProduct.Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
+            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
 
         CollectionAssert.AreEqual(
             new[] { "claude_desktop_config.json", "profiles", ".desktop-current" },
@@ -77,10 +77,10 @@ public sealed class ProductBackupLayoutTests
     {
         // ⛔ IsDirectory is the field whose failure is silent: a single file restored as a
         // directory finds nothing, restores nothing, and still reports success.
-        Assert.IsTrue(Section(SchemaRegistry.ClaudeCodeProduct, "claude-dir").IsDirectory);
+        Assert.IsTrue(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").IsDirectory);
         Assert.IsTrue(Section(SchemaRegistry.ClaudeDesktopProduct, "profiles").IsDirectory);
 
-        Assert.IsFalse(Section(SchemaRegistry.ClaudeCodeProduct, "claude.json").IsDirectory);
+        Assert.IsFalse(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude.json").IsDirectory);
         Assert.IsFalse(Section(SchemaRegistry.ClaudeDesktopProduct, ".desktop-current").IsDirectory);
     }
 
@@ -95,7 +95,7 @@ public sealed class ProductBackupLayoutTests
         PlatformPaths.TestUserProfileOverride = sandbox;
         try
         {
-            string resolved = Section(SchemaRegistry.ClaudeCodeProduct, "claude-dir").Destination();
+            string resolved = Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").Destination();
             StringAssert.StartsWith(resolved, sandbox,
                 "The destination must follow the profile override that is current when it is CALLED.");
         }

@@ -247,7 +247,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.Plugins.Set(new EnabledPlugin("from-sdk@m", Enabled: true));
@@ -397,7 +397,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             // Accessor sees no plugins; the raw scope carries an array-valued one.
@@ -448,7 +448,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
             client.Plugins.Set(new EnabledPlugin("comp/plugin", Enabled: true, Components: ["a", "b"]));
 

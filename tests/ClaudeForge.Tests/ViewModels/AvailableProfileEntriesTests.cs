@@ -28,7 +28,7 @@ public sealed class AvailableProfileEntriesTests
         _schemaRegistry = new SchemaRegistry();
 
         // Instantiate without triggering InitializeAsync (no workspace load needed).
-        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService());
     }
 
     [TestCleanup]
@@ -84,7 +84,7 @@ public sealed class AvailableProfileEntriesTests
 
     private void CreateCliProfile(string name)
     {
-        Directory.CreateDirectory(Path.Combine(PlatformPaths.ProfilesDirectory, name));
+        Directory.CreateDirectory(Path.Combine(PlatformPaths.ProfilesDirectory(ClaudeEnvironment.Empty), name));
     }
 
     private void CreateDesktopProfile(string name)

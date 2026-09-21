@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Globalization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
@@ -34,7 +35,7 @@ public sealed class ClaudeBackupPageProgressTests
 
         List<string> sectionIds =
         [
-            .. ClaudeBackupPage.DefaultProducts
+            .. ClaudeBackupPage.DefaultProductsFor(ClaudeEnvironment.Empty)
                 .SelectMany(p => p.Backup.Sections)
                 .Select(s => s.ProgressLabelId)
         ];
@@ -79,7 +80,7 @@ public sealed class ClaudeBackupPageProgressTests
             IReadOnlyDictionary<string, string> labels = BackupPageTestOptions.Create().Text.ProgressLabels;
 
             List<string> mismatches = [];
-            foreach (ProductDescriptor product in ClaudeBackupPage.DefaultProducts)
+            foreach (ProductDescriptor product in ClaudeBackupPage.DefaultProductsFor(ClaudeEnvironment.Empty))
             {
                 foreach (ProductArchiveSection section in product.Backup.Sections)
                 {

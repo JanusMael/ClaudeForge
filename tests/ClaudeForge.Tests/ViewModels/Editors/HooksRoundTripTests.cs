@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.Json;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -288,7 +289,7 @@ public class HooksRoundTripTests
         // Build empty workspace + SDK client.
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
 
         // First editor — populate with a URL hook + header + allowedEnvVar.

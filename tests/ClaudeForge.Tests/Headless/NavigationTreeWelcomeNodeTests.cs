@@ -67,7 +67,7 @@ public sealed class NavigationTreeWelcomeNodeTests
     {
         SchemaRegistry schemaRegistry = new();
         NullDialogService dialog = new();
-        return new MainWindowViewModel(schemaRegistry, dialog);
+        return new MainWindowViewModel(ClaudeEnvironment.Empty, schemaRegistry, dialog);
     }
 
     [TestMethod]

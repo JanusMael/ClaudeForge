@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
@@ -75,7 +76,7 @@ public sealed class SavePreviewDangerTests
     {
         SettingsDocument doc = new(scope, $"{scope}.json", baseline ?? new JsonObject(), isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        AgentConfigClientCore client = ClaudeCodeClient.FromExistingWorkspace(
+        AgentConfigClientCore client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, scope, schemaRegistry: new SchemaRegistry());
 
         foreach ((string key, JsonNode? value) in writes)
@@ -287,10 +288,10 @@ public sealed class SavePreviewDangerTests
     [TestMethod]
     public void EachProductSectionCarriesItsOwnPolicy_StatedOnce()
     {
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
         ProductSection code = vm.Sections.Single(
-            s => s.Product.Id == SchemaRegistry.ClaudeCodeProduct.Id);
+            s => s.Product.Id == SchemaRegistry.ClaudeCodeProductId);
         ProductSection desktop = vm.Sections.Single(
             s => s.Product.Id == SchemaRegistry.ClaudeDesktopProduct.Id);
 

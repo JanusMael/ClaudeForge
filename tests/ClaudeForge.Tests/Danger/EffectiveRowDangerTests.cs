@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
@@ -331,7 +332,7 @@ public sealed class EffectiveRowDangerTests
                     e.Scope, $"{e.Scope}.json", (JsonObject)JsonNode.Parse(e.Json)!, isReadOnly: false)),
                 ClaudeMergePolicy.Instance);
 
-            return ClaudeCodeClient.FromExistingWorkspace(
+            return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
                 ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         }
 

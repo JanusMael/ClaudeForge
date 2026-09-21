@@ -1,4 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
@@ -53,7 +54,7 @@ public sealed class EssentialsCardOptionsTests
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         return new EssentialsViewModel(
-            ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry()),
+            ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, ws, ConfigScope.User, schemaRegistry: new SchemaRegistry()),
             new FakeEnvironmentProvider());
     }
 

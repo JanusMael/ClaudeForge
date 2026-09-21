@@ -1,4 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
@@ -24,7 +25,7 @@ public class ProductDescriptorSchemaTests
     [TestMethod]
     public void Descriptors_NameDistinctProductsAndSchemas()
     {
-        ProductDescriptor code = SchemaRegistry.ClaudeCodeProduct;
+        ProductDescriptor code = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
         ProductDescriptor desktop = SchemaRegistry.ClaudeDesktopProduct;
 
         Assert.AreEqual("claude-code", code.Id);
@@ -52,7 +53,7 @@ public class ProductDescriptorSchemaTests
         // namespace here collides with Core's own Schema types (same reason
         // NavigationTreeBuilderThreadSafetyTests uses var).
         var codeRoot =
-            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProduct, TestContext.CancellationToken);
+            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.CancellationToken);
         var desktopRoot =
             await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.CancellationToken);
 

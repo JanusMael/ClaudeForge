@@ -1,4 +1,4 @@
-﻿using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -26,7 +26,7 @@ public sealed class SaveDialogBuilderTests
     {
         SettingsDocument doc = new(ConfigScope.User, filePath, new JsonObject(), isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
@@ -142,7 +142,7 @@ public sealed class SaveDialogBuilderTests
         SettingsDocument seeded = new(
             ConfigScope.User, "user.json",
             (JsonObject)JsonNode.Parse("""{"model":"sonnet"}""")!, isReadOnly: false);
-        AgentConfigClientCore modified = ClaudeCodeClient.FromExistingWorkspace(
+        AgentConfigClientCore modified = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             new SettingsWorkspace([seeded], ClaudeMergePolicy.Instance),
             ConfigScope.User, schemaRegistry: new SchemaRegistry());
         modified.SetValue("model", "opus");

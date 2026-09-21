@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.Json;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -240,7 +241,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
@@ -275,7 +276,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
 
         // Snapshot BEFORE editor construction.
@@ -317,7 +318,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);
@@ -355,7 +356,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject initialRoot = new() { ["hooks"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, new SchemaRegistry());
 
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);

@@ -95,7 +95,7 @@ public sealed class ExportArchiveTests
         CollectionAssert.AreEqual(
             new[]
             {
-                SchemaRegistry.ClaudeCodeProduct.ArchiveFolder,
+                SchemaRegistry.ClaudeCodeArchiveFolder,
                 SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder,
             },
             clients,
@@ -143,7 +143,7 @@ public sealed class ExportArchiveTests
     // ── helpers ─────────────────────────────────────────────────────────
 
     private static string CcSettingsPath =>
-        Path.Combine(PlatformPaths.ClaudeHome, "settings.json");
+        Path.Combine(PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty), "settings.json");
 
     private async Task<string> ExportAndRead(string entryPath)
     {
@@ -164,7 +164,7 @@ public sealed class ExportArchiveTests
         bool ran = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = new(
+                MainWindowViewModel vm = new(ClaudeEnvironment.Empty, 
                     new SchemaRegistry(), new ExportingDialogService(destination));
                 await vm.LoadAllWorkspacesAsync();
 

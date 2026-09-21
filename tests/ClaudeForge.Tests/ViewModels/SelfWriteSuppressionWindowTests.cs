@@ -44,7 +44,7 @@ public sealed class SelfWriteSuppressionWindowTests
         // the commit the seam came from.  No write can outlive the call that started it, so
         // quiescence holds by construction and the seam does not exist to be called.
         _schemaRegistry = new SchemaRegistry();
-        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService(), timeProvider: _time);
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService(), timeProvider: _time);
     }
 
     [TestCleanup]

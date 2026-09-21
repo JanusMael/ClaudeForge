@@ -74,16 +74,16 @@ public sealed class ClaudeArtifactPathsTests
         var paths = new ClaudeArtifactPaths(_profile);
 
         Assert.AreEqual(PlatformPaths.UserProfile, paths.UserProfile, nameof(paths.UserProfile));
-        Assert.AreEqual(PlatformPaths.ClaudeHome, paths.ClaudeHome, nameof(paths.ClaudeHome));
-        Assert.AreEqual(PlatformPaths.UserSettingsPath, paths.UserSettingsPath, nameof(paths.UserSettingsPath));
-        Assert.AreEqual(PlatformPaths.UserMcpPath, paths.UserMcpPath, nameof(paths.UserMcpPath));
+        Assert.AreEqual(PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty), paths.ClaudeHome, nameof(paths.ClaudeHome));
+        Assert.AreEqual(PlatformPaths.UserSettingsPath(ClaudeEnvironment.Empty), paths.UserSettingsPath, nameof(paths.UserSettingsPath));
+        Assert.AreEqual(PlatformPaths.UserMcpPath(ClaudeEnvironment.Empty), paths.UserMcpPath, nameof(paths.UserMcpPath));
         Assert.AreEqual(
             PlatformPaths.ManagedSettingsPath, paths.ManagedSettingsPath, nameof(paths.ManagedSettingsPath));
         Assert.AreEqual(
             PlatformPaths.ManagedSettingsDropInDir, paths.ManagedSettingsDropInDir,
             nameof(paths.ManagedSettingsDropInDir));
         Assert.AreEqual(PlatformPaths.ClaudeJsonPath, paths.ClaudeJsonPath, nameof(paths.ClaudeJsonPath));
-        Assert.AreEqual(PlatformPaths.CredentialsPath, paths.CredentialsPath, nameof(paths.CredentialsPath));
+        Assert.AreEqual(PlatformPaths.CredentialsPath(ClaudeEnvironment.Empty), paths.CredentialsPath, nameof(paths.CredentialsPath));
     }
 
     [TestMethod]

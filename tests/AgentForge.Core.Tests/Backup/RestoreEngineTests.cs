@@ -675,7 +675,7 @@ public sealed class RestoreEngineTests
         string open = Path.Combine(_baseDir, "OpenProject");
         Directory.CreateDirectory(open);
 
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots([open]);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, [open]);
 
         Assert.IsTrue(roots.Contains(open),
             "The host's open project must be authorised — it is the path the archive was "
@@ -687,7 +687,7 @@ public sealed class RestoreEngineTests
     {
         // Null is legal (a restore with no project open) and must not throw or produce a
         // set that refuses everything the machine legitimately knows.
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(null);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, null);
 
         Assert.IsNotNull(roots);
         // No count assertion: this machine's ~/.claude.json is real and may hold anything,
@@ -700,7 +700,7 @@ public sealed class RestoreEngineTests
     {
         // "No project open" reaches the host as an empty string as often as a null, and a
         // blank entry in the set would be compared against every candidate path.
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(["", "   "]);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, ["", "   "]);
 
         Assert.IsFalse(roots.Any(string.IsNullOrWhiteSpace),
             "A blank root must never enter the authorised set.");

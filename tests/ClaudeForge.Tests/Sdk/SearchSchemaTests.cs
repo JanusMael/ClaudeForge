@@ -58,7 +58,7 @@ public sealed class SearchSchemaTests
     {
         // Schema nodes are populated during OpenAsync; before that the cache is
         // null and SearchSchema should return gracefully, not throw.
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("model");
@@ -74,7 +74,7 @@ public sealed class SearchSchemaTests
     [TestMethod]
     public void SearchSchema_EmptyQuery_ReturnsEmpty()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema(string.Empty);
@@ -93,7 +93,7 @@ public sealed class SearchSchemaTests
 
     private static async Task<ClaudeCodeClient> OpenedClientAsync()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         // null project root → User-only workspace; settings file may be absent
         // (ConfigFileLoader creates a placeholder document).
         await client.OpenAsync(null, CancellationToken.None);

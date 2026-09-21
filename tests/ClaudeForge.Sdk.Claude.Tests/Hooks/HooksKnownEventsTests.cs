@@ -45,7 +45,7 @@ public sealed class HooksKnownEventsTests
     [TestMethod]
     public async Task KnownEvents_ExposesSchemaDerivedVocabulary()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         List<string> events = client.Hooks.KnownEvents.Select(e => e.Name).ToList();
@@ -72,7 +72,7 @@ public sealed class HooksKnownEventsTests
         //
         // Regression: this previously fell back to curated NAMES with null descriptions,
         // so the GUI's hook-event tooltips and detail label rendered blank.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         IReadOnlyList<HookEventInfo> known = client.Hooks.KnownEvents;
 
         List<string> names = known.Select(e => e.Name).ToList();
@@ -93,7 +93,7 @@ public sealed class HooksKnownEventsTests
     {
         // Headless consumers get the schema DESCRIPTION too, not just the name —
         // e.g. so a CLI/MCP tool can explain an unfamiliar event like CwdChanged.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         HookEventInfo cwd = client.Hooks.KnownEvents.First(e => e.Name == "CwdChanged");

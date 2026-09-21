@@ -41,7 +41,7 @@ public sealed class NavigationNodeIdTests
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     [TestCleanup]

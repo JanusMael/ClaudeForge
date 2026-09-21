@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
@@ -25,7 +25,9 @@ internal static class BackupPageTestOptions
 {
     internal static AgentForge.Avalonia.Shell.Backup.BackupPageOptions Create(
         IReadOnlyList<ProductDescriptor>? products = null) =>
-        ClaudeBackupPage.Options(products ?? ClaudeBackupPage.DefaultProducts);
+        ClaudeBackupPage.Options(
+            ClaudeEnvironment.Empty,
+            products ?? ClaudeBackupPage.DefaultProductsFor(ClaudeEnvironment.Empty));
 
     /// <summary>
     /// The Clients-column abbreviations ClaudeForge actually ships.
@@ -965,10 +967,10 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
             Assert.IsTrue(created.Succeeded, "Test prerequisite: backup must create.");
 
@@ -1015,10 +1017,10 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await BackupEngine.Default.CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProduct],
+                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
             Assert.IsTrue(created.Succeeded);
 
@@ -1472,7 +1474,7 @@ public sealed class BackupRestoreViewModelTests
 
         Assert.AreEqual(1, request.Products.Count,
             "Only the still-selected product may be requested.");
-        Assert.IsFalse(request.Includes(SchemaRegistry.ClaudeCodeProduct),
+        Assert.IsFalse(request.Includes(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
             "Deselecting Claude Code must actually exclude it — otherwise the checkbox is "
             + "decorative and the user's choice is silently ignored.");
         Assert.IsTrue(request.Includes(SchemaRegistry.ClaudeDesktopProduct));

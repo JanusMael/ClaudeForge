@@ -108,7 +108,7 @@ public sealed class ManagedSettingsLocationTests
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId(platformId));
 
-        string home = Normalize(PlatformPaths.ClaudeHome);
+        string home = Normalize(PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty));
 
         foreach (string managed in new[]
                  {

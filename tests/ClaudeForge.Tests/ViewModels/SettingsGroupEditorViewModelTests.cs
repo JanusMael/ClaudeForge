@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.RegularExpressions;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -377,7 +378,7 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsWorkspace ws = MakeWorkspace(
             (ConfigScope.Project, """{"model":"opus"}"""),
             (ConfigScope.User, "{}"));
-        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);
@@ -405,7 +406,7 @@ public partial class SettingsGroupEditorViewModelTests
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
         SettingsWorkspace ws = MakeWorkspace((ConfigScope.User, "{}"));
-        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(
+        using AgentConfigClientCore sdk = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
 
         SharedScopeContext ctx = new(ConfigScope.User);

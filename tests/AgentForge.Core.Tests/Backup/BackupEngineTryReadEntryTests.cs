@@ -63,22 +63,22 @@ public sealed class BackupEngineTryReadEntryTests
     [TestMethod]
     public void TryReadEntry_NullPath_ReturnsNull()
     {
-        Assert.IsNull(BackupEngine.Default.TryReadEntry(null!),
+        Assert.IsNull(TestBackupEngine.Default.TryReadEntry(null!),
             "Null path is the documented 'no file' signal; must short-circuit to null.");
     }
 
     [TestMethod]
     public void TryReadEntry_EmptyPath_ReturnsNull()
     {
-        Assert.IsNull(BackupEngine.Default.TryReadEntry(string.Empty));
-        Assert.IsNull(BackupEngine.Default.TryReadEntry("   "));
+        Assert.IsNull(TestBackupEngine.Default.TryReadEntry(string.Empty));
+        Assert.IsNull(TestBackupEngine.Default.TryReadEntry("   "));
     }
 
     [TestMethod]
     public void TryReadEntry_NonExistentFile_ReturnsNull()
     {
         string missing = Path.Combine(_tmp, "does-not-exist.zip");
-        Assert.IsNull(BackupEngine.Default.TryReadEntry(missing),
+        Assert.IsNull(TestBackupEngine.Default.TryReadEntry(missing),
             "A path that exists on no filesystem must return null, not a corrupt entry.");
     }
 
@@ -86,14 +86,14 @@ public sealed class BackupEngineTryReadEntryTests
     public async Task TryReadEntry_ValidBackupZip_ReturnsParsedEntry()
     {
         string zipPath = Path.Combine(_tmp, "backup-20300101-000000.zip");
-        BackupResult result = await BackupEngine.Default.CreateAsync(new BackupRequest
+        BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProduct],
+            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         Assert.IsTrue(result.Succeeded, "Test prerequisite: backup must be creatable.");
 
-        BackupEntry? entry = BackupEngine.Default.TryReadEntry(zipPath);
+        BackupEntry? entry = TestBackupEngine.Default.TryReadEntry(zipPath);
 
         Assert.IsNotNull(entry, "A valid backup zip must produce a non-null entry.");
         Assert.IsFalse(entry!.IsCorrupt,
@@ -110,7 +110,7 @@ public sealed class BackupEngineTryReadEntryTests
         string bogusZip = Path.Combine(_tmp, "not-a-real-zip.zip");
         File.WriteAllBytes(bogusZip, [0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x42]);
 
-        BackupEntry? entry = BackupEngine.Default.TryReadEntry(bogusZip);
+        BackupEntry? entry = TestBackupEngine.Default.TryReadEntry(bogusZip);
 
         Assert.IsNotNull(entry,
             "An unreadable zip should still return an entry (with IsCorrupt=true), " +
@@ -127,7 +127,7 @@ public sealed class BackupEngineTryReadEntryTests
         string emptyZip = Path.Combine(_tmp, "empty.zip");
         File.WriteAllBytes(emptyZip, Array.Empty<byte>());
 
-        BackupEntry? entry = BackupEngine.Default.TryReadEntry(emptyZip);
+        BackupEntry? entry = TestBackupEngine.Default.TryReadEntry(emptyZip);
 
         Assert.IsNotNull(entry);
         Assert.IsTrue(entry!.IsCorrupt,

@@ -55,7 +55,7 @@ public sealed class ProfilesViewModelTests
 
     private static ProfilesViewModel NewVm(StubDialogService? dlg = null)
     {
-        return new ProfilesViewModel(dlg ?? new StubDialogService());
+        return new ProfilesViewModel(ClaudeEnvironment.Empty, dlg ?? new StubDialogService());
     }
 
     private void CreateProfile(string name, bool withSettings = true, bool withClaudeMd = false, bool withMcp = false)
@@ -83,7 +83,7 @@ public sealed class ProfilesViewModelTests
     [TestMethod]
     public void Constructor_NullDialogService_Throws()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new ProfilesViewModel(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new ProfilesViewModel(ClaudeEnvironment.Empty, null!));
     }
 
     // ── DesktopAvailable property surface ─────────────────────────────────
@@ -157,7 +157,7 @@ public sealed class ProfilesViewModelTests
     {
         CreateProfile("alpha");
         CreateProfile("beta");
-        ProfileEngine.WriteCurrentProfileName("beta");
+        ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "beta");
 
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
@@ -367,8 +367,8 @@ public sealed class ProfilesViewModelTests
     {
         CreateProfile("work");
         // Mark "work" as the currently-active CLI profile.
-        ProfileEngine.WriteCurrentProfileName("work");
-        Assert.AreEqual("work", ProfileEngine.ReadCurrentProfileName());
+        ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "work");
+        Assert.AreEqual("work", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty));
 
         StubDialogService dlg = new() { ConfirmReturns = true };
         ProfilesViewModel vm = NewVm(dlg);
@@ -376,7 +376,7 @@ public sealed class ProfilesViewModelTests
 
         await vm.DeleteCommand.ExecuteAsync(null);
 
-        Assert.IsNull(ProfileEngine.ReadCurrentProfileName(),
+        Assert.IsNull(ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
             "Deleting the CLI-active profile must clear the activation pointer "
             + "so Claude Code is not pointing at a deleted directory.");
     }
@@ -651,7 +651,7 @@ public sealed class ProfilesViewModelTests
         Assert.AreEqual("""{"from":"profile"}""",
             await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json")),
             "Confirmed apply must copy profile settings.json into the live location.");
-        Assert.AreEqual("p", ProfileEngine.ReadCurrentProfileName(),
+        Assert.AreEqual("p", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
             "Apply must update the active-profile pointer.");
     }
 
@@ -737,7 +737,7 @@ public sealed class ProfilesViewModelTests
         CreateProfile("p");
         string exportPath = Path.Combine(_sandbox, "exports", "p.json");
         Directory.CreateDirectory(Path.GetDirectoryName(exportPath)!);
-        await ProfileEngine.ExportProfileAsync("p", exportPath);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "p", exportPath);
 
         // Delete the profile so import can re-create it.
         Directory.Delete(Path.Combine(_sandbox, ".claude", "profiles", "p"), recursive: true);

@@ -110,7 +110,7 @@ public sealed class SchemaProvenanceBadgeTests
 
     private static async Task<MainWindowViewModel> LoadedAsync(HttpMessageHandler handler)
     {
-        MainWindowViewModel vm = new(new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
         await vm.LoadAllWorkspacesAsync();
         return vm;
     }
@@ -172,7 +172,7 @@ public sealed class SchemaProvenanceBadgeTests
             // Premise, asserted rather than assumed: the two products differ in exactly the
             // way this test is about. If Desktop ever gains a published schema, this test is
             // making a claim about the wrong thing and should say so here.
-            StringAssert.StartsWith(SchemaRegistry.ClaudeCodeProduct.SchemaUrl, "https://",
+            StringAssert.StartsWith(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaUrl, "https://",
                 StringComparison.OrdinalIgnoreCase);
             Assert.IsFalse(
                 SchemaRegistry.ClaudeDesktopProduct.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase),
@@ -244,7 +244,7 @@ public sealed class SchemaProvenanceBadgeTests
             MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
-            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProduct);
+            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
             string failedFetch = string.Format(
                 CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipBundledFmt, sha);
 
@@ -267,7 +267,7 @@ public sealed class SchemaProvenanceBadgeTests
             MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
-            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProduct);
+            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
 
             Assert.IsNotNull(cc.BadgeTooltip);
             StringAssert.Contains(cc.BadgeTooltip, sha, StringComparison.Ordinal,

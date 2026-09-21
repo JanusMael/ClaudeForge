@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -585,7 +586,7 @@ public class SearchViewModelTests
         JsonObject root = new();
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         EssentialsViewModel essentialsVm = new(client, new FakeEnvironmentProvider());
 
@@ -602,7 +603,7 @@ public class SearchViewModelTests
         SettingsWorkspace ws = new(
             [new SettingsDocument(ConfigScope.User, "u.json", new JsonObject(), isReadOnly: false)],
             ClaudeMergePolicy.Instance);
-        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
         EssentialsViewModel vm = new(client, new FakeEnvironmentProvider());
 

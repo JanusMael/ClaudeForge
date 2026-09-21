@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
@@ -105,9 +106,9 @@ internal sealed class TestConfigClient : AgentConfigClientCore
         // Settings before .mcp.json, matching the real clients: when both declare
         // mcpServers, save order has to favour the settings file.
         IReadOnlyList<DiscoveredFile> settings =
-            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(projectRoot, profileName: null);
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, projectRoot, profileName: null);
         IReadOnlyList<DiscoveredFile> mcp =
-            ConfigFileDiscoverer.DiscoverMcpFiles(projectRoot, profileName: null);
+            ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty, projectRoot, profileName: null);
         return [.. settings, .. mcp];
     }
 
@@ -117,7 +118,7 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     /// Desktop's, not a neutral one — see the class remarks. Nothing about these tests
     /// depends on which of the two is chosen beyond the schema being loadable.
     /// </remarks>
-    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
+    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
     /// <inheritdoc/>
     /// <remarks>
@@ -131,6 +132,6 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
-        return new BackupClient(BackupEngine.Default, [Product]);
+        return new BackupClient(new BackupEngine(ClaudeEnvironment.Empty), [Product]);
     }
 }

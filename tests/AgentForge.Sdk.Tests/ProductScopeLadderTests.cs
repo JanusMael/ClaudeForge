@@ -1,6 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
@@ -90,7 +91,7 @@ public sealed class ProductScopeLadderTests
     private sealed class LadderClient(ScopeLadder scopes) : AgentConfigClientCore(
         scopes.DefaultEditableScope, schemaRegistry: null)
     {
-        protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProduct;
+        protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
         protected override IMergePolicy MergePolicy => new TestMergePolicy();
 
@@ -105,6 +106,6 @@ public sealed class ProductScopeLadderTests
         protected override IReadOnlyList<DiscoveredFile> DiscoverFiles(string? projectRoot) => [];
 
         protected override IBackupClient CreateBackupClient() =>
-            new BackupClient(BackupEngine.Default, [Product]);
+            new BackupClient(new BackupEngine(ClaudeEnvironment.Empty), [Product]);
     }
 }

@@ -115,7 +115,7 @@ public sealed class BackupArchiveCompatibilityTests
     {
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entry);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
 
         Assert.IsTrue(restore.Succeeded,
             "A backup written by a shipped build must keep restoring. " + restore.Message);
@@ -145,7 +145,7 @@ public sealed class BackupArchiveCompatibilityTests
         // the first product would look green everywhere else.
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await BackupEngine.Default.RestoreAsync(entry);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
         Assert.IsTrue(restore.Succeeded, restore.Message);
 
         Assert.IsTrue(File.Exists(PlatformPaths.DesktopConfigPath),
@@ -160,7 +160,7 @@ public sealed class BackupArchiveCompatibilityTests
         // that does not appear in the list can never be restored, and nothing errors.
         StageFixture();
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
 
         Assert.AreEqual(1, entries.Count, "The frozen archive must appear in the restorable list.");
         await Task.CompletedTask;
@@ -193,7 +193,7 @@ public sealed class BackupArchiveCompatibilityTests
         string staged = Path.Combine(_fakeHome, "backup-20260911-000000.zip");
         File.Copy(FixturePath(), staged, overwrite: true);
 
-        IReadOnlyList<BackupEntry> entries = BackupEngine.Default.List(_fakeHome);
+        IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.AreEqual(1, entries.Count, "Expected exactly the staged fixture in the sandbox.");
         return entries[0];
     }

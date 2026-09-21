@@ -1,4 +1,5 @@
-﻿using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
@@ -23,7 +24,7 @@ public sealed class PermissionsAutoModeGatingTests
         };
         SettingsDocument doc = new(scope, "settings.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+        ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, scope, new SchemaRegistry());
 
         PermissionsEditorViewModel vm = new(

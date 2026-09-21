@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Collections;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.AgentForge.Sdk;
@@ -33,7 +34,7 @@ public sealed class EssentialsViewModelTests
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 

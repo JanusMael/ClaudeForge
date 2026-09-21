@@ -63,7 +63,7 @@ public sealed class PlatformPathsCacheTests
         File.WriteAllText(binaryPath, string.Empty);
 
         // First call — primes the cache and returns the located binary.
-        PlatformPaths.ClaudeCodeLocation? first = PlatformPaths.TryFindClaudeCodeBinary();
+        PlatformPaths.ClaudeCodeLocation? first = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         Assert.IsNotNull(first);
         Assert.AreEqual(binaryPath, first!.BinaryPath);
 
@@ -72,14 +72,14 @@ public sealed class PlatformPathsCacheTests
 
         // Second call WITHOUT invalidation — must still return the cached
         // location. (Process-lifetime cache contract.)
-        PlatformPaths.ClaudeCodeLocation? secondCached = PlatformPaths.TryFindClaudeCodeBinary();
+        PlatformPaths.ClaudeCodeLocation? secondCached = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         Assert.IsNotNull(secondCached,
             "Cache should still return the prior location even though the file is gone.");
         Assert.AreEqual(binaryPath, secondCached!.BinaryPath);
 
         // After invalidation, re-probe sees the empty disk.
         PlatformPaths.InvalidatePathCache();
-        PlatformPaths.ClaudeCodeLocation? afterInvalidate = PlatformPaths.TryFindClaudeCodeBinary();
+        PlatformPaths.ClaudeCodeLocation? afterInvalidate = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         Assert.IsNull(afterInvalidate,
             "Post-invalidation probe should reflect the now-empty sandbox.");
     }

@@ -56,7 +56,7 @@ public sealed class HasUnsavedChangesRecheckTests
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
         await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -107,7 +107,7 @@ public sealed class HasUnsavedChangesRecheckTests
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
         await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -152,7 +152,7 @@ public sealed class HasUnsavedChangesRecheckTests
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         await File.WriteAllTextAsync(settingsPath, "{}");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -173,7 +173,7 @@ public sealed class HasUnsavedChangesRecheckTests
         // edit set HasUnsavedChanges=true but the Save button stayed dark. Save must depend
         // only on there being unsaved changes (and not being mid-load), never on the
         // install-guidance banner's visibility.
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             vm.ShowInstallBanner = true;
@@ -221,7 +221,7 @@ public sealed class HasUnsavedChangesRecheckTests
         PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
 
         // ── leg 1: no products detected, load, then place Code settings ──
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);

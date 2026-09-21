@@ -48,7 +48,7 @@ public class AccessorsTests
 
     private async Task<ClaudeCodeClient> OpenAsync()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         return client;
     }

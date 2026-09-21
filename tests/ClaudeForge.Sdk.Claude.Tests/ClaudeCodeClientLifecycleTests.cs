@@ -61,7 +61,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task OpenAsync_LoadsUserScopeWorkspace_FromEmptyDisk()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
 
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
@@ -73,7 +73,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task PublicMethods_BeforeOpen_ThrowInvalidOperation()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
 
         Assert.ThrowsExactly<InvalidOperationException>(
             () => client.GetEffective<string>("model"),
@@ -89,7 +89,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task SetValue_GetEffective_RoundTripsStringAtUserScope()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "claude-opus-4");
@@ -102,7 +102,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task SetValue_NestedPath_StoresUnderTopLevelObject()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         // Dotted path — the SDK reads the existing top-level "permissions" object,
@@ -121,7 +121,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task RemoveValue_TopLevel_ClearsAndMarksClean()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "opus");
@@ -135,7 +135,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task RemoveValue_NestedPath_RemovesOnlyTheNestedKey()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("permissions.defaultMode", "auto");
@@ -155,7 +155,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task SaveAsync_PersistsToDisk_AndClearsUnsavedFlag()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "claude-sonnet-4");
@@ -177,7 +177,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task ReloadAsync_DiscardsUnsavedInMemoryEdits()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         // Persist a baseline.
@@ -202,7 +202,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task SetValue_RaisesChangedEvent_WithMutationKindAndPath()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         List<ClientChangedEventArgs> captured = new();
@@ -218,7 +218,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task SaveAsync_RaisesSavedKind_WithNullPath()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "opus");
@@ -243,7 +243,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task Dispose_DoubleCall_IsSafe()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         client.Dispose();
         client.Dispose(); // must not throw
@@ -252,7 +252,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task PublicMethods_AfterDispose_ThrowObjectDisposed()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         client.Dispose();
 
@@ -268,7 +268,7 @@ public class ClaudeCodeClientLifecycleTests
     {
         // Construct with a non-default DefaultScope so we can distinguish from
         // the User-scope default.
-        using ClaudeCodeClient client = new(defaultScope: ConfigScope.User);
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty, defaultScope: ConfigScope.User);
         await client.OpenAsync(projectRoot: null, CancellationToken.None);
 
         client.SetValue("model", "opus");
@@ -285,7 +285,7 @@ public class ClaudeCodeClientLifecycleTests
         // SDK SetValue suppresses the workspace forwarder while it does the
         // write, then explicitly raises Changed with the dotted path. The
         // consumer sees ONE event with the path populated.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, CancellationToken.None);
 
         List<ClientChangedEventArgs> events = new();
@@ -312,7 +312,7 @@ public class ClaudeCodeClientLifecycleTests
         // still surfaces the change to its consumers via the workspace.Changed
         // forwarder. Path is null because the workspace event doesn't carry
         // path info.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, CancellationToken.None);
 
         List<ClientChangedEventArgs> events = new();
@@ -343,7 +343,7 @@ public class ClaudeCodeClientLifecycleTests
     [TestMethod]
     public async Task EditableScopes_NoProjectRoot_ReturnsUserOnly()
     {
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, CancellationToken.None);
 
         IReadOnlyList<ConfigScope> scopes = client.EditableScopes;
@@ -359,7 +359,7 @@ public class ClaudeCodeClientLifecycleTests
         // window during GUI startup where the binding might read scopes
         // before the workspace finishes loading. Always returns at least
         // User so the scope ComboBox has a sensible default.
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         IReadOnlyList<ConfigScope> scopes = client.EditableScopes;
 
         Assert.AreEqual(1, scopes.Count);
@@ -380,7 +380,7 @@ public class ClaudeCodeClientLifecycleTests
         await File.WriteAllTextAsync(
             Path.Combine(projectRoot, ".claude", "settings.local.json"), "{}");
 
-        using ClaudeCodeClient client = new();
+        using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot, CancellationToken.None);
 
         IReadOnlyList<ConfigScope> scopes = client.EditableScopes;

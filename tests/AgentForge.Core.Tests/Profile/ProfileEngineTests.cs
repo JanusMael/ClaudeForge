@@ -74,7 +74,7 @@ public sealed class ProfileEngineTests
     [TestMethod]
     public void DiscoverProfiles_NoDirExists_ReturnsEmpty()
     {
-        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles();
+        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles(ClaudeEnvironment.Empty);
 
         Assert.AreEqual(0, result.Count);
     }
@@ -84,7 +84,7 @@ public sealed class ProfileEngineTests
     {
         Directory.CreateDirectory(ProfileDir("empty-profile"));
 
-        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles();
+        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles(ClaudeEnvironment.Empty);
 
         Assert.AreEqual(0, result.Count);
     }
@@ -94,7 +94,7 @@ public sealed class ProfileEngineTests
     {
         CreateProfileWithSettings("myprofile");
 
-        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles();
+        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles(ClaudeEnvironment.Empty);
 
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual("myprofile", result[0].Name);
@@ -109,7 +109,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         File.WriteAllText(CurrentFile, "beta");
 
-        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles();
+        IReadOnlyList<ProfileInfo> result = ProfileEngine.DiscoverProfiles(ClaudeEnvironment.Empty);
 
         ProfileInfo alpha = result.Single(p => p.Name == "alpha");
         ProfileInfo beta = result.Single(p => p.Name == "beta");
@@ -122,7 +122,7 @@ public sealed class ProfileEngineTests
     [TestMethod]
     public void ReadCurrentProfileName_FileAbsent_ReturnsNull()
     {
-        string? result = ProfileEngine.ReadCurrentProfileName();
+        string? result = ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty);
 
         Assert.IsNull(result);
     }
@@ -133,7 +133,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         File.WriteAllText(CurrentFile, "work");
 
-        string? result = ProfileEngine.ReadCurrentProfileName();
+        string? result = ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty);
 
         Assert.AreEqual("work", result);
     }
@@ -146,7 +146,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         File.WriteAllText(CurrentFile, "old");
 
-        ProfileEngine.WriteCurrentProfileName(null);
+        ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, null);
 
         Assert.IsFalse(File.Exists(CurrentFile));
     }
@@ -154,7 +154,7 @@ public sealed class ProfileEngineTests
     [TestMethod]
     public void WriteCurrentProfileName_StringValue_CreatesFileWithName()
     {
-        ProfileEngine.WriteCurrentProfileName("foo");
+        ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "foo");
 
         Assert.IsTrue(File.Exists(CurrentFile));
         Assert.AreEqual("foo", File.ReadAllText(CurrentFile).Trim());
@@ -168,7 +168,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark"}""");
 
-        bool created = await ProfileEngine.CreateFromLiveAsync("snap");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "snap");
 
         Assert.IsTrue(created);
         Assert.IsTrue(File.Exists(ProfileSettings("snap")));
@@ -178,7 +178,7 @@ public sealed class ProfileEngineTests
     [TestMethod]
     public async Task CreateFromLiveAsync_NoLiveSettings_WritesEmptyObject()
     {
-        bool created = await ProfileEngine.CreateFromLiveAsync("blank");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "blank");
 
         Assert.IsTrue(created);
         Assert.IsTrue(File.Exists(ProfileSettings("blank")));
@@ -190,7 +190,7 @@ public sealed class ProfileEngineTests
     {
         CreateProfileWithSettings("existing");
 
-        bool created = await ProfileEngine.CreateFromLiveAsync("existing");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "existing");
 
         Assert.IsFalse(created);
     }
@@ -202,7 +202,7 @@ public sealed class ProfileEngineTests
         await File.WriteAllTextAsync(LiveSettings, "{}");
         await File.WriteAllTextAsync(ClaudeJsonPath, """{"mcpServers":{"myserver":{"command":"npx"}}}""");
 
-        await ProfileEngine.CreateFromLiveAsync("withMcp");
+        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "withMcp");
 
         Assert.IsTrue(File.Exists(ProfileMcp("withMcp")));
         JsonObject? mcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("withMcp"))) as JsonObject;
@@ -217,7 +217,7 @@ public sealed class ProfileEngineTests
     {
         CreateProfileWithSettings("prod", """{"env":"prod"}""");
 
-        await ProfileEngine.ApplyProfileToLiveAsync("prod", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "prod", autoSync: false);
 
         Assert.IsTrue(File.Exists(LiveSettings));
         Assert.AreEqual("""{"env":"prod"}""", await File.ReadAllTextAsync(LiveSettings));
@@ -231,7 +231,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         await File.WriteAllTextAsync(LiveClaudeMd, "# old instructions");
 
-        await ProfileEngine.ApplyProfileToLiveAsync("minimal", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "minimal", autoSync: false);
 
         Assert.IsFalse(File.Exists(LiveClaudeMd));
     }
@@ -246,7 +246,7 @@ public sealed class ProfileEngineTests
         Directory.CreateDirectory(ClaudeHome);
         await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark","newKey":true}""");
 
-        await ProfileEngine.SyncFromLiveAsync("dev");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "dev");
 
         string synced = await File.ReadAllTextAsync(ProfileSettings("dev"));
         StringAssert.Contains(synced, "dark");
