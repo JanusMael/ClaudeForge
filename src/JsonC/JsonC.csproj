@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.JsonC</RootNamespace>
+        <AssemblyName>JsonC</AssemblyName>
+        <Description>
+            Comment- and formatting-preserving JSONC reader plus an edit-based writer.
+
+            Writes by replacing the minimal text span for each changed path rather than
+            re-serializing the document, so comments, blank lines, key order, indentation
+            style, and line endings survive a save untouched — they are never rewritten.
+
+            Framework-only by design: no package references. It is a text-editing
+            component, and staying dependency-free is what keeps it testable in isolation
+            and safe to reason about, since a bug here corrupts user config.
+
+            Named outside the AgentForge family on purpose: nothing in here knows what an
+            agent is, and the package id should not claim otherwise.
+
+            Invariant: no product-neutral project may reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it, and its selector names this project
+            explicitly — the family prefixes alone would no longer reach it.
+        </Description>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+</Project>

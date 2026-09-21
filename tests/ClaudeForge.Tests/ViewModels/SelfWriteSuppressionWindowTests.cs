@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -34,10 +34,17 @@ public sealed class SelfWriteSuppressionWindowTests
 
         _time = new FakeTimeProvider();
 
-        // Held in a field so Cleanup can drain the registry's fire-and-forget disk-cache sync
-        // before the sandbox is deleted — see the AGENTS.md §3 entry on draining before delete.
+        // Held in a field so Cleanup can dispose it before the sandbox is deleted.
+        //
+        // ⓘ On main this also had to DRAIN a fire-and-forget disk-cache sync, via
+        // SchemaRegistry.WhenDiskCacheIdleAsync().  There is nothing to drain here: this
+        // branch's disk cache awaits its write inline (SchemaRegistry.GetSchemaAsync, the
+        // `_disk.WriteAsync(...).GetAwaiter().GetResult()` site), which supersedes the
+        // awaitable seam rather than dropping it — that site's own comment cites cafe89c,
+        // the commit the seam came from.  No write can outlive the call that started it, so
+        // quiescence holds by construction and the seam does not exist to be called.
         _schemaRegistry = new SchemaRegistry();
-        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService(), timeProvider: _time);
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService(), timeProvider: _time);
     }
 
     [TestCleanup]
@@ -49,8 +56,6 @@ public sealed class SelfWriteSuppressionWindowTests
             await reload.ContinueWith(static t => _ = t.Exception,
                 CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
         }
-
-        await _schemaRegistry.WhenDiskCacheIdleAsync();
 
         _vm.Dispose();
         _schemaRegistry.Dispose();

@@ -1,7 +1,8 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
-using MarketplaceEntry = Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces.MarketplaceEntry;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
+using MarketplaceEntry = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces.MarketplaceEntry;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -413,7 +414,7 @@ public class MarketplacesEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.Marketplaces.Set(new MarketplaceEntry(

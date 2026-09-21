@@ -1,4 +1,6 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.ComponentModel;
 using System.Globalization;
 using System.Security;
@@ -10,39 +12,46 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using Bennewitz.Ninja.ClaudeForge.Core;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.FileIO;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Profile;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Core.FileIO;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Profile;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
-using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+using Bennewitz.Ninja.LayeredEditors.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Json.Schema;
 using Serilog;
-using SchemaRegistry = Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaRegistry;
+using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
 // Core and Sdk (ConfigScope, SchemaValidationError). Code in MWVM continues to
 // use the Core types by default; the SDK-typed names are reached via Sdk.* .
 // the public Status property below shadows the
-// ClaudeForge.ViewModels.Status namespace; this alias gives unambiguous
+// AgentForge.Avalonia.Shell.Status namespace; this alias gives unambiguous
 // access to the namespace's types (StatusKind, StatusController) inside
-// MainWindowViewModel.
+// MainWindowViewModel. Phase 5 slice 1 moved those two types to the neutral
+// shell — the shadowing hazard is unchanged, only the namespace moved.
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -64,13 +73,27 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     public IDialogService DialogServiceForViewAccess { get; }
 
     private readonly IShareService? _shareService;
-    private readonly SchemaSnapshotService _snapshotService = new();
+    // ⛔ This used to be a bare `new()`, taking a parameterless constructor whose default was
+    // {ClaudeHome}/cache — the Claude-ness living in the NEUTRAL layer rather than here. Naming
+    // the directory at the app is the whole correction: it is identical behaviour, and it is now
+    // ClaudeForge saying ~/.claude is Claude's answer instead of AgentForge.Core assuming it.
+    // ⚠ A target-typed `new()` also makes a call site invisible to any search for the type name,
+    // which is how this one was nearly missed. See NeutralLayerDefaultsTests.
+    // ⛔ Assigned in the constructor, NOT here. A field initializer runs before the constructor
+    // body, so it cannot see _env — and the compiler says so (CS0236) rather than silently
+    // resolving the default home, which is the one mercy in this whole refactor.
+    private readonly SchemaSnapshotService _snapshotService;
 
     private ConfigFileWatcher? _watcher;
+
+    // Path -> the descriptor it was discovered as, so a watcher hit can name its SCOPE and not
+    // just a path. Rebuilt alongside the watcher. Case-insensitive because Windows paths are.
+    private readonly Dictionary<string, DiscoveredFile> _watchedFiles =
+        new(StringComparer.OrdinalIgnoreCase);
     // legacy _workspace / _desktopWorkspace fields
     // retired. The SDK clients (ClaudeCodeSdk / ClaudeDesktopSdk) are the
     // only state holders. NavigationTreeBuilder.BuildGroups derives the
-    // backing SettingsWorkspace via ClaudeConfigClientCore.WorkspaceForGui
+    // backing SettingsWorkspace via AgentConfigClientCore.WorkspaceForGui
     // for the SettingsGroupEditorViewModel + factory chain that still
     // consumes workspace.GetLayeredValue.
 
@@ -82,10 +105,90 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // fields are deleted and the SDK clients become the only state holders.
     // Typed as the concrete public-abstract base rather than the interface so
     // MWVM can reach internal helpers (SnapshotDirtyDocuments — 4.3.7 step 9)
-    // without a cast at every call site. Both ClaudeCodeClient and
-    // ClaudeDesktopClient derive from this base.
-    internal ClaudeConfigClientCore? ClaudeCodeSdk { get; private set; }
-    internal ClaudeConfigClientCore? ClaudeDesktopSdk { get; private set; }
+    // without a cast at every call site. ClaudeConfigClientBase specifically,
+    // not AgentConfigClientCore: it is the one that carries the Claude-only
+    // accessors (Hooks, Permissions, Marketplaces, Plugins, Models) the editor
+    // view-models below take as IClaudeConfigClient. Both ClaudeCodeClient and
+    // ClaudeDesktopClient derive from it.
+    // The products this shell hosts, in navigation order. THE source of truth for every
+    // lifecycle operation below — save, validate, snapshot, subscribe, dispose, export,
+    // search all iterate this rather than naming two fields. See ProductSection for what is
+    // and is not N-product yet.
+    // ⛔ The danger table is stated HERE and nowhere else. Both consumers — the settings pages via
+    // BuildGroups and the save dialog via DirtySources() — read it off the section, so they cannot
+    // disagree about which product's threat model applies. Claude Desktop gets none on purpose:
+    // nobody has triaged its keys, and Claude Code's table would be a false claim rather than a
+    // shortcut (the schemas barely overlap, and `env` is in both).
+    // ⛔ Assigned in the constructor for the same reason as _snapshotService above: the Claude
+    // Code descriptor is now built from the environment, which no field initializer can see.
+    private readonly List<ProductSection> _sections;
+
+    private static List<ProductSection> BuildSections(ClaudeEnvironment env) =>
+    [
+        new(SchemaRegistry.ClaudeCodeProductFor(env), NavTitleClaudeCode,
+            () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json",
+            ClaudeDangerTable.Settings),
+        new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
+            () => Strings.WorkspaceNameClaudeDesktop, "claude_desktop_config.json"),
+    ];
+
+    internal IReadOnlyList<ProductSection> Sections => _sections;
+
+    /// <summary>Every section whose client is open, in navigation order.</summary>
+    private IEnumerable<ProductSection> OpenSections => _sections.Where(s => s.Client is not null);
+
+    private ProductSection SectionFor(ProductDescriptor product)
+    {
+        return SectionFor(product.Id);
+    }
+
+    /// <summary>
+    /// The section for a product id.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ <b>An id overload so a caller that only wants its own section need not build a
+    /// descriptor.</b> Since the Claude Code descriptor became environment-bound, the obvious
+    /// <c>SectionFor(ClaudeCodeProductFor(_env))</c> would allocate a fresh record on every
+    /// property read. ⓘ Matching was already on <see cref="ProductDescriptor.Id"/>, which is why
+    /// a per-call descriptor would have worked at all: two instances built from the same
+    /// environment are NOT record-equal, because their destination factories are distinct
+    /// delegates.
+    /// </remarks>
+    private ProductSection SectionFor(string productId)
+    {
+        return _sections.Single(s => string.Equals(s.Product.Id, productId, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Open clients paired with the localized name to label their changes under, for the
+    /// save-confirmation dialog and the pending-change log.
+    /// </summary>
+    /// <remarks>
+    /// The display name is resolved HERE, per call, rather than stored: it is resource-backed,
+    /// and the two consumers render it into user-visible text.
+    /// </remarks>
+    private IEnumerable<DirtySource> DirtySources()
+    {
+        return OpenSections.Select(s =>
+            new DirtySource((AgentConfigClientCore)s.Client!, s.WorkspaceDisplayName(), s.Danger));
+    }
+
+    // Named accessors over the list. Kept — not a transitional shim — because the pages that
+    // use them are Claude-Code-specific by design (Essentials, Environment, Effective
+    // settings) and naming the product reads better than indexing a list. What changed is
+    // that they are no longer the storage: the section is, so nothing can iterate one and
+    // miss the other.
+    internal ClaudeConfigClientBase? ClaudeCodeSdk
+    {
+        get => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client;
+        private set => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client = value;
+    }
+
+    internal ClaudeConfigClientBase? ClaudeDesktopSdk
+    {
+        get => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client;
+        private set => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client = value;
+    }
 
     private bool _disposed;
 
@@ -102,10 +205,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // and scheduling a new one with a short delay.
     private CancellationTokenSource? _backupStateSaveCts;
 
-    // Reload guard: prevents concurrent calls to LoadAllWorkspacesAsync.
-    // If a reload arrives while one is already running, _reloadPending is set
-    // and a new reload starts automatically when the in-flight one finishes.
+    // Reload coalescing for ReloadCoreAsync ONLY. If a reload arrives while one is already
+    // running, _reloadPending is set and a new reload starts when the in-flight one finishes.
+    //
+    // ⚠ This comment used to claim it "prevents concurrent calls to LoadAllWorkspacesAsync".
+    // It does not, and never did: it guards ReloadCoreAsync, which is one of three callers.
+    // OpenProjectAsync and InitializeAsync set IsLoading without checking it. That false
+    // statement is why a use-after-dispose race survived unnoticed — the concurrency test
+    // written to cover it named this field while exercising a method it does not protect.
+    // Serialisation now lives in LoadAllWorkspacesAsync itself; see its remarks.
     private bool _reloadPending;
+
+    // Serialises overlapping LoadAllWorkspacesAsync calls. Each call chains onto the previous
+    // one rather than taking a lock, so re-entrancy queues instead of deadlocking.
+    private Task _loadChain = Task.CompletedTask;
 
     // reload-loop guard (companion to _reloadPending).
     //
@@ -287,9 +400,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// English (parallels the other NavTitle* constants) so both the node's
     /// display label and the programmatic <c>n.Title</c> lookups stay
     /// culture-invariant.  The localized <c>Strings.NavTitleEssentials</c>
-    /// is consumed separately by <c>SearchViewModel</c> as the search-results
-    /// group label; full nav-tree localization is still pending (see the
-    /// NavDesc* note below).
+    /// is consumed separately by <c>ClaudeSyntheticSearch</c> as the
+    /// search-results group label; full nav-tree localization is still pending
+    /// (see the NavDesc* note below).
     /// </summary>
     private const string NavTitleEssentials = "Essentials";
 
@@ -386,10 +499,31 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     private const string NavDescWelcome =
         "Orientation for the editor — what gets edited, how scopes layer, and where to find the high-impact settings. Shown by default on first launch.";
 
-    public MainWindowViewModel(SchemaRegistry schemaRegistry, IDialogService dialogService,
+    /// <summary>
+    /// The resolved Claude environment, supplied by <c>App</c>'s composition root and used for
+    /// every path this view-model and its children resolve.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>One value, shared with both SDK clients</b>, for the same reason the schema registry
+    /// is shared: two environments in one process would let the pages read one config tree while
+    /// a save validated against another, and no surface anywhere would disagree.
+    /// </remarks>
+    private readonly ClaudeEnvironment _env;
+
+    public MainWindowViewModel(ClaudeEnvironment env,
+                               SchemaRegistry schemaRegistry, IDialogService dialogService,
                                IShareService? shareService = null,
                                TimeProvider? timeProvider = null)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
+
+        // Both of these were field initializers until the home became environment-bound. They
+        // have to run after _env is assigned, and the compiler enforces that rather than
+        // letting them quietly resolve the default home.
+        _snapshotService = new(Path.Combine(PlatformPaths.ClaudeHome(env), "cache"));
+        _sections = BuildSections(env);
+        UpdateBanner = new UpdateBannerViewModel(env);
         _timeProvider = timeProvider ?? TimeProvider.System;
         _schemaRegistry = schemaRegistry;
         DialogServiceForViewAccess = dialogService;
@@ -403,12 +537,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Search = new SearchViewModel(
             getNavigationTree: () => NavigationTree,
             isLoadingProbe: () => IsLoading,
-            claudeCodeNavTitle: NavTitleClaudeCode,
+            getSyntheticEntries: () => ClaudeSyntheticSearch.Build(NavTitleClaudeCode),
             getSchemaSearchProviders: BuildSchemaSearchProviders);
 
         // Restore persisted state — single hydrate per session. Subsequent saves
         // mutate _cachedState in place rather than re-reading from disk.
-        _cachedState = WindowStateService.Load();
+        _cachedState = WindowStateService.Load(_env);
         _projectRoot = _cachedState.ProjectRoot;
         _isFollowingSystem = _cachedState.Theme == "System";
         _isDarkTheme = _cachedState.Theme == "Dark"; // false when "System" — corrected in ApplyRestoredTheme
@@ -487,7 +621,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Centre status-bar text + lifecycle.  Replaces the prior bare
     /// <c>string? StatusMessage</c> that never auto-cleared — see
-    /// <see cref="Bennewitz.Ninja.ClaudeForge.ViewModels.Status.StatusController"/> and
+    /// <see cref="Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusController"/> and
     /// <c>CLAUDE.md</c> "Status bar" for the full lifecycle rules.
     /// </summary>
     /// <remarks>
@@ -547,6 +681,29 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// The shape every page's <c>OnTerminalStatus</c> hook is wired to: a sentence plus whether
+    /// it is a failure, routed to the pill that matches.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ One method rather than the same three-line lambda at four construction sites. It began
+    /// as backup/restore's alone; F3 added Effective settings, and *Share log* added the two
+    /// cached About view-models. A lambda copied four times is four chances to route a failure to
+    /// the success pill, where it would auto-clear after six seconds instead of waiting to be
+    /// dismissed.
+    /// </remarks>
+    private void RouteTerminalStatus(string text, bool isFailure)
+    {
+        if (isFailure)
+        {
+            SetStatusFailure(text);
+        }
+        else
+        {
+            SetStatusSuccess(text);
+        }
+    }
+
+    /// <summary>
     /// Convert an exception into a status-bar-safe message.  Strips
     /// absolute filesystem paths and truncates the message so the
     /// Failure pill (which sticks indefinitely until the user
@@ -580,6 +737,22 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             : $" on {Path.GetFileName(hintPath)}";
         string shortMessage = SafeShortMessage(ex.Message);
         return $"{typeName}{fileSuffix}: {shortMessage}";
+    }
+
+    /// <summary>
+    /// Status text for a file that loaded as a placeholder rather than content — see
+    /// <see cref="SettingsDocument.LoadFailure"/>.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of <see cref="SanitiseExceptionForStatus"/> for the case where there is no
+    /// exception to report: the loader swallowed it deliberately and recorded the reason
+    /// instead. Same privacy rule — only <see cref="Path.GetFileName"/> reaches the status
+    /// pill, never the directory, because failure pills do not auto-clear and stay on screen
+    /// through a screen-share.
+    /// </remarks>
+    internal static string SanitiseLoadFailureForStatus(string filePath, string? reason)
+    {
+        return $"{Path.GetFileName(filePath)}: {SafeShortMessage(reason ?? string.Empty)}";
     }
 
     /// <summary>
@@ -686,17 +859,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // swap (workspace reload). Method-group conversion isn't usable here because
         // SearchSchema has a defaulted maxResults parameter — so wrap in a one-arg
         // lambda that takes the SDK default.
-        List<SchemaSearchProvider> list = new(2);
-        ClaudeConfigClientCore? cc = ClaudeCodeSdk;
-        if (cc is not null)
+        List<SchemaSearchProvider> list = new(_sections.Count);
+        foreach (ProductSection section in OpenSections)
         {
-            list.Add(new SchemaSearchProvider(NavTitleClaudeCode, q => cc.SearchSchema(q)));
-        }
-
-        ClaudeConfigClientCore? dt = ClaudeDesktopSdk;
-        if (dt is not null)
-        {
-            list.Add(new SchemaSearchProvider(NavTitleClaudeDesktop, q => dt.SearchSchema(q)));
+            // Capture the client in a local per iteration so the lambda closes over THIS
+            // client rather than re-reading section.Client, which a workspace reload swaps.
+            AgentConfigClientCore client = section.Client!;
+            list.Add(new SchemaSearchProvider(section.NavTitle, q => client.SearchSchema(q)));
         }
 
         return list;
@@ -839,7 +1008,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// on the current OS). Bound by the Welcome page's "What you're editing
     /// now" panel as the always-active User-scope target.
     /// </summary>
-    public string UserSettingsPath => PlatformPaths.UserSettingsPath;
+    public string UserSettingsPath => PlatformPaths.UserSettingsPath(_env);
 
     /// <summary>
     /// One-line summary of the current editing context, formatted for the
@@ -915,6 +1084,36 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// last touched it.  Uses local time with AM/PM so the value is immediately readable.
     /// The wording makes clear this only tracks tool saves — manual edits won't update it.
     /// </summary>
+    /// <summary>
+    /// Resolve <c>--writer</c> into a writer instance, or <see langword="null"/> for the
+    /// default comment-preserving one.
+    /// </summary>
+    /// <remarks>
+    /// This method is the whole reason <c>IConfigWriter</c> lives in
+    /// <c>AgentForge.Abstractions</c>: the flag is parsed here in the app, the save happens
+    /// in <c>AgentForge.Core</c>, and Core must never reference the app. Resolving the name
+    /// at the composition point is what keeps that boundary intact.
+    /// <para>
+    /// Logged at Warning for <c>legacy</c> because it is a lossy mode a user opted into
+    /// under duress — if config formatting later looks mangled, the log should already say
+    /// why. Remove alongside the flag after one clean release.
+    /// </para>
+    /// </remarks>
+    private static IConfigWriter? SelectedConfigWriter()
+    {
+        if (!string.Equals(DebugFlags.ConfigWriterName, "legacy", StringComparison.Ordinal))
+        {
+            // Both null (unset) and "jsonc" mean the default; naming it explicitly on the
+            // command line should not take a different code path from omitting it.
+            return null;
+        }
+
+        Log.Warning("[Config] --writer legacy selected: saves will re-serialize the whole "
+                    + "document, discarding comments, blank lines, and indentation style. "
+                    + "This hatch exists for one release only.");
+        return new LegacySerializingWriter();
+    }
+
     private string MakeHeaderComment()
     {
         return $"ClaudeForge v{AppVersion} last saved this file on {DateTime.Now:MM-dd-yyyy hh:mm:ss tt}" +
@@ -1082,7 +1281,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
         if (Directory.Exists(profileDir))
         {
             DialogMessage existsMsg = DialogMessage.Builder()
@@ -1098,7 +1297,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // Seed from the current live ~/.claude/settings.json (+ CLAUDE.md + mcpServers)
             // so the profile starts from real state rather than an empty object.
             // CreateFromLiveAsync falls back to writing {} when the live file is absent.
-            await ProfileEngine.CreateFromLiveAsync(name);
+            await ProfileEngine.CreateFromLiveAsync(_env, name);
 
             // Refresh the ComboBox first so the new item is visible when the
             // binding updates SelectedProfile.
@@ -1163,7 +1362,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
         try
         {
             if (Directory.Exists(profileDir))
@@ -1173,9 +1372,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
             // Clear the .claudectx-current pointer if it pointed to this profile,
             // so the CLI active badge disappears and we don't reference a deleted profile.
-            if (string.Equals(ProfileEngine.ReadCurrentProfileName(), name, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(ProfileEngine.ReadCurrentProfileName(_env), name, StringComparison.OrdinalIgnoreCase))
             {
-                ProfileEngine.WriteCurrentProfileName(null);
+                ProfileEngine.WriteCurrentProfileName(_env, null);
                 CliActiveProfileName = null;
             }
 
@@ -1307,7 +1506,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// resolves with an UpdateAvailable result that hasn't been
     /// previously dismissed.
     /// </summary>
-    public UpdateBannerViewModel UpdateBanner { get; } = new();
+    // ⛔ Assigned in the constructor, not here: a property initializer runs before the
+    // constructor body and so cannot see _env. Same ordering rule as _sections above.
+    public UpdateBannerViewModel UpdateBanner { get; }
 
     /// <summary>
     /// Process-static latch: <see langword="true"/> once the
@@ -1355,7 +1556,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             try
             {
-                Core.Updates.UpdateCheckResult result =
+                Bennewitz.Ninja.AgentForge.Core.Updates.UpdateCheckResult result =
                     await AppUpdateService.CheckOncePerLaunchAsync().ConfigureAwait(true);
                 // Marshal the apply to the UI thread — UpdateBannerViewModel
                 // raises PropertyChanged events that must hit the UI sync
@@ -1439,7 +1640,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 {
                     await Task.Delay(UpdateRecheckInterval, _timeProvider, ct).ConfigureAwait(false);
 
-                    Core.Updates.UpdateCheckResult result =
+                    Bennewitz.Ninja.AgentForge.Core.Updates.UpdateCheckResult result =
                         await AppUpdateService.CheckPeriodicAsync(ct).ConfigureAwait(false);
 
                     await Dispatcher.UIThread.InvokeAsync(() =>
@@ -1574,7 +1775,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     {
         get
         {
-            HashSet<string> cliNames = new(PlatformPaths.DiscoverProfiles(), StringComparer.OrdinalIgnoreCase);
+            HashSet<string> cliNames = new(PlatformPaths.DiscoverProfiles(_env), StringComparer.OrdinalIgnoreCase);
             HashSet<string> dtNames = new(PlatformPaths.DiscoverDesktopProfiles(), StringComparer.OrdinalIgnoreCase);
 
             List<UnifiedProfileEntry> entries = [UnifiedProfileEntry.Global];
@@ -1717,7 +1918,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             }
         }
 
-        if (ClaudeCodeSdk is null && ClaudeDesktopSdk is null)
+        if (!OpenSections.Any())
         {
             SetStatusWarning(Strings.StatusNothingToSave);
             return;
@@ -1734,7 +1935,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             // Log all pending changes before any modal dialog appears so the
             // changes are always visible in the rolling log and the F12 debug window.
-            WorkspaceDiagnostics.LogPendingChanges(ClaudeCodeSdk, ClaudeDesktopSdk);
+            WorkspaceDiagnostics.LogPendingChanges(DirtySources());
 
             // ── Schema validation ────────────────────────────────────────────────
             // Validate dirty documents before showing any confirmation or writing files.
@@ -1794,7 +1995,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // If there are no content differences (e.g., Save is pressed twice), or the user
             // previously unchecked "Show this dialog on save", skip the dialog.
             SaveChangesDialogViewModel? summaryVm =
-                SaveDialogBuilder.Build(ClaudeCodeSdk, ClaudeDesktopSdk, isRestoreContext);
+                SaveDialogBuilder.Build(DirtySources(), ClaudeSaveDialogText.Create(), isRestoreContext);
             // diagnostic logging for the "silent save" bug report.
             // The user reported clicking Save (button enabled => HasUnsavedChanges
             // is true => structural diff is non-empty) but no dialog appearing.
@@ -1924,14 +2125,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // untouched if it already exists.
                 // 4.3.7 step 9: route through the SDK's dirty-doc snapshot when
                 // available — only the FilePath is needed for the B4Forge copy.
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
-                    CreateB4ForgeBackupsFromPaths(ClaudeCodeSdk.SnapshotDirtyDocuments());
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    CreateB4ForgeBackupsFromPaths(ClaudeDesktopSdk.SnapshotDirtyDocuments());
+                    CreateB4ForgeBackupsFromPaths(section.Client!.SnapshotDirtyDocuments());
                 }
 
                 // route through the SDK's SaveAsync
@@ -1943,14 +2139,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // (after the user opted into "save anyway"), or silently re-validate
                 // after auto-fixes — both are wrong. Falls back to the legacy
                 // SaveDirtyAsync path before the SDK clients are constructed.
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
-                    await ClaudeCodeSdk.SaveAsync(force: true, comment, CancellationToken.None);
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    await ClaudeDesktopSdk.SaveAsync(force: true, comment, CancellationToken.None);
+                    await section.Client!.SaveAsync(force: true, comment, CancellationToken.None);
                 }
 
                 // Suppress the file watcher's reaction to our own write. See
@@ -2066,14 +2257,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         CancellationToken ct = default)
     {
         List<SchemaValidationError> all = [];
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            all.AddRange(await ClaudeCodeSdk.ValidateAsync(ct));
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            all.AddRange(await ClaudeDesktopSdk.ValidateAsync(ct));
+            all.AddRange(await section.Client!.ValidateAsync(ct));
         }
 
         return all;
@@ -2096,8 +2282,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     // Save-confirmation dialog construction (BuildChangeSummaryViewModel +
     // AppendSdkSections + AppendSection + DiffJsonObjects + TruncateJson +
-    // ToDisplayPath) moved to ClaudeForge.Services.SaveDialogBuilder in
-    // cleanup. Call sites use SaveDialogBuilder.Build directly.
+    // ToDisplayPath) moved out of this class; Phase 5 slice 5 then moved the
+    // builder itself to AgentForge.Avalonia.Shell.Save. Call sites use
+    // SaveDialogBuilder.Build directly, passing this app's wording.
 
     /// <summary>
     /// Confirms with the user, deletes the persisted UI-state file, and
@@ -2131,7 +2318,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // process actually exits.
         _suppressStateSave = true;
 
-        string path = WindowStateService.Delete();
+        string path = WindowStateService.Delete(_env);
         string logsDir = PlatformPaths.AppLogsDirectory;
         Log.Information(
             "[ClearAppData] deleted persisted UI state at {Path}; purging {LogDir} and exiting",
@@ -2413,25 +2600,18 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedNodeChanged(NavigationNodeViewModel? value)
     {
-        // Deactivate the previously visible group editor so subsequent shared-scope
-        // changes are deferred (lazy rebuild) rather than executed while hidden.
-        // Also clear any active filter so the next visit starts with the full list.
-        if (ActiveEditor is SettingsGroupEditorViewModel prevGroup)
+        // Let the page being left tidy up — flush a deferred rebuild, clear a filter
+        // the next visit should not inherit. Pages declare this themselves through
+        // INavigablePage; this used to be a chain of `is SomeConcreteViewModel` checks,
+        // which meant a newly added page was silently never told, with no compiler
+        // signal and no symptom beyond stale content.
+        //
+        // The flag says whether a DIFFERENT editor is taking over: several pages survive
+        // a workspace reload and are re-attached to a freshly built node, and one that
+        // discards transient state must not do so when the user never navigated away.
+        if (ActiveEditor is INavigablePage leavingPage)
         {
-            prevGroup.Deactivate();
-        }
-        else if (ActiveEditor is EnvironmentEditorViewModel prevEnv)
-        {
-            prevEnv.FilterText = string.Empty;
-        }
-        else if (ActiveEditor is AgentsSkillsEditorViewModel prevAgents
-                 && !ReferenceEquals(ActiveEditor, value?.Editor))
-        {
-            // Same convention as the Environment page: a user-typed filter is
-            // cleared on the way out so the next visit starts with the full list.
-            // A deep restore applies its own navigation filter afterwards, so this
-            // does not fight the restore path.
-            prevAgents.ApplyNavigationFilter(null);
+            leavingPage.OnNavigatedFrom(!ReferenceEquals(ActiveEditor, value?.Editor));
         }
 
         // Manual navigation (not triggered by a deep link) clears the back stack
@@ -2459,69 +2639,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // flag, which is no longer needed now that headers are interactive.
         ActiveEditor = value.Editor;
 
-        // Activate the newly selected group editor; this flushes any pending
-        // rebuild that accumulated while the page was not visible.
-        if (value.Editor is SettingsGroupEditorViewModel newGroup)
+        // Let the page arriving refresh itself. Same contract as the leave hook above:
+        // the page owns the behaviour, so adding a page cannot forget to register it.
+        if (value.Editor is INavigablePage enteringPage)
         {
-            newGroup.Activate();
-        }
-        else if (value.Editor is AgentsSkillsEditorViewModel agentsVm)
-        {
-            // Deferred first-load (the VM is constructed without an eager disk scan so
-            // profile switches don't pay the filesystem cost when the user never visits
-            // this page) — but RE-scan on every later visit too. EnsureLoaded is one-shot
-            // by design, which meant an agent / skill / command created after the first
-            // visit stayed invisible for the rest of the session.
-            agentsVm.Refresh();
-        }
-        else if (value.Editor is ProfilesViewModel profilesVm)
-        {
-            // Profiles are directories on disk; one created outside the app (or by another
-            // ClaudeForge window) would otherwise not appear until restart.
-            profilesVm.Refresh();
-        }
-        else if (value.Editor is BackupRestoreViewModel backupVm)
-        {
-            // The archive list is a directory listing — re-read it so backups created or
-            // deleted outside the app are reflected.
-            backupVm.Refresh();
-        }
-        else if (value.Editor is AboutEditorViewModel aboutVm)
-        {
-            // Cheap re-probe of the config-file actions only (see the method's remarks):
-            // a settings.json written after launch otherwise leaves "Open Config" disabled
-            // for the session.
-            aboutVm.RefreshConfigAvailability();
-        }
-        else if (value.Editor is MemoryEditorViewModel memoryVm)
-        {
-            // Re-enumerate on every visit. The Tier 1 inventory is a filesystem
-            // snapshot taken once in the VM ctor, so a memory file created AFTER
-            // launch — e.g. the user writes a global ~/.claude/CLAUDE.md — stayed
-            // invisible until they found the Refresh button or restarted the app.
-            // Fire-and-forget: RefreshAsync serialises concurrent callers through
-            // its own gate, so this can't race the bound Refresh button.
-            memoryVm.Refresh();
-        }
-        else if (value.Editor is EssentialsViewModel essentialsVm)
-        {
-            // Essentials is a PERSISTENT VM (survives workspace reloads) that refreshed only
-            // at creation and subscribes to no change event — unlike its siblings Effective
-            // Settings and Environment, which subscribe to _client.Changed. So its cards
-            // (model / effort / token limits / update channel) went stale after an external
-            // settings edit OR an edit made on another page (e.g. changing the model on
-            // Model & Effort). Re-read on nav. Safe from self-write loops: Essentials
-            // live-writes each edit immediately, so there are no pending in-page edits for a
-            // re-read to clobber, and this fires only on nav TO the page.
-            _ = essentialsVm.RefreshAsync(ClaudeCodeSdk);
-        }
-        else if (value.Editor is EnvironmentEditorViewModel envVm)
-        {
-            // Environment rebuilds on _client.Changed for SETTINGS edits, but a pure OS
-            // environment-variable change (a User / Machine var set outside the app, no
-            // settings change) has no such signal. Re-read on nav so it's caught. Reload()
-            // preserves the current selection and is a cheap registry/env read.
-            envVm.Reload();
+            enteringPage.OnNavigatedTo();
         }
 
         // Page-navigation trace: every landed-on page (user click, deep link, or
@@ -2532,7 +2654,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _lastNodeTitle = value.Title;
         SaveWindowState();
 
-        // A queued deep restore fires AFTER the per-VM refresh branch above, so
+        // A queued deep restore fires AFTER the page's OnNavigatedTo hook above, so
         // the walk it awaits (via LastRefresh) is already under way.  Runs after
         // SaveWindowState deliberately: the restore mutates the page's position,
         // and letting it write back through the save path here would persist a
@@ -2948,6 +3070,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Dispatcher.UIThread.Post(
                 () =>
                 {
+                    // ⛔ This used to type-test for AgentsSkillsEditorViewModel, so the
+                    // post-layout tab re-apply reached exactly ONE page and every other
+                    // tabbed page silently kept whatever tab it defaulted to. ReapplyTab is
+                    // on the interface with a do-nothing default, so asking every navigable
+                    // page costs nothing and stops the next tabbed page being forgotten.
                     if (pending.Segments.Count > 0)
                     {
                         navigable.ReapplyTab(pending.Segments);
@@ -3259,7 +3386,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (ClaudeCodeSdk is null && ClaudeDesktopSdk is null)
+        if (!OpenSections.Any())
         {
             SetStatusWarning(Strings.StatusNothingToExport);
             return;
@@ -3276,26 +3403,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     CreatedUtc = DateTime.UtcNow,
                     Platform = PlatformPaths.PlatformId,
                     AppVersion = AppVersion,
-                    IncludesClaudeCode = ClaudeCodeSdk is not null,
-                    IncludesClaudeDesktop = ClaudeDesktopSdk is not null,
+                    // Same sequence the entry loop below walks, so the manifest's product
+                    // list and the archive's folders cannot disagree. The pair of
+                    // `ClaudeCodeSdk is not null` checks this replaced said the same thing
+                    // only as long as there were exactly two products.
+                    Clients = [.. OpenSections.Select(s => s.Product.ArchiveFolder)],
                     HeaderComment = comment,
                 };
 
-                if (ClaudeCodeSdk is not null)
+                foreach (ProductSection section in OpenSections)
                 {
                     JsonObject stamped = EffectiveConfigBuilder.Stamp(
-                        ClaudeCodeSdk.ComputeEffectiveSnapshot(), comment);
+                        section.Client!.ComputeEffectiveSnapshot(), comment);
                     writer.AddTextEntry(
-                        "ClaudeCode/.claude/settings.json",
-                        stamped.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-                }
-
-                if (ClaudeDesktopSdk is not null)
-                {
-                    JsonObject stamped = EffectiveConfigBuilder.Stamp(
-                        ClaudeDesktopSdk.ComputeEffectiveSnapshot(), comment);
-                    writer.AddTextEntry(
-                        "ClaudeDesktop/claude_desktop_config.json",
+                        section.ExportEntryPath,
                         stamped.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                 }
 
@@ -3451,7 +3572,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _cachedState.LastBackupUtc = _backupVm.LastBackupUtc;
         }
 
-        WindowStateService.Save(_cachedState);
+        WindowStateService.Save(_env, _cachedState);
     }
 
     public SavedWindowGeometry GetSavedGeometry()
@@ -3535,7 +3656,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 // above.  Even if THIS task is cancelled, the cache mutation
                 // already happened, and any subsequent SaveWindowState() (or
                 // the OnClosed shutdown hook) will persist the correct value.
-                WindowStateService.Save(_cachedState);
+                WindowStateService.Save(_env, _cachedState);
             }
             catch (OperationCanceledException)
             {
@@ -3587,7 +3708,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Wire dirty-tracking onto the SDK clients' <see cref="Sdk.IClaudeConfigClient.Changed"/>
+    /// Wire dirty-tracking onto the SDK clients' <see cref="Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient.Changed"/>
     /// event. the SDK forwards every workspace mutation
     /// (SDK-initiated or via direct <c>workspace.SetValue</c> from the editor
     /// live-write loop), so MWVM only needs to subscribe in one place.
@@ -3600,27 +3721,17 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </remarks>
     private void SubscribeWorkspaceChangedEvents()
     {
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            ClaudeCodeSdk.Changed += OnSdkClientChanged;
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            ClaudeDesktopSdk.Changed += OnSdkClientChanged;
+            section.Client!.Changed += OnSdkClientChanged;
         }
     }
 
     private void UnsubscribeWorkspaceChangedEvents()
     {
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            ClaudeCodeSdk.Changed -= OnSdkClientChanged;
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            ClaudeDesktopSdk.Changed -= OnSdkClientChanged;
+            section.Client!.Changed -= OnSdkClientChanged;
         }
     }
 
@@ -3631,7 +3742,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// recomputation is identical for all three.
     /// </summary>
     /// <remarks>
-    /// Phase 1.1 — UI-thread dispatch. The SDK raises <see cref="Sdk.IClaudeConfigClient.Changed"/>
+    /// Phase 1.1 — UI-thread dispatch. The SDK raises <see cref="Bennewitz.Ninja.AgentForge.Sdk.IAgentConfigClient.Changed"/>
     /// synchronously from whatever thread invoked the mutation. Most callers
     /// are on the UI thread (editor property changes, Save command), but
     /// file-watcher reloads, backup/restore, and profile-switch paths can
@@ -3683,12 +3794,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     private bool ComputeHasActualChanges()
     {
-        return (ClaudeCodeSdk?.HasUnsavedChanges ?? false) ||
-               (ClaudeDesktopSdk?.HasUnsavedChanges ?? false);
+        return OpenSections.Any(s => s.Client!.HasUnsavedChanges);
     }
 
     /// <summary>
-    /// Test seam: returns the live <see cref="Sdk.ClaudeConfigClientCore"/>
+    /// Test seam: returns the live <see cref="Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore"/>
     /// so tests can drive <c>SetValue</c> / <c>RemoveValue</c> through the
     /// SDK and see the same Changed-event flow that production code does.
     /// Returns <see langword="null"/> before
@@ -3700,7 +3810,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <c>GetClaudeCodeWorkspaceForTesting()</c> seam was retired in step 15
     /// — every test path now flows through the SDK.
     /// </remarks>
-    internal ClaudeConfigClientCore? GetClaudeCodeSdkClientForTesting()
+    internal AgentConfigClientCore? GetClaudeCodeSdkClientForTesting()
     {
         return ClaudeCodeSdk;
     }
@@ -3760,7 +3870,67 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// transactional-reload tests can drive it directly without spinning
     /// up the full app event loop.
     /// </summary>
-    internal async Task LoadAllWorkspacesAsync()
+    /// <remarks>
+    /// <para>
+    /// <b>Overlapping calls are serialised here, and that is load-bearing.</b> The body
+    /// disposes the previous SDK clients and then rebuilds the navigation tree against the
+    /// new ones. Two overlapping calls interleave at their <c>await</c> points on the UI
+    /// dispatcher, so one could reach <c>ClaudeCodeSdk?.Dispose()</c> while the other was
+    /// still inside <see cref="BuildNavigationTreeAsync"/> — the tree build then threw
+    /// <see cref="ObjectDisposedException"/> from <c>PermissionsAccessor.GetDefaultModeAt</c>.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>_reloadPending</c> did not cover this, despite a comment that said it did.</b>
+    /// That guard lives in <see cref="ReloadCoreAsync"/>. <see cref="OpenProjectAsync"/> sets
+    /// <c>IsLoading</c> but never checks it, and awaits a folder dialog first — so a
+    /// file-watcher reload could begin while that dialog was open and Open Project would
+    /// proceed regardless. Guarding the callers is what failed; the invariant belongs to the
+    /// method doing the destructive swap.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Serialised, deliberately NOT coalesced.</b> Returning one shared task to
+    /// overlapping callers is the obvious version and it is wrong here:
+    /// <see cref="OpenProjectAsync"/> mutates <see cref="ProjectRoot"/> <i>before</i> calling,
+    /// so a caller that joined an in-flight load would silently never open the newly chosen
+    /// project. Every caller gets a full load, in call order.
+    /// </para>
+    /// </remarks>
+    internal Task LoadAllWorkspacesAsync()
+    {
+        // Chain onto whatever is already running rather than taking a lock. A non-reentrant
+        // lock would deadlock if the load path ever re-entered this method, and the load path
+        // does raise property-change notifications that can drive profile selection — the
+        // reason _suppressProfileChangeReload exists. Chaining cannot deadlock: a re-entrant
+        // caller is simply queued behind the load it came from.
+        //
+        // Safe to read-modify-write without interlocking because every caller is on the
+        // Avalonia UI thread; the assignment happens before the first await inside Chained.
+        Task prior = _loadChain;
+        _loadChain = Chained(prior);
+        return _loadChain;
+
+        async Task Chained(Task previous)
+        {
+            try
+            {
+                await previous.ConfigureAwait(true);
+            }
+            catch
+            {
+                // A prior load's failure is that caller's to report — it must not prevent
+                // this one from running. LoadAllWorkspacesCoreAsync surfaces its own status.
+            }
+
+            await LoadAllWorkspacesCoreAsync().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// The reload itself. Never call directly — go through
+    /// <see cref="LoadAllWorkspacesAsync"/>, which serialises overlapping calls. Its remarks
+    /// explain why that matters.
+    /// </summary>
+    private async Task LoadAllWorkspacesCoreAsync()
     {
         // Transactional reload.
         //
@@ -3830,8 +4000,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // contribute to each workspace given the active profile).
         string? cliProfile = (!entry.IsGlobal && entry.HasCli) ? entry.Name : null;
         IReadOnlyList<DiscoveredFile> settingsFiles =
-            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ProjectRoot, cliProfile);
-        IReadOnlyList<DiscoveredFile> mcpFiles = ConfigFileDiscoverer.DiscoverMcpFiles(ProjectRoot, cliProfile);
+            ConfigFileDiscoverer.DiscoverClaudeCodeSettings(_env, ProjectRoot, cliProfile);
+        IReadOnlyList<DiscoveredFile> mcpFiles = ConfigFileDiscoverer.DiscoverMcpFiles(_env, ProjectRoot, cliProfile);
         IReadOnlyList<DiscoveredFile> ccFiles = (IReadOnlyList<DiscoveredFile>)[..settingsFiles, ..mcpFiles];
 
         string? dtProfile = (!entry.IsGlobal && entry.HasDesktop) ? entry.Name : null;
@@ -3846,8 +4016,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         SettingsWorkspace dtCandidate;
         try
         {
-            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles);
-            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles);
+            // Both candidates are Claude products, so both take Claude's merge rules —
+            // the same policy the SDK clients supply for their own loads.
+            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles, ClaudeMergePolicy.Instance);
+            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles, ClaudeMergePolicy.Instance);
         }
         catch (Exception ex) when (ex is JsonException
                                        or IOException
@@ -3865,6 +4037,34 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             return; // bail BEFORE touching any state
         }
 
+        // ⚠ The catch above is NOT sufficient on its own, and for years it was the only check.
+        // ConfigFileLoader deliberately does not throw on a malformed file — it degrades to an
+        // empty root so the editor survives a corrupt file (a contract pinned by
+        // ConfigFileLoaderTests). So a truncate-then-rewrite race produces a workspace that
+        // loads "successfully" and merely looks empty, PHASE 1 sees no exception, and the swap
+        // below installs it. The next save then writes that emptiness over the user's real
+        // settings — exactly what the loader's own comment warned about.
+        //
+        // Ask the candidates whether their files actually parsed. Both are checked before
+        // either is installed, which is what makes the reload all-or-nothing ACROSS products:
+        // a valid Claude Code file must not be swapped in while Claude Desktop's is corrupt.
+        //
+        // Found 2026-08-18 by un-inerting TransactionalReloadTests, whose three assertions of
+        // this contract had never been able to fail.
+        SettingsDocument? unparseable = ccCandidate.FailedDocuments
+                                                   .Concat(dtCandidate.FailedDocuments)
+                                                   .FirstOrDefault();
+        if (unparseable is not null)
+        {
+            Log.Warning(
+                "[Reload] {File} could not be parsed ({Reason}); existing in-memory workspace preserved",
+                unparseable.FilePath, unparseable.LoadFailure);
+            SetStatusFailure(string.Format(
+                Strings.StatusReloadFailedFmt,
+                SanitiseLoadFailureForStatus(unparseable.FilePath, unparseable.LoadFailure)));
+            return; // bail BEFORE touching any state — same contract as the catch above
+        }
+
         // ── PHASE 2 — destructive swap (no throw points past here) ──────────
 
         // Detach change listeners from the about-to-be-replaced workspaces and reset the
@@ -3877,13 +4077,15 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // SDK client is the only state holder. On reload, dispose the
         // previous SDK client so its SemaphoreSlim doesn't leak. The
         // injected SchemaRegistry is owned by MWVM, so it survives.
+        IConfigWriter? writer = SelectedConfigWriter();
+
         ClaudeCodeSdk?.Dispose();
         ClaudeCodeSdk = ClaudeCodeClient.FromExistingWorkspace(
-            ccCandidate, ConfigScope.User, _schemaRegistry);
+            _env, ccCandidate, ConfigScope.User, _schemaRegistry, writer);
 
         ClaudeDesktopSdk?.Dispose();
         ClaudeDesktopSdk = ClaudeDesktopClient.FromExistingWorkspace(
-            dtCandidate, ConfigScope.User, _schemaRegistry);
+            dtCandidate, ConfigScope.User, _schemaRegistry, writer);
 
         // Recompute the install-guidance banner.
         //
@@ -3899,7 +4101,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         //
         // The --showInstallBanner debug flag forces the banner on unconditionally
         // (useful for UI testing the banner on a machine with Claude installed).
-        bool neitherInstalled = !PlatformPaths.IsClaudeCodeInstalled && !PlatformPaths.IsDesktopInstalled;
+        bool neitherInstalled = !PlatformPaths.IsClaudeCodeInstalled(_env) && !PlatformPaths.IsDesktopInstalled;
         if (!neitherInstalled)
         {
             _bannerDismissedByUser = false; // product detected — reset so banner can re-show later
@@ -3909,7 +4111,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                             || (neitherInstalled && !_bannerDismissedByUser);
 
         // Refresh the active-profile badges so they reflect the current pointer files.
-        CliActiveProfileName = ProfileEngine.ReadCurrentProfileName();
+        CliActiveProfileName = ProfileEngine.ReadCurrentProfileName(_env);
         DesktopActiveProfileName = ProfileEngine.ReadCurrentDesktopProfileName();
 
         // Update the editing-scope selector to only show scopes with loaded documents.
@@ -3958,7 +4160,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Aggregate of <see cref="IClaudeConfigClient.ValidateAllAsync"/> across
+    /// Aggregate of <see cref="IAgentConfigClient.ValidateAllAsync"/> across
     /// both product clients, returning every currently-invalid field in the
     /// loaded workspace (not just user-introduced deltas).  Backs the
     /// post-reload schema-violation banner.
@@ -3967,14 +4169,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         CancellationToken ct = default)
     {
         List<SchemaValidationError> all = [];
-        if (ClaudeCodeSdk is not null)
+        foreach (ProductSection section in OpenSections)
         {
-            all.AddRange(await ClaudeCodeSdk.ValidateAllAsync(ct));
-        }
-
-        if (ClaudeDesktopSdk is not null)
-        {
-            all.AddRange(await ClaudeDesktopSdk.ValidateAllAsync(ct));
+            all.AddRange(await section.Client!.ValidateAllAsync(ct));
         }
 
         return all;
@@ -4014,6 +4211,154 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             UnsupportedShapeText.NoticeTitle,
             UnsupportedShapeText.NoticeHeader,
             paths);
+    }
+
+    /// <summary>
+    /// Label a section header with which copy of its schema the pages beneath it were built
+    /// from. Mirrors <c>OpenCodeForge</c>'s applier of the same name.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Network-first made this necessary, and in this app it says more than it does in
+    /// OpenCodeForge.</b> ClaudeForge builds ONE registry and hands it to both SDK clients, so
+    /// the copy this badge reports is also the copy save-validation evaluates against. In
+    /// OpenCodeForge the two are separate instances that merely agree, and its badge is
+    /// careful to claim only the former.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>A product with no upstream gets a different tooltip, and this is not cosmetic.</b>
+    /// Claude Desktop's schema is hand-maintained — its <c>$id</c> is a bare token, so
+    /// <see cref="ProductDescriptor.SchemaUrl"/> is <c>bundled://…</c> and no fetch is ever
+    /// attempted. The ordinary bundled tooltip says the app "tried to fetch a newer copy and
+    /// could not", which for that section would be a plain untruth pointing the reader at a
+    /// network problem they do not have.
+    /// </para>
+    /// <para>
+    /// ⓘ The null-provenance early return is defensive. By the time the nav is built,
+    /// <c>LoadAllWorkspacesCoreAsync</c> has awaited both schemas or thrown; it stays because
+    /// <c>ProvenanceFor</c> is genuinely nullable and no badge is the honest rendering of
+    /// "not loaded", which is a different fact from "loaded from the binary".
+    /// </para>
+    /// </remarks>
+    internal static void ApplyProvenanceBadge(
+        NavigationNodeViewModel header, SchemaRegistry registry, ProductDescriptor product)
+    {
+        ArgumentNullException.ThrowIfNull(header);
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(product);
+
+        SchemaProvenance? provenance = registry.ProvenanceFor(product.SchemaFileName);
+        if (provenance is null)
+        {
+            return;
+        }
+
+        if (provenance.Source == SchemaSource.Bundled)
+        {
+            // Fetchability is read off the descriptor rather than listed here: a product
+            // gaining a published schema is then one URL edit, not a URL edit plus a branch
+            // somebody has to remember exists.
+            bool hasUpstream = product.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+
+            header.Badge = Strings.SchemaBadgeBundled;
+            header.BadgeTooltip = string.Format(
+                CultureInfo.CurrentCulture,
+                hasUpstream ? Strings.SchemaBadgeTooltipBundledFmt : Strings.SchemaBadgeTooltipNoUpstreamFmt,
+                provenance.ShortSha);
+            return;
+        }
+
+        // Local time, not UTC: the badge is read by a human looking at a clock, and the
+        // tooltip carries the digest for anything that needs comparing across machines.
+        string when = provenance.FetchedUtc is { } utc
+            ? utc.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)
+            : string.Empty;
+
+        header.Badge = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeFetchedFmt, when);
+        header.BadgeTooltip = string.Format(
+            CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipFetchedFmt, when, provenance.ShortSha);
+    }
+
+    /// <summary>
+    /// Re-fetch every product schema that has an upstream, re-label the nav badges, and
+    /// return a localized one-line summary for the caller to show. Backs the About dialog's
+    /// <em>Check for schema updates</em> button.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>This is what makes <c>NavigationNodeViewModel.Badge</c> observable rather than
+    /// <c>init</c>.</b> The nav nodes were built at load time; re-badging them in place is the
+    /// only way a mid-session check can be visible without discarding the tree — and
+    /// discarding the tree would throw away expansion state, selection and any editor the
+    /// user is part-way through.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>It deliberately does NOT reload.</b> The pages on screen were built from the
+    /// previous copy, so an <c>Updated</c> result means badge and tree now disagree — which
+    /// is why the summary says to reload rather than implying the change already took effect.
+    /// Reloading automatically would interrupt or discard unsaved edits from a button whose
+    /// label says "check", and the schema is picked up on the next launch regardless.
+    /// </para>
+    /// </remarks>
+    internal async Task<string> CheckForSchemaUpdatesAsync(CancellationToken ct = default)
+    {
+        IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher
+            .RefreshAsync(_schemaRegistry, _sections.Select(s => s.Product), ct)
+            .ConfigureAwait(true);
+
+        // Every section, not only the checked ones: a product with no upstream still has a
+        // badge, and leaving it alone here is what keeps this method's effect equal to
+        // "re-read provenance" rather than "re-read the products I happened to fetch".
+        foreach (ProductSection section in _sections)
+        {
+            NavigationNodeViewModel? header = NavigationTree
+                .FirstOrDefault(n => string.Equals(n.Title, section.NavTitle, StringComparison.Ordinal));
+
+            if (header is not null)
+            {
+                ApplyProvenanceBadge(header, _schemaRegistry, section.Product);
+            }
+        }
+
+        return SummariseSchemaCheck(results);
+    }
+
+    /// <summary>
+    /// Turn per-product results into the one line the dialog shows.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Severity order, not concatenation:</b> Failed, then Updated, then Unavailable,
+    /// then up-to-date. A mixed run reports its most actionable outcome, because the row this
+    /// lands in is one line and a sentence per product would overflow it. The per-product
+    /// detail is in the log and in each section's own badge, which this method's caller has
+    /// just refreshed.
+    /// </remarks>
+    internal static string SummariseSchemaCheck(IReadOnlyList<SchemaRefreshResult> results)
+    {
+        ArgumentNullException.ThrowIfNull(results);
+
+        static string Names(IEnumerable<SchemaRefreshResult> subset) =>
+            string.Join(", ", subset.Select(r => r.Product.DisplayName));
+
+        List<SchemaRefreshResult> failed = [.. results.Where(r => r.Status == SchemaRefreshStatus.Failed)];
+        if (failed.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckFailedFmt, Names(failed));
+        }
+
+        List<SchemaRefreshResult> updated = [.. results.Where(r => r.Status == SchemaRefreshStatus.Updated)];
+        if (updated.Count > 0)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckUpdatedFmt, Names(updated));
+        }
+
+        if (results.Any(r => r.Status == SchemaRefreshStatus.Unavailable))
+        {
+            return Strings.SchemaCheckUnavailable;
+        }
+
+        return Strings.SchemaCheckUpToDate;
     }
 
     private async Task BuildNavigationTreeAsync(
@@ -4124,18 +4469,26 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // the whole load, so nothing can navigate to a not-yet-attached node.
         SettingsWorkspace? ccWorkspace = ClaudeCodeSdk?.WorkspaceForGui;
         SettingsWorkspace? dtWorkspace = ClaudeDesktopSdk?.WorkspaceForGui;
-        ClaudeConfigClientCore? ccSdk = ClaudeCodeSdk;
-        ClaudeConfigClientCore? dtSdk = ClaudeDesktopSdk;
+        ClaudeConfigClientBase? ccSdk = ClaudeCodeSdk;
+        ClaudeConfigClientBase? dtSdk = ClaudeDesktopSdk;
         System.Diagnostics.Stopwatch editorBuildSw = System.Diagnostics.Stopwatch.StartNew();
         (IReadOnlyList<NavigationGroup> Cc, IReadOnlyList<NavigationGroup> Dt) builtGroups =
             await Task.Run(() => (
                 ccWorkspace is not null && ccSdk is not null
+                    // Each product's rows carry that product's own danger table, read off its
+                    // section rather than named here — the save dialog reads the same field, and
+                    // two literals would agree only by vigilance. ⛔ Desktop's is null on purpose:
+                    // the two schemas share almost no key names, so reusing Claude Code's would
+                    // label Desktop's page with a policy written about a different product —
+                    // silently blank for most keys, confidently wrong on any that collide.
                     ? NavigationTreeBuilder.BuildGroups(
-                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes)
+                        ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes,
+                        SectionFor(SchemaRegistry.ClaudeCodeProductId).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
                 dtWorkspace is not null && dtSdk is not null
                     ? NavigationTreeBuilder.BuildGroups(
-                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes)
+                        dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes,
+                        SectionFor(SchemaRegistry.ClaudeDesktopProduct).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>()));
         editorBuildSw.Stop();
         Log.Debug(
@@ -4169,9 +4522,15 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // H-2: persistent About VM (lazy-init once, reuse across reloads).
         _aboutCodeVm ??= new AboutEditorViewModel(
+            _env,
             AboutProduct.ClaudeCode,
             dialogService: DialogServiceForViewAccess,
-            shareService: _shareService);
+            shareService: _shareService)
+        {
+            // ⚠ Inside the `??=`, so it is wired once with the cached instance rather than on
+            // every navigation rebuild. Share log had no status surface at all before this.
+            OnTerminalStatus = RouteTerminalStatus,
+        };
         ccHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
             // Same id as the Claude Desktop sibling below \u2014 ids are unique per
@@ -4181,6 +4540,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutCodeVm,
         });
 
+        ApplyProvenanceBadge(ccHeader, _schemaRegistry, SchemaRegistry.ClaudeCodeProductFor(_env));
         NavigationTree.Add(ccHeader);
 
         // --- Claude Desktop section ---
@@ -4210,15 +4570,20 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // H-2: persistent About VM (lazy-init once, reuse across reloads).
         _aboutDesktopVm ??= new AboutEditorViewModel(
+            _env,
             AboutProduct.ClaudeDesktop,
             dialogService: DialogServiceForViewAccess,
-            shareService: _shareService);
+            shareService: _shareService)
+        {
+            OnTerminalStatus = RouteTerminalStatus,
+        };
         dtHeader.Children.Add(new NavigationNodeViewModel(NavTitleVersionInfo, "\u2139", NavDescVersionInfo)
         {
             NodeId = NavIdVersionInfo,
             Editor = _aboutDesktopVm,
         });
 
+        ApplyProvenanceBadge(dtHeader, _schemaRegistry, SchemaRegistry.ClaudeDesktopProduct);
         NavigationTree.Add(dtHeader);
 
         // One-time aggregated LOG entry if any setting in either section has no
@@ -4233,8 +4598,19 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleEffectiveSettings, "📊", NavDescEffectiveSettings)
         {
             NodeId = NavIdEffectiveSettings,
+            // The danger table is Claude CODE's, and so is this page: it reads ClaudeCodeSdk and
+            // ccNodes. Passing it explicitly rather than letting the VM default keeps that pairing
+            // visible at the one place where it is actually true — Claude Desktop's settings are
+            // not governed by this policy.
             Editor = new EffectiveSettingsViewModel(ClaudeCodeSdk!, ProjectRoot, _shareService,
-                SchemaTreeBuilder.CollectDescriptions(ccNodes)),
+                SchemaTreeBuilder.CollectDescriptions(ccNodes),
+                ClaudeDangerTable.Settings)
+            {
+                // Share outcomes reach the centre pill, exactly as backup/restore's do. Without
+                // this the page has no status surface at all — it does not even carry a
+                // page-local label — so the button would go on acknowledging nothing.
+                OnTerminalStatus = RouteTerminalStatus,
+            },
             IsTopLevel = true,
         });
 
@@ -4246,7 +4622,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // so the disk-backed list reflects post-reload state.
         if (_profilesVm is null)
         {
-            _profilesVm = new ProfilesViewModel(DialogServiceForViewAccess);
+            _profilesVm = new ProfilesViewModel(_env, DialogServiceForViewAccess);
             _profilesVm.OnProfileApplied = async appliedName =>
             {
                 // Sync the toolbar ComboBox so the GUI now edits the same profile the CLI uses.
@@ -4294,7 +4670,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
                 // The CLI-active badge is already cleared inside ProfilesViewModel.DeleteAsync
                 // when the deleted profile was CLI-active; re-read to be safe.
-                CliActiveProfileName = ProfileEngine.ReadCurrentProfileName();
+                CliActiveProfileName = ProfileEngine.ReadCurrentProfileName(_env);
             };
             _profilesVm.OnProfileCreated = createdName =>
             {
@@ -4356,7 +4732,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         Log.Information(
             "[Profiles] After load: {Count} unified entries discovered (CLI: {CliCount}, Desktop: {DesktopCount})",
             AvailableProfileEntries.Count,
-            PlatformPaths.DiscoverProfiles().Count,
+            PlatformPaths.DiscoverProfiles(_env).Count,
             PlatformPaths.DiscoverDesktopProfiles().Count);
 
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleProfiles, "👤", NavDescProfiles)
@@ -4381,7 +4757,13 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // OnBackupStateChanged on every Backup VM update.
         if (_backupVm is null)
         {
-            _backupVm = new BackupRestoreViewModel(DialogServiceForViewAccess, _shareService)
+            // The shell's own section list drives the Backup tab's per-product checkboxes,
+            // so the two lists cannot drift: a product this window hosts is a product the
+            // user can back up.
+            _backupVm = new BackupRestoreViewModel(
+                DialogServiceForViewAccess,
+                ClaudeBackupPage.Options(_env, _sections.Select(s => s.Product).ToList()),
+                _shareService)
             {
                 CredentialsPreference = _cachedState.IncludeCredentialsInBackup,
                 LastBackupUtc = _cachedState.LastBackupUtc,
@@ -4398,20 +4780,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 IsAnyWorkspaceDirty = () => ComputeHasActualChanges(),
                 SaveAllWorkspaces = SaveForBackupOrRestoreAsync,
                 OnRestoreCompleted = ReloadAsync,
-                // route backup/restore terminal outcomes
-                // through the centre status bar pill in addition to
-                // the page-local label.
-                OnTerminalStatus = (text, isFailure) =>
-                {
-                    if (isFailure)
-                    {
-                        SetStatusFailure(text);
-                    }
-                    else
-                    {
-                        SetStatusSuccess(text);
-                    }
-                },
+                // route backup/restore terminal outcomes — and, since F3's siblings, the
+                // Share-archive outcome too — through the centre status bar pill in addition
+                // to the page-local label.
+                OnTerminalStatus = RouteTerminalStatus,
             };
             _backupVm.PersistentStateChanged += OnBackupStateChanged;
         }
@@ -4486,7 +4858,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         NavigationTree.Add(new NavigationNodeViewModel(NavTitleAgentsSkills, "🧩", NavDescAgentsSkills)
         {
             NodeId = NavIdAgentsSkills,
-            Editor = new AgentsSkillsEditorViewModel(ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess)
+            Editor = new AgentsSkillsEditorViewModel(
+                _env, ProjectRoot, ShellLauncher.Instance, DialogServiceForViewAccess)
             {
                 // The page can only build a full deep link if it knows the node it
                 // is hosted under; passing it in beats hardcoding the id twice.
@@ -4628,10 +5001,55 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         _watcher?.Dispose();
         _watcher = new ConfigFileWatcher();
         _watcher.FileChanged += OnFileChangedExternally;
-        foreach (DiscoveredFile f in files.Where(f => f.Exists))
+        _watchedFiles.Clear();
+
+        int watched = 0;
+        foreach (DiscoveredFile f in files)
         {
-            _watcher.Watch(f.FilePath);
+            // ⛔ THIS USED TO FILTER ON f.Exists, AND THAT LOST THREE OF SIX FILES.
+            // ConfigFileWatcher.Watch needs only the containing DIRECTORY; it registers a
+            // FileSystemWatcher(dir, name) and already raises Created when the file appears. So
+            // filtering on the file existing was never necessary, and it meant a config created
+            // while the app was running — settings.local.json, .mcp.json — was invisible until
+            // some unrelated change forced a re-arm. The symptom is "sometimes it notices my new
+            // file, sometimes it never does", which is the worst kind of bug to report.
+            //
+            // Surfaced by the event log added the same day: every re-arm printed
+            // "armed for 3 of 6 discovered file(s)" and the three names next to it.
+            string? directory = Path.GetDirectoryName(f.FilePath);
+            if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
+            {
+                _watcher.Watch(f.FilePath);
+                _watchedFiles[f.FilePath] = f;
+                watched++;
+                EnqueueWatcherEvent(
+                    f.FilePath,
+                    f.Exists ? "watching" : "watching (file does not exist yet)",
+                    f);
+            }
+            else
+            {
+                // The only remaining reason to skip: Watch would no-op anyway.
+                EnqueueWatcherEvent(f.FilePath, "NOT watched, directory does not exist", f);
+            }
         }
+
+        EnqueueWatcherEvent(
+            "(watcher setup)",
+            $"armed for {watched} of {files.Count} discovered file(s)");
+    }
+
+    /// <summary>Scope and identity of a discovered file, for the event log.</summary>
+    private static string Describe(DiscoveredFile? f)
+    {
+        if (f is null)
+        {
+            return "scope=unknown";
+        }
+
+        string profile = f.ProfileName is null ? string.Empty : $", profile={f.ProfileName}";
+        string readOnly = f.IsReadOnly ? ", read-only" : string.Empty;
+        return $"scope={f.Scope}, type={f.FileType}{profile}{readOnly}";
     }
 
     private void OnFileChangedExternally(object? sender, string filePath)
@@ -4691,10 +5109,16 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// branch of <see cref="OnFileChangedExternally"/> so the user sees EVERY
     /// debounced event, not just the ones that trigger a reload.
     /// </summary>
-    private static void EnqueueWatcherEvent(string filePath, string disposition)
+    private void EnqueueWatcherEvent(string filePath, string disposition, DiscoveredFile? known = null)
     {
+        DiscoveredFile? descriptor = known;
+        if (descriptor is null)
+        {
+            _watchedFiles.TryGetValue(filePath, out descriptor);
+        }
+
         AvaloniaDiagnostics.EnqueueEvent(
-            $"{DateTime.Now:HH:mm:ss.fff}  {filePath}  — {disposition}");
+            $"{DateTime.Now:HH:mm:ss.fff}  [{Describe(descriptor)}]  {filePath}  — {disposition}");
     }
 
     /// <summary>
@@ -4827,10 +5251,11 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
         // SDK clients release their internal SemaphoreSlim. Dispose them before
         // the SchemaRegistry below so they don't observe a half-disposed registry.
-        ClaudeCodeSdk?.Dispose();
-        ClaudeCodeSdk = null;
-        ClaudeDesktopSdk?.Dispose();
-        ClaudeDesktopSdk = null;
+        foreach (ProductSection section in _sections)
+        {
+            section.Client?.Dispose();
+            section.Client = null;
+        }
         _watcher?.Dispose();
         _schemaRegistry.Dispose();
     }

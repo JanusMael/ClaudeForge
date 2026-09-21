@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -250,7 +250,7 @@ public sealed class AgentsSkillsFilterTests
         Write(Path.Combine(Home, "skills", "pdf-skill", "SKILL.md"), "---\nname: pdf-skill\n---\n\nB.\n");
         Write(Path.Combine(Home, "commands", "pdf-cmd.md"), "---\ndescription: d\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         vm.FilterText = "pdf";
@@ -267,7 +267,7 @@ public sealed class AgentsSkillsFilterTests
         Write(Path.Combine(Home, "agents", "alpha.md"), "---\nname: alpha\n---\n\nB.\n");
         Write(Path.Combine(Home, "agents", "beta.md"), "---\nname: beta\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         vm.FilterText = "alpha";
         Assert.AreEqual(1, vm.FilteredAgentItems.OfType<ArtifactRowViewModel>().Count());
@@ -283,7 +283,7 @@ public sealed class AgentsSkillsFilterTests
     {
         // Regression guard: the view binds the computed projections, so a rebuild
         // that doesn't announce them leaves the UI rendering stale lists.
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         Write(Path.Combine(Home, "agents", "alpha.md"), "---\nname: alpha\n---\n\nB.\n");
 
         List<string> raised = [];
@@ -313,7 +313,7 @@ public sealed class AgentsSkillsFilterTests
         Write(Path.Combine(Home, "skills", "alpha", "SKILL.md"),
             "---\nname: alpha\ndescription: Converts PDF documents\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
 
         // Subscribe BEFORE RefreshAsync. The refresh starts the description fill
         // internally (LastDescriptionFill is assigned inside it), so subscribing
@@ -353,7 +353,7 @@ public sealed class AgentsSkillsFilterTests
     [TestMethod]
     public async Task ApplyNavigationFilter_FlagsNavigationThenUserEditClearsIt()
     {
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         vm.ApplyNavigationFilter("alpha");
@@ -368,7 +368,7 @@ public sealed class AgentsSkillsFilterTests
     [TestMethod]
     public async Task ApplyNavigationFilter_WithEmpty_DoesNotFlagNavigation()
     {
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         vm.ApplyNavigationFilter(null);
@@ -380,7 +380,7 @@ public sealed class AgentsSkillsFilterTests
     [TestMethod]
     public async Task ClearFilter_AfterNavigationFilter_DropsTheFrame()
     {
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         vm.ApplyNavigationFilter("alpha");
 
@@ -397,7 +397,7 @@ public sealed class AgentsSkillsFilterTests
         Write(Path.Combine(Home, "agents", "beta.md"), "---\nname: beta\n---\n\nB.\n");
         Write(Path.Combine(Home, "skills", "gamma", "SKILL.md"), "---\nname: gamma\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         // Segment 0 = sub-agents.
@@ -429,7 +429,7 @@ public sealed class AgentsSkillsFilterTests
         Write(Path.Combine(Home, "skills", "beta", "SKILL.md"), "---\nname: beta\n---\n\nB.\n");
         Write(Path.Combine(Home, "commands", "gamma.md"), "---\ndescription: d\n---\n\nB.\n");
 
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         CollectionAssert.AreEquivalent(

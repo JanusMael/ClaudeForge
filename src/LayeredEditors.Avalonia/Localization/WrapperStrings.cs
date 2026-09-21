@@ -1,15 +1,25 @@
-// Default English strings for the library-side PropertyEditorWrapper chrome.
+// Default English strings for the library-side chrome: the PropertyEditorWrapper,
+// and the Themes/*.axaml styles this library ships.
 //
 // The library wrapper is consumed as a fallback by external users of
-// LayeredEditors.Avalonia who don't supply their own; ClaudeForge supplies
-// its own fully-localised wrapper at src/ClaudeForge/Controls/PropertyEditorWrapper.axaml
-// so this default surface rarely renders in the host app — but the strings
+// LayeredEditors.Avalonia who don't supply their own; a host app can supply
+// its own fully-localised wrapper control instead, so this default surface
+// rarely renders in a complete app — but the strings
 // still need to be overridable so the library is genuinely reusable.
+// The Themes strings (the spinner button names) DO render in every host,
+// because every host that includes the theme bundle gets those styles.
 //
 // Pattern: a static `Resolver` Func returns the localised text for a key.
 // The default resolver returns the English literal.  Consumers wire a
 // host-specific resolver at app-startup (BEFORE any wrapper XAML loads) to
-// pull from their own resx — see ClaudeForge.Program.WireWrapperLocalization.
+// pull from their own resx — each host app wires this during startup, before it
+// builds the Avalonia app.
+//
+// ⚠ NO DEFAULT HERE MAY NAME A PRODUCT. These literals are the fallback every host
+// inherits until it wires a resolver, and a host that forgets ships another product's
+// brand in its own tooltips — invisible until someone hovers. TipUndocumented read
+// "not in official Claude documentation" until 2026-08-20; it is now product-neutral,
+// and WrapperStringsNeutralityTests holds that.
 //
 // Why a Func rather than a resx-on-the-library:
 //   - Adding a satellite-assembly resx to a library is non-trivial and
@@ -23,9 +33,9 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
 
 /// <summary>
 /// Chrome-string surface for the library-side
-/// <see cref="Controls.PropertyEditorWrapper"/>.  All strings default to
-/// English literals; hosts override by assigning <see cref="Resolver"/> at
-/// startup before any wrapper XAML is parsed.
+/// <see cref="Controls.PropertyEditorWrapper"/> and for the styles under
+/// <c>Themes/</c>.  All strings default to English literals; hosts override by
+/// assigning <see cref="Resolver"/> at startup before any library XAML is parsed.
 /// </summary>
 public static class WrapperStrings
 {
@@ -48,11 +58,14 @@ public static class WrapperStrings
         {
             nameof(TipResetToInherited) => "Remove this setting at the current scope (inherit from lower scope)",
             nameof(TipReadOnly) => "Read only",
-            nameof(TipUndocumented) => "Undocumented setting — not in official Claude documentation",
+            nameof(TipUndocumented) => "Undocumented setting — not in the official documentation",
             nameof(TipShowSuggestions) => "Show suggestions",
             nameof(TipNewSetting) => "New setting — added since your last session",
             nameof(LabelOverridden) => "(overridden)",
             nameof(LabelReset) => "Reset",
+            nameof(LabelSpinnerIncrease) => "Increase value",
+            nameof(LabelSpinnerDecrease) => "Decrease value",
+            nameof(LabelExpandCollapse) => "Expand or collapse",
             nameof(LabelBrowse) => "Browse...",
             nameof(LabelAdd) => "Add",
             nameof(LabelRemove) => "Remove",
@@ -66,7 +79,7 @@ public static class WrapperStrings
     /// <summary>Tooltip for the 🔒 read-only / managed-scope lock icon.</summary>
     public static string TipReadOnly => Resolver(nameof(TipReadOnly));
 
-    /// <summary>Tooltip for the 🕵 "not in official Claude docs" indicator.</summary>
+    /// <summary>Tooltip for the 🕵 "not in the official docs" indicator.</summary>
     public static string TipUndocumented => Resolver(nameof(TipUndocumented));
 
     /// <summary>Tooltip for the free-form enum's "▾ show suggestions" chevron.</summary>
@@ -93,6 +106,28 @@ public static class WrapperStrings
     /// the only thing that makes the control identifiable.
     /// </summary>
     public static string LabelRemove => Resolver(nameof(LabelRemove));
+
+    /// <summary>
+    /// Screen-reader name for a <c>ButtonSpinner</c>'s up button — the one a
+    /// <c>NumericUpDown</c> draws.  See <c>Themes/AccessibilityNames.axaml</c> for why
+    /// the theme has to supply this rather than the markup that hosts the control.
+    /// </summary>
+    public static string LabelSpinnerIncrease => Resolver(nameof(LabelSpinnerIncrease));
+
+    /// <summary>Screen-reader name for a <c>ButtonSpinner</c>'s down button.</summary>
+    public static string LabelSpinnerDecrease => Resolver(nameof(LabelSpinnerDecrease));
+
+    /// <summary>
+    /// Screen-reader name for a <c>TreeViewItem</c>'s expand/collapse chevron.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Deliberately state-free.</b> The chevron's peer is a
+    /// <c>ToggleButtonAutomationPeer</c> and carries <c>IToggleProvider</c>, so the
+    /// expanded-or-collapsed state is already reported through the pattern. A name that changed
+    /// with the state would have a reader announce it twice, and disagree with the pattern for as
+    /// long as the two were out of step.
+    /// </remarks>
+    public static string LabelExpandCollapse => Resolver(nameof(LabelExpandCollapse));
 
     /// <summary>
     /// Restore <see cref="Resolver"/> to the default-English implementation.

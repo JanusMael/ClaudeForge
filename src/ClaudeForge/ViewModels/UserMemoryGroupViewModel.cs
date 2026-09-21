@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

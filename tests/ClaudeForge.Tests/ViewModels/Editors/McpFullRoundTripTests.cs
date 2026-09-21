@@ -2,7 +2,9 @@
 // editor → user-mutation → SDK → disk round-trip suite for the MCP
 // servers editor.  Mirrors HooksFullRoundTripTests' fixture pattern.
 
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -34,10 +36,10 @@ public class McpFullRoundTripTests
             }
 
             SettingsDocument doc = new(ConfigScope.User, "settings.json", rootObj, isReadOnly: false);
-            SettingsWorkspace ws = new([doc]);
-            ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
+            SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
+            ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
                 ws, ConfigScope.User,
-                new SchemaRegistry(new HttpClient()));
+                new SchemaRegistry());
             McpFixture fx = new(doc, ws, client);
             fx.RebuildEditor();
             return fx;

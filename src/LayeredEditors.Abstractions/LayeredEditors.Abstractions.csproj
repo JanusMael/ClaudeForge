@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <RootNamespace>Bennewitz.Ninja.Layer.Abstractions</RootNamespace>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Abstractions</RootNamespace>
         <AssemblyName>LayeredEditors.Abstractions</AssemblyName>
         <Description>
             Generic abstractions for hierarchical, layered-scope settings editors.
@@ -10,4 +11,12 @@
             scope/override semantics.
         </Description>
     </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
 </Project>

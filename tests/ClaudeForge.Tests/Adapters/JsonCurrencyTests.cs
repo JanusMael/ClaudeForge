@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
@@ -6,7 +7,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// Direct tests for <see cref="JsonCurrency"/>
 /// </summary>
 /// <remarks>
-/// The existing <c>ClaudeValueAdapter</c> tests cover the same behaviour
+/// The existing <c>LayeredValueAdapter</c> tests cover the same behaviour
 /// indirectly because <c>Normalise</c>/<c>Coerce</c> now delegate here;
 /// these tests target the public surface directly so future consumers
 /// (post-step-5 SettingsGroupEditorViewModel, MCP tools that deal in

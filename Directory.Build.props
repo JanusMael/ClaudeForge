@@ -5,20 +5,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <!-- Allow restoring Windows targeting packs on non-Windows hosts.
-             Two projects in the solution use the plural <TargetFrameworks>
-             form to add a net10.0-windows10.0.19041.0 TFM:
-               * src/ClaudeForge/ClaudeForge.csproj
-                   (picks up the MAUI-Essentials build of the share service)
-               * src/LayeredEditors.Avalonia.Services/...csproj
-                   (the share service itself, compiled against MAUI Essentials)
-             On non-Windows hosts (macOS / Linux CI) `dotnet restore` against
-             those projects fails with NETSDK1100 unless this opt-in is set.
-             It is a no-op on Windows hosts and a no-op on projects that do
-             NOT target a Windows-only TFM, so setting it globally here is
-             both safe and future-proof — any new Windows-TFM project
-             inherits the same restore behaviour without a per-csproj edit. -->
-        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <!-- ⛔ THE SINGULAR FORM IS LOAD-BEARING, and two projects once believed otherwise.
+             src/ClaudeForge and src/LayeredEditors.Avalonia.Services each declared a plural
+             <TargetFrameworks> adding net10.0-windows10.0.19041.0, with comments saying it took
+             precedence over this property. It does not: MSBuild cross-targets only when
+             TargetFramework is EMPTY, so both projects built net10.0 alone for the whole life of
+             those declarations, and the MAUI Essentials share path they existed for never
+             compiled. Both declarations are now gone.
+
+             Adding a platform TFM to any project therefore means CLEARING this property for it
+             first — `<TargetFramework></TargetFramework>` in that csproj, before the plural form
+             — and re-adding EnableWindowsTargeting, which used to sit here so a Windows TFM
+             would restore on macOS / Linux CI hosts without NETSDK1100. Neither is needed while
+             every project is single-TFM, and leaving them in place documents a capability the
+             build does not have. -->
     </PropertyGroup>
     
     <PropertyGroup>
@@ -27,7 +27,19 @@
 
         <!-- Company and product names; consumed by the source generator at build time -->
         <AssemblyCompany>Bennewitz.Ninja</AssemblyCompany>
-        <AssemblyProduct>ClaudeForge</AssemblyProduct>
+        <!--
+          The DEFAULT product, which is now the shared library family rather than either app.
+
+          ⚠ This used to be `ClaudeForge`, which stamped that name into every assembly in the
+          repository — including AgentForge.* and LayeredEditors.*, which are product-neutral by
+          design and are consumed by both apps. A shared library reporting itself as one of its
+          two consumers is wrong in a file properties dialog, in a crash dump, and in any
+          support bundle that lists loaded modules.
+
+          Each app OVERRIDES this in its own csproj with its own name. Adding a third app means
+          adding the same one-line override there, not editing this.
+        -->
+        <AssemblyProduct>AgentForge</AssemblyProduct>
         <CopyrightHolder>Brian Bennewitz</CopyrightHolder>
 
         <!-- Map CI environment variables to the MSBuild properties the generator reads.
@@ -35,6 +47,33 @@
              e.g. GitLab: $(CI_COMMIT_SHA) / $(GITLAB_CI), Bitbucket: $(BITBUCKET_COMMIT) / $(CI). -->
         <CommitSha Condition="'$(CommitSha)' == ''">$(GITHUB_SHA)</CommitSha>
         <IsContinuousIntegration>$(GITHUB_ACTIONS)</IsContinuousIntegration>
+    </PropertyGroup>
+
+    <!--
+      ══ THE VERSION OF THE ELEVEN SHARED PACKAGES THE RELEASE CONSUMES ══════════════════════
+
+      plans/00003, Phase D. This is a COMMITTED PIN, deliberately, and it belongs in the ROOT
+      props rather than src/'s: the test projects consume the packages too, and only the root
+      file reaches them.
+
+      ⭐ WHY A PIN AND NOT A DERIVED VALUE. The app release tag and the package tag are
+      independent — 'v2026.3.918' and 'packages-v2026.3.918' are separate releases on separate
+      schedules — so nothing about an app tag says which package version it should consume. An
+      explicit value also satisfies Directory.Build.targets' refusal to invent a default, makes
+      the release reproducible from its tag with no workflow inputs, and turns every version
+      move into a diff a human approves.
+
+      ⚠ THIS IS INERT UNTIL UseSharedPackages=true. In the default development mode nothing
+      reads it, the feed is never contacted, and a clone with no credentials restores normally.
+      The canary passes its own throwaway version on the command line, and a global property
+      still outranks this one.
+
+      ⛔ BUMPING THIS IS A RELEASE ACTION. It must name a version that actually exists on the
+      feed: a value pointing at an unpublished version fails the restore rather than falling
+      back, which is the intended behaviour.
+    -->
+    <PropertyGroup>
+        <SharedPackageVersion Condition="'$(SharedPackageVersion)' == ''">2026.3.920</SharedPackageVersion>
     </PropertyGroup>
 
     <!--
@@ -74,7 +113,7 @@
          a runtime dependency).  IncludeAssets enumerates the asset types the
          generator legitimately needs at build time. -->
     <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.819">
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.3.916">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

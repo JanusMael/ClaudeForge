@@ -22,8 +22,19 @@ namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Behaviors;
 /// </remarks>
 public static class CodeInline
 {
+    /// <summary>
+    /// The bundled monospace face, named by URI rather than by a system stack.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>This was the SEVENTH spelling of the monospace stack in the repository</b>, and the
+    /// only one in C# — so a sweep of the markup would have left backtick code runs rendering in
+    /// a different typeface from every other code surface, on the same screen. Markup binds the
+    /// <c>AppMonoFontFamily</c> resource; this is the one place that cannot, because it builds
+    /// runs in code, so it names the same URI directly.
+    /// ⚠ Keep the two in step: if the resource moves to another font, this moves with it.
+    /// </remarks>
     private static readonly FontFamily MonoFont =
-        new("Cascadia Mono,Cascadia Code,Consolas,Menlo,monospace");
+        new("avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL");
 
     /// <summary>The backtick-markup source string for the target TextBlock.</summary>
     public static readonly AttachedProperty<string?> MarkupProperty =

@@ -241,9 +241,10 @@
                  (NotifyFilteredListsChanged); the underlying ObservableCollection
                  mutations no longer reach the UI on their own. -->
             <TabControl Margin="16,0,16,16"
-                        SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding SelectedSegmentIndex, Mode=TwoWay}"
+                        AutomationProperties.Name="{x:Static loc:Strings.AutoNameAgentsSkillsTabs}">
                 <TabItem Header="{x:Static loc:Strings.TabAgents}"
-                         AutomationProperties.Name="{x:Static loc:Strings.TabAgents}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabAgents}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredAgentItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
@@ -256,7 +257,7 @@
                 </TabItem>
 
                 <TabItem Header="{x:Static loc:Strings.TabSkills}"
-                         AutomationProperties.Name="{x:Static loc:Strings.TabSkills}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabSkills}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredSkillItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
@@ -269,7 +270,7 @@
                 </TabItem>
 
                 <TabItem Header="{x:Static loc:Strings.TabSlashCommands}"
-                         AutomationProperties.Name="{x:Static loc:Strings.TabSlashCommands}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabSlashCommands}">
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding FilteredCommandItems}" Margin="0,8,0,0">
                             <ItemsControl.ItemsPanel>
@@ -487,7 +488,7 @@
                              AcceptsReturn="True"
                              AcceptsTab="True"
                              TextWrapping="NoWrap"
-                             FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              MinHeight="160"
                              KeyDown="OnRawKeyDown"
                              AutomationProperties.Name="{x:Static loc:Strings.ButtonEditRawYaml}" />
@@ -507,7 +508,7 @@
                      IsVisible="{Binding IsEditing}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
-                     FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                     FontFamily="{DynamicResource AppMonoFontFamily}"
                      VerticalAlignment="Stretch"
                      MinHeight="300"
                      AutomationProperties.Name="{x:Static loc:Strings.NavTitleAgentsSkills}" />

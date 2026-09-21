@@ -1,8 +1,11 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Diagnostics;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -23,16 +26,29 @@ file sealed class RecordingShareService : IShareService
     public List<ShareTextCall> TextCalls { get; } = [];
     public List<ShareFileCall> FileCalls { get; } = [];
 
-    public Task ShareTextAsync(string title, string text, string? uri = null)
+    /// <summary>What the next call reports. ⚠ Defaults to <see cref="ShareOutcome.Unavailable"/>
+    /// because that is the truth about a stub: it recorded the payload and shared nothing. A test
+    /// asserting a success sentence has to say which success it is arranging, so the arrangement
+    /// cannot be mistaken for the thing under test.</summary>
+    public ShareOutcome NextOutcome { get; set; } = ShareOutcome.Unavailable;
+
+    /// <summary>Set to throw from both methods, for the caller's catch path.</summary>
+    public Exception? ThrowOnShare { get; set; }
+
+    public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
     {
         TextCalls.Add(new ShareTextCall(title, text, uri));
-        return Task.CompletedTask;
+        return ThrowOnShare is not null
+            ? Task.FromException<ShareOutcome>(ThrowOnShare)
+            : Task.FromResult(NextOutcome);
     }
 
-    public Task ShareFileAsync(string title, string filePath)
+    public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
     {
         FileCalls.Add(new ShareFileCall(title, filePath));
-        return Task.CompletedTask;
+        return ThrowOnShare is not null
+            ? Task.FromException<ShareOutcome>(ThrowOnShare)
+            : Task.FromResult(NextOutcome);
     }
 }
 
@@ -100,7 +116,7 @@ public class BackupShareCommandTests
     public async Task ShareBackup_NullRow_DoesNotCallService()
     {
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
 
         // Execute with null — must be a no-op.
         await vm.ShareBackupCommand.ExecuteAsync(null);
@@ -113,7 +129,7 @@ public class BackupShareCommandTests
     public async Task ShareBackup_NullService_IsNoOp()
     {
         // No share service wired up — command must complete silently.
-        BackupRestoreViewModel vm = new(new NullDialogService(), shareService: null);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create());
         BackupRowViewModel row = MakeRow();
 
         // Should not throw.
@@ -125,7 +141,7 @@ public class BackupShareCommandTests
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
@@ -141,7 +157,7 @@ public class BackupShareCommandTests
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
         RecordingShareService svc = new();
-        BackupRestoreViewModel vm = new(new NullDialogService(), svc);
+        BackupRestoreViewModel vm = new(new NullDialogService(), BackupPageTestOptions.Create(), svc);
         BackupRowViewModel row = MakeRow(archivePath);
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
@@ -158,19 +174,25 @@ public class BackupShareCommandTests
 [TestClass]
 public class EffectiveSettingsShareCommandTests
 {
-    private static ClaudeConfigClientCore MakeClient()
+    private static AgentConfigClientCore MakeClient()
     {
         // Wrap an in-memory empty SettingsWorkspace via the internal
         // FromExistingWorkspace overload — avoids disk I/O and
         // TestUserProfileOverride leakage across tests. The grant lives
-        // in ClaudeForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
-        SettingsWorkspace ws = new([]);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        // in AgentForge.Sdk.csproj's InternalsVisibleTo for ClaudeForge.Tests.
+        SettingsWorkspace ws = new([], ClaudeMergePolicy.Instance);
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
+    /// <remarks>
+    /// ⓘ This was <c>ShareConfig_NullService_IsNoOp</c>, and the name stopped being true when F3
+    /// landed: a missing service is now reported rather than absorbed. It still pins the half
+    /// that matters here — no throw — and the sentence it emits is asserted in
+    /// <c>ShareOutcomeTests.WithNoShareServiceWired_TheUserIsToldSoRatherThanNothing</c>.
+    /// </remarks>
     [TestMethod]
-    public async Task ShareConfig_NullService_IsNoOp()
+    public async Task ShareConfig_NullService_DoesNotThrow()
     {
         EffectiveSettingsViewModel vm = new(MakeClient(), shareService: null);
 
@@ -221,7 +243,7 @@ public class AboutShareLogCommandTests
     public void ShareLog_NullService_CommandCannotExecute()
     {
         // No share service → CanExecute must be false regardless of log path.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: null,
             logPathProvider: () => FakeLogPath);
@@ -235,7 +257,7 @@ public class AboutShareLogCommandTests
     {
         RecordingShareService svc = new();
         // Log path provider returns null → CanExecute must be false.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => null);
@@ -248,7 +270,7 @@ public class AboutShareLogCommandTests
     public void ShareLog_BothPrerequisitesMet_CommandCanExecute()
     {
         RecordingShareService svc = new();
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => FakeLogPath);
@@ -261,7 +283,7 @@ public class AboutShareLogCommandTests
     public async Task ShareLog_CallsServiceWithLogPath()
     {
         RecordingShareService svc = new();
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: svc,
             logPathProvider: () => FakeLogPath);
@@ -278,7 +300,7 @@ public class AboutShareLogCommandTests
     public async Task ShareLog_NullService_IsNoOp()
     {
         // Even when forced to execute, the command must not throw with no service.
-        AboutEditorViewModel vm = new(
+        AboutEditorViewModel vm = new(ClaudeEnvironment.Empty, 
             AboutProduct.ClaudeCode,
             shareService: null,
             logPathProvider: () => FakeLogPath);
@@ -328,26 +350,32 @@ public class DefaultShareServiceTests
         await svc.ShareTextAsync("Test", "body", "https://example.com");
     }
 
+    /// <summary>
+    /// Constructing with no arguments — what the app does — starts nothing.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Replaces two tests that exercised an <c>hwndProvider</c> parameter which no longer
+    /// exists.</b> It was there to initialise MAUI Essentials behind
+    /// <c>#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER</c>, in a TFM that was declared but never
+    /// built — so both tests were asserting the wiring of a code path no build contained. What is
+    /// worth pinning is what the composition root actually calls.
+    /// </remarks>
     [TestMethod]
-    public void DefaultShareService_CanBeConstructed_WithNullProvider()
+    public void DefaultShareService_ConstructsWithNoArguments_AndLaunchesNothing()
     {
-        // Null hwndProvider must default gracefully without NRE.
-        DefaultShareService svc = new(hwndProvider: null);
-        Assert.IsNotNull(svc);
-    }
-
-    [TestMethod]
-    public void DefaultShareService_CanBeConstructed_WithCustomProvider()
-    {
-        bool called = false;
-        DefaultShareService svc = new(hwndProvider: () =>
+        bool launched = false;
+        DefaultShareService svc = new(processLauncher: psi =>
         {
-            called = true;
-            return 0;
+            launched = true;
+            _ = psi;
+            return null;
         });
+
         Assert.IsNotNull(svc);
-        // Provider is only invoked inside Windows share calls, not at construction.
-        Assert.IsFalse(called, "hwndProvider must not be invoked at construction time.");
+        Assert.IsFalse(launched, "Construction must not start a process.");
+
+        // The parameterless form is the one App.axaml.cs uses; it must not throw either.
+        Assert.IsNotNull(new DefaultShareService());
     }
 
     [TestMethod]

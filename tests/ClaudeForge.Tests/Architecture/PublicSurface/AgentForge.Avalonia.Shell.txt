@@ -1,0 +1,685 @@
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.ConfigScopeAdapter [sealed] implements Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope
+    Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope Source { get; }
+    System.Boolean IsReadOnly { get; }
+    System.Int32 Priority { get; }
+    System.String DisplayName { get; }
+    System.String Id { get; }
+    System.String ToString()
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.ConfigScopeAdapter For(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+    static Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope ToConfigScope(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    static System.Int32 ToLibraryPriority(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.JsonCurrency
+    static System.Object FromJsonNode(System.Text.Json.Nodes.JsonNode node)
+    static System.Text.Json.Nodes.JsonNode ToJsonNode(System.Object value)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.LayeredValueAdapter [sealed] implements Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Settings.LayeredValue inner)
+    Bennewitz.Ninja.AgentForge.Core.Settings.LayeredValue Inner { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope EffectiveScope { get; }
+    System.Boolean IsDefinedAt(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.Boolean IsOverridden { get; }
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope> EnumerateDefinedScopes()
+    System.Object EffectiveValue { get; }
+    System.Object GetValueAt(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.String Path { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.SchemaNodeAdapter [sealed] implements Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode inner)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.EditorValueType ValueType { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema ItemsSchema { get; }
+    System.Boolean IsDeprecated { get; }
+    System.Boolean IsNew { get; }
+    System.Boolean IsReadOnly { get; }
+    System.Boolean IsUndocumented { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> Metadata { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> EnumValueDescriptions { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema> Properties { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> EnumValues { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> Examples { get; }
+    System.Nullable<System.Double> Maximum { get; }
+    System.Nullable<System.Double> Minimum { get; }
+    System.Object DefaultValue { get; }
+    System.String Description { get; }
+    System.String Name { get; }
+    System.String Path { get; }
+    System.String Title { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters.SettingsWorkspaceAdapter [sealed] implements Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace inner)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue GetValue(System.String path)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope> AvailableScopes { get; }
+    System.Void RemoveValue(System.String path, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.Void SetValue(System.String path, System.Object value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    event System.EventHandler<Bennewitz.Ninja.LayeredEditors.Abstractions.ValueChangedEventArgs> ValueChanged
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupModeConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupModeConverter IsFull
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupModeConverter IsSanitized
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupModeConverter IsSettingsOnly
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions <Clone>$()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText Text { get;init; }
+    Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine Engine { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> Products { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> AgentProcessNames { get;init; }
+    System.Func<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor, System.String> ProductCheckboxLabel { get;init; }
+    System.Int32 GetHashCode()
+    System.String CredentialsPathDisplay { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> ClientAbbreviations { get;init; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> ProgressLabels { get;init; }
+    System.Int32 GetHashCode()
+    System.String ButtonContinueWithoutSaving { get;init; }
+    System.String ButtonDiscardAndRestore { get;init; }
+    System.String ButtonIncludeCredentialsConfirm { get;init; }
+    System.String ButtonOmitCredentials { get;init; }
+    System.String ButtonRestore { get;init; }
+    System.String ButtonRestoreAnyway { get;init; }
+    System.String ButtonSaveDialog { get;init; }
+    System.String DialogTitleBackupFailed { get;init; }
+    System.String DialogTitleBackupWithoutSaving { get;init; }
+    System.String DialogTitleCrossPlatformRestore { get;init; }
+    System.String DialogTitleDiscardUnsavedEdits { get;init; }
+    System.String DialogTitleDropRestore { get;init; }
+    System.String DialogTitleDropRestoreInvalid { get;init; }
+    System.String DialogTitleIncludeCredentials { get;init; }
+    System.String DialogTitleRestoreCompletedSkippedFmt { get;init; }
+    System.String DialogTitleRestoreFailed { get;init; }
+    System.String DialogTitleUnsavedChanges { get;init; }
+    System.String LabelBackupIncludesProject { get;init; }
+    System.String LabelBackupNoProjectOpen { get;init; }
+    System.String LabelLastBackupDaysFmt { get;init; }
+    System.String LabelLastBackupHoursFmt { get;init; }
+    System.String LabelLastBackupJustNow { get;init; }
+    System.String LabelLastBackupMinutesFmt { get;init; }
+    System.String LabelLastBackupNever { get;init; }
+    System.String ProgressCreatingJunction { get;init; }
+    System.String ProgressPreparing { get;init; }
+    System.String ProgressRestoring { get;init; }
+    System.String ProgressStarting { get;init; }
+    System.String StatusAgentRunningFmt { get;init; }
+    System.String StatusBackupDeleteFailedFmt { get;init; }
+    System.String StatusBackupDeletedFmt { get;init; }
+    System.String StatusBackupWarningsFmt { get;init; }
+    System.String StatusChooseBackupFolder { get;init; }
+    System.String StatusShareArchiveFailed { get;init; }
+    System.String StatusShareArchiveRevealed { get;init; }
+    System.String StatusShareArchiveUnavailable { get;init; }
+    System.String TextCredentialsExplainer { get;init; }
+    System.String TextCrossPlatformRestoreMiddle { get;init; }
+    System.String TextCrossPlatformRestorePrefix { get;init; }
+    System.String TextCrossPlatformRestoreSuffix { get;init; }
+    System.String TextDiscardUnsavedForRestore { get;init; }
+    System.String TextDropRestoreNotABackup { get;init; }
+    System.String TextDropRestoreNotZip { get;init; }
+    System.String TextDropRestorePromptPrefix { get;init; }
+    System.String TextDropRestorePromptSuffix { get;init; }
+    System.String TextProceedWithoutSavingBackup { get;init; }
+    System.String TextRestoreSkippedExplainer { get;init; }
+    System.String TextRestoreSkippedTrailerFmt { get;init; }
+    System.String TextSaveBeforeBackupPrompt { get;init; }
+    System.String TextSaveBeforeRestorePrompt { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageText right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupProductViewModel [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    System.Boolean IsSelected { get;set; }
+    System.String DisplayName { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRestoreViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.IDeepNavigable, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.INavigablePage, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging, System.IDisposable
+    .ctor(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IDialogService dialogService, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupPageOptions options, Bennewitz.Ninja.LayeredEditors.Avalonia.Services.IShareService shareService = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel SelectedBackup { get;set; }
+    Bennewitz.Ninja.AgentForge.Core.Backup.BackupMode Mode { get;set; }
+    Bennewitz.Ninja.AgentForge.Core.Backup.MsixStatus MsixStatus { get;set; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand BackupCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand BrowseBackupDirectoryCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand BrowseRestoreDirectoryCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand FixMsixCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel> DeleteCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel> RestoreCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel> ShareBackupCommand { get; }
+    CommunityToolkit.Mvvm.Input.IAsyncRelayCommand<System.String> RestoreFromDroppedArchiveCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand CancelOperationCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel> OpenFileLocationCommand { get; }
+    System.Action<System.String, System.Boolean> OnTerminalStatus { get;set; }
+    System.Boolean CanCreateBackup { get; }
+    System.Boolean HasNeverBackedUp { get; }
+    System.Boolean HasRestoreDirectory { get; }
+    System.Boolean IncludeCredentials { get;set; }
+    System.Boolean IsBusy { get;set; }
+    System.Boolean ShowMsixTab { get; }
+    System.Boolean ShowSecretsWarning { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> CaptureDeepPath()
+    System.Collections.ObjectModel.ObservableCollection<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupProductViewModel> SelectableProducts { get; }
+    System.Collections.ObjectModel.ObservableCollection<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel> Backups { get; }
+    System.Double ProgressPercent { get;set; }
+    System.Func<System.Boolean, System.Threading.Tasks.Task> SaveAllWorkspaces { get;set; }
+    System.Func<System.Boolean> IsAnyWorkspaceDirty { get;set; }
+    System.Func<System.Threading.Tasks.Task> OnRestoreCompleted { get;set; }
+    System.Int32 KeepLast { get;set; }
+    System.Int32 SelectedTabIndex { get;set; }
+    System.Nullable<System.Boolean> CredentialsPreference { get;set; }
+    System.Nullable<System.DateTime> LastBackupUtc { get;set; }
+    System.String BackupDirectory { get;set; }
+    System.String BackupIncludesProjectLabel { get; }
+    System.String InitialBackupDirectory { get;set; }
+    System.String InitialProjectRoot { get;set; }
+    System.String InitialRestoreDirectory { get;set; }
+    System.String LastBackupLabel { get; }
+    System.String OpenProjectName { get; }
+    System.String ProgressMessage { get;set; }
+    System.String RestoreDirectory { get;set; }
+    System.String StatusMessage { get;set; }
+    System.Threading.Tasks.Task RestoreFromDroppedArchiveAsync(System.String archivePath)
+    System.Threading.Tasks.Task<System.Boolean> TryRestoreDeepPathAsync(System.Collections.Generic.IReadOnlyList<System.String> segments, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.DeepRestoreMode mode, System.Object transientState, System.Threading.CancellationToken ct)
+    System.Void Dispose()
+    System.Void OnNavigatedTo()
+    System.Void ReapplyTab(System.Collections.Generic.IReadOnlyList<System.String> segments)
+    System.Void Refresh()
+    const System.String TabBackupId
+    const System.String TabMsixFixId
+    const System.String TabRestoreId
+    event System.EventHandler PersistentStateChanged
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup.BackupRowViewModel [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> clientAbbreviations = null)
+    Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry Entry { get; }
+    System.Boolean IsRestorable { get; }
+    System.Boolean IsSanitized { get; }
+    System.String DisplayClients { get; }
+    System.String DisplayClientsTooltip { get; }
+    System.String DisplayDate { get; }
+    System.String DisplayMode { get; }
+    System.String DisplayModeTooltip { get; }
+    System.String DisplayName { get; }
+    System.String DisplayPlatform { get; }
+    System.String DisplaySize { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity EscalatedTier { get;init; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Tier { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule other)
+    System.Boolean Equals(System.Object obj)
+    System.Func<System.Object, System.Boolean> Unsafe { get;init; }
+    System.Func<System.String, System.Boolean> EscalatesAt { get;init; }
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.String Why { get;init; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.TableDangerClassifier [sealed] implements Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier
+    .ctor(System.Collections.Generic.IReadOnlyDictionary<System.String, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger.DangerRule> rules)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Classify(System.String path, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope, System.Object currentValue)
+    System.Collections.Generic.IReadOnlyCollection<System.String> ClassifiedPaths { get; }
+enum Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKind : System.Int32
+    Bool = 0
+    Derived = 5
+    EnumString = 2
+    Int = 1
+    LabelledEnum = 4
+    StringList = 3
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKind expected)
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverters
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsBool
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsDerived
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsEnumString
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsInt
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsLabelledEnum
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKindConverter IsStringList
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Severity { get;init; }
+    System.Boolean AllowsFreeForm { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsEnvVarCard { get;init; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption> LabelledOptions { get;init; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem> ModelSuggestions { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> EnumOptions { get;init; }
+    System.Decimal IntIncrement { get;init; }
+    System.Decimal IntMaximum { get;init; }
+    System.Decimal IntMinimum { get;init; }
+    System.Func<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardViewModel, System.Boolean> IsDangerPredicate { get;init; }
+    System.Func<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardViewModel, System.Threading.Tasks.Task> ReadAsync { get;init; }
+    System.Func<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardViewModel, System.Threading.Tasks.Task> WriteAsync { get;init; }
+    System.Int32 GetHashCode()
+    System.String AmberCalloutText { get;init; }
+    System.String Body { get;init; }
+    System.String DangerBannerText { get;init; }
+    System.String Id { get;init; }
+    System.String JsonPathFilter { get;init; }
+    System.String Title { get;init; }
+    System.String ToString()
+    System.String ViewInGroupLabelFormat { get;init; }
+    System.String ViewInGroupTitle { get;init; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardOptions options)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsCardKind Kind { get; }
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption SelectedOption { get;set; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Severity { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand AddStringListEntryCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand ViewInGroupCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand<System.String> RemoveStringListEntryCommand { get; }
+    System.Boolean AllowsFreeForm { get; }
+    System.Boolean EnumDisabled { get;set; }
+    System.Boolean HasOsMachineSource { get;set; }
+    System.Boolean HasOsUserSource { get;set; }
+    System.Boolean HasSettingsJsonSource { get;set; }
+    System.Boolean IsDanger { get;set; }
+    System.Boolean IsEnvVarCard { get; }
+    System.Boolean IsFreeFormEnumString { get; }
+    System.Boolean IsLoading { get;set; }
+    System.Boolean IsStrictEnumString { get; }
+    System.Boolean ShowAmberCallout { get;set; }
+    System.Boolean ShowConstraintNotice { get;set; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption> LabelledOptions { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem> ModelSuggestions { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> EnumOptions { get; }
+    System.Collections.ObjectModel.ObservableCollection<System.String> FilteredOptions { get; }
+    System.Collections.ObjectModel.ObservableCollection<System.String> StringListValues { get; }
+    System.Decimal IntIncrement { get; }
+    System.Decimal IntMaximum { get; }
+    System.Decimal IntMinimum { get; }
+    System.Nullable<System.Boolean> BoolValue { get;set; }
+    System.Nullable<System.Int32> IntValue { get;set; }
+    System.String AmberCalloutText { get; }
+    System.String Body { get; }
+    System.String ConstraintNoticeText { get;set; }
+    System.String DangerBannerText { get; }
+    System.String DerivedText { get;set; }
+    System.String EffectiveEnvSourceLabel { get;set; }
+    System.String EnumValue { get;set; }
+    System.String Id { get; }
+    System.String JsonPathFilter { get; }
+    System.String ModelSupportSummary { get;set; }
+    System.String NewStringListEntry { get;set; }
+    System.String Title { get; }
+    System.String ViewInGroupLabel { get; }
+    System.String ViewInGroupTitle { get; }
+    System.Threading.Tasks.Task ReadAsync()
+    System.Threading.Tasks.Task WriteAsync()
+    System.Void ActivateAmberCallout()
+    System.Void SetFilteredOptions(System.Collections.Generic.IEnumerable<System.String> options)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption>
+    .ctor(System.String Value, System.String Label, System.String Description = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean HasDescription { get; }
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String Label { get;init; }
+    System.String ToString()
+    System.String Value { get;init; }
+    System.Void Deconstruct(out System.String Value, out System.String Label, out System.String Description)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.EssentialsEnumOption right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem>
+    .ctor(System.String Value, System.String Label, System.String Detail = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Detail { get;init; }
+    System.String Label { get;init; }
+    System.String ToString()
+    System.String Value { get;init; }
+    System.Void Deconstruct(out System.String Value, out System.String Label, out System.String Detail)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials.ModelSuggestionItem right)
+enum Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.DeepRestoreMode : System.Int32
+    Full = 1
+    Locate = 0
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.IDeepNavigable
+    System.Collections.Generic.IReadOnlyList<System.String> CaptureDeepPath()
+    System.Object CaptureTransientState()
+    System.Threading.Tasks.Task<System.Boolean> TryRestoreDeepPathAsync(System.Collections.Generic.IReadOnlyList<System.String> segments, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.DeepRestoreMode mode, System.Object transientState, System.Threading.CancellationToken ct)
+    System.Void ReapplyTab(System.Collections.Generic.IReadOnlyList<System.String> segments)
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.INavigablePage
+    System.Void OnNavigatedFrom(System.Boolean replaced)
+    System.Void OnNavigatedTo()
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPath
+    const System.Char Separator
+    const System.Char SourcePathSeparator
+    const System.Char SourceSeparator
+    const System.Int32 MaxSegments
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution Resolve(System.Collections.Generic.IReadOnlyList<System.String> segments, System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel> tree)
+    static System.Boolean TryParse(System.String raw, out System.Collections.Generic.IReadOnlyList<System.String> segments, out System.String error)
+    static System.String EncodeSource(System.String source)
+    static System.String Format(System.Collections.Generic.IEnumerable<System.String> segments)
+    static System.String FormatItemKey(System.String name, System.String source)
+    static System.String Slug(System.String title)
+    static System.ValueTuple<System.String, System.String> SplitItemKey(System.String itemKey)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution>
+    .ctor(Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel Node, System.Collections.Generic.IReadOnlyList<System.String> RemainingSegments)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel Node { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean Resolved { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> RemainingSegments { get;init; }
+    System.Int32 GetHashCode()
+    System.String ItemKey { get; }
+    System.String TabId { get; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel Node, out System.Collections.Generic.IReadOnlyList<System.String> RemainingSegments)
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution Unresolved { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.NavDeepPathResolution right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage>
+    .ctor(System.String Title, System.String Description, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> Nodes)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> Nodes { get;init; }
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String Title { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Title, out System.String Description, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> Nodes)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPageLayout [sealed]
+    .ctor()
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> PageDescriptions { get;init; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> PropertyToPage { get;init; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.SchemaPage> Arrange(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> nodes)
+    System.Collections.Generic.IReadOnlyList<System.String> PageOrder { get;init; }
+    System.String FallbackPage { get;init; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource>
+    .ctor(Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore Client, System.String DisplayName, Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier Danger = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource <Clone>$()
+    Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore Client { get;init; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier Danger { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String DisplayName { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore Client, out System.String DisplayName, out Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier Danger)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangeEntryViewModel [sealed]
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind Kind { get;init; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Danger { get;init; }
+    System.Boolean HasDangerSeverity { get; }
+    System.String ChangeLine { get; }
+    System.String DangerAccessibleText { get; }
+    System.String FormattedText { get; }
+    System.String FullNewValue { get;init; }
+    System.String FullOldValue { get;init; }
+    System.String Key { get;init; }
+    System.String KindAccessibleName { get;init; }
+    System.String KindLabel { get; }
+    System.String NewValue { get;init; }
+    System.String OldValue { get;init; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangeSectionViewModel [sealed]
+    .ctor()
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangeEntryViewModel> Entries { get;init; }
+    System.Nullable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> Scope { get;init; }
+    System.String ActionVerb { get;init; }
+    System.String FilePath { get;init; }
+    System.String ScopeText { get;init; }
+    System.String Title { get; }
+    System.String WorkspaceName { get;init; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangesDialogViewModel [sealed] implements Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ISaveChangesPrompt
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode Mode { get;init; }
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText Text { get;init; }
+    System.Boolean HasUnsafeChanges { get; }
+    System.Boolean ShowDialogAgain { get;set; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangeSectionViewModel> Sections { get;init; }
+    System.Int32 UnsafeChangeCount { get; }
+    System.String ActionVerb { get; }
+    System.String CancelButtonLabel { get; }
+    System.String ChangesOnlyText { get; }
+    System.String ConfirmButtonLabel { get; }
+    System.String SummaryLine { get; }
+    System.String UnsafeChangeWarning { get; }
+    System.String WindowTitle { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogBuilder
+    static Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveChangesDialogViewModel Build(System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.DirtySource> sources, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText text, System.Boolean isRestoreContext = false)
+enum Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode : System.Int32
+    Restore = 1
+    Save = 0
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String AccessibleNameFor(Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.ChangeKind kind)
+    System.String ActionVerbFor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode mode)
+    System.String CancelButton { get;init; }
+    System.String ConfirmButtonFor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode mode)
+    System.String KindAdded { get;init; }
+    System.String KindModified { get;init; }
+    System.String KindRemoved { get;init; }
+    System.String RestoreConfirmButton { get;init; }
+    System.String RestoreSummaryFormat { get;init; }
+    System.String RestoreTitle { get;init; }
+    System.String SaveConfirmButton { get;init; }
+    System.String SaveSummaryFormat { get;init; }
+    System.String SaveTitle { get;init; }
+    System.String SummaryFormatFor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode mode)
+    System.String TitleFor(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogMode mode)
+    System.String ToString()
+    System.String UnsafeChangeWarningFormat { get;init; }
+    System.String WillBeRestoredTo { get;init; }
+    System.String WillBeWrittenTo { get;init; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save.SaveDialogText right)
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.IJsonPathScopedEditor
+    System.String OwnedJsonPathPrefix { get; }
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.ISchemaGroupEditor
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> SchemaNodes { get; }
+    System.String GroupName { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider>
+    .ctor(System.String SectionTitle, System.Func<System.String, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult>> Search)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider other)
+    System.Boolean Equals(System.Object obj)
+    System.Func<System.String, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult>> Search { get;init; }
+    System.Int32 GetHashCode()
+    System.String SectionTitle { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String SectionTitle, out System.Func<System.String, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Sdk.SchemaSearchResult>> Search)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchResultViewModel [sealed]
+    .ctor(Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel node, System.String sectionTitle, System.String groupTitle, System.String propertyDisplayName, System.String propertyKey, System.String snippet, System.String fullDescription)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Danger { get;init; }
+    Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel Node { get; }
+    System.Boolean HasDangerSeverity { get; }
+    System.Boolean IsSynthetic { get;init; }
+    System.String AccessibleName { get; }
+    System.String DangerAccessibleText { get; }
+    System.String FullDescription { get; }
+    System.String GroupTitle { get; }
+    System.String NavigationContext { get; }
+    System.String PropertyDisplayName { get; }
+    System.String PropertyKey { get; }
+    System.String SectionTitle { get; }
+    System.String Snippet { get; }
+    System.String ToString()
+    System.String TooltipText { get; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean Matches(System.String normalizedQuery)
+    System.Collections.Generic.IReadOnlyList<System.String> Excluding { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Mentions { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> Phrases { get;init; }
+    System.Collections.Generic.IReadOnlyList<System.String> PrefixOf { get;init; }
+    System.Int32 GetHashCode()
+    System.Int32 MinQueryLength { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchViewModel [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging, System.IDisposable
+    .ctor(System.Func<System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel>> getNavigationTree, System.Func<System.Boolean> isLoadingProbe, System.Func<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry>> getSyntheticEntries = null, System.Func<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SchemaSearchProvider>> getSchemaSearchProviders = null)
+    System.Boolean IsSearchOpen { get;set; }
+    System.Collections.ObjectModel.ObservableCollection<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchResultViewModel> SearchResults { get; }
+    System.String SearchQuery { get;set; }
+    System.Void Dispose()
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchTrigger Trigger { get;init; }
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<System.String> Suppresses { get;init; }
+    System.Func<System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel>, Bennewitz.Ninja.LayeredEditors.ViewModels.NavigationNodeViewModel> FindTarget { get;init; }
+    System.Int32 GetHashCode()
+    System.String Description { get;init; }
+    System.String DisplayName { get;init; }
+    System.String GroupTitle { get;init; }
+    System.String Id { get;init; }
+    System.String PropertyKey { get;init; }
+    System.String SectionTitle { get;init; }
+    System.String Snippet { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SyntheticSearchEntry right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow>
+    .ctor(System.String Property, System.String DisplayValue, System.Nullable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> Scope, System.Boolean IsOverridden, System.String Description = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Danger { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean HasDangerSeverity { get; }
+    System.Boolean IsOverridden { get;init; }
+    System.Int32 GetHashCode()
+    System.Nullable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> Scope { get;init; }
+    System.String DangerAccessibleText { get; }
+    System.String Description { get;init; }
+    System.String DisplayValue { get;init; }
+    System.String Property { get;init; }
+    System.String PropertyTooltip { get; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Property, out System.String DisplayValue, out System.Nullable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> Scope, out System.Boolean IsOverridden, out System.String Description)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.GroupTab [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor()
+    System.Boolean IsDefaultTab { get;set; }
+    System.Object Content { get;init; }
+    System.String AutomationName { get;init; }
+    System.String Header { get;set; }
+    System.String Id { get;init; }
+    System.String ToString()
+    const System.String EffectiveId
+    const System.String JsonId
+    const System.String PropertiesId
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.IGroupTabCustomizer
+    System.Void Customize(System.String groupName, System.Collections.Generic.IList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.GroupTab> tabs, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> editors, System.Action<System.String> selectTab = null)
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.ISchemaEditorFactory
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier Danger { get; }
+    Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel Create(Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode schema, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope editingScope, System.Func<System.Threading.Tasks.Task<System.String>> browseDialog = null, Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace = null)
+interface Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.ITransientHintHost
+    System.Void DismissTransientHints()
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupEditorViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.IDeepNavigable, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.INavigablePage, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.ISchemaGroupEditor, Bennewitz.Ninja.LayeredEditors.ViewModels.IDangerAnnotatedEditor, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging, System.IDisposable
+    .ctor(System.String groupName, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> schemaNodes, Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.ISchemaEditorFactory factory, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText text, System.Nullable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> initialScope = null, System.Func<System.Threading.Tasks.Task<System.String>> browseDialog = null)
+    .ctor(System.String groupName, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> schemaNodes, Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SharedScopeContext sharedScope, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.ISchemaEditorFactory factory, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText text, System.Func<System.Threading.Tasks.Task<System.String>> browseDialog = null, System.String groupDescription = "", Bennewitz.Ninja.AgentForge.Sdk.AgentConfigClientCore sdkClient = null, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.IGroupTabCustomizer tabCustomizer = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.GroupTab SelectedTab { get;set; }
+    Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope EditingScope { get;set; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment AssessDanger(System.String jsonPath)
+    CommunityToolkit.Mvvm.Input.IRelayCommand ClearFilterCommand { get; }
+    CommunityToolkit.Mvvm.Input.IRelayCommand CopyJsonCommand { get; }
+    System.Boolean FilterFromNavigation { get;set; }
+    System.Boolean ShowFilterBar { get; }
+    System.Boolean ShowJsonPlaceholders { get;set; }
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> FilteredEditors { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.EffectivePropertyRow> EffectiveRows { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaNode> SchemaNodes { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> AvailableScopes { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel> Editors { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> CaptureDeepPath()
+    System.Collections.ObjectModel.ObservableCollection<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.GroupTab> Tabs { get; }
+    System.String EditorError { get;set; }
+    System.String FilterText { get;set; }
+    System.String GroupDescription { get; }
+    System.String GroupName { get; }
+    System.String JsonPreview { get; }
+    System.String JsonTabHeader { get; }
+    System.Threading.Tasks.Task<System.Boolean> TryRestoreDeepPathAsync(System.Collections.Generic.IReadOnlyList<System.String> segments, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation.DeepRestoreMode mode, System.Object transientState, System.Threading.CancellationToken ct)
+    System.Void Activate()
+    System.Void ApplyNavigationFilter(System.String filter)
+    System.Void ApplyToWorkspace()
+    System.Void Deactivate()
+    System.Void Dispose()
+    System.Void OnNavigatedFrom(System.Boolean replaced)
+    System.Void OnNavigatedTo()
+    System.Void ReapplyTab(System.Collections.Generic.IReadOnlyList<System.String> segments)
+    System.Void RefreshFromWorkspace()
+    System.Void SelectTab(System.String tabId)
+    event System.EventHandler<System.String> CopyJsonRequested
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String TabEffective { get;init; }
+    System.String TabJsonActive { get;init; }
+    System.String TabJsonAll { get;init; }
+    System.String TabProperties { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText left, Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SettingsGroupText right)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings.SharedScopeContext [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging
+    .ctor()
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope initialScope)
+    Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope EditingScope { get;set; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope> AvailableScopes { get;set; }
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.FileShareStatus
+    static System.ValueTuple<System.String, System.Boolean> Describe(Bennewitz.Ninja.LayeredEditors.Avalonia.Services.ShareOutcome outcome, System.String revealed, System.String unavailable, System.String failed)
+class Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusController [sealed] : CommunityToolkit.Mvvm.ComponentModel.ObservableObject implements System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.INotifyPropertyChanging, System.IDisposable
+    .ctor()
+    .ctor(System.TimeProvider timeProvider, System.Action<System.Action> dispatch = null)
+    Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusKind Kind { get;set; }
+    System.Boolean HasText { get; }
+    System.Boolean IsActive { get; }
+    System.Boolean IsDismissible { get; }
+    System.Boolean IsFailure { get; }
+    System.Boolean IsState { get; }
+    System.Boolean IsSuccess { get; }
+    System.Boolean IsWarning { get; }
+    System.String Text { get;set; }
+    System.TimeSpan SuccessAutoClearDelay { get;set; }
+    System.TimeSpan WarningAutoClearDelay { get;set; }
+    System.Void Dismiss()
+    System.Void Dispose()
+    System.Void SetActive(System.String text)
+    System.Void SetFailure(System.String text)
+    System.Void SetState(System.String text)
+    System.Void SetSuccess(System.String text)
+    System.Void SetWarning(System.String text)
+    static System.TimeSpan DefaultSuccessAutoClearDelay
+    static System.TimeSpan DefaultWarningAutoClearDelay
+enum Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusKind : System.Int32
+    Active = 1
+    Failure = 4
+    None = 0
+    State = 5
+    Success = 2
+    Warning = 3
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease

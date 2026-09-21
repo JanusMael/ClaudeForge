@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
-             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
-             xmlns:settings="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
+             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
+             xmlns:settings="using:Bennewitz.Ninja.AgentForge.Core.Settings"
              xmlns:abs="using:Bennewitz.Ninja.LayeredEditors.Abstractions"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
              xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
@@ -20,6 +20,15 @@
         <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
         <libconv:BoolToStatusTextConverter x:Key="BoolToStatusText" />
         <libconv:BoolToStatusBrushConverter x:Key="BoolToStatusBrush" />
+        <!-- Severity rendering, identical to the shared library's wrapper so a tier looks the
+             same in both apps. ⚠ This app has its OWN copy of PropertyEditorWrapper — the shared
+             one under LayeredEditors.Avalonia is what OpenCodeForge renders — so a change to the
+             danger surface has to be made in both files. DangerSurfaceMarkupTests fails if either
+             one loses it. -->
+        <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
+        <libconv:AppSeverityToTintBrushConverter x:Key="SeverityToTint" />
     </UserControl.Resources>
 
     <!-- IsEnabled is NOT on the outer Border so the lock icon can show its tooltip.
@@ -84,6 +93,34 @@
                 </Panel>
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!--
+                        Severity indicator — how much attention this setting deserves, from
+                        ClaudeDangerTable. Rendered BEFORE the name so a user scanning a page
+                        reads the weight before the label.
+
+                        ⭐ DUAL-CODED: the GLYPH differs per severity (⊗ ⚠ ● ○) as well as the
+                        colour, because colour alone excludes colour-blind users and
+                        Critical-vs-Caution sits exactly on the red-green axis. Geometric shapes
+                        rather than emoji — emoji need a system emoji font and render as tofu
+                        without one (see AVALONIA-GOTCHAS).
+
+                        ⛔ AutomationProperties.HelpText is NOT decoration here. A coloured shape
+                        conveys nothing to a screen reader, so DangerAccessibleText names the tier
+                        AND the consequence; without it this whole surface would be sighted-only.
+                        HelpText and not Name: on a TextBlock the Text ALWAYS wins and an explicit
+                        Name is ignored outright (measured via UIA — see AVALONIA-GOTCHAS).
+
+                        Hidden entirely when the product says nothing about this path.
+                    -->
+                    <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                               Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                               FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
+                               VerticalAlignment="Center"
+                               AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                               ToolTip.Tip="{Binding DangerAccessibleText}" />
+
                     <!-- 2026-05-16 — Property name rendered as a tight-padded pill so the
                          heading is visually distinct from body text on BOTH themes (the
                          earlier teal-foreground-only treatment was hard to spot on light
@@ -201,6 +238,54 @@
                                ToolTip.Tip="{Binding UnsupportedShapeNotice}" />
                 </StackPanel>
             </DockPanel>
+
+            <!--
+                Row 1b: the standing "this value is unsafe RIGHT NOW" banner.
+
+                Distinct from the severity dot above on purpose. The dot is the TIER — present
+                even when the value is at its safe default, which is what lets a user spot a
+                dangerous knob before turning it. This banner appears only when the value actually
+                held is the unsafe one, so it never becomes wallpaper: on a page whose settings are
+                all at safe defaults, no banner renders at all.
+
+                ⛔ Coloured from the SEVERITY tokens, deliberately NOT from LE.DangerText /
+                LE.DangerBorder. LE.DangerText is a single flat #C62828 — theme-neutral by design —
+                which measures roughly 3:1 on the dark surface, under the 4.5:1 UI-STYLE-GUIDE
+                requires for text; and a hardcoded red says "critical" even for a Caution-tier
+                problem. Binding the severity means a cost lever reads amber and a security
+                boundary reads red.
+
+                ⚠ HorizontalAlignment=Left so the banner sizes to its sentence. Stretched across
+                the full row it read as a page-wide alert rather than one row's problem.
+            -->
+            <!-- ⛔ The explanation TextBlock below sets NO Foreground, deliberately. It used to
+                 take the severity brush, which is an ACCENT chosen to clear the 3.0:1 non-text
+                 floor; as body text the floor is 4.5:1 and the light theme measured 3.19:1
+                 (finding F4). Inheriting gives ordinary body text, which reaches 14.8:1 or better
+                 on the tint — and inheriting rather than naming a token is what lets BOTH apps
+                 render this, since OpenCodeForge declares no AppPrimaryTextBrush.
+                 The tint and the border still carry the severity, so nothing is lost. -->
+            <Border IsVisible="{Binding IsDangerNow}"
+                    Background="{Binding Danger.Severity, Converter={StaticResource SeverityToTint}}"
+                    BorderBrush="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="0,2,0,2"
+                    HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                               Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                               FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=14}"
+                               FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
+                               VerticalAlignment="Top" />
+                    <TextBlock Text="{Binding Danger.Explanation}"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               MaxWidth="720"
+                               AutomationProperties.HelpText="{Binding DangerAccessibleText}" />
+                </StackPanel>
+            </Border>
 
             <!-- Row 2: Description / help text (URLs are linkified) -->
             <libctrl:LinkifiedTextBlock SourceText="{Binding Description}"
@@ -350,7 +435,7 @@
                                                          Text="{Binding Text}"
                                                          PlaceholderText="{Binding InputWatermark}"
                                                          AcceptsReturn="{Binding IsCommandKind}"
-                                                         FontFamily="Consolas, Menlo, monospace"
+                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                          FontSize="12"
                                                          MinWidth="240" />
                                             </Grid>
@@ -378,7 +463,7 @@
                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkMcpMatchPayload}"
                                              Text="{Binding NewText}"
                                              PlaceholderText="{x:Static loc:Strings.WatermarkMcpMatchPayload}"
-                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                              FontSize="12"
                                              MinWidth="240">
                                         <TextBox.KeyBindings>
@@ -434,7 +519,7 @@
                                                              AutomationProperties.Name="{Binding PrimaryValueWatermark}"
                                                              Text="{Binding PrimaryValue}"
                                                              PlaceholderText="{Binding PrimaryValueWatermark}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12"
                                                              MinWidth="240" />
                                                 </Grid>
@@ -445,7 +530,8 @@
                                                      truly removes it from the on-disk shape. -->
                                                 <Expander Header="{x:Static loc:Strings.HeaderAdvancedFields}"
                                                           IsVisible="{Binding ShowGitFields}"
-                                                          Margin="0,2,0,0">
+                                                          Margin="0,2,0,0"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderAdvancedFields}">
                                                     <Grid ColumnDefinitions="100,8,*"
                                                           RowDefinitions="Auto,4,Auto"
                                                           Margin="0,4,0,0">
@@ -457,7 +543,7 @@
                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplaceRef}"
                                                                  Text="{Binding Ref}"
                                                                  PlaceholderText="{x:Static loc:Strings.WatermarkMarketplaceRef}"
-                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                  FontSize="12" />
                                                         <TextBlock Grid.Row="2" Grid.Column="0"
                                                                    Text="{x:Static loc:Strings.LabelMarketplacePath}"
@@ -467,7 +553,7 @@
                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkMarketplacePath}"
                                                                  Text="{Binding Path}"
                                                                  PlaceholderText="{x:Static loc:Strings.WatermarkMarketplacePath}"
-                                                                 FontFamily="Consolas, Menlo, monospace"
+                                                                 FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                  FontSize="12" />
                                                     </Grid>
                                                 </Expander>
@@ -478,7 +564,8 @@
                                                      the user clearing all rows truly removes it. -->
                                                 <Expander Header="{x:Static loc:Strings.HeaderHttpHeaders}"
                                                           IsVisible="{Binding ShowHeadersField}"
-                                                          Margin="0,2,0,0">
+                                                          Margin="0,2,0,0"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderHttpHeaders}">
                                                     <StackPanel Spacing="4" Margin="0,4,0,0">
                                                         <ItemsControl ItemsSource="{Binding Headers}">
                                                             <ItemsControl.ItemTemplate>
@@ -498,13 +585,13 @@
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderName}"
                                                                                     Text="{Binding Key}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                             <TextBox Grid.Column="2"
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderValue}"
                                                                                     Text="{Binding Value}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                         </Grid>
                                                                     </DockPanel>
@@ -524,13 +611,13 @@
                                                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderName}"
                                                                          Text="{Binding NewHeaderName}"
                                                                          PlaceholderText="{x:Static loc:Strings.WatermarkHeaderName}"
-                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                          FontSize="12" />
                                                                 <TextBox Grid.Column="2"
                                                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkHeaderValue}"
                                                                          Text="{Binding NewHeaderValue}"
                                                                          PlaceholderText="{x:Static loc:Strings.WatermarkHeaderValue}"
-                                                                         FontFamily="Consolas, Menlo, monospace"
+                                                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                          FontSize="12">
                                                                     <TextBox.KeyBindings>
                                                                         <KeyBinding Gesture="Enter"
@@ -570,7 +657,7 @@
                                              AutomationProperties.Name="{Binding NewPrimaryValueWatermark}"
                                              Text="{Binding NewPrimaryValue}"
                                              PlaceholderText="{Binding NewPrimaryValueWatermark}"
-                                             FontFamily="Consolas, Menlo, monospace"
+                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                              FontSize="12"
                                              MinWidth="240">
                                         <TextBox.KeyBindings>
@@ -602,7 +689,7 @@
                                      AutomationProperties.Name="{x:Static loc:Strings.AutoNameRawJsonEditor}"
                                      AcceptsReturn="True"
                                      TextWrapping="NoWrap"
-                                     FontFamily="Consolas, Menlo, monospace"
+                                     FontFamily="{DynamicResource AppMonoFontFamily}"
                                      FontSize="12"
                                      MinHeight="80"
                                      MaxHeight="240"
@@ -636,9 +723,13 @@
                             <ItemsControl ItemsSource="{Binding Plugins}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PluginConfigEntryViewModel">
+                                        <!-- Named from the plugin's own id: these expanders repeat
+                                             per plugin, so a static label would announce every
+                                             row identically. -->
                                         <Expander Margin="0,2"
                                                   IsExpanded="True"
-                                                  HorizontalAlignment="Stretch">
+                                                  HorizontalAlignment="Stretch"
+                                                  AutomationProperties.Name="{Binding PluginId}">
                                             <Expander.Header>
                                                 <DockPanel LastChildFill="True">
                                                     <Button DockPanel.Dock="Right"
@@ -653,7 +744,7 @@
                                                     <TextBox Text="{Binding PluginId}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginId}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12"
                                                              MinWidth="280" />
                                                 </DockPanel>
@@ -664,7 +755,8 @@
                                                         <DataTemplate x:DataType="vm:PluginServerConfigViewModel">
                                                             <Expander Margin="0,2"
                                                                       IsExpanded="True"
-                                                                      HorizontalAlignment="Stretch">
+                                                                      HorizontalAlignment="Stretch"
+                                                                      AutomationProperties.Name="{Binding ServerName}">
                                                                 <Expander.Header>
                                                                     <DockPanel LastChildFill="True">
                                                                         <Button DockPanel.Dock="Right"
@@ -679,7 +771,7 @@
                                                                         <TextBox Text="{Binding ServerName}"
                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
                                                                                 PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
-                                                                                FontFamily="Consolas, Menlo, monospace"
+                                                                                FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                 FontSize="12"
                                                                                 MinWidth="220" />
                                                                     </DockPanel>
@@ -705,13 +797,13 @@
                                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigKey}"
                                                                                             Text="{Binding Key}"
                                                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
-                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                             FontSize="12" />
                                                                                         <TextBox Grid.Column="2"
                                                                                                  AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigValue}"
                                                                                             Text="{Binding Value}"
                                                                                             PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
-                                                                                            FontFamily="Consolas, Menlo, monospace"
+                                                                                            FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                             FontSize="12" />
                                                                                     </Grid>
                                                                                 </DockPanel>
@@ -731,13 +823,13 @@
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigKey}"
                                                                                     Text="{Binding NewConfigKey}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigKey}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12" />
                                                                             <TextBox Grid.Column="2"
                                                                                      AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginConfigValue}"
                                                                                     Text="{Binding NewConfigValue}"
                                                                                     PlaceholderText="{x:Static loc:Strings.WatermarkPluginConfigValue}"
-                                                                                    FontFamily="Consolas, Menlo, monospace"
+                                                                                    FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                                     FontSize="12">
                                                                                 <TextBox.KeyBindings>
                                                                                     <KeyBinding Gesture="Enter"
@@ -762,7 +854,7 @@
                                                     <TextBox Text="{Binding NewServerName}"
                                                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
                                                              PlaceholderText="{x:Static loc:Strings.WatermarkPluginMcpServerName}"
-                                                             FontFamily="Consolas, Menlo, monospace"
+                                                             FontFamily="{DynamicResource AppMonoFontFamily}"
                                                              FontSize="12">
                                                         <TextBox.KeyBindings>
                                                             <KeyBinding Gesture="Enter"
@@ -784,7 +876,7 @@
                                 <TextBox Text="{Binding NewPluginId}"
                                          AutomationProperties.Name="{x:Static loc:Strings.WatermarkPluginId}"
                                          PlaceholderText="{x:Static loc:Strings.WatermarkPluginId}"
-                                         FontFamily="Consolas, Menlo, monospace"
+                                         FontFamily="{DynamicResource AppMonoFontFamily}"
                                          FontSize="12">
                                     <TextBox.KeyBindings>
                                         <KeyBinding Gesture="Enter"
@@ -942,7 +1034,8 @@
                                     <DataTemplate x:DataType="vm:PropertyCategoryViewModel">
                                         <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
                                                   Margin="0,2,0,0"
-                                                  HorizontalAlignment="Stretch">
+                                                  HorizontalAlignment="Stretch"
+                                                  AutomationProperties.Name="{Binding Header}">
                                             <!-- Title in the page-header accent (NavSelectedAccentBrush,
                                                  the same blue as the group heading pill) so the section
                                                  reads as a real header and can't be missed. -->

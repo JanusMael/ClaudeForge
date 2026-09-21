@@ -1,0 +1,111 @@
+name: Release packages
+
+# Triggered by a PACKAGE version tag: packages-v2026.3.914 (plans/00001, work item 6).
+#
+# ⚠ THE PREFIX IS NOT DECORATION, AND IT IS NOT EITHER APP'S. The eleven shared libraries serve
+# BOTH ClaudeForge and OpenCodeForge, so riding on one app's release tag would make the other
+# app's releases unable to publish shared code — and would tie a library fix to cutting a full
+# app release. This prefix is also what keeps the three release workflows disjoint: 'v*.*.*' and
+# 'opencodeforge-v*.*.*' cannot match a tag starting 'packages-v'.
+#
+# ⓘ Safe against the in-app update check, verified rather than assumed: ClaudeForge uses
+# ReleaseTagScheme.Unprefixed, which strips at most a leading 'v' and then requires
+# Version.TryParse to succeed — 'packages-v2026.3.914' fails that, so neither app can mistake a
+# package release for one of its own.
+#
+# ⛔ NO GITHUB RELEASE IS CREATED. The artifacts of this tag are packages on a feed, not
+# downloads. This repository's Releases page is how users of two apps find their binaries, and an
+# entry with nothing to download for either of them belongs somewhere else.
+on:
+  push:
+    tags:
+      - 'packages-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Package tag to publish, e.g. packages-v2026.3.914'
+        required: true
+
+# contents: read — this workflow never writes to the repository.
+# packages: write — what GITHUB_TOKEN needs to push to GitHub Packages.
+permissions:
+  contents: read
+  packages: write
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  # Must stay equal to the tag filter above, minus the glob. Resolve-ReleaseVersion.ps1 refuses a
+  # tag that does not start with it, so a mismatch fails the run rather than publishing under a
+  # version nobody meant.
+  TAG_PREFIX: packages-v
+
+# ── Credentials ──────────────────────────────────────────────────────────────
+# GITHUB_TOKEN only. The feed is this repository's own GitHub Packages registry, so no
+# long-lived secret is stored or rotated. ⚠ Trusted Publishing (OIDC, NuGet/login) is NOT
+# applicable here — it issues nuget.org keys, and these packages are private.
+#
+# A developer running scripts/Publish-Packages.ps1 locally needs a PAT with write:packages, and
+# should prefer -PreflightOnly unless they intend to publish something permanent.
+
+jobs:
+
+  # ── Gate: the suite must pass before anything immutable is published ────────
+  #
+  # ⛔ A published package version can never be replaced. Everything this repository normally
+  # treats as recoverable — a bad build, a wrong version — is permanent past the push step, so
+  # the gate is not optional here the way a re-runnable job's would be.
+  #
+  # ⓘ One OS, unlike the app workflows' three. These eleven are RID-neutral libraries; the
+  # cross-platform surface belongs to the apps, and ci.yml's package-canary job already proves
+  # the whole repo builds and tests against these packages rather than the projects.
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      - run: dotnet restore ClaudeForge.slnx
+
+      - run: dotnet build ClaudeForge.slnx --no-restore -c Debug
+
+      - run: dotnet test ClaudeForge.slnx --no-build -c Debug
+
+  publish:
+    name: Publish packages
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # The same derivation both app releases use. A dispatch supplies a TAG rather than a bare
+      # version deliberately: it then passes the identical validation — real date, quarter
+      # agreeing with month, correct prefix — instead of letting a typed version bypass it.
+      - name: Resolve version from tag
+        shell: pwsh
+        run: >
+          ./scripts/Resolve-ReleaseVersion.ps1
+          -Tag "${{ github.event.inputs.tag || github.ref_name }}"
+          -TagPrefix $env:TAG_PREFIX
+
+      # Packs, then refuses on any of three grounds before the first upload: a set at more than
+      # one version, a package whose contained assembly is stamped differently, or a version the
+      # feed already holds. See the script's header for why a partial push is unrecoverable.
+      - name: Publish
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/Publish-Packages.ps1 -PackageVersion $env:ReleaseVersion

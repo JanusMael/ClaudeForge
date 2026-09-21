@@ -1,17 +1,21 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
-using HookEvent = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookEvent;
+using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks.HookCommandType;
+using HookEvent = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks.HookEvent;
 
 // Alias the SDK HookEvent so it's reachable without fully-qualifying. The
 // editor's HookEntry now uses the SDK HookCommandType directly — the former
@@ -23,8 +27,11 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// Editor for the "hooks" object.
 /// Groups hooks by event type; within each group lists matcher+command entries.
 /// </summary>
-public partial class HooksEditorViewModel : PropertyEditorViewModel
+public partial class HooksEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
 {
+    /// <inheritdoc />
+    public string OwnedJsonPathPrefix => "hooks";
+
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces / McpServers
@@ -574,7 +581,7 @@ public partial class HooksEditorViewModel : PropertyEditorViewModel
                                      .Where(e => e.Scope != editingScope && e.Value is JsonObject jo && jo.Count > 0)
                                      .Select(e => e.Scope)
                                      .Distinct()
-                                     .Select(scope => (IEditorScope)ClaudeScope.For(scope))
+                                     .Select(scope => (IEditorScope)ConfigScopeAdapter.For(scope))
                                      .ToList();
     }
 

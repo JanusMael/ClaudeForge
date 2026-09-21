@@ -1,3 +1,6 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -21,11 +24,22 @@ public sealed class GroupEditorDeepNavigationTests
     private static SettingsGroupEditorViewModel MakeEditor()
     {
         JsonObject root = (JsonObject)JsonNode.Parse("{}")!;
+
+        // ⚠ Adapted from main: this branch's SettingsWorkspace takes an explicit merge policy,
+        // and the group editor takes an editor factory plus its host-supplied text — neither
+        // existed when main wrote this test. The shapes come from the branch's own callers, not
+        // invented here.
         SettingsWorkspace workspace = new(
-            [new SettingsDocument(ConfigScope.User, "User.json", root, isReadOnly: false)]);
+            [new SettingsDocument(ConfigScope.User, "User.json", root, isReadOnly: false)],
+            ClaudeMergePolicy.Instance);
 
         List<SchemaNode> nodes = [new("model", "model") { ValueType = SchemaValueType.String }];
-        return new SettingsGroupEditorViewModel("Git", nodes, workspace);
+        return new SettingsGroupEditorViewModel(
+            "Git",
+            nodes,
+            workspace,
+            ClaudeEditorFactoryConfig.CreateDefault(),
+            ClaudeSettingsGroupText.Create());
     }
 
     [TestMethod]

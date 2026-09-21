@@ -1,0 +1,129 @@
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
+enum Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity : System.Int32
+    Caution = 2
+    Critical = 3
+    Info = 1
+    Neutral = 0
+class Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment>
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Severity, System.Boolean IsDangerNow, System.String Explanation)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Severity { get;init; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsDangerNow { get;init; }
+    System.Int32 GetHashCode()
+    System.String Explanation { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity Severity, out System.Boolean IsDangerNow, out System.String Explanation)
+    static Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Unremarkable { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment left, Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment left, Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment right)
+enum Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogCategory : System.Int32
+    Confirmation = 1
+    Destructive = 2
+    Error = 3
+    Information = 0
+    Input = 4
+class Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage [sealed]
+    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment> segments)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment> Segments { get; }
+    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage Plain(System.String text)
+    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Builder()
+class Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder [sealed]
+    .ctor()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage Build()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Bold(System.String s)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Code(System.String s)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Hyperlink(System.String label, System.String url)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Path(System.String path)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessageBuilder Text(System.String s)
+class Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment>
+    .ctor(Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegmentKind Kind, System.String Value, System.String Url = null)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment <Clone>$()
+    Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegmentKind Kind { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.String Url { get;init; }
+    System.String Value { get;init; }
+    System.Void Deconstruct(out Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegmentKind Kind, out System.String Value, out System.String Url)
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment left, Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment left, Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegment right)
+enum Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogSegmentKind : System.Int32
+    Bold = 1
+    Code = 4
+    Hyperlink = 3
+    Path = 2
+    Text = 0
+class Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext [sealed] implements System.IEquatable<Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext>
+    .ctor(System.Func<System.Threading.Tasks.Task<System.String>> BrowsePath = null, System.Func<System.Threading.Tasks.Task<System.String>> BrowseFile = null)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext other)
+    System.Boolean Equals(System.Object obj)
+    System.Func<System.Threading.Tasks.Task<System.String>> BrowseFile { get;init; }
+    System.Func<System.Threading.Tasks.Task<System.String>> BrowsePath { get;init; }
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.Void Deconstruct(out System.Func<System.Threading.Tasks.Task<System.String>> BrowsePath, out System.Func<System.Threading.Tasks.Task<System.String>> BrowseFile)
+    static Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext Empty { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext left, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext left, Bennewitz.Ninja.LayeredEditors.Abstractions.EditorContext right)
+enum Bennewitz.Ninja.LayeredEditors.Abstractions.EditorValueType : System.Int32
+    Boolean = 1
+    Complex = 10
+    Dictionary = 9
+    Enum = 4
+    Integer = 5
+    Number = 6
+    Object = 8
+    Path = 3
+    String = 2
+    StringArray = 7
+    Unknown = 0
+interface Bennewitz.Ninja.LayeredEditors.Abstractions.IDangerClassifier
+    Bennewitz.Ninja.LayeredEditors.Abstractions.DangerAssessment Classify(System.String path, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope, System.Object currentValue)
+    System.Collections.Generic.IReadOnlyCollection<System.String> ClassifiedPaths { get; }
+interface Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema
+    Bennewitz.Ninja.LayeredEditors.Abstractions.EditorValueType ValueType { get; }
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema ItemsSchema { get; }
+    System.Boolean IsDeprecated { get; }
+    System.Boolean IsNew { get; }
+    System.Boolean IsReadOnly { get; }
+    System.Boolean IsUndocumented { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> Metadata { get; }
+    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> EnumValueDescriptions { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorSchema> Properties { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> EnumValues { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> Examples { get; }
+    System.Nullable<System.Double> Maximum { get; }
+    System.Nullable<System.Double> Minimum { get; }
+    System.Object DefaultValue { get; }
+    System.String Description { get; }
+    System.String Name { get; }
+    System.String Path { get; }
+    System.String Title { get; }
+interface Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope
+    System.Boolean IsReadOnly { get; }
+    System.Int32 Priority { get; }
+    System.String DisplayName { get; }
+    System.String Id { get; }
+interface Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope EffectiveScope { get; }
+    System.Boolean IsDefinedAt(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.Boolean IsOverridden { get; }
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope> EnumerateDefinedScopes()
+    System.Object EffectiveValue { get; }
+    System.Object GetValueAt(Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.String Path { get; }
+interface Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorWorkspace
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorValue GetValue(System.String path)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope> AvailableScopes { get; }
+    System.Void RemoveValue(System.String path, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    System.Void SetValue(System.String path, System.Object value, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    event System.EventHandler<Bennewitz.Ninja.LayeredEditors.Abstractions.ValueChangedEventArgs> ValueChanged
+class Bennewitz.Ninja.LayeredEditors.Abstractions.ValueChangedEventArgs [sealed] : System.EventArgs
+    .ctor(System.String path, Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope scope)
+    Bennewitz.Ninja.LayeredEditors.Abstractions.IEditorScope Scope { get; }
+    System.String Path { get; }

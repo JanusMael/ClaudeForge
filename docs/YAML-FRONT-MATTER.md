@@ -5,10 +5,16 @@ parser is a deliberately small subset of YAML: front matter in skill, agent,
 command and memory files is shallow, and a full YAML library would bring implicit
 type coercion and node re-ordering that a round-tripping *editor* must not have.
 
-Source: [`YamlFrontMatter.cs`](../src/ClaudeForge.Sdk/Memory/YamlFrontMatter.cs),
-[`FrontMatter.cs`](../src/ClaudeForge.Sdk/Memory/FrontMatter.cs).
-Tests: [`YamlFrontMatterBlockScalarTests.cs`](../tests/ClaudeForge.Sdk.Tests/Memory/YamlFrontMatterBlockScalarTests.cs),
-[`YamlFrontMatterFlowScalarTests.cs`](../tests/ClaudeForge.Sdk.Tests/Memory/YamlFrontMatterFlowScalarTests.cs).
+Source: [`YamlFrontMatter.cs`](../src/AgentForge.Sdk/Memory/YamlFrontMatter.cs),
+[`FrontMatter.cs`](../src/AgentForge.Sdk/Memory/FrontMatter.cs).
+Tests: [`YamlFrontMatterBlockScalarTests.cs`](../tests/AgentForge.Sdk.Tests/Memory/YamlFrontMatterBlockScalarTests.cs),
+[`YamlFrontMatterRealFileBlockScalarTests.cs`](../tests/AgentForge.Sdk.Tests/Memory/YamlFrontMatterRealFileBlockScalarTests.cs),
+[`YamlFrontMatterFlowScalarTests.cs`](../tests/AgentForge.Sdk.Tests/Memory/YamlFrontMatterFlowScalarTests.cs),
+[`YamlFrontMatterLineEndingTests.cs`](../tests/AgentForge.Sdk.Tests/Memory/YamlFrontMatterLineEndingTests.cs).
+
+> ⓘ **Paths differ from `main`.** This branch renamed `ClaudeForge.Sdk` to `AgentForge.Sdk`, and
+> keeps **two** block-scalar test files: this branch and `main` wrote that coverage
+> independently, neither was a superset, and the parser here is the union of both.
 
 ## The tokens
 

@@ -1,19 +1,21 @@
 using System.Text;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer;
 
 /// <summary>
-/// Headless example consumer of the <c>ClaudeForge.Sdk</c> v1 surface.
+/// Headless example consumer of the <c>AgentForge.Sdk</c> v1 surface.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This project exists to prove
 /// that the SDK is Avalonia-free and consumable from a strictly headless
 /// context (an MCP server, a CLI, a daemon, etc.). It builds with
-/// <c>net10.0</c> and references only <c>ClaudeForge.Sdk</c>; if any future
+/// <c>net10.0</c> and references only <c>AgentForge.Sdk</c>; if any future
 /// change pulls Avalonia into the SDK's transitive closure, this project will
 /// start failing to build with package-version conflicts.
 /// </para>
@@ -58,7 +60,7 @@ internal static class Program
             ctsRoot.Cancel();
         };
 
-        using ClaudeCodeClient client = new(defaultScope: ConfigScope.User);
+        using ClaudeCodeClient client = new(ClaudeEnvironment.FromProcess(), defaultScope: ConfigScope.User);
 
         try
         {
@@ -203,7 +205,7 @@ internal static class Program
 
     private static void PrintUsage()
     {
-        Console.Error.WriteLine("Claude Config MCP server (sample) — exercises ClaudeForge.Sdk.");
+        Console.Error.WriteLine("Claude Config MCP server (sample) — exercises AgentForge.Sdk.");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Commands:");
         Console.Error.WriteLine("  get-effective <path>");

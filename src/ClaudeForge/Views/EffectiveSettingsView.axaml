@@ -1,9 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.EffectiveSettingsView"
              x:DataType="vm:EffectiveSettingsViewModel">
@@ -14,6 +15,11 @@
         <conv:ScopeToTooltipConverter x:Key="ScopeToTooltip" />
         <conv:LongValueTooltipConverter x:Key="LongValueTooltip" />
         <conv:OverriddenTooltipConverter x:Key="OverriddenTooltip" />
+        <!-- Severity rendering, shared with both PropertyEditorWrappers so a tier looks the same
+             wherever it appears. -->
+        <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+        <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+        <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
     </UserControl.Resources>
 
     <DockPanel>
@@ -76,11 +82,12 @@
         </Border>
 
         <!-- Tab view: flat table + raw JSON -->
-        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveSettingsTabs}">
 
             <!-- Property table -->
             <TabItem Header="{x:Static loc:Strings.TabProperties}"
-                     AutomationProperties.Name="{x:Static loc:Strings.TabProperties}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabProperties}">
                 <DockPanel>
                     <!-- Filter bar -->
                     <Border DockPanel.Dock="Top" Padding="8,6"
@@ -103,7 +110,7 @@
                               AutomationProperties.Name="{x:Static loc:Strings.AutoNameEffectiveRowsGrid}">
                         <DataGrid.Columns>
                             <!--
-                                Cells are wrapped in <controls:TipCell> rather than relying
+                                Cells are wrapped in <lecontrols:TipCell> rather than relying
                                 on bare TextBlock.ToolTip.Tip so the tooltip fires anywhere
                                 inside the cell bounds — not just over the text glyphs.
                                 This matches the pattern already used in EnvironmentEditorView
@@ -111,6 +118,54 @@
                                 content; an internal property-changed handler in TipCell
                                 forwards it to ToolTip.SetTip on the cell itself.
                             -->
+                            <!--
+                                Risk — first column so the weight is read before the label,
+                                matching the property wrapper where the dot precedes the name.
+
+                                ⭐⭐ Assessed at the scope that WON and the value in effect, so it
+                                can legitimately differ from the dot on the same setting's editor
+                                row (which assesses the scope being edited). That divergence is
+                                the column's reason to exist — see EffectivePropertyRow.Danger —
+                                and the header tooltip says so, because two dots disagreeing
+                                otherwise reads as a bug.
+                            -->
+                            <DataGridTemplateColumn Width="Auto"
+                                                    CanUserSort="True"
+                                                    SortMemberPath="Danger.Severity">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{x:Static loc:Strings.HeaderEffectiveSeverity}"
+                                               ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveSeverity}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
+                                        <!-- Dual-coded: the GLYPH differs per tier (⊗ ⚠ ● ○) as
+                                             well as the colour, because Critical-vs-Caution sits
+                                             exactly on the red-green axis. Geometric shapes, not
+                                             emoji — emoji need a system emoji font and render as
+                                             tofu without one.
+
+                                             ⛔ HelpText, not Name: on a TextBlock the Text always
+                                             wins and an explicit Name is ignored outright, so a
+                                             Name here would announce the glyph and nothing else.
+
+                                             The TipCell wrapper makes the whole cell hoverable,
+                                             matching every other column on this grid — a one-
+                                             character glyph is a very small tooltip target. -->
+                                        <lecontrols:TipCell Tip="{Binding DangerAccessibleText}">
+                                            <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                                       Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                                       Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                                                       FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
+                                                       FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="12,0"
+                                                       AutomationProperties.HelpText="{Binding DangerAccessibleText}" />
+                                        </lecontrols:TipCell>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                             <DataGridTemplateColumn Width="220"
                                                     CanUserSort="True"
                                                     SortMemberPath="Property">
@@ -119,15 +174,15 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveProperty}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- Tooltip shows the schema description (falls back to the
                                              path) so hovering a property name explains what it does. -->
-                                        <controls:TipCell Tip="{Binding PropertyTooltip}">
+                                        <lecontrols:TipCell Tip="{Binding PropertyTooltip}">
                                             <TextBlock Text="{Binding Property}"
                                                        VerticalAlignment="Center"
                                                        Margin="12,0"
                                                        TextTrimming="CharacterEllipsis" />
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -141,29 +196,35 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveValueCol}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- SelectableTextBlock + ContextFlyout matches the
                                              SaveChangesDialog cell pattern: drag-select + Ctrl+C
                                              copies the visible (ellipsis-trimmed) text natively;
                                              right-click → Copy copies the FULL DisplayValue so
                                              long JSON blobs are recoverable in one click without
                                              needing to expand the column. -->
-                                        <controls:TipCell
+                                        <lecontrols:TipCell
                                             Tip="{Binding DisplayValue,
                                                 Converter={StaticResource LongValueTooltip}}">
+                                            <!-- ⛔ Monospace, like every other surface that shows
+                                                 a literal value. This column renders the SAME
+                                                 JSON the properties pane does, and rendered it
+                                                 in the proportional UI font — so one screen
+                                                 showed one value two ways. -->
                                             <SelectableTextBlock Text="{Binding DisplayValue}"
+                                                                 FontFamily="{DynamicResource AppMonoFontFamily}"
                                                                  TextTrimming="CharacterEllipsis"
                                                                  VerticalAlignment="Center"
                                                                  Margin="12,0">
                                                 <SelectableTextBlock.ContextFlyout>
                                                     <MenuFlyout>
                                                         <MenuItem Header="{x:Static loc:Strings.LabelMenuCopy}"
-                                                                  AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"
-                                                                  Click="OnCopyEffectiveValue" />
+                                                                  Click="OnCopyEffectiveValue" 
+        AutomationProperties.Name="{x:Static loc:Strings.LabelMenuCopy}"/>
                                                     </MenuFlyout>
                                                 </SelectableTextBlock.ContextFlyout>
                                             </SelectableTextBlock>
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -176,11 +237,11 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveScope}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
                                         <!-- Outer TipCell makes the entire cell area hoverable
                                              (not just the colored badge), so users can read the
                                              scope description by pointing anywhere in the cell. -->
-                                        <controls:TipCell
+                                        <lecontrols:TipCell
                                             Tip="{Binding Scope,
                                                 Converter={StaticResource ScopeToTooltip}}">
                                             <Border
@@ -195,7 +256,7 @@
                                                     FontSize="10" FontWeight="Bold"
                                                     HorizontalAlignment="Center" />
                                             </Border>
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -211,8 +272,8 @@
                                                ToolTip.Tip="{x:Static loc:Strings.TipHeaderEffectiveOverridden}" />
                                 </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate x:DataType="vm:EffectivePropertyRow">
-                                        <controls:TipCell
+                                    <DataTemplate x:DataType="shell:EffectivePropertyRow">
+                                        <lecontrols:TipCell
                                             Tip="{Binding IsOverridden,
                                                 Converter={StaticResource OverriddenTooltip}}">
                                             <CheckBox IsChecked="{Binding IsOverridden}"
@@ -220,7 +281,7 @@
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"
                                                       AutomationProperties.Name="{x:Static loc:Strings.HeaderEffectiveOverridden}" />
-                                        </controls:TipCell>
+                                        </lecontrols:TipCell>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -231,7 +292,7 @@
 
             <!-- Raw JSON with syntax highlighting -->
             <TabItem Header="{x:Static loc:Strings.TabJson}"
-                     AutomationProperties.Name="{x:Static loc:Strings.TabJson}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabJson}">
                 <DockPanel>
                     <!-- Copy button -->
                     <Button DockPanel.Dock="Top"

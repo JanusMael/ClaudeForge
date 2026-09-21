@@ -1,16 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+             xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
+             xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:lecontrols="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:core="using:Bennewitz.Ninja.ClaudeForge.Core.Settings"
+             xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Settings"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
              xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.SettingsGroupEditorView"
-             x:DataType="vm:SettingsGroupEditorViewModel">
+             x:DataType="shell:SettingsGroupEditorViewModel">
 
     <UserControl.Resources>
         <conv:ScopeToBrushConverter x:Key="ScopeToBrush" />
@@ -218,19 +219,10 @@
              bound so the choice is remembered across rebuilds / navigation; the
              VM seeds it from the remembered tab → customizer default → first. -->
         <TabControl ItemsSource="{Binding Tabs}"
-                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
-            <!-- The name has to sit on the TabItem CONTAINER: UI Automation reports
-                 the container, and an unnamed one falls back to the bound item's
-                 ToString(), which announced every settings tab as the GroupTab type
-                 name. The ItemTemplate below names the header TextBlock, which is
-                 inside the container and not what gets reported. -->
-            <TabControl.Styles>
-                <Style Selector="TabItem" x:DataType="vm:GroupTab">
-                    <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
-                </Style>
-            </TabControl.Styles>
+                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameSettingsGroupTabs}">
             <TabControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:GroupTab">
+                <DataTemplate x:DataType="shell:GroupTab">
                     <TextBlock Text="{Binding Header}"
                                AutomationProperties.Name="{Binding AutomationName}" />
                 </DataTemplate>

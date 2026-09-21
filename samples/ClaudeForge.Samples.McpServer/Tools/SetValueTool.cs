@@ -1,19 +1,19 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 
 /// <summary>
 /// <c>set-value &lt;path&gt; &lt;value&gt;</c> — writes a string value at the
-/// given path to the client's <see cref="IClaudeConfigClient.DefaultScope"/>.
+/// given path to the client's <see cref="IAgentConfigClient.DefaultScope"/>.
 /// Demonstrates the generic escape hatch
-/// <see cref="IClaudeConfigClient.SetValue{T}(string, T)"/>.
+/// <see cref="IAgentConfigClient.SetValue{T}(string, T)"/>.
 /// </summary>
 /// <remarks>
 /// Mutations land in memory; <c>save</c> writes them to disk.
 /// </remarks>
 internal static class SetValueTool
 {
-    public static Task<int> RunAsync(IClaudeConfigClient client, string[] args, CancellationToken ct)
+    public static Task<int> RunAsync(IAgentConfigClient client, string[] args, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 

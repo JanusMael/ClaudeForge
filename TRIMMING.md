@@ -5,6 +5,14 @@ This document captures hard-won knowledge about `PublishTrimmed` with Avalonia
 is zero ILLink warnings in the Release publish across all six RIDs:
 `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`.
 
+> ⚠ **There are TWO apps, and the target is therefore 12 publishes, not six.**
+> `ClaudeForge` and `OpenCodeForge` are published separately and each has its
+> own link closure, so a trim break can exist in one and not the other. This
+> file said "six RIDs" throughout while only ever describing the first app —
+> corrected 2026-09-14. ⛔ `ILLink.Suppressions.xml` belongs to `ClaudeForge`
+> and covers *its* dependency closure; it is an app-level artifact and a
+> packaged library neither carries nor needs one.
+
 > **Avalonia 12 dependency note:** `Avalonia.Svg.Skia` has no Avalonia 12
 > release. The app references `Svg.Skia 3.0.2` directly instead — same
 > underlying `SKSvg` API, no Avalonia version dependency. The trim
@@ -427,9 +435,51 @@ the suppression comment.
 
 ---
 
+## `EnableTrimAnalyzer`, and the analysis packaging would have silently removed
+
+`src/Directory.Build.props` sets two properties for everything under `src/`:
+
+```xml
+<IsTrimmable>true</IsTrimmable>
+<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+```
+
+⭐ **The second one exists because PACKAGING would otherwise delete half the trim analysis, with
+nothing reporting it.** There are two analyses, and they are not the same thing:
+
+| | What it sees | When it runs |
+|---|---|---|
+| The **Roslyn** trim analyser | one project's own source | every build of every `src/` project, **Debug included**, because of this property |
+| **ILLink**'s whole-program pass | the entire link closure, and decides what is actually removed | only on a `dotnet publish`, which is what the 12-publish matrix above measures |
+
+Before this property, the Roslyn half reached the shared libraries **only** because
+`dotnet publish -p:PublishTrimmed=true` sets a **global** MSBuild property, which flows into every
+project *in the app's build graph*. ⛔ **A packaged library is not in that graph.** Consume the
+eleven as NuGet packages and the property reaches nothing, the analyser never runs on shared code
+again, and the first sign is an `IL2026` in an app that cannot edit the assembly causing it.
+
+⚠ **`IsTrimmable` does not cover the gap, though it looks like it should.** It is baked into each
+assembly as metadata and travels inside the `.nupkg`, so ILLink still analyses the packaged IL —
+but after the fact, attributed to an assembly the consuming app does not own. That is a bug report,
+not a build error.
+
+ⓘ **Canary for this property:** remove the `McpServersAccessor` cast in the JSON helper and confirm
+a plain `dotnet build` reddens with `IL2026` in **both** Debug and Release. It was verified that
+way rather than assumed.
+
+⛔ **`ILLink.Suppressions.xml` is NOT part of this.** It belongs to `ClaudeForge` and covers *its*
+dependency closure — an app-level artifact. A packaged library neither carries one nor needs one,
+and adding one to a shared project would suppress warnings for consumers who never agreed to it.
+
+> ⓘ **Corrected 2026-09-13.** `CLAUDE.md` said trim analysis "only runs on a Release publish".
+> That stopped being true when this property landed. The warning above still stands, because the
+> ILLink half — the one that decides what is actually removed — is still publish-only.
+
+---
+
 ## Our code is trim-clean — keep it that way
 
-The following rules keep `ClaudeForge`, `ClaudeForge.Core`, and the
+The following rules keep `ClaudeForge`, `AgentForge.Core`, and the
 `LayeredEditors.*` projects out of this file:
 
 - **Use source-generated `JsonSerializerContext`** — see `CoreJsonContext` /

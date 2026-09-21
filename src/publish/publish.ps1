@@ -1,12 +1,17 @@
 <#
 .SYNOPSIS
-    Multi-RID publish orchestrator for ClaudeForge.
+    Multi-RID publish orchestrator for one app.
 
 .DESCRIPTION
     Drives Publish-Rid.ps1 across every supported RID, prompting the user
     before each one so a developer can cherry-pick the architectures they
     actually need (or quit partway through). Pass -All to skip prompts and
     build every RID unattended — this is the CI / release-cut mode.
+
+    One app per invocation. The repository ships two, and they release on
+    separate tags and separate workflows (see .github/workflows/release.yml's
+    header and AgentForge.Core/Updates/ReleaseTagScheme.cs), so publishing both
+    in one run would produce a set of archives no single release consumes.
 
     Script layout (all scripts live under src/publish/):
 
@@ -31,6 +36,10 @@
         pwsh src/publish/publish.ps1 -All
         pwsh src/publish/publish.ps1 -Rids win-x64,win-arm64
 
+.PARAMETER App
+    Which app to publish — a Name from PublishApps.ps1. Defaults to ClaudeForge
+    so every pre-existing caller keeps meaning what it meant.
+
 .PARAMETER All
     Build every RID in $Rids without prompting. Typical CI usage:
       `pwsh src/publish/publish.ps1 -All`
@@ -48,12 +57,18 @@
     pwsh src/publish/publish.ps1 -All
 
 .EXAMPLE
+    # The other app, unattended.
+    pwsh src/publish/publish.ps1 -App OpenCodeForge -All
+
+.EXAMPLE
     # Interactive, but only offer the two Windows RIDs.
     pwsh src/publish/publish.ps1 -Rids win-x64,win-arm64
 #>
 
 [CmdletBinding()]
 param(
+    [string] $App = 'ClaudeForge',
+
     [switch] $All,
 
     [ValidateSet("win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64")]
@@ -78,71 +93,22 @@ $logFolder       = Join-Path $distFolder "logs"
 $worker          = Join-Path $PSScriptRoot "Publish-Rid.ps1"
 $closureAnalyzer = Join-Path $PSScriptRoot "Analyze-XamlClosures.ps1"
 
-Set-Location $srcRoot
+# $appInfo, never $app — PowerShell variable names are case-insensitive, so a
+# local named $app IS the $App parameter.
+. (Join-Path $PSScriptRoot 'PublishApps.ps1')
+$appInfo = Get-PublishApp -Name $App
+Write-Host ("Publishing app: " + $appInfo.Name) -ForegroundColor Magenta
 
-# ── 0. Workload preflight (Windows RIDs only) ────────────────────────────────
-# LayeredEditors.Avalonia.Services.csproj sets <UseMauiEssentials>true</UseMauiEssentials>
-# for its net10.0-windows10.0.19041.0 TFM so DefaultShareService can call the
-# native Windows share flyout via Microsoft.Maui.Essentials. That property
-# triggers an SDK workload check (NETSDK1147) which fails on any machine that
-# does not have the `maui-windows` workload installed — typically every fresh
-# clone of this repo on a machine without Visual Studio 2022+.
-#
-# Why this is opt-in / surgical rather than a blanket `dotnet workload restore`:
-#   - `restore` refreshes ALL advertising manifests on every invocation
-#     (slow: 10-30 s) and tries to reconcile every installed workload on the
-#     machine to its latest manifest version — including unrelated workloads
-#     (android, ios, etc.) that this project never touches.
-#   - This preflight is a no-op on the fast path (one `dotnet workload list`
-#     parse, ~500 ms) and only triggers an install if `maui-windows` is
-#     genuinely absent. `--skip-manifest-update` keeps the install targeted.
-#
-# Gating: only runs when at least one Windows RID is in the build set. Linux /
-# macOS RIDs publish via the net10.0 TFM which doesn't reference Maui, so
-# they don't need the workload — running the preflight then would just be
-# pointless overhead.
-#
-# Failure path: if the workload install fails (typically: not running
-# elevated; `dotnet workload install` writes to %ProgramFiles%\dotnet\
-# sdk-manifests on Windows and requires Admin), we abort here with a clear
-# remediation hint rather than letting the per-RID publish fail later with
-# the less-obvious NETSDK1147.
-$buildingWindows = ($Rids | Where-Object { $_ -like 'win-*' }).Count -gt 0
-if ($buildingWindows)
-{
-    Write-Host "Checking required .NET workloads for Windows publishes..." -ForegroundColor Magenta
-    # `dotnet workload list` writes a tabular display to stdout. Lines after
-    # the column header start with the workload id (one per row). Use a
-    # multiline regex anchored to start-of-line (with optional leading
-    # whitespace) and a word boundary so we don't false-positive on
-    # hypothetical future ids like `maui-windows-foo`.
-    $workloadOutput = & dotnet workload list 2>&1 | Out-String
-    if ($workloadOutput -notmatch '(?m)^\s*maui-windows\b')
-    {
-        Write-Host "  Missing workload: maui-windows. Installing..." -ForegroundColor Yellow
-        dotnet workload install maui-windows --skip-manifest-update
-        $workloadExit = $LASTEXITCODE
-        if ($workloadExit -ne 0)
-        {
-            Write-Host "" -ForegroundColor Red
-            Write-Host "Workload install failed (exit $workloadExit)." -ForegroundColor Red
-            Write-Host "Remediation:" -ForegroundColor Yellow
-            Write-Host "  - On Windows, run this script from an elevated (Admin) shell, OR" -ForegroundColor Yellow
-            Write-Host "  - Install manually: dotnet workload install maui-windows" -ForegroundColor Yellow
-            Write-Host "  - Verify with:      dotnet workload list" -ForegroundColor Yellow
-            Write-Host "" -ForegroundColor Red
-            exit $workloadExit
-        }
-        Write-Host "  Workload 'maui-windows' installed." -ForegroundColor Green
-    }
-    else
-    {
-        Write-Host "  Workload 'maui-windows' already installed." -ForegroundColor DarkGreen
-    }
-}
+Set-Location $srcRoot
 
 # ── 1. Global pre-clean ─────────────────────────────────────────────────────
 # Wipe dist/ (all prior zips, logs, staging) and every bin/obj under src/.
+#
+# ⚠ dist/ IS SHARED BY BOTH APPS, so this wipe removes the other app's archives
+# too. That is fine for CI — each workflow run gets a fresh runner, and the two
+# apps release from separate workflows on separate tags — but publishing both
+# apps locally means the second run deletes the first run's zips. Publish one,
+# copy its output elsewhere, then publish the other.
 #
 # We use a manual bin/obj wipe rather than `dotnet clean` because the Release
 # config sets <SelfContained>true</SelfContained>, which makes the SDK
@@ -164,6 +130,23 @@ $cleanTargets = Get-ChildItem -Path $srcRoot -Directory -Recurse -Force `
     Select-Object -ExpandProperty FullName
 foreach ($dir in $cleanTargets) {
     Remove-Item -Recurse -Force -LiteralPath $dir -ErrorAction SilentlyContinue
+}
+
+# ⛔ AND THE LOCAL PACKAGE FEED, WHICH IS NOT UNDER src/ AND SO SURVIVED EVERY WIPE ABOVE.
+# scripts/package-canary.ps1 writes throwaway packages into artifacts/localfeed, and
+# nuget.config lists that directory as a source mapped to the same eleven ids as the private
+# GitHub feed. In package mode a local package at the version being released is preferred over
+# the published one — silently, because a local folder source is exactly as valid to NuGet as a
+# remote one. A release cut on a developer's machine could then ship a build of whatever was in
+# the working tree when the canary last ran.
+#
+# ⓘ Deleting it is safe by design: nuget.config already documents the feed as absent on a fresh
+# clone, and nothing maps to it unless UseSharedPackages=true. The canary re-packs it on its
+# next run. See plans/00001 work items 5 and 6.
+$localFeed = Join-Path (Split-Path $srcRoot -Parent) 'artifacts/localfeed'
+if (Test-Path $localFeed) {
+    Write-Host "  Wiping the local package feed (artifacts/localfeed)..." -ForegroundColor DarkGray
+    Remove-Item -Recurse -Force -LiteralPath $localFeed -ErrorAction SilentlyContinue
 }
 
 # ── 2. Per-RID loop with optional prompting ─────────────────────────────────
@@ -237,7 +220,7 @@ foreach ($rid in $Rids) {
     # selective clean would NOT do, but the full wipe the orchestrator does
     # WOULD). Call the worker with -DistFolder so sibling logs and zips all
     # land in the same orchestrator-owned folder.
-    $result = & $worker -Rid $rid -DistFolder $distFolder
+    $result = & $worker -App $App -Rid $rid -DistFolder $distFolder
     $results.Add($result)
 }
 
@@ -258,18 +241,32 @@ if ($ridsWithWarnings.Count -gt 0) {
         # almost always RID-invariant (the same Semi.Avalonia closures appear
         # across all platforms), so one log is representative.
         $primaryRid = $ridsWithWarnings[0]
-        $primaryLog = Join-Path $logFolder "publish-$primaryRid.log"
-        $linkedPath = Join-Path $srcRoot `
-            ("ClaudeForge/obj/Release/net10.0/{0}/linked/ClaudeForge.dll" -f $primaryRid)
+        $primaryLog = Join-Path $logFolder `
+            ('publish-' + $appInfo.AssemblyName + "-$primaryRid.log")
+        # The obj/ tree is named by the PROJECT DIRECTORY, which is not always the
+        # assembly name; take the directory from the descriptor's project path and
+        # the dll name from its assembly name rather than assuming they match.
+        $projectDir = Split-Path $appInfo.ProjectPath -Parent
+        $linkedPath = Join-Path (Resolve-PublishAppPath -RelativePath $projectDir) `
+            ("obj/Release/net10.0/{0}/linked/{1}.dll" -f $primaryRid, $appInfo.AssemblyName)
 
         # Quick confirmation diagnostic per TRIMMING.md step 1: did the
         # suppression XML actually reach ILLink?
-        $linkAttrHits = Select-String -Path $primaryLog -Pattern '--link-attributes' -ErrorAction SilentlyContinue
+        #
+        # ⚠ ABSENCE PROVES NOTHING HERE, and this used to claim it did. ILLink
+        # prints its command line only under its own verbose flag AND only at
+        # MSBuild verbosities above the default `minimal` that Publish-Rid.ps1
+        # uses — so a clean publish of EITHER app produces a 31-line log with no
+        # ILLink mention at all. Measured on both. The old message read "the
+        # csproj wiring is broken" in red for that, which is a false accusation
+        # every time it fires, aimed at the wiring rather than at the verbosity.
+        $linkAttrHits = Select-String -Path $primaryLog -Pattern 'link-attributes' -ErrorAction SilentlyContinue
         if ($linkAttrHits) {
-            Write-Host ("[check] ILLink received {0} --link-attributes arg(s) — suppression XML did reach the linker." -f $linkAttrHits.Count) -ForegroundColor Gray
+            Write-Host ("[check] ILLink received {0} link-attributes arg(s) — suppression XML did reach the linker." -f $linkAttrHits.Count) -ForegroundColor Gray
         }
         else {
-            Write-Host "[check] NO --link-attributes in ILLink command line — the csproj wiring is broken. See TRIMMING.md (the four-row comparison table)." -ForegroundColor Red
+            Write-Host "[check] ILLink's command line is not in this log — expected, since the publish runs at default verbosity." -ForegroundColor DarkGray
+            Write-Host "        To confirm the suppression XML reaches the linker, re-publish with -v detailed and grep for link-attributes. See TRIMMING.md (the four-row comparison table)." -ForegroundColor DarkGray
         }
 
         if (Test-Path $linkedPath) {
@@ -278,8 +275,9 @@ if ($ridsWithWarnings.Count -gt 0) {
         else {
             # Fallback: let the analyzer auto-discover a linked assembly (it
             # defaults to win-x64; log-vs-RID mismatch is rare but harmless).
+            # -App still matters here — auto-discovery searches THAT app's obj tree.
             Write-Host ("Linked assembly not found at {0}; falling back to analyzer defaults." -f $linkedPath) -ForegroundColor DarkYellow
-            & $closureAnalyzer -WarningsPath $primaryLog -IncludeReferences
+            & $closureAnalyzer -App $App -WarningsPath $primaryLog -IncludeReferences
         }
     }
 
@@ -294,14 +292,41 @@ elseif ($results.Count -gt 0) {
 # built, which failed, and whether anything was skipped via the prompt.
 if ($results.Count -gt 0) {
     Write-Host "`nResults:" -ForegroundColor Green
-    $results | Format-Table Rid, ExitCode, WarningCount, @{
+    $results | Format-Table App, Rid, ExitCode, WarningCount, @{
         Name       = 'Archive'
         Expression = { if ($_.ArchivePath) { Split-Path $_.ArchivePath -Leaf } else { '(none)' } }
     } | Out-Host
     Write-Host "Output zips: $distFolder" -ForegroundColor Green
     Write-Host "Publish logs: $logFolder" -ForegroundColor Gray
-    Write-Host "Publish Complete!" -ForegroundColor Green
 }
 else {
     Write-Host "`nNo RIDs were built." -ForegroundColor DarkYellow
+}
+
+# ── 5. Propagate failure ────────────────────────────────────────────────────
+# ⛔ Until Phase 15 this script ALWAYS exited 0 and printed "Publish Complete!"
+# in green even when a RID's `dotnet publish` had failed. Publish-Rid.ps1
+# reports the failure in its result object rather than throwing — which is right
+# for the orchestrator, since one bad RID should not abandon the others — but
+# nothing downstream read it.
+#
+# In CI that meant a failed RID produced a PARTIAL artifact set and a green step.
+# `if-no-files-found: error` on the upload only fires when EVERY archive is
+# missing, so a single failed architecture sailed through to the release job and
+# surfaced as `gh release create` complaining about a missing file — several
+# minutes and two jobs away from the compiler error that caused it.
+#
+# Exit codes: the count of failed RIDs, capped at 125 to stay clear of the
+# shell's reserved range (126/127 = not-executable / not-found, 128+n = signal).
+$failed = @($results | Where-Object { $_.ExitCode -ne 0 })
+if ($failed.Count -gt 0) {
+    Write-Host ("`n{0} of {1} RID(s) FAILED to publish: {2}" -f `
+            $failed.Count, $results.Count, (($failed | ForEach-Object { $_.Rid }) -join ', ')) `
+        -ForegroundColor Red
+    Write-Host "See the per-RID logs in $logFolder for the failing output." -ForegroundColor Red
+    exit ([Math]::Min($failed.Count, 125))
+}
+
+if ($results.Count -gt 0) {
+    Write-Host "Publish Complete!" -ForegroundColor Green
 }

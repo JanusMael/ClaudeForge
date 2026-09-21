@@ -1,5 +1,6 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -31,15 +32,15 @@ public class EnumPropertyEditorViewModelTests
     }
 
     private static LibVm.EnumPropertyEditorViewModel NewVm(
-        SchemaNode schema, ConfigScope scope = ConfigScope.User)
+        SchemaNode schema, ConfigScope? scope = null)
     {
-        return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(scope));
+        return new LibVm.EnumPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(scope ?? ConfigScope.User));
     }
 
     private static void Load(
         LibVm.EnumPropertyEditorViewModel vm, LayeredValue layered, ConfigScope scope)
     {
-        vm.LoadFromValue(new ClaudeValueAdapter(layered), ClaudeScope.For(scope));
+        vm.LoadFromValue(new LayeredValueAdapter(layered), ConfigScopeAdapter.For(scope));
     }
 
     private static LayeredValue LayeredWith(ConfigScope scope, string value)

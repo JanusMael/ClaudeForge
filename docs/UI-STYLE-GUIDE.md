@@ -129,6 +129,149 @@ for ≥7:1 (Primary, WCAG AAA) and ≥4.5:1 (Secondary, AA Normal) against
 their natural backgrounds.  Don't substitute a "looks fine" hex without
 checking — Semi's variant tweaks can drop you below threshold quietly.
 
+### 3a. Severity family (`AppSeverity*Brush`)
+
+How much attention a setting's state deserves. Keyed by the
+`AppSeverity` enum (`LayeredEditors.Abstractions`) through
+`AppSeverityToBrushConverter.KeyFor`, and declared per variant in **both**
+apps' `App.axaml`.
+
+| Token | Light | Dark | Meaning |
+|---|---|---|---|
+| `AppSeverityCriticalBrush` | `#A8071A` | `#F99090` | Weakens a security or safety boundary |
+| `AppSeverityCautionBrush` | `#874400` | `#F0A03A` | Affects cost, quality, or output volume |
+| `AppSeverityInfoBrush` | `#0050B3` | `#6BB1F2` | Behaviour worth knowing about; cannot cost money |
+| `AppSeverityNeutralBrush` | `#666666` | `#AAAAAA` | Unremarkable — the default |
+
+**The values are not new.** Each reuses the already-vetted
+`AppStatus*ForegroundBrush` / `AppSecondaryTextBrush` pair for that role,
+so the severity dot matches the status text beside it and no unreviewed
+colour enters the palette.
+
+⛔ **These replaced four hardcoded hexes** — `#D32F2F` / `#F4B400` /
+`#1976D2` in `EssentialsViewModel.BuildCards`, plus a `#9E9E9E`
+parse-failure fallback. Each was a single literal emitted regardless of
+variant, so the **light**-theme red and amber were what shipped into dark
+mode. Severity travels as an enum now; a colour string could also be
+malformed, which is why the old code needed a fallback branch at all.
+
+⛔⛔ **NORMATIVE: a view-model must not name a colour.** `GuardRawHexInViewModels`
+in `Directory.Build.targets` fails the build on a hex literal under
+`*ViewModel.cs` or `ViewModels/` (comments stripped, so prose citing an old
+hex is fine). Declare an `App*Brush` per variant in each app's `App.axaml`
+and bind through a converter over the enum.
+
+⚠ The rule is scoped to view-models, not to the repo: `App.axaml` **is** the
+token declaration, and converters, controls and `BrushHelper` fallbacks are
+resolution backstops. A view-model returning a colour is different in kind —
+it puts presentation in the layer with no view, and beyond the theme's reach
+in both variants at once.
+
+⛔ **This is an accessibility rule, not a tidiness one.** The literal that
+prompted the guard, `SaveChangeEntryViewModel.KindBackground`'s `#F57C00`,
+gave its white glyph **2.70:1** — below the 4.5:1 text floor and below even
+the 3.0:1 non-text one — defended by a comment that reasoned about hue and
+measured nothing. A colour nobody can see in the theme files is a colour
+nobody re-measures.
+
+### `AppChangeKind*Brush` — the save dialog's change pills
+
+| Token | Both variants | White glyph |
+|---|---|---|
+| `AppChangeKindAddedBrush` | `#2E7D32` | 5.13:1 |
+| `AppChangeKindRemovedBrush` | `#C62828` | 5.62:1 |
+| `AppChangeKindModifiedBrush` | `#B45309` | 5.02:1 |
+
+⚠ **Identical in light and dark ON PURPOSE — the one family where that is
+correct.** A severity token is a *foreground* on a themed surface, so one
+literal for both themes is exactly the bug above. A change-kind token is a
+*fill* behind a white glyph: the pair that must hold is glyph-vs-fill, and
+lightening the fill for dark mode trades that away for fill-vs-surface
+(~2.8:1), which is redundant with the `+`/`-`/`~` glyph and its accessible
+name. Declared per variant regardless, because a themed lookup finds nothing
+in a flat dictionary. Guards: `AppChangeKindTokenCoverageTests` (declared in
+both variants of both apps, **and** every fill ≥ 4.5:1 against white) and
+`ChangeKindThemedLookupTests` (the converter reaches the token rather than its
+fallback — which mirrors the light value, so nothing else can tell).
+
+⚠ **Never look these up with `BrushHelper.Resolve`.** They live in
+`ThemeDictionaries`, and a themed key looked up with a null variant
+resolves to nothing — the caller silently takes its fallback hex. Use
+`ResolveThemed`. See "A THEMED resource looked up with a null variant
+resolves to NOTHING" in `AVALONIA-GOTCHAS.md`.
+
+Guards: `AppSeverityTokenCoverageTests` (every member declared in both
+variants of both apps, and light ≠ dark) and
+`AppSeverityThemedLookupTests` (the converter resolves the declared token
+rather than its fallback).
+
+### 3b. Where severity is rendered, and what the two codes mean
+
+As of Phase 11.5 the family appears on **six** surfaces: Essentials cards, the
+settings row (`PropertyEditorWrapper` — ⚠ **each app has its own copy**, the
+shared one under `LayeredEditors.Avalonia` and ClaudeForge's under
+`src/ClaudeForge/Controls/`), search hits, the row's danger banner, the
+effective-value **Risk** column (⚠ **two files**, `GroupEffectiveView.axaml` and
+`EffectiveSettingsView.axaml`, fed by two unrelated producers), and the
+**save-confirmation dialog** (a dot per pending change, plus a headline). Both
+products supply a table: `ClaudeDangerTable` (142 top-level keys) and
+`OpenCodeDangerTable` (36 + 13).
+
+⭐⭐ **A surface either ASKS THE EDITOR or CLASSIFIES, and which one is not a
+style choice — it follows from what the surface holds.** Severity is a function
+of three inputs (path, scope, value). A **search hit** holds only the path, so it
+asks the editor (`IDangerAnnotatedEditor.AssessDanger`) and renders the row's own
+assessment; classifying there would invent a scope and a value and contradict the
+row it navigates to. An **effective row** holds all three — and they are the
+*winning* scope and value, not the edited ones — so it classifies. ⚠ **The
+resulting dots can legitimately disagree** (a key that escalates in a
+git-committed file is Caution at the User scope you are editing and Critical once
+a project file overrides it), which is why the Risk column's header tooltip
+explains the difference rather than leaving it to look like a bug.
+
+⭐ **The dot and the banner answer DIFFERENT questions, and both are needed.**
+The dot is the **tier** — present even when the value sits at its safe default,
+which is what lets someone spot a dangerous knob *before* turning it. The banner
+appears only when the value actually held is the unsafe one, so it never becomes
+wallpaper: on a page of safe defaults, no banner renders at all.
+
+⚠ **The same split governs any AGGREGATE.** The save dialog's headline counts
+`IsDangerNow`, never the tier — counting tiers would fire on nearly every real
+save, and a headline that always shows is a headline nobody reads. Measured
+live: three toggled settings, all three dotted, headline says **1**.
+
+⛔ **Dual-coding is normative, not advisory.** Severity carries a **glyph** as
+well as a colour — `▲` Critical, `◆` Caution, `●` Info, `○` Neutral — because
+colour alone excludes colour-blind users and Critical-vs-Caution sits exactly on
+the red-green axis. Geometric shapes, never emoji: emoji need a system emoji
+font and render as tofu without one.
+
+⛔ **Colour the banner from `AppSeverity*Brush`, never from `LE.DangerText` /
+`LE.DangerBorder`.** Measured: `LE.DangerText` is a single flat `#C62828` —
+`LE.*` tokens are theme-neutral *by design* — which lands near **3:1** on the
+dark surface, under the 4.5:1 §2 requires for text. A hardcoded red also says
+"critical" for a Caution-tier problem.
+
+⚠ **A Neutral row still renders its `○`.** Every key in both tables carries an
+explanation, so every row gets a dot; the hollow ring is deliberately the least
+prominent glyph. Verified on screen — it reads as quiet punctuation, not noise.
+
+⚠ **Announce it with `AutomationProperties.HelpText`, not `Name`.** On a
+`TextBlock` the `Text` always wins and an explicit `Name` is ignored outright, so
+a dot annotated that way announces the glyph character and nothing else. Do not
+wrap the glyph to work around it — a `Border` and a `ContentControl` both get no
+automation peer at all.
+
+Guard: `DangerSurfaceMarkupTests` **discovers** the surfaces by their
+`x:DataType` (so a new one is covered without editing a list), requires both the
+dot and the banner, and rejects a glyph annotated with `Name`. ⛔ Its
+"hosts the control that draws it" escape hatch **excludes self-delegating
+files** — both wrappers recurse into `<ctrl:PropertyEditorWrapper />` for nested
+children, so without that exclusion the hatch opens for the two files it exists
+to check.
+
+### 3b. Accent tint pill (`AppAccent*Brush`)
+
 **Weight is a design constraint, not just contrast.**  `AppAccentBrush`
 is a two-tone *pill* (tint + matching-hue text), the same shape as the
 property-name pill in §4b, and it is deliberately the quieter of the
@@ -445,6 +588,37 @@ Every interactive control in `Views/*.axaml` MUST have
 `AutomationProperties.Name`.  Guard test
 `AxamlAccessibilityCoverageTests` fails CI when a new control regresses
 coverage.  See the AutomationProperties invariant in `AGENTS.md`.
+
+⛔⛔ **That guard scans a LIST of control types, and the list is not
+"everything".** It omitted `TreeView` until 2026-08-27 — so
+`MainWindow.axaml` scored a clean **0 unnamed controls** while the app's
+primary navigation tree had no name at all, and the zero was quotable as
+evidence. `TabControl`, `TabItem`, `Expander`, `MenuItem` and
+`HyperlinkButton` were missing too. **Before trusting a 0, check the type
+you care about is in `InteractiveControlElements`.**
+
+Deliberately excluded, with counts at the time: `ItemsControl` (67) and
+`ScrollViewer` (31) take no focus and are not announced as controls;
+`SelectableTextBlock` (8) is announced by its content, so a Name would
+duplicate or shadow the text. Naming those is noise, and noise is what
+stops a baseline from being read.
+
+⛔ **A container generated from `ItemsSource` takes its name from the
+ITEM, and no markup scan can see that.** Both of the repo's
+`ItemsSource`-bound TabControls announced their view-model's type name
+while passing this guard, because the `AutomationProperties.Name` really
+was in the AXAML — on the inner `TextBlock`, not the focusable container.
+Override `ToString()` on the item type;
+`ItemsSourceBoundTabsTests` enforces it. The same applies to
+`TreeViewItem` and `ListBoxItem`.
+
+**Reuse the visible label's key.** A control whose `Header`/`Content` is
+already a resx string should point `AutomationProperties.Name` at *that
+key*, not a new one — the label a sighted user reads is the right
+announcement, and a second key is a second string to translate and to
+drift. 20 of the 35 controls backfilled on 2026-08-27 needed no new
+string; 9 more reused a per-row binding (`Tool`, `HumanLabel`,
+`PluginId`) so repeated rows announce distinguishably.
 
 **Sibling principle for non-interactive cues**: anywhere colour or a
 single-glyph cue is the only signal of meaning — the kind pill, scope

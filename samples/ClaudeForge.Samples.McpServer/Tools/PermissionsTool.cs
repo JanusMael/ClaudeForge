@@ -1,5 +1,6 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Samples.McpServer.Tools;
 

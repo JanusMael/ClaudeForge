@@ -14,6 +14,139 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
+## [Unreleased]
+
+### Fixed
+
+- **Enterprise policy is read from the directory Claude Code actually reads it from.**
+  ClaudeForge looked for `managed-settings.json` in `~/.claude/`; Claude Code reads it from
+  a per-OS *system* directory — `C:\Program Files\ClaudeCode\` on Windows,
+  `/Library/Application Support/ClaudeCode/` on macOS, `/etc/claude-code/` on Linux and
+  WSL. It failed both ways and silently: a machine with real policy showed **no managed
+  layer**, so the effective view told you your own value won where policy actually
+  overrides it; and a file you placed at `~/.claude/managed-settings.json` displayed as
+  enforced while doing nothing. `managed-mcp.json` is now handled as well.
+- **`CLAUDE_CONFIG_DIR` is honoured.** The app documented this variable in its own tooltips
+  and then ignored it, so anyone who had relocated their Claude home was shown — and was
+  editing — the settings in `~/.claude` instead. Every path derived from the home now
+  resolves through it, including the ones behind the Memory and Agents &amp; Skills pages,
+  which previously read a different tree than the settings pages did. `~/.claude.json` is
+  deliberately unaffected: it sits beside the home rather than inside it, so Claude Code
+  does not move it either.
+- **The restore progress bar no longer names `~/.claude/` when the home is somewhere else.**
+  The label said `Restoring ~/.claude/…` in all nine languages regardless of where the
+  restore was actually writing.
+
+## [2026.3.920] - 2026-09-20
+
+### Added
+
+- **Saving a config now preserves its comments and formatting.** Writes go through a
+  JSONC editor that edits the bytes in place rather than re-serializing the document,
+  so comments, key order, blank lines and indentation survive a save. Previously a
+  save rewrote the file from a parsed object and quietly discarded all of it. The
+  previous behaviour is available for one release as `--writer legacy` if a file
+  round-trips wrongly; please report it if you need that flag.
+- **Every setting now says how much it matters.** A severity indicator sits on
+  settings rows, on search results, and in the effective view — so scanning a page
+  shows at a glance which values carry weight and which are routine. The classification
+  is Claude Code's own answer about its own settings, not a generic heuristic, and it
+  travels per product rather than being a colour chosen in markup.
+- **The save dialog says which pending changes weaken a boundary.** Before writing,
+  the preview calls out edits that loosen a permission or a safety-relevant setting,
+  instead of listing every change with equal weight.
+- **An Artifacts page** — the first page that is not a settings group. It shows the
+  agents, skills and commands resolved for the current workspace, with where each one
+  came from.
+- **Schemas are fetched, and the app says which copy it used.** A launch tries the
+  upstream schema first and falls back to the bundled copy, and every section of the
+  navigation carries a badge naming the copy it was built from. *Check for schema
+  updates* in the About dialog re-fetches on demand and re-labels those badges. A
+  product with no upstream — Claude Desktop, whose schema is hand-maintained — is
+  omitted from a check's results rather than reported as up to date, so the result
+  never describes a fetch that was not attempted.
+- **`--schema-source <bundled|fetched>`** forces one branch of that chain, for
+  reproducing a report against a known copy. `fetched` is fatal if the fetch fails
+  rather than falling back, because a run that silently used the bundled copy would
+  prove nothing.
+- **Live config-file events, and a log of them on disk.** **Shift+F12** opens a window
+  showing config-file changes as they happen, and the same stream is written to
+  `logs/events-*.txt` beside the executable, with the scope each change belongs to.
+
+### Changed
+
+- **Backup wording comes from the host application.** Progress phase labels, the
+  Clients column's short names, and the credentials prompt now name the host's own
+  credential store instead of using generic text.
+- **The accent colour and the "✨ NEW" badge are owned rather than borrowed.** The badge
+  is a tint pill rather than a solid chip, and the accent no longer depends on an
+  undefined system brush that rendered differently across platforms.
+- **Monospace text now ships with the app instead of borrowing whatever the system has.**
+  Config values, paths, commands, permission rules and code blocks are drawn in a bundled
+  JetBrains Mono, so they look the same on Windows, macOS and Linux. Previously six
+  different font stacks were spelled out across the app, two of which picked a different
+  typeface from their neighbours on the same screen. The bundled cut has **no ligatures**,
+  deliberately: what you read now matches the bytes in your file, where before a sequence
+  like `!=` or `->` could be drawn as a single composed character.
+
+### Fixed
+
+- **Collapsible section headers now announce their own name.** Every expander — the environment
+  variable groups, the permissions sections, the advanced panels — read out as
+  `Avalonia.Controls.Grid` to a screen reader, so nothing distinguished one section from
+  another. They now announce the heading you see.
+- **Restoring a backup now puts your project's files back.** A backup taken with a project
+  open contains that project's `.claude/` files, but restore quietly skipped any project
+  kept outside your home folder — reported success, wrote nothing, and described the
+  refusal as a path that was *"not present on this machine"*. Projects your Claude Code has
+  opened are now restored wherever they live, and anything genuinely refused says so in
+  words that match the reason.
+- **A restore cleans up after itself.** Files it overwrites are still moved aside as
+  `.pre-restore-*.bak` first, and once the restore has completed without a single failure
+  those copies are removed and counted in the result — previously every one of them stayed,
+  roughly doubling the size of `~/.claude` on each restore with nothing saying so. A restore
+  that could not place every file keeps them, deliberately, and says that instead.
+- **Editing one environment variable no longer deletes the others.** Saving a change to
+  any variable the app recognises removed every variable it did not — proxy settings,
+  internal tool paths, anything an organisation adds that the schema has never heard of.
+  Variables the app does not model are now left exactly as they were. The same applies
+  to any other settings object: keys the editor does not render are no longer keys it
+  deletes.
+- **Themed colours now follow a light/dark switch immediately.** Severity glyphs and
+  other themed elements kept whichever palette was live when they were last drawn, so
+  a switch could leave one screen showing both palettes at once.
+- **Screen readers now announce the interface.** Navigation rows in the tree, settings
+  tabs, rows in four list boxes, the spinner buttons on numeric fields, composite
+  controls, and every control in the diagnostics windows previously announced nothing
+  or read out an internal type name. The diagnostics window's header links are now
+  reachable by keyboard with a visible focus ring.
+- **The Artifacts page painted its metadata red and its problems grey**, inverting the
+  two colours that matter most on it.
+- **The `apiKey` escalation warning never fired.** The condition it was guarded by
+  could not be true.
+- **Sharing did nothing on Windows, and said nothing anywhere.** *Share config* on the
+  effective-settings view now copies the JSON to the clipboard, and the status bar reports what
+  actually happened — copied to the clipboard, opened in your browser, handed to your mail
+  client — rather than completing in silence. *Share log* in the About dialog and *Share* on a
+  backup row got the same treatment: both say the file was revealed in your file manager, which
+  is what they do. A share that fails now says so and stays on screen until dismissed;
+  previously it was recorded only in the log.
+- **A config file created while the app was running was not picked up** — a new
+  `settings.local.json` or `.mcp.json` is now watched from the moment it appears.
+- **The live-log window hid itself when F12 was pressed again**, instead of staying put.
+- **A config that fails to parse is no longer installed by a reload**, and overlapping
+  reloads are serialized rather than each guarding itself.
+- **Backup patterns: `/foo` matched nothing and `**/foo` matched too much.**
+- **The Critical severity marker drew smaller than the Caution one**, so the loudest tier
+  looked like the quietest — worst on the Effective Settings grid, where the markers are
+  smallest. The two markers were being drawn from two different system fonts, and the
+  warning triangle was arriving as a colour emoji, which is also why it **ignored the
+  theme's caution colour entirely** and stayed yellow in both light and dark. Both markers
+  now come from one face and rank by size the way they were meant to.
+- **Effective Settings showed values in the regular interface font** while the same JSON on
+  a settings page was monospace, so one screen displayed one value two different ways.
+
+
 ## [2026.3.916] - 2026-09-16
 
 ### Added

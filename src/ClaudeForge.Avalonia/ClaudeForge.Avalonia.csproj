@@ -1,19 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
+        <IsPackable>false</IsPackable>  <!-- product-specific: one product's half, no second consumer -->
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Avalonia</RootNamespace>
         <AssemblyName>ClaudeForge.Avalonia</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Description>
             Reusable Avalonia controls + view-models for editing Claude Code
             permission rules: a guided per-tool rule builder, a dry-run rule
-            tester, and an education panel. Depends on ClaudeForge.Sdk (for the
+            tester, and an education panel. Depends on AgentForge.Sdk (for the
             rule parser / matchers / resolver) + Avalonia + CommunityToolkit.Mvvm.
             Hosts adapt their own data source via the IPermissionRuleSource /
             IPermissionRuleSink / IPermissionPathPicker abstractions so the
             controls drop into any Claude-adjacent Avalonia tool.
         </Description>
     </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
@@ -24,14 +33,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj" />
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
+        <ProjectReference Include="..\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj" />
+        <!-- Neutral host-service interfaces (IPermissionPathPicker lives here: it is a file
+             picker, not a permissions type). -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- The in-tree test project exercises a few internal view-model helpers
-             (the quote-aware command cleaner, the bare-wildcard path check)
-             directly. Mirrors the InternalsVisibleTo pattern used by
-             Core / Sdk / LayeredEditors.Avalonia. -->
-        <InternalsVisibleTo Include="ClaudeForge.Avalonia.Tests" />
-    </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -67,7 +67,7 @@ public sealed class AgentsSkillsDeepPathTests
 
     private async Task<AgentsSkillsEditorViewModel> LoadedVmAsync()
     {
-        var vm = new AgentsSkillsEditorViewModel(_project);
+        var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         vm.Refresh();
         if (vm.LastRefresh is { } r)
         {

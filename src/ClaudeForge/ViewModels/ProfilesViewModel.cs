@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Profile;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Profile;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,9 +25,12 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// callbacks wired up by <see cref="MainWindowViewModel"/> when the nav node is built.
 /// </para>
 /// </summary>
-public partial class ProfilesViewModel : ObservableObject
+public partial class ProfilesViewModel : ObservableObject, INavigablePage
 {
     private readonly IDialogService _dialogService;
+
+    /// <summary>The resolved Claude environment every profile path here hangs off.</summary>
+    private readonly ClaudeEnvironment _env;
 
     // ── CLI callbacks ────────────────────────────────────────────────────────
     /// <summary>
@@ -65,8 +69,10 @@ public partial class ProfilesViewModel : ObservableObject
     /// </summary>
     public Action<string>? OnDesktopProfileDeleted { get; set; }
 
-    public ProfilesViewModel(IDialogService dialogService)
+    public ProfilesViewModel(ClaudeEnvironment env, IDialogService dialogService)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
         _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         Profiles = new ObservableCollection<ProfileRowViewModel>();
         DesktopProfiles = new ObservableCollection<DesktopProfileRowViewModel>();
@@ -130,7 +136,7 @@ public partial class ProfilesViewModel : ObservableObject
     private void RefreshCli()
     {
         string? prevName = SelectedProfile?.Name;
-        IReadOnlyList<ProfileInfo> rows = ProfileEngine.DiscoverProfiles();
+        IReadOnlyList<ProfileInfo> rows = ProfileEngine.DiscoverProfiles(_env);
         Profiles.Clear();
         foreach (ProfileInfo info in rows)
         {
@@ -169,7 +175,7 @@ public partial class ProfilesViewModel : ObservableObject
 
         Log.Information("[Profiles.Command] action=NewCli name=\"{Name}\"", name);
 
-        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+        string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
         if (Directory.Exists(profileDir))
         {
             DialogMessage existsMsg = DialogMessage.Builder()
@@ -185,7 +191,7 @@ public partial class ProfilesViewModel : ObservableObject
         try
         {
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-            await ProfileEngine.CreateFromLiveAsync(name, cts.Token);
+            await ProfileEngine.CreateFromLiveAsync(_env, name, cts.Token);
             StatusMessage = string.Format(Strings.StatusProfileCreatedFmt, name);
             Refresh();
 
@@ -255,7 +261,7 @@ public partial class ProfilesViewModel : ObservableObject
         try
         {
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-            await ProfileEngine.ApplyProfileToLiveAsync(name, autoSync: true, cts.Token);
+            await ProfileEngine.ApplyProfileToLiveAsync(_env, name, autoSync: true, ct: cts.Token);
             StatusMessage = string.Format(Strings.StatusProfileAppliedFmt, name);
             Refresh();
 
@@ -322,7 +328,7 @@ public partial class ProfilesViewModel : ObservableObject
         try
         {
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-            await ProfileEngine.SyncFromLiveAsync(name, cts.Token);
+            await ProfileEngine.SyncFromLiveAsync(_env, name, cts.Token);
             StatusMessage = string.Format(Strings.StatusProfileSyncedFmt, name);
             Refresh();
         }
@@ -361,7 +367,7 @@ public partial class ProfilesViewModel : ObservableObject
         string name = SelectedProfile.Name;
         Log.Information("[Profiles.Command] action=DeleteCli name=\"{Name}\"", name);
 
-        string? cliActive = ProfileEngine.ReadCurrentProfileName();
+        string? cliActive = ProfileEngine.ReadCurrentProfileName(_env);
         bool isCliActive = string.Equals(cliActive, name, StringComparison.OrdinalIgnoreCase);
 
         // Set IsBusy BEFORE the first await so a rapid second click is blocked by CanDelete
@@ -395,7 +401,7 @@ public partial class ProfilesViewModel : ObservableObject
                 return;
             }
 
-            string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory, name);
+            string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(_env), name);
 
             if (Directory.Exists(profileDir))
             {
@@ -405,7 +411,7 @@ public partial class ProfilesViewModel : ObservableObject
             // Clear the CLI-active pointer if it pointed here.
             if (isCliActive)
             {
-                ProfileEngine.WriteCurrentProfileName(null);
+                ProfileEngine.WriteCurrentProfileName(_env, null);
             }
 
             StatusMessage = string.Format(Strings.StatusProfileDeletedFmt, name);
@@ -432,7 +438,7 @@ public partial class ProfilesViewModel : ObservableObject
     //  JSON format the claudectx CLI tool uses.  Profile data is converted
     //  via ProfileEngine.ExportProfileAsync / ImportProfileAsync; the GUI
     //  only owns the file-picker / status-message wiring.  Keeps the
-    //  SDK-first separation: all logic lives in ClaudeForge.Core.Profile.
+    //  SDK-first separation: all logic lives in AgentForge.Core.Profile.
     // -----------------------------------------------------------------------
 
     // ---- Export ----
@@ -473,7 +479,7 @@ public partial class ProfilesViewModel : ObservableObject
             // network-mounted destination file system or pathological
             // CLAUDE.md size leaving the UI stuck with IsBusy=true.
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-            await ProfileEngine.ExportProfileAsync(name, dest, cts.Token);
+            await ProfileEngine.ExportProfileAsync(_env, name, dest, cts.Token);
             StatusMessage = string.Format(Strings.StatusProfileExportedFmt, name, dest);
         }
         catch (Exception ex)
@@ -520,7 +526,7 @@ public partial class ProfilesViewModel : ObservableObject
             // IOException with a "profile X already exists" message —
             // surface as-is.
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-            string landed = await ProfileEngine.ImportProfileAsync(src, overrideName: null, cts.Token);
+            string landed = await ProfileEngine.ImportProfileAsync(_env, src, overrideName: null, ct: cts.Token);
             StatusMessage = string.Format(Strings.StatusProfileImportedFmt, landed);
             Refresh();
         }
@@ -841,6 +847,16 @@ public partial class ProfilesViewModel : ObservableObject
 
         error = string.Empty;
         return true;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Profiles are directories on disk; one created outside the app (or by another
+    /// ClaudeForge window) would otherwise not appear until restart.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
     }
 }
 

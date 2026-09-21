@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Sdk</RootNamespace>
+        <AssemblyName>AgentForge.Sdk</AssemblyName>
+        <!-- Generate XML documentation file so consumers see the threading and
+             cancellation contracts that live on the public interface.  CS1591 is
+             disabled because we don't require a doc comment on every member at
+             this stub stage; the architectural contracts are what matter. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Description>
+            The public client surface over AgentForge.Core's engines: open a config, read and
+            write it through layered scopes, take and restore backups, inspect MCP servers,
+            memory and artifacts, and be told what changed — with the threading and
+            cancellation contracts stated on the interface rather than implied.
+
+            Product-neutral by construction. A concrete client supplies its own descriptors,
+            scopes, footprint catalog and schema; AgentConfigClientCore supplies everything
+            that does not depend on which agent is being edited.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Sdk depends on Core for the existing settings/backup/profile engines.
+             The reverse must NOT be true — Core remains independent of Sdk so it
+             can be used as primitives, and Sdk owns the public contract on top. -->
+        <ProjectReference Include="..\AgentForge.Core\AgentForge.Core.csproj"/>
+        <!-- Dialog primitives (DialogMessage, DialogCategory, DialogSegment*) live in
+             AgentForge.Abstractions: they carry no product knowledge, and hosting
+             libraries need them without taking a dependency on a Claude-specific SDK.
+             SdkDialogs — the Claude-flavoured dialog factories — stays here. -->
+        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
+        <!-- Artifact resolution: where agents, commands, skills, rules and memory files come from.
+             The memory inventory's directory walks live there now as IArtifactSource
+             implementations, so the walk that serves Claude is the same one a second product
+             composes differently. Framework-only and product-free — the edge points the safe way. -->
+        <ProjectReference Include="..\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
+        <!--
+            For DialogMessage only. The SDK produces dialog models for a host to render, and that
+            contract is host-agnostic rather than agent-specific — so it lives in the editor
+            abstractions, which depend on nothing. This is the product layer consuming the library
+            layer, which is the direction the eventual repository split needs.
+        -->
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
+    </ItemGroup>
+
+</Project>

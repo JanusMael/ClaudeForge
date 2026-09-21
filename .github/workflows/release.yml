@@ -1,15 +1,34 @@
 name: Release
 
 # Triggered by a version tag: v1.2.3 or v1.2.3-rc.1 (pre-release)
+#
+# ⚠ This pattern is ClaudeForge's, and it is deliberately narrow. The repository hosts more
+# than one app, and each one's releases are told apart by tag prefix — see ReleaseTagScheme.
+# ClaudeForge publishes BARE tags (v2026.3.810) because thirteen releases already exist in that
+# shape and every installed copy looks for exactly it; later apps take a prefix instead
+# (opencodeforge-v…), which this pattern correctly does not match.
+#
+# ⛔ Do NOT widen this to catch another app's tags. This job builds and publishes ClaudeForge,
+# so an 'opencodeforge-v*' tag reaching it would attach ClaudeForge binaries to what users see
+# as an OpenCodeForge release. A second app needs its own release workflow, not another
+# trigger on this one.
 on:
   push:
     tags:
       - 'v*.*.*'
 
 # Required to create the GitHub Release, upload assets, and read PR bodies.
+#
+# ⛔ packages: read is what lets the publish RESTORE the eleven Bennewitz.Ninja.* packages from
+# this repository's GitHub Packages feed. plans/00003, Phase D (D2). Without it every release
+# publish 401s on the feed — and before Phase D nothing asked for the packages at all, so the
+# grant was missing AND unnecessary, which is half of why the release had never once been built
+# from them. ⚠ The cost, accepted deliberately: a FORK cannot cut a release, because its token
+# has no read access to this repository's packages.
 permissions:
   contents: write
   pull-requests: read   # needed to read PR body for release notes
+  packages: read        # restore the shared packages from GitHub Packages
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -21,10 +40,29 @@ env:
 # Configure under Settings → Secrets and variables → Actions on the repository.
 #
 # This workflow delegates all build work to `src/publish/publish.ps1` — the
-# same script developers run locally. The script reads $env:PublicVersion to
-# stamp the assembly and embed the version in archive filenames; the workflow
-# wires that env var from the tag below. To trace what the script does, read
-# its header comment (publish.ps1) and its single-RID worker (Publish-Rid.ps1).
+# same script developers run locally. To trace what it does, read its header
+# comment (publish.ps1) and its single-RID worker (Publish-Rid.ps1).
+#
+# ⛔ THIS BLOCK USED TO SAY the script "reads $env:PublicVersion to stamp the
+# assembly and embed the version in archive filenames". BOTH HALVES WERE FALSE.
+# publish.ps1 has no version handling at all — archives are unversioned, as the
+# release-notes body below already said — and PublicVersion does not set the
+# version: the AutoVersioning generator writes it only as
+# [AssemblyMetadata("PublicVersion", …)]. Measured: -p:PublicVersion=2026.3.901
+# stamps 2026.3.914.1346 and carries that attribute.
+#
+# So every release before this one had AssemblyVersion and FileVersion of the DAY
+# CI RAN rather than of its tag — while the tag sat in a metadata attribute two
+# steps away, which is why nothing looked wrong. The two agreed by coincidence,
+# a tag being cut minutes before its build, and would diverge on a re-run days
+# later or a tag cut near midnight.
+#
+# The numbers now come from the tag through scripts/Resolve-ReleaseVersion.ps1,
+# which exports BuildTimestamp — the one input the generator reads for the
+# version — alongside PublicVersion, so both describe the same tag by
+# construction. That script's header carries the three-way measurement, and the
+# reason the metadata attribute is still worth having: a prerelease suffix
+# survives nowhere else, since x.y.z-rc.1 and x.y.z both stamp x.y.z.0.
 #
 # Repository secrets (Settings → Secrets → Actions → New repository secret):
 #
@@ -114,21 +152,25 @@ jobs:
   # the Windows maui-windows workload preflight, calls Publish-Rid.ps1 per
   # RID, scans IL warnings, and runs the closure analyzer when warnings hit.
   #
+  # ⚠ -App is passed EXPLICITLY even though ClaudeForge is its default. The
+  # script builds whichever app it is told to, and this is the one caller whose
+  # output is attached to a public release — relying on a default here means a
+  # change to that default silently reships the wrong binaries under this app's
+  # tag. See src/publish/PublishApps.ps1 for the table.
+  #
   # One job per OS so each RID builds on its native host:
   #
   #   windows-latest  → win-x64, win-arm64   (Windows TFM + maui-windows workload)
   #   ubuntu-latest   → linux-x64, linux-arm64
   #   macos-latest    → osx-x64, osx-arm64   (native dylibs match the runner arch)
   #
-  # PublicVersion env var → publish.ps1 → -p:Version on dotnet publish AND
-  # the archive filename. Result naming: ClaudeForge-<version>-<rid>.zip (Win)
-  # or .tar.gz (Linux/macOS).
+  # Archives are UNVERSIONED — ClaudeForge-<rid>.zip (Win) or .tar.gz — because the
+  # version lives in the tag and in the binaries it stamps. Every publish job resolves
+  # that version from the tag first; see the header for what used to happen instead.
   publish-windows:
     name: Publish (Windows)
     needs: test
     runs-on: windows-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -138,12 +180,23 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        shell: bash
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      # Exports BuildTimestamp (and ReleaseVersion) into $GITHUB_ENV, where MSBuild picks
+      # it up as a property. It must run in EVERY publish job: $GITHUB_ENV does not cross
+      # a job boundary, and a job that skipped it would silently stamp the CI date.
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (win-x64, win-arm64)
         shell: pwsh
+        # ⛔⛔ THE CREDENTIALS, WHICH ARE A SEPARATE HALF FROM THE PERMISSION. `packages: read`
+        # in the permissions block only makes the token ALLOWED to read the feed; NuGet still
+        # has to be handed it. Without this the restore reaches the feed and 401s, which is
+        # exactly how the first two attempts at this release died — after the permission had
+        # been added and verified. ci.yml sets the identical variable on every step that touches
+        # the feed. ⚠ The `_github` suffix must match the source key in nuget.config exactly.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
         # `shell: pwsh` already runs this `run:` block inside pwsh, so an
         # inner `pwsh src/publish/publish.ps1 ...` invocation nests pwsh
         # twice.  The outer pwsh tokenises the inner command line and
@@ -152,7 +205,7 @@ jobs:
         # (no RID literally named "win-x64,win-arm64" exists).  Calling
         # the script directly lets pwsh's expression parser handle the
         # comma-array natively: -Rids win-x64,win-arm64 → @('win-x64','win-arm64').
-        run: ./src/publish/publish.ps1 -All -Rids win-x64,win-arm64
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids win-x64,win-arm64
 
       # Windows binaries are signed locally, after the release is published and
       # before the winget submission (the signing cert can't be automated on
@@ -165,12 +218,44 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      # ⭐ THIS IS THE ARCHIVED PROVENANCE, and plans/00003 Phase D step D3 is why it exists.
+      # There is NO artifact-level tell to find afterwards: `Directory.Build.targets` sets
+      # CopyDocumentationFilesFromPackages in package mode specifically to erase the one known
+      # difference between a PackageReference and a ProjectReference output, and the publish
+      # strip removes *.xml either way. So the shipped zip cannot be inspected to learn which
+      # mode built it — the record has to be kept at build time, which is what these logs are.
+      #
+      # GuardShippingPublishUsesPackages prints the mode into every publish at high importance:
+      # "PACKAGE MODE: ... at <version>" on the intended path, "ESCAPE HATCH USED: ..." when
+      # -p:AllowProjectReferencePublish=true deliberately took the other one. `Publish-Rid.ps1`
+      # tees the publish stream to src/dist/logs/*.log, so the line lands here either way.
+      #
+      # ⚠ Spelled with the glob on purpose, and NOT as the bare directory. That staging folder is
+      # a build output, and git does not track empty directories — so it exists on any machine
+      # that has ever published and never in a fresh checkout. BuildFilePathIntegrityTests
+      # resolves a bare repo-relative path but skips one containing '*', so the directory form
+      # passes locally and fails on every CI runner, which is exactly what it did here.
+      #
+      # ⛔ The glob must keep a suffix after the star. A trailing '/*' is trimmed back to the bare
+      # directory before the check, so that spelling fails the same way the directory does.
+      #
+      # ⚠ if: always() on purpose — a FAILED publish is when this evidence is worth most, and a
+      # step that only archives on success is the one that never has the log you need. ⚠ These
+      # are workflow artifacts, never release assets: `gh release create` names its six files
+      # explicitly, so nothing here can reach the published release by accident.
+      - name: Upload publish provenance (Windows)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-windows
+          path: src/dist/logs/*.log
+          retention-days: 90
+          if-no-files-found: error
+
   publish-linux:
     name: Publish (Linux)
     needs: test
     runs-on: ubuntu-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -180,14 +265,18 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (linux-x64, linux-arm64)
         shell: pwsh
         # See the comment on the corresponding Windows step for why we call
-        # the script directly instead of via an inner `pwsh` invocation.
-        run: ./src/publish/publish.ps1 -All -Rids linux-x64,linux-arm64
+        # the script directly instead of via an inner `pwsh` invocation, and
+        # why the feed credentials are a separate half from `packages: read`.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids linux-x64,linux-arm64
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v7
@@ -197,12 +286,20 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      # The archived provenance for this host's RIDs — see the long note in the Windows job.
+      - name: Upload publish provenance (Linux)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-linux
+          path: src/dist/logs/*.log
+          retention-days: 90
+          if-no-files-found: error
+
   publish-macos:
     name: Publish (macOS)
     needs: test
     runs-on: macos-latest
-    env:
-      PublicVersion: ${{ github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
@@ -212,14 +309,18 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Extract version from tag
-        run: echo "PublicVersion=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Resolve version from tag
+        shell: pwsh
+        run: ./scripts/Resolve-ReleaseVersion.ps1
 
       - name: Publish (osx-x64, osx-arm64)
         shell: pwsh
         # See the comment on the Windows publish step for why we call the
-        # script directly instead of via an inner `pwsh` invocation.
-        run: ./src/publish/publish.ps1 -All -Rids osx-x64,osx-arm64
+        # script directly instead of via an inner `pwsh` invocation, and why
+        # the feed credentials are a separate half from `packages: read`.
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: ./src/publish/publish.ps1 -App ClaudeForge -All -Rids osx-x64,osx-arm64
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v7
@@ -227,6 +328,16 @@ jobs:
           name: dist-macos
           path: src/dist/*.tar.gz
           retention-days: 1
+          if-no-files-found: error
+
+      # The archived provenance for this host's RIDs — see the long note in the Windows job.
+      - name: Upload publish provenance (macOS)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provenance-macos
+          path: src/dist/logs/*.log
+          retention-days: 90
           if-no-files-found: error
 
   # ── Create the GitHub Release ───────────────────────────────────────────────

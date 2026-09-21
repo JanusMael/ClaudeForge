@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Editor for string-array properties — shows a list with Add/Remove controls.

@@ -2,12 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Controls;
 
 /// <summary>
-/// A chrome control that wraps any <see cref="LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel"/>:
+/// A chrome control that wraps any <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel"/>:
 /// renders the property name, scope badge, override indicator, lock icon, reset button,
 /// description, and delegates the actual input control to a DataTemplate.
 /// Specialized editor types not listed in the built-in DataTemplates fall through to
@@ -64,7 +64,7 @@ public partial class PropertyEditorWrapper : UserControl
         // Show the FULL list when the chevron is clicked, not
         // the substring-filtered subset.  Pre-fix behaviour: AutoCompleteBox
         // uses its current Text as the filter, so after the user picked a
-        // value (e.g. "claude-3-5-sonnet"), clicking the chevron showed only
+        // value (e.g. a long model id), clicking the chevron showed only
         // entries containing that string — usually just the one already
         // selected.  Surprising to a user who isn't typing.
         //

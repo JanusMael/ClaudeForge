@@ -1,4 +1,4 @@
-# Contributing to ClaudeForge
+﻿# Contributing to ClaudeForge
 
 Thanks for your interest. This doc walks you through the dev environment, the rules of the road, and what kinds of contributions we welcome.
 
@@ -32,22 +32,50 @@ dotnet run --project src/ClaudeForge
 
 The app uses `~/.claude/` (and any open project's `.claude/`) for its real working data. If you'd like an isolated sandbox for development, the `PlatformPaths.TestUserProfileOverride` static is the seam most tests use — but for manual smoke runs, point at a throwaway `~/.claude/` setup or back yours up first.
 
+### Which solution to open
+
+The repo hosts two apps over a shared core, so there are three entry points:
+
+| File | Scope | Use it when |
+|---|---|---|
+| `ClaudeForge.slnx` | **Everything.** | Always — it is also what CI builds. |
+
+ⓘ **There are no `.slnf` solution filters on this branch.** They existed to give each product a
+focused view of the shared layer plus its own projects; with a single product a filter selects the
+entire solution, so it offered nothing and the guards around it could no longer fail. They are
+restored from the parked branch when a second product returns — see plans/00003 Phase 0.
+
+⚠ **`ClaudeForge.slnx` is the one CI builds and tests**, so a project missing from it never builds in CI at all — and no local build will tell you. Add new projects there first. A filter cannot paper over the omission: naming a project that is absent from the parent solution is a hard `MSB4025` error. The reverse drift — added to the solution, forgotten in the filters — is caught by `SolutionFilterTests` instead, because MSBuild has no opinion about it.
+
 ---
 
 ## Project structure
 
 | Project | Description |
 |---------|-------------|
-| `src/ClaudeForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
-| `src/ClaudeForge.Sdk` | Typed accessors over Core (the public consumer surface — `IClaudeConfigClient` + accessors) |
+| `src/AgentForge.Abstractions` | Product-neutral contracts, BCL-only — no UI, no serialization, no product knowledge |
+| `src/JsonC` | Comment- and formatting-preserving JSONC reader + edit-based writer. Framework-only, no package references. See [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md) |
+| `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
+| `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
+| `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
+| `src/AgentForge.Avalonia.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits: the status bar, deep-path navigation, global search, the page-navigation lifecycle, schema→page layout, and the save-confirmation dialog's model. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `src/LayeredEditors.*` | Reusable layered-config editor library (used by ClaudeForge but designed to stand alone) |
-| `tests/ClaudeForge.Core.Tests` | Domain logic |
-| `tests/ClaudeForge.Sdk.Tests` | SDK accessor contracts + regression tests |
+| `tests/AgentForge.Core.Tests` | Domain logic |
+| `tests/AgentForge.Sdk.Tests` | Product-neutral SDK contracts + regression tests. Builds without either product — uses its own `TestConfigClient` where a live client is needed |
+| `tests/ClaudeForge.Sdk.Claude.Tests` | Claude accessor round-trips, permission matchers, client lifecycle |
+| `tests/JsonC.Tests` | Scanner/parser/editor contracts for the JSONC writer — comment and formatting preservation, and the refuse-to-edit-unparseable-input guarantee |
 | `tests/ClaudeForge.Tests` | View-model + headless integration tests |
 | `tests/LayeredEditors.*.Tests` | Library tests |
 
-When in doubt about which project a file belongs in: if it has Avalonia / Semi.Avalonia references it's `ClaudeForge`; if it's pure JSON / file-IO / domain logic it's `ClaudeForge.Core` or `ClaudeForge.Sdk`.
+When in doubt about which project a file belongs in: if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`. If it has Avalonia references, ask whether it names a product: shell chrome that does not is `AgentForge.Avalonia.Shell`, and anything Claude-shaped stays in `ClaudeForge`. `AgentForge.*` may never reference `ClaudeForge.*` — `AssemblyLayeringTests` fails the build on both the project graph and compiled references, so guessing wrong is caught rather than merged.
+
+**`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** The shared
+foundation only stays shared if it cannot see either product, and a
+`ProjectReference` in the wrong direction compiles perfectly — so
+`AssemblyLayeringTests` guards it, reading both the `.csproj` files and the
+compiled reference tables. If a type you are adding to `AgentForge.*` needs to
+know that Claude exists, it belongs in `ClaudeForge.Sdk.Claude` instead.
 
 ---
 
@@ -65,8 +93,8 @@ When in doubt about which project a file belongs in: if it has Avalonia / Semi.A
 Open an issue first if you're planning:
 
 - **Architectural changes** (swapping a package, restructuring SDK / Core / GUI separation, adding a new top-level project).
-- **New bundled schema files** — the schema-loading priority is documented in `CLAUDE.md`; choosing where to embed something has follow-on consequences. To **refresh** an existing bundled schema from its upstream source, see `scripts/refresh-schema.{sh,ps1}` — they download from `json.schemastore.org`, validate, show a diff, and write atomically. The PowerShell variant is also invoked weekly by `.github/workflows/schema-refresh.yml`, which opens a `chore/schema-refresh` PR if upstream has drifted; reviewers inspect the diff before merging. Any ClaudeForge hand-curated additions (notably the `default` + `examples` on the top-level `model` property, which drive the UI's AutoCompleteBox) live in the sibling `claude-code-settings.overlay.json` and are never touched by a refresh — the runtime merges them via RFC 7396 JSON Merge Patch. Guard tests under `tests/ClaudeForge.Core.Tests/Schema/` lock that contract.
-- **Breaking changes to `IClaudeConfigClient`** — that's a public API; we want intentional churn. (The `Models` accessor — `IModelCatalogAccessor`, backed by the bundled `model-catalog.json` — is part of this surface; the catalog is the source of truth for `model`/`effortLevel`/`permissions.defaultMode` values + their relationships, validated by `scripts/validate-model-catalog.ps1`.)
+- **New bundled schema files** — the schema-loading priority is documented in `CLAUDE.md`; choosing where to embed something has follow-on consequences. To **refresh** an existing bundled schema from its upstream source, see `scripts/refresh-schema.{sh,ps1}` — they download from `json.schemastore.org`, validate, show a diff, and write atomically. The PowerShell variant is also invoked weekly by `.github/workflows/schema-refresh.yml`, which opens a `chore/schema-refresh` PR if upstream has drifted; reviewers inspect the diff before merging. Any ClaudeForge hand-curated additions (notably the `default` + `examples` on the top-level `model` property, which drive the UI's AutoCompleteBox) live in the sibling `claude-code-settings.overlay.json` and are never touched by a refresh — the runtime merges them via RFC 7396 JSON Merge Patch. Guard tests under `tests/AgentForge.Core.Tests/Schema/` lock that contract.
+- **Breaking changes to `IAgentConfigClient`** — that's a public API; we want intentional churn. (The `Models` accessor — `IModelCatalogAccessor`, backed by the bundled `model-catalog.json` — is part of this surface; the catalog is the source of truth for `model`/`effortLevel`/`permissions.defaultMode` values + their relationships, validated by `scripts/validate-model-catalog.ps1`.)
 - **Anything that touches the Backup / Restore engine.** Sharp safety invariants there (path-traversal protection, partial-write rollback, B4Forge-suffix files); subtle changes can corrupt user data.
 - **Anything that touches the Profile import path.** See commit `854ed7e` for the path-traversal CRITICAL fix that's now pinned by 7 regression tests; don't regress it.
 
@@ -76,11 +104,16 @@ Open an issue first if you're planning:
 
 ### SDK-first separation
 
-- `ClaudeForge.Core` — domain model. No Avalonia. No UI dependencies.
-- `ClaudeForge.Sdk` — typed accessors over Core. `IClaudeConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
+- `AgentForge.Core` — domain model. No Avalonia. No UI dependencies.
+- `AgentForge.Sdk` — product-neutral typed accessors over Core. `IAgentConfigClient` is the public contract; out-of-tree callers (a future MCP server, CLI, third-party apps) consume this.
+- `ClaudeForge.Sdk.Claude` — the Claude-specific accessors and the two concrete clients. `IClaudeConfigClient` extends `IAgentConfigClient` with them, so `client.Permissions` / `.Hooks` / `.Marketplaces` / `.Plugins` / `.Models` require this project.
 - `ClaudeForge` — Avalonia UI. View-models bind to SDK clients, never directly to Core.
 
 If you're adding a feature that touches data, ask yourself: "would this make sense in a CLI version of the app?" If yes, the logic belongs in Core or the SDK, not in a view-model.
+
+### Saving config files
+
+Config writes go through `IConfigWriter`; the default preserves the user's comments, blank lines, key order, and indentation by editing only the spans that changed. **Don't add a code path that serializes a whole config document** — that is what the deprecated `LegacySerializingWriter` does, and it exists only as a one-release escape hatch behind `--writer legacy`. Contract and rationale: [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md).
 
 ### Trim safety (`PublishTrimmed=true`)
 
@@ -124,7 +157,7 @@ AXAML binds via `{x:Static loc:Strings.YourKeyName}`. See [LOCALIZATION.md](./LO
 
 ### PII / security awareness
 
-- Secret-bearing keys are auto-redacted by `SensitiveKeys.IsSensitive` before logging — see `src/ClaudeForge.Sdk/Diagnostics/SensitiveKeys.cs`. The classifier checks PATH SEGMENTS, so anything under `env`, `headers`, `credentials`, `auth` is auto-redacted regardless of nesting.
+- Secret-bearing keys are auto-redacted by `SensitiveKeys.IsSensitive` before logging — see `src/AgentForge.Sdk/Diagnostics/SensitiveKeys.cs`. The classifier checks PATH SEGMENTS, so anything under `env`, `headers`, `credentials`, `auth` is auto-redacted regardless of nesting.
 - If you add a new code path that emits user values, check whether they could contain secrets before logging. Trust `SensitiveKeys.IsSensitive` rather than ad-hoc regex.
 - New file paths in logs are usually fine (they tend to contain the user's username only — accepted PII for a tool the user is running on their own machine), but flag for review if a path could contain values not normally in `~/.claude/` or `~/.config/`.
 
@@ -168,7 +201,7 @@ Existing commits show `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@ant
 - [ ] `dotnet test --no-build` passes — 0 failed, no new skips. Compare against the most recent green run on `main`.
 - [ ] `dotnet publish src/ClaudeForge -c Release -r win-x64` succeeds with zero ILLink warnings.
 - [ ] **If you touched the GUI:** launched the published binary and clicked through the affected pages (lifetime / asset-bundling regressions are easy to ship and only show up at runtime).
-- [ ] **If you touched the SDK accessor public surface:** ran the contract tests in `tests/ClaudeForge.Sdk.Tests/` to confirm no breaks.
+- [ ] **If you touched the SDK accessor public surface:** ran the contract tests in `tests/AgentForge.Sdk.Tests/` to confirm no breaks.
 - [ ] **If you added a new resx key:** all three files (`Strings.resx`, `Strings.zh-CN.resx`, `Strings.Designer.cs`) are in sync.
 - [ ] **If you touched privacy-sensitive code** (logging, file paths, env vars): no new PII or secret leaks.
 - [ ] Commit messages explain the WHY, not just the what.

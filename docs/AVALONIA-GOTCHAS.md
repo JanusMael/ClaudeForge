@@ -142,6 +142,32 @@ Both traps can be present at once and mask each other — fixing only the scopin
 
 ---
 
+### An unresolvable `DynamicResource` is silent in FOUR places at once
+
+**Symptom:** A control renders unstyled — plain text where a warning colour belongs, or an invisible border — and nothing anywhere reports a problem.
+
+`LE.DangerText` was referenced 7 times and `LE.DangerBorder` twice by `OpenCodeKeybindEditorView.axaml`, while `EditorColors.axaml` declared neither. Every conflict / incomplete / held / capturing banner in that editor rendered as ordinary text inside an invisible border. What made it survive:
+
+1. **Not a build error.** XamlX resolves `StaticResource` at build time but defers `DynamicResource` to runtime — so it compiles, *including under the Release trim publish*, which is otherwise this repo's strictest AXAML gate.
+2. **Not a runtime error.** Avalonia leaves the property at its default value.
+3. **Nothing is logged.** No warning, no trace.
+4. **A screenshot pass can miss it entirely** — all nine elements were conditional on a keybind conflict, and the sandbox config used for a live UIA/screenshot pass had none, so not one was ever on screen.
+
+**Fix:** a static guard, not vigilance. `ThemeResourceIntegrityTests` asserts every `LE.*` key referenced in AXAML is declared, and every declared key is referenced from AXAML **or C#** — six of the eight are resolved from code (`BoolToStatusBrushConverter`, `LinkifiedTextBlock`), so an AXAML-only scan calls them all dead.
+
+---
+
+### A THEMED resource looked up with a null variant resolves to NOTHING
+
+**Symptom:** A brush token you just added produces a plausible colour that is nonetheless the wrong one, and is identical in light and dark.
+
+`BrushHelper.Resolve` calls `TryGetResource(key, null, out …)`. That is correct for the `LE.*` tokens, which are declared **flat** and documented theme-neutral. Every `App*Brush` is declared inside `ResourceDictionary.ThemeDictionaries` with `Light` / `Dark` children — and a themed key looked up with a **null** variant is not found. The caller then falls back to its hardcoded hex, which is one literal for both themes: precisely the problem the token was introduced to remove, now invisible.
+
+**Fix:** `BrushHelper.ResolveThemed`, which passes `Application.Current.ActualThemeVariant`. Kept as a **separate method** rather than an optional parameter, because an optional parameter is a thing somebody forgets and the failure is silent.
+
+⚠ **This is untestable without a headless app.** In ordinary unit tests `Application.Current` is null or resource-less, so the flat and themed lookups both land on the fallback and both look correct. `AppSeverityThemedLookupTests` installs a themed dictionary whose sentinel colours match no fallback, so the flat lookup fails instead of passing. Canary confirmed: swapping `ResolveThemed` → `Resolve` reddens it, and reddens nothing else in the suite.
+---
+
 ### AvaloniaEdit under Semi resolves only with the compat dictionaries
 
 **Symptom:** Hosting an `AvaloniaEdit` `TextEditor` under `Semi.Avalonia` throws a
@@ -211,6 +237,164 @@ box.IsDropDownOpen = true;
 Reference: `ModelPicker.axaml.cs` chevron handler (the fuzzy model picker).
 
 ---
+
+### A `TabControl` bound to `ItemsSource` names its `TabItem`s from the ITEM, not the `ItemTemplate`
+
+**Symptom:** A screen reader announces `Namespace.Type.FullName` for every tab, while the AXAML plainly contains an `AutomationProperties.Name`.
+
+Avalonia takes a generated container's automation name from the bound **item**. Putting `AutomationProperties.Name` inside the `ItemTemplate` names the `TextBlock` *inside* the header and leaves the focusable `TabItem` falling back to `ToString()`. When the template renders more than one element there is no single header text to infer from either.
+
+**Both of this repo's `ItemsSource`-bound TabControls had it — a 100% hit rate on the pattern.** Measured through UI Automation on the running apps:
+
+| View | Announced |
+|---|---|
+| `OpenCodeArtifactsPageView` (5 tabs) | `…Artifacts.OpenCodeArtifactTabViewModel` |
+| `SettingsGroupEditorView` (6 tabs) | `…Settings.GroupTab` |
+
+⛔ **`AxamlAccessibilityCoverageTests` cannot catch this and scored both files clean.** It asserts on `AutomationProperties.Name` attributes present in the markup — and in both cases the attribute *was* present, on the wrong element. The name that reaches the user comes from a view-model, which no scan of the markup can evaluate.
+
+**Fix:** override `ToString()` on the item type, returning an explicit automation name and falling back to the visible header. `ItemsSourceBoundTabsTests` resolves each such TabControl's `ItemTemplate` `x:DataType`, finds the file declaring it, and fails without the override.
+
+> The "name comes from the item" rule applies to any `ItemsSource`-generated container — but ⛔ **the FALLBACK does not, and neither does the fix.** ClaudeForge's nav `TreeViewItem`s were audited afterwards and were broken too; see the next entry. Do not assume `ToString()` is the answer for a container that is not a `TabItem`.
+
+---
+
+### A `TreeViewItem` generated from `ItemsSource` has NO automation name — not from the template, not from `ToString()`
+
+**Symptom:** A screen reader announces *nothing at all* for every row of a navigation tree, while the AXAML plainly contains `AutomationProperties.Name` and the `TreeView` itself is correctly named.
+
+Same underlying rule as the `TabControl` entry above — the container's name does not come from the `ItemTemplate` — but the fallback is different, and that changes the fix:
+
+| Container | Fallback when the template root is not a lone text element | Fix |
+|---|---|---|
+| `TabItem` | the item's `ToString()` → announces the **type name** | override `ToString()` |
+| `TreeViewItem` | **nothing — an empty name** | `AutomationProperties.Name` on the container, via a `Style` |
+| `ListBoxItem` | the item's `ToString()` → announces the **type name** | either works — see the `ListBox` entry below |
+| `ComboBoxItem` | the item's `ToString()` → announces the **type name**, and a `record`'s synthesized one announces **every property** | override `ToString()` |
+| `ItemsControl` | **not in this class** — its `ContentPresenter` takes no focus, so the name comes from whatever focusable control the template contains | name that control |
+
+⚠ **A `record` used as an `ItemsSource` item is the worst case of the `ToString()` fallback**, because the synthesized implementation is plausible-looking text rather than an obviously-wrong type name: `EssentialsEnumOption { Value = NotSet, Label = Not set, Description = Writes nothing… }` announced for every row. Measured on `OpenCodeEssentialsView`'s picker: with `public override string ToString() => Label;` the four rows announce `Not set` / `Never update` / `Notify only` / `Update automatically`. ⭐ Return the **label**, never the committed value — the value is an internal discriminator.
+
+⛔⛔ **A `ToString()` override does NOT fix a `TreeViewItem`.** Measured: a probe override returning `"PROBE-" + Title` on `NavigationNodeViewModel` never reached UIA — all 26 rows stayed empty. The empty name is itself the tell, because `ToString()` can never *return* empty.
+
+⛔⛔ **A lone bound `TextBlock` as the template root does NOT supply the name either.** Both of the repo's `ItemsSource`-bound navigation trees were broken, measured via a UIA `ControlViewWalker` census on both running apps:
+
+| View | Template root | Rows before | Rows after |
+|---|---|---|---|
+| `ClaudeForge/Views/MainWindow.axaml` | `Panel` (divider `Border` + icon/title `StackPanel`) | 26 × `[]` | 24 × `[Essentials]`, `[Claude Code]`, `[General]`, … |
+| `OpenCodeForge/Views/MainWindow.axaml` | a single `<TextBlock Text="{Binding Title}" />` | 3 × `[]` | `[OpenCode]`, `[OpenCode TUI]`, `[Artifacts]` |
+
+Each tree's own `Tree` element was already named `Settings navigation` in both apps, which is part of why this survived so long — the container is named, so a spot check looks healthy.
+
+⚠⚠ **Beware the harness recipe that hid this.** The UIA navigation recipe in this repo's notes locates a page by finding the `Text` **leaf** whose name is the page title and walking **up** to its `TreeItem` ancestor. That works, and it made OpenCodeForge's tree look correctly labelled when only the inner `TextBlock` ever was. A first draft of the guard below trusted that and passed any lone-text template — an escape hatch that would have vouched for a tree announcing nothing. **Read the container's own `Name`, not a descendant's.**
+
+**Fix** — a style setter on the generated container:
+
+```xml
+<Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
+    <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+</Style>
+```
+
+⚠ **`x:DataType` on the `Style` is required**, not decorative: without it the setter's binding is a reflection binding, which is an `IL2026` trim error in this repo. It compiles clean with it.
+
+⚠ **Do not name a decorative row.** The two divider nodes carry the vestigial `Title` `"─────────────"` — thirteen box-drawing characters the template has never rendered (it draws a 1px `Border`) — so binding `Name` to `Title` made them announce thirteen glyphs each. `AutomationProperties.AccessibilityView="Raw"` drops an element from the control view; applying it to every row took the census from 26 to 0, confirming the lever. `BoolToAccessibilityViewConverter` applies it to dividers only, so a screen reader walks 24 rows rather than 26.
+
+⛔ **`AxamlAccessibilityCoverageTests` scored both files clean, and a baseline of zero was quoted as evidence.** Guarded instead by `ItemsSourceBoundTreeViewsTests`, which requires every `ItemsSource`-bound `TreeView` to declare a container-naming `Style` — no exceptions, for the reason above. Canaried in both directions and per-file: dropping either app's style reds only that app, dropping both names both, and a *scoped* `TreeView > TreeViewItem` selector is still accepted (the `>` inside the attribute value breaks a naive tag regex — the guard skips quoted strings).
+
+---
+
+### A `ListBox` bound to `ItemsSource` announces the item's type name for every row
+
+**Symptom:** A screen reader reads `Bennewitz.Ninja.<…>.SomeViewModel` for each row of a list, once per row, while the rows render perfectly on screen.
+
+Third container type, same rule, and **four of the repo's four `ItemsSource`-bound ListBoxes had it** — the pattern's hit rate is now 8 for 8 across `TabControl`, `TreeView` and `ListBox`. Found by running OpenCodeForge and reading the search results after building an unrelated feature on that surface:
+
+| View | Item type | Rows before | Rows after |
+|---|---|---|---|
+| `OpenCodeForge/Views/MainWindow.axaml` (search results) | `SearchResultViewModel` | 5 × `[…Search.SearchResultViewModel]` | `[share, OpenCode › Sharing. Critical: On auto, every session is uploaded to a shareable link.]` |
+| `ClaudeForge/Views/HooksEditorView.axaml` | `HookEventGroup` | type name | `[PreToolUse, 2 hooks]` |
+| `ClaudeForge/Views/McpServersEditorView.axaml` | `McpServerEntry` | type name | `[my-server, stdio]` |
+| `OpenCode.Avalonia/Keybinds/OpenCodeKeybindEditorView.axaml` | `OpenCodeKeybindActionViewModel` | type name | `[Share current session, <leader>s]` |
+
+⚠ **Only the first row of that table was measured before and after.** The other three are the same container type generated the same way and were fixed by the same mechanism; the guard proves the override is present, but they have not individually been seen on screen.
+
+**Fix** — either the `ToString()` override (as for a `TabItem`) or a container-naming `Style` (as for a `TreeViewItem`). Both genuinely work here, which is why `ItemsSourceBoundListBoxesTests` accepts either while its two sibling guards each require exactly one. The convention is an `AccessibleName` property with `public override string ToString() => AccessibleName;`, matching `OpenCodeArtifactTabViewModel`.
+
+⭐ **Put in the announcement whatever the row conveys visually and only visually.** Each fix above carries a count, a transport, a key summary, or a severity, because those are rendered beside the label and a reader gets none of them otherwise. A row whose dot says "Critical" is the clearest case: the dot's own `HelpText` is on an inner `TextBlock`, and a reader announcing the **container** does not necessarily read a child's help text.
+
+⚠ **An `ItemsControl` is not in this class and is deliberately not scanned.** It generates non-focusable `ContentPresenter`s, so the announced name comes from the focusable control inside the template. ClaudeForge's search popup is an `ItemsControl` of `Button`s carrying an explicit `AutomationProperties.Name`, which is why the *same view-model* was broken in one app and correct in the other — a per-app difference no view-model test can see.
+
+---
+
+### `AutomationProperties.Name` is IGNORED on a `TextBlock` — its `Text` always wins
+
+**Symptom:** A screen reader announces a glyph, an icon character, or the visible text, no matter what `AutomationProperties.Name` is bound to. No warning, no binding error.
+
+Avalonia's `TextBlock` peer reports the control's own `Text` as its automation name. An explicit `AutomationProperties.Name` does not override it. Measured through UIA on the running app: a severity dot bound to a full sentence announced `▲`, and a banner bound to `"Critical: …"` announced its visible sentence instead.
+
+⛔ **This makes a whole class of markup a silent no-op.** This repo has **15** `AutomationProperties.Name="{Binding DisplayName}"` attributes on `TextBlock`s; every one is dead. Nobody noticed because in each case the `Text` *already* equals `DisplayName`, so the announced result was accidentally correct.
+
+⚠ **Wrapping the `TextBlock` to carry the name makes it worse, two ways** — both measured:
+
+| Wrapper | Result |
+|---|---|
+| `Border` | **no automation peer at all**, so the element vanishes from the control view |
+| `ContentControl` | same — no peer, element absent |
+
+Combined with `AutomationProperties.AccessibilityView="Raw"` on the inner glyph, the indicator became *invisible* to assistive tech — strictly worse than announcing the glyph.
+
+**Fix:** use `AutomationProperties.HelpText` for the sentence and let `Text` be the name. UIA announces name then help text, so the user hears `"▲, Critical: Filesystem snapshots are your undo."` This is also already the convention in `PropertyEditorWrapper.axaml`, where each property's description rides `HelpText` on its label.
+
+⭐ **A UIA dump reports `Name` by default, so `HelpText` looks absent unless you ask for it** — read `element.Current.HelpText` explicitly before concluding the annotation did not apply.
+
+---
+---
+
+### An `AutoCompleteBox` reports `ControlType.Group`, and a `NumericUpDown`'s inner `TextBox` is a separate element that needs its own name
+
+**Symptom:** A UIA sweep that queries the obvious control types — `Edit`, `ComboBox`, `CheckBox` — finds the free-form pickers **missing** and reports several unnamed `Edit` elements instead. It reads exactly like `AutomationProperties.Name` having been ignored.
+
+**It has not been.** Measured on OpenCodeForge's Essentials page, where three `AutoCompleteBox`es and three `NumericUpDown`s each carry `AutomationProperties.Name="{Binding Title}"`:
+
+| Control in markup | What UIA actually exposes |
+|---|---|
+| `AutoCompleteBox` | one `ControlType.Group`, **correctly named**, keyboard-focusable — plus one `ControlType.Edit` child (its templated `TextBox`), which was unnamed and is the element that actually takes focus |
+| `NumericUpDown` | one `ControlType.Spinner`, **correctly named** — plus one `Edit` child that was unnamed and takes the focus, and two `Button`s that announced their own type name |
+
+So the name arrives — but it arrives on the composite's own peer, and the inner `TextBox` is a distinct element that had no name of its own. Both apps behaved identically, and had since the first `NumericUpDown` shipped.
+
+⛔ **That distinction is the whole defect, because the composite never HOLDS focus.** Measured with `HasKeyboardFocusProperty`: True on the inner `Edit`, False on the correctly-named `Spinner` above it. So the `AutomationProperties.Name` every view carefully binds sat on an element a screen-reader user never lands on — 6 number fields and 8 pickers. **Fixed 2026-09-08** by copying the host's name down to the part, in the same theme file as the spin buttons below. No new string: the name is the host's own, already localised by whatever the view bound.
+
+```xml
+<Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+    <Setter Property="AutomationProperties.Name"
+            Value="{Binding $parent[NumericUpDown].(AutomationProperties.Name)}" />
+</Style>
+```
+
+⚠ **Scope such a selector to the control whose `TemplatedParent` OWNS the part, which is not always the one it renders inside.** `PART_TextBox` draws within the `ButtonSpinner` but belongs to the `NumericUpDown`'s template, so a `ButtonSpinner /template/` selector — the natural guess from the UIA tree — matches nothing. UIA shows nesting; it never shows template ownership. Read `TemplatedParent` from a headless dump instead of reasoning about it; the guard asserts it so the selector and the test cannot drift apart.
+
+A host the view left unnamed copies down an empty string and stays unnamed — deliberately, so this cannot paper over a genuinely missing name. One `AutoCompleteBox` on ClaudeForge's Model & Effort page is in exactly that state, and the app-wide count of blank-named focusable `PART_TextBox` instances went 15 → 1 rather than to zero for that reason. The container and the focused field now carry the same name, so a screen reader may say it twice; that verbosity is the right side of the trade against a focused field with no name at all.
+
+⛔ **The trap is the probe, not the app.** Enumerate by `TrueCondition` and read `Current.ControlType.ProgrammaticName`, or filter to `Current.IsKeyboardFocusable` — the focus targets are what a screen reader actually lands on. ⛔ They did **not** line up with the markup one-for-one, which an earlier revision of this entry claimed: the composite reports itself focusable yet never holds focus, so the focusable set included both it and its unnamed inner `Edit`. `IsKeyboardFocusable` tells you what *can* take focus; only `HasKeyboardFocusProperty` tells you what *does*. `AutomationElement.FocusedElement` is no substitute — it is global, and from an agent session the app usually cannot be brought foreground, so it returns the desktop's `Pane class=#32769`. Querying a hand-picked list of control types produced a confident false conclusion here, and the count of unnamed `Edit`s (six) happened to look like a plausible defect: 3 + 3.
+
+⚠ **A `NumericUpDown`'s spin buttons announced `Avalonia.Controls.PathIcon`** — same `ToString()` fallback as the `ItemsSource` container cases above, because Avalonia's default template gives them no name and their content is a `PathIcon`. Twelve of them in ClaudeForge (Essentials, General, Sandbox, Backup / Restore) and six on OpenCodeForge's Essentials page. **Fixed 2026-09-08.**
+
+This one cannot be fixed from a view, and no widening of the AXAML scan reaches it: the buttons exist only inside `ButtonSpinner`'s control template, so there is no element in any markup to annotate or to scan. They are named from the theme instead — `src/LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml`, included by `SemiBundle.axaml`, which is the one line both apps' `App.axaml` already take from the shared library:
+
+```xml
+<Style Selector="ButtonSpinner /template/ RepeatButton#PART_IncreaseButton">
+    <Setter Property="AutomationProperties.Name"
+            Value="{x:Static loc:WrapperStrings.LabelSpinnerIncrease}" />
+</Style>
+```
+
+The `/template/` combinator is not optional — a selector without it does not reach an element that lives inside a control template. The two strings come from `WrapperStrings` so a host localises them through the same `Resolver` hook as the wrapper chrome.
+
+**Guard:** `tests/LayeredEditors.Avalonia.Tests/Themes/TemplatePartAutomationNameTests.cs` builds a real templated `NumericUpDown` on the headless UI thread — in an app that loads exactly the host's `SemiBundle.axaml` include — and reads its automation PEERS, because the `ToString()` fallback lives in the peer and only the peer can show it is gone. It asserts its own premise first (one `ButtonSpinner`, one button per part name), since a template whose parts get renamed would otherwise hand the test an empty set to pass over.
+
+⭐ **Related:** `CopyFromScreen` captures the **physical screen**, so screenshotting a background window silently yields whatever is on top of it — for one run here, the editor that launched the harness. Force the window foreground first (`ShowWindow` + `SetWindowPos` topmost + `SetForegroundWindow`) or treat the UIA dump, not the image, as the evidence.
 
 ## Virtualization / perf
 

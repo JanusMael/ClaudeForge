@@ -1,6 +1,7 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -246,7 +247,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.Plugins.Set(new EnabledPlugin("from-sdk@m", Enabled: true));
@@ -396,7 +397,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             // Accessor sees no plugins; the raw scope carries an array-valued one.
@@ -447,7 +448,7 @@ public class EnabledPluginsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
             client.Plugins.Set(new EnabledPlugin("comp/plugin", Enabled: true, Components: ["a", "b"]));
 

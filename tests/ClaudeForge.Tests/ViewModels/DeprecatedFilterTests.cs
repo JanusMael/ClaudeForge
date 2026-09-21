@@ -1,5 +1,7 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels.PropertyEditorViewModel;
+﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.ClaudeForge.Adapters;
+using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -18,7 +20,7 @@ public sealed class DeprecatedFilterTests
             JsonObject root = (JsonObject)JsonNode.Parse(e.Json)!;
             return new SettingsDocument(e.Scope, $"{e.Scope}.json", root, isReadOnly: false);
         });
-        return new SettingsWorkspace(docs);
+        return new SettingsWorkspace(docs, ClaudeMergePolicy.Instance);
     }
 
     [TestMethod]
@@ -37,7 +39,7 @@ public sealed class DeprecatedFilterTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
         Assert.AreEqual(1, filtered.Count,
@@ -60,7 +62,7 @@ public sealed class DeprecatedFilterTests
         SettingsWorkspace workspace = MakeWorkspace(
             (ConfigScope.User, """{"includeCoAuthoredBy":true}"""));
 
-        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Git", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
         Assert.AreEqual(1, filtered.Count,
@@ -77,7 +79,7 @@ public sealed class DeprecatedFilterTests
         ];
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
 
-        SettingsGroupEditorViewModel vm = new("Models", nodes, workspace);
+        SettingsGroupEditorViewModel vm = new("Models", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         Assert.AreEqual(1, vm.FilteredEditors.Count());
     }

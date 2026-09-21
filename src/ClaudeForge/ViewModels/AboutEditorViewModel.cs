@@ -1,11 +1,13 @@
-using System.Collections;
+﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,7 +22,7 @@ public enum AboutProduct
     ClaudeDesktop
 }
 
-public partial class AboutEditorViewModel : ObservableObject
+public partial class AboutEditorViewModel : ObservableObject, INavigablePage
 {
     private readonly IShellLauncher _shellLauncher;
     private readonly IDialogService? _dialogService;
@@ -28,6 +30,13 @@ public partial class AboutEditorViewModel : ObservableObject
     private readonly IShareService? _shareService;
     private readonly Func<string?> _logPathProvider;
     private readonly PlatformPaths.ClaudeCodeLocation? _claudeCodeLocation;
+
+    /// <summary>
+    /// The resolved Claude environment. ⓘ Used only on the Claude Code side: the Desktop arm of
+    /// <see cref="PrimaryConfigPath"/> reads an OS application-data path that
+    /// <c>CLAUDE_CONFIG_DIR</c> cannot move.
+    /// </summary>
+    private readonly ClaudeEnvironment _env;
 
     // Default log-path factory used in production.  Extracted as a static so
     // the lambda allocation happens once, not on every constructor call.
@@ -159,10 +168,11 @@ public partial class AboutEditorViewModel : ObservableObject
     /// correct — no change notification needed.
     /// </remarks>
     public string PrimaryConfigPath => Product == AboutProduct.ClaudeCode
-        ? PlatformPaths.UserSettingsPath
+        ? PlatformPaths.UserSettingsPath(_env)
         : PlatformPaths.DesktopConfigPath;
 
     public AboutEditorViewModel(
+        ClaudeEnvironment env,
         AboutProduct product,
         IShellLauncher? shellLauncher = null,
         IDialogService? dialogService = null,
@@ -170,6 +180,8 @@ public partial class AboutEditorViewModel : ObservableObject
         IShareService? shareService = null,
         Func<string?>? logPathProvider = null)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
         Product = product;
         _shellLauncher = shellLauncher ?? ShellLauncher.Instance;
         _dialogService = dialogService;
@@ -183,7 +195,7 @@ public partial class AboutEditorViewModel : ObservableObject
         // IsClaudeCodeOnPath / ShowClaudeCodePathWarning and is forwarded to
         // LoadVersionsAsync so the version probe uses the exact binary we
         // located rather than depending on a PATH lookup the user may not have.
-        _claudeCodeLocation = PlatformPaths.TryFindClaudeCodeBinary();
+        _claudeCodeLocation = PlatformPaths.TryFindClaudeCodeBinary(env);
 
         // Seed install panels only for the products that are not currently
         // detected — when a product is installed we hide its entire row, so
@@ -291,18 +303,49 @@ public partial class AboutEditorViewModel : ObservableObject
         string? logPath = _logPathProvider();
         if (logPath is null || _shareService is null)
         {
+            // ⚠ CanShareLog already guards both, so reaching here means the command was invoked
+            // around its CanExecute. Say so rather than returning quietly — silence is precisely
+            // what made this defect invisible.
+            ReportShareOutcome(ShareOutcome.Unavailable);
             return;
         }
 
         try
         {
             Log.Information("[About] Share log requested: {LogPath}", logPath);
-            await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
+            ShareOutcome outcome = await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
+            Log.Information("[About] Share log outcome: {Outcome}", outcome);
+            ReportShareOutcome(outcome);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "[About] Share log failed for {LogPath}", logPath);
+            ReportShareOutcome(ShareOutcome.Failed);
         }
+    }
+
+    /// <summary>
+    /// Raised with the terminal outcome of *Share log*, for the host to route to the centre
+    /// status pill: the sentence, and whether it is a failure.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Same shape and same reason as <c>BackupRestoreViewModel.OnTerminalStatus</c> and
+    /// <c>EffectiveSettingsViewModel</c>'s. This page has no status surface of its own, so
+    /// without the hook *Share log* acknowledged nothing at all — the F3 defect, one surface
+    /// along. ⓘ The two About view-models are CACHED and reused across reloads, so the host wires
+    /// this once at construction rather than on every navigation rebuild.
+    /// </remarks>
+    public Action<string, bool /* isFailure */>? OnTerminalStatus { get; set; }
+
+    private void ReportShareOutcome(ShareOutcome outcome)
+    {
+        (string text, bool isFailure) = FileShareStatus.Describe(
+            outcome,
+            Strings.StatusShareLogRevealed,
+            Strings.StatusShareLogUnavailable,
+            Strings.StatusShareLogFailed);
+
+        OnTerminalStatus?.Invoke(text, isFailure);
     }
 
     /// <summary>
@@ -673,5 +716,16 @@ public partial class AboutEditorViewModel : ObservableObject
             ClaudeCodeVersion ??= $"(probe error: {ex.Message})";
             ClaudeDesktopVersion ??= null;
         }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Cheap re-probe of the config-file actions only (see
+    /// <see cref="RefreshConfigAvailability"/>): a settings.json written after launch
+    /// otherwise leaves "Open Config" disabled for the rest of the session.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        RefreshConfigAvailability();
     }
 }

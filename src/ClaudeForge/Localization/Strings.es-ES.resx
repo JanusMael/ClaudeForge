@@ -133,6 +133,18 @@
     <value>Nueva referencia de plugin</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>Aumentar valor</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>Expandir o contraer</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>Disminuir valor</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -569,6 +581,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>Restaurando claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Restaurando el directorio principal de Claude…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Restaurando la configuración de Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Restaurando los perfiles de Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Restaurando el perfil activo de Desktop…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>Aplicando la restauración…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>Restaurando proyectos…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>Restaurando worktrees…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>Restauración completada</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>Detectando proyectos…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Retención</value>
@@ -1284,6 +1332,12 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Se marca cuando un ámbito más estrecho (p. ej. local o project) define esta propiedad explícitamente, sobrescribiendo el valor de esta fila</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Riesgo</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>Cuánto importa esta opción, evaluada en el ámbito que prevalece y con el valor en vigor: puede diferir de la misma opción en la pestaña Propiedades, que evalúa el ámbito que estás editando</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copiar al portapapeles</value>
   </data>
@@ -1308,6 +1362,42 @@ Las nuevas terminales adoptarán el cambio; las terminales abiertas deben reinic
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>Recargado.</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuración copiada al portapapeles.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuración abierta en el navegador.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuración enviada al cliente de correo.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuración mostrada en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Compartir no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>No se pudo compartir la configuración — consulta el registro para más detalles.</value>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Archivo de registro mostrado en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Compartir el registro no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>No se pudo mostrar el archivo de registro — consulta el registro para más detalles.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Archivo de copia de seguridad mostrado en el explorador de archivos.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Compartir la copia de seguridad no está disponible en este sistema.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>No se pudo mostrar la copia de seguridad — consulta el registro para más detalles.</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nada que exportar — los ajustes aún no se han cargado.</value>
@@ -1786,6 +1876,9 @@ Cancelar — mantener la ventana abierta.</value>
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>Propiedad modificada</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} de estos cambios establecen un valor que debilita un límite de seguridad. Revisa las filas marcadas antes de guardar.</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2828,6 +2921,60 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>No se pudo abrir el enlace directo «{0}»: no existe esa página ni ese elemento.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Navegación de ajustes</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Subagentes, habilidades y comandos</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Copia de seguridad y restauración</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Vistas de ajustes efectivos</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Niveles de memoria</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Vistas de ajustes</value>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>incluido</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>descargado {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante el esquema incluido en esta aplicación (huella {0}). La aplicación intentó descargar una copia más reciente y no pudo: normalmente por falta de red o porque la descarga fue demasiado lenta.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante un esquema descargado a las {0} (huella {1}). La copia incluida en esta aplicación se usa en su lugar cuando la descarga no está disponible.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>La configuración de esta sección se describe mediante el esquema incluido en esta aplicación (huella {0}). Este producto no publica ningún esquema descargable, por lo que esta copia es la única.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Buscar actualizaciones de esquema</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Vuelve a descargar las definiciones en las que se basan estos editores. Se aplica tras volver a cargar.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Comprobando…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Los esquemas están actualizados.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Actualizado: {0}. Vuelve a cargar la ventana para aplicarlo: los editores siguen mostrando la versión anterior.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>No se pudo conectar con el servidor de esquemas. Se usa la copia incluida en esta aplicación.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>No se pudo cargar el esquema de {0}. Consulta el registro para más detalles.</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>Quitar</value>

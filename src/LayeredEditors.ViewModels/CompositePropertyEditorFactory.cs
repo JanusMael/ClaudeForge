@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Extends <see cref="DefaultPropertyEditorFactory"/> with a matcher-based registration

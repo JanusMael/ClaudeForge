@@ -133,6 +133,18 @@
     <value>새 플러그인 참조</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>값 늘리기</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>확장 또는 축소</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>값 줄이기</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -578,6 +590,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>claude.json 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Claude 홈 디렉터리 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Desktop 구성 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Desktop 프로필 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Desktop 활성 프로필 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>복원 적용 중…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>프로젝트 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>워크트리 복원 중…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>복원 완료</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>프로젝트를 검색하는 중…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>보존</value>
@@ -1227,6 +1275,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>더 좁은 범위(예: local 또는 project)가 이 속성을 명시적으로 설정하여 이 행의 값을 재정의할 때 체크됩니다</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>위험도</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>이 설정의 중요도입니다. 우선 적용된 범위와 실제 적용 중인 값을 기준으로 판정하므로, 편집 중인 범위를 기준으로 판정하는 속성 탭의 동일한 설정과 다를 수 있습니다</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>클립보드에 복사</value>
   </data>
@@ -1251,6 +1305,42 @@
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>다시 불러왔습니다.</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>설정을 클립보드에 복사했습니다.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>설정을 브라우저에서 열었습니다.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>설정을 메일 클라이언트로 전달했습니다.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>설정을 파일 관리자에서 표시했습니다.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>이 시스템에서는 공유를 사용할 수 없습니다.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>설정을 공유하지 못했습니다. 자세한 내용은 로그를 확인하세요.</value>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>로그 파일을 파일 관리자에서 표시했습니다.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>이 시스템에서는 로그 공유를 사용할 수 없습니다.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>로그 파일을 표시하지 못했습니다. 자세한 내용은 로그를 확인하세요.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>백업 아카이브를 파일 관리자에서 표시했습니다.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>이 시스템에서는 아카이브 공유를 사용할 수 없습니다.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>백업 아카이브를 표시하지 못했습니다. 자세한 내용은 로그를 확인하세요.</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>내보낼 항목이 없습니다 — 설정이 아직 로드되지 않았습니다.</value>
@@ -1812,6 +1902,9 @@
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>수정된 속성</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>이 변경 사항 중 {0}개가 안전 경계를 약화시키는 값을 설정합니다. 저장하기 전에 표시된 행을 검토하세요.</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2840,6 +2933,60 @@
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>딥 링크 '{0}'을(를) 열 수 없습니다 — 해당 페이지나 항목이 없습니다.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>설정 탐색</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>서브 에이전트, 스킬 및 명령</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>백업 및 복원</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>적용된 설정 보기</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>메모리 계층</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>설정 보기</value>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>내장</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>가져옴 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 이 앱에 내장된 스키마(지문 {0})로 정의됩니다. 더 새로운 사본을 가져오려 했지만 실패했습니다 — 보통 네트워크가 없거나 다운로드가 너무 느린 경우입니다.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 {0}에 다운로드된 스키마(지문 {1})로 정의됩니다. 다운로드를 사용할 수 없을 때는 이 앱에 내장된 사본이 대신 사용됩니다.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>이 섹션의 설정은 이 앱에 내장된 스키마(지문 {0})로 정의됩니다. 이 제품은 다운로드할 수 있는 스키마를 게시하지 않으므로 이 사본이 유일합니다.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>스키마 업데이트 확인</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>이 편집기의 기반이 되는 정의를 다시 다운로드합니다. 다시 불러온 후 적용됩니다.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>확인 중…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>스키마가 최신입니다.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>업데이트됨: {0}. 적용하려면 창을 다시 불러오세요 — 편집기에는 아직 이전 버전이 표시됩니다.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>스키마 서버에 연결할 수 없습니다. 이 앱에 내장된 사본을 사용합니다.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>{0}의 스키마를 불러올 수 없습니다. 자세한 내용은 로그를 확인하세요.</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>제거</value>

@@ -1,0 +1,132 @@
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
+class Bennewitz.Ninja.LayeredEditors.Avalonia.AssemblyMarker
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors.CopyValue
+    static Avalonia.AttachedProperty<System.Boolean> IsEnabledProperty
+    static System.Boolean GetIsEnabled(Avalonia.Controls.DataGrid dg)
+    static System.Void SetIsEnabled(Avalonia.Controls.DataGrid dg, System.Boolean value)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors.FileDrop
+    static Avalonia.AttachedProperty<System.String> AllowedExtensionsProperty
+    static Avalonia.AttachedProperty<System.Windows.Input.ICommand> DropCommandProperty
+    static System.String GetAllowedExtensions(Avalonia.Controls.Control c)
+    static System.Void SetAllowedExtensions(Avalonia.Controls.Control c, System.String value)
+    static System.Void SetDropCommand(Avalonia.Controls.Control c, System.Windows.Input.ICommand value)
+    static System.Windows.Input.ICommand GetDropCommand(Avalonia.Controls.Control c)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors.FocusOnRequest
+    static Avalonia.AttachedProperty<System.Int32> RequestIdProperty
+    static System.Int32 GetRequestId(Avalonia.Controls.Control c)
+    static System.Void SetRequestId(Avalonia.Controls.Control c, System.Int32 value)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.DescriptionFormatter
+    static System.String SplitSentencesOntoLines(System.String source)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.JsonHighlightBlock [sealed] : Avalonia.Controls.UserControl implements Avalonia.Controls.IResourceHost, Avalonia.Controls.IResourceNode, Avalonia.Controls.ISetInheritanceParent, Avalonia.Controls.ISetLogicalParent, Avalonia.Controls.Templates.IDataTemplateHost, Avalonia.IDataContextProvider, Avalonia.INamed, Avalonia.Input.IInputElement, Avalonia.LogicalTree.ILogical, Avalonia.Styling.ISetterValue, Avalonia.Styling.IStyleHost, Avalonia.Styling.IThemeVariantHost, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.ISupportInitialize
+    .ctor()
+    System.String Json { get;set; }
+    System.Void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    System.Void OnPropertyChanged(Avalonia.AvaloniaPropertyChangedEventArgs change)
+    static Avalonia.StyledProperty<System.String> JsonProperty
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.LinkifiedTextBlock [sealed] : Avalonia.Controls.TextBlock implements Avalonia.Controls.IResourceHost, Avalonia.Controls.IResourceNode, Avalonia.Controls.ISetInheritanceParent, Avalonia.Controls.ISetLogicalParent, Avalonia.Controls.Templates.IDataTemplateHost, Avalonia.IDataContextProvider, Avalonia.INamed, Avalonia.Input.IInputElement, Avalonia.LogicalTree.ILogical, Avalonia.Styling.ISetterValue, Avalonia.Styling.IStyleHost, Avalonia.Styling.IThemeVariantHost, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.ISupportInitialize
+    .ctor()
+    System.String SourceText { get;set; }
+    static Avalonia.StyledProperty<System.String> SourceTextProperty
+    static System.Func<System.String, System.String> EnvVarDescriptionProvider { get;set; }
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.PropertyEditorWrapper : Avalonia.Controls.UserControl implements Avalonia.Controls.IResourceHost, Avalonia.Controls.IResourceNode, Avalonia.Controls.ISetInheritanceParent, Avalonia.Controls.ISetLogicalParent, Avalonia.Controls.Templates.IDataTemplateHost, Avalonia.IDataContextProvider, Avalonia.INamed, Avalonia.Input.IInputElement, Avalonia.LogicalTree.ILogical, Avalonia.Styling.ISetterValue, Avalonia.Styling.IStyleHost, Avalonia.Styling.IThemeVariantHost, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.ISupportInitialize
+    .ctor()
+    System.Void InitializeComponent(System.Boolean loadXaml = true)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Controls.TipCell [sealed] : Avalonia.Controls.ContentControl implements Avalonia.Controls.IResourceHost, Avalonia.Controls.IResourceNode, Avalonia.Controls.ISetInheritanceParent, Avalonia.Controls.ISetLogicalParent, Avalonia.Controls.Templates.IDataTemplateHost, Avalonia.IDataContextProvider, Avalonia.INamed, Avalonia.Input.IInputElement, Avalonia.LogicalTree.ILogical, Avalonia.Styling.ISetterValue, Avalonia.Styling.IStyleHost, Avalonia.Styling.IThemeVariantHost, System.ComponentModel.INotifyPropertyChanged, System.ComponentModel.ISupportInitialize
+    .ctor()
+    System.Object Tip { get;set; }
+    static Avalonia.StyledProperty<System.Object> TipProperty
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static System.String KeyFor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity severity)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToFontSizeConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    const System.Double DefaultBaseSize
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToFontSizeConverter Instance
+    static System.Double ScaleFor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity severity)
+    static System.Double SizeFor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity severity, System.Double baseSize)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToGlyphConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Avalonia.Media.FontFamily GlyphFontFamily
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToGlyphConverter Instance
+    static System.String GlyphFor(Bennewitz.Ninja.LayeredEditors.Abstractions.AppSeverity severity)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToTintBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.AppSeverityToTintBrushConverter Instance
+    static System.Double TintAlpha
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToAccessibilityViewConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToAccessibilityViewConverter Instance
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToFormatStringConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToFormatStringConverter Instance
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToStatusBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BoolToStatusTextConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BytesToHumanReadableConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.BytesToHumanReadableConverter Instance
+    static System.String Format(System.Int64 bytes)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.EnvVarNameToBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.IsPositiveConverter
+    static Avalonia.Data.Converters.IValueConverter Instance
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.ScopeToBrushConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.ScopeToDisplayNameConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.SuppressNullWriteConverter [sealed] implements Avalonia.Data.Converters.IValueConverter
+    .ctor()
+    System.Object Convert(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    System.Object ConvertBack(System.Object value, System.Type targetType, System.Object parameter, System.Globalization.CultureInfo culture)
+    static Bennewitz.Ninja.LayeredEditors.Avalonia.Converters.SuppressNullWriteConverter Instance
+class Bennewitz.Ninja.LayeredEditors.Avalonia.Localization.WrapperStrings
+    static System.Func<System.String, System.String> Resolver { get;set; }
+    static System.String LabelAdd { get; }
+    static System.String LabelBrowse { get; }
+    static System.String LabelExpandCollapse { get; }
+    static System.String LabelOverridden { get; }
+    static System.String LabelRemove { get; }
+    static System.String LabelReset { get; }
+    static System.String LabelSpinnerDecrease { get; }
+    static System.String LabelSpinnerIncrease { get; }
+    static System.String TipNewSetting { get; }
+    static System.String TipReadOnly { get; }
+    static System.String TipResetToInherited { get; }
+    static System.String TipShowSuggestions { get; }
+    static System.String TipUndocumented { get; }
+class CompiledAvaloniaXaml.!AvaloniaResources
+    static Avalonia.Styling.Styles Build:/Themes/AccessibilityNames.axaml(System.IServiceProvider )
+    static Avalonia.Styling.Styles Build:/Themes/EditorColors.axaml(System.IServiceProvider )
+    static Avalonia.Styling.Styles Build:/Themes/SemiBundle.axaml(System.IServiceProvider )
+    static System.Void Populate:/Themes/AccessibilityNames.axaml(System.IServiceProvider , Avalonia.Styling.Styles )
+    static System.Void Populate:/Themes/EditorColors.axaml(System.IServiceProvider , Avalonia.Styling.Styles )
+    static System.Void Populate:/Themes/SemiBundle.axaml(System.IServiceProvider , Avalonia.Styling.Styles )
+class CompiledAvaloniaXaml.!XamlLoader
+    static System.Object TryLoad(System.IServiceProvider , System.String )
+    static System.Object TryLoad(System.String )

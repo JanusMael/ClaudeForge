@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Editor for boolean properties. Tri-state: <c>null</c> = unset (inherits),

@@ -1,15 +1,18 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.LayeredEditors.Messages;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -27,7 +30,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// body (post-front-matter) renders below.
 /// </para>
 /// </summary>
-public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable, IDeepNavigable
+public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDisposable, IDeepNavigable, INavigablePage
 {
     // ── Segment ids ──────────────────────────────────────────────────────
     //
@@ -107,9 +110,21 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     // land after the user has already moved on and overwrite the selection.
     private CancellationTokenSource _loadCts = new();
 
+    /// <summary>The resolved environment this page's disk walk is rooted at.</summary>
+    /// <remarks>
+    /// ⚠ Required rather than optional: an omitted environment would resolve <c>~/.claude</c> and
+    /// list a relocated user's agents and skills from a directory Claude Code is not reading.
+    /// </remarks>
+    private readonly ClaudeEnvironment _env;
+
     public AgentsSkillsEditorViewModel(
-        string? projectRoot, IShellLauncher? shellLauncher, IDialogService? dialogService)
+        ClaudeEnvironment env,
+        string? projectRoot,
+        IShellLauncher? shellLauncher,
+        IDialogService? dialogService)
     {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
         _projectRoot = projectRoot;
         _shellLauncher = shellLauncher;
         _dialogService = dialogService;
@@ -122,14 +137,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     }
 
     /// <summary>Convenience ctor — shell-launch but no dialog plumbing.</summary>
-    public AgentsSkillsEditorViewModel(string? projectRoot, IShellLauncher? shellLauncher)
-        : this(projectRoot, shellLauncher, dialogService: null)
+    public AgentsSkillsEditorViewModel(
+        ClaudeEnvironment env, string? projectRoot, IShellLauncher? shellLauncher)
+        : this(env, projectRoot, shellLauncher, dialogService: null)
     {
     }
 
     /// <summary>Test/fixture convenience ctor — no shell-launch / dialog plumbing.</summary>
-    public AgentsSkillsEditorViewModel(string? projectRoot)
-        : this(projectRoot, shellLauncher: null, dialogService: null)
+    public AgentsSkillsEditorViewModel(ClaudeEnvironment env, string? projectRoot)
+        : this(env, projectRoot, shellLauncher: null, dialogService: null)
     {
     }
 
@@ -138,8 +154,8 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// navigated to.  Idempotent: subsequent calls after the first load
     /// are no-ops (explicit <see cref="Refresh"/> or the UI Refresh button
     /// still work normally after the initial load completes).
-    /// Called by <c>MainWindowViewModel.OnSelectedNodeChanged</c> when this
-    /// editor becomes active.
+    /// Reached through <see cref="INavigablePage.OnNavigatedTo"/> when this editor
+    /// becomes active.
     /// </summary>
     public void EnsureLoaded()
     {
@@ -616,7 +632,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
     /// <summary>
     /// Synchronous shortcut for the ctor and for
-    /// <c>MainWindowViewModel.OnSelectedNodeChanged</c> — fire-and-forget refresh.
+    /// <see cref="INavigablePage.OnNavigatedTo"/> — fire-and-forget refresh.
     /// The task is retained in <see cref="LastRefresh"/> so a deep-path restore
     /// can await THIS walk instead of starting a competing one.
     /// </summary>
@@ -632,7 +648,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     /// Without this seam a deep-path restore would call
     /// <see cref="RefreshAsync"/> itself; because that serialises on
     /// <c>_refreshLock</c>, the restore would queue a SECOND full filesystem walk
-    /// behind the one <c>OnSelectedNodeChanged</c> already started, and that
+    /// behind the one the navigation hook already started, and that
     /// second walk would rebuild every row underneath the restore that was busy
     /// resolving one. Same rationale as <see cref="LastDescriptionFill"/>.
     /// </para>
@@ -663,7 +679,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
                 // Fast, stat-only walk on the thread pool — no file contents
                 // read here, so the lists can render immediately.
                 IReadOnlyList<EditableMemoryEntry> entries =
-                    await Task.Run(() => EditableMemoryService.Snapshot(_projectRoot)).ConfigureAwait(true);
+                    await Task.Run(() => EditableMemoryService.Snapshot(_env, _projectRoot)).ConfigureAwait(true);
 
                 var rows = new List<ArtifactRowViewModel>();
                 FillGrouped(AgentItems, entries, UserMemoryCategory.Subagent, rows);
@@ -1456,15 +1472,6 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
     }
 
     /// <inheritdoc />
-    public void ReapplyTab(IReadOnlyList<string> segments)
-    {
-        if (segments is { Count: > 0 })
-        {
-            SelectSegment(segments[0]);
-        }
-    }
-
-    /// <inheritdoc />
     public IReadOnlyList<string> CaptureDeepPath()
     {
         // No open artifact: the visible segment alone is the position.
@@ -1483,6 +1490,15 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         // Fully-qualified (name@source) rather than a bare name so the restore
         // can't land on a same-named artifact from a different scope or plugin.
         return [segment, NavDeepPath.FormatItemKey(row.DisplayName, row.Source)];
+    }
+
+    /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 })
+        {
+            SelectSegment(segments[0]);
+        }
     }
 
     /// <inheritdoc />
@@ -1607,6 +1623,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
             // what arrives here is the encoded spelling. Normalising both sides
             // also means a human may type either one.
             string wanted = NavDeepPath.EncodeSource(source);
+
             ArtifactRowViewModel? exact = rows.FirstOrDefault(
                 r => string.Equals(r.DisplayName, name, StringComparison.OrdinalIgnoreCase)
                      && string.Equals(
@@ -1720,5 +1737,32 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
         CardTools = null;
         CardShowName = false;
         CardShowToolsAndModel = false;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Deferred first-load (the VM is constructed without an eager disk scan, so a
+    /// profile switch does not pay the filesystem cost when the user never visits this
+    /// page) — but re-scan on every later visit too. <c>EnsureLoaded</c> is one-shot by
+    /// design, which meant an agent / skill / command created after the first visit
+    /// stayed invisible for the rest of the session.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Same convention as the Environment page: a user-typed filter is cleared on the
+    /// way out so the next visit starts with the full list. A deep restore applies its
+    /// own navigation filter afterwards, so this does not fight the restore path.
+    /// </remarks>
+    public void OnNavigatedFrom(bool replaced)
+    {
+        if (replaced)
+        {
+            ApplyNavigationFilter(null);
+        }
     }
 }

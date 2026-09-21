@@ -42,7 +42,8 @@
 
         <!-- Dry-run tester — collapsed by default; "Test this rule" expands it. -->
         <Expander Header="{x:Static loc:Strings.HeaderTesterAccordion}"
-                  IsExpanded="{Binding IsTesterExpanded}">
+                  IsExpanded="{Binding IsTesterExpanded}"
+        AutomationProperties.Name="{x:Static loc:Strings.HeaderTesterAccordion}">
             <Border Background="{DynamicResource AppCardBackgroundBrush}"
                     BorderBrush="{DynamicResource AppPanelBorderBrush}"
                     BorderThickness="1" CornerRadius="4" Padding="12,10">

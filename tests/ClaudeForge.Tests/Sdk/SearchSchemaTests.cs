@@ -1,10 +1,11 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Sdk;
 
 /// <summary>
-/// Tests for <see cref="IClaudeConfigClient.SearchSchema"/>.
+/// Tests for <see cref="IAgentConfigClient.SearchSchema"/>.
 /// Uses a sandboxed profile path so <c>ConfigFileDiscoverer</c> reads/writes
 /// within the temp directory, never touching the user's real <c>~/.claude/</c>.
 /// The bundled schema resource is always available; no HTTP calls are made.
@@ -57,7 +58,7 @@ public sealed class SearchSchemaTests
     {
         // Schema nodes are populated during OpenAsync; before that the cache is
         // null and SearchSchema should return gracefully, not throw.
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("model");
@@ -73,7 +74,7 @@ public sealed class SearchSchemaTests
     [TestMethod]
     public void SearchSchema_EmptyQuery_ReturnsEmpty()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema(string.Empty);
@@ -92,7 +93,7 @@ public sealed class SearchSchemaTests
 
     private static async Task<ClaudeCodeClient> OpenedClientAsync()
     {
-        ClaudeCodeClient client = new();
+        ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         // null project root → User-only workspace; settings file may be absent
         // (ConfigFileLoader creates a placeholder document).
         await client.OpenAsync(null, CancellationToken.None);

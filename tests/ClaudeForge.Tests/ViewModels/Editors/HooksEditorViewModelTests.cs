@@ -1,6 +1,7 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -707,7 +708,7 @@ public class HooksEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.Hooks.Add(new HookEvent(
@@ -906,7 +907,7 @@ public class HooksEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User, client);

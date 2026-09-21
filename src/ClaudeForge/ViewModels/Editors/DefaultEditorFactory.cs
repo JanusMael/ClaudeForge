@@ -1,8 +1,11 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Services;
-using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
@@ -16,7 +19,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// for Object child editors go through <see cref="Create"/> so that subclasses
 /// (e.g. <see cref="CompositeEditorFactory"/>) can intercept them.
 /// </remarks>
-public class DefaultEditorFactory
+public class DefaultEditorFactory : ISchemaEditorFactory
 {
     /// <summary>
     /// Optional sink notified whenever this factory falls back to the raw-JSON
@@ -26,6 +29,26 @@ public class DefaultEditorFactory
     /// for the production build.
     /// </summary>
     public IUnsupportedShapeSink? UnsupportedShapeSink { get; set; }
+
+    /// <summary>
+    /// This product's danger policy, applied to every editor the factory produces, or
+    /// <see langword="null"/> for a caller that declares none.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>Read by <see cref="CompositeEditorFactory.Create"/>, which is the single attach
+    /// site.</b> It is declared here rather than there because this base holds the state and the
+    /// derived class holds the dispatch — and because a caller configures the factory once, not
+    /// per editor.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The failure mode of leaving it unset is silence:</b> the rows render with no severity
+    /// at all, which looks exactly like "this product has nothing dangerous". That is why
+    /// <c>ClaudeEditorDangerWiringTests</c> drives every top-level schema node through the real
+    /// factory and fails on any editor that came back without a classifier.
+    /// </para>
+    /// </remarks>
+    public IDangerClassifier? Danger { get; init; }
 
     /// <summary>
     /// Build the raw-JSON fallback editor for a shape the factory cannot classify,
@@ -80,8 +103,8 @@ public class DefaultEditorFactory
             // through the IEditorSchema/IEditorScope adapters and is rendered by the
             // libvm:BooleanPropertyEditorViewModel data template in PropertyEditorWrapper.
             SchemaValueType.Boolean => new LibVm.BooleanPropertyEditorViewModel(
-                new ClaudeSchemaAdapter(schema),
-                ClaudeScope.For(editingScope)),
+                new SchemaNodeAdapter(schema),
+                ConfigScopeAdapter.For(editingScope)),
             // Phase 2.1 step 6 — Enum migrated to the library type.
             SchemaValueType.Enum => NewLibEnum(schema, editingScope),
             // Phase 2.1 step 6b — Path migrated to the library type.
@@ -107,13 +130,13 @@ public class DefaultEditorFactory
     private static LibVm.StringPropertyEditorViewModel NewLibString(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.StringPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.StringPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.NumberPropertyEditorViewModel NewLibNumber(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.NumberPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.NumberPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.EnumPropertyEditorViewModel NewLibEnum(
@@ -125,19 +148,19 @@ public class DefaultEditorFactory
         if (schema.Name == "model")
         {
             return new ModelPropertyEditorViewModel(
-                new ClaudeSchemaAdapter(schema),
-                ClaudeScope.For(editingScope),
+                new SchemaNodeAdapter(schema),
+                ConfigScopeAdapter.For(editingScope),
                 ModelSuggestionCatalog.Build());
         }
 
-        return new LibVm.EnumPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope));
+        return new LibVm.EnumPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope));
     }
 
     private static LibVm.PathPropertyEditorViewModel NewLibPath(
         SchemaNode schema, ConfigScope editingScope,
         Func<Task<string?>>? browseDialog)
     {
-        return new LibVm.PathPropertyEditorViewModel(new ClaudeSchemaAdapter(schema), ClaudeScope.For(editingScope),
+        return new LibVm.PathPropertyEditorViewModel(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope),
             browseDialog);
     }
 
@@ -230,8 +253,8 @@ public class DefaultEditorFactory
     private static LibVm.StringArrayPropertyEditorViewModel NewLibStringArray(
         SchemaNode schema, ConfigScope editingScope)
     {
-        return new LibVm.StringArrayPropertyEditorViewModel(new ClaudeSchemaAdapter(schema),
-            ClaudeScope.For(editingScope));
+        return new LibVm.StringArrayPropertyEditorViewModel(new SchemaNodeAdapter(schema),
+            ConfigScopeAdapter.For(editingScope));
     }
 
     /// <summary>

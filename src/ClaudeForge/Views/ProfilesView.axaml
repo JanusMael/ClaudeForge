@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
@@ -80,9 +79,9 @@
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
                             Named profiles store separate copies of your Claude Code settings, CLAUDE.md, and MCP server
                             definitions under
-                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="~/.claude/profiles/" />.
+                            <Run FontFamily="{DynamicResource AppMonoFontFamily}" Text="~/.claude/profiles/" />.
                             Use <Bold>Apply to CLI</Bold> to make a profile active for the Claude Code CLI.
-                            Compatible with the <Run FontFamily="Cascadia Mono,Consolas,monospace">claudectx</Run>
+                            Compatible with the <Run FontFamily="{DynamicResource AppMonoFontFamily}">claudectx</Run>
                             tool.
                         </TextBlock>
 
@@ -164,10 +163,10 @@
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate x:DataType="vm:ProfileRowViewModel">
-                                            <ctrl:TipCell Tip="{Binding Name}">
+                                            <libctrl:TipCell Tip="{Binding Name}">
                                                 <TextBlock Text="{Binding Name}"
                                                            VerticalAlignment="Center" Margin="4,0" />
-                                            </ctrl:TipCell>
+                                            </libctrl:TipCell>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -241,7 +240,7 @@
                         <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}">
                             Named profiles store separate snapshots of your
-                            <Run FontFamily="Cascadia Mono,Consolas,monospace" Text="claude_desktop_config.json" />
+                            <Run FontFamily="{DynamicResource AppMonoFontFamily}" Text="claude_desktop_config.json" />
                             under the Desktop config directory. Use <Bold>Apply to Desktop</Bold> to make a
                             profile active. Claude Desktop picks up the change on its next launch.
                             Independent from CLI profiles — managed separately.
@@ -308,10 +307,10 @@
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate x:DataType="vm:DesktopProfileRowViewModel">
-                                            <ctrl:TipCell Tip="{Binding Name}">
+                                            <libctrl:TipCell Tip="{Binding Name}">
                                                 <TextBlock Text="{Binding Name}"
                                                            VerticalAlignment="Center" Margin="4,0" />
-                                            </ctrl:TipCell>
+                                            </libctrl:TipCell>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

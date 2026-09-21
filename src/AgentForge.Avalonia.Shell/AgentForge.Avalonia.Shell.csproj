@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Avalonia.Shell</RootNamespace>
+        <AssemblyName>AgentForge.Avalonia.Shell</AssemblyName>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Description>
+            The product-neutral half of the desktop shell: chrome and services a
+            configuration editor needs regardless of which agent product it edits.
+            Phase 5 of the OpenCodeForge plan moves pieces here in slices, each
+            parameterised on the way through rather than merely relocated.
+
+            Nothing here may name a product. The rule is enforced, not merely
+            documented: AssemblyLayeringTests fails the build if any AgentForge.*
+            project gains a reference to ClaudeForge.* or OpenCode.*, checking both
+            the ProjectReference graph and the compiled assembly references.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- NavigationNodeViewModel already lives on the neutral LayeredEditors side, so
+             deep-path resolution can reference it directly. Permitted by
+             AssemblyLayeringTests: its rule forbids AgentForge.* -> ClaudeForge.* /
+             OpenCode.*, and LayeredEditors.* is neither. -->
+        <ProjectReference Include="..\LayeredEditors.ViewModels\LayeredEditors.ViewModels.csproj" />
+
+        <!-- Search matches against schema shapes: SchemaSearchResult (Sdk) is what a
+             product's client hands back for a query, and SchemaNode (Core, pulled in
+             transitively) is what a settings-group page exposes. Both are neutral
+             AgentForge.* types describing a config schema, not a product. -->
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
+
+        <!-- ISaveChangesPrompt: the dialog-service seam the save view-model implements.
+             LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*, so the layering
+             rule permits it, and that project references only AgentForge.Abstractions
+             so there is no cycle back into the shell. -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
+
+        <!-- BytesToHumanReadableConverter.Format: the Backup page renders archive sizes, and
+             that formatter is the one already used for every other size in the apps. Permitted
+             by AssemblyLayeringTests (LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*)
+             and no cycle: LayeredEditors.Avalonia references only LayeredEditors.Abstractions
+             and LayeredEditors.ViewModels, never back into the shell.
+             ⚠ Re-implementing the formatter here instead would put a second byte-rounding rule
+             in the codebase, and the two would drift in the decimal place nobody checks. -->
+        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
+    </ItemGroup>
+
+</Project>

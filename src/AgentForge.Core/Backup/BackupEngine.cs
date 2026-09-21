@@ -1,0 +1,1238 @@
+﻿using System.Collections.Concurrent;
+using System.Globalization;
+using System.IO.Compression;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+
+namespace Bennewitz.Ninja.AgentForge.Core.Backup;
+
+/// <summary>
+/// High-level entry point for Claude backup / restore / list / delete operations.
+/// All methods are cancellation-aware, progress-reporting, and avoid throwing for
+/// expected failure modes — they return typed results the UI can render directly.
+/// </summary>
+/// <remarks>
+/// <para>
+/// **Path discipline.** Every source path is taken from <see cref="PlatformPaths"/>
+/// so there is a single source of truth for where Claude stores its data. The engine
+/// never fabricates paths from string literals.
+/// </para>
+/// <para>
+/// **Atomicity.** Archive writes go through <see cref="ZipArchiveWriter"/>, which
+/// writes to a sibling <c>.tmp</c> file and renames on success. A cancelled backup
+/// cleans up after itself and never leaves a half-written <c>.zip</c> on disk.
+/// </para>
+/// <para>
+/// **Security.** Restore rejects any zip entry whose resolved destination path escapes
+/// the restore target directory (classic zip-slip defence).
+/// </para>
+/// </remarks>
+public sealed class BackupEngine
+{
+    // ⛔ There is deliberately NO parameterless `Default` instance any more. It was the one
+    // remaining way to obtain an engine pointed at the DEFAULT home, so on a machine with
+    // CLAUDE_CONFIG_DIR set it would archive an empty ~/.claude and report success. Removing it
+    // is the point rather than a side effect: every engine must now name the environment it
+    // resolves against, and the compiler is what enforces that.
+
+    private readonly WorktreeProbe _worktreeProbe;
+    private readonly IBackupFileSystem _fs;
+    private readonly IReadOnlyList<ProductDescriptor>? _restorableProducts;
+    private readonly ClaudeEnvironment _env;
+
+    /// <summary>
+    /// Construct with custom collaborators (used by tests).
+    /// </summary>
+    /// <param name="worktreeProbe">Probe used to discover external git worktrees.
+    /// Defaults to a new <see cref="WorktreeProbe"/>.</param>
+    /// <param name="fileSystem">File-system seam. Defaults to
+    /// <see cref="RealBackupFileSystem.Instance"/> for production. Tests inject an
+    /// in-memory implementation to exercise retention, discovery, and similar
+    /// purely-file-system code paths without real disk I/O.</param>
+    /// <param name="restorableProducts">
+    /// The products whose archive sections a restore applies. Defaults to Claude Code and Claude
+    /// Desktop.
+    /// <para>
+    /// ⛔ <b>This is how a host that edits a different product restores ITS archives.</b> A backup
+    /// takes its products from <see cref="BackupRequest.Products"/>, but a restore is driven by an
+    /// archive whose manifest records only archive folder names — so the descriptors have to come
+    /// from somewhere, and <c>AgentForge.Core</c> must never reference a product assembly to find
+    /// them. Supply them here.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A host that writes archives for a product it cannot restore has a one-way backup.</b>
+    /// Whatever set a host passes to <see cref="BackupRequest.Products"/> should be the set it
+    /// passes here.
+    /// </para>
+    /// </param>
+    /// <param name="environment">
+    /// The resolved Claude environment every path in this engine is relative to.
+    /// <para>
+    /// ⛔ <b>Required, and first, on purpose.</b> An optional one defaulting to
+    /// <see cref="ClaudeEnvironment.Empty"/> would let a composition root silently archive the
+    /// wrong directory, which no test and no error would report. Tests that do not care pass
+    /// <see cref="ClaudeEnvironment.Empty"/> explicitly, which says so at the call site.
+    /// </para>
+    /// </param>
+    public BackupEngine(
+        ClaudeEnvironment environment,
+        WorktreeProbe? worktreeProbe = null,
+        IBackupFileSystem? fileSystem = null,
+        IReadOnlyList<ProductDescriptor>? restorableProducts = null)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+
+        _worktreeProbe = worktreeProbe ?? new WorktreeProbe();
+        _fs = fileSystem ?? RealBackupFileSystem.Instance;
+        _restorableProducts = restorableProducts;
+        _env = environment;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  CREATE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Builds a backup archive according to <paramref name="request"/>. Returns a
+    /// result describing success / failure and (on success) the manifest that was
+    /// written. Never throws for expected failures — returns a failure result instead.
+    /// </summary>
+    public async Task<BackupResult> CreateAsync(
+        BackupRequest request,
+        IProgress<BackupProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // resolve project set + worktrees.
+        progress?.Report(new BackupProgress(
+            0, 0, "Discovering projects…", 0, BackupProgressIds.DiscoveringProjects));
+        IReadOnlyList<string> settingsFilesForDiscovery =
+            CollectSettingsFilesForDiscovery(_env, request.ExplicitProjectDirs);
+        IReadOnlyList<string> discovered = AdditionalDirectoriesResolver.Resolve(settingsFilesForDiscovery);
+        IReadOnlyList<string> projects = MergeExplicitAndDiscovered(request.ExplicitProjectDirs, discovered);
+
+        List<string> warnings = [];
+
+        // Full-mode multi-project expansion (2026-05-23):
+        //
+        // Pre-fix, Full mode included the user-level ~/.claude/ tree
+        // (incl. session transcripts via AddClaudeHome) but ONLY backed
+        // up the explicitly-open project's `.claude/` directory.  Per-
+        // project hooks, MCP config, agents, skills, CLAUDE.md, etc. for
+        // every OTHER project Claude had ever seen were silently absent
+        // from the archive — even though a disaster-recovery user
+        // restoring this same backup would expect "Full" to mean
+        // comprehensive.
+        //
+        // For Full mode only, expand `projects` to include every known
+        // project from ~/.claude.json's top-level `projects` map (the
+        // canonical list of paths Claude Code has opened).  SettingsOnly
+        // and Sanitized modes deliberately retain the single-project
+        // contract:
+        //   - SettingsOnly is the "small, fast, just-my-config" mode.
+        //   - Sanitized exists for sharing with support / community /
+        //     bug reports — extending it to include every project the
+        //     user has ever worked on would defeat the redaction
+        //     premise.
+        if (request.Mode == BackupMode.Full)
+        {
+            KnownProjectsDiscovery.DiscoveryResult known =
+                KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);
+
+            if (known.ExistingProjectRoots.Count > 0)
+            {
+                // Dedup the discovered known-projects against what's
+                // already in `projects` (explicit + additionalDirectories
+                // discovered).  Use Path.GetFullPath to normalise so
+                // "C:\foo\" and "C:/foo" don't both appear; pick the
+                // platform-appropriate comparer (Windows is path-case-
+                // insensitive, Linux / macOS are case-sensitive —
+                // matches AdditionalDirectoriesResolver's convention).
+                StringComparer pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? StringComparer.OrdinalIgnoreCase
+                    : StringComparer.Ordinal;
+
+                HashSet<string> seen = new(pathComparer);
+                foreach (string existing in projects)
+                {
+                    try
+                    {
+                        seen.Add(Path.GetFullPath(existing));
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException)
+                    {
+                        // Malformed path in `projects`; don't dedup against it.
+                        _ = ex;
+                    }
+                }
+
+                List<string> merged = projects.ToList();
+                foreach (string knownRoot in known.ExistingProjectRoots)
+                {
+                    string normalised;
+                    try
+                    {
+                        normalised = Path.GetFullPath(knownRoot);
+                    }
+                    catch (Exception ex) when (ex is ArgumentException or PathTooLongException or NotSupportedException)
+                    {
+                        // Skip malformed paths in ~/.claude.json's projects map.
+                        _ = ex;
+                        continue;
+                    }
+
+                    if (seen.Add(normalised))
+                    {
+                        merged.Add(knownRoot);
+                    }
+                }
+                projects = merged;
+            }
+
+            if (known.SkippedNonExistentCount > 0)
+            {
+                warnings.Add(string.Format(CultureInfo.InvariantCulture,
+                    "Full-mode backup skipped {0} known project(s) whose path no longer exists on disk.",
+                    known.SkippedNonExistentCount));
+            }
+        }
+        IReadOnlyList<BackupWorktreeEntry> worktrees = [];
+        try
+        {
+            WorktreeDiscoveryResult discovery =
+                await _worktreeProbe.DiscoverExternalAsync(projects, ct).ConfigureAwait(false);
+            worktrees = discovery.Worktrees;
+            if (discovery.GitMissing)
+            {
+                warnings.Add(
+                    "git not found on PATH or timed out; external worktrees were not included in this backup.");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"Worktree discovery failed: {ex.Message}");
+        }
+
+        // build manifest body.
+        BackupManifest manifest = new()
+        {
+            Kind = "backup",
+            SchemaVersion = BackupManifest.CurrentSchemaVersion,
+            CreatedUtc = DateTime.UtcNow,
+            Platform = PlatformPaths.PlatformId,
+            AppVersion = GetAppVersion(),
+            Mode = request.Mode,
+            Clients = BuildClientList(request),
+            Projects = projects.ToList(),
+            Worktrees = worktrees.ToList(),
+            // Sanitized backups deliberately drop credentials regardless of the
+            // request flag — the file is opaque bytes Anthropic/OAuth tokens
+            // and would leak verbatim into a sharing-targeted archive.  This
+            // is defence-in-depth: the redactor itself only touches .json
+            // files, so a credentials file (.credentials.json) would otherwise
+            // be redacted, but skipping it entirely is the safer default.
+            IncludedCredentials = request.IncludeCredentials
+                                  && request.Mode != BackupMode.Sanitized
+                                  && AnyCredentialDataPresent(request),
+            Warnings = warnings,
+        };
+
+        // annotate Sanitized backups in the manifest so anyone
+        // reading manifest.json out-of-band knows the contract: this archive
+        // is for SHARING, not RESTORE.  The Restore engine refuses to apply
+        // it; the GUI's Restore list shows a "(sanitized — for sharing)"
+        // chip; this warning is the third surface communicating the same
+        // thing, intended for support engineers who receive the archive
+        // and crack it open in a hex viewer.
+        if (request.Mode == BackupMode.Sanitized)
+        {
+            warnings.Add(
+                "Sanitized backup: secret-bearing values were replaced with \"[redacted]\". " +
+                "Not restorable. Intended for sharing config shape with support / community / bug reports.");
+        }
+
+        // build the archive.
+        await using ZipArchiveWriter writer = ZipArchiveWriter.Create(request.DestinationZipPath);
+
+        // Sanitized mode wires a JSON in-flight transformer so
+        // every *.json file is parsed and secret-bearing values replaced
+        // with the literal string "[redacted]" before landing in the zip.
+        // Failure mode: a JsonException on a malformed file gets caught
+        // INSIDE the transformer and the file is emitted as an explicit
+        // error placeholder rather than its raw bytes — we never want a
+        // sanitized archive to leak the original content of a file we
+        // couldn't redact.
+        if (request.Mode == BackupMode.Sanitized)
+        {
+            writer.FileTransformer = RedactFileForSharing;
+        }
+
+        try
+        {
+            // --- Every requested product's declared sections ---
+            //
+            // ⭐ The five blocks this replaces (claude.json, the ~/.claude tree, the Desktop
+            // config, its profiles directory and its active-profile pointer) were exactly the five
+            // sections each product now declares on its descriptor. The pairing a section holds —
+            // archive sub-path ↔ live path — reads in BOTH directions, so the writer and the
+            // restorer consume one table instead of agreeing by hand. That agreement is what used
+            // to be able to drift silently: a section written under one name and read under
+            // another restores nothing and reports success.
+            //
+            // ⚠ Products are taken from request.Products, so this side is product-neutral: a
+            // product supplies its sections from its own assembly and needs no code here.
+            foreach (ProductDescriptor product in request.Products)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                foreach (ProductArchiveSection section in product.Backup.Sections)
+                {
+                    // ⛔ Credential-bearing sections need the same gate as a credential file found
+                    // inside a home walk: an explicit opt-in, and never in the sharing-targeted
+                    // mode. Sanitized cannot strip these — OpenCode's are SQLite rows, not JSON
+                    // values — so excluding them is the only honest answer.
+                    if (section.RequiresCredentialOptIn
+                        && (!request.IncludeCredentials || request.Mode == BackupMode.Sanitized))
+                    {
+                        continue;
+                    }
+
+                    // ⚠ A section can decline to be archived on this machine — today, OpenCode's
+                    // default config root when $OPENCODE_CONFIG_DIR leaves it pointing at the same
+                    // directory the live-config section already covers. Write-side only: the
+                    // restorer applies whatever the archive actually holds, because the machine
+                    // restoring need not have the environment of the machine that wrote.
+                    if (section.IncludeWhen is { } gate && !gate())
+                    {
+                        continue;
+                    }
+
+                    string live = section.Destination();
+                    string entryPath = $"{product.ArchiveFolder}/{string.Join('/', section.SubPath)}";
+
+                    if (!section.IsDirectory)
+                    {
+                        if (File.Exists(live))
+                        {
+                            writer.AddFile(live, entryPath);
+                        }
+                    }
+                    else if (section.IsProductHome)
+                    {
+                        // The home tree is the only walk that consults the product's skip rules.
+                        if (Directory.Exists(live))
+                        {
+                            AddProductHome(writer, request, product, live, entryPath);
+                        }
+                    }
+                    else if (Directory.Exists(live))
+                    {
+                        writer.AddDirectory(live, entryPath);
+                    }
+                }
+            }
+
+            // --- Claude Code's per-project and worktree data ---
+            //
+            // ⚠ Still product-specific, and not from a lack of trying: these are driven by the
+            // manifest's project list and by git worktree discovery, not by a fixed archive path,
+            // so there is no section that describes them. OpenCode's equivalent — if it has one —
+            // will not be a directory-per-project either.
+            if (request.Includes(SchemaRegistry.ClaudeCodeProductFor(_env)))
+            {
+                foreach (string projectRoot in projects)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    string name = Path.GetFileName(projectRoot.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        continue;
+                    }
+
+                    AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");
+                }
+
+                foreach (BackupWorktreeEntry wt in worktrees)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    string wtName = Path.GetFileName(wt.WorktreePath.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                    if (string.IsNullOrEmpty(wtName))
+                    {
+                        continue;
+                    }
+
+                    AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");
+                    // Stash the worktree's project-root mapping so restore can re-locate it.
+                    BackupWorktreeEntry meta = new() { ProjectRoot = wt.ProjectRoot, WorktreePath = wt.WorktreePath };
+                    string metaJson = JsonSerializer.Serialize(meta, BackupJsonContext.Default.BackupWorktreeEntry);
+                    writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
+                }
+            }
+
+            // ⓘ Claude Desktop's three sections — config, profiles, active-profile pointer — are
+            // written by the section loop above. Its log files are deliberately absent from that
+            // list: runtime-only artefacts that cannot be meaningfully restored and may be locked
+            // by a running Claude Desktop process.
+
+            // Sanitized-mode parallel precompute.  Runs the
+            // RedactFileForSharing transformer in parallel across multiple
+            // cores BEFORE CommitAsync starts so the single-threaded zip
+            // writer feeds on ready-to-write strings instead of doing
+            // the CPU-bound regex scan inline.  Halves wall-clock time
+            // on multi-core machines for typical Sanitized backups.
+            // No-op for non-Sanitized modes (FileTransformer is null).
+            if (request.Mode == BackupMode.Sanitized)
+            {
+                await writer.PrecomputeTransformsAsync(ct: ct).ConfigureAwait(false);
+            }
+
+            // --- Manifest goes last so a truncated archive is obviously broken ---
+            // Capture the real file-entry count before writing the manifest itself, then
+            // include the count inside the manifest for accurate stats. Note: we add 1
+            // to cover the manifest entry we are about to write.
+            int pendingCountAtCommit = writer.PendingCount + 1;
+            manifest.ItemCount = pendingCountAtCommit;
+            // Bundle the current schema files into the archive under Schemas/ so that
+            // restore can validate against the schema version in effect at backup time,
+            // not whatever version is currently installed.  BundleSchemas is called AFTER
+            // ItemCount is captured so the schema entries don't inflate the user-visible
+            // item count, and BEFORE the manifest so manifest.json remains the last entry.
+            //
+            // Manifest + schemas are added via AddTextEntry (string content)
+            // so they bypass the FileTransformer + precompute pipeline
+            // naturally — neither needs redaction.
+            BundleSchemas(writer, request.Products);
+            writer.AddTextEntry("manifest.json",
+                JsonSerializer.Serialize(manifest, BackupJsonContext.Default.BackupManifest));
+
+            // Flush to disk.
+            long actualBytes = await writer.CommitAsync(progress, ct).ConfigureAwait(false);
+
+            // Bake the true byte count into the manifest by rewriting it inside the
+            // finished zip. Small cost, huge UX benefit (Restore list shows real sizes).
+            // CancellationToken.None is intentional here: the archive has already been
+            // committed (temp-file renamed to the final path). A cancellation at this
+            // point would leave a valid archive with a stale-but-accurate ItemCount in
+            // the manifest — not a corrupt archive. We accept that outcome rather than
+            // leave no SizeBytes field at all, which would break the Restore list size
+            // column. The rewrite is ~hundreds of bytes and always completes promptly.
+            manifest.SizeBytes = actualBytes;
+            // Note: ItemCount was already set before CommitAsync (line above).
+            // We do NOT re-assign it here — the value is identical and re-assigning
+            // would be misleading.
+            if (writer.SkippedSymlinks.Count > 0)
+            {
+                manifest.Warnings.Add(
+                    $"Skipped {writer.SkippedSymlinks.Count} symlink(s)/junction(s) during backup.");
+            }
+
+            // SkippedFiles records only filenames (Path.GetFileName), not file content.
+            // This is intentional: the manifest is bundled in the archive, so filenames
+            // provide useful diagnostics without leaking any sensitive data.
+            if (writer.SkippedFiles.Count > 0)
+            {
+                manifest.Warnings.Add(
+                    $"Skipped {writer.SkippedFiles.Count} locked/inaccessible file(s): " +
+                    string.Join(", ", writer.SkippedFiles.Select(Path.GetFileName)));
+            }
+
+            await RewriteManifestAsync(request.DestinationZipPath, manifest, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Retention
+            if (request.KeepLast > 0)
+            {
+                ApplyRetention(Path.GetDirectoryName(request.DestinationZipPath)!, request.KeepLast);
+            }
+
+            // no trailing period: the message renders inline
+            // next to the filename in the Backup page's status row and the
+            // center status bar pill; a period after the filename reads as
+            // part of the filename (file.zip. — easy to mis-copy).
+            return new BackupResult(Succeeded: true,
+                Message: $"Backup saved to {Path.GetFileName(request.DestinationZipPath)}",
+                Manifest: manifest, ArchivePath: request.DestinationZipPath);
+        }
+        catch (OperationCanceledException)
+        {
+            return new BackupResult(Succeeded: false, Message: "Backup cancelled.", Manifest: null, ArchivePath: null);
+        }
+        catch (Exception ex) when (ex is IOException
+                                       or UnauthorizedAccessException
+                                       or OutOfMemoryException)
+        {
+            // OutOfMemoryException added to the filter.
+            // A multi-GB malformed .json file could OOM during
+            // JsonRedactor.Redact (which materialises the whole document
+            // as a JsonNode tree); without this catch, the OOM would
+            // crash the whole backup task instead of producing a graceful
+            // BackupResult(Succeeded: false).
+            return new BackupResult(Succeeded: false, Message: $"Backup failed: {ex.Message}", Manifest: null,
+                ArchivePath: null);
+        }
+    }
+
+    /// <summary>
+    /// Helper for the <see cref="BackupMode.Sanitized"/> writer hook.
+    /// Reads <paramref name="sourcePath"/>, routes to the right redactor
+    /// based on extension, and returns the redacted content.  On read or
+    /// parse failure returns a short JSON-shaped placeholder marking the
+    /// redaction-failed state instead of the original bytes — a sanitized
+    /// archive must NEVER fall back to copying raw content, because that
+    /// would leak the secrets the mode exists to scrub.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// **Extension routing:** files ending in <c>.json</c>
+    /// (case-insensitive) go through <see cref="JsonRedactor.Redact"/>
+    /// (key-name based walker over a parsed object tree); everything else
+    /// goes through <see cref="TextRedactor.Redact"/> (regex-based scan
+    /// for known token shapes).  Both surfaces emit
+    /// <see cref="JsonRedactor.RedactedMarker"/> as the replacement so the
+    /// archive contains a single unified marker string.
+    /// </para>
+    /// <para>
+    /// The placeholder emitted on failure is itself well-formed JSON so
+    /// consumers that round-trip the archive through a parser don't choke
+    /// on it.  We include only the filename (<c>Path.GetFileName</c>, not
+    /// the full path) so support workflows can grep for it without
+    /// disclosing user directory structure.
+    /// </para>
+    /// </remarks>
+    internal static string RedactFileForSharing(string sourcePath)
+    {
+        string content;
+        try
+        {
+            content = File.ReadAllText(sourcePath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Locked / inaccessible — emit a placeholder.  The original
+            // bytes never travel into the sanitized archive.
+            _ = ex;
+            return BuildSanitizationPlaceholder(sourcePath, "io-failure");
+        }
+
+        bool isJson = Path.GetExtension(sourcePath)
+                          .Equals(".json", StringComparison.OrdinalIgnoreCase);
+
+        if (isJson)
+        {
+            try
+            {
+                return JsonRedactor.Redact(content);
+            }
+            catch (JsonException)
+            {
+                // The file's not parseable as JSON — emit a placeholder
+                // rather than copying the original (potentially
+                // secret-bearing) text.
+                return BuildSanitizationPlaceholder(sourcePath, "redaction-failed-malformed-json");
+            }
+        }
+
+        // Non-JSON: regex-based text scan.  TextRedactor never throws
+        // for well-formed strings; it returns content unchanged when
+        // no patterns match.  Any unexpected runtime exception
+        // (OutOfMemoryException on a gigantic file, regex backtracking
+        // timeout) propagates to ZipArchiveWriter's catch filter which
+        // skips the entry with SkippedFiles accounting.
+        return TextRedactor.Redact(content);
+    }
+
+    /// <summary>
+    /// Build a JSON-shaped placeholder for a file that couldn't be
+    /// safely redacted.  Uses <see cref="JsonSerializer"/> via the
+    /// source-generated <see cref="BackupJsonContext"/> so escaping is
+    /// always correct (control chars, embedded quotes, etc. replacing the prior hand-rolled escaper that only
+    /// handled <c>\\</c> and <c>"</c>).
+    /// </summary>
+    /// <remarks>
+    /// Only the filename (<see cref="Path.GetFileName"/>) is included
+    /// in the placeholder — never the absolute path.  Consistent with
+    /// the M1 hygiene principle for error messages: errors shouldn't
+    /// disclose user directory layout to a support workflow.
+    /// </remarks>
+    internal static string BuildSanitizationPlaceholder(string sourcePath, string reason)
+    {
+        string name = Path.GetFileName(sourcePath);
+        SanitizationErrorPlaceholder record = new(
+            ClaudeForgeSanitizationError: reason,
+            File: name);
+        return JsonSerializer.Serialize(record,
+            BackupJsonContext.Default.SanitizationErrorPlaceholder);
+    }
+
+    /// <summary>
+    /// Whether any requested product actually has credential-bearing data on disk for this backup
+    /// to carry.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>This read <c>File.Exists(PlatformPaths.CredentialsPath)</c> — Claude Code's credentials
+    /// file, by name.</b> Correct while Claude was the only product with credentials, and quietly
+    /// wrong the moment another one had some: an OpenCode backup taken WITH the opt-in archived the
+    /// session database and then stamped <c>includedCredentials: false</c>, because Claude's file
+    /// was not on that machine. The manifest lied about what the archive held, and the restore
+    /// advisory that reads it told the user their session history was missing while it sat in the
+    /// archive.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>"Requested was true" is not the same as "something was archived", which is why this
+    /// checks the disk.</b> A user who opts in on a machine with no credentials anywhere should get
+    /// an archive stamped <c>false</c> — otherwise the restore advisory stays silent about an
+    /// archive that genuinely carries nothing.
+    /// </para>
+    /// </remarks>
+    private static bool AnyCredentialDataPresent(BackupRequest request)
+    {
+        foreach (ProductDescriptor product in request.Products)
+        {
+            // A credential file found by walking the product's home tree.
+            if (product.Backup.CredentialFileName is { } credentialFile)
+            {
+                foreach (ProductArchiveSection home in product.Backup.Sections.Where(s => s.IsProductHome))
+                {
+                    if (File.Exists(Path.Combine(home.Destination(), credentialFile)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // A credential-bearing section the product declares outright.
+            foreach (ProductArchiveSection section in product.Backup.Sections.Where(s => s.RequiresCredentialOptIn))
+            {
+                string path = section.Destination();
+                if (section.IsDirectory ? Directory.Exists(path) : File.Exists(path))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Walk a product's home tree, honouring its declared skip rules.
+    /// </summary>
+    /// <remarks>
+    /// <b>Was <c>AddClaudeHome</c>, which named <c>PlatformPaths.ClaudeHome</c> and Claude's
+    /// archive folder directly.</b> Both now arrive from the section being written, so the walk
+    /// works for any product that declares a home section — the rules it consults are that
+    /// product's own.
+    /// </remarks>
+    private static void AddProductHome(
+        ZipArchiveWriter writer,
+        BackupRequest request,
+        ProductDescriptor product,
+        string homePath,
+        string entryPrefix)
+    {
+        // Walk the home root top-level, deciding per-entry whether to include.
+        foreach (string file in Directory.EnumerateFiles(homePath))
+        {
+            if (ShouldSkipHomeFile(file, request, product))
+            {
+                continue;
+            }
+
+            writer.AddFile(file, $"{entryPrefix}/{Path.GetFileName(file)}");
+        }
+
+        foreach (string sub in Directory.EnumerateDirectories(homePath))
+        {
+            string name = Path.GetFileName(sub);
+            if (ShouldSkipHomeSubdir(name, request, product))
+            {
+                continue;
+            }
+
+            writer.AddDirectory(sub, $"{entryPrefix}/{name}");
+        }
+    }
+
+    private static bool ShouldSkipHomeFile(string filePath, BackupRequest request, ProductDescriptor product)
+    {
+        string name = Path.GetFileName(filePath);
+
+        // Credentials: only include when explicitly opted in.
+        // Sanitized backups always drop credentials — the file is opaque
+        // bytes (Anthropic / OAuth tokens) that the JsonRedactor would
+        // technically "redact" because the file has a .json extension and
+        // sensitive-keyed values inside, but skipping it entirely is the
+        // safer default for sharing-targeted archives.  Mirror of the
+        // IncludedCredentials manifest-flag gating in CreateAsync.
+        //
+        // ⭐ The NAME comes from the product's layout, because the semantics are general and only
+        // the file name is Claude's: OpenCode's auth.json is the same thing and wants the same
+        // treatment. ⚠ A product with no credential file declares null and this rule never fires —
+        // which must not be confused with "its credentials are safe to archive".
+        if (product.Backup.CredentialFileName is { } credentialFile
+            && name.Equals(credentialFile, StringComparison.OrdinalIgnoreCase))
+        {
+            return !request.IncludeCredentials || request.Mode == BackupMode.Sanitized;
+        }
+
+        // Pre-ClaudeForge snapshots: these are outside backup scope — they exist as
+        // a separate safety net and should not be included in backup archives.
+        if (name.EndsWith(BackupConstants.B4ForgeSuffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // *.bak sidecars from RestoreEngine (".pre-restore-{stamp}.bak") and
+        // any editor-style backup file.  Sibling of the ZipArchiveWriter
+        // exclusion that covers nested directories — see that file's
+        // EnumerateRecursive for the full rationale.  2026-05-13 user
+        // report: prior-restore .bak files dominated backup size and
+        // time on a heavily-restored profile.
+        if (name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether the walk of the Claude Code product's home skips
+    /// <paramref name="dirName"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This was eight <c>if</c> statements comparing hardcoded directory names</b> —
+    /// <c>statsig</c>, <c>shell-snapshots</c>, <c>local</c> — i.e. one product's layout expressed
+    /// as a decision tree inside a product-neutral engine. The rules now live on that product's
+    /// <see cref="ProductDescriptor.BackupLayout"/>, so a product supplies its own from its own
+    /// assembly instead of needing a row added here.
+    /// </para>
+    /// <para>
+    /// ⚠ <b><c>projects</c> is mirrored in <c>FootprintCatalog.Default</c></b> as the one category
+    /// with <c>IsInStandardBackup: false</c>, so the Memory page's badge agrees with what a
+    /// Standard backup actually does. <c>FootprintCatalogTests</c> asserts it is the only one —
+    /// mark a second rule <c>IncludedInFullBackup</c> and that test is the tripwire.
+    /// </para>
+    /// </remarks>
+    private static bool ShouldSkipHomeSubdir(string dirName, BackupRequest request, ProductDescriptor product)
+    {
+        foreach (ProductSkippedSubdir rule in product.Backup.SkippedSubdirs)
+        {
+            if (!dirName.Equals(rule.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // A rule that no mode includes skips unconditionally; one flagged for Full skips
+            // unless Full was requested.
+            return !rule.IncludedInFullBackup || request.Mode != BackupMode.Full;
+        }
+
+        return false;
+    }
+
+    private static void AddProjectClaudeData(ZipArchiveWriter writer, string projectRoot, string entryPrefix)
+    {
+        foreach (string item in new[] { ".claude", ".mcp.json", "CLAUDE.md", "CLAUDE.local.md" })
+        {
+            string src = Path.Combine(projectRoot, item);
+            if (Directory.Exists(src))
+            {
+                writer.AddDirectory(src, $"{entryPrefix}/{item}");
+            }
+            else if (File.Exists(src))
+            {
+                writer.AddFile(src, $"{entryPrefix}/{item}");
+            }
+        }
+    }
+
+    private static async Task RewriteManifestAsync(string zipPath, BackupManifest manifest, CancellationToken ct)
+    {
+        // Open the zip in Update mode and replace the manifest entry with the final
+        // numbers. This keeps manifest.json as the last entry chronologically but
+        // updates its content — the rest of the archive is untouched.
+        await using FileStream fs = new(zipPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        await using ZipArchive archive = new(fs, ZipArchiveMode.Update);
+
+        ZipArchiveEntry? existing = archive.GetEntry("manifest.json");
+        existing?.Delete();
+
+        ZipArchiveEntry updated = archive.CreateEntry("manifest.json", CompressionLevel.Optimal);
+        await using Stream es = updated.Open();
+        string json = JsonSerializer.Serialize(manifest, BackupJsonContext.Default.BackupManifest);
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+        await es.WriteAsync(bytes.AsMemory(), ct).ConfigureAwait(false);
+    }
+
+    /// <remarks>
+    /// ⭐ <b>Internal rather than private so RESTORE can ask the same question.</b> Restore has to
+    /// decide which manifest-named paths it may write to, and the only answer that cannot drift is
+    /// "the ones this machine would itself have captured" — see
+    /// <see cref="RestoreEngine.BuildAuthorisedRoots"/>. Two parallel lists that happen to agree
+    /// today is exactly how F7 happened.
+    /// </remarks>
+    internal static IReadOnlyList<string> CollectSettingsFilesForDiscovery(
+        ClaudeEnvironment env,
+        IReadOnlyList<string> explicitProjects)
+    {
+        List<string> list =
+        [
+            PlatformPaths.UserSettingsPath(env),
+            Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),
+        ];
+        foreach (string p in explicitProjects)
+        {
+            list.Add(PlatformPaths.ProjectSettingsPath(p));
+            list.Add(PlatformPaths.LocalSettingsPath(p));
+        }
+
+        return list;
+    }
+
+    /// <summary>
+    /// Returns the union of <paramref name="explicitDirs"/> and
+    /// <paramref name="discovered"/>, filtered to entries that currently exist on
+    /// disk and de-duplicated via <see cref="Path.GetFullPath(string)"/> +
+    /// case-insensitive comparison.
+    /// </summary>
+    /// <remarks>
+    /// Goes through the <see cref="IBackupFileSystem"/> seam so
+    /// tests can exercise the dedup contract against an in-memory file system
+    /// rather than real temp directories. Internal helper, not part of the
+    /// public API; the wrapper version that takes an <see cref="IBackupFileSystem"/>
+    /// is callable by tests via <c>InternalsVisibleTo</c>.
+    /// </remarks>
+    internal static IReadOnlyList<string> MergeExplicitAndDiscovered(
+        IBackupFileSystem fs,
+        IEnumerable<string> explicitDirs,
+        IEnumerable<string> discovered)
+    {
+        SortedSet<string> set = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string d in explicitDirs)
+        {
+            if (fs.DirectoryExists(d))
+            {
+                set.Add(Path.GetFullPath(d));
+            }
+        }
+
+        foreach (string d in discovered)
+        {
+            if (fs.DirectoryExists(d))
+            {
+                set.Add(Path.GetFullPath(d));
+            }
+        }
+
+        return set.ToList();
+    }
+
+    private IReadOnlyList<string> MergeExplicitAndDiscovered(
+        IEnumerable<string> explicitDirs, IEnumerable<string> discovered)
+    {
+        return MergeExplicitAndDiscovered(_fs, explicitDirs, discovered);
+    }
+
+    /// <summary>
+    /// The manifest's <c>clients</c> array: each requested product's archive folder name.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ These strings are PERSISTED and read back by the restore browser, which is why they
+    /// come from <see cref="ProductDescriptor.ArchiveFolder"/> rather than being re-stated
+    /// here. Before Phase 4d this method rebuilt the list from two booleans, so the same two
+    /// literals existed in the manifest builder, in every folder path below, and again in
+    /// <c>RestoreEngine</c>.
+    /// </remarks>
+    private static List<string> BuildClientList(BackupRequest r)
+    {
+        return r.Products.Select(p => p.ArchiveFolder).ToList();
+    }
+
+    private static string GetAppVersion()
+    {
+        return BackupConstants.AppVersion;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  LIST
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // per-zip manifest cache. The manifest-parse loop below
+    // opens every backup zip and deserialises its manifest.json; with N
+    // backups the cost is N file opens + N JSON parses on every List call.
+    // Rider monitoring re-flagged List as a hot path after the
+    // BackupRestoreViewModel.RebuildBackupList async refactor — moving it
+    // off the UI thread didn't reduce the work, only stopped it from
+    // freezing the UI. The bulk of the work repeats per call (e.g., when
+    // the backup directory is rescanned after a profile switch).
+    //
+    // Cache key: (path, lastWriteTimeUtc, length). Invalidates automatically
+    // when a zip is rewritten (mtime bumps) or grows/shrinks. No external
+    // mutation can produce a different manifest with the same key — zip
+    // file metadata is the canonical version stamp.
+    //
+    // Cache value: the parsed manifest, OR null sentinel meaning "we tried
+    // and the file is corrupt / unreadable / not a backup". Either way we
+    // skip the work next time. The cache is keyed by full path so multiple
+    // backup directories don't collide.
+    //
+    // Memory: each entry is a parsed BackupManifest (small POCO with a few
+    // string lists). On a large machine with hundreds of backups this is
+    // tens of KB, well within budget. Process-lifetime is fine; explicit
+    // invalidation happens on Delete and after CreateAsync via the
+    // RewriteManifestAsync path that bumps mtime (so the next List re-reads
+    // the rewritten zip naturally).
+    private sealed record ManifestCacheEntry(DateTime LastWriteUtc, long Length, BackupManifest? Manifest);
+
+    private static readonly ConcurrentDictionary<string, ManifestCacheEntry> _manifestCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Discards every cached parsed manifest. Tests call this in cleanup;
+    /// production code does not need to invoke it because the cache is
+    /// keyed on file mtime + length and self-invalidates on rewrite.
+    /// </summary>
+    public static void InvalidateListCache()
+    {
+        _manifestCache.Clear();
+    }
+
+    /// <summary>
+    /// Returns every <c>backup-*.zip</c> file in <paramref name="backupDirectory"/>,
+    /// newest first, with parsed manifests (or <see cref="BackupEntry.IsCorrupt"/> when
+    /// unreadable). Non-existent directory → empty list. Per-zip manifest parses are
+    /// memoised; see <see cref="InvalidateListCache"/>.
+    /// </summary>
+    public IReadOnlyList<BackupEntry> List(string backupDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(backupDirectory) || !Directory.Exists(backupDirectory))
+        {
+            return [];
+        }
+
+        string currentPlatform = PlatformPaths.PlatformId;
+        List<BackupEntry> results = [];
+
+        foreach (string file in
+                 Directory.EnumerateFiles(backupDirectory, "backup-*.zip", SearchOption.TopDirectoryOnly))
+        {
+            FileInfo info = new(file);
+            BackupManifest? manifest = GetCachedOrParseManifest(file, info.LastWriteTimeUtc, info.Length);
+
+            results.Add(new BackupEntry
+            {
+                ArchivePath = file,
+                FileName = info.Name,
+                SizeBytes = info.Length,
+                LastModifiedUtc = info.LastWriteTimeUtc,
+                Manifest = manifest,
+                IsCrossPlatform = manifest != null &&
+                                  !string.Equals(manifest.Platform, currentPlatform, StringComparison.Ordinal),
+            });
+        }
+
+        results.Sort((a, b) => b.LastModifiedUtc.CompareTo(a.LastModifiedUtc));
+        return results;
+    }
+
+    /// <summary>
+    /// Parses a single backup archive at <paramref name="archivePath"/> and returns a
+    /// <see cref="BackupEntry"/> describing it, or <c>null</c> if the file does not exist.
+    /// The returned entry's <see cref="BackupEntry.IsCorrupt"/> is <c>true</c> when the zip
+    /// is unreadable / has no valid manifest / is the wrong <c>Kind</c> — the caller is
+    /// responsible for refusing to act on a corrupt entry.  Used by the drag-drop "restore
+    /// from this specific zip" path (W8) where the file may live outside the user's
+    /// configured restore directory and therefore would not be discovered by
+    /// <see cref="List(string)"/>.
+    /// </summary>
+    /// <remarks>
+    /// Shares the same parse + cache pipeline as <see cref="List(string)"/> so a zip read
+    /// once from a dropped path and again from a restore-folder enumeration hits the
+    /// memoised manifest the second time.
+    /// </remarks>
+    public BackupEntry? TryReadEntry(string archivePath)
+    {
+        if (string.IsNullOrWhiteSpace(archivePath) || !File.Exists(archivePath))
+        {
+            return null;
+        }
+
+        FileInfo info;
+        try
+        {
+            info = new FileInfo(archivePath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        BackupManifest? manifest = GetCachedOrParseManifest(info.FullName, info.LastWriteTimeUtc, info.Length);
+        string currentPlatform = PlatformPaths.PlatformId;
+
+        return new BackupEntry
+        {
+            ArchivePath = info.FullName,
+            FileName = info.Name,
+            SizeBytes = info.Length,
+            LastModifiedUtc = info.LastWriteTimeUtc,
+            Manifest = manifest,
+            IsCrossPlatform = manifest != null &&
+                              !string.Equals(manifest.Platform, currentPlatform, StringComparison.Ordinal),
+        };
+    }
+
+    /// <summary>
+    /// Returns the cached manifest for <paramref name="file"/> when the cache
+    /// entry's mtime + length match the live file; otherwise re-opens the zip
+    /// and parses manifest.json, storing the result (success OR null) for next
+    /// time.
+    /// </summary>
+    private static BackupManifest? GetCachedOrParseManifest(string file, DateTime lastWriteUtc, long length)
+    {
+        if (_manifestCache.TryGetValue(file, out ManifestCacheEntry? cached)
+            && cached.LastWriteUtc == lastWriteUtc
+            && cached.Length == length)
+        {
+            return cached.Manifest;
+        }
+
+        BackupManifest? manifest = null;
+        try
+        {
+            using FileStream fs = new(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using ZipArchive archive = new(fs, ZipArchiveMode.Read);
+            ZipArchiveEntry? entry = archive.GetEntry("manifest.json");
+            if (entry != null)
+            {
+                using Stream es = entry.Open();
+                manifest = JsonSerializer.Deserialize(es, BackupJsonContext.Default.BackupManifest);
+                // Reject manifests from unknown future schema versions.
+                if (manifest != null && manifest.SchemaVersion > BackupManifest.CurrentSchemaVersion)
+                {
+                    manifest = null;
+                }
+
+                // Reject anything that isn't a "backup" (e.g. exports) so they
+                // cannot be listed as restorable.
+                if (manifest != null && !string.Equals(manifest.Kind, "backup", StringComparison.Ordinal))
+                {
+                    manifest = null;
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException
+                                       or JsonException)
+        {
+            manifest = null;
+        }
+
+        _manifestCache[file] = new ManifestCacheEntry(lastWriteUtc, length, manifest);
+        return manifest;
+    }
+
+    /// <summary>Delete a backup archive. Returns <c>true</c> if the file was removed.</summary>
+    public bool Delete(BackupEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        try
+        {
+            if (File.Exists(entry.ArchivePath))
+            {
+                File.Delete(entry.ArchivePath);
+            }
+
+            // Drop the cache entry — even though a future zip with the same path
+            // would have a different mtime/length and self-invalidate, leaving a
+            // stale entry around for a deleted file wastes memory across long
+            // sessions where the user creates and deletes many backups.
+            _manifestCache.TryRemove(entry.ArchivePath, out ManifestCacheEntry? _);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Trims older <c>backup-*.zip</c> archives in <paramref name="backupDirectory"/>
+    /// so that at most <paramref name="keepLast"/> survive (newest first by last-write
+    /// time). Best-effort — locked or otherwise unreachable files are skipped.
+    /// </summary>
+    /// <remarks>
+    /// Goes through the <see cref="IBackupFileSystem"/> seam so the
+    /// retention contract is testable without real disk I/O. <c>internal</c> so the
+    /// test project can invoke it directly via <c>InternalsVisibleTo</c>.
+    /// </remarks>
+    internal static void ApplyRetention(IBackupFileSystem fs, string backupDirectory, int keepLast)
+    {
+        if (keepLast <= 0)
+        {
+            return;
+        }
+
+        if (!fs.DirectoryExists(backupDirectory))
+        {
+            return;
+        }
+
+        List<string> oldFiles = fs.EnumerateFiles(backupDirectory, "backup-*.zip", SearchOption.TopDirectoryOnly)
+                                  .Select(path => (Path: path, LastWriteTimeUtc: fs.GetLastWriteTimeUtc(path)))
+                                  .OrderByDescending(t => t.LastWriteTimeUtc)
+                                  .Skip(keepLast)
+                                  .Select(t => t.Path)
+                                  .ToList();
+
+        foreach (string oldPath in oldFiles)
+        {
+            try
+            {
+                fs.DeleteFile(oldPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Best-effort; skip if locked or unreachable.
+                _ = ex;
+            }
+        }
+    }
+
+    private void ApplyRetention(string backupDirectory, int keepLast)
+    {
+        ApplyRetention(_fs, backupDirectory, keepLast);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  RESTORE  (delegated to RestoreEngine)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Extracts <paramref name="entry"/> into the real Claude paths. Existing
+    /// files are moved aside with a <c>.pre-restore-{stamp}.bak</c> suffix
+    /// before being overwritten. Returns a result summary.
+    /// </summary>
+    /// <remarks>
+    /// the restore implementation lives in
+    /// <see cref="RestoreEngine"/>; this method is a stable public-surface
+    /// passthrough so existing consumers (notably <c>BackupClient</c>) keep
+    /// compiling unchanged.
+    /// </remarks>
+    /// <param name="openProjectRoots">
+    /// The project the host currently has open, when it has one. ⚠ <b>Pass it.</b> A
+    /// *Settings only* backup captures exactly the open project and nothing else on the
+    /// machine need ever have heard of it, so omitting this is what makes a restore refuse
+    /// the very project the archive was taken for — see <c>F7</c>.
+    /// </param>
+    public Task<RestoreResult> RestoreAsync(
+        BackupEntry entry,
+        IProgress<BackupProgress>? progress = null,
+        CancellationToken ct = default,
+        IReadOnlyCollection<string>? openProjectRoots = null)
+    {
+        return RestoreEngine.RestoreAsync(_env, entry, _restorableProducts, progress, ct, openProjectRoots);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  SCHEMA BUNDLING & POST-RESTORE VALIDATION
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Copies the embedded schema resources <b>this archive's products can be validated
+    /// against</b> into the archive under <c>Schemas/</c>. Called during
+    /// <see cref="CreateAsync"/> so that the archive carries the exact schema version that
+    /// was current when the backup was made.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why this filters by product rather than bundling everything.</b> It used to copy
+    /// every <c>.json</c> under <c>Assets/Schemas/</c>, which was harmless while every
+    /// bundled schema belonged to a hosted Claude product. It stops being harmless the
+    /// moment a second agent's schemas ship in the same folder: OpenCode's TUI schema alone
+    /// is ~1.1 MB, so every ClaudeForge backup would grow by more than a megabyte of rules
+    /// it can never be checked against, and every restore would parse them.
+    /// </para>
+    /// <para>
+    /// <see cref="RestoreEngine"/> would still be <i>correct</i> — it routes each config
+    /// file to the schema its own product names, so an irrelevant schema is loaded and then
+    /// never matched. This is about size and parse cost, not correctness, which is why it
+    /// would never have surfaced as a failure.
+    /// </para>
+    /// <para>
+    /// Each product contributes its <see cref="ProductDescriptor.SchemaFileName"/> and that
+    /// schema's overlay sibling. An unknown resource under <c>Assets/Schemas/</c> belonging
+    /// to no requested product is skipped, which is also the behaviour that keeps a future
+    /// product's schemas out of this product's archives.
+    /// </para>
+    /// </remarks>
+    private static void BundleSchemas(ZipArchiveWriter writer, IReadOnlyList<ProductDescriptor> products)
+    {
+        HashSet<string> wanted = new(StringComparer.OrdinalIgnoreCase);
+        foreach (ProductDescriptor product in products)
+        {
+            wanted.Add(product.SchemaFileName);
+            wanted.Add(SchemaRegistry.OverlayFileNameFor(product.SchemaFileName));
+        }
+
+        Assembly assembly = typeof(SchemaRegistry).Assembly;
+        foreach (string resourceName in assembly.GetManifestResourceNames())
+        {
+            // Only include resources under Assets/Schemas/. The prefix is derived from the
+            // assembly's root namespace (see ResourceHelper) rather than written out here:
+            // a hardcoded copy that stops matching bundles ZERO schemas, and RestoreEngine
+            // then reads the missing folder as "archive predates bundling" and silently
+            // skips validation.
+            string prefix = ResourceHelper.SchemasPrefix;
+            if (!resourceName.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string fileName = resourceName[prefix.Length..];
+            if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!wanted.Contains(fileName))
+            {
+                continue;
+            }
+
+            using Stream? stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null)
+            {
+                continue;
+            }
+
+            using StreamReader reader = new(stream, Encoding.UTF8);
+            writer.AddTextEntry($"Schemas/{fileName}", reader.ReadToEnd());
+        }
+    }
+}
+
+/// <summary>Outcome of <see cref="BackupEngine.CreateAsync"/>.</summary>
+public sealed record BackupResult(bool Succeeded, string Message, BackupManifest? Manifest, string? ArchivePath);
+
+/// <summary>Outcome of <see cref="BackupEngine.RestoreAsync"/>.</summary>
+public sealed record RestoreResult(
+    bool Succeeded,
+    string Message,
+    int ItemsRestored,
+    IReadOnlyList<string>? ValidationWarnings = null,
+    IReadOnlyList<string>? FileFailures = null);

@@ -151,7 +151,7 @@
                                FontSize="11" Opacity="0.8" />
                     <TextBox Text="{Binding PreviewRule, Mode=OneWay}"
                              IsReadOnly="True"
-                             FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              ToolTip.Tip="{x:Static loc:Strings.PermBuilderPreviewTip}"
                              AutomationProperties.Name="{Binding PreviewRule}" />
                     <!-- Plain-English gloss: tinted callout chip so the "what this

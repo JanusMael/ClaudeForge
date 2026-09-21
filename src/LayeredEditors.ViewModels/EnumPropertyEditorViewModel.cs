@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>Editor for string properties with a fixed set of allowed values (schema enum).</summary>
 public partial class EnumPropertyEditorViewModel : PropertyEditorViewModel

@@ -1,7 +1,8 @@
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using System.Runtime.InteropServices;
 using Avalonia;
-using Bennewitz.Ninja.ClaudeForge.Core.Backup;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -22,6 +23,18 @@ internal sealed class Program
         //    isn't configured yet); deferred warnings + the active-flags
         //    summary are flushed by LogActiveFlags() in Step 4 below.
         DebugFlags.Initialize(args);
+
+        // Map the parsed flag onto the registry's enum. Process-wide because a launch builds
+        // SEVERAL registries -- the window's and one per client -- and a flag reaching only the
+        // first would leave the pages on one source while save-validation used another.
+        // DebugFlags cannot do this itself: SchemaRegistry is upstream of this app, and the
+        // dependency only runs in this direction.
+        SchemaRegistry.ProcessSourceOverride = DebugFlags.SchemaSourceName switch
+        {
+            "bundled" => SchemaSourceOverride.Bundled,
+            "fetched" => SchemaSourceOverride.Fetched,
+            _ => null,
+        };
 
         // 1b. A rejected --deep-link is the one parse failure the USER needs to see
         //     on their terminal, not just in the rolling log.  This binary is a
@@ -70,6 +83,14 @@ internal sealed class Program
             nameof(WrapperStrings.TipNewSetting) => Strings.TipNewSetting,
             nameof(WrapperStrings.LabelOverridden) => Strings.TextOverridden,
             nameof(WrapperStrings.LabelReset) => Strings.ButtonReset,
+            // Unlike the seven above, these two DO render here: they name the
+            // NumericUpDown spinner's up/down buttons, which the theme bundle in
+            // Themes/AccessibilityNames.axaml styles for every host.
+            nameof(WrapperStrings.LabelSpinnerIncrease) => Strings.AutoNameSpinnerIncrease,
+            nameof(WrapperStrings.LabelSpinnerDecrease) => Strings.AutoNameSpinnerDecrease,
+            // Same shape again: the navigation tree's expand/collapse chevrons are TreeViewItem
+            // template parts, named for every host by that same theme file.
+            nameof(WrapperStrings.LabelExpandCollapse) => Strings.AutoNameExpandCollapse,
             nameof(WrapperStrings.LabelBrowse) => Strings.ButtonBrowse,
             nameof(WrapperStrings.LabelAdd) => Strings.ButtonAdd,
             nameof(WrapperStrings.LabelRemove) => Strings.AutoNameRemoveEntry,
@@ -103,6 +124,16 @@ internal sealed class Program
             EnableEventTailWindow = true,
             EventTailWindowTitle = "Live Config-File Events — Shift+F12 to hide",
             EventTailLaunchLabel = "Config-file events ▸",
+            // ⭐ The same stream, persisted. The tail window above is live-only, so "did the
+            // watcher fire while I was editing?" was unanswerable once the window closed — and
+            // impossible to hand to anyone else. This writes events-*.txt beside app-*.txt in the
+            // same directory (next to the executable), same bucketing and retention.
+            EnableEventLogFile = true,
+            // NOTE: no hyphen. BucketedRollingFileSink rejects a prefix containing '-' because
+            // the file name is {prefix}-{yyyyMMdd}-{HH}.txt and the hyphen is the field
+            // separator it parses back when pruning. "config-events" throws, and it throws
+            // from ConfigureLogging - before any logging exists - so the app dies silently.
+            EventLogFileNamePrefix = "events",
         });
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture
@@ -178,7 +209,7 @@ internal sealed class Program
     /// <summary>
     /// Dispatch for the <c>--cleanup-restore-sidecars</c> command-line
     /// flag.  Walks <c>~/.claude/</c>, deletes every <c>*.bak</c> file
-    /// left behind by <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.RestoreEngine"/>'s
+    /// left behind by <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.RestoreEngine"/>'s
     /// pre-restore sidecar pattern, and prints a human-readable summary
     /// to stderr (visible regardless of how the binary was launched) plus
     /// a Serilog entry for post-mortem grepping.
@@ -186,7 +217,7 @@ internal sealed class Program
     /// CLI-only by design: the operation is unconditionally destructive
     /// and best performed as an explicit maintenance step the user has
     /// consciously chosen.  GUI does not expose this — see the comment
-    /// on <see cref="Bennewitz.Ninja.ClaudeForge.Core.Backup.RestoreSidecarCleanup"/>
+    /// on <see cref="Bennewitz.Ninja.AgentForge.Core.Backup.RestoreSidecarCleanup"/>
     /// for the full rationale.
     /// </para>
     /// </summary>
@@ -243,10 +274,19 @@ internal sealed class Program
         // Without this the WinExe-detached console swallows everything.
         TryAttachParentConsole();
 
-        Console.Error.WriteLine($"[ClaudeForge] Cleaning up *.bak restore sidecars under {PlatformPaths.ClaudeHome}…");
+        // Named once, then both reported and walked. The cleanup used to resolve its own home
+        // from a null default, so the directory in this message and the directory it deleted
+        // from were two independent lookups that happened to agree.
+        // ⓘ This CLI-bypass tool never starts Avalonia, so it never reaches App's composition
+        // root and has to resolve the environment itself. That is correct rather than a
+        // duplicate: it is its own one-shot composition root, and it still reads the process
+        // exactly once.
+        string claudeHome = PlatformPaths.ClaudeHome(ClaudeEnvironment.FromProcess());
+
+        Console.Error.WriteLine($"[ClaudeForge] Cleaning up *.bak restore sidecars under {claudeHome}…");
         Log.Information("[Cleanup] Restore-sidecar cleanup invoked via --cleanup-restore-sidecars");
 
-        RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(onProgress: count =>
+        RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(claudeHome, onProgress: count =>
         {
             // Heartbeat every 1000 deletions so the user knows the run is
             // making progress on a large directory (the user's reported

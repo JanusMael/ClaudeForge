@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Updates;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -53,7 +53,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void Default_State_HasBannerHidden()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
 
         Assert.IsFalse(vm.IsVisible, "Banner must default to hidden.");
         Assert.IsNull(vm.LatestTagName);
@@ -66,7 +66,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void ApplyResult_NoUpdate_LeavesBannerHidden()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.NoUpdate());
 
         Assert.IsFalse(vm.IsVisible);
@@ -76,7 +76,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void ApplyResult_UpdateAvailable_NotDismissed_SurfacesBanner()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -93,7 +93,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void ApplyResult_UpdateAvailable_NoReleaseUrl_SurfacesBannerWithoutLinkButton()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -111,9 +111,9 @@ public sealed class UpdateBannerViewModelTests
     {
         // Seed the persisted dismiss list with the tag we're about to apply.
         WindowState state = new() { DismissedUpdateVersions = ["v2.0.0"] };
-        WindowStateService.Save(state);
+        WindowStateService.Save(ClaudeEnvironment.Empty, state);
 
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -130,9 +130,9 @@ public sealed class UpdateBannerViewModelTests
         // User dismissed v1.0.0 earlier; v2.0.0 is now available.
         // The dismiss is irrelevant — v2.0.0 should surface.
         WindowState state = new() { DismissedUpdateVersions = ["v1.0.0"] };
-        WindowStateService.Save(state);
+        WindowStateService.Save(ClaudeEnvironment.Empty, state);
 
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -149,7 +149,7 @@ public sealed class UpdateBannerViewModelTests
         // Defensive: an UpdateAvailable result with empty tag (shouldn't
         // happen via the production checker, but the result factory
         // doesn't enforce a non-empty tag) must not crash.
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(new UpdateCheckResult(
             IsUpdateAvailable: true,
             LatestTagName: "",
@@ -165,7 +165,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void Dismiss_HidesBannerAndPersistsTag()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -176,7 +176,7 @@ public sealed class UpdateBannerViewModelTests
 
         Assert.IsFalse(vm.IsVisible, "Dismiss must hide the banner.");
 
-        WindowState persisted = WindowStateService.Load();
+        WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
         CollectionAssert.Contains(persisted.DismissedUpdateVersions, "v2.0.0",
             "Dismissed tag MUST be persisted so the next launch suppresses the banner for this version.");
     }
@@ -187,9 +187,9 @@ public sealed class UpdateBannerViewModelTests
         // Seed with the tag already dismissed (could happen via an
         // out-of-band write between sessions).
         WindowState state = new() { DismissedUpdateVersions = ["v2.0.0"] };
-        WindowStateService.Save(state);
+        WindowStateService.Save(ClaudeEnvironment.Empty, state);
 
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -199,7 +199,7 @@ public sealed class UpdateBannerViewModelTests
 
         vm.DismissCommand.Execute(null);
 
-        WindowState persisted = WindowStateService.Load();
+        WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.AreEqual(1, persisted.DismissedUpdateVersions.Count(t => t == "v2.0.0"),
             "Dismiss must be idempotent — the tag must appear exactly once in the list.");
     }
@@ -209,13 +209,13 @@ public sealed class UpdateBannerViewModelTests
     {
         // Defensive: banner is normally hidden when LatestTagName is
         // null, but the command can still be invoked programmatically.
-        UpdateBannerViewModel vm = new() { IsVisible = true, LatestTagName = null };
-        WindowStateService.Save(new WindowState());  // baseline: empty list
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty) { IsVisible = true, LatestTagName = null };
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState());  // baseline: empty list
 
         vm.DismissCommand.Execute(null);
 
         Assert.IsFalse(vm.IsVisible);
-        WindowState persisted = WindowStateService.Load();
+        WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.AreEqual(0, persisted.DismissedUpdateVersions.Count,
             "Dismissing with no tag must not pollute the persisted list with empty / null entries.");
     }
@@ -225,7 +225,7 @@ public sealed class UpdateBannerViewModelTests
     [TestMethod]
     public void Dismiss_RaisesDismissedEvent_SoHostCanStopRecheckTimer()
     {
-        UpdateBannerViewModel vm = new();
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.UpdateAvailable(
             "v2.0.0",
             new Version(2, 0, 0),
@@ -247,7 +247,7 @@ public sealed class UpdateBannerViewModelTests
     {
         // The defensive null-tag hide is not a genuine dismiss — it must not
         // stop the host's re-check loop.
-        UpdateBannerViewModel vm = new() { IsVisible = true, LatestTagName = null };
+        UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty) { IsVisible = true, LatestTagName = null };
         bool raised = false;
         vm.Dismissed += (_, _) => raised = true;
 

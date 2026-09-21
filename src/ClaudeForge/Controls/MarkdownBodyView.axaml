@@ -100,7 +100,7 @@
                 <!-- Plain (no-language) fenced code blocks. -->
                 <Style Selector=".Markdown_Avalonia_MarkdownViewer TextBlock.CodeBlock">
                     <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
-                    <Setter Property="FontFamily" Value="Consolas, Menlo, monospace" />
+                    <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
                     <Setter Property="FontSize" Value="12" />
                 </Style>
 

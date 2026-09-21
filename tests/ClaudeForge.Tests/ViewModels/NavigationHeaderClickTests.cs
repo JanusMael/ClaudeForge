@@ -1,8 +1,8 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -33,7 +33,7 @@ public sealed class NavigationHeaderClickTests
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     [TestCleanup]

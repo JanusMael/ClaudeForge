@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -13,7 +13,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// handler unconditionally set <c>HasUnsavedChanges = true</c> on every
 /// <c>workspace.Changed</c> event. After a set-then-reset cycle (user edits a
 /// field, then clicks Reset which writes the original value back into the
-/// workspace), the workspace's <see cref="Bennewitz.Ninja.ClaudeForge.Core.Settings.SettingsDocument.IsDirty"/>
+/// workspace), the workspace's <see cref="Bennewitz.Ninja.AgentForge.Core.Settings.SettingsDocument.IsDirty"/>
 /// flag stayed true (it is a one-way latch), but <c>HasActualChanges()</c>
 /// correctly returned false. The Save button stayed enabled even though
 /// nothing actually differed from the baseline. The new handler computes
@@ -56,7 +56,7 @@ public sealed class HasUnsavedChangesRecheckTests
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
         await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -68,7 +68,7 @@ public sealed class HasUnsavedChangesRecheckTests
             // the editor pipeline does not need to be exercised directly here;
             // we are testing the SDK Changed forwarder → HasActualChanges chain.
             // 4.3.7 step 14: prefer the SDK seam over the legacy workspace one.
-            ClaudeConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
+            AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
             Assert.IsNotNull(client, "Initialize must have created the Claude Code SDK client.");
 
             client!.SetValue("model", "opus", ConfigScope.User);
@@ -107,11 +107,11 @@ public sealed class HasUnsavedChangesRecheckTests
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
         await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
-            ClaudeConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
+            AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
             Assert.IsNotNull(client);
 
             // Edit: deviate from baseline.
@@ -152,7 +152,7 @@ public sealed class HasUnsavedChangesRecheckTests
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         await File.WriteAllTextAsync(settingsPath, "{}");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -173,7 +173,7 @@ public sealed class HasUnsavedChangesRecheckTests
         // edit set HasUnsavedChanges=true but the Save button stayed dark. Save must depend
         // only on there being unsaved changes (and not being mid-load), never on the
         // install-guidance banner's visibility.
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             vm.ShowInstallBanner = true;
@@ -221,7 +221,7 @@ public sealed class HasUnsavedChangesRecheckTests
         PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
 
         // ── leg 1: no products detected, load, then place Code settings ──
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
@@ -237,7 +237,11 @@ public sealed class HasUnsavedChangesRecheckTests
 
             // ── leg 2: remove Code settings again — banner should re-show
             //    (only assertable if Desktop is also not installed on this machine) ──
-            File.Delete(settingsPath);
+            // Not a bare File.Delete: the write above started ConfigFileWatcher's 400 ms
+            // debounce, so its background re-read can still have this file open here. On
+            // Windows that makes the delete throw; on Unix it does not, which is why this
+            // failed only on windows-latest while ubuntu and macOS passed in the same run.
+            TestCleanupHelpers.DeleteFileWithRetry(settingsPath);
             await vm.ReloadCommand.ExecuteAsync(null);
 
             if (!PlatformPaths.IsDesktopInstalled)

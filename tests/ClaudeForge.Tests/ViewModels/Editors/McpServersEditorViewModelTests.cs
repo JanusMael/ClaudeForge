@@ -1,6 +1,7 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -555,7 +556,7 @@ public class McpServersEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.McpServers.Set(
@@ -638,7 +639,7 @@ public class McpServersEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             client.OpenAsync(projectRoot: null, ct: CancellationToken.None).GetAwaiter().GetResult();
 
             client.McpServers.Set("api",

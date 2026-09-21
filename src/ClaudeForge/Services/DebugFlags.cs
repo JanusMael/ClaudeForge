@@ -1,7 +1,8 @@
 using System.Globalization;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Serilog;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -78,7 +79,7 @@ public static class DebugFlags
     /// is not polluted; the next launch without the flag resumes correctly.
     /// </para>
     /// <para>
-    /// Wired via <see cref="Bennewitz.Ninja.ClaudeForge.Core.Schema.SchemaTreeBuilder.BuildTopLevel(JsonSchemaNode, ISet{string}?, bool)"/>
+    /// Wired via <see cref="Bennewitz.Ninja.AgentForge.Core.Schema.SchemaTreeBuilder.BuildTopLevel(JsonSchemaNode, ISet{string}?, bool)"/>
     /// — passing <c>flagAllAsNew: true</c> bypasses the normal "diff against
     /// snapshot" logic and stamps every node with <c>IsNew = true</c>.
     /// </para>
@@ -158,6 +159,51 @@ public static class DebugFlags
     /// </para>
     /// </summary>
     public static string? DeepLinkPath { get; private set; }
+
+    /// <summary>
+    /// Config writer selected via <c>--writer legacy|jsonc</c>.
+    /// <see langword="null"/> means the default, comment-preserving writer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A one-release escape hatch, not a supported mode. The comment-preserving writer is
+    /// the highest-consequence code path in the product — a bug corrupts config for every
+    /// user — so <c>--writer legacy</c> restores the pre-Phase-2 whole-document
+    /// re-serializer without needing a new build. <c>--writer jsonc</c> is accepted too so
+    /// the flag reads symmetrically and a script can pin the default explicitly.
+    /// </para>
+    /// <para>
+    /// <b>The value is a name, not the writer itself.</b> <c>DebugFlags</c> lives in the app
+    /// assembly and the save path lives in <c>AgentForge.Core</c>, which must never
+    /// reference the app; resolving the name into an <c>IConfigWriter</c> happens where the
+    /// SDK client is constructed. See <c>docs/JSONC-WRITER.md</c>.
+    /// </para>
+    /// <para>
+    /// <b>Remove this flag, both writers' selection logic, and
+    /// <c>LegacySerializingWriter</c> after one clean release.</b> Two writers means every
+    /// future save-path change has to be correct twice, and the lossy one is the one nobody
+    /// will remember to test.
+    /// </para>
+    /// </remarks>
+    public static string? ConfigWriterName { get; private set; }
+
+    /// <summary>
+    /// Forced schema source: <c>"bundled"</c>, <c>"fetched"</c>, or <see langword="null"/> for
+    /// the normal chain.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ Exists because network-first made the bundled path unreachable on a healthy machine.
+    /// Every offline, throttled or firewalled user gets that path and a developer never sees it;
+    /// the alternative to this flag is unplugging the network, which disables everything else too.
+    /// </para>
+    /// <para>
+    /// ⚠ A <see langword="string"/>, not <c>SchemaSourceOverride?</c>, so this class keeps its
+    /// shape: every flag here is a primitive, and <c>Program.cs</c> maps this one onto the enum at
+    /// the point it configures the registry. Same treatment as <see cref="ConfigWriterName"/>.
+    /// </para>
+    /// </remarks>
+    public static string? SchemaSourceName { get; private set; }
 
     /// <summary>
     /// Why a supplied <c>--deep-link</c> value was rejected, or
@@ -298,15 +344,94 @@ public static class DebugFlags
 
                     break;
 
+                // Two-token flag. Validated against the known names here rather than
+                // deferred, so a typo falls back to the safe (preserving) writer with a
+                // warning instead of silently selecting the lossy one.
+                case "--writer":
+                    if (i + 1 >= args.Length)
+                    {
+                        _deferredWarnings.Add(
+                            "[DebugFlags] --writer flag requires a value "
+                            + "(--writer legacy or --writer jsonc); ignoring.");
+                        break;
+                    }
+
+                    // PEEK, don't consume. Because the value is validated against a closed
+                    // set, a rejected token can still be a valid flag in its own right —
+                    // `--writer --linux` should reject the writer AND honour --linux, rather
+                    // than swallowing it. Contrast --deep-link, which consumes positionally
+                    // by design because any string is a syntactically plausible path.
+                    string requestedWriter = args[i + 1];
+                    if (string.Equals(requestedWriter, "legacy", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(requestedWriter, "jsonc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ConfigWriterName = requestedWriter.ToLowerInvariant();
+                        i++; // consume the value only now that it is known to be one
+                    }
+                    else
+                    {
+                        _deferredWarnings.Add(
+                            $"[DebugFlags] --writer '{requestedWriter}' rejected: expected "
+                            + "'legacy' or 'jsonc'. Using the default comment-preserving writer.");
+                    }
+
+                    break;
+
+                case "--schema-source":
+                    if (i + 1 >= args.Length)
+                    {
+                        _deferredWarnings.Add(
+                            "[DebugFlags] --schema-source flag requires a value "
+                            + "(--schema-source bundled or --schema-source fetched); ignoring.");
+                        break;
+                    }
+
+                    // PEEK, don't consume -- same reasoning as --writer: the value set is
+                    // closed, so a rejected token may itself be a valid flag and must not be
+                    // swallowed.
+                    string requestedSource = args[i + 1];
+                    if (string.Equals(requestedSource, "bundled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SchemaSourceName = "bundled";
+                        i++;
+                    }
+                    else if (string.Equals(requestedSource, "fetched", StringComparison.OrdinalIgnoreCase))
+                    {
+                        SchemaSourceName = "fetched";
+                        i++;
+                    }
+                    else
+                    {
+                        _deferredWarnings.Add(
+                            $"[DebugFlags] --schema-source '{requestedSource}' rejected: expected "
+                            + "'bundled' or 'fetched'. Using the normal loading chain.");
+                    }
+
+                    break;
+
                 // Help / discovery: defer the help message so it surfaces in the log
                 // after Serilog is configured (Initialize runs before logging).
                 case "--debug-help":
                 case "--help-debug":
+                    // ⚠ Two messages, because these are two different KINDS of argument and
+                    // AGENTS.md is explicit that they must not be conflated. A debug flag
+                    // configures the app and then it starts; a CLI-bypass tool does its work
+                    // and exits without ever building Avalonia, and is dispatched in
+                    // Program.cs above BuildAvaloniaApp(). Listing the tool among the flags
+                    // told a user it was a flag and sent the next maintainer looking for a
+                    // `case` here that does not exist.
+                    //
+                    // ⛔ DebugHelpAdvertisesNothingItCannotParse asserts the first message
+                    // names only things this switch parses, so the two cannot re-merge.
                     _deferredWarnings.Add(
                         "[DebugFlags] available flags: --showInstallBanner, " +
                         "--windows, --macos, --linux, --showAllNew, --culture <code>, " +
-                        "--simulate-update, --deep-link <path>, " +
-                        "--cleanup-restore-sidecars, --debug-help");
+                        "--simulate-update, --deep-link <path>, --writer <legacy|jsonc>, " +
+                        "--schema-source <bundled|fetched>, " +
+                        "--debug-help");
+                    _deferredWarnings.Add(
+                        "[DebugFlags] CLI-bypass tools (run and exit, no window): " +
+                        "--cleanup-restore-sidecars");
                     break;
             }
         }
@@ -386,6 +511,8 @@ public static class DebugFlags
         SimulateUpdate = false;
         DeepLinkPath = null;
         DeepLinkPathError = null;
+        ConfigWriterName = null;
+        SchemaSourceName = null;
         _deferredWarnings.Clear();
         PlatformInfo.ResetForTesting();
     }
@@ -420,6 +547,19 @@ public static class DebugFlags
         if (DeepLinkPath != null)
         {
             yield return "--deep-link " + DeepLinkPath;
+        }
+
+        if (SchemaSourceName != null)
+        {
+            yield return "--schema-source " + SchemaSourceName;
+        }
+
+        if (ConfigWriterName != null)
+        {
+            // Worth being in the active-flags log line: the two writers produce different
+            // bytes for identical input, so a bug report that does not say which one ran is
+            // much harder to act on.
+            yield return "--writer " + ConfigWriterName;
         }
     }
 }

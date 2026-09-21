@@ -1,5 +1,7 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Text.Json;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -55,9 +57,9 @@ public sealed class McpServersEditorRoundTripTests
 
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // Editor LOAD via SDK path.
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);
@@ -127,9 +129,9 @@ public sealed class McpServersEditorRoundTripTests
 
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
+            ws, ConfigScope.User, new SchemaRegistry());
 
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
@@ -166,9 +168,9 @@ public sealed class McpServersEditorRoundTripTests
         // Wrap in workspace + SDK client.
         JsonObject initialRoot = new() { ["mcpServers"] = (JsonObject)input.DeepClone() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
-        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(
-            ws, ConfigScope.User, new SchemaRegistry(new HttpClient()));
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
+        using ClaudeCodeClient client = ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
+            ws, ConfigScope.User, new SchemaRegistry());
 
         // Construct editor WITH the SDK client (production path).
         McpServersEditorViewModel vm = new(McpServersSchema(), ConfigScope.User, client);

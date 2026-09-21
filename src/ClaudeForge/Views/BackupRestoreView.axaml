@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
+             xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
              xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
-             xmlns:core="using:Bennewitz.Ninja.ClaudeForge.Core.Backup"
-             xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
+             xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Backup"
+             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
              xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.BackupRestoreView"
@@ -102,11 +102,12 @@
             </DockPanel>
         </Border>
 
-        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                    AutomationProperties.Name="{x:Static loc:Strings.AutoNameBackupRestoreTabs}">
 
             <!-- =========================== BACKUP TAB =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabBackup}"
-                     AutomationProperties.Name="{x:Static loc:Strings.TabBackup}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabBackup}">
                 <ScrollViewer>
                     <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
 
@@ -220,12 +221,25 @@
                         </Border>
 
                         <TextBlock Text="{x:Static loc:Strings.LabelClients}" FontWeight="SemiBold" Margin="0,8,0,0" />
-                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeCode}"
-                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeCode}"
-                                  IsChecked="{Binding IncludeClaudeCode}" />
-                        <CheckBox Content="{x:Static loc:Strings.CheckboxClaudeDesktop}"
-                                  AutomationProperties.Name="{x:Static loc:Strings.CheckboxClaudeDesktop}"
-                                  IsChecked="{Binding IncludeClaudeDesktop}" />
+                        <!-- One checkbox per hosted product, from SelectableProducts. Was two
+                             fixed CheckBox elements bound to IncludeClaudeCode /
+                             IncludeClaudeDesktop, which enumerated products in markup. The
+                             labels are still resource-backed — the item view-model resolves
+                             them, so the nine-locale translations are unchanged. -->
+                        <ItemsControl ItemsSource="{Binding SelectableProducts}">
+                            <ItemsControl.ItemTemplate>
+                                <!-- x:DataType explicitly, like the two DataTemplates further
+                                     down: with it, these bindings are COMPILED against the item
+                                     view-model, so renaming DisplayName or IsSelected breaks the
+                                     build instead of silently rendering an empty list. It is also
+                                     what keeps them trim-safe. -->
+                                <DataTemplate x:DataType="vm:BackupProductViewModel">
+                                    <CheckBox Content="{Binding DisplayName}"
+                                              AutomationProperties.Name="{Binding DisplayName}"
+                                              IsChecked="{Binding IsSelected}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
                         <!-- 2026-05-15 — the IncludeCredentials checkbox was removed in
                              favour of always-prompting via the credentials dialog at
@@ -268,7 +282,7 @@
 
             <!-- =========================== RESTORE TAB =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabRestore}"
-                     AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
+        AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
                 <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
                      FileDrop is a reusable attached-property behaviour in
                      LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
@@ -345,7 +359,7 @@
                                 <MenuItem Header="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           AutomationProperties.Name="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           Command="{Binding OpenFileLocationCommand}"
-                                          CommandParameter="{Binding SelectedBackup}" />
+                                          CommandParameter="{Binding SelectedBackup}"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <!-- 2026-05-19 — column widths tuned for default ~950 px window.
@@ -506,8 +520,8 @@
 
             <!-- =========================== MSIX FIX TAB (Windows-only, conditional) =========================== -->
             <TabItem Header="{x:Static loc:Strings.TabMsixFix}"
-                     AutomationProperties.Name="{x:Static loc:Strings.TabMsixFix}"
-                     IsVisible="{Binding ShowMsixTab}">
+                     IsVisible="{Binding ShowMsixTab}"
+        AutomationProperties.Name="{x:Static loc:Strings.TabMsixFix}">
                 <StackPanel Margin="16" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
                     <TextBlock Text="{x:Static loc:Strings.HeadingMsixFix}"
                                FontSize="15" FontWeight="SemiBold" />
@@ -519,11 +533,11 @@
                         <StackPanel Spacing="4">
                             <TextBlock Text="{x:Static loc:Strings.LabelMsixVirtualisedPath}" FontWeight="SemiBold" />
                             <TextBlock Text="{Binding MsixStatus.VirtualisedPath}"
-                                       FontFamily="Consolas,Courier New,monospace" />
+                                       FontFamily="{DynamicResource AppMonoFontFamily}" />
                             <TextBlock Text="{x:Static loc:Strings.LabelMsixStandardPath}" FontWeight="SemiBold"
                                        Margin="0,6,0,0" />
                             <TextBlock Text="{Binding MsixStatus.StandardPath}"
-                                       FontFamily="Consolas,Courier New,monospace" />
+                                       FontFamily="{DynamicResource AppMonoFontFamily}" />
                         </StackPanel>
                     </Border>
 

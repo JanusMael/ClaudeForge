@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
 namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Tests.Permissions;
 

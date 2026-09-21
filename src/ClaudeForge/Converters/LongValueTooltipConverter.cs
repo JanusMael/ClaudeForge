@@ -2,7 +2,7 @@ using System.Globalization;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Diagnostics;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 
 namespace Bennewitz.Ninja.ClaudeForge.Converters;
 
@@ -53,7 +53,7 @@ public sealed class LongValueTooltipConverter : IValueConverter
         // serialised form is. The 50-char threshold is intentionally NOT applied
         // here — a value like {"allow":["Bash(*)"]} is well under 50 chars but is
         // still a blob that benefits from indented formatting. Pretty-print +
-        // cap moved to ClaudeForge.Sdk.Diagnostics.JsonFormatting in the
+        // cap moved to AgentForge.Sdk.Diagnostics.JsonFormatting in the
         // SDK-first migration.
         //
         // for JSON content we return a monospace-styled

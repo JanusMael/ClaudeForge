@@ -1,6 +1,205 @@
 <Project>
 
     <!--
+      ══ The package version ══  (plans/00001, work item 3)
+
+      One stamp, one source. AutoVersioning computes the version the assemblies carry and now
+      also exposes it as a plain MSBuild property, readable before compilation; the eleven
+      packages take their version from that same property, so a package and the assembly inside
+      it agree BY CONSTRUCTION rather than by two conventions that happen to line up.
+
+      ⛔ WHY NOT src/Directory.Build.props, WHERE THE REST OF THE PACKAGE IDENTITY LIVES.
+      AutoPackageVersion is defined by the AutoVersioning package's own props, which arrive via
+      the NuGet-generated import — AFTER Directory.Build.props. Assigned there it evaluates to
+      EMPTY, and an empty PackageVersion does not fail: the SDK's default assignment has already
+      run, so all eleven pack at 1.0.0 exactly as they did before. This file is imported last,
+      which is the whole reason it is this file.
+
+      ⚠ THE CONDITION IS NOT DEFENSIVE PADDING. Without it, a build in which AutoVersioning has
+      not contributed its props — a `dotnet msbuild` on a project whose restore has not run —
+      would assign the empty string and pack an unversioned package. Falling back to the SDK's
+      default is the honest failure: 1.0.0 is visibly wrong, an empty version is a restore error
+      from deep inside NuGet naming nothing the reader wrote down.
+
+      ⓘ The canary passes -p:PackageVersion=<throwaway> on the command line. That is a GLOBAL
+      property and outranks this assignment, which is what lets one script pack eleven packages
+      at a per-run prerelease version without touching this file.
+
+      PackageVersionLockstepTests reads the stamp back out of a BUILT DLL rather than out of the
+      property that produced it — the property agreeing with itself proves nothing.
+    -->
+    <PropertyGroup Condition="'$(AutoPackageVersion)' != ''">
+        <PackageVersion>$(AutoPackageVersion)</PackageVersion>
+    </PropertyGroup>
+
+    <!--
+      ══ The shared-library reference switch ══  (plans/00001, work item 5)
+
+      ProjectReference for development; PackageReference for the per-PR canary and the release
+      publish. One conditional, applied centrally, so the two modes cannot be mixed.
+
+      ⛔ MIXING THEM IS THE FAILURE THIS EXISTS TO MAKE UNREPRESENTABLE. ClaudeForge.Tests
+      references src/AgentForge.Core AND src/ClaudeForge. If only the app switched, that test's
+      graph would hold two AgentForge.Core.dll — one from a project, one transitively from a
+      package — and MSBuild prefers the project output. A job named "package canary" would report
+      success over a suite still exercising project-built code.
+
+      ⭐ WHY THIS LIVES IN THE ROOT TARGETS FILE AND NOT A src/ ONE. It has to run AFTER each
+      csproj declares its ProjectReferences, which rules out Directory.Build.props. The obvious
+      answer — a Directory.Build.targets under src/ — is a trap measured while doing work item 2:
+      MSBuild imports only the CLOSEST one, so adding it silently detaches every src project from
+      THIS file, and the publish strip, the dead-resx guard and the raw-hex guard below all stop
+      running with nothing failing.
+
+      ⚠ WHICH REFERENCES SWITCH: those whose project file name begins `AgentForge.` or
+      `LayeredEditors.` — a rule, not a list, and PackageMetadataTests asserts that the set it
+      matches is exactly the set of packable projects. A reference to a PRODUCT-specific library
+      (ClaudeForge.Sdk.Claude, OpenCode.Avalonia, …) stays a ProjectReference, because none of
+      those is packaged.
+
+      ⚠ WHICH PROJECTS SWITCH: every project that is not itself one of the eleven — both apps,
+      all four product-specific libraries, the sample, and all twelve test projects. The eleven
+      keep referencing EACH OTHER by project in both modes, which is what `IsPackable != true`
+      expresses. ⓘ The plan says "both apps and all twelve test projects"; that list is
+      incomplete. A product library left on ProjectReference re-creates the duplicate-assembly
+      graph above through the app that references it, so it switches too.
+    -->
+    <PropertyGroup Condition="'$(UseSharedPackages)' == 'true' And '$(IsPackable)' != 'true'">
+        <_SwitchSharedReferences>true</_SwitchSharedReferences>
+
+        <!--
+          ⛔ A PACKAGE AND A PROJECT DO NOT PUT THE SAME FILES IN THE OUTPUT DIRECTORY, and the
+          canary is how that was found rather than reasoned about.
+
+          A ProjectReference copies the referenced project's XML documentation file next to its
+          DLL. A PackageReference does NOT: the SDK ships `lib/net10.0/*.xml` inside the .nupkg
+          but leaves it there, because CopyDocumentationFilesFromPackages defaults to false.
+          `PublicSurfaceContractTests.IAgentConfigClient_DocumentsThreadingContract` reads
+          AgentForge.Sdk.xml from the test output to assert the threading contract is documented
+          on the public interface, and it was the one test of 4,295 that failed in package mode.
+
+          ⚠ Set only in this mode, on purpose. Repo-wide it would also drag every third-party
+          package's XML into every bin/ directory — Avalonia's alone is megabytes — changing what
+          development builds produce in order to fix something development builds do not have.
+          Publish output is unaffected either way: the ExcludeNonDistributableFromPublish target
+          below strips *.xml.
+        -->
+        <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+    </PropertyGroup>
+
+    <!--
+      ⛔ TWO MSBUILD FACTS SHAPE EVERY LINE BELOW, both measured rather than recalled:
+
+      1. `%(Metadata)` in a condition on an item OUTSIDE a target evaluates to EMPTY and does not
+         error. The obvious spelling — Include="@(ProjectReference)" with a
+         Condition="...StartsWith('AgentForge.')" — therefore matches nothing, silently, and the
+         build succeeds having switched nothing. That was the first attempt here.
+      2. Item `Remove` is a STRING comparison of item specs, not a path comparison. It does not
+         normalise, `**` does not traverse `..`, and an absolute pattern will not match a
+         relatively-spelled item. This repo spells these references two ways —
+         `..\AgentForge.Core\…` from src/ and `..\..\src\AgentForge.Core\…` from tests/ — so a
+         glob tuned to one spelling would silently miss the other. Which is the whole failure
+         mode this file keeps running into.
+
+      So: normalise every ProjectReference to its full path first, then use Remove as a SET
+      DIFFERENCE, which is the one thing it does reliably. No per-item conditions, no target
+      hooks — plain evaluation, so restore and build see identical items and cannot disagree.
+    -->
+    <ItemGroup Condition="'$(_SwitchSharedReferences)' == 'true'">
+        <!-- The eleven, globbed off disk. Two family rules plus one exception, which is one
+             more than anybody wants: JsonC is a general-purpose JSONC reader with no agent
+             knowledge, so it was renamed out of the AgentForge family before first publish
+             rather than carrying a name that overclaims. It is named here explicitly because
+             it is a family of one. PackageMetadataTests asserts this set and the set of
+             packable projects are the same set, in BOTH directions. -->
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\AgentForge.*\AgentForge.*.csproj" />
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\LayeredEditors.*\LayeredEditors.*.csproj" />
+        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\JsonC\JsonC.csproj" />
+
+        <!-- Full paths, so Remove can match. The transform carries metadata across, so any
+             PrivateAssets / OutputItemType on a reference survives the round trip. -->
+        <_NormalisedProjectReference Include="@(ProjectReference->'%(FullPath)')" />
+
+        <!-- Set difference, twice: what is NOT shared, then what IS. -->
+        <_NonSharedProjectReference Include="@(_NormalisedProjectReference)" />
+        <_NonSharedProjectReference Remove="@(_PackableSharedProject)" />
+
+        <_SharedProjectReference Include="@(_NormalisedProjectReference)" />
+        <_SharedProjectReference Remove="@(_NonSharedProjectReference)" />
+
+        <!-- Product-specific references stay projects; the shared ones become packages. Only
+             the ones this project actually referenced — adding all eleven everywhere would
+             compile fine and hide a missing dependency. -->
+        <ProjectReference Remove="@(ProjectReference)" />
+        <ProjectReference Include="@(_NonSharedProjectReference)" />
+        <PackageReference Include="@(_SharedProjectReference->'Bennewitz.Ninja.%(Filename)')"
+                          Version="$(SharedPackageVersion)" />
+    </ItemGroup>
+
+    <!--
+      ⚠ An empty version does not fail loudly on its own — it restores as NU1604 from deep inside
+      NuGet, naming a package the reader never wrote down. Say what actually went wrong instead.
+      The canary and release scripts always pass one; this catches a hand-typed
+      `-p:UseSharedPackages=true`.
+    -->
+    <Target Name="ValidateSharedPackageVersion"
+            BeforeTargets="CollectPackageReferences;BeforeBuild"
+            Condition="'$(_SwitchSharedReferences)' == 'true' And '$(SharedPackageVersion)' == ''">
+        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the eleven Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value: 'pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly' prints the version it packed. See plans/00001 work item 5." />
+    </Target>
+
+    <!--
+      ⛔ THE RELEASE HAD NEVER ONCE BEEN BUILT FROM THE SHARED PACKAGES, and two comments said it
+      was. `.github/workflows/ci.yml` and `scripts/package-canary.ps1` both called package mode
+      "the mode the release publishes from" for the entire life of the feature; nothing set the
+      switch, so every RID of every release ever cut used ProjectReference. plans/00003 exists for
+      that defect, and this target is its Phase D guard. The claim used to live in a comment, and
+      a comment is not a guard — so it is a build error now.
+
+      ⚠ IT FIRES ON A LOCAL PUBLISH TOO, deliberately. `src/publish/publish.ps1` is the canonical
+      entry point and the same script a developer runs; guarding CI alone would rebuild the exact
+      local-versus-released divergence this plan closes.
+
+      ⭐ THE HATCH IS NAMED AND RECORDED, never silent. `AllowProjectReferencePublish=true` takes
+      the other path on purpose — the CI trim gate and the boot smoke both want a publish without
+      feed credentials — and when it is used this target says so at high importance, so the line
+      lands in the publish log `Publish-Rid.ps1` tees and in the provenance record it writes
+      beside the archives. A publish that quietly took the other path while the release claimed
+      package mode is this plan's founding defect pointed the other way.
+
+      ⚠ A Message, not a Warning, and that is not a style choice. `Directory.Build.props` sets
+      TreatWarningsAsErrors, and a hatch whose own record can be escalated into the failure it
+      exists to avoid is not a hatch. Importance="high" survives the default verbosity that
+      `Publish-Rid.ps1` and the CI logs run at.
+
+      ⛔ PACKAGE MODE ANNOUNCES ITSELF TOO, and that line is not decoration. A guard that is
+      SILENT on the good path leaves the log proving the mode only by the ABSENCE of the hatch
+      line — which is exactly what a log looks like when the guard never ran at all, when the
+      target was renamed, or when the condition stopped selecting this project. Absence is not
+      evidence, and this repo has paid for treating it as evidence before. So every publish of a
+      shipping app now states its mode positively, from any entry point including a bare
+      `dotnet publish`, and the archived log can be read without re-deriving anything.
+
+      ⚠ SCOPE IS DERIVED, NOT DECLARED. Every project under src/ is `Library` except the app, so
+      OutputType plus `IsPackable != true` selects exactly the shipping apps — and picks up a
+      second app automatically. An opt-in property would have to be remembered, and a new app that
+      forgot it would publish unguarded, silently, which is the failure mode this file keeps
+      meeting. Debug is excluded because a Debug publish ships nothing.
+    -->
+    <Target Name="GuardShippingPublishUsesPackages"
+            BeforeTargets="PrepareForPublish"
+            Condition="'$(Configuration)' == 'Release' And '$(OutputType)' != 'Library' And '$(IsPackable)' != 'true'">
+        <Error Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' != 'true'"
+               Text="Release publish of $(MSBuildProjectName) with UseSharedPackages unset. The release must be built from the eleven Bennewitz.Ninja.* packages, not from ProjectReference: that claim lived in two comments and was false for every release ever cut (plans/00003). Pass -p:UseSharedPackages=true — SharedPackageVersion is the committed pin in the root Directory.Build.props, so it needs no other input. If this publish deliberately wants project references, as the CI trim gate and the boot smoke do because neither has feed credentials, pass -p:AllowProjectReferencePublish=true; it is recorded by name in the publish log and the provenance record. See plans/00003, Phase D step D3." />
+        <Message Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' == 'true'"
+                 Importance="high"
+                 Text="ESCAPE HATCH USED: AllowProjectReferencePublish=true. $(MSBuildProjectName) is publishing $(Configuration) from ProjectReference, NOT from the Bennewitz.Ninja.* packages. Recorded deliberately — plans/00003 D3 requires a departure from package mode to name itself. A shipping release must never take this path." />
+        <Message Condition="'$(UseSharedPackages)' == 'true'"
+                 Importance="high"
+                 Text="PACKAGE MODE: $(MSBuildProjectName) is publishing $(Configuration) from the Bennewitz.Ninja.* packages at $(SharedPackageVersion). Stated positively on purpose — see the note above this target." />
+    </Target>
+
+    <!--
       Strip non-distributable files from the publish output.
   
       The publish output directory is the authoritative list of what goes into the
@@ -351,6 +550,102 @@ public class CheckUnusedResxKeys : Task
         <CheckUnusedResxKeys ResxPath="$(MSBuildProjectDirectory)/Localization/Strings.resx"
                              ScanRoots="$(MSBuildProjectDirectory);$(MSBuildThisFileDirectory)tests"
                              ProjectDir="$(MSBuildProjectDirectory)" />
+    </Target>
+
+    <!--
+        No raw hex colours in view-models.
+
+        ⭐ SCOPED TO VIEW-MODELS ON PURPOSE, and the scope is what makes the rule enforceable.
+        A repo-wide ban is unshippable: ~230 hex literals live in AXAML (App.axaml IS the token
+        declaration) and 45 more in C#, essentially all of them legitimate — syntax colouring in
+        JsonHighlightBlock, the scope and status brush converters, CodeInline, and every
+        BrushHelper fallback, which exists precisely so a missing token still renders. Those are
+        colour DEFINITIONS and resolution backstops. A view-model returning a colour is different
+        in kind: it puts presentation in the layer that has no view, and it puts the value beyond
+        the theme's reach in both variants at once.
+
+        ⛔ This is not a style rule. The literal it was written to catch —
+        SaveChangeEntryViewModel.KindBackground's #F57C00 — gave its white glyph 2.70:1, under
+        both the 4.5:1 text floor and the 3.0:1 non-text one, and had a comment defending the
+        choice on hue grounds with no contrast measurement anywhere. A colour nobody can see in
+        the theme files is a colour nobody re-measures.
+
+        Comments and string interpolation holes are stripped first: prose citing an old hex (see
+        AppSeverity.cs) is documentation, not a colour decision.
+    -->
+    <UsingTask TaskName="CheckRawHexInViewModels"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <ProjectDir ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+public class CheckRawHexInViewModels : Task
+{
+    public string ProjectDir { get; set; }
+
+    public override bool Execute()
+    {
+        if (!Directory.Exists(ProjectDir)) return true;
+
+        // A quoted 3/4/6/8-digit hex colour — the form Avalonia parses from a bound string.
+        var hex = new Regex("\"#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\"");
+        var blockComment = new Regex(@"/\*.*?\*/", RegexOptions.Singleline);
+        var lineComment = new Regex(@"//[^\r\n]*");
+        var sep = Path.DirectorySeparatorChar;
+        var offenders = new System.Collections.Generic.List<string>();
+
+        foreach (var f in Directory.EnumerateFiles(ProjectDir, "*.cs", SearchOption.AllDirectories))
+        {
+            if (f.Contains(sep + "obj" + sep) || f.Contains(sep + "bin" + sep)) continue;
+
+            var name = Path.GetFileName(f);
+            bool isViewModel = name.EndsWith("ViewModel.cs", StringComparison.OrdinalIgnoreCase)
+                               || f.Contains(sep + "ViewModels" + sep);
+            if (!isViewModel) continue;
+
+            var text = File.ReadAllText(f);
+            text = blockComment.Replace(text, "");
+            text = lineComment.Replace(text, "");
+
+            foreach (Match m in hex.Matches(text))
+            {
+                var line = text.Take(m.Index).Count(c => c == '\n') + 1;
+                offenders.Add(name + " ~line " + line + ": " + m.Value);
+            }
+        }
+
+        if (offenders.Count == 0) return true;
+
+        var sb = new StringBuilder();
+        sb.Append("Raw hex colour(s) in view-model(s): ");
+        sb.Append(string.Join("; ", offenders));
+        sb.Append(". A view-model must not name a colour — declare an App*Brush token per theme ");
+        sb.Append("variant in each app's App.axaml and bind through a converter over the enum ");
+        sb.Append("(see ChangeKindToBrushConverter / AppSeverityToBrushConverter). A literal here ");
+        sb.Append("is invisible to the theme and, in the case this guard was written for, shipped ");
+        sb.Append("a 2.70:1 contrast failure. See docs/DANGER-TAXONOMY.md.");
+        Log.LogError(sb.ToString());
+        return false;
+    }
+}
+]]></Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GuardRawHexInViewModels" AfterTargets="Build"
+            Condition="'$(DesignTimeBuild)' != 'true'
+                       And '$(RunRawHexGuard)' != 'false'">
+        <CheckRawHexInViewModels ProjectDir="$(MSBuildProjectDirectory)" />
     </Target>
 
 </Project>

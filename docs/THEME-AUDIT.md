@@ -41,6 +41,42 @@ variant, including the high-contrast overrides.
 `../cl/ClaudeForge` checkout, so its "ClaudeForge under Semi" table still lists
 `SystemAccentColorBrush` until the next regeneration picks the removal up.
 
+## The other half: tokens this repo declares and nobody uses
+
+`theme-audit` answers *"referenced here, defined by no theme"* — the undefined key that paints an
+invisible control. The mirror question is *"declared here, referenced by nothing"*: a dead token.
+Both are the same declared × referenced relation, read from opposite corners.
+
+| | Declared here | Not declared |
+|---|---|---|
+| **Referenced** | healthy | ⛔ `theme-audit` — invisible control |
+| **Not referenced** | ⛔ `NoDeadBrushTokensTests` — dead token | — |
+
+⚠ **The dead half is enforced HERE, not by `theme-audit`, and deliberately.** The tool is a dotnet
+tool in the DiffView repository, needs a checkout beside this one plus the `../../nuget-local`
+feed that this repository's NuGet configuration deliberately does not carry, and is run on theme
+pin bumps. Its report says of itself that it is a snapshot which goes stale until the next
+regeneration. None of that can gate a change on the day it is made, and both tokens the first run
+of the guard found — `InstallBannerCodeBorderBrush` and `SuggestionGroupHeaderBrush` — had been
+dead long enough that one of them had started generating questions about whether the install
+banner was missing a border.
+
+ⓘ **A test rather than an MSBuild task, which is the closer local precedent.**
+`CheckUnusedResxKeys` in `Directory.Build.targets` is the same shape of guard and solved the same
+two traps first — it blanks comments so a `<see cref="…"/>` cannot keep a dead key alive, and it
+trips on dynamic access with the note *"if a dynamically-built key family is genuinely intended,
+extend this guard with an allowlist"*. ⚠ It is also **per-project**, taking one `ProjectDir` and
+one `ResxPath`. Brush tokens are declared in `ClaudeForge/App.axaml` and referenced from
+OpenCodeForge and the shared library, so the scan has to be repo-wide — the same reason
+`DangerSurfaceMarkupTests` reads source text across assemblies instead of reflecting.
+
+⭐ **What WOULD belong upstream is the inventory.** The tool already walks every consumer for the
+keys it references, so it holds one side of the relation already; what its report lists is themes,
+variants, consumers, undefined keys, the contrast matrix and the compat ledger — there is no
+"declared and unreferenced" section. Adding one would make the dead-token picture available for
+every consumer DiffView audits, not just this one, and this repository's test would stay as the
+gate.
+
 ## Regenerating
 
 The report and the dictionaries are produced from the theme sources at their pinned versions,

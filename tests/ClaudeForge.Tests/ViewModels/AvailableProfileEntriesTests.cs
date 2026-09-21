@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -28,7 +28,7 @@ public sealed class AvailableProfileEntriesTests
         _schemaRegistry = new SchemaRegistry();
 
         // Instantiate without triggering InitializeAsync (no workspace load needed).
-        _vm = new MainWindowViewModel(_schemaRegistry, new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService());
     }
 
     [TestCleanup]
@@ -55,9 +55,17 @@ public sealed class AvailableProfileEntriesTests
                 TaskScheduler.Default);
         }
 
-        // Ordered second: the reload is what starts the sync, so draining it first is what makes
-        // this snapshot complete.
-        await _schemaRegistry.WhenDiskCacheIdleAsync();
+        // ⛔ WAS: await _schemaRegistry.WhenDiskCacheIdleAsync(); — dropped in the 2026-09-12 merge
+        // of main, NOT because the race it drained was imagined but because the thing that raced no
+        // longer exists. Network-first removed the disk cache outright, so there is no
+        // fire-and-forget disk write left for a reload to start, and the method it awaited went
+        // with it. The belt-and-braces DeleteDirectoryWithRetry below still covers the other
+        // writer main's fix named — the FileSystemWatcher completion-port handle.
+        //
+        // ⚠ THIS COMES BACK. The disk cache is being reinstated as the resolved-artifact store
+        // (fetch-or-bundled, stripped, overlaid, written atomically at launch), and the moment a
+        // launch writes to disk again this teardown races that write exactly as it used to.
+        // Reinstate the drain with the single-writer guard rather than rediscovering the flake.
 
         _vm.Dispose();
         _schemaRegistry.Dispose();
@@ -76,7 +84,7 @@ public sealed class AvailableProfileEntriesTests
 
     private void CreateCliProfile(string name)
     {
-        Directory.CreateDirectory(Path.Combine(PlatformPaths.ProfilesDirectory, name));
+        Directory.CreateDirectory(Path.Combine(PlatformPaths.ProfilesDirectory(ClaudeEnvironment.Empty), name));
     }
 
     private void CreateDesktopProfile(string name)

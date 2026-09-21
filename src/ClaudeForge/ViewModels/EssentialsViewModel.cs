@@ -1,16 +1,21 @@
-using System.Collections;
+﻿using System.Collections;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Catalog;
+using Bennewitz.Ninja.AgentForge.Core.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -37,7 +42,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// the values.
 /// </para>
 /// </summary>
-public class EssentialsViewModel : ObservableObject, IDisposable
+public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
 {
     /// <summary>Group title used for the "View in <c>Permissions</c>" deep-link.</summary>
     internal const string GroupTitlePermissions = "Permissions";
@@ -350,6 +355,20 @@ public class EssentialsViewModel : ObservableObject, IDisposable
 
     // ── Card construction ─────────────────────────────────────────────────
 
+    /// <summary>
+    /// Build a card, supplying the wording the shell's view-model cannot know.
+    /// </summary>
+    /// <remarks>
+    /// ⭐ The deep-link label's format string is the same on every Claude card, so it is applied
+    /// here rather than repeated twelve times — and the shell stays free of any product's
+    /// resources. Same split as <c>SaveDialogText</c>: mechanism in the shell, words from the host.
+    /// </remarks>
+    private static EssentialsCardViewModel Card(EssentialsCardOptions options)
+    {
+        return new EssentialsCardViewModel(
+            options with { ViewInGroupLabelFormat = Strings.LabelEssentialsViewInGroupFmt });
+    }
+
     private IReadOnlyList<EssentialsCardViewModel> BuildCards()
     {
         // The danger-state predicates are factored out so they can be
@@ -391,169 +410,196 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // is preserved on each card; only the position in the list moves.
         List<EssentialsCardViewModel> list =
         [
-            new(
-                    id: CardIdAutoMemoryEnabled,
-                    title: Strings.EssentialsCardAutoMemoryEnabledTitle,
-                    body: Strings.EssentialsCardAutoMemoryEnabledBody,
-                    severityColor: "#1976D2", // blue — behaviour
-                    kind: EssentialsCardKind.Bool,
-                    viewInGroupTitle: GroupTitleGeneral,
-                    isEnvVarCard: false,
-                    readAsync: ReadBoolAsync("autoMemoryEnabled"),
-                    writeAsync: WriteBoolAsync("autoMemoryEnabled"),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "autoMemoryEnabled" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdAutoMemoryEnabled,
+                Title = Strings.EssentialsCardAutoMemoryEnabledTitle,
+                Body = Strings.EssentialsCardAutoMemoryEnabledBody,
+                Severity = AppSeverity.Info,
+                // blue — behaviour
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleGeneral,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("autoMemoryEnabled"),
+                WriteAsync = WriteBoolAsync("autoMemoryEnabled"),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "autoMemoryEnabled",
+            }),
             // 2 — Max Output Tokens (env-var)
 
-            new(
-                    id: CardIdMaxOutputTokens,
-                    title: Strings.EssentialsCardMaxOutputTokensTitle,
-                    body: Strings.EssentialsCardMaxOutputTokensBody,
-                    severityColor: "#F4B400", // amber — quality
-                    kind: EssentialsCardKind.Int,
-                    viewInGroupTitle: GroupTitleEnvironment,
-                    isEnvVarCard: true,
-                    readAsync: ReadEnvIntAsync(EnvVarKey.MaxOutputTokens),
-                    writeAsync: WriteEnvIntAsync(EnvVarKey.MaxOutputTokens),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = EnvVarKey.MaxOutputTokens },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdMaxOutputTokens,
+                Title = Strings.EssentialsCardMaxOutputTokensTitle,
+                Body = Strings.EssentialsCardMaxOutputTokensBody,
+                Severity = AppSeverity.Caution,
+                // amber — quality
+                Kind = EssentialsCardKind.Int,
+                ViewInGroupTitle = GroupTitleEnvironment,
+                IsEnvVarCard = true,
+                ReadAsync = ReadEnvIntAsync(EnvVarKey.MaxOutputTokens),
+                WriteAsync = WriteEnvIntAsync(EnvVarKey.MaxOutputTokens),
+                AmberCalloutText = amberText,
+                JsonPathFilter = EnvVarKey.MaxOutputTokens,
+            }),
             // 3 — Max Thinking Tokens (env-var)
 
-            new(
-                    id: CardIdMaxThinkingTokens,
-                    title: Strings.EssentialsCardMaxThinkingTokensTitle,
-                    body: Strings.EssentialsCardMaxThinkingTokensBody,
-                    severityColor: "#F4B400",
-                    kind: EssentialsCardKind.Int,
-                    viewInGroupTitle: GroupTitleEnvironment,
-                    isEnvVarCard: true,
-                    readAsync: ReadEnvIntAsync(EnvVarKey.MaxThinkingTokens),
-                    writeAsync: WriteEnvIntAsync(EnvVarKey.MaxThinkingTokens),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = EnvVarKey.MaxThinkingTokens },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdMaxThinkingTokens,
+                Title = Strings.EssentialsCardMaxThinkingTokensTitle,
+                Body = Strings.EssentialsCardMaxThinkingTokensBody,
+                Severity = AppSeverity.Caution,
+                Kind = EssentialsCardKind.Int,
+                ViewInGroupTitle = GroupTitleEnvironment,
+                IsEnvVarCard = true,
+                ReadAsync = ReadEnvIntAsync(EnvVarKey.MaxThinkingTokens),
+                WriteAsync = WriteEnvIntAsync(EnvVarKey.MaxThinkingTokens),
+                AmberCalloutText = amberText,
+                JsonPathFilter = EnvVarKey.MaxThinkingTokens,
+            }),
             // 4 — Effort level
 
-            new(
-                    id: CardIdEffortLevel,
-                    title: Strings.EssentialsCardEffortLevelTitle,
-                    body: Strings.EssentialsCardEffortLevelBody,
-                    severityColor: "#F4B400",
-                    kind: EssentialsCardKind.EnumString,
-                    viewInGroupTitle: GroupTitleModelEffort,
-                    isEnvVarCard: false,
-                    readAsync: ReadStringAsync("effortLevel"),
-                    writeAsync: WriteStringAsync("effortLevel"),
-                    enumOptions: effortOptions,
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "effortLevel" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdEffortLevel,
+                Title = Strings.EssentialsCardEffortLevelTitle,
+                Body = Strings.EssentialsCardEffortLevelBody,
+                Severity = AppSeverity.Caution,
+                Kind = EssentialsCardKind.EnumString,
+                ViewInGroupTitle = GroupTitleModelEffort,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringAsync("effortLevel"),
+                WriteAsync = WriteStringAsync("effortLevel"),
+                EnumOptions = effortOptions,
+                AmberCalloutText = amberText,
+                JsonPathFilter = "effortLevel",
+            }),
             // 5 — Fast mode
 
-            new(
-                    id: CardIdFastMode,
-                    title: Strings.EssentialsCardFastModeTitle,
-                    body: Strings.EssentialsCardFastModeBody,
-                    severityColor: "#F4B400",
-                    kind: EssentialsCardKind.Bool,
-                    viewInGroupTitle: GroupTitleModelEffort,
-                    isEnvVarCard: false,
-                    readAsync: ReadBoolAsync("fastMode"),
-                    writeAsync: WriteBoolAsync("fastMode"),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "fastMode" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdFastMode,
+                Title = Strings.EssentialsCardFastModeTitle,
+                Body = Strings.EssentialsCardFastModeBody,
+                Severity = AppSeverity.Caution,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleModelEffort,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("fastMode"),
+                WriteAsync = WriteBoolAsync("fastMode"),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "fastMode",
+            }),
             // 6 — Model
 
-            new(
-                    id: CardIdModel,
-                    title: Strings.EssentialsCardModelTitle,
-                    body: Strings.EssentialsCardModelBody,
-                    severityColor: "#D32F2F", // red — cost
-                    kind: EssentialsCardKind.EnumString,
-                    viewInGroupTitle: GroupTitleModelEffort,
-                    isEnvVarCard: false,
-                    readAsync: ReadStringAsync("model"),
-                    writeAsync: WriteStringAsync("model"),
-                    // Suggestions from the model catalog (aliases + pinned ids +
-                    // [1m] variants). Free-form ComboBox (AllowsFreeForm → IsEditable)
-                    // so users can still type any custom model id.
-                    enumOptions: modelOptions,
-                    amberCalloutText: amberText,
-                    allowsFreeForm: true)
-                { JsonPathFilter = "model", ModelSuggestions = modelSuggestions },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdModel,
+                Title = Strings.EssentialsCardModelTitle,
+                Body = Strings.EssentialsCardModelBody,
+                Severity = AppSeverity.Critical,
+                // red — cost
+                Kind = EssentialsCardKind.EnumString,
+                ViewInGroupTitle = GroupTitleModelEffort,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringAsync("model"),
+                WriteAsync = WriteStringAsync("model"),
+                // Suggestions from the model catalog (aliases + pinned ids +
+                // [1m] variants). Free-form ComboBox (AllowsFreeForm → IsEditable)
+                // so users can still type any custom model id.
+                EnumOptions = modelOptions,
+                AmberCalloutText = amberText,
+                AllowsFreeForm = true,
+                JsonPathFilter = "model",
+                ModelSuggestions = modelSuggestions,
+            }),
             // 7 — Disable bypass-permissions mode
 
-            new(
-                    id: CardIdDisableBypass,
-                    title: Strings.EssentialsCardDisableBypassTitle,
-                    body: Strings.EssentialsCardDisableBypassBody,
-                    severityColor: "#D32F2F",
-                    kind: EssentialsCardKind.Bool,
-                    viewInGroupTitle: GroupTitlePermissions,
-                    isEnvVarCard: false,
-                    readAsync: ReadStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
-                    writeAsync: WriteStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "permissions.disableBypassPermissionsMode" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdDisableBypass,
+                Title = Strings.EssentialsCardDisableBypassTitle,
+                Body = Strings.EssentialsCardDisableBypassBody,
+                Severity = AppSeverity.Critical,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitlePermissions,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
+                WriteAsync = WriteStringFlagAsync("permissions.disableBypassPermissionsMode", DisableBypassValue),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "permissions.disableBypassPermissionsMode",
+            }),
             // 8 — Auto-trust project MCP servers
 
-            new(
-                    id: CardIdEnableAllProjectMcp,
-                    title: Strings.EssentialsCardEnableAllMcpTitle,
-                    body: Strings.EssentialsCardEnableAllMcpBody,
-                    severityColor: "#D32F2F", // red — security
-                    kind: EssentialsCardKind.Bool,
-                    viewInGroupTitle: GroupTitleMcpServers,
-                    isEnvVarCard: false,
-                    readAsync: ReadBoolAsync("enableAllProjectMcpServers"),
-                    writeAsync: WriteBoolAsync("enableAllProjectMcpServers"),
-                    isDangerPredicate: EnableAllMcpDanger,
-                    dangerBannerText: Strings.EssentialsCardEnableAllMcpDanger,
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "enableAllProjectMcpServers" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdEnableAllProjectMcp,
+                Title = Strings.EssentialsCardEnableAllMcpTitle,
+                Body = Strings.EssentialsCardEnableAllMcpBody,
+                Severity = AppSeverity.Critical,
+                // red — security
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleMcpServers,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("enableAllProjectMcpServers"),
+                WriteAsync = WriteBoolAsync("enableAllProjectMcpServers"),
+                IsDangerPredicate = EnableAllMcpDanger,
+                DangerBannerText = Strings.EssentialsCardEnableAllMcpDanger,
+                AmberCalloutText = amberText,
+                JsonPathFilter = "enableAllProjectMcpServers",
+            }),
             // 9 — Sandbox enabled
 
-            new(
-                    id: CardIdSandboxEnabled,
-                    title: Strings.EssentialsCardSandboxEnabledTitle,
-                    body: Strings.EssentialsCardSandboxEnabledBody,
-                    severityColor: "#D32F2F",
-                    kind: EssentialsCardKind.Bool,
-                    viewInGroupTitle: GroupTitleSandbox,
-                    isEnvVarCard: false,
-                    readAsync: ReadBoolAsync("sandbox.enabled"),
-                    writeAsync: WriteBoolAsync("sandbox.enabled"),
-                    isDangerPredicate: SandboxEnabledDanger,
-                    dangerBannerText: Strings.EssentialsCardSandboxEnabledDanger,
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "sandbox.enabled" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdSandboxEnabled,
+                Title = Strings.EssentialsCardSandboxEnabledTitle,
+                Body = Strings.EssentialsCardSandboxEnabledBody,
+                Severity = AppSeverity.Critical,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleSandbox,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("sandbox.enabled"),
+                WriteAsync = WriteBoolAsync("sandbox.enabled"),
+                IsDangerPredicate = SandboxEnabledDanger,
+                DangerBannerText = Strings.EssentialsCardSandboxEnabledDanger,
+                AmberCalloutText = amberText,
+                JsonPathFilter = "sandbox.enabled",
+            }),
             // 10 — Sandbox allowed domains (sandbox.network.allowedDomains per schema)
 
-            new(
-                    id: CardIdSandboxDomains,
-                    title: Strings.EssentialsCardSandboxDomainsTitle,
-                    body: Strings.EssentialsCardSandboxDomainsBody,
-                    severityColor: "#D32F2F",
-                    kind: EssentialsCardKind.StringList,
-                    viewInGroupTitle: GroupTitleSandbox,
-                    isEnvVarCard: false,
-                    readAsync: ReadStringListAsync("sandbox.network.allowedDomains"),
-                    writeAsync: WriteStringListAsync("sandbox.network.allowedDomains"),
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "sandbox.network.allowedDomains" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdSandboxDomains,
+                Title = Strings.EssentialsCardSandboxDomainsTitle,
+                Body = Strings.EssentialsCardSandboxDomainsBody,
+                Severity = AppSeverity.Critical,
+                Kind = EssentialsCardKind.StringList,
+                ViewInGroupTitle = GroupTitleSandbox,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringListAsync("sandbox.network.allowedDomains"),
+                WriteAsync = WriteStringListAsync("sandbox.network.allowedDomains"),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "sandbox.network.allowedDomains",
+            }),
             // 11 — Auto-updates channel
 
-            new(
-                    id: CardIdAutoUpdatesChannel,
-                    title: Strings.EssentialsCardAutoUpdatesChannelTitle,
-                    body: Strings.EssentialsCardAutoUpdatesChannelBody,
-                    severityColor: "#1976D2",
-                    kind: EssentialsCardKind.EnumString,
-                    viewInGroupTitle: GroupTitleGeneral,
-                    isEnvVarCard: false,
-                    readAsync: ReadStringAsync("autoUpdatesChannel"),
-                    writeAsync: WriteStringAsync("autoUpdatesChannel"),
-                    enumOptions: ["stable", "latest"],
-                    amberCalloutText: amberText)
-                { JsonPathFilter = "autoUpdatesChannel" },
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdAutoUpdatesChannel,
+                Title = Strings.EssentialsCardAutoUpdatesChannelTitle,
+                Body = Strings.EssentialsCardAutoUpdatesChannelBody,
+                Severity = AppSeverity.Info,
+                Kind = EssentialsCardKind.EnumString,
+                ViewInGroupTitle = GroupTitleGeneral,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringAsync("autoUpdatesChannel"),
+                WriteAsync = WriteStringAsync("autoUpdatesChannel"),
+                EnumOptions = ["stable", "latest"],
+                AmberCalloutText = amberText,
+                JsonPathFilter = "autoUpdatesChannel",
+            }),
         ];
 
         // 1 — Auto-memory enabled
@@ -586,17 +632,20 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         //      in isolation).
         if (_checkForUpdatesRead is not null && _checkForUpdatesWrite is not null)
         {
-            list.Add(new EssentialsCardViewModel(
-                id: CardIdCheckForUpdates,
-                title: Strings.EssentialsCardCheckForUpdatesTitle,
-                body: Strings.EssentialsCardCheckForUpdatesBody,
-                severityColor: "#1976D2", // blue — behaviour (same as auto-memory / channel)
-                kind: EssentialsCardKind.Bool,
-                viewInGroupTitle: GroupTitleGeneral,
-                isEnvVarCard: false,
-                readAsync: ReadWindowStateBoolAsync(_checkForUpdatesRead),
-                writeAsync: WriteWindowStateBoolAsync(_checkForUpdatesWrite),
-                amberCalloutText: amberText));
+            list.Add(Card(new EssentialsCardOptions
+            {
+                Id = CardIdCheckForUpdates,
+                Title = Strings.EssentialsCardCheckForUpdatesTitle,
+                Body = Strings.EssentialsCardCheckForUpdatesBody,
+                // blue — behaviour (same as auto-memory / channel)
+                Severity = AppSeverity.Info,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleGeneral,
+                IsEnvVarCard = false,
+                ReadAsync = ReadWindowStateBoolAsync(_checkForUpdatesRead),
+                WriteAsync = WriteWindowStateBoolAsync(_checkForUpdatesWrite),
+                AmberCalloutText = amberText,
+            }));
         }
 
         return list;
@@ -1128,5 +1177,26 @@ public class EssentialsViewModel : ObservableObject, IDisposable
         // and fault the unobserved task — breaking the documented "safe after disposal"
         // contract. A SemaphoreSlim whose AvailableWaitHandle is never accessed owns no
         // unmanaged handle, so leaving it for GC is the correct, race-free choice.
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Essentials is a persistent VM (it survives workspace reloads) that refreshed only
+    /// at creation and subscribes to no change event — unlike its siblings Effective
+    /// Settings and Environment, which subscribe to <c>_client.Changed</c>. So its cards
+    /// (model / effort / token limits / update channel) went stale after an external
+    /// settings edit, or after an edit made on another page such as Model &amp; Effort.
+    /// Re-read on nav. Safe from self-write loops: Essentials live-writes each edit
+    /// immediately, so there are no pending in-page edits for a re-read to clobber, and
+    /// this fires only on navigation TO the page.
+    /// <para>
+    /// The argument-less overload keeps the client already bound, which the host set on
+    /// this same instance during the nav-tree build — passing it again would be the same
+    /// object.
+    /// </para>
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        _ = RefreshAsync();
     }
 }

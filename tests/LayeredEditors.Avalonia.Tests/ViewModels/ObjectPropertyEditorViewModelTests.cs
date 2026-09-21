@@ -158,7 +158,7 @@ public class ObjectPropertyEditorViewModelTests
 
     // ── End-to-end: non-Claude consumer ──────────────────────────────────────
     // This is the hard acceptance test from the plan: a non-JSON, non-Claude
-    // consumer can drive the library without touching ClaudeForge.Core or
+    // consumer can drive the library without touching AgentForge.Core or
     // System.Text.Json.
 
     // ── Child-change propagation (B.3 coverage gap #6) ───────────────────────
@@ -372,5 +372,133 @@ public class ObjectPropertyEditorViewModelTests
         enabledChild.ResetToInheritedCommand.Execute(null);
         Assert.IsNull(enabledChild.Value);
         Assert.IsFalse(enabledChild.IsModified);
+    }
+
+    // ── F12: keys this editor does not model must survive a save ─────────────
+    //
+    // ⛔ The mirror of F9, in the LIBRARY's object editor rather than the app's.
+    // ToValue() rebuilds the object from schema-derived Children, and the hosting
+    // group editor writes that result as a WHOLE-OBJECT replacement at the
+    // editor's path (AgentForge.Avalonia.Shell SettingsGroupEditorViewModel ->
+    // WriteEditorValue -> SetValue). A key with no child therefore reaches the
+    // writer as a key the user deleted.
+    //
+    // ⚠ Only two of the five below actually REPRODUCE the defect — the
+    // "preserves" and "round-trip" cases. The other three guard the opposite
+    // error (carrying too much) and pass with the fix absent, so they must never
+    // be counted as evidence that the defect was caught.
+
+    private static ObjectPropertyEditorViewModel WithUnmodelled(
+        out BooleanPropertyEditorViewModel modelledChild,
+        IEditorScope? unmodelledAtScope = null)
+    {
+        modelledChild = MakeBoolChild();
+        FakeEditorWorkspace ws = new FakeEditorWorkspace()
+            .Seed("settings.nested.flag", FakeEditorScope.User, true);
+
+        ObjectPropertyEditorViewModel vm = new(ParentSchema(), FakeEditorScope.User,
+            [modelledChild], ws);
+
+        FakeEditorValue parentValue = new FakeEditorValue("settings.nested")
+            .With(unmodelledAtScope ?? FakeEditorScope.User, new Dictionary<string, object?>
+            {
+                ["flag"] = true,
+                ["HTTPS_PROXY"] = "http://proxy.internal:8080",
+                ["INTERNAL_TOOL_PATH"] = "/opt/acme/bin",
+            });
+
+        vm.LoadFromValue(parentValue, FakeEditorScope.User);
+        return vm;
+    }
+
+    [TestMethod]
+    public void ToValue_PreservesKeysNoChildModels_AtEditingScope()
+    {
+        ObjectPropertyEditorViewModel vm = WithUnmodelled(out BooleanPropertyEditorViewModel flag);
+
+        // Premise: the fixture really did produce the state this test names — one
+        // modelled child and two keys nothing models. A setup that quietly failed
+        // to create the unmodelled keys would make the claim below vacuous.
+        Assert.AreEqual(1, vm.Children.Count, "premise: exactly one modelled child");
+
+        flag.Value = false; // the single user edit that used to delete the rest
+
+        IReadOnlyDictionary<string, object?>? result =
+            vm.ToValue() as IReadOnlyDictionary<string, object?>;
+
+        Assert.IsNotNull(result);
+        Assert.IsFalse((bool?)result["flag"], "the edit itself must still land");
+        Assert.AreEqual("http://proxy.internal:8080", result["HTTPS_PROXY"]);
+        Assert.AreEqual("/opt/acme/bin", result["INTERNAL_TOOL_PATH"]);
+    }
+
+    [TestMethod]
+    public void ToValue_RoundTripsUnmodelledKeys_WithNoEditAtAll()
+    {
+        // The round-trip contract on its own: load then save must reproduce what
+        // it was given. No edit, so nothing can be blamed on the edit.
+        ObjectPropertyEditorViewModel vm = WithUnmodelled(out _);
+
+        IReadOnlyDictionary<string, object?>? result =
+            vm.ToValue() as IReadOnlyDictionary<string, object?>;
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(3, result.Count,
+            "load-then-save dropped keys the editor chose not to render");
+    }
+
+    [TestMethod]
+    public void ToValue_DoesNotCarryUnmodelledKeys_FromAnotherScope()
+    {
+        // ⚠ Guards the OPPOSITE error and passes without the fix. Carrying a lower
+        // scope's keys would promote an inherited value into an explicit override
+        // at the editing scope, which nobody asked for.
+        ObjectPropertyEditorViewModel vm =
+            WithUnmodelled(out BooleanPropertyEditorViewModel flag, FakeEditorScope.Project);
+
+        flag.Value = true;
+
+        IReadOnlyDictionary<string, object?>? result =
+            vm.ToValue() as IReadOnlyDictionary<string, object?>;
+
+        Assert.IsNotNull(result);
+        Assert.IsFalse(result.ContainsKey("HTTPS_PROXY"),
+            "a key defined only at PROJECT must not be re-emitted at USER");
+    }
+
+    [TestMethod]
+    public void ResetToInherited_DropsPreservedKeys()
+    {
+        // ⚠ Also passes without the fix. Reset means "remove this property at this
+        // scope"; a property the user believes they cleared must not survive it.
+        ObjectPropertyEditorViewModel vm = WithUnmodelled(out _);
+
+        vm.ResetToInheritedCommand.Execute(null);
+
+        Assert.IsNull(vm.ToValue(),
+            "reset left an object alive on keys the user cannot see");
+    }
+
+    [TestMethod]
+    public void ToValue_ChildValueWins_OverAPreservedKeyOfTheSameName()
+    {
+        // ⚠ Also passes without the fix. Defends against a re-emit that overwrites
+        // the child's own answer with the stale load-time one.
+        BooleanPropertyEditorViewModel flag = MakeBoolChild();
+        ObjectPropertyEditorViewModel vm = new(ParentSchema(), FakeEditorScope.User, [flag]);
+
+        vm.LoadFromValue(
+            new FakeEditorValue("settings.nested").With(FakeEditorScope.User,
+                new Dictionary<string, object?> { ["flag"] = true }),
+            FakeEditorScope.User);
+
+        flag.Value = false;
+
+        IReadOnlyDictionary<string, object?>? result =
+            vm.ToValue() as IReadOnlyDictionary<string, object?>;
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(1, result.Count);
+        Assert.IsFalse((bool?)result["flag"], "the child's current value must win");
     }
 }

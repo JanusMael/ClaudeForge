@@ -1,10 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels"
+        xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
+        xmlns:backup="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
+        xmlns:libvm="using:Bennewitz.Ninja.LayeredEditors.ViewModels"
+        xmlns:search="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search"
         xmlns:views="using:Bennewitz.Ninja.ClaudeForge.Views"
         xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
         xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+        xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
         xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
         x:Class="Bennewitz.Ninja.ClaudeForge.Views.MainWindow"
         x:Name="RootWindow"
@@ -76,9 +80,14 @@
             <SolidColorBrush x:Key="InstallBannerFgBrush" Color="#FF292524" />
             <SolidColorBrush x:Key="InstallBannerBorderBrush" Color="#FFFBBF24" />
             <SolidColorBrush x:Key="InstallBannerCodeBgBrush" Color="#FFFEF08A" />
-            <SolidColorBrush x:Key="InstallBannerCodeBorderBrush" Color="#FFD97706" />
             <!-- Teal-blue from LE.LinkBrush — the same colour used for hyperlinks throughout the app -->
             <SolidColorBrush x:Key="InstallBannerLinkBrush" Color="#FF006B8A" />
+
+            <!-- Severity dot on a search hit. The same two converters the settings row's wrapper
+                 uses, so a severity reads identically on both surfaces. -->
+            <libconv:AppSeverityToBrushConverter x:Key="SeverityToBrush" />
+            <libconv:AppSeverityToGlyphConverter x:Key="SeverityToGlyph" />
+            <libconv:AppSeverityToFontSizeConverter x:Key="SeverityToFontSize" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -239,7 +248,7 @@
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:SearchResultViewModel">
+                                        <DataTemplate x:DataType="search:SearchResultViewModel">
                                             <!-- ElementName (#RootWindow) keeps this binding on the
                                                  compiled-binding path; `$parent[Window]` would emit
                                                  a `ReflectionBindingExtension(String)` call that
@@ -254,14 +263,40 @@
                                                     Command="{Binding #RootWindow.((vm:MainWindowViewModel)DataContext).SelectSearchResultCommand}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip.Tip="{Binding TooltipText}"
-                                                    AutomationProperties.Name="{Binding TooltipText}">
+                                                    AutomationProperties.Name="{Binding TooltipText}"
+                                                    AutomationProperties.HelpText="{Binding DangerAccessibleText}">
                                                 <StackPanel>
-                                                    <TextBlock>
-                                                        <Run Text="{Binding GroupTitle}"
-                                                             Foreground="{DynamicResource SearchGroupLabelBrush}" />
-                                                        <Run Text=" › " />
-                                                        <Run Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
-                                                    </TextBlock>
+                                                    <!--
+                                                        Severity dot — see the same block in
+                                                        OpenCodeForge's MainWindow. The assessment
+                                                        is the settings row's own, reached through
+                                                        IDangerAnnotatedEditor, so the two surfaces
+                                                        cannot disagree. It stays invisible until a
+                                                        product supplies a danger table, which
+                                                        Claude does not yet do.
+
+                                                        HelpText also goes on the BUTTON above:
+                                                        the button is the focusable element, and a
+                                                        TextBlock's own HelpText is reachable via
+                                                        UIA but is not part of what a reader
+                                                        announces for the focused row.
+                                                    -->
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock IsVisible="{Binding HasDangerSeverity}"
+                                                                   Text="{Binding Danger.Severity, Converter={StaticResource SeverityToGlyph}}"
+                                                                   Foreground="{Binding Danger.Severity, Converter={StaticResource SeverityToBrush}}"
+                                                                   FontSize="{Binding Danger.Severity, Converter={StaticResource SeverityToFontSize}, ConverterParameter=11}"
+                                                                   FontFamily="{x:Static libconv:AppSeverityToGlyphConverter.GlyphFontFamily}"
+                                                                   VerticalAlignment="Center"
+                                                                   AutomationProperties.HelpText="{Binding DangerAccessibleText}"
+                                                                   ToolTip.Tip="{Binding DangerAccessibleText}" />
+                                                        <TextBlock>
+                                                            <Run Text="{Binding GroupTitle}"
+                                                                 Foreground="{DynamicResource SearchGroupLabelBrush}" />
+                                                            <Run Text=" › " />
+                                                            <Run Text="{Binding PropertyDisplayName}" FontWeight="SemiBold" />
+                                                        </TextBlock>
+                                                    </StackPanel>
                                                     <TextBlock Text="{Binding Snippet}"
                                                                FontSize="11"
                                                                Foreground="{DynamicResource SearchDescriptionBrush}"
@@ -583,7 +618,8 @@
                         <TextBlock Text="{x:Static loc:Strings.ButtonBack}" FontWeight="SemiBold" Foreground="White" />
                     </Button>
                     <TreeView ItemsSource="{Binding NavigationTree}"
-                              SelectedItem="{Binding SelectedNode}">
+                              SelectedItem="{Binding SelectedNode}"
+                              AutomationProperties.Name="{x:Static loc:Strings.AutoNameNavigationTree}">
                         <TreeView.Styles>
                             <!-- Expand all top-level header items (Claude Code, Claude Desktop) on startup.
                                  The user explicitly wants them always-expanded. During the session the
@@ -600,6 +636,53 @@
                                 is selected" affordance hard to see. Foreground forced to white so
                                 the row text stays legible on the saturated accent fill.
                             -->
+                            <!--
+                                ⛔⛔ THIS IS WHAT NAMES A NAV ROW FOR A SCREEN READER, and nothing
+                                in the ItemTemplate below can do it.
+
+                                A container generated from ItemsSource takes its automation name
+                                from the ITEM, not from the ItemTemplate's contents — so the three
+                                ToolTip-bearing TextBlocks below name themselves and leave the
+                                focusable TreeViewItem silent. Measured through UIA on the running
+                                app: all 26 rows of the app's primary navigation announced an EMPTY
+                                name, the Tree's own name (added 2026-08-27) notwithstanding.
+
+                                ⛔ A ToString() override on NavigationNodeViewModel does NOT fix
+                                this, unlike the two ItemsSource-bound TabControls whose TabItems
+                                announced their view-model's type name. Measured: a probe returning
+                                "PROBE-" + Title never reached UIA. TabItem falls back to the item's
+                                ToString(); TreeViewItem falls back to nothing at all. Same rule,
+                                two different fallbacks, so two different fixes — do not "unify"
+                                these onto ToString().
+
+                                The working sibling is OpenCodeForge/Views/MainWindow.axaml, whose
+                                TreeDataTemplate root is a single TextBlock: a lone text child does
+                                supply the name. This template's root is a Panel (divider Border +
+                                icon/title StackPanel), which cannot.
+
+                                x:DataType keeps the setter's binding compiled — a reflection
+                                binding here would be an IL2026 trim error in this repo.
+                            -->
+                            <Style Selector="TreeViewItem" x:DataType="libvm:NavigationNodeViewModel">
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+
+                                <!-- Where the provenance badge's detail goes for a screen
+                                     reader, and why it is not on the badge itself:
+                                     AutomationProperties.Name is IGNORED on a TextBlock — its
+                                     Text always wins — so a Name there would be dead markup.
+                                     UIA announces name then help text, so focusing a section
+                                     reads "Claude Code" and then which copy built it. Empty on
+                                     rows with no badge, which UIA treats as absent. -->
+                                <Setter Property="AutomationProperties.HelpText" Value="{Binding BadgeTooltip}" />
+
+                                <!-- Dividers are decorative, and naming them is worse than leaving
+                                     them silent — their Title is thirteen box-drawing characters
+                                     that the template never renders. Raw drops them out of the
+                                     control view so a screen reader walks 24 rows, not 26. -->
+                                <Setter Property="AutomationProperties.AccessibilityView"
+                                        Value="{Binding IsDivider, Converter={x:Static libconv:BoolToAccessibilityViewConverter.Instance}}" />
+                            </Style>
+
                             <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
                                 <Setter Property="Background" Value="{DynamicResource NavSelectedAccentBrush}" />
                             </Style>
@@ -685,6 +768,29 @@
                                                        VerticalAlignment="Center"
                                                        Padding="0,2,4,2"
                                                        ToolTip.Tip="{Binding Description, FallbackValue={x:Static loc:Strings.TipNavigationDefault}, TargetNullValue={x:Static loc:Strings.TipNavigationDefault}}" />
+
+                                            <!-- Schema-provenance badge — which copy of this
+                                                 section's schema built the pages beneath it.
+                                                 Only the two product headers carry one; every
+                                                 other row leaves Badge null and collapses.
+
+                                                 Its OWN tooltip, not the row's: Avalonia
+                                                 tooltips don't propagate child→parent, and the
+                                                 badge answers a different question from the
+                                                 row ("which copy is this?" vs "what is this
+                                                 section for?"), so overloading one tooltip
+                                                 would lose whichever text came second.
+
+                                                 Secondary text via Opacity rather than a
+                                                 colour token — the convention in this nav, and
+                                                 it stays legible in both theme variants
+                                                 without declaring a brush per variant. -->
+                                            <TextBlock Text="{Binding Badge}"
+                                                       IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                       FontSize="10"
+                                                       Opacity="0.65"
+                                                       VerticalAlignment="Center"
+                                                       ToolTip.Tip="{Binding BadgeTooltip}" />
                                         </StackPanel>
                                     </Border>
                                 </Panel>
@@ -741,6 +847,7 @@
                                            FontSize="11"
                                            VerticalAlignment="Center" />
                                 <HyperlinkButton Content="{x:Static loc:Strings.LinkClaudeOverview}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.LinkClaudeOverview}"
                                                  NavigateUri="https://claude.com/product/overview"
                                                  FontSize="11" Padding="0"
                                                  Foreground="{DynamicResource InstallBannerLinkBrush}"
@@ -749,6 +856,7 @@
                                            FontSize="11"
                                            VerticalAlignment="Center" />
                                 <HyperlinkButton Content="{x:Static loc:Strings.LinkQuickStart}"
+                                                 AutomationProperties.Name="{x:Static loc:Strings.LinkQuickStart}"
                                                  NavigateUri="https://code.claude.com/docs/en/quickstart"
                                                  FontSize="11" Padding="0"
                                                  Foreground="{DynamicResource InstallBannerLinkBrush}"
@@ -853,7 +961,7 @@
                     <!-- Editor area: DataTemplates map VM types to Views -->
                     <ContentControl Content="{Binding ActiveEditor}">
                         <ContentControl.DataTemplates>
-                            <DataTemplate DataType="vm:SettingsGroupEditorViewModel">
+                            <DataTemplate DataType="shell:SettingsGroupEditorViewModel">
                                 <views:SettingsGroupEditorView />
                             </DataTemplate>
                             <DataTemplate DataType="vm:EffectiveSettingsViewModel">
@@ -865,7 +973,7 @@
                             <DataTemplate DataType="vm:EnvironmentEditorViewModel">
                                 <views:EnvironmentEditorView />
                             </DataTemplate>
-                            <DataTemplate DataType="vm:BackupRestoreViewModel">
+                            <DataTemplate DataType="backup:BackupRestoreViewModel">
                                 <views:BackupRestoreView />
                             </DataTemplate>
                             <DataTemplate DataType="vm:ProfilesViewModel">

@@ -1,11 +1,13 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -233,7 +235,7 @@ public partial class EnabledPluginsEditorViewModel : PropertyEditorViewModel
             {
                 // Cast across the parallel ConfigScope enums (Core ↔ Sdk):
                 // their numeric values match — see ConfigScope XML doc and
-                // tests/ClaudeForge.Tests/Adapters/ClaudeValueAdapterTests.
+                // tests/ClaudeForge.Tests/Adapters/LayeredValueAdapterTests.
                 ConfigScope sdkScope = editingScope;
                 IReadOnlyList<EnabledPlugin> snapshot = _client.Plugins.GetAt(sdkScope);
                 foreach (EnabledPlugin plugin in snapshot)

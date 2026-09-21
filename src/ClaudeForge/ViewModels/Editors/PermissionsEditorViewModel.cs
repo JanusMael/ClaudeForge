@@ -1,24 +1,28 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.JsonHelpers;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Catalog;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.Matching.PermissionBucket;
-using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionDefaultMode;
-using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRule;
-using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Permissions.PermissionRuleNormalizer;
-using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching.PermissionBucket;
+using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionDefaultMode;
+using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionRule;
+using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionRuleNormalizer;
+using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 // Alias the SDK to disambiguate ConfigScope and reach the typed Permissions
 // accessor at every call site. Mirrors the previous editor migrations.
@@ -154,8 +158,25 @@ public sealed partial class ToolActionGroup : ObservableObject
 /// Rules are wrapped in <see cref="PermissionRuleViewModel"/> so each row is
 /// editable inline (two-way binding to a string element is not supported in Avalonia).
 /// </summary>
-public partial class PermissionsEditorViewModel : PropertyEditorViewModel
+public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor, ITransientHintHost
 {
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The CLI danger hint is raised when a filter or deep link surfaces the
+    /// bypass-permissions row, so it must not outlive the filter that caused it.
+    /// </remarks>
+    public void DismissTransientHints() => ShowDangerCliHint = false;
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Search asks the editor rather than mapping its type, so a new specialised
+    /// page becomes searchable by declaring its own subtree. Note the prefix is a
+    /// path, not a title: it matches <c>permissions.allow</c> but never
+    /// <c>hooks.permissions</c>.
+    /// </remarks>
+    public string OwnedJsonPathPrefix => "permissions";
+
     // Stored so OnResetToInherited can restore the on-disk state (same pattern as
     // McpServersEditorViewModel and HooksEditorViewModel).
     private LayeredValue? _lastLayered;
@@ -1740,7 +1761,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel
                 EffectiveScope = childEntries.Count > 0 ? childEntries[0].Scope : null,
             };
 
-            child.LoadFromValue(new ClaudeValueAdapter(childLayered), ClaudeScope.For(editingScope));
+            child.LoadFromValue(new LayeredValueAdapter(childLayered), ConfigScopeAdapter.For(editingScope));
         }
     }
 

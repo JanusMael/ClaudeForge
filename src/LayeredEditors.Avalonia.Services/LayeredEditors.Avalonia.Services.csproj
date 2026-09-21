@@ -1,43 +1,64 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Services</RootNamespace>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.Services</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Services</AssemblyName>
         <Description>
             Platform-agnostic and Avalonia-backed service implementations that are not specific
             to any Claude configuration concern: shell launching, file-manager integration,
-            environment-variable access, and the Avalonia dialog service (file/folder pickers,
-            alerts, confirmations, save-changes prompts).
+            environment-variable access, the Avalonia dialog service (file/folder pickers,
+            alerts, confirmations, save-changes prompts), and value converters over the
+            product-neutral vocabulary in AgentForge.Abstractions.
         </Description>
-        <!-- Add the Windows platform TFM so DefaultShareService can compile with MAUI
-             Essentials on Windows builds. Directory.Build.props sets the singular
-             <TargetFramework>; the plural form here takes precedence.
-             Note: <EnableWindowsTargeting>true</EnableWindowsTargeting> is set
-             repo-wide in Directory.Build.props so this project's Windows TFM
-             also restores on macOS / Linux CI hosts. -->
-        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
-        <!-- Enable MAUI Essentials only for the Windows TFM -->
-        <UseMauiEssentials Condition="$([MSBuild]::IsTargetFrameworkCompatible(
-        '$(TargetFramework)', 'net10.0-windows'))">true
-        </UseMauiEssentials>
-        <!-- Minimum Windows version for Share API availability (Windows 10 v1809) -->
-        <SupportedOSPlatformVersion Condition="$(TargetFramework.Contains('-windows'))">
-            10.0.17763.0
-        </SupportedOSPlatformVersion>
+        <!-- ⛔ SINGLE TFM, inherited from Directory.Build.props. This project used to declare
+             <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks> with a
+             comment saying the plural form took precedence over the root's singular
+             <TargetFramework>. It does not: MSBuild cross-targets only when TargetFramework is
+             EMPTY, and the root sets it. The Windows TFM was therefore never built, in any
+             configuration, since it was added — so MAUI Essentials never compiled and
+             DefaultShareService has always been its non-Windows fallback.
+
+             Adding a platform TFM back means clearing the root's singular property first, and
+             then re-establishing the six-RID zero-warning trim result, because MAUI Essentials
+             needed its own ILLink suppression file. See DefaultShareService's remarks. -->
     </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
-        <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment) live in
-             ClaudeForge.Sdk so the SDK can produce dialog models that this services
-             library renders.  Couples the services lib to ClaudeForge.Sdk in this
-             codebase; if the lib is ever extracted for another app, the dialog
-             types can be split into a third project at that time. -->
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
-    </ItemGroup>
+        <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment*) live in
+             AgentForge.Abstractions. This library previously referenced ClaudeForge.Sdk
+             for them, which meant a product-neutral services library depended on a
+             Claude-specific SDK purely to name four primitives. Splitting them into the
+             abstractions assembly removes the violation with no added indirection —
+             this library uses exactly those four types and never SdkDialogs. -->
+        <!--
+            ⭐ THE EDGE THAT USED TO POINT AT AgentForge, AND NOW DOES NOT.
 
-    <!-- Explicit MAUI Essentials package reference required for net8+ when UseMauiEssentials=true -->
-    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0-windows'))">
-        <PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.101"/>
+            This was the ONLY reference from the LayeredEditors family into AgentForge, and it
+            was what stopped the editor libraries being liftable into their own repository: a
+            generic services package cannot ship without dragging agent-configuration contracts
+            with it. Two types crossed here, and they needed opposite fixes:
+
+              • DialogMessage & friends — genuinely generic UI contract, whose own remarks said
+                "nothing here knows which product it is serving". MOVED to
+                LayeredEditors.Abstractions, where a host-agnostic contract belongs.
+              • PermissionOutcome — genuinely agent-domain vocabulary (allow / ask / deny), shared
+                because BOTH agent products spell those three answers the same way. It stayed put;
+                what moved was PermissionOutcomeToBrushConverter, which had no business being in a
+                generic services package and had exactly one consumer, a ClaudeForge view.
+
+            ⚠ The direction of travel is the point: the product repo may depend on the library
+            repo, never the reverse.
+        -->
+        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
     </ItemGroup>
 </Project>

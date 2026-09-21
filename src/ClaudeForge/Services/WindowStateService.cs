@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Serilog;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 
@@ -41,10 +42,10 @@ public static class WindowStateService
     // mistake for shared state belonging to Claude itself rather than to this
     // editor. Also future-proofs against a sibling tool dropping a file with
     // the same name into the same cache dir.
-    private static string StatePath =>
-        Path.Combine(PlatformPaths.ClaudeHome, "cache", "ClaudeForge-gui-state.json");
+    private static string StatePath(ClaudeEnvironment env) =>
+        Path.Combine(PlatformPaths.ClaudeHome(env), "cache", "ClaudeForge-gui-state.json");
 
-    public static WindowState Load()
+    public static WindowState Load(ClaudeEnvironment env)
     {
         // count every Load call so the cache fix can be
         // verified at runtime. The first call (initial cache hydrate) is
@@ -70,9 +71,10 @@ public static class WindowStateService
 
         try
         {
-            if (File.Exists(StatePath))
+            string statePath = StatePath(env);
+            if (File.Exists(statePath))
             {
-                string json = File.ReadAllText(StatePath);
+                string json = File.ReadAllText(statePath);
                 // Use source-generated context for trimming compatibility (Release builds use PublishTrimmed=true).
                 return JsonSerializer.Deserialize(json, AppJsonContext.Default.WindowState) ?? new WindowState();
             }
@@ -84,11 +86,12 @@ public static class WindowStateService
         return new WindowState();
     }
 
-    public static void Save(WindowState state)
+    public static void Save(ClaudeEnvironment env, WindowState state)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
+            string statePath = StatePath(env);
+            Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
             // Use source-generated context for trimming compatibility.
             string json = JsonSerializer.Serialize(state, AppJsonContext.Default.WindowState);
             // Atomic write: temp-file + rename. Plain File.WriteAllText opens with
@@ -98,9 +101,9 @@ public static class WindowStateService
             // credentials-include preference; corruption silently resets all of them.
             // Same pattern is already used by ConfigFileLoader.SaveAsync for config
             // files (see CLAUDE.md "Common gotchas").
-            string tmp = StatePath + $".tmp-{Guid.NewGuid():N}";
+            string tmp = statePath + $".tmp-{Guid.NewGuid():N}";
             File.WriteAllText(tmp, json);
-            File.Move(tmp, StatePath, overwrite: true);
+            File.Move(tmp, statePath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -125,20 +128,20 @@ public static class WindowStateService
     /// </para>
     /// </summary>
     /// <returns>The path that was targeted, for logging purposes.</returns>
-    public static string Delete()
+    public static string Delete(ClaudeEnvironment env)
     {
         try
         {
-            if (File.Exists(StatePath))
+            if (File.Exists(StatePath(env)))
             {
-                File.Delete(StatePath);
+                File.Delete(StatePath(env));
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
         }
 
-        return StatePath;
+        return StatePath(env);
     }
 }
 

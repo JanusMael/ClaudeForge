@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Abstractions</RootNamespace>
+        <AssemblyName>AgentForge.Abstractions</AssemblyName>
+        <Description>
+            Product-neutral contracts shared by every AgentForge-based app (ClaudeForge,
+            OpenCodeForge). Deliberately dependency-free beyond the BCL: no UI, no
+            serialization, no product knowledge — so any host can reference it without
+            inheriting a stack.
+
+            Currently holds the dialog primitives (DialogMessage and friends). Later phases
+            add the scope model, merge policy, permission vocabulary, and product descriptor
+            as each is generalized out of the Claude-specific code.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+</Project>

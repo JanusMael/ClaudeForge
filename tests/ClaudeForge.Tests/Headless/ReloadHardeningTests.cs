@@ -1,9 +1,10 @@
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Reflection;
 using Avalonia.Headless;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Internal;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -25,8 +26,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 ///     <b>Reload concurrency</b> — multiple
 ///     <see cref="MainWindowViewModel.LoadAllWorkspacesAsync"/> calls in
 ///     rapid succession must converge to a single final state without
-///     deadlock.  The <c>_reloadPending</c> guard's contract is that
-///     extra calls are coalesced into at most one re-run.
+///     deadlock.  ⚠ <b>Not <c>_reloadPending</c></b>, which this item used to
+///     credit: that guards <c>ReloadCoreAsync</c>, a method this test never
+///     calls.  <c>LoadAllWorkspacesAsync</c> serialises overlapping calls
+///     itself — see its remarks for why it serialises rather than coalescing.
 ///   </item>
 ///   <item>
 ///     <b>H-2 persistent tool VMs</b> — the long-running tool VMs
@@ -41,6 +44,40 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// could not catch — only the headless harness lets us drive
 /// <see cref="MainWindowViewModel"/> end-to-end with a real Avalonia
 /// dispatcher and a sandboxed file system.
+/// <para>
+/// ⚠⚠ <b>Every test here was inert until 2026-08-18</b> — <c>return Session.Dispatch(async
+/// …)</c> yields <c>Task&lt;Task&gt;</c>, whose inner task MSTest never awaited, so no
+/// assertion could fail. See <see cref="TransactionalReloadTests"/> for the full write-up.
+/// Now converted and canaried.
+/// </para>
+/// <para>
+/// ⚠ <b>Two then failed for real, and they are two <i>different</i> pre-existing defects:</b>
+/// </para>
+/// <list type="number">
+///   <item>
+///     <b>Malformed-reload recovery</b> — there was no bail to recover from, because
+///     <c>ConfigFileLoader.LoadAsync</c> swallowed the parse failure into an empty document.
+///     ✅ <b>Fixed</b> via <c>SettingsDocument.LoadFailure</c>; see
+///     <see cref="TransactionalReloadTests"/>. This test is live again.
+///   </item>
+///   <item>
+///     <b>Use-after-dispose under concurrent reload</b> — one reload reached
+///     <c>ClaudeCodeSdk?.Dispose()</c> while another was inside
+///     <c>BuildNavigationTreeAsync</c>, so <c>PermissionsAccessor.GetDefaultModeAt</c> threw
+///     <c>ObjectDisposedException</c>. Reachable in the app because
+///     <c>OpenProjectAsync</c> sets <c>IsLoading</c> but never checks it, and awaits a folder
+///     dialog first — so a file-watcher reload can begin while that dialog is open.
+///     ✅ <b>Fixed</b> by serialising overlapping calls inside
+///     <see cref="MainWindowViewModel.LoadAllWorkspacesAsync"/> rather than in its three
+///     callers.
+///   </item>
+/// </list>
+/// <para>
+/// <b>Both fixes were canaried.</b> Bypassing the serialisation returns
+/// <c>ObjectDisposedException</c> to two tests here; disabling the parse-failure bail turns
+/// three red across this class and <see cref="TransactionalReloadTests"/>. Nothing in this
+/// class is <c>[Ignore]</c>d any more.
+/// </para>
 /// </summary>
 [TestClass]
 public sealed class ReloadHardeningTests
@@ -87,20 +124,20 @@ public sealed class ReloadHardeningTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(new HttpClient()), new NullDialogService());
+        return new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     // ── H-1 recovery: malformed reload must not break subsequent reloads ──
 
     [TestMethod]
-    public Task LoadAllWorkspacesAsync_AfterMalformedBail_RecoversOnNextValidReload()
+    public async Task LoadAllWorkspacesAsync_AfterMalformedBail_RecoversOnNextValidReload()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Initial valid load.
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            ClaudeConfigClientCore? initialCc = vm.ClaudeCodeSdk;
+            AgentConfigClientCore? initialCc = vm.ClaudeCodeSdk;
             Assert.IsNotNull(initialCc);
 
             // Step 1: write malformed JSON, reload bails (H-1 contract).
@@ -121,22 +158,26 @@ public sealed class ReloadHardeningTests
             Assert.IsNotNull(vm.ClaudeCodeSdk);
             Assert.AreNotSame(initialCc, vm.ClaudeCodeSdk,
                 "Recovery contract: after the malformed bail, the next valid reload MUST swap the SDK reference.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     // ── Reload concurrency: rapid back-to-back reloads must converge ──
 
     [TestMethod]
-    public Task LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock()
+    public async Task LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
-            // Trigger several reloads in rapid succession.  The
-            // _reloadPending guard's contract is that extra calls
-            // arriving while a reload is in flight are coalesced into
-            // at most one re-run on the trailing edge.  We exercise
-            // both the single-await path and the queued-during-flight
-            // path.
+            // Trigger several reloads in rapid succession. LoadAllWorkspacesAsync chains
+            // overlapping calls, so each of t1..t3 performs a FULL load in call order rather
+            // than being coalesced away — deliberately, because OpenProjectAsync mutates
+            // ProjectRoot before calling and a joined load would never open the new project.
+            // Before that serialisation existed, one call's ClaudeCodeSdk.Dispose() landed
+            // while another was inside BuildNavigationTreeAsync and this threw
+            // ObjectDisposedException.
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
@@ -166,15 +207,18 @@ public sealed class ReloadHardeningTests
             // is structural: the post-reload state is consistent and
             // queryable.  The lack of deadlock is itself the assertion.
             Assert.IsNotNull(doc);
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     // ── H-2 persistent tool VMs ──────────────────────────────────────────
 
     [TestMethod]
-    public Task PersistentToolVms_BackupVm_SurvivesReload_SameInstance()
+    public async Task PersistentToolVms_BackupVm_SurvivesReload_SameInstance()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
@@ -193,13 +237,16 @@ public sealed class ReloadHardeningTests
                 "H-2 contract: BackupRestoreViewModel reference MUST survive workspace reload.  " +
                 "A fresh instance would lose any in-flight backup CTS, file watchers, and the " +
                 "user's pre-reload Backup-tab state.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task PersistentToolVms_ProfilesVm_SurvivesReload_SameInstance()
+    public async Task PersistentToolVms_ProfilesVm_SurvivesReload_SameInstance()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
@@ -211,13 +258,16 @@ public sealed class ReloadHardeningTests
 
             Assert.AreSame(firstProfiles, vm.GetProfilesVmForTesting(),
                 "H-2 contract: ProfilesViewModel reference MUST survive workspace reload.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task PersistentToolVms_AboutVms_SurviveReload_SameInstance()
+    public async Task PersistentToolVms_AboutVms_SurviveReload_SameInstance()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // About VMs (Code + Desktop) own version probes and a
             // PathWasAddedOrAlreadyPresent flag that drives the
@@ -238,13 +288,16 @@ public sealed class ReloadHardeningTests
                 "H-2 contract: Claude-Code AboutEditorViewModel reference MUST survive reload.");
             Assert.AreSame(firstAboutDesktop, vm.GetAboutDesktopVmForTesting(),
                 "H-2 contract: Claude-Desktop AboutEditorViewModel reference MUST survive reload.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task PersistentToolVms_EssentialsVm_SurvivesReload_SameInstance()
+    public async Task PersistentToolVms_EssentialsVm_SurvivesReload_SameInstance()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Essentials VM owns the synthetic-search amber
             // callout state (one-time, dismissed on first edit) plus any
@@ -262,13 +315,16 @@ public sealed class ReloadHardeningTests
 
             Assert.AreSame(firstEssentials, vm.GetEssentialsVmForTesting(),
                 "H-2 contract: EssentialsViewModel reference MUST survive workspace reload.");
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     [TestMethod]
-    public Task PersistentToolVms_StaySameAcrossThreeReloads()
+    public async Task PersistentToolVms_StaySameAcrossThreeReloads()
     {
-        return Session.Dispatch(async () =>
+        bool ran = await Session.Dispatch(async () =>
         {
             // Symmetric guard — verify the persistence holds across
             // multiple reload cycles, not just one.  Catches a class
@@ -286,7 +342,10 @@ public sealed class ReloadHardeningTests
                 Assert.AreSame(initial, vm.GetBackupVmForTesting(),
                     $"BackupVm reference must persist across reload #{i + 1}.");
             }
+            return true;
         }, CancellationToken.None);
+
+        Assert.IsTrue(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.JsonHelpers;
+using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Hooks.HookCommandType;
+using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks.HookCommandType;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 

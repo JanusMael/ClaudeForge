@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 
@@ -19,7 +20,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 ///   <item>A leaf overriding only library <c>ToValue</c> produces the right
 ///         JSON via the bridge's default <c>ToJsonValue</c>.</item>
 ///   <item>A leaf overriding only library <c>LoadFromValue</c> sees a
-///         <see cref="ClaudeValueAdapter"/> when the App-side caller passes
+///         <see cref="LayeredValueAdapter"/> when the App-side caller passes
 ///         a <see cref="LayeredValue"/>.</item>
 ///   <item>A leaf overriding NEITHER side throws a clear
 ///         <see cref="InvalidOperationException"/> from the recursion guard
@@ -98,11 +99,11 @@ public sealed class PropertyEditorBridgeDefaultsTests
     // ── LoadFromLayered default ──────────────────────────────────────
 
     [TestMethod]
-    public void LoadFromLayered_DefaultPath_DelegatesToLoadFromValueWithClaudeValueAdapter()
+    public void LoadFromLayered_DefaultPath_DelegatesToLoadFromValueWithLayeredValueAdapter()
     {
         // FUTURE-style leaf: overrides library LoadFromValue only.  When a
         // legacy caller hands it a LayeredValue, the bridge's default must
-        // wrap it in ClaudeValueAdapter and forward.
+        // wrap it in LayeredValueAdapter and forward.
         LibraryLoadFromValueOnlyLeaf leaf = new(S("x"), ConfigScope.User);
 
         List<ScopeEntry> entries =
@@ -119,8 +120,8 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         Assert.IsNotNull(leaf.LastReceivedValue,
             "Default LoadFromLayered must invoke library LoadFromValue.");
-        Assert.IsInstanceOfType<ClaudeValueAdapter>(leaf.LastReceivedValue,
-            "Wrapped value must be a ClaudeValueAdapter so adapters that "
+        Assert.IsInstanceOfType<LayeredValueAdapter>(leaf.LastReceivedValue,
+            "Wrapped value must be a LayeredValueAdapter so adapters that "
             + "type-test for the underlying LayeredValue can recover it.");
     }
 
@@ -184,11 +185,11 @@ public sealed class PropertyEditorBridgeDefaultsTests
             "IsManagedLocked must mirror IsLocked so legacy bindings keep working.");
     }
 
-    // ── BuildFallbackLayeredValue (non-ClaudeValueAdapter IEditorValue) ──
+    // ── BuildFallbackLayeredValue (non-LayeredValueAdapter IEditorValue) ──
     //
     // the bridge's LoadFromValue branches on
-    // whether the incoming IEditorValue is a ClaudeValueAdapter.  Normal
-    // production calls always pass a ClaudeValueAdapter (the App-side
+    // whether the incoming IEditorValue is a LayeredValueAdapter.  Normal
+    // production calls always pass a LayeredValueAdapter (the App-side
     // wraps the LayeredValue itself), so the fallback synthesis path was
     // never hit by integration tests — only by hypothetical test-fakes
     // that hand the bridge a raw IEditorValue.  These tests exercise that
@@ -197,13 +198,13 @@ public sealed class PropertyEditorBridgeDefaultsTests
     [TestMethod]
     public void LoadFromValue_NonAdapterIEditorValue_SynthesizesLayeredViaFallback()
     {
-        // Pass a non-ClaudeValueAdapter fake to a leaf that overrides ONLY
+        // Pass a non-LayeredValueAdapter fake to a leaf that overrides ONLY
         // LoadFromLayered (legacy pattern).  Dispatch:
         //   leaf.LoadFromValue is NOT overridden → bridge's override runs.
-        //   value is NOT ClaudeValueAdapter → BuildFallbackLayeredValue fires.
+        //   value is NOT LayeredValueAdapter → BuildFallbackLayeredValue fires.
         //   bridge calls LoadFromLayered(synth, …) → leaf override captures.
         LegacyLoadFromLayeredOnlyLeaf leaf = new(S("model"), ConfigScope.User);
-        ClaudeScope userScope = ClaudeScope.For(ConfigScope.User);
+        ConfigScopeAdapter userScope = ConfigScopeAdapter.For(ConfigScope.User);
         MinimalFakeEditorValue fakeValue = new MinimalFakeEditorValue("model")
             .With(userScope, "sonnet");
 
@@ -222,7 +223,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
         // No scope has defined this property → BuildFallbackLayeredValue
         // produces a LayeredValue with NO entries + null EffectiveScope.
         LegacyLoadFromLayeredOnlyLeaf leaf = new(S("empty"), ConfigScope.User);
-        ClaudeScope userScope = ClaudeScope.For(ConfigScope.User);
+        ConfigScopeAdapter userScope = ConfigScopeAdapter.For(ConfigScope.User);
         MinimalFakeEditorValue fakeValue = new("empty"); // no With() calls
 
         leaf.LoadFromValue(fakeValue, userScope);
@@ -240,8 +241,8 @@ public sealed class PropertyEditorBridgeDefaultsTests
         // Two scopes defined → fallback synthesises both entries.  The
         // fake reports the higher-priority scope as effective.
         LegacyLoadFromLayeredOnlyLeaf leaf = new(S("model"), ConfigScope.User);
-        ClaudeScope userScope = ClaudeScope.For(ConfigScope.User);
-        ClaudeScope projectScope = ClaudeScope.For(ConfigScope.Project);
+        ConfigScopeAdapter userScope = ConfigScopeAdapter.For(ConfigScope.User);
+        ConfigScopeAdapter projectScope = ConfigScopeAdapter.For(ConfigScope.Project);
         MinimalFakeEditorValue fakeValue = new MinimalFakeEditorValue("model")
                                            .With(userScope, "sonnet")
                                            .With(projectScope, "opus");
@@ -323,7 +324,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
     /// Legacy-style leaf: overrides only the App-side <c>LoadFromLayered</c>
     /// (the pattern still used by the 11 compound editors).  Used to
     /// exercise the bridge's <c>LoadFromValue</c> default path when a
-    /// non-<see cref="ClaudeValueAdapter"/> <see cref="IEditorValue"/> is
+    /// non-<see cref="LayeredValueAdapter"/> <see cref="IEditorValue"/> is
     /// passed — which forces <c>BuildFallbackLayeredValue</c> to fire.
     /// </summary>
     private sealed class LegacyLoadFromLayeredOnlyLeaf : PropertyEditorViewModel
@@ -349,7 +350,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
     /// <summary>
     /// Minimal <see cref="IEditorValue"/> fake — NOT a
-    /// <see cref="ClaudeValueAdapter"/> — so the bridge's
+    /// <see cref="LayeredValueAdapter"/> — so the bridge's
     /// <c>LoadFromValue</c> takes the <c>BuildFallbackLayeredValue</c>
     /// branch rather than the unwrap-the-adapter branch.  Mirrors the
     /// shape of <c>tests/LayeredEditors.Avalonia.Tests/Fakes/FakeEditorValue.cs</c>
@@ -418,14 +419,14 @@ public sealed class PropertyEditorBridgeDefaultsTests
             // Calling ToJsonValue here triggers the cycle the guard catches.
             // We only call it because the library would otherwise fail at the
             // abstract-method level; the guard's diagnostic is the real test.
-            return ClaudeValueAdapter.Normalise(ToJsonValue());
+            return JsonCurrency.FromJsonNode(ToJsonValue());
         }
 
         public override void LoadFromValue(IEditorValue value, IEditorScope editingScope)
         {
             // Trigger the cycle the LoadFromLayered guard catches.
-            LayeredValue lv = (value as ClaudeValueAdapter)?.Inner ?? new LayeredValue("x", []);
-            LoadFromLayered(lv, ClaudeScope.ToConfigScope(editingScope));
+            LayeredValue lv = (value as LayeredValueAdapter)?.Inner ?? new LayeredValue("x", []);
+            LoadFromLayered(lv, ConfigScopeAdapter.ToConfigScope(editingScope));
         }
     }
 }

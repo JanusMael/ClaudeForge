@@ -1,11 +1,13 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Converters;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Services;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Views;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Controls;
@@ -48,7 +50,40 @@ public class App : Application
             Dispatcher.UIThread.UnhandledException += OnUiThreadUnhandledException;
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-            SchemaRegistry schemaRegistry = new();
+            // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design, and this
+            // line said `new()` from the initial commit. That was harmless while the chain
+            // was bundled-first — bundled won for every product, so an HttpClient would
+            // never have been reached. Network-first inverted it, and the parameterless
+            // constructor became the difference between fetching and not. ClaudeForge kept
+            // building its pages, and validating its saves, against bundled schemas.
+            //
+            // ONE registry serves the whole app: it is handed to both SDK clients in
+            // MainWindowViewModel, so a schema is fetched once per launch rather than once
+            // per consumer. Disposal stays with MainWindowViewModel, which now also disposes
+            // the HttpClient this creates.
+            //
+            // The --schema-source override reaches this without being passed: Program.cs
+            // sets SchemaRegistry.ProcessSourceOverride in step 1, and the constructor falls
+            // back to it.
+            // ⛔ The cache directory is supplied BY THE APP and there is no neutral default: the
+            // registry writes the resolved schema artifact here, and ~/.claude is Claude's answer
+            // to that question, not OpenCode's. A null directory means no disk cache at all,
+            // which is what keeps every test off a real profile.
+            // ⭐ THE composition root for the environment: read from the process exactly once,
+            // here, and passed down as a value. Every path the app resolves hangs off this one
+            // call, so a session cannot change its mind about where the config directory is
+            // half way through — which is what a re-read per accessor would allow, and what a
+            // save in flight cannot survive.
+            ClaudeEnvironment claudeEnvironment = ClaudeEnvironment.FromProcess();
+
+            // ⛔ Must happen before any update check. AppUpdateService is a static whose
+            // coordinator reads the auto-check preference from the persisted UI state, and it
+            // throws rather than falling back to the default home if this is skipped.
+            AppUpdateService.Initialize(claudeEnvironment);
+
+            SchemaRegistry schemaRegistry = SchemaRegistry.CreateWithNetwork(
+                cacheDirectory: Path.Combine(
+                    PlatformPaths.ClaudeHome(claudeEnvironment), "cache", "schemas"));
             AvaloniaDialogService dialogService = new();
             // The DialogAppIcon assignment below uses SmallInstance (64-px
             // render of the simplified small SVG) instead of Instance (256-px
@@ -90,22 +125,16 @@ public class App : Application
                 return await dialog.ShowDialog<bool>(window);
             });
 
-            // Create the main window first so its handle can be captured lazily
-            // by DefaultShareService for the Windows HWND injection requirement.
             MainWindow mainWindow = new();
 
-            // Build the share service. On Windows 10+ builds, the DefaultShareService
-            // uses MAUI Essentials and requires the native HWND before each request —
-            // captured via a closure so the handle is fetched at call time rather
-            // than construction time (avoiding any ordering issues during startup).
-#if NET10_0_WINDOWS10_0_19041_0_OR_GREATER
-            IShareService shareService = new DefaultShareService(
-                hwndProvider: () => mainWindow.TryGetPlatformHandle()?.Handle ?? default);
-#else
+            // ⚠ The share service needs nothing from the window. It used to: a #if for the
+            // Windows TFM passed an hwndProvider closure so MAUI Essentials could anchor its
+            // share flyout. That TFM never built, so the #else branch below is the only one that
+            // has ever compiled — see DefaultShareService's remarks.
             IShareService shareService = new DefaultShareService();
-#endif
 
-            MainWindowViewModel mainVm = new(schemaRegistry, dialogService, shareService);
+            MainWindowViewModel mainVm = new(
+                claudeEnvironment, schemaRegistry, dialogService, shareService);
 
             mainWindow.DataContext = mainVm;
             desktop.MainWindow = mainWindow;

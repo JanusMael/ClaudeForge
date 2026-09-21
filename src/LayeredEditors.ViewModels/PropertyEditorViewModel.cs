@@ -1,11 +1,11 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Abstract base for all property editor ViewModels in the reusable library.
 /// Works exclusively with the <see cref="LayeredEditors.Abstractions"/> interfaces;
 /// no JSON or domain types leak in here.
 /// </summary>
-public abstract partial class PropertyEditorViewModel : ObservableObject
+public abstract partial class PropertyEditorViewModel : ObservableObject, IDangerAnnotatedEditor
 {
     protected PropertyEditorViewModel(IEditorSchema schema, IEditorScope editingScope)
     {
@@ -24,6 +24,177 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
 
     /// <summary>The settings-tree path for this property (equivalent to the old JsonPath).</summary>
     public string Path => Schema.Path;
+
+    /// <summary>
+    /// The host product's danger policy, or <see langword="null"/> for a product that declares
+    /// none. Supplied by the product's factory via
+    /// <see cref="AttachDangerClassifier(IDangerClassifier?)"/>, deliberately NOT through
+    /// <see cref="EditorContext"/> — see that type's remarks for why.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>init</c>-only rather than a constructor parameter on purpose. This base has a long tail
+    /// of leaf and specialised subclasses, each with its own <c>base(schema, editingScope)</c>
+    /// call; a third parameter would have to be threaded through every one of them. An
+    /// <c>init</c> property is set by whoever news the editor up — the factory — so the
+    /// subclasses stay untouched.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The failure mode of that choice is silence.</b> A factory branch that forgets to set
+    /// it produces an editor whose rows simply show no severity, which looks identical to "this
+    /// product has nothing dangerous". That is the same shape as the
+    /// factory-branch-without-a-DataTemplate trap, and it is why
+    /// <c>OpenCodeEditorDangerWiringTests</c> drives every top-level schema node through the real
+    /// factory and fails on any editor that came back without a classifier.
+    /// </para>
+    /// </remarks>
+    public IDangerClassifier? DangerClassifier { get; private set; }
+
+    /// <summary>
+    /// Attach the host's danger policy, once, and return this editor for chaining.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Exists so a factory has ONE assignment site instead of one per branch.</b>
+    /// <c>OpenCodeEditorFactory</c> has a dozen <c>return new …EditorViewModel(schema, scope)</c>
+    /// arms; setting the classifier in each object initializer means a new arm silently ships
+    /// with no severity, which is indistinguishable from "this product declares nothing
+    /// dangerous". Chaining this off a single choke point removes that class of mistake rather
+    /// than guarding against it.
+    /// </para>
+    /// <para>
+    /// Named <c>Attach…</c> and not <c>With…</c> deliberately: it MUTATES and returns the same
+    /// instance. A <c>With</c> prefix reads as a record-style copy, which this is not.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// A second call. Set-once keeps this from becoming general mutable state — an editor's
+    /// product cannot change under it, so a second attach means two owners disagree about who
+    /// built this editor.
+    /// </exception>
+    public PropertyEditorViewModel AttachDangerClassifier(IDangerClassifier? classifier)
+    {
+        if (DangerClassifier is not null)
+        {
+            throw new InvalidOperationException(
+                $"A danger classifier is already attached to the editor for '{Path}'. "
+                + "Attach it once, at construction, from the factory that owns this product.");
+        }
+
+        DangerClassifier = classifier;
+        RecomputeDanger();
+        return this;
+    }
+
+    /// <summary>
+    /// How much attention this property deserves, and whether the value it holds right now is
+    /// the unsafe one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Recomputed on read rather than cached, and re-raised by <see cref="RecomputeDanger"/>
+    /// whenever the value or the editing scope changes — the assessment is a function of both, so
+    /// a cached copy goes stale the moment somebody types.
+    /// </para>
+    /// <para>
+    /// ⚠ Passes <see cref="ToValue"/>, which is the editor's CURRENT (possibly unsaved) state.
+    /// That is the intent: the point of a danger indicator is to fire while the change is still
+    /// being made, not after it is written.
+    /// </para>
+    /// </remarks>
+    public DangerAssessment Danger =>
+        DangerClassifier?.Classify(Path, EditingScope, ToValue()) ?? DangerAssessment.Unremarkable;
+
+    /// <summary>
+    /// True when this property is worth drawing attention to at all — i.e. the product said
+    /// something about it. Bound by the wrapper to decide whether to render a severity dot.
+    /// </summary>
+    public bool HasDangerSeverity => Danger.Explanation is not null;
+
+    /// <summary>
+    /// True when the value held right now is the unsafe one, so the wrapper should raise a
+    /// standing banner rather than just tint a dot.
+    /// </summary>
+    public bool IsDangerNow => Danger.IsDangerNow;
+
+    /// <summary>
+    /// What a screen reader announces for the severity indicator.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>The indicator is a coloured geometric glyph, which conveys nothing to a screen
+    /// reader.</b> Colour and shape are the two visual codes; this is the third, and without it
+    /// the whole danger surface is sighted-only. Naming the tier as well as the consequence
+    /// matters because the consequence sentence alone does not say how much it matters.
+    /// <para>
+    /// Composed here rather than in AXAML so it is unit-testable and so the two apps cannot
+    /// format it differently.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>The severity word is an unlocalised English literal, and there is currently nowhere
+    /// better to put it.</b> This assembly has no string surface at all: the library's
+    /// resolver-based <c>WrapperStrings</c> lives in <c>LayeredEditors.Avalonia</c>, which sits
+    /// ABOVE this one, so referencing it would invert the dependency. The consequence sentence
+    /// itself comes from the product's danger table and is localisable there.
+    /// </para>
+    /// </remarks>
+    public string DangerAccessibleText =>
+        Danger.Explanation is null ? string.Empty : $"{Danger.Severity}: {Danger.Explanation}";
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// <para>
+    /// Returns this editor's own <see cref="Danger"/> for its own <see cref="Path"/>, then
+    /// descends into <see cref="IChildEditorHost.Children"/> — so a nested path like
+    /// <c>attachment.image.maxWidth</c> resolves to the child editor that actually renders it,
+    /// carrying that child's value rather than its parent's.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The descent tests <see cref="IChildEditorHost"/>, never a concrete object-editor
+    /// type.</b> There are two <c>ObjectPropertyEditorViewModel</c> classes — one here and one in
+    /// the app — and the app's does not derive from this library's, so a type test would silently
+    /// cover only half the object editors in play. That is the same trap
+    /// <see cref="IChildEditorHost"/> was created for, and the symptom here would be a nested
+    /// dangerous key reporting no severity at all.
+    /// </para>
+    /// <para>
+    /// Ordinal comparison, matching the classifier's own table lookup: these are JSON paths, not
+    /// display text, and a case-insensitive match would let <c>Permission</c> answer for
+    /// <c>permission</c>.
+    /// </para>
+    /// </remarks>
+    public DangerAssessment? AssessDanger(string jsonPath)
+    {
+        if (string.Equals(jsonPath, Path, StringComparison.Ordinal))
+        {
+            return Danger;
+        }
+
+        if (this is IChildEditorHost host)
+        {
+            foreach (PropertyEditorViewModel child in host.Children)
+            {
+                DangerAssessment? nested = child.AssessDanger(jsonPath);
+                if (nested is not null)
+                {
+                    return nested;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Re-raise <see cref="Danger"/> and its companions. Call after anything that changes the
+    /// value or the scope.
+    /// </summary>
+    protected void RecomputeDanger()
+    {
+        OnPropertyChanged(nameof(Danger));
+        OnPropertyChanged(nameof(HasDangerSeverity));
+        OnPropertyChanged(nameof(IsDangerNow));
+        OnPropertyChanged(nameof(DangerAccessibleText));
+    }
 
     /// <summary>
     /// True when the schema adapter reports this property was not present in the
@@ -334,6 +505,13 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(IsModified));
         }
+
+        // ⚠ UNCONDITIONAL, unlike the IsModified re-raise above. The danger assessment depends on
+        // the VALUE, not on whether the modified flag moved — switching one unsafe value for
+        // another (or an unsafe one for a safe one) leaves IsModified untouched while the
+        // assessment flips. Guarding this with `wasModified` would leave a stale "unsafe" banner
+        // sitting over a value the user had already fixed.
+        RecomputeDanger();
     }
 
     // ── Reset command ──────────────────────────────────────────────────────────
@@ -344,6 +522,11 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
     {
         IsModified = false;
         OnResetToInherited();
+
+        // Reverting to the inherited value changes what this scope holds, so the assessment
+        // changes with it — a row that was red because the user set `allow` here must stop being
+        // red once that override is gone.
+        RecomputeDanger();
     }
 
     /// <summary>Called from <see cref="ResetToInherited"/> after flag is cleared.
@@ -358,6 +541,11 @@ public abstract partial class PropertyEditorViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsLocked));
         OnPropertyChanged(nameof(CanReset));
+
+        // Severity escalates with scope: the same API key is a local secret at a user-global
+        // scope and a git-committed one at project scope, so switching the scope selector must
+        // repaint the row even though the value never moved.
+        RecomputeDanger();
     }
 
     partial void OnEffectiveScopeChanged(IEditorScope? value)

@@ -2,8 +2,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,7 +19,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// <remarks>
 /// <para>
 /// Replaces the prior fallback that routed every Complex / Unknown property
-/// to a <see cref="LayeredEditors.Avalonia.ViewModels.StringPropertyEditorViewModel"/>.
+/// to a <see cref="LayeredEditors.ViewModels.StringPropertyEditorViewModel"/>.
 /// That fallback let the user type any string into a slot the schema required
 /// to be an object — the corrupting value (<c>"modelOverrides": "test"</c>,
 /// for instance) round-tripped to disk and only surfaced as a schema-banner

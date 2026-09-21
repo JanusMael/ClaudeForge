@@ -1,17 +1,20 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using McpServer = Bennewitz.Ninja.ClaudeForge.Sdk.McpServers.McpServer;
-using McpTransport = Bennewitz.Ninja.ClaudeForge.Sdk.McpServers.McpTransport;
+using McpServer = Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer;
+using McpTransport = Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpTransport;
 
 // Alias the SDK to keep ConfigScope unambiguous and signal each SDK
 // touchpoint at the call site. Mirrors the EnabledPlugins / Marketplaces
@@ -23,12 +26,15 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// Editor for the "mcpServers" object.
 /// Shows a list of server entries; each can be added, edited, or removed.
 /// </summary>
-public partial class McpServersEditorViewModel : PropertyEditorViewModel
+public partial class McpServersEditorViewModel : PropertyEditorViewModel, IJsonPathScopedEditor
 {
+    /// <inheritdoc />
+    public string OwnedJsonPathPrefix => "mcpServers";
+
     // SDK client for typed reads. Optional: when null, fall back to the
     // legacy JsonObject-based load path so unit-test fixtures continue to
     // work unchanged. Mirrors the EnabledPlugins / Marketplaces migrations.
-    private readonly IClaudeConfigClient? _client;
+    private readonly IAgentConfigClient? _client;
 
     // Stored so OnResetToInherited can restore the saved on-disk state rather
     // than clearing entirely (which would lose the user's existing servers).
@@ -58,7 +64,7 @@ public partial class McpServersEditorViewModel : PropertyEditorViewModel
     public McpServersEditorViewModel(
         SchemaNode schema,
         ConfigScope editingScope,
-        IClaudeConfigClient? client)
+        IAgentConfigClient? client)
         : base(schema, editingScope)
     {
         _client = client;
@@ -242,7 +248,7 @@ public partial class McpServersEditorViewModel : PropertyEditorViewModel
                                      .Where(e => e.Scope != editingScope && e.Value is JsonObject jo && jo.Count > 0)
                                      .Select(e => e.Scope)
                                      .Distinct()
-                                     .Select(scope => (IEditorScope)ClaudeScope.For(scope))
+                                     .Select(scope => (IEditorScope)ConfigScopeAdapter.For(scope))
                                      .ToList();
     }
 

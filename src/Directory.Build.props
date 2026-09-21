@@ -1,0 +1,165 @@
+<Project>
+    <!-- MSBuild applies only the CLOSEST Directory.Build.props by default.
+         To inherit the repo-root settings (Nullable, LangVersion, AutoVersioning,
+         debug-type policy, etc.) on top of the src-only additions below, the
+         root file must be explicitly imported.  GetPathOfFileAbove walks up
+         the directory tree to find the next Directory.Build.props above this
+         one — at the repo root, in this case.  Same idiom as tests/. -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <!--
+          Make every shipped assembly trim-ANALYSED, not merely trim-ABLE.
+
+          Why this exists — measured 2026-09-03, and it is not what it looks like:
+
+          ILLink only reports trim warnings for assemblies marked IsTrimmable.
+          Everything else it trims SILENTLY.  Every project under src/ was
+          unmarked, so both apps' Release publishes were trimming the whole
+          shared stack while reporting nothing about it.  A real IL2026 in
+          AgentForge.Sdk/McpServers/McpServersAccessor.cs sat in shared code
+          reachable from BOTH apps and neither publish said a word.
+
+          The reason that bug was ever seen is a command-line accident:
+          `dotnet publish -p:PublishTrimmed=true` sets a GLOBAL property, which
+          flows into every project in the build graph and switches on each one's
+          Roslyn trim analyser.  The same property written inside an app's own
+          csproj applies to that app alone, so it never reaches the libraries.
+          Enabling PublishTrimmed in OpenCodeForge.csproj therefore produces a
+          trim check that trims but stays blind to shared code — which is the
+          failure this property closes, and the reason a csproj-only change was
+          not sufficient.
+
+          Verified by canary rather than assumed: with the McpServersAccessor
+          cast removed, a publish reddens with IL2026 when this property is set
+          and stays GREEN (exit 0, zero diagnostics) when it is removed, for
+          ClaudeForge as well as OpenCodeForge.  If a future change makes trim
+          breaks stop being caught, re-run that canary before trusting the log.
+
+          Cost, measured rather than estimated: zero.  Turning this on surfaced
+          no new diagnostics anywhere in src/ at either the Roslyn-analyser or
+          the ILLink level, and TrimMode=link was already trimming these
+          assemblies — this changes what gets REPORTED, not what gets removed.
+
+          Scoped to src/ deliberately: tests/ has its own Directory.Build.props
+          and is never published or trimmed, so analysing it would be noise.
+        -->
+        <IsTrimmable>true</IsTrimmable>
+
+        <!--
+          Run the Roslyn trim analyser on the libraries THEMSELVES, at their own build.
+
+          ⛔ Packaging silently removes the analysis the property above describes, and the
+          reason is in that comment: the analyser reaches shared code today only because
+          `dotnet publish -p:PublishTrimmed=true` sets a GLOBAL property that flows into
+          every project IN THE APP'S BUILD GRAPH.  A packaged library is not in that graph.
+          The property would reach nothing, the analyser would never run on shared code
+          again, and — as before — nothing would fail.
+
+          ILLink still analyses the packaged IL, because IsTrimmable is baked into each
+          assembly as metadata and travels in the .nupkg.  But that is after the fact and
+          attributed to an assembly the consuming app cannot edit.  This property moves the
+          check back to the build that can act on it, and makes it independent of whether
+          anyone publishes an app at all: a plain `dotnet build -c Release` now reddens.
+
+          Cost, measured before it was turned on: a Release build of the whole solution
+          produces IL diagnostics ONLY under tests/, which has its own Directory.Build.props
+          and is never published or trimmed.  Zero under src/.
+
+          Verified by canary rather than assumed, and the canary is the same one the
+          property above uses: remove the (JsonNode?) cast in
+          AgentForge.Sdk/McpServers/McpServersAccessor.cs — the one whose comment explains
+          that the uncast overload carries [RequiresUnreferencedCode] — and a plain BUILD
+          reddens with IL2026.  Before this property it took a trimmed publish.
+
+          ⛔ IsAotCompatible is deliberately NOT set alongside it.  That implies the AOT and
+          single-file analysers as well, which is a claim about these libraries that nothing
+          has measured.
+        -->
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    </PropertyGroup>
+
+    <!--
+      ══ NuGet package identity and metadata ══  (plans/00001, work item 2)
+
+      Eleven of the seventeen projects under src/ become private NuGet packages on GitHub
+      Packages; the two apps and the four product-specific halves do not.  This block says
+      what a package IS, once, instead of seventeen times.
+
+      ⛔ WHICH projects pack is the one thing it deliberately does NOT decide.  Every csproj
+      under src/ states <IsPackable> for itself, true or false, and
+      PackageMetadataTests.EverySrcProjectStatesIsPackableExplicitly fails if one defaults.
+      A guard asserting "the packable set is exactly these eleven" would need a list of the
+      eleven — the copy-of-the-truth this repo's guards exist to avoid.  Asserting that
+      nothing DEFAULTS is the non-vacuous form: a new project cannot be published, or
+      skipped, by being forgotten.
+    -->
+    <PropertyGroup>
+        <!--
+          Bennewitz.Ninja.<AssemblyName>, per the plan's naming decision.
+
+          ⚠ $(AssemblyName) is NOT usable here, and using it would fail silently.
+          Directory.Build.props is imported at the TOP of every csproj, before that file's
+          own <AssemblyName> is assigned, so it evaluates EMPTY and all eleven packages
+          would be called "Bennewitz.Ninja." — an id collision rather than an error.
+          $(MSBuildProjectName) is the csproj file name; it is defined before any import,
+          and it is what the SDK defaults AssemblyName to anyway.
+
+          ⛔ The alternative was a src/Directory.Build.targets, imported AFTER the csproj
+          body where $(AssemblyName) is real.  Rejected: MSBuild imports only the CLOSEST
+          Directory.Build.targets, so adding one under src/ silently detaches every src
+          project from the ROOT targets file — the publish strip, the dead-resx guard and
+          the raw-hex guard all stop running, and nothing fails.  That is a worse trap than
+          the drift this accepts.
+
+          The drift it accepts: a project whose AssemblyName stops matching its file name
+          would be packaged under the file's name.  Closed by a guard rather than by hope —
+          PackageMetadataTests.EverySrcProjectsAssemblyNameMatchesItsFileName.
+        -->
+        <PackageId>Bennewitz.Ninja.$(MSBuildProjectName)</PackageId>
+
+        <Authors>Brian Bennewitz</Authors>
+        <!-- One source of truth: the root props already declares it for the assemblies. -->
+        <Company>$(AssemblyCompany)</Company>
+
+        <RepositoryUrl>https://github.com/JanusMael/ClaudeForge</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/JanusMael/ClaudeForge</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+        <!-- Satisfied by the ItemGroup below, which packs either the project's own README.md
+             or the shared one.  Both land at the package root under this name. -->
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <!--
+          ⓘ No .snupkg, on purpose.  The root props sets DebugType=embedded for Release, so
+          the symbols are already inside the packaged DLL and a symbol package would carry
+          nothing.  Setting IncludeSymbols here would produce empty .snupkg files and a
+          second artefact to push for every package.
+        -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--
+          A project with its own README.md packs it; everything else packs the shared one,
+          renamed to README.md at the package root.
+
+          ⚠ The fallback exists because one project already HAS a real readme:
+          LayeredEditors.Avalonia.Diagnostics wrote one before any of this, and replacing it
+          with the family boilerplate would lose the better document.  A shared readme is the
+          default, not a mandate.
+
+          Not conditioned on IsPackable — it cannot be, since the csproj sets that after this
+          file is imported.  Harmless: Pack metadata is only read during `dotnet pack`, which
+          IsPackable=false skips entirely.
+        -->
+        <None Include="$(MSBuildProjectDirectory)/README.md"
+              Condition="Exists('$(MSBuildProjectDirectory)/README.md')"
+              Pack="true" PackagePath="README.md" Visible="false" />
+        <None Include="$(MSBuildThisFileDirectory)PACKAGE-README.md"
+              Condition="!Exists('$(MSBuildProjectDirectory)/README.md')"
+              Pack="true" PackagePath="README.md" Visible="false" />
+    </ItemGroup>
+
+</Project>

@@ -54,6 +54,12 @@ public static class AvaloniaDiagnostics
     private static AvaloniaDiagnosticsOptions? _options;
     private static LiveTailWindow? _eventWindow;
 
+    // The host-event file, and the private logger that feeds it. Deliberately NOT Log.Logger:
+    // these events are outside the Serilog pipeline by design, and routing them through the
+    // shared logger would put them in the app log too - the separation this exists to keep.
+    private static BucketedRollingFileSink? _eventFileSink;
+    private static global::Serilog.Core.Logger? _eventLogger;
+
     /// <summary>
     /// Application name supplied via
     /// <see cref="AvaloniaDiagnosticsOptions.AppName"/>. Exposed so host code
@@ -81,6 +87,12 @@ public static class AvaloniaDiagnostics
     /// items outside of the F12 window.
     /// </summary>
     public static string? CurrentLogFilePath => _fileSink?.CurrentFilePath;
+
+    /// <summary>
+    /// Full path of the host-event file, or <see langword="null"/> when
+    /// <see cref="AvaloniaDiagnosticsOptions.EnableEventLogFile"/> was not set.
+    /// </summary>
+    public static string? CurrentEventLogFilePath => _eventFileSink?.CurrentFilePath;
 
     /// <summary>
     /// Configures <see cref="Log.Logger"/> and (optionally) redirects
@@ -117,6 +129,21 @@ public static class AvaloniaDiagnostics
             options.BucketSize,
             options.Retention,
             options.FileNamePrefix);
+
+        if (options.EnableEventLogFile)
+        {
+            _eventFileSink = new BucketedRollingFileSink(
+                options.LogsDirectory,
+                options.BucketSize,
+                options.Retention,
+                options.EventLogFileNamePrefix ?? "events");
+
+            // Verbose minimum: the host decides what is worth enqueuing, not a level filter.
+            _eventLogger = new LoggerConfiguration()
+                           .MinimumLevel.Verbose()
+                           .WriteTo.Sink(_eventFileSink)
+                           .CreateLogger();
+        }
 
         LoggerConfiguration config = new LoggerConfiguration()
                                      .MinimumLevel.Is(options.MinimumLevel)
@@ -220,6 +247,10 @@ public static class AvaloniaDiagnostics
     public static void EnqueueEvent(string line)
     {
         _eventWindow?.Enqueue(line);
+
+        // The window is live-only; the file is what survives the session and can be handed to
+        // someone else. Both are optional and independent.
+        _eventLogger?.Information("{EventLine}", line);
     }
 
     /// <summary>

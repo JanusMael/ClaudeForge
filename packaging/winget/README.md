@@ -1,25 +1,64 @@
 # winget packaging
 
-`winget install Bennewitz.Ninja.ClaudeForge`
+```
+winget install Bennewitz.Ninja.ClaudeForge
+winget install Bennewitz.Ninja.OpenCodeForge
+```
 
 This folder holds the [Windows Package Manager](https://learn.microsoft.com/windows/package-manager/)
-manifest **templates** for ClaudeForge and documents how they reach the
-community repository, [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs).
+manifest **templates** for **both** apps in this repository, and documents how
+they reach the community repository,
+[`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs).
 
 ## Identity
 
-| Field | Value |
-|-------|-------|
-| `PackageIdentifier` | `Bennewitz.Ninja.ClaudeForge` |
-| `Publisher` (display) | `Brian Bennewitz` |
-| `Moniker` | `claudeforge` |
-| Installer | the release `ClaudeForge-win-<arch>.zip`, installed **portable** (nested `ClaudeForge.exe`) |
+One manifest set per app, three files each, named by package id:
+
+| Field | ClaudeForge | OpenCodeForge |
+|-------|-------------|---------------|
+| `PackageIdentifier` | `Bennewitz.Ninja.ClaudeForge` | `Bennewitz.Ninja.OpenCodeForge` |
+| `Publisher` (display) | `Brian Bennewitz` | `Brian Bennewitz` |
+| `Moniker` | `claudeforge` | `opencodeforge` |
+| Release tag | `v<version>` | `opencodeforge-v<version>` |
+| Installer | `ClaudeForge-win-<arch>.zip`, **portable** (nested `ClaudeForge.exe`) | `OpenCodeForge-win-<arch>.zip`, **portable** (nested `OpenCodeForge.exe`) |
 
 The identifier prefix is the author's namespace (`Bennewitz.Ninja`, matching the
 NuGet convention); the `Publisher` display field is the author's name. winget
 does not require those to match, nor to match the GitHub account (`JanusMael`)
 that hosts the releases. The identifier is effectively permanent once accepted —
 keep the exact casing everywhere.
+
+⛔ **The release tags differ in SHAPE, and the installer manifests hardcode them.**
+GitHub releases are repository-level, so a repository hosting two apps tells
+their releases apart by tag prefix. ClaudeForge keeps bare tags because releases
+already exist in that shape and every installed copy looks for exactly it;
+OpenCodeForge, shipping second, takes a prefix. Copying one app's installer
+manifest to seed another's therefore produces a download URL that **404s at
+winget validation**, hours after the release, reading as a missing asset rather
+than a wrong tag. `WingetManifestTests` asserts each set against its app's
+`TagPrefix` in `src/publish/PublishApps.ps1`.
+
+⚠ **The repository is still named `ClaudeForge` and that is deliberate** — every
+`PackageUrl` here points at it. Published manifests cannot be retroactively
+repointed, which is precisely why the repo keeps a name that no longer describes
+it.
+
+## Submitting one app
+
+Both submission paths take the app by name and read everything else — package
+id, tag prefix, asset names — from `src/publish/PublishApps.ps1`:
+
+```powershell
+pwsh packaging/Resubmit-Winget.ps1 -App OpenCodeForge -Version 2026.4.100 -Force
+```
+
+or dispatch `.github/workflows/winget-submit.yml` and pick the app from its
+`app` input.
+
+⛔ **Each submission stages only its own app's manifests.** Both paths used to
+glob `*.yaml`, which was correct while this folder held one set — and would have
+carried both packages into a single winget-pkgs PR the moment it held two,
+publishing a version bump for an app that had not released.
 
 ## What "portable" means here
 
@@ -102,18 +141,10 @@ two PRs against the same manifest, which winget-pkgs asks contributors not to do
 |---|---|---|
 | `packaging/sign-release.ps1` | **Dispatches the workflow itself** at the end, unless `-SkipWinget` | yes |
 | `.github/workflows/winget-submit.yml` | `gh workflow run winget-submit.yml -f version=<ver>` | yes |
-| `packaging/Resubmit-Winget.ps1` | run locally with `-Force`; submits straight from your machine | **no** |
+| `packaging/Resubmit-Winget.ps1` | run locally; submits straight from your machine. ⚠ Refuses without `-Force` | **no** |
 
 **The normal release is: run `sign-release.ps1` and stop — it already submits.** The
 other two are for re-submitting after a failure, or when you passed `-SkipWinget`.
-
-`Resubmit-Winget.ps1` is named for the only job it has and refuses to run without
-`-Force`, because the failure it guards against is silent: reaching for it after a
-submission that already happened opens a second PR, and you find out from
-winget-pkgs rather than from your own tooling.
-
-Neither is the script for standing up a **new** winget package — that is the
-`wingetcreate new` interactive wizard, written up in `packaging/BBWinget.md`.
 
 Both submit paths refuse to run when an open winget-pkgs PR already exists for that
 package + version.

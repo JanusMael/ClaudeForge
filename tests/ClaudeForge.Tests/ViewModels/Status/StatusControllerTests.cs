@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels.Status;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;

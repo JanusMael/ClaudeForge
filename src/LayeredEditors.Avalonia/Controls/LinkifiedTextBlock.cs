@@ -6,7 +6,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Helpers;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Messages;
+using Bennewitz.Ninja.LayeredEditors.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 
 namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Controls;

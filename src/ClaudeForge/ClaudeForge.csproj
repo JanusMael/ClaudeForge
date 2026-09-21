@@ -1,8 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
+        <IsPackable>false</IsPackable>  <!-- an app, not a library -->
         <RootNamespace>Bennewitz.Ninja.ClaudeForge</RootNamespace>
         <AssemblyName>ClaudeForge</AssemblyName>
+        <!-- Per-app, matching the sibling. The repo-wide default in Directory.Build.props is the
+             neutral library family, so an app that omits this would ship reporting itself as
+             AgentForge. -->
+        <AssemblyProduct>ClaudeForge</AssemblyProduct>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <Version>1.0.0</Version>
         <!-- Static Windows app/taskbar icon embedded in the apphost exe so the
@@ -11,13 +16,13 @@
              render on the startup path. Generated from Resources/ClaudeForge.svg as a
              multi-resolution .ico (256/128/64/48/32/16). -->
         <ApplicationIcon>Resources\ClaudeForge.ico</ApplicationIcon>
-        <!-- Add Windows platform TFM to pick up the net10.0-windows build of
-             LayeredEditors.Avalonia.Services (which includes DefaultShareService with MAUI).
-             Directory.Build.props sets <TargetFramework>net10.0; the plural form overrides it.
-             Note: <EnableWindowsTargeting>true</EnableWindowsTargeting> is set
-             repo-wide in Directory.Build.props so this project's Windows TFM
-             also restores on macOS / Linux CI hosts. -->
-        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <!-- ⛔ SINGLE TFM, inherited from Directory.Build.props. This app used to declare
+             <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks> to pick up a
+             net10.0-windows build of LayeredEditors.Avalonia.Services, with a comment claiming
+             the plural form overrode the root's singular <TargetFramework>. It does not —
+             MSBuild cross-targets only when TargetFramework is EMPTY — so that TFM was never
+             built and no shipped ClaudeForge has ever contained the MAUI share path. See
+             DefaultShareService's remarks. -->
         <!-- SatelliteResourceLanguages intentionally omitted.
              When this property is set, .NET treats it as a STRICT allow-list:
              only satellite assemblies whose folder name exactly matches one of
@@ -32,11 +37,16 @@
              culture, which is negligible against the ~80 MB self-contained binary. -->
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
     <!-- Expose internal test-seam members to the test project. -->
     <ItemGroup>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>ClaudeForge.Tests</_Parameter1>
-        </AssemblyAttribute>
     </ItemGroup>
 
     <ItemGroup>
@@ -97,7 +107,29 @@
         <!-- 
           Optimization settings for a clean distribution.
         -->
-        <TrimMode>link</TrimMode>
+        <!--
+          TrimMode: `partial`, NOT `link`.
+
+          ⛔ `link` is UNSUPPORTED BY AVALONIA and the build never says so.
+          AvaloniaUI/Avalonia#16697 — "TrimMode=link, while not supported, still
+          builds successfully, but crashes inconsistently" — states that COM
+          interop is not supported under it, and reports access violations in
+          `UiaReturnRawElementProvider` for users running Magnifier or a screen
+          reader.  Applications "build successfully with minimal warnings,
+          creating a false sense of security", which is exactly what a clean
+          six-RID publish matrix bought here for months.
+
+          ⚠ The measured cost of moving is ~76 KB on win-x64 (27,647,430 ->
+          27,725,447 bytes, single-file compressed).  `docs/RETEST-FINDINGS.md`
+          assumed the growth would be meaningful; it is not.
+
+          ⓘ This does NOT fix an accessibility defect, because there was none to
+          fix — see the F5 entry in docs/RETEST-FINDINGS.md.  The trimmed `link`
+          build exposes a full UIA tree (168 descendants, measured).  This change
+          is about leaving a configuration upstream calls unsupported, on the
+          strength of upstream's crash reports, not about a defect observed here.
+        -->
+        <TrimMode>partial</TrimMode>
         <DebuggerSupport>false</DebuggerSupport>
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -201,11 +233,28 @@
         <_ILLinkSuppressions Include="ILLink.Suppressions.xml"/>
     </ItemGroup>
 
-    <!-- Windows-only suppression for Microsoft.Maui.ApplicationModel.
-         Included only when publishing against the Windows TFM so the
-         net10.0 TFM publish does not emit IL2007 (assembly not found). -->
-    <ItemGroup Condition="'$(Configuration)' == 'Release' And&#xD;&#xA;                        $([MSBuild]::IsTargetFrameworkCompatible(&#xD;&#xA;                            '$(TargetFramework)', 'net10.0-windows10.0.19041.0'))">
-        <_ILLinkSuppressions Include="ILLink.Suppressions.Windows.xml"/>
+    <!--
+      Avalonia.DesignerSupport is remote-designer / preview code — Assembly.LoadFrom,
+      Bson-over-TCP, reflection over arbitrary types — and it is NEVER reached by a
+      published app.
+
+      ⚠ It becomes a publish BLOCKER the moment TrimMode stops being `link`.  Under
+      `partial` an assembly that is not marked trimmable is copied WHOLE, so
+      DesignerSupport's `RemoteDesignerEntryPoint.Main` stops being dead code, gets
+      analysed, and its IL2026 / IL2072 / IL2075 escalate to
+      `NETSDK1144: Optimizing assemblies for size failed`.  Measured, not assumed.
+
+      ⭐ Marking just this assembly trimmable restores the `link` treatment FOR IT
+      ALONE: the unreachable entry point is removed again and the diagnostics go with
+      it.  That is why there is no matching block in ILLink.Suppressions.xml —
+      suppressing those warnings would silence a real analysis over code that would
+      then still be shipped.  This removes the code instead.
+
+      ⓘ `docs/RETEST-FINDINGS.md` proposed the suppression route.  This is the cheaper
+      one: measured at zero IL diagnostics on a full win-x64 publish.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <TrimmableAssembly Include="Avalonia.DesignerSupport"/>
     </ItemGroup>
 
     <!--
@@ -273,8 +322,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
-        <ProjectReference Include="..\ClaudeForge.Sdk\ClaudeForge.Sdk.csproj"/>
+        <ProjectReference Include="..\AgentForge.Core\AgentForge.Core.csproj"/>
+        <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
+        <ProjectReference Include="..\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
+        <ProjectReference Include="..\AgentForge.Avalonia.Shell\AgentForge.Avalonia.Shell.csproj"/>
         <ProjectReference Include="..\ClaudeForge.Avalonia\ClaudeForge.Avalonia.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
         <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>

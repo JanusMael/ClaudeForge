@@ -1,8 +1,13 @@
+﻿using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.LayeredEditors.Abstractions;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,30 +22,63 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// stays current without requiring a manual Refresh click.
 /// </summary>
 /// <remarks>
-/// ctor takes <see cref="ClaudeConfigClientCore"/>
+/// ctor takes <see cref="AgentConfigClientCore"/>
 /// directly. Reads (compute-effective, defined keys, layered probes) flow
 /// through the SDK's internal snapshot helpers; auto-refresh subscribes to
-/// the SDK's <see cref="IClaudeConfigClient.Changed"/> event (which
+/// the SDK's <see cref="IAgentConfigClient.Changed"/> event (which
 /// includes the workspace.Changed forwarder shipped in step 8 — so editor
 /// direct writes still trigger refresh).
 /// </remarks>
 public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable, IDeepNavigable
 {
-    private readonly ClaudeConfigClientCore _client;
+    private readonly AgentConfigClientCore _client;
     private readonly string? _projectRoot;
     private readonly IShareService? _shareService;
     private readonly IReadOnlyDictionary<string, string> _descriptions;
+    private readonly IDangerClassifier? _danger;
     private bool _disposed;
 
+    /// <summary>
+    /// Raised with the terminal outcome of a share, for the host to route to the centre status
+    /// pill: the sentence, and whether it is a failure (false → green ✓ Success pill that
+    /// auto-clears, true → red ✗ Failure pill that sticks until dismissed).
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Emissions go through this and never through the legacy <c>StatusMessage</c>
+    /// setter</b>, which still compiles and routes to <c>StatusKind.State</c> — grey plain text,
+    /// no icon, no auto-clear. The host (MainWindowViewModel) wires this to
+    /// <c>SetStatusSuccess</c> / <c>SetStatusFailure</c>, which is where that lifecycle lives.
+    /// <para>
+    /// Same shape and same reason as <c>BackupRestoreViewModel.OnTerminalStatus</c>: a page-local
+    /// label is invisible to a user standing on another nav node, and share had not even that.
+    /// </para>
+    /// </remarks>
+    public Action<string, bool /* isFailure */>? OnTerminalStatus { get; set; }
+
+    /// <param name="danger">
+    /// The danger policy for the product this page reports on, or <see langword="null"/> for a
+    /// caller that declares none (tests, headless) — rows then render with no severity.
+    /// </param>
+    /// <remarks>
+    /// ⛔ <b>Supplied per call rather than defaulted to
+    /// <c>ClaudeDangerTable.Settings</c>.</b> Defaulting is the same hazard that keeps
+    /// <c>ClaudeEditorFactoryConfig.CreateDefault</c> classifier-free: this app hosts BOTH Claude
+    /// Code and Claude Desktop, whose schemas overlap on keys like <c>env</c>, so a default would
+    /// confidently label one product's settings with the other's threat model. This page happens
+    /// to be built only for Claude Code today, and the parameter is what keeps that a decision at
+    /// the call site instead of an accident of construction.
+    /// </remarks>
     public EffectiveSettingsViewModel(
-        ClaudeConfigClientCore client,
+        AgentConfigClientCore client,
         string? projectRoot = null,
         IShareService? shareService = null,
-        IReadOnlyDictionary<string, string>? descriptions = null)
+        IReadOnlyDictionary<string, string>? descriptions = null,
+        IDangerClassifier? danger = null)
     {
         _client = client;
         _projectRoot = projectRoot;
         _shareService = shareService;
+        _danger = danger;
         // Top-level-key → schema description, so the property column can show help text
         // on hover. Empty when not supplied (tests / headless) — tooltip falls back to
         // the path.
@@ -70,55 +108,6 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
     {
         string tab = value switch { 0 => "Properties", 1 => "Json", _ => "?" };
         Log.Information("[Effective.Tab] index={Index} tab={Tab}", value, tab);
-    }
-
-    // ── IDeepNavigable ───────────────────────────────────────────────────
-
-    /// <summary>Stable tab ids, so a deep link survives reordering and translation.</summary>
-    public const string TabPropertiesId = "properties";
-
-    /// <inheritdoc cref="TabPropertiesId"/>
-    public const string TabJsonId = "json";
-
-    private static int? TabIndexFor(string? tabId)
-    {
-        return tabId?.ToLowerInvariant() switch
-        {
-            TabPropertiesId => 0,
-            TabJsonId => 1,
-            var _ => null,
-        };
-    }
-
-    /// <inheritdoc />
-    public IReadOnlyList<string> CaptureDeepPath()
-    {
-        return [SelectedTabIndex == 1 ? TabJsonId : TabPropertiesId];
-    }
-
-    /// <inheritdoc />
-    public void ReapplyTab(IReadOnlyList<string> segments)
-    {
-        if (segments is { Count: > 0 } && TabIndexFor(segments[0]) is { } index)
-        {
-            SelectedTabIndex = index;
-        }
-    }
-
-    /// <inheritdoc />
-    public Task<bool> TryRestoreDeepPathAsync(
-        IReadOnlyList<string> segments,
-        DeepRestoreMode mode,
-        object? transientState,
-        CancellationToken ct)
-    {
-        if (segments is null || segments.Count == 0 || TabIndexFor(segments[0]) is not { } index)
-        {
-            return Task.FromResult(false);
-        }
-
-        SelectedTabIndex = index;
-        return Task.FromResult(true);
     }
 
     public List<EffectivePropertyRow> PropertyRows { get; private set; }
@@ -179,13 +168,46 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
                 layered.EffectiveValue?.ToJsonString() ?? "(null)",
                 layered.EffectiveScope,
                 layered.IsOverridden,
-                _descriptions.GetValueOrDefault(key)));
+                _descriptions.GetValueOrDefault(key))
+            {
+                Danger = Assess(key, layered),
+            });
         }
 
         rows.Sort((a, b) => string.Compare(a.Property, b.Property, StringComparison.Ordinal));
         PropertyRows = rows;
         OnPropertyChanged(nameof(PropertyRows));
         OnPropertyChanged(nameof(FilteredRows));
+    }
+
+    /// <summary>
+    /// Classify one row at the scope that won, over the value that won.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>The key is already a settings path.</b> <c>AllDefinedKeys</c> returns the top-level
+    /// keys present in any scope's document, which is exactly the shape
+    /// <see cref="IDangerClassifier"/> matches — so these are EXACT matches and the rules' value
+    /// predicates and scope escalation genuinely run here, rather than the tier-only inherited
+    /// answer a nested path would get.
+    /// </para>
+    /// <para>
+    /// ⛔ The value must cross into the editor value currency first; a predicate handed a raw
+    /// <c>JsonNode</c> matches no pattern it was written for and silently reports safe.
+    /// </para>
+    /// </remarks>
+    private DangerAssessment Assess(string key, LayeredValue layered)
+    {
+        if (_danger is null)
+        {
+            return DangerAssessment.Unremarkable;
+        }
+
+        IEditorScope? scope = layered.EffectiveScope is { } winner
+            ? ConfigScopeAdapter.For(winner)
+            : null;
+
+        return _danger.Classify(key, scope, JsonCurrency.FromJsonNode(layered.EffectiveValue));
     }
 
     [RelayCommand]
@@ -199,25 +221,73 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
     public event EventHandler<string>? CopyJsonRequested;
 
     /// <summary>
-    /// Shares the current effective settings JSON via the OS share sheet.
+    /// Hands the current effective settings JSON to the desktop, and reports through the centre
+    /// status pill which action that turned out to be.
     /// </summary>
+    /// <remarks>
+    /// ⛔ <b>This acknowledged nothing, in either direction.</b> Success returned silently and
+    /// failure only reached the log, under a comment about not surfacing a dialog — the right
+    /// instinct about modals, and the wrong conclusion, because the pill is the non-modal channel
+    /// this codebase already has. Reported 2026-09-14 as "the share config button appears to do
+    /// nothing"; on Windows it genuinely did nothing, and nothing could tell.
+    /// <para>
+    /// ⚠ <b>The sentence is chosen from <see cref="ShareOutcome"/>, never assumed.</b> A generic
+    /// "Shared" would be wrong on Windows, where the payload goes to the clipboard and nothing is
+    /// shared — and a message asserted without an outcome would have hidden the no-op just as the
+    /// void return did.
+    /// </para>
+    /// </remarks>
     [RelayCommand]
     private async Task ShareConfigAsync()
     {
         if (_shareService is null)
         {
+            // The button is reachable with no service wired (headless, and any host that omits
+            // it). Saying so is the honest answer; returning quietly is the defect.
+            OnTerminalStatus?.Invoke(Strings.StatusShareConfigUnavailable, /* isFailure: */ false);
             return;
         }
 
         try
         {
-            await _shareService.ShareTextAsync("Claude Config", EffectiveJson);
+            ShareOutcome outcome = await _shareService.ShareTextAsync("Claude Config", EffectiveJson);
+            Log.Information("[EffectiveSettings] Share config outcome: {Outcome}", outcome);
+            ReportShareOutcome(outcome);
         }
         catch (Exception ex)
         {
-            // Share is best-effort; log without surfacing a dialog.
             Log.Error(ex, "[EffectiveSettings] Share failed: {Message}", ex.Message);
+            OnTerminalStatus?.Invoke(Strings.StatusShareConfigFailed, /* isFailure: */ true);
         }
+    }
+
+    private void ReportShareOutcome(ShareOutcome outcome)
+    {
+        // ⚠ No default arm, deliberately. Every declared member is answered here, so adding one
+        // to ShareOutcome without a sentence is CS8509 at build time rather than a silent
+        // fall-through to a wrong one — which is the class of defect this whole change closes.
+        //
+        // ⭐ CS8524 is the OTHER half of that diagnostic and is suppressed on purpose. Roslyn
+        // splits "a named member is unanswered" (CS8509) from "a cast could produce a value with
+        // no name" (CS8524) so exactly this trade is expressible: keep the guarantee that matters
+        // and decline the one a `_ =>` arm would take down with it. Adding `_ =>` to satisfy
+        // CS8524 would silence CS8509 as well, and the next member added to ShareOutcome would
+        // then ship reporting a sentence written for something else. An out-of-range cast throws
+        // here, and the caller's catch reports it as a failure — loud, which is the right way for
+        // this to fail.
+#pragma warning disable CS8524
+        (string text, bool isFailure) = outcome switch
+        {
+            ShareOutcome.CopiedToClipboard => (Strings.StatusShareConfigCopiedToClipboard, false),
+            ShareOutcome.OpenedInBrowser => (Strings.StatusShareConfigOpenedInBrowser, false),
+            ShareOutcome.OpenedMailClient => (Strings.StatusShareConfigOpenedMailClient, false),
+            ShareOutcome.RevealedInFileManager => (Strings.StatusShareConfigRevealedInFileManager, false),
+            ShareOutcome.Unavailable => (Strings.StatusShareConfigUnavailable, false),
+            ShareOutcome.Failed => (Strings.StatusShareConfigFailed, true),
+        };
+#pragma warning restore CS8524
+
+        OnTerminalStatus?.Invoke(text, isFailure);
     }
 
     private void OnSdkChanged(object? sender, ClientChangedEventArgs e)
@@ -245,18 +315,53 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
             Dispatcher.UIThread.Post(Refresh);
         }
     }
-}
 
-public sealed record EffectivePropertyRow(
-    string Property,
-    string DisplayValue,
-    ConfigScope? Scope,
-    bool IsOverridden,
-    string? Description = null)
-{
-    /// <summary>
-    /// Tooltip for the property-name cell: the schema description when known, else the
-    /// raw path (so the cell always has a meaningful hover, matching the old behaviour).
-    /// </summary>
-    public string PropertyTooltip => string.IsNullOrWhiteSpace(Description) ? Property : Description!;
+    // ── IDeepNavigable ───────────────────────────────────────────────────
+
+    /// <summary>Stable tab ids, so a deep link survives reordering and translation.</summary>
+    public const string TabPropertiesId = "properties";
+
+    /// <inheritdoc cref="TabPropertiesId"/>
+    public const string TabJsonId = "json";
+
+    private static int? TabIndexFor(string? tabId)
+    {
+        return tabId?.ToLowerInvariant() switch
+        {
+            TabPropertiesId => 0,
+            TabJsonId => 1,
+            var _ => null,
+        };
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> CaptureDeepPath()
+    {
+        return [SelectedTabIndex == 1 ? TabJsonId : TabPropertiesId];
+    }
+
+    /// <inheritdoc />
+    public void ReapplyTab(IReadOnlyList<string> segments)
+    {
+        if (segments is { Count: > 0 } && TabIndexFor(segments[0]) is { } index)
+        {
+            SelectedTabIndex = index;
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryRestoreDeepPathAsync(
+        IReadOnlyList<string> segments,
+        DeepRestoreMode mode,
+        object? transientState,
+        CancellationToken ct)
+    {
+        if (segments is null || segments.Count == 0 || TabIndexFor(segments[0]) is not { } index)
+        {
+            return Task.FromResult(false);
+        }
+
+        SelectedTabIndex = index;
+        return Task.FromResult(true);
+    }
 }

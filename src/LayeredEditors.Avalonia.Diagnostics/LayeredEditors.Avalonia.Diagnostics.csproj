@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <RootNamespace>Bennewitz.Ninja.Layer.Avalonia.Diagnostics</RootNamespace>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics</RootNamespace>
         <AssemblyName>LayeredEditors.Avalonia.Diagnostics</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
         <!-- Generate XML doc in all configurations for IDE IntelliSense and NuGet packaging.
@@ -19,12 +20,22 @@
             built-in ExceptionValidationPlugin, and a DataValidationErrors attached-property
             logger that catches binding errors Avalonia's own logger never sees.
         </Description>
-        <!-- NuGet package metadata — placeholders, filled in before first publish. -->
-        <PackageId>LayeredEditors.Avalonia.Diagnostics</PackageId>
-        <Authors>LayeredEditors contributors</Authors>
+        <!-- Identity, authors, licence, repository and readme now come from
+             src/Directory.Build.props, which covers all eleven packages. The placeholders
+             that used to sit here named this package WITHOUT the Bennewitz.Ninja prefix and
+             credited "LayeredEditors contributors"; both would have shipped on first publish.
+             Tags stay, because they are the one piece of this metadata that is genuinely
+             per-package. -->
         <PackageTags>avalonia;serilog;logging;diagnostics;binding;crash</PackageTags>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
 
     <ItemGroup>
         <!-- Core Avalonia runtime. -->
@@ -42,14 +53,9 @@
     <!-- Expose internal test-seam members (Map, BucketStart/FileName, etc.) to the
          matching test project without making them part of the public API. -->
     <ItemGroup>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-            <_Parameter1>LayeredEditors.Avalonia.Diagnostics.Tests</_Parameter1>
-        </AssemblyAttribute>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- README packaged for NuGet when we decide to publish. Kept optional
-             via Condition so the project still builds without it. -->
-        <None Include="README.md" Pack="true" PackagePath="\" Condition="Exists('README.md')"/>
-    </ItemGroup>
+    <!-- This project's own README.md is still the one that ships: src/Directory.Build.props
+         packs a project-local README.md when there is one and the shared PACKAGE-README.md
+         otherwise, so the include that used to sit here is now redundant rather than removed. -->
 </Project>

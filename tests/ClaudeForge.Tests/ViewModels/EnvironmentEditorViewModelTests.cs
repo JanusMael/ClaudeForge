@@ -1,7 +1,9 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Collections;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -62,20 +64,20 @@ public class EnvironmentEditorViewModelTests
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
-        return new SettingsWorkspace([doc]);
+        return new SettingsWorkspace([doc], ClaudeMergePolicy.Instance);
     }
 
     /// <summary>
     /// Wrap an in-memory <see cref="SettingsWorkspace"/> in a ClaudeCodeClient
     /// via the internal <c>FromExistingWorkspace</c> overload. Avoids disk I/O
     /// while exercising the SDK-backed Environment editor migrated in
-    /// 4.3.7 step 11. The grant lives in <c>ClaudeForge.Sdk.csproj</c>'s
+    /// 4.3.7 step 11. The grant lives in <c>AgentForge.Sdk.csproj</c>'s
     /// InternalsVisibleTo for ClaudeForge.Tests.
     /// </summary>
-    private static ClaudeConfigClientCore MakeClient(string userJson = "{}")
+    private static AgentConfigClientCore MakeClient(string userJson = "{}")
     {
         SettingsWorkspace ws = MakeWorkspace(userJson);
-        return ClaudeCodeClient.FromExistingWorkspace(
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, 
             ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
@@ -115,7 +117,7 @@ public class EnvironmentEditorViewModelTests
     public void Refresh_MergesClaudeEnvFromWorkspace()
     {
         FakeEnvironmentProvider provider = new();
-        ClaudeConfigClientCore client = MakeClient("""{"env":{"ANTHROPIC_API_KEY":"sk-test"}}""");
+        AgentConfigClientCore client = MakeClient("""{"env":{"ANTHROPIC_API_KEY":"sk-test"}}""");
 
         EnvironmentEditorViewModel vm = new(provider, client);
 
@@ -137,7 +139,7 @@ public class EnvironmentEditorViewModelTests
         provider.User["PATH"] = "user-path";
         provider.Process["PATH"] = "process-path";
 
-        ClaudeConfigClientCore client = MakeClient("""{"env":{"PATH":"claude-path"}}""");
+        AgentConfigClientCore client = MakeClient("""{"env":{"PATH":"claude-path"}}""");
         EnvironmentEditorViewModel vm = new(provider, client);
 
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("PATH", StringComparison.OrdinalIgnoreCase));
@@ -152,7 +154,7 @@ public class EnvironmentEditorViewModelTests
         provider.Machine["MY_VAR"] = "machine-val";
         provider.User["MY_VAR"] = "user-val";
 
-        ClaudeConfigClientCore client = MakeClient("""{"env":{"MY_VAR":"claude-val"}}""");
+        AgentConfigClientCore client = MakeClient("""{"env":{"MY_VAR":"claude-val"}}""");
         EnvironmentEditorViewModel vm = new(provider, client);
 
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("MY_VAR", StringComparison.OrdinalIgnoreCase));
@@ -252,11 +254,11 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void SaveEdit_ClaudeScope_WritesToWorkspace()
+    public void SaveEdit_ConfigScopeAdapter_WritesToWorkspace()
     {
         FakeEnvironmentProvider provider = new();
         provider.Process["PATH"] = "/usr/bin"; // so PATH is in AllEntries
-        ClaudeConfigClientCore client = MakeClient();
+        AgentConfigClientCore client = MakeClient();
         EnvironmentEditorViewModel vm = new(provider, client);
 
         vm.EditingScope = EnvEditScope.Claude;
@@ -278,10 +280,10 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void RemoveFromScope_ClaudeScope_RemovesFromWorkspace()
+    public void RemoveFromScope_ConfigScopeAdapter_RemovesFromWorkspace()
     {
         FakeEnvironmentProvider provider = new();
-        ClaudeConfigClientCore client = MakeClient("""{"env":{"MY_KEY":"existing-val"}}""");
+        AgentConfigClientCore client = MakeClient("""{"env":{"MY_KEY":"existing-val"}}""");
         EnvironmentEditorViewModel vm = new(provider, client);
 
         vm.EditingScope = EnvEditScope.Claude;
@@ -301,10 +303,10 @@ public class EnvironmentEditorViewModelTests
     // -----------------------------------------------------------------------
 
     [TestMethod]
-    public void AddNew_ClaudeScope_AddsEntryAndSelectsIt()
+    public void AddNew_ConfigScopeAdapter_AddsEntryAndSelectsIt()
     {
         FakeEnvironmentProvider provider = new();
-        ClaudeConfigClientCore client = MakeClient();
+        AgentConfigClientCore client = MakeClient();
         EnvironmentEditorViewModel vm = new(provider, client)
         {
             EditingScope = EnvEditScope.Claude,
@@ -331,7 +333,7 @@ public class EnvironmentEditorViewModelTests
     public void SyncEditValue_ShowsClaudeValueWhenScopeIsClaudeAndEntryHasClaudeValue()
     {
         FakeEnvironmentProvider provider = new();
-        ClaudeConfigClientCore client = MakeClient("""{"env":{"ANTHROPIC_API_KEY":"sk-abc"}}""");
+        AgentConfigClientCore client = MakeClient("""{"env":{"ANTHROPIC_API_KEY":"sk-abc"}}""");
         EnvironmentEditorViewModel vm = new(provider, client);
 
         vm.EditingScope = EnvEditScope.Claude;

@@ -2,13 +2,14 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.ClaudeForge.Core.JsonHelpers;
-using Bennewitz.Ninja.ClaudeForge.Core.Schema;
-using Bennewitz.Ninja.ClaudeForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MarketplaceSourceKind = Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces.MarketplaceSourceKind;
+using MarketplaceSourceKind = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces.MarketplaceSourceKind;
 
 // Alias the SDK namespaces — both ConfigScope and MarketplaceEntry collide
 // with names defined in this file. Reaching the SDK types via Sdk.* keeps
@@ -353,8 +354,8 @@ public partial class MarketplacesEditorViewModel : PropertyEditorViewModel
             if (_client is not null)
             {
                 ConfigScope sdkScope = editingScope;
-                IReadOnlyList<Sdk.Marketplaces.MarketplaceEntry> snapshot = _client.Marketplaces.GetAt(sdkScope);
-                foreach (Sdk.Marketplaces.MarketplaceEntry sdkEntry in snapshot)
+                IReadOnlyList<Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces.MarketplaceEntry> snapshot = _client.Marketplaces.GetAt(sdkScope);
+                foreach (Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces.MarketplaceEntry sdkEntry in snapshot)
                 {
                     MarketplaceEntry entry = new(
                         sdkEntry.Name,

@@ -133,6 +133,18 @@
     <value>新插件引用</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>增大数值</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>展开或折叠</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>减小数值</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -579,6 +591,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>正在还原 claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>正在还原 Claude 主目录…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>正在还原 Desktop 配置…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>正在还原 Desktop 配置档案…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>正在还原 Desktop 当前配置档案…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>正在应用还原…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>正在还原项目…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>正在还原工作树…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>还原完成</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>正在检测项目…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>保留</value>
@@ -1294,6 +1342,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>当较窄的作用域（例如 local 或 project）显式设置此属性、覆盖此行的值时勾选</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>风险</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>此设置的重要程度，按生效的作用域和当前生效值判定，因此可能与“属性”选项卡中同一设置的判定不同（后者按你正在编辑的作用域判定）</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>复制到剪贴板</value>
   </data>
@@ -1318,6 +1372,42 @@
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>已重新加载。</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>配置已复制到剪贴板。</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>配置已在浏览器中打开。</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>配置已交给邮件客户端。</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>配置已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>此系统不支持共享。</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>无法共享配置 — 详情请查看日志。</value>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>日志文件已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>此系统不支持共享日志。</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>无法显示日志文件 — 详情请查看日志。</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>备份文件已在文件管理器中显示。</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>此系统不支持共享备份文件。</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>无法显示备份文件 — 详情请查看日志。</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>没有可导出的内容 — 设置尚未加载。</value>
@@ -1859,6 +1949,9 @@
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>已修改属性</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>其中 {0} 项更改会设置削弱安全边界的值。保存前请检查已标记的行。</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2819,6 +2912,60 @@
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>无法打开深层链接“{0}”——没有该页面或项。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>设置导航</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>子代理、技能和命令</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>备份与恢复</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>生效设置视图</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>内存层级</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>设置视图</value>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>内置</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>已获取 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>本节的设置由此应用内置的架构（指纹 {0}）描述。应用尝试获取更新的副本但未成功——通常是没有网络，或下载过慢。</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>本节的设置由在 {0} 下载的架构（指纹 {1}）描述。下载不可用时，将改用此应用内置的副本。</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>本节的设置由此应用内置的架构（指纹 {0}）描述。该产品未发布可下载的架构，因此此副本是唯一的副本。</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>检查架构更新</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>重新下载这些编辑器所依据的定义。重新加载后生效。</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>正在检查…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>架构已是最新。</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>已更新：{0}。请重新加载窗口以应用——编辑器仍显示先前的版本。</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>无法连接架构服务器。将使用此应用内置的副本。</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>无法加载 {0} 的架构。详情请查看日志。</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>移除</value>

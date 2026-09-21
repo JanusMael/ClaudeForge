@@ -178,7 +178,7 @@ public class ScopeToTooltipConverterTests
     [TestMethod]
     public void Convert_AllConfigScopeValues_ReturnNonNullStrings()
     {
-        foreach (ConfigScope scope in Enum.GetValues<ConfigScope>())
+        foreach (ConfigScope scope in ConfigScope.All)
         {
             string? result = Convert(scope) as string;
             Assert.IsFalse(string.IsNullOrWhiteSpace(result),

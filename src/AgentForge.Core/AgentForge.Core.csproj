@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <IsPackable>true</IsPackable>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.Core</RootNamespace>
+        <AssemblyName>AgentForge.Core</AssemblyName>
+        <Description>
+            The product-neutral engines an agent-configuration app is built on: JSON Schema
+            loading and validation with a network-first resolution chain and a disk cache,
+            the layered settings workspace, the backup and restore engine, artifact profiles
+            and the model catalog, platform path resolution, and the update check.
+
+            Knows about no agent. Every product-shaped answer — which files, which scopes,
+            which schema — arrives as a descriptor from the host.
+
+            Invariant: AgentForge.* must never reference ClaudeForge.* or OpenCode.*.
+            AssemblyLayeringTests enforces it.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
+        <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
+             file discovery errors).  No Avalonia dependency — safe to reference from Core. -->
+        <PackageReference Include="Serilog" Version="4.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The comment-preserving writer, and the neutral IConfigWriter contract it and
+             the legacy writer both implement. Neither is product-specific, so the layering
+             rule is unaffected. ⚠ This used to read "both are AgentForge.*" — JsonC left that
+             family when it was renamed, because nothing in it knows what an agent is. The
+             layering guard was widened to keep scanning it rather than losing it silently. -->
+        <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
+        <ProjectReference Include="..\JsonC\JsonC.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
+        <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
+        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
+    </ItemGroup>
+
+</Project>

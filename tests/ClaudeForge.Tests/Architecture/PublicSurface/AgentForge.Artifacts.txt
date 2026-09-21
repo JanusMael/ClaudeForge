@@ -1,0 +1,105 @@
+enum Bennewitz.Ninja.AgentForge.Artifacts.ArtifactForm : System.Int32
+    BuiltIn = 2
+    File = 0
+    Inline = 1
+    Remote = 3
+enum Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind : System.Int32
+    Agent = 1
+    Command = 2
+    Configuration = 8
+    Hook = 5
+    Memory = 0
+    Plan = 7
+    Plugin = 6
+    Rule = 4
+    Skill = 3
+class Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe>
+    .ctor(System.String Name, System.String Path)
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Name { get;init; }
+    System.String Path { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Name, out System.String Path)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe right)
+class Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef>
+    .ctor(System.String Name, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactForm Form, System.String Location, System.String SourceId)
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactForm Form { get;init; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef <Clone>$()
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Location { get;init; }
+    System.String Name { get;init; }
+    System.String SourceId { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Name, out Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind, out Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope, out Bennewitz.Ninja.AgentForge.Artifacts.ArtifactForm Form, out System.String Location, out System.String SourceId)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef right)
+class Bennewitz.Ninja.AgentForge.Artifacts.ArtifactResolver
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact> Resolve(System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.IArtifactSource> sources)
+class Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope>
+    .ctor(System.String Id, System.String DisplayName, System.Int32 Precedence)
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.Int32 Precedence { get;init; }
+    System.String DisplayName { get;init; }
+    System.String Id { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Id, out System.String DisplayName, out System.Int32 Precedence)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope right)
+class Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity>
+    .ctor(System.String Id, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope)
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope { get;init; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String Id { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String Id, out Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind, out Bennewitz.Ninja.AgentForge.Artifacts.ArtifactScope Scope)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity left, Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity right)
+class Bennewitz.Ninja.AgentForge.Artifacts.DirectoryArtifactSource [sealed] implements Bennewitz.Ninja.AgentForge.Artifacts.IArtifactSource
+    .ctor(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity identity, System.String root, System.String searchPattern, System.Boolean recursive, System.Boolean stripExtension)
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Enumerate()
+    System.Collections.Generic.IReadOnlyList<System.String> ExcludedSuffixes { get;init; }
+    System.String Id { get; }
+    System.String NamePrefix { get;init; }
+class Bennewitz.Ninja.AgentForge.Artifacts.FileProbeArtifactSource [sealed] implements Bennewitz.Ninja.AgentForge.Artifacts.IArtifactSource
+    .ctor(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity identity, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactProbe> probes)
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Enumerate()
+    System.String Id { get; }
+interface Bennewitz.Ninja.AgentForge.Artifacts.IArtifactSource
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Enumerate()
+    System.String Id { get; }
+class Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact>
+    .ctor()
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactKind Kind { get;init; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef Effective { get; }
+    Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsShadowed { get; }
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Shadowed { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Entries { get;init; }
+    System.Int32 GetHashCode()
+    System.String Name { get;init; }
+    System.String ToString()
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact left, Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact left, Bennewitz.Ninja.AgentForge.Artifacts.ResolvedArtifact right)
+class Bennewitz.Ninja.AgentForge.Artifacts.SkillDirectoryArtifactSource [sealed] implements Bennewitz.Ninja.AgentForge.Artifacts.IArtifactSource
+    .ctor(Bennewitz.Ninja.AgentForge.Artifacts.ArtifactSourceIdentity identity, System.String root, System.String manifestFileName)
+    System.Collections.Generic.IEnumerable<Bennewitz.Ninja.AgentForge.Artifacts.ArtifactRef> Enumerate()
+    System.String Id { get; }
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease

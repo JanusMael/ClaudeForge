@@ -207,6 +207,7 @@ ClaudeForge accepts a small set of command-line flags useful for testing UI stat
 | `--showAllNew` | Force every property in every editor to render with the "✨ NEW" badge. Useful for QA / screenshots / verifying badge styling without mutating the schema or snapshot cache. |
 | `--culture <code>` | Override `CurrentUICulture` with the named specific culture (e.g. `en-US`, `zh-CN`, `fr-FR`). Validated against the .NET predefined-culture list — unrecognised codes are rejected with a Serilog warning and the OS default is used. Useful for verifying the resx fallback path on cultures with no satellite. |
 | `--deep-link <path>` | Launch straight into a page, tab, or item instead of wherever you left off. See [Deep links](#deep-links). |
+| `--writer <legacy\|jsonc>` | Which writer saves your config files. The default (`jsonc`) edits in place, so your comments, blank lines, key order, and indentation survive a save and only the settings you changed appear in a `git diff`. `legacy` restores the older behaviour of re-serializing the whole file, which reformats it — **a recovery hatch in case the in-place writer ever mangles a file, and it is going away after one release.** If you need it, please open an issue with the before/after so it can be fixed. Unrecognised values fall back to the default. |
 | `--debug-help` | Log the available flags. |
 
 Passing any flag emits a startup log line so log captures always say which flags shaped the session:
@@ -244,6 +245,10 @@ pages nested under a product:
 
 Every settings page takes `properties`, `effective` and `json`; a page that
 contributes its own tab addresses it the same way, which is what `hooks.flow` is.
+In the `name@source` form, a plugin's source is itself a path, so its separators
+are written as `:` to keep the whole thing inside one segment —
+`math-olympiad@claude-plugins-official:plugins:math-olympiad`. **Copy deep link**
+does this for you; either spelling is accepted if you type one by hand.
 
 **You don't have to compose these by hand.** Open an agent, skill, or command and use
 **Copy deep link** in its toolbar — that puts the exact path on your clipboard,
@@ -253,11 +258,6 @@ also how you hand someone else a pointer to a specific artifact.
 Page and tab ids are stable identifiers, not display labels, so a link keeps
 working in any language. A settings page's id is its sidebar name lower-cased with
 punctuation collapsed to `-` (`MCP Servers` → `mcp-servers`).
-
-In the `name@source` form, a plugin's source is itself a path, so its separators
-are written as `:` to keep the whole thing inside one segment —
-`math-olympiad@claude-plugins-official:plugins:math-olympiad`. **Copy deep link**
-does this for you; either spelling is accepted if you type one by hand.
 
 A path that doesn't work says so rather than failing quietly. A **malformed** one is
 reported on your terminal, with the valid pages listed:

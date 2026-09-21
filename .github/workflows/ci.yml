@@ -108,9 +108,190 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Publish (Release, linux-x64)
+      # ⚠ EVERY shipping app needs its own publish. A trim break is invisible to the Debug
+      # suite — one IL2026 in a JSON helper broke the Release publish for three phases while
+      # thousands of Debug tests passed over it — and this job only ever covered the first app,
+      # so the second could have shipped the same class of break with CI green.
+      #
+      # ⭐ -p:AllowProjectReferencePublish=true IS THE NAMED ESCAPE HATCH, and this job is the
+      # reason it exists (plans/00003, Phase D step D3). GuardShippingPublishUsesPackages fails
+      # any Release publish of a shipping app that is not in package mode, because the release
+      # claimed package mode in a comment for the life of the feature while every RID it ever cut
+      # used ProjectReference. This job must NOT be in package mode: it has no feed credentials,
+      # and a fork must run it green. ⚠ The hatch is recorded rather than silent — the guard
+      # prints "ESCAPE HATCH USED" at high importance into this job's log. What is measured here
+      # is trim analysis of THIS commit's source, which is what a fork can check and what a
+      # package-mode publish of a pinned older version could not tell you.
+      - name: Publish ClaudeForge (Release, linux-x64)
         run: >
           dotnet publish src/ClaudeForge
           -c Release -r linux-x64
           --self-contained true
-          -o /tmp/trim-check
+          -p:AllowProjectReferencePublish=true
+          -o /tmp/trim-check-claudeforge
+
+  # ── The package canary ───────────────────────────────────────────────────────
+  #
+  # Eleven projects under src/ ship as NuGet packages on GitHub Packages (plans/00001) — PUBLIC,
+  # though the feed still requires a token for every read. Everything else
+  # consumes them as ProjectReference in development and PackageReference under
+  # UseSharedPackages=true. Development mode is what every human runs, so PACKAGE mode is the
+  # one that rots unobserved — and it is the mode the release publishes from.
+  #
+  # ⛔ THAT LAST CLAUSE WAS FALSE WHEN IT WAS WRITTEN, for the entire life of the feature, and
+  # plans/00003 names this comment as one of the two that asserted it. Nothing set the switch on
+  # the release path, so every RID of every release ever cut used ProjectReference. It is true as
+  # of Phase D (D1), and it is now GUARDED rather than merely asserted:
+  # GuardShippingPublishUsesPackages fails a Release publish of a shipping app that is not in
+  # package mode. ⚠ Keep the clause and the guard together — a claim about the release that only
+  # a comment defends is the exact defect this plan exists to close.
+  #
+  # ⚠ THIS JOB NEVER CONTACTS THE FEED. It packs THIS COMMIT at a throwaway version into a local
+  # folder, which proves the PackageReference mechanics and nothing about the published bytes.
+  # The `published-version` job below is the one that consumes what a release actually ships
+  # against; the two are not interchangeable and neither replaces the other.
+  #
+  # ⛔ The two modes are not equivalent, which is the whole reason this job exists rather than
+  # being assumed. Its first run found a real difference: a ProjectReference copies the
+  # referenced project's XML documentation file into the output directory and a PackageReference
+  # does not, which failed the one test that reads AgentForge.Sdk.xml to assert the threading
+  # contract is documented. Nothing about that is inferable from the package contents.
+  #
+  # ⚠ No credentials, and none needed. The job packs THIS commit into a local folder feed and
+  # restores from there; nuget.config maps the private GitHub feed to the same ids, but it is
+  # never reached because the local feed answers first. A fork runs this green.
+  package-canary:
+    name: Package Canary (Release linux-x64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # The script packs at a timestamped throwaway version into a job-local NUGET_PACKAGES,
+      # because NuGet will not re-extract an id+version it has already seen — without both, a
+      # second run silently validates the first run's packages. See the script's header.
+      - name: Pack, build, test and publish against packages
+        shell: pwsh
+        run: ./scripts/package-canary.ps1 -RuntimeIdentifier linux-x64
+
+  # ── Does the app restore the eleven FROM THE PUBLISHED FEED? ────────────────
+  #
+  # plans/00003 Phase D, D1 and D2. The canary job above proves package MODE works; it packs
+  # locally and answers from artifacts/localfeed, so it says nothing about the feed. This job
+  # is the other half: the pinned SharedPackageVersion must resolve from GitHub Packages.
+  #
+  # ⛔ WHY A WHOLE JOB RATHER THAN A FLAG ON THE CANARY. To NuGet a folder source is exactly as
+  # valid as a remote one, so "the restore succeeded" is the same output either way. Measured on
+  # 2026-09-19: a restore at the pinned version reported success with all eleven resolving from
+  # artifacts/localfeed — locally-packed bytes from an earlier commit — because the global cache
+  # is keyed id+version and never re-extracts. The script therefore purges before restoring and
+  # reads `source` out of each .nupkg.metadata afterwards.
+  #
+  # ⚠ CREDENTIALS COME FROM AN ENVIRONMENT VARIABLE, NOT A CONFIG EDIT. NuGet reads
+  # NuGetPackageSourceCredentials_<sourceName>, so nothing is written to nuget.config and no
+  # token reaches the working tree. The source name must match the key in nuget.config exactly.
+  #
+  # ⚠ THIS JOB CANNOT PASS ON A FORK, and that is the same accepted cost as release.yml's
+  # packages: read — a fork's token has no read access to this repository's packages.
+  feed-restore:
+    name: Feed Restore (published packages)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # ⓘ The script creates artifacts/localfeed EMPTY before restoring. It is gitignored, so a
+      # fresh checkout has no such folder — and a configured local source that does not exist is
+      # a hard NU1301 error, not a skipped one, which killed this job's first run before it ever
+      # reached the feed. An empty folder satisfies NuGet and can supply nothing, so it makes the
+      # provenance conclusion stronger rather than weaker. The script also purges the global
+      # cache, because a runner image could in principle carry one.
+      - name: Restore from the feed and verify provenance
+        shell: pwsh
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/verify-feed-restore.ps1
+
+  # ── The published version, end to end ───────────────────────────────────────
+  #
+  # plans/00003, Phase D step D4. `feed-restore` proves the eleven RESOLVE from the feed; this
+  # job proves the repository still WORKS when they do — the whole suite plus a real trimmed
+  # publish, in package mode, at the version pinned in the root Directory.Build.props.
+  #
+  # ⛔ THIS IS NOT THE PACKAGE CANARY, and the difference is the whole point. `package-canary`
+  # packs THIS COMMIT at a throwaway version into a local folder and consumes that, which proves
+  # the PackageReference mechanics and says nothing whatever about the bytes on the feed. This
+  # job consumes the immutable PUBLISHED bytes, which is what a release actually ships against.
+  # The two can disagree — packages published from an older commit are exactly the case no local
+  # gate would notice, and a published version can never be replaced once it exists.
+  #
+  # ⚠ NO LOCAL FEED, AND THE FOLDER STILL HAS TO EXIST. A configured local source that does not
+  # exist is a hard NU1301, not a skipped one; that killed `feed-restore`'s first run before it
+  # ever reached the feed. Creating it empty satisfies NuGet, can supply nothing, and therefore
+  # makes the conclusion stronger rather than weaker.
+  #
+  # ⓘ "With the global cache purged" needs no arranging here: a hosted runner starts without one
+  # and this workflow configures no NuGet caching. That is precisely the condition a developer
+  # machine cannot offer, because the cache is keyed id+version and never re-extracts.
+  #
+  # ⚠ Like `feed-restore`, THIS JOB CANNOT PASS ON A FORK — a fork's token has no read access to
+  # this repository's packages. Same accepted cost as `release.yml`'s `packages: read`.
+  published-version:
+    name: Published Version (suite + trim, Release)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.x'
+
+      # Gitignored, so a fresh checkout has none. See the NU1301 note above.
+      - name: Create an empty local feed
+        run: mkdir -p artifacts/localfeed
+
+      # ⚠ Credentials arrive as an environment variable, never a config edit: NuGet reads
+      # NuGetPackageSourceCredentials_<sourceName>, so no token reaches the working tree. The
+      # suffix must match the source key in nuget.config exactly.
+      - name: Test the solution against the published packages
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: dotnet test ClaudeForge.slnx -c Release -p:UseSharedPackages=true
+
+      # ⭐ A real trimmed publish, so ILLink's whole-program pass runs over the PACKAGED shared
+      # libraries rather than the project-built ones. It fails on NETSDK1144 for any IL2xxx that
+      # is neither fixed nor suppressed, which is the gate. ⓘ It also exercises
+      # GuardShippingPublishUsesPackages on its intended path: the guard prints the mode, and
+      # this is the one job whose publish is in package mode without an escape hatch.
+      - name: Publish (trim gate) against the published packages
+        env:
+          NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+        run: >
+          dotnet publish src/ClaudeForge
+          -c Release -r linux-x64
+          --self-contained true
+          -p:UseSharedPackages=true
+          -o /tmp/published-version-trim

@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -26,7 +26,7 @@ public sealed class WindowTitleTests
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
 
-        _vm = new MainWindowViewModel(new SchemaRegistry(), new NullDialogService());
+        _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     [TestCleanup]

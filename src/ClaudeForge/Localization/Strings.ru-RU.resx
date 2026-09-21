@@ -133,6 +133,18 @@
     <value>Новая ссылка на плагин</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>Увеличить значение</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>Развернуть или свернуть</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>Уменьшить значение</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -578,6 +590,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>Восстановление claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Восстановление домашнего каталога Claude…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Восстановление конфигурации Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Восстановление профилей Desktop…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Восстановление активного профиля Desktop…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>Применение восстановления…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>Восстановление проектов…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>Восстановление рабочих деревьев…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>Восстановление завершено</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>Поиск проектов…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Хранение</value>
@@ -1227,6 +1275,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Отмечено, когда более узкая область (напр. local или project) явно задаёт это свойство, переопределяя значение в этой строке</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Риск</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>Насколько важна эта настройка — оценивается по области, которая победила, и по действующему значению, поэтому может отличаться от той же настройки на вкладке «Свойства», где оценивается редактируемая область</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Копировать в буфер обмена</value>
   </data>
@@ -1251,6 +1305,42 @@
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>Перезагружено.</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Конфигурация скопирована в буфер обмена.</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Конфигурация открыта в браузере.</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Конфигурация передана почтовому клиенту.</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Конфигурация показана в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Общий доступ недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Не удалось поделиться конфигурацией — подробности см. в журнале.</value>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Файл журнала показан в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Общий доступ к журналу недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Не удалось показать файл журнала — подробности см. в журнале.</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Архив резервной копии показан в файловом менеджере.</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Общий доступ к архиву недоступен в этой системе.</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Не удалось показать архив — подробности см. в журнале.</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Нечего экспортировать — параметры ещё не загружены.</value>
@@ -1812,6 +1902,9 @@
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>Изменённое свойство</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} из этих изменений задают значение, ослабляющее границу безопасности. Проверьте отмеченные строки перед сохранением.</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2840,6 +2933,60 @@
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>Не удалось открыть прямую ссылку «{0}» — такой страницы или элемента нет.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Навигация по настройкам</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Субагенты, навыки и команды</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Резервное копирование и восстановление</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Представления действующих настроек</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Уровни памяти</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Представления настроек</value>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>встроенная</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>загружено {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, встроенной в это приложение (отпечаток {0}). Приложение попыталось загрузить более новую копию и не смогло — обычно из-за отсутствия сети или слишком медленной загрузки.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, загруженной в {0} (отпечаток {1}). Если загрузка недоступна, вместо неё используется копия, встроенная в это приложение.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>Параметры этого раздела описаны схемой, встроенной в это приложение (отпечаток {0}). Этот продукт не публикует схему для загрузки, поэтому эта копия — единственная.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Проверить обновления схем</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Повторно загрузить определения, на которых основаны эти редакторы. Вступает в силу после перезагрузки.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Проверка…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Схемы актуальны.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Обновлено: {0}. Перезагрузите окно, чтобы применить — редакторы всё ещё показывают предыдущую версию.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Не удалось связаться с сервером схем. Используется копия, встроенная в это приложение.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Не удалось загрузить схему для {0}. Подробности в журнале.</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>Удалить</value>

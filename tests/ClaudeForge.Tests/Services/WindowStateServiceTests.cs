@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
@@ -37,12 +37,12 @@ public sealed class WindowStateServiceTests
     public void Delete_RemovesPersistedFile()
     {
         // Save a state to disk so there is something to delete.
-        WindowStateService.Save(new WindowState { Width = 9999 });
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { Width = 9999 });
 
         string statePath = Path.Combine(_sandbox, ".claude", "cache", "ClaudeForge-gui-state.json");
         Assert.IsTrue(File.Exists(statePath), "Setup: Save must have created the file.");
 
-        WindowStateService.Delete();
+        WindowStateService.Delete(ClaudeEnvironment.Empty);
 
         Assert.IsFalse(File.Exists(statePath),
             "Delete must remove the persisted UI-state file so the next launch starts " +
@@ -55,7 +55,7 @@ public sealed class WindowStateServiceTests
         // Calling Delete on a fresh sandbox where the state file was never
         // written must be a silent no-op — Clear App Data must never block
         // shutdown on a missing-file edge case.
-        string path = WindowStateService.Delete();
+        string path = WindowStateService.Delete(ClaudeEnvironment.Empty);
 
         Assert.IsNotNull(path, "Delete must return the targeted path even when the file did not exist.");
     }
@@ -79,7 +79,7 @@ public sealed class WindowStateServiceTests
         string stateFile = Path.Combine(stateDir, "ClaudeForge-gui-state.json");
         File.WriteAllText(stateFile, """{"width":1200,"height":900,"theme":"System"}""");
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
 
         Assert.IsTrue(loaded.ShowWelcomeNode,
             "Missing showWelcomeNode key must deserialize to the field-initializer default (true). "
@@ -94,10 +94,10 @@ public sealed class WindowStateServiceTests
         // than throwing or echoing stale state — the next launch needs to
         // boot from clean defaults so window position / theme / last-node
         // all reset.
-        WindowStateService.Save(new WindowState { Width = 1234, Height = 567 });
-        WindowStateService.Delete();
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { Width = 1234, Height = 567 });
+        WindowStateService.Delete(ClaudeEnvironment.Empty);
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
 
         Assert.AreEqual(1200, loaded.Width, "Width must fall back to the WindowState default.");
         // bumped from 750 to 900 (~20% taller) so the editor
@@ -117,10 +117,10 @@ public sealed class WindowStateServiceTests
         WindowStateService.ResetLoadCountForTesting();
         Assert.AreEqual(0, WindowStateService.LoadCount, "Counter must start at 0 after reset.");
 
-        _ = WindowStateService.Load();
+        _ = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.AreEqual(1, WindowStateService.LoadCount, "First Load must increment to 1.");
 
-        _ = WindowStateService.Load();
+        _ = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.AreEqual(2, WindowStateService.LoadCount,
             "Second Load must increment to 2 — locks the per-call increment contract.");
     }
@@ -134,8 +134,8 @@ public sealed class WindowStateServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         File.WriteAllText(settingsPath, """{"model":"sonnet"}""");
 
-        WindowStateService.Save(new WindowState { Width = 9999 });
-        WindowStateService.Delete();
+        WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { Width = 9999 });
+        WindowStateService.Delete(ClaudeEnvironment.Empty);
 
         Assert.IsTrue(File.Exists(settingsPath),
             "settings.json must NOT be deleted — Clear App Data is a UI-state reset only.");
@@ -146,7 +146,7 @@ public sealed class WindowStateServiceTests
     [TestMethod]
     public void LoadCount_ExactlyOne_AfterMwvmConstruction()
     {
-        // MainWindowViewModel calls WindowStateService.Load()
+        // MainWindowViewModel calls WindowStateService.Load(ClaudeEnvironment.Empty)
         // exactly once during construction (line 212 of MainWindowViewModel.cs) to
         // hydrate _cachedState. Subsequent SaveWindowState() calls mutate that in-memory
         // object and write to disk without calling Load() again.
@@ -165,11 +165,11 @@ public sealed class WindowStateServiceTests
         Assert.AreEqual(0, WindowStateService.LoadCount,
             "Counter must be 0 before MWVM is constructed.");
 
-        MainWindowViewModel vm = new(new SchemaRegistry(), new NullDialogService());
+        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
         {
             Assert.AreEqual(1, WindowStateService.LoadCount,
-                "MWVM construction must call WindowStateService.Load() exactly once. " +
+                "MWVM construction must call WindowStateService.Load(ClaudeEnvironment.Empty) exactly once. " +
                 "If count > 1 a second Load() call was introduced on a hot path — " +
                 "regressing the single-hydrate contract.");
         }
@@ -197,7 +197,7 @@ public sealed class WindowStateServiceTests
         // they want it off they toggle the Essentials card; the default
         // should match the user's reasonable expectation that an app
         // tells them when it's out of date.
-        WindowState state = WindowStateService.Load();
+        WindowState state = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.IsTrue(state.CheckForUpdatesOnLaunch,
             "CheckForUpdatesOnLaunch default must be true on a fresh install. " +
             "If you change this default, also update the Essentials card's expected initial state.");
@@ -206,7 +206,7 @@ public sealed class WindowStateServiceTests
     [TestMethod]
     public void DismissedUpdateVersions_DefaultsToEmpty()
     {
-        WindowState state = WindowStateService.Load();
+        WindowState state = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.IsNotNull(state.DismissedUpdateVersions,
             "List must be initialised, not null — the Dismiss command path " +
             "calls .Add(tag) directly without a null-check.");
@@ -220,9 +220,9 @@ public sealed class WindowStateServiceTests
         // User toggles the Essentials card off → Save → next launch →
         // Load → reads back as false.  Locks the persistence contract.
         WindowState toSave = new() { CheckForUpdatesOnLaunch = false };
-        WindowStateService.Save(toSave);
+        WindowStateService.Save(ClaudeEnvironment.Empty, toSave);
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.IsFalse(loaded.CheckForUpdatesOnLaunch,
             "The user's 'check disabled' choice must survive a save-then-load cycle.");
     }
@@ -234,9 +234,9 @@ public sealed class WindowStateServiceTests
         // save-then-load cycle so a relaunch returns them to the item, not just
         // the page.
         WindowState toSave = new() { LastDeepPath = "agents-skills/skills/pdf@User" };
-        WindowStateService.Save(toSave);
+        WindowStateService.Save(ClaudeEnvironment.Empty, toSave);
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
 
         Assert.AreEqual("agents-skills/skills/pdf@User", loaded.LastDeepPath);
     }
@@ -244,9 +244,9 @@ public sealed class WindowStateServiceTests
     [TestMethod]
     public void LastDeepPath_DefaultsToNullOnCleanInstall()
     {
-        WindowStateService.Delete();
+        WindowStateService.Delete(ClaudeEnvironment.Empty);
 
-        Assert.IsNull(WindowStateService.Load().LastDeepPath,
+        Assert.IsNull(WindowStateService.Load(ClaudeEnvironment.Empty).LastDeepPath,
             "A fresh install has no remembered position.");
     }
 
@@ -261,7 +261,7 @@ public sealed class WindowStateServiceTests
             Path.Combine(dir, "ClaudeForge-gui-state.json"),
             """{"width":1200,"height":900,"lastNode":"Essentials"}""");
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
 
         Assert.IsNull(loaded.LastDeepPath);
         Assert.AreEqual("Essentials", loaded.LastSelectedNodeTitle,
@@ -279,9 +279,9 @@ public sealed class WindowStateServiceTests
         {
             DismissedUpdateVersions = ["v2026.5.523", "v2026.6.524"],
         };
-        WindowStateService.Save(toSave);
+        WindowStateService.Save(ClaudeEnvironment.Empty, toSave);
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
         CollectionAssert.AreEqual(
             new[] { "v2026.5.523", "v2026.6.524" },
             loaded.DismissedUpdateVersions,
@@ -304,7 +304,7 @@ public sealed class WindowStateServiceTests
         // Write a minimal state file with NO dismissedUpdateVersions field.
         File.WriteAllText(statePath, """{"width":1200,"height":900}""");
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.IsNotNull(loaded.DismissedUpdateVersions,
             "Old state files (pre-fix) MUST deserialise to a non-null list — " +
             "the Dismiss command path does .Add(tag) without null-checking.");
@@ -323,7 +323,7 @@ public sealed class WindowStateServiceTests
         Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
         File.WriteAllText(statePath, """{"width":1200,"height":900}""");
 
-        WindowState loaded = WindowStateService.Load();
+        WindowState loaded = WindowStateService.Load(ClaudeEnvironment.Empty);
         Assert.IsTrue(loaded.CheckForUpdatesOnLaunch,
             "Old state files (pre-fix) MUST deserialise to the new field's default — true.  " +
             "Otherwise existing users would silently lose the auto-check behaviour after upgrade.");

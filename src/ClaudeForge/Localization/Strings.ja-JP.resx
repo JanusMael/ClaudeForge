@@ -133,6 +133,18 @@
     <value>新しいプラグイン参照</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>値を大きくする</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>展開または折りたたみ</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>値を小さくする</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -578,6 +590,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>claude.json を復元しています…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Claude ホームディレクトリを復元しています…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Desktop の設定を復元しています…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Desktop のプロファイルを復元しています…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Desktop のアクティブなプロファイルを復元しています…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>復元を適用しています…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>プロジェクトを復元しています…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>ワークツリーを復元しています…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>復元が完了しました</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>プロジェクトを検出しています…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>保持</value>
@@ -1227,6 +1275,12 @@
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>より狭いスコープ (例: local または project) がこのプロパティを明示的に設定し、この行の値を上書きしている場合にチェックされます</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>リスク</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>この設定の重要度。優先されたスコープと有効な値に基づいて判定されるため、編集中のスコープで判定する「プロパティ」タブの同じ設定とは異なる場合があります</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>クリップボードにコピー</value>
   </data>
@@ -1251,6 +1305,42 @@
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>再読み込みしました。</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>設定をクリップボードにコピーしました。</value>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>設定をブラウザーで開きました。</value>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>設定をメールクライアントに渡しました。</value>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>設定をファイルマネージャーで表示しました。</value>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>このシステムでは共有を利用できません。</value>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>設定を共有できませんでした。詳細はログを確認してください。</value>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>ログファイルをファイルマネージャーで表示しました。</value>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>このシステムではログの共有を利用できません。</value>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>ログファイルを表示できませんでした。詳細はログを確認してください。</value>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>バックアップアーカイブをファイルマネージャーで表示しました。</value>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>このシステムではアーカイブの共有を利用できません。</value>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>バックアップアーカイブを表示できませんでした。詳細はログを確認してください。</value>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>エクスポート対象がありません — 設定がまだ読み込まれていません。</value>
@@ -1812,6 +1902,9 @@
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>変更されたプロパティ</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>これらの変更のうち {0} 件は、安全境界を弱める値を設定します。保存する前に、マークされた行を確認してください。</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2839,6 +2932,60 @@
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>ディープリンク「{0}」を開けませんでした — 該当するページまたは項目がありません。</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>設定ナビゲーション</value>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>サブエージェント、スキル、コマンド</value>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>バックアップとリストア</value>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>有効な設定のビュー</value>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>メモリ階層</value>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>設定ビュー</value>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>内蔵</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>取得 {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>このセクションの設定は、このアプリに内蔵されたスキーマ (フィンガープリント {0}) で定義されています。より新しいコピーの取得を試みましたが失敗しました — 通常はネットワークがない、またはダウンロードが遅すぎる場合です。</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>このセクションの設定は、{0} にダウンロードされたスキーマ (フィンガープリント {1}) で定義されています。ダウンロードが利用できない場合は、このアプリに内蔵されたコピーが代わりに使用されます。</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>このセクションの設定は、このアプリに内蔵されたスキーマ (フィンガープリント {0}) で定義されています。この製品はダウンロード可能なスキーマを公開していないため、このコピーが唯一のものです。</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>スキーマの更新を確認</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>これらのエディターの基になっている定義を再ダウンロードします。再読み込み後に反映されます。</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>確認中…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>スキーマは最新です。</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>更新しました: {0}。適用するにはウィンドウを再読み込みしてください — エディターにはまだ以前のバージョンが表示されています。</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>スキーマサーバーに接続できませんでした。このアプリに内蔵されたコピーを使用します。</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>{0} のスキーマを読み込めませんでした。詳細はログを確認してください。</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>削除</value>

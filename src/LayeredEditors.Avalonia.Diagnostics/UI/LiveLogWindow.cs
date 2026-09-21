@@ -7,6 +7,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -103,7 +104,7 @@ public static class LiveLogWindow
     private static AvaloniaList<string>? _logLines;
     private static Window? _window;
     private static ListBox? _logList;
-    private static TextBlock? _logPathLink;
+    private static Button? _logPathLink;
     private static string? _currentLogFilePath;
     private static bool _initialized;
 
@@ -450,7 +451,7 @@ public static class LiveLogWindow
                 tooltip: LogFileLinkTooltip,
                 foreground: linkBrush,
                 onClick: OnLogFileClicked);
-            _logPathLink.FontFamily = new FontFamily("Consolas, Courier New, monospace");
+            HeaderLink.SetFontFamily(_logPathLink, new FontFamily("Consolas, Courier New, monospace"));
 
             stack.Children.Add(label);
             stack.Children.Add(_logPathLink);
@@ -470,7 +471,7 @@ public static class LiveLogWindow
                 stack.Children.Add(separator);
             }
 
-            TextBlock folderLink = HeaderLink.Create(
+            Button folderLink = HeaderLink.Create(
                 text: "Open folder",
                 automationName: "Open logs folder",
                 tooltip: "Open the logs directory in the OS file browser",
@@ -518,7 +519,7 @@ public static class LiveLogWindow
     // Header link actions
     // -----------------------------------------------------------------------
 
-    private static void OnLogFileClicked(object? sender, PointerPressedEventArgs e)
+    private static void OnLogFileClicked(object? sender, RoutedEventArgs e)
     {
         if (!string.IsNullOrEmpty(_currentLogFilePath))
         {
@@ -526,7 +527,7 @@ public static class LiveLogWindow
         }
     }
 
-    private static void OnFolderClicked(object? sender, PointerPressedEventArgs e)
+    private static void OnFolderClicked(object? sender, RoutedEventArgs e)
     {
         if (!string.IsNullOrEmpty(_logsDirectory))
         {
@@ -575,7 +576,7 @@ public static class LiveLogWindow
         }
 
         _currentLogFilePath = path;
-        _logPathLink.Text = path;
+        HeaderLink.SetText(_logPathLink, path);
 
         // The accessible name stays "Open log file"; the path rides in the help text so a
         // screen-reader user can still hear which file the link opens.

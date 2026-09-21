@@ -1,8 +1,9 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,9 +18,9 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// inventory; Claude Desktop shows an explainer panel because it has no
 /// <c>CLAUDE.md</c>-equivalent surface.
 /// </summary>
-public sealed partial class MemoryEditorViewModel : ObservableObject
+public sealed partial class MemoryEditorViewModel : ObservableObject, INavigablePage
 {
-    private readonly IClaudeConfigClient? _codeClient;
+    private readonly IAgentConfigClient? _codeClient;
     private readonly string? _projectRoot;
     private readonly IDialogService? _dialogService;
     private readonly IShellLauncher? _shellLauncher;
@@ -37,7 +38,7 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     private readonly SemaphoreSlim _refreshLock = new(initialCount: 1, maxCount: 1);
 
     public MemoryEditorViewModel(
-        IClaudeConfigClient? codeClient,
+        IAgentConfigClient? codeClient,
         string? projectRoot,
         IDialogService? dialogService,
         IShellLauncher? shellLauncher)
@@ -56,7 +57,7 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
     /// Convenience constructor used by tests / fixtures that don't need
     /// shell-launch or dialog plumbing.
     /// </summary>
-    public MemoryEditorViewModel(IClaudeConfigClient? codeClient, string? projectRoot)
+    public MemoryEditorViewModel(IAgentConfigClient? codeClient, string? projectRoot)
         : this(codeClient, projectRoot, dialogService: null, shellLauncher: null)
     {
     }
@@ -653,6 +654,20 @@ public sealed partial class MemoryEditorViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(HasProjectBreakdown));
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Re-enumerate on every visit. The Tier 1 inventory is a filesystem snapshot taken
+    /// once in the constructor, so a memory file created AFTER launch — e.g. the user
+    /// writes a global <c>~/.claude/CLAUDE.md</c> — stayed invisible until they found
+    /// the Refresh button or restarted the app. Fire-and-forget: <c>RefreshAsync</c>
+    /// serialises concurrent callers through its own gate, so this cannot race the
+    /// bound Refresh button.
+    /// </remarks>
+    public void OnNavigatedTo()
+    {
+        Refresh();
     }
 }
 

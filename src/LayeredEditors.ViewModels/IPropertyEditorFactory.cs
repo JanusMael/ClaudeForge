@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+namespace Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 /// <summary>
 /// Creates a <see cref="PropertyEditorViewModel"/> for a given schema / workspace pair.

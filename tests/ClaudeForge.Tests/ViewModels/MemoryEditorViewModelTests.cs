@@ -1,14 +1,15 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Backup;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Env;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Hooks;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Marketplaces;
-using Bennewitz.Ninja.ClaudeForge.Sdk.McpServers;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Memory;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Models;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Plugins;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
+using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
 
@@ -59,7 +60,7 @@ public sealed class MemoryEditorViewModelTests
         File.WriteAllText(full, content);
     }
 
-    private static MemoryEditorViewModel NewVm(IClaudeConfigClient? client)
+    private static MemoryEditorViewModel NewVm(IAgentConfigClient? client)
     {
         return new MemoryEditorViewModel(client, projectRoot: null);
     }
@@ -68,7 +69,7 @@ public sealed class MemoryEditorViewModelTests
     {
         // Re-assert the sandbox override inside the test METHOD's async flow — not
         // only in [TestInitialize]. TestUserProfileOverride is an AsyncLocal (kept
-        // that way because ClaudeForge.Sdk.Tests runs method-level parallel and needs
+        // that way because AgentForge.Sdk.Tests runs method-level parallel and needs
         // per-flow isolation). Under serial MSTest, the value set in the sync Setup
         // does not always propagate into the async test method's execution context, so
         // FootprintService.DeleteAsync's Task.Run — which reads PlatformPaths.ClaudeHome
@@ -389,7 +390,7 @@ public sealed class MemoryEditorViewModelTests
             return vm.RefreshAsync();
         }
 
-        private sealed class InnerClient : IClaudeConfigClient
+        private sealed class InnerClient : IAgentConfigClient
         {
             private readonly Action _onSnapshot;
 
@@ -582,7 +583,12 @@ public sealed class MemoryEditorViewModelTests
     public void EveryFootprintCategory_HasNonEmptyTooltip()
     {
         // Same regression lock for FootprintRowViewModel.Tooltip.
-        foreach (FootprintCategory cat in Enum.GetValues(typeof(FootprintCategory)))
+        //
+        // ⚠ This said `Enum.GetValues(typeof(FootprintCategory))` until the category set moved into
+        // product data. That is a REFLECTION call, so it kept compiling after the type stopped
+        // being an enum and failed at run time with "Type provided must be an Enum" — the one call
+        // site in this conversion the compiler could not point at. `.All` is the replacement.
+        foreach (FootprintCategory cat in FootprintCategory.All)
         {
             FootprintCategoryStats stats = new(
                 Category: cat,
@@ -901,16 +907,16 @@ public sealed class MemoryEditorViewModelTests
     }
 
     /// <summary>
-    /// Minimal client stub — exposes only the four IClaudeConfigClient methods
+    /// Minimal client stub — exposes only the four IAgentConfigClient methods
     /// the Memory page touches. Avoids the full ClaudeCodeClient open/discover
     /// machinery so tests stay fast and don't require fixture settings files.
     /// </summary>
-    private sealed class FakeClaudeCodeClient : IClaudeConfigClient
+    private sealed class FakeClaudeCodeClient : IAgentConfigClient
     {
         // ── Memory + footprint methods (delegate to the static SDK helpers) ─
         public IReadOnlyList<UserMemoryFile> SnapshotUserMemoryFiles(string? projectRoot = null)
         {
-            return UserMemoryService.SnapshotFiles(projectRoot);
+            return UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
         }
 
         public Task<string?> ReadMemoryFileAsync(string absolutePath, CancellationToken ct)

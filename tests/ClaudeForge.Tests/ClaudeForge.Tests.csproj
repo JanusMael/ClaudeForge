@@ -4,12 +4,39 @@
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Tests</RootNamespace>
     </PropertyGroup>
 
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
     <ItemGroup>
-        <PackageReference Include="Avalonia.Headless" Version="12.1.2" />
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\ClaudeForge.Core\ClaudeForge.Core.csproj"/>
+        <PackageReference Include="Avalonia.Headless" Version="12.1.2" />
+        <!--
+          XQ1001 replaces this repo's hand-rolled Expander automation-name scan.
+
+          ⛔ 2026.3.921 is a FLOOR, not a preference. In 2026.3.920 the two shipped mapping tables
+          are declared as contentFiles WITHOUT copyToOutput, so they never reach a
+          PackageReference consumer's bin. Verified by diffing the two nuspecs, where that
+          attribute is the only difference. Nothing here uses the bare-name mapping form today,
+          but pinning a known-broken version so a later consumer trips over it is not worth the
+          saving.
+
+          ⚠ TEST-ONLY, deliberately. A reference from src/ would become a transitive dependency of
+          all eleven published packages, on an immutable feed. This buys a guard, not a runtime
+          capability.
+
+          ⓘ No nuget.config change: the source mapping routes only AgentForge.*,
+          LayeredEditors.* and JsonC to the private feed, so this id falls to nuget.org's `*`.
+          That is the payoff for naming the two families there instead of a broad prefix.
+        -->
+        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.921" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
         <ProjectReference Include="..\..\src\ClaudeForge\ClaudeForge.csproj"/>
         <ProjectReference Include="..\..\src\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
     </ItemGroup>

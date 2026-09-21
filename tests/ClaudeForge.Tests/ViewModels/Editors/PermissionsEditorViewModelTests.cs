@@ -1,8 +1,9 @@
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
-using Bennewitz.Ninja.ClaudeForge.Sdk;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Permissions;
-using LibVm = Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
+using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
@@ -336,7 +337,7 @@ public class PermissionsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
             client.Permissions.AddAllow(new PermissionRule("Bash(git status)"));
@@ -852,7 +853,7 @@ public class PermissionsEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = tempDir;
         try
         {
-            using ClaudeCodeClient client = new();
+            using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
             await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
             client.Permissions.AddAllow(new PermissionRule("Bash(git status)"));
 

@@ -11,7 +11,8 @@
     <StackPanel Spacing="12" Margin="0,8,0,0">
 
         <!-- ───── Allow ───── -->
-        <Expander IsExpanded="True">
+        <Expander IsExpanded="True"
+                  AutomationProperties.Name="{x:Static loc:Strings.HeaderAllow}">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="{x:Static loc:Strings.HeaderAllow}" FontWeight="SemiBold" Foreground="#388E3C" />
@@ -29,7 +30,7 @@
                                     <Panel Width="360">
                                         <TextBox Text="{Binding Rule}"
                                                  AutomationProperties.Name="{Binding Rule, StringFormat='Allow rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
+                                                 FontFamily="{DynamicResource AppMonoFontFamily}" />
                                         <Border IsVisible="{Binding HasValidationError}"
                                                 BorderBrush="#C62828"
                                                 BorderThickness="2"
@@ -55,7 +56,7 @@
                     <TextBox Text="{Binding NewAllowText}"
                              PlaceholderText="{x:Static loc:Strings.WatermarkAllowRule}"
                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkAllowRule}"
-                             FontFamily="Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              Width="280"
                              VerticalAlignment="Top"
                              ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
@@ -82,7 +83,7 @@
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                         <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AllowExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                     </StackPanel>
                 </Border>
@@ -90,7 +91,8 @@
         </Expander>
 
         <!-- ───── Deny ───── -->
-        <Expander IsExpanded="True">
+        <Expander IsExpanded="True"
+                  AutomationProperties.Name="{x:Static loc:Strings.HeaderDeny}">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="{x:Static loc:Strings.HeaderDeny}" FontWeight="SemiBold" Foreground="#D32F2F" />
@@ -108,7 +110,7 @@
                                     <Panel Width="360">
                                         <TextBox Text="{Binding Rule}"
                                                  AutomationProperties.Name="{Binding Rule, StringFormat='Deny rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
+                                                 FontFamily="{DynamicResource AppMonoFontFamily}" />
                                         <Border IsVisible="{Binding HasValidationError}"
                                                 BorderBrush="#C62828"
                                                 BorderThickness="2"
@@ -134,7 +136,7 @@
                     <TextBox Text="{Binding NewDenyText}"
                              PlaceholderText="{x:Static loc:Strings.WatermarkDenyRule}"
                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkDenyRule}"
-                             FontFamily="Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              Width="280"
                              VerticalAlignment="Top"
                              ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
@@ -161,7 +163,7 @@
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                         <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.DenyExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                     </StackPanel>
                 </Border>
@@ -169,7 +171,8 @@
         </Expander>
 
         <!-- ───── Ask ───── -->
-        <Expander IsExpanded="True">
+        <Expander IsExpanded="True"
+                  AutomationProperties.Name="{x:Static loc:Strings.HeaderAsk}">
             <Expander.Header>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Text="{x:Static loc:Strings.HeaderAsk}" FontWeight="SemiBold" Foreground="#F57F17" />
@@ -187,7 +190,7 @@
                                     <Panel Width="360">
                                         <TextBox Text="{Binding Rule}"
                                                  AutomationProperties.Name="{Binding Rule, StringFormat='Ask rule: {0}'}"
-                                                 FontFamily="Consolas,Menlo,monospace" />
+                                                 FontFamily="{DynamicResource AppMonoFontFamily}" />
                                         <Border IsVisible="{Binding HasValidationError}"
                                                 BorderBrush="#C62828"
                                                 BorderThickness="2"
@@ -213,7 +216,7 @@
                     <TextBox Text="{Binding NewAskText}"
                              PlaceholderText="{x:Static loc:Strings.WatermarkAskRule}"
                              AutomationProperties.Name="{x:Static loc:Strings.WatermarkAskRule}"
-                             FontFamily="Consolas,Menlo,monospace"
+                             FontFamily="{DynamicResource AppMonoFontFamily}"
                              Width="280"
                              VerticalAlignment="Top"
                              ToolTip.Tip="{x:Static loc:Strings.TipPermissionRule}">
@@ -240,7 +243,7 @@
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                         <TextBlock Text="{x:Static vm:PermissionsEditorViewModel.AskExamples}"
-                                   FontFamily="Consolas,Menlo,monospace" FontSize="11"
+                                   FontFamily="{DynamicResource AppMonoFontFamily}" FontSize="11"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
                     </StackPanel>
                 </Border>

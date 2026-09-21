@@ -1,4 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Updates;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Updates;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -43,6 +44,18 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// </summary>
 public partial class UpdateBannerViewModel : ObservableObject
 {
+    /// <summary>
+    /// The resolved Claude environment, for the persisted UI state this banner reads and writes.
+    /// </summary>
+    private readonly ClaudeEnvironment _env;
+
+    /// <param name="env">The resolved Claude environment, supplied by the owning window.</param>
+    public UpdateBannerViewModel(ClaudeEnvironment env)
+    {
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
+    }
+
     /// <summary>
     /// Whether the banner is currently shown.  Bound to
     /// <c>IsVisible="{Binding IsVisible}"</c> on the root Border of the
@@ -124,7 +137,7 @@ public partial class UpdateBannerViewModel : ObservableObject
         // Per-version dismiss check.  Tag comparison is byte-exact —
         // GitHub tags are case-sensitive identifiers and we never
         // canonicalise them.
-        WindowState state = WindowStateService.Load();
+        WindowState state = WindowStateService.Load(_env);
         if (state.DismissedUpdateVersions.Contains(result.LatestTagName))
         {
             Log.Information(
@@ -160,11 +173,11 @@ public partial class UpdateBannerViewModel : ObservableObject
         }
 
         string tag = LatestTagName;
-        WindowState state = WindowStateService.Load();
+        WindowState state = WindowStateService.Load(_env);
         if (!state.DismissedUpdateVersions.Contains(tag))
         {
             state.DismissedUpdateVersions.Add(tag);
-            WindowStateService.Save(state);
+            WindowStateService.Save(_env, state);
             Log.Information(
                 "[UpdateCheck] User dismissed update banner for {Tag}; persisted.",
                 tag);

@@ -1,11 +1,11 @@
 using System.Text.Json;
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.ViewModels;
-using Bennewitz.Ninja.ClaudeForge.Sdk.Dialogs;
+using Bennewitz.Ninja.LayeredEditors.ViewModels;
+using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 
@@ -83,7 +83,7 @@ public sealed class DeepPathReloadTests
 
     private static MainWindowViewModel BuildViewModel()
     {
-        return new MainWindowViewModel(new SchemaRegistry(new HttpClient()), new NullDialogService());
+        return new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
     private static async Task<AgentsSkillsEditorViewModel> OpenAgentsSkillsAsync(MainWindowViewModel vm)

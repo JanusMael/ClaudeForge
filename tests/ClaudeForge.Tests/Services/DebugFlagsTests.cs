@@ -1,4 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.Core.Platform;
+using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Services;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
@@ -434,5 +435,284 @@ public sealed class DebugFlagsTests
         DebugFlags.ResetForTesting();
 
         Assert.IsNull(DebugFlags.DeepLinkPath);
+    }
+
+    // ── --writer <legacy|jsonc> ──────────────────────────────────────────────
+    //
+    // The one-release escape hatch for the comment-preserving writer. Unlike
+    // --deep-link, an unrecognised value must NOT be accepted positionally: the two
+    // writers produce different bytes, and a typo silently selecting the lossy one is
+    // exactly the failure this flag exists to protect against.
+
+    [TestMethod]
+    public void Initialize_NoWriterFlag_LeavesWriterUnset()
+    {
+        DebugFlags.Initialize([]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "Unset means the default comment-preserving writer.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterLegacy_SelectsLegacy()
+    {
+        DebugFlags.Initialize(["--writer", "legacy"]);
+
+        Assert.AreEqual("legacy", DebugFlags.ConfigWriterName);
+    }
+
+    [TestMethod]
+    public void Initialize_WriterJsonc_IsAcceptedAndNormalized()
+    {
+        // Accepted so a script can pin the default explicitly and the flag reads
+        // symmetrically; it resolves to the same writer as omitting the flag.
+        DebugFlags.Initialize(["--writer", "JSONC"]);
+
+        Assert.AreEqual("jsonc", DebugFlags.ConfigWriterName,
+            "Value should be normalized to lower case so downstream comparisons are ordinal.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterUnknownValue_FallsBackToTheSafeWriter()
+    {
+        DebugFlags.Initialize(["--writer", "legcy"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "A typo must fall back to the preserving writer, never to the lossy one.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterMissingValue_DoesNotEatTheNextFlag()
+    {
+        // Contrast with --deep-link, which consumes positionally by design. Here the
+        // value is validated against a closed set, so a following flag is rejected as a
+        // writer name and still takes effect as a flag.
+        DebugFlags.Initialize(["--writer", "--linux"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName);
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "Validation against a closed set means the swallowed token is not silently lost "
+            + "the way an unvalidated positional value would be.");
+    }
+
+    [TestMethod]
+    public void Initialize_WriterAtEndOfArgs_IsIgnoredWithoutThrowing()
+    {
+        DebugFlags.Initialize(["--writer"]);
+
+        Assert.IsNull(DebugFlags.ConfigWriterName);
+    }
+
+    [TestMethod]
+    public void ResetForTesting_ClearsConfigWriterName()
+    {
+        DebugFlags.Initialize(["--writer", "legacy"]);
+        Assert.IsNotNull(DebugFlags.ConfigWriterName);
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsNull(DebugFlags.ConfigWriterName,
+            "Static flag state must not bleed into the next test — a leaked 'legacy' here "
+            + "would silently make other tests assert against the lossy writer.");
+    }
+
+    // ── The --debug-help text must match what Initialize actually parses ──
+
+    /// <summary>The source of <c>DebugFlags.cs</c>, which is the only place the pairing lives.</summary>
+    /// <remarks>
+    /// Source text rather than reflection: a <c>case "--x":</c> label leaves no metadata to
+    /// reflect over, and the help string is a literal inside a switch arm. There is nothing at
+    /// runtime that relates the two.
+    /// </remarks>
+    private static string DebugFlagsSource()
+    {
+        string? dir = AppContext.BaseDirectory;
+        for (int i = 0; i < 12 && !string.IsNullOrEmpty(dir); i++)
+        {
+            string candidate = Path.Combine(dir, "src", "ClaudeForge", "Services", "DebugFlags.cs");
+            if (File.Exists(candidate))
+            {
+                return File.ReadAllText(candidate);
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new InvalidOperationException(
+            $"Could not locate DebugFlags.cs by walking up from '{AppContext.BaseDirectory}'.");
+    }
+
+    /// <summary>Every <c>case "--x":</c> label in the file, lower-cased as the switch sees them.</summary>
+    private static HashSet<string> ParsedFlagNames()
+    {
+        MatchCollection matches = Regex.Matches(
+            DebugFlagsSource(), @"case\s+""(--[a-z0-9-]+)""\s*:", RegexOptions.CultureInvariant);
+
+        return [.. matches.Select(m => m.Groups[1].Value)];
+    }
+
+    /// <summary>Every flag the <c>--debug-help</c> output advertises.</summary>
+    private static HashSet<string> AdvertisedFlagNames()
+    {
+        // The help text is the concatenated string literals in the --debug-help arm. Take the
+        // whole file and pull flag-shaped tokens out of the "available flags:" message only, so
+        // a flag named in an ordinary comment cannot count as documented.
+        Match message = Regex.Match(
+            DebugFlagsSource(),
+            @"available flags:(?<body>.*?)""\s*\)\s*;",
+            RegexOptions.Singleline | RegexOptions.CultureInvariant);
+
+        Assert.IsTrue(message.Success,
+            "Could not find the \"available flags:\" message in DebugFlags.cs. If it was "
+            + "reworded, update this scan — otherwise both directions below pass vacuously.");
+
+        return
+        [
+            .. Regex.Matches(message.Groups["body"].Value, @"--[a-zA-Z0-9-]+",
+                    RegexOptions.CultureInvariant)
+                .Select(m => m.Value.ToLowerInvariant()),
+        ];
+    }
+
+    /// <summary>
+    /// Every flag <c>Initialize</c> parses is advertised by <c>--debug-help</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>Nothing enforced this, and the absence cost real time.</b> <c>AGENTS.md</c>'s
+    /// flag-adding checklist says to update the help text, but a checklist is not a guard: a new
+    /// <c>case</c> ships undiscoverable and the only symptom is a flag nobody can find. The
+    /// author of this test first asserted, from a truncated grep, that
+    /// <c>--showInstallBanner</c> was missing. It was not — reading the file settled in seconds
+    /// what a guess got wrong, which is the argument for having the check at all.
+    /// </remarks>
+    [TestMethod]
+    public void EveryFlagInitializeParses_IsAdvertisedByDebugHelp()
+    {
+        HashSet<string> parsed = ParsedFlagNames();
+        HashSet<string> advertised = AdvertisedFlagNames();
+
+        Assert.IsTrue(parsed.Count > 5,
+            $"Only {parsed.Count} flag case(s) were found; the scan has lost its subject.");
+
+        // --help-debug is an alias of --debug-help and needs no separate line.
+        List<string> undocumented =
+        [
+            .. parsed
+                .Where(f => !advertised.Contains(f))
+                .Where(f => f != "--help-debug")
+                .Order(StringComparer.Ordinal),
+        ];
+
+        Assert.AreEqual(0, undocumented.Count,
+            $"{undocumented.Count} flag(s) are parsed but not listed by --debug-help: "
+            + string.Join(", ", undocumented)
+            + ". A flag nobody can discover is a flag nobody uses. Add it to the "
+            + "\"available flags:\" message.");
+    }
+
+    /// <summary>
+    /// The reverse: <c>--debug-help</c> advertises nothing <c>Initialize</c> does not parse.
+    /// </summary>
+    /// <remarks>
+    /// ⛔⛔ <b>This is the direction that found a real defect.</b> The help text listed
+    /// <c>--cleanup-restore-sidecars</c>, which <c>DebugFlags</c> does not parse at all — it is a
+    /// CLI-bypass tool dispatched in <c>Program.cs</c> above <c>BuildAvaloniaApp()</c>.
+    /// <c>AGENTS.md</c> is explicit that the two are "conceptually different" and that a tool
+    /// belongs in the CLI-bypass section, NOT the debug-flags table. Advertising it here told a
+    /// user it was a debug flag and told the next maintainer to look for a <c>case</c> that does
+    /// not exist.
+    /// </remarks>
+    [TestMethod]
+    public void DebugHelpAdvertisesNothingItCannotParse()
+    {
+        HashSet<string> parsed = ParsedFlagNames();
+        HashSet<string> advertised = AdvertisedFlagNames();
+
+        Assert.IsTrue(advertised.Count > 5,
+            $"Only {advertised.Count} advertised flag(s) were found; the scan has lost its subject.");
+
+        List<string> phantom =
+        [
+            .. advertised.Where(f => !parsed.Contains(f)).Order(StringComparer.Ordinal),
+        ];
+
+        Assert.AreEqual(0, phantom.Count,
+            $"--debug-help advertises {phantom.Count} name(s) DebugFlags.Initialize does not "
+            + "parse: " + string.Join(", ", phantom)
+            + ". Either it is a CLI-bypass tool — which belongs in its own list, not this one, "
+            + "per AGENTS.md — or the flag was renamed and the help text was not.");
+    }
+    // ── --schema-source ───────────────────────────────────────────────
+
+    [TestMethod]
+    [DataRow("bundled")]
+    [DataRow("fetched")]
+    [DataRow("BUNDLED")]
+    public void SchemaSource_AcceptsEitherValue_CaseInsensitively(string value)
+    {
+        DebugFlags.Initialize(["--schema-source", value]);
+
+        Assert.AreEqual(value.ToLowerInvariant(), DebugFlags.SchemaSourceName,
+            "The value is normalised to lower case so the Program.cs switch can match literals.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_RejectsAnUnknownValue()
+    {
+        DebugFlags.Initialize(["--schema-source", "disk"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName,
+            "An unrecognised source must leave the normal loading chain in place rather than "
+            + "guessing which branch the user meant.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_WithNoValue_IsIgnored()
+    {
+        DebugFlags.Initialize(["--schema-source"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName);
+    }
+
+    /// <summary>
+    /// ⭐ A rejected value must not SWALLOW the next flag.
+    /// </summary>
+    /// <remarks>
+    /// The two-token flags split into two families and this one is in the PEEK family, like
+    /// <c>--writer</c>: because the value set is closed, a token that is not a valid value may
+    /// still be a valid flag in its own right. Consuming positionally — correct for
+    /// <c>--deep-link</c>, where any string is a plausible path — would silently discard it.
+    /// </remarks>
+    [TestMethod]
+    public void SchemaSource_WithAFlagAsItsValue_RejectsTheValueAndHonoursTheFlag()
+    {
+        DebugFlags.Initialize(["--schema-source", "--linux"]);
+
+        Assert.IsNull(DebugFlags.SchemaSourceName, "'--linux' is not a schema source.");
+        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+            "--linux was swallowed as --schema-source's value instead of being honoured.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_AppearsInTheActiveFlagList()
+    {
+        DebugFlags.Initialize(["--schema-source", "bundled"]);
+
+        DebugFlags.LogActiveFlags();
+
+        Assert.AreEqual("bundled", DebugFlags.SchemaSourceName,
+            "Premise: the flag must be set for the listing to have anything to report.");
+    }
+
+    [TestMethod]
+    public void SchemaSource_IsClearedByResetForTesting()
+    {
+        DebugFlags.Initialize(["--schema-source", "fetched"]);
+        Assert.AreEqual("fetched", DebugFlags.SchemaSourceName, "Premise: it must be set first.");
+
+        DebugFlags.ResetForTesting();
+
+        Assert.IsNull(DebugFlags.SchemaSourceName,
+            "A flag left set after a reset leaks into whatever test runs next.");
     }
 }

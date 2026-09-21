@@ -135,6 +135,47 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!--
+                The one monospace stack, for every surface that shows a config value, a path,
+                a command or a JSON fragment.
+
+                ⛔ There were SIX spellings across 66 markup sites before this existed, and a
+                seventh in C# (CodeInline.MonoFont). Four of them differed in substance, not
+                just whitespace: two led with "Cascadia Mono" and so rendered a DIFFERENT
+                TYPEFACE from their neighbours on the same screen in Windows; two fell back to
+                "Courier New" and one to bare "monospace", which on macOS means Courier rather
+                than Menlo. A font stack is a design token exactly like a brush is, and the
+                repo already refuses literal colours for the same reason.
+
+                ⭐ BUNDLED, not named. A stack is a request the platform answers however it
+                likes; the file is a guarantee. JetBrains Mono NL ships inside
+                LayeredEditors.Avalonia — see that csproj for why NL (no ligatures) is a
+                correctness choice on surfaces that show literal file bytes, and why exactly
+                three weights are embedded.
+
+                ⭐ Theme-INDEPENDENT on purpose, so it sits here rather than in the theme
+                dictionaries below: a typeface does not change between light and dark, and
+                duplicating it into both would create two places for it to drift.
+
+                ⚠ Every monospace site binds this KEY rather than the URI, so the font is named
+                in exactly one place in markup. NoLiteralMonospaceFontStackTests fails the build
+                if a literal stack comes back.
+            -->
+            <FontFamily x:Key="AppMonoFontFamily">avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL</FontFamily>
+
+            <!--
+                The ligature cut of the same family, for surfaces read for COMPREHENSION rather
+                than byte-fidelity — the log viewer's planned readable/byte-exact toggle.
+
+                ⚠ DELIBERATELY UNBOUND. Nothing references this yet; it exists so the toggle
+                binds a key rather than hardcoding a URI, and so the font it needs is already
+                in the published library rather than requiring a new package version later.
+                ⛔ Do not "clean up" as dead — and do not point a literal-value surface at it,
+                because a ligature makes `!=` and `->` render as something the file does not
+                contain.
+            -->
+            <FontFamily x:Key="AppMonoLigaturesFontFamily">avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono</FontFamily>
+
+            <!--
                 App-owned theme-adaptive brushes.
 
                 These brushes are defined in ThemeDictionaries so they resolve to the
@@ -145,7 +186,15 @@
                   toolbar and status-bar buttons have visible contrast in light mode.
                 AppLinkBrush — teal-blue used for "Browse suggestions" expander labels
                   and other secondary action text (matches LayeredEditors LinkBrush hue).
-                AppCautionBrush — amber warning foreground for the PATH-warning row.
+                AppCautionBrush — amber caution ACCENT: borders and glyphs, floor 3.0:1.
+                  ⛔ NOT a text colour. It was one, at five sites, and every one of them
+                  measured 3.07–3.19:1 against a 4.5:1 text floor (finding F4). An accent
+                  chosen to clear the non-text floor cannot also clear the text one; that is
+                  why the pair below exists. CautionBrushIsNotUsedAsTextTests guards it.
+                AppCautionTextBrush — caution-coloured TEXT, floor 4.5:1. Light #9A3412
+                  measures 7.31:1 on white and 7.05:1 on the warm tint. The dark value is
+                  the accent unchanged: #F59E0B already measures 7.76:1 on the dark surface,
+                  which is why only the light theme was ever reported as broken.
                 AppCautionBackgroundBrush — warm tint for bordered caution panels.
                 AppAccentBrush / AppAccentBackgroundBrush — accent tint pill: tinted
                   background plus matching-hue text (the per-property "NEW" badge).
@@ -156,8 +205,53 @@
                     <!-- Foreground for bar buttons: dark text on the light bar so icons/labels are legible -->
                     <SolidColorBrush x:Key="BarButtonForegroundBrush" Color="#FF111111" />
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#005D7F" />
-                    <SolidColorBrush x:Key="AppCautionBrush" Color="#D97706" />
+                    <SolidColorBrush x:Key="AppCautionBrush" Color="#EA580C" />
+                    <SolidColorBrush x:Key="AppCautionTextBrush" Color="#9A3412" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#FFFBEB" />
+                    <!--
+                        AppSeverity*Brush — how much attention a setting's state deserves, keyed by
+                        the AppSeverity enum via AppSeverityToBrushConverter.KeyFor.
+
+                        ⛔ These REPLACE four hardcoded hexes that used to live in
+                        EssentialsViewModel.BuildCards (#D32F2F / #F4B400 / #1976D2) and a #9E9E9E
+                        parse-failure fallback in EssentialsCardViewModel. Those were single values
+                        emitted regardless of theme, so the light-theme red and amber were what
+                        shipped into dark mode.
+
+                        The values are not new: each is the existing, already-vetted
+                        AppStatus*ForegroundBrush / AppSecondaryTextBrush pair for that role, so no
+                        unreviewed colour enters the palette and the severity dot matches the status
+                        text it sits beside. Declared per variant on purpose — a themed key looked up
+                        with a null variant resolves to NOTHING and the caller takes its fallback
+                        hex, which is invisible and is the exact problem this token removes.
+                    -->
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#CE2029" />
+                    <!-- #EA580C replaced #D97706, which was reported as reading BROWN rather than
+                         amber (finding F2). ⛔ Lightening it is the one move that cannot work:
+                         #D97706 already sits at 3.19:1 against white, barely over the 3.0:1
+                         non-text floor, and every step lighter drops under it — one step lands on
+                         exactly 2.70:1, the ratio this repo already records as a defect in
+                         AppChangeKindTokenCoverageTests. The way out is a HUE shift, not lightness:
+                         #EA580C reads orange and measures BETTER, at 3.56:1.
+                         ⚠ The cost, stated so it is a choice: Critical is #CE2029 at ~357°, so the
+                         hue gap narrows from 35° to 24° — the axis a red-green colour-blind reader
+                         is weakest on. The shape difference (⊗ vs ⚠) is what absorbs it, which is
+                         why this is as far toward orange as it should go. -->
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#EA580C" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#0050B3" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#666666" />
+                    <!-- Save-dialog change-kind pills. Same value in both variants ON
+                         PURPOSE: the fill carries a WHITE glyph, and the pair that matters is
+                         glyph-vs-fill (>= 4.5:1, measured: 5.13 / 5.62 / 5.02). Lightening the
+                         fill for the dark theme would raise fill-vs-surface (~2.8:1) at the cost
+                         of the glyph contrast that a user actually reads, and the fill is
+                         redundant with the +/-/~ glyph and its accessible name anyway. Declared
+                         per variant regardless, because ResolveThemed finds nothing in a flat
+                         dictionary. #B45309 replaced #F57C00, which measured 2.70:1. -->
+                    <SolidColorBrush x:Key="AppChangeKindAddedBrush" Color="#2E7D32" />
+                    <SolidColorBrush x:Key="AppChangeKindRemovedBrush" Color="#C62828" />
+                    <SolidColorBrush x:Key="AppChangeKindModifiedBrush" Color="#B45309" />
+
                     <!-- Accent TINT PILL — a tinted background plus matching-hue text,
                          the same two-tone shape as the property-name pill.  Currently
                          the per-property "NEW" badge in PropertyEditorWrapper.
@@ -185,10 +279,6 @@
                          Dark:  text #9BCFF2 on #152C42 = 8.57:1; pill vs page 1.27:1. -->
                     <SolidColorBrush x:Key="AppAccentBrush" Color="#0F4C81" />
                     <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#DCEAF7" />
-                    <!-- Group-header labels inside the Browse suggestions picker.
-                         Semi.Avalonia does not guarantee SystemControlForegroundBaseHighBrush
-                         in all theme variants, so we own this token explicitly. -->
-                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#1F1F1F" />
                     <!-- Muted secondary text (e.g. "Old" column in SaveChangesDialog).
                          Semi.Avalonia does not guarantee SystemControlForegroundBaseMediumBrush
                          across all theme variants, so we own this token explicitly. -->
@@ -279,14 +369,35 @@
                     <SolidColorBrush x:Key="BarButtonForegroundBrush" Color="#FFF2F2F2" />
                     <SolidColorBrush x:Key="AppLinkBrush" Color="#4DBFE0" />
                     <SolidColorBrush x:Key="AppCautionBrush" Color="#F59E0B" />
+                    <!-- Deliberately the SAME value as the accent. On the dark surface the accent
+                         already measures 7.76:1 as text, so splitting the roles here would change
+                         a colour that was never broken. The keys still differ because the LIGHT
+                         values must, and a key declared in one variant only resolves to nothing
+                         in the other. -->
+                    <SolidColorBrush x:Key="AppCautionTextBrush" Color="#F59E0B" />
                     <SolidColorBrush x:Key="AppCautionBackgroundBrush" Color="#292010" />
+                    <SolidColorBrush x:Key="AppSeverityCriticalBrush" Color="#F99090" />
+                    <SolidColorBrush x:Key="AppSeverityCautionBrush" Color="#F0A03A" />
+                    <SolidColorBrush x:Key="AppSeverityInfoBrush" Color="#6BB1F2" />
+                    <SolidColorBrush x:Key="AppSeverityNeutralBrush" Color="#AAAAAA" />
+                    <!-- Save-dialog change-kind pills. Same value in both variants ON
+                         PURPOSE: the fill carries a WHITE glyph, and the pair that matters is
+                         glyph-vs-fill (>= 4.5:1, measured: 5.13 / 5.62 / 5.02). Lightening the
+                         fill for the dark theme would raise fill-vs-surface (~2.8:1) at the cost
+                         of the glyph contrast that a user actually reads, and the fill is
+                         redundant with the +/-/~ glyph and its accessible name anyway. Declared
+                         per variant regardless, because ResolveThemed finds nothing in a flat
+                         dictionary. #B45309 replaced #F57C00, which measured 2.70:1. -->
+                    <SolidColorBrush x:Key="AppChangeKindAddedBrush" Color="#2E7D32" />
+                    <SolidColorBrush x:Key="AppChangeKindRemovedBrush" Color="#C62828" />
+                    <SolidColorBrush x:Key="AppChangeKindModifiedBrush" Color="#B45309" />
+
                     <!-- Dark-theme accent tint pill (see Light counterpart for rationale).
                          Text 8.57:1 on the pill; pill 1.27:1 above the page, against
                          the property pill's 1.50:1 — subtler than its neighbour on
                          this theme too. -->
                     <SolidColorBrush x:Key="AppAccentBrush" Color="#9BCFF2" />
                     <SolidColorBrush x:Key="AppAccentBackgroundBrush" Color="#152C42" />
-                    <SolidColorBrush x:Key="SuggestionGroupHeaderBrush" Color="#E8E8E8" />
                     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#AAAAAA" />
                     <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#E8E8E8" />
                     <!-- Dark-theme property heading color (see Light counterpart for rationale). -->

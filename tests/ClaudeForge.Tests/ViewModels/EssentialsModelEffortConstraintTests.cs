@@ -1,5 +1,8 @@
-using Bennewitz.Ninja.ClaudeForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -12,17 +15,17 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 [TestClass]
 public sealed class EssentialsModelEffortConstraintTests
 {
-    private static ClaudeConfigClientCore MakeClient(string userJson)
+    private static ClaudeConfigClientBase MakeClient(string userJson)
     {
         JsonObject root = (JsonObject)JsonNode.Parse(userJson)!;
         SettingsDocument doc = new(ConfigScope.User, "user.json", root, isReadOnly: false);
-        SettingsWorkspace ws = new([doc]);
-        return ClaudeCodeClient.FromExistingWorkspace(ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
+        return ClaudeCodeClient.FromExistingWorkspace(ClaudeEnvironment.Empty, ws, ConfigScope.User, schemaRegistry: new SchemaRegistry());
     }
 
-    private static async Task<(EssentialsViewModel vm, ClaudeConfigClientCore client)> OpenAsync(string userJson)
+    private static async Task<(EssentialsViewModel vm, ClaudeConfigClientBase client)> OpenAsync(string userJson)
     {
-        ClaudeConfigClientCore client = MakeClient(userJson);
+        ClaudeConfigClientBase client = MakeClient(userJson);
         EssentialsViewModel vm = new(client, new FakeEnvironmentProvider());
         await vm.RefreshAsync();
         return (vm, client);
@@ -39,14 +42,14 @@ public sealed class EssentialsModelEffortConstraintTests
     [TestMethod]
     public async Task Load_ValidCombo_StaysClean()
     {
-        (_, ClaudeConfigClientCore client) = await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
+        (_, ClaudeConfigClientBase client) = await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
         Assert.IsFalse(client.HasUnsavedChanges, "A valid persisted combo must not dirty the workspace on load.");
     }
 
     [TestMethod]
     public async Task Load_InvalidCombo_DoesNotWriteOrDirty_ButAdvises()
     {
-        (EssentialsViewModel vm, ClaudeConfigClientCore client) =
+        (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-sonnet-4-6","effortLevel":"xhigh"}""");
 
         Assert.IsFalse(client.HasUnsavedChanges, "Load must not write a coercion — no phantom dirty state.");
@@ -60,7 +63,7 @@ public sealed class EssentialsModelEffortConstraintTests
     [TestMethod]
     public async Task Load_HaikuPlusEffort_DisablesAndAdvises_DoesNotDrop_NorDirty()
     {
-        (EssentialsViewModel vm, ClaudeConfigClientCore client) =
+        (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-haiku-4-5","effortLevel":"high"}""");
 
         Assert.IsTrue(Effort(vm).EnumDisabled, "Haiku exposes no effort → control disabled.");
@@ -76,7 +79,7 @@ public sealed class EssentialsModelEffortConstraintTests
     [TestMethod]
     public async Task UserChange_InvalidEffort_CoercesToNearestAnalog_AndDirties()
     {
-        (EssentialsViewModel vm, ClaudeConfigClientCore client) =
+        (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"xhigh"}""");
         Assert.IsFalse(client.HasUnsavedChanges);
 
@@ -91,7 +94,7 @@ public sealed class EssentialsModelEffortConstraintTests
     [TestMethod]
     public async Task UserChange_ToHaiku_DropsExplicitEffort()
     {
-        (EssentialsViewModel vm, ClaudeConfigClientCore client) =
+        (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
 
         ChangeModel(vm, "claude-haiku-4-5");
@@ -105,7 +108,7 @@ public sealed class EssentialsModelEffortConstraintTests
     [TestMethod]
     public async Task UserChange_StillValidEffort_NoCoercionNoNotice()
     {
-        (EssentialsViewModel vm, ClaudeConfigClientCore client) =
+        (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
 
         ChangeModel(vm, "claude-sonnet-4-6"); // still supports high

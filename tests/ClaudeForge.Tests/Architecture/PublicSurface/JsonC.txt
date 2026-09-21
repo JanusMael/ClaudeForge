@@ -1,0 +1,98 @@
+class Bennewitz.Ninja.AutoVersioning.DirectoryBuildInfo
+    const System.String BuildRelease
+class Bennewitz.Ninja.JsonC.JsoncDocument [sealed]
+    Bennewitz.Ninja.JsonC.JsoncMember FindMember(System.String path)
+    Bennewitz.Ninja.JsonC.JsoncStyle Style { get; }
+    Bennewitz.Ninja.JsonC.JsoncValue Root { get; }
+    System.Boolean IsEditable { get; }
+    System.Collections.Generic.IReadOnlyList<System.String> Errors { get; }
+    System.String Text { get; }
+    static Bennewitz.Ninja.JsonC.JsoncDocument Parse(System.String text)
+class Bennewitz.Ninja.JsonC.JsoncEditor
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.JsonC.TextEdit> RemoveEdits(Bennewitz.Ninja.JsonC.JsoncDocument document, System.String path)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.JsonC.TextEdit> SetValueEdits(Bennewitz.Ninja.JsonC.JsoncDocument document, System.String path, System.Text.Json.Nodes.JsonNode value)
+    static System.String Remove(System.String text, System.String path)
+    static System.String SetValue(System.String text, System.String path, System.Text.Json.Nodes.JsonNode value)
+class Bennewitz.Ninja.JsonC.JsoncMember [sealed]
+    Bennewitz.Ninja.JsonC.JsoncValue Value { get; }
+    System.Int32 End { get; }
+    System.Int32 KeyEnd { get; }
+    System.Int32 KeyStart { get; }
+    System.Int32 Start { get; }
+    System.String Name { get; }
+class Bennewitz.Ninja.JsonC.JsoncScanner
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.JsonC.JsoncToken> Scan(System.String text)
+struct Bennewitz.Ninja.JsonC.JsoncStyle implements System.IEquatable<Bennewitz.Ninja.JsonC.JsoncStyle>
+    .ctor(System.String IndentUnit, System.String NewLine)
+    System.Boolean Equals(Bennewitz.Ninja.JsonC.JsoncStyle other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 GetHashCode()
+    System.String IndentUnit { get;init; }
+    System.String NewLine { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.String IndentUnit, out System.String NewLine)
+    static Bennewitz.Ninja.JsonC.JsoncStyle Default { get; }
+    static Bennewitz.Ninja.JsonC.JsoncStyle Detect(System.String text)
+    static System.Boolean op_Equality(Bennewitz.Ninja.JsonC.JsoncStyle left, Bennewitz.Ninja.JsonC.JsoncStyle right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.JsonC.JsoncStyle left, Bennewitz.Ninja.JsonC.JsoncStyle right)
+struct Bennewitz.Ninja.JsonC.JsoncToken implements System.IEquatable<Bennewitz.Ninja.JsonC.JsoncToken>
+    .ctor(Bennewitz.Ninja.JsonC.JsoncTokenKind Kind, System.Int32 Start, System.Int32 Length)
+    Bennewitz.Ninja.JsonC.JsoncTokenKind Kind { get;init; }
+    System.Boolean Equals(Bennewitz.Ninja.JsonC.JsoncToken other)
+    System.Boolean Equals(System.Object obj)
+    System.Boolean IsTrivia { get; }
+    System.Int32 End { get; }
+    System.Int32 GetHashCode()
+    System.Int32 Length { get;init; }
+    System.Int32 Start { get;init; }
+    System.ReadOnlySpan<System.Char> Text(System.String source)
+    System.String ToString()
+    System.Void Deconstruct(out Bennewitz.Ninja.JsonC.JsoncTokenKind Kind, out System.Int32 Start, out System.Int32 Length)
+    static System.Boolean op_Equality(Bennewitz.Ninja.JsonC.JsoncToken left, Bennewitz.Ninja.JsonC.JsoncToken right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.JsonC.JsoncToken left, Bennewitz.Ninja.JsonC.JsoncToken right)
+enum Bennewitz.Ninja.JsonC.JsoncTokenKind : System.Int32
+    BlockComment = 2
+    CloseBrace = 4
+    CloseBracket = 6
+    Colon = 7
+    Comma = 8
+    False = 12
+    Invalid = 14
+    LineComment = 1
+    Null = 13
+    Number = 10
+    OpenBrace = 3
+    OpenBracket = 5
+    String = 9
+    True = 11
+    Whitespace = 0
+class Bennewitz.Ninja.JsonC.JsoncValue [sealed]
+    Bennewitz.Ninja.JsonC.JsoncMember FindMember(System.String name)
+    Bennewitz.Ninja.JsonC.JsoncValueKind Kind { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.JsonC.JsoncMember> Members { get; }
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.JsonC.JsoncValue> Items { get; }
+    System.Int32 End { get; }
+    System.Int32 Start { get; }
+    System.ReadOnlySpan<System.Char> Text(System.String source)
+enum Bennewitz.Ninja.JsonC.JsoncValueKind : System.Int32
+    Array = 1
+    False = 5
+    Null = 6
+    Number = 3
+    Object = 0
+    String = 2
+    True = 4
+struct Bennewitz.Ninja.JsonC.TextEdit implements System.IEquatable<Bennewitz.Ninja.JsonC.TextEdit>
+    .ctor(System.Int32 Start, System.Int32 Length, System.String NewText)
+    System.Boolean Equals(Bennewitz.Ninja.JsonC.TextEdit other)
+    System.Boolean Equals(System.Object obj)
+    System.Int32 End { get; }
+    System.Int32 GetHashCode()
+    System.Int32 Length { get;init; }
+    System.Int32 Start { get;init; }
+    System.String NewText { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.Int32 Start, out System.Int32 Length, out System.String NewText)
+    static System.Boolean op_Equality(Bennewitz.Ninja.JsonC.TextEdit left, Bennewitz.Ninja.JsonC.TextEdit right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.JsonC.TextEdit left, Bennewitz.Ninja.JsonC.TextEdit right)
+    static System.String Apply(System.String source, System.Collections.Generic.IEnumerable<Bennewitz.Ninja.JsonC.TextEdit> edits)

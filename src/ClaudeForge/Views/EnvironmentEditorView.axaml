@@ -413,7 +413,7 @@
                                 <!-- Description shown as tooltip only — not inline — to keep the
                                      dropdown compact. Hover over any item to see the full detail. -->
                                 <TextBlock Text="{Binding DisplayName}"
-                                           FontFamily="Consolas,Menlo,monospace"
+                                           FontFamily="{DynamicResource AppMonoFontFamily}"
                                            ToolTip.Tip="{Binding Description}"
                                            AutomationProperties.Name="{Binding AccessibleName}" />
                             </DataTemplate>

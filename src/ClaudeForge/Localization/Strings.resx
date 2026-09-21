@@ -129,6 +129,18 @@
     <value>New plugin reference</value>
     <comment>Screen-reader name for the text box where the user types a new plugin ref (e.g. formatter@anthropic-tools) before clicking Add.</comment>
   </data>
+  <data name="AutoNameSpinnerIncrease" xml:space="preserve">
+    <value>Increase value</value>
+    <comment>Screen-reader name for a NumericUpDown's up button. The button comes from the control template, not from any view, so it is named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings.</comment>
+  </data>
+  <data name="AutoNameSpinnerDecrease" xml:space="preserve">
+    <value>Decrease value</value>
+    <comment>Screen-reader name for a NumericUpDown's down button. See AutoNameSpinnerIncrease.</comment>
+  </data>
+  <data name="AutoNameExpandCollapse" xml:space="preserve">
+    <value>Expand or collapse</value>
+    <comment>Screen-reader name for a TreeViewItem's expand/collapse chevron in the navigation tree. A template part, named by LayeredEditors.Avalonia/Themes/AccessibilityNames.axaml via WrapperStrings. Deliberately state-free: the chevron's ToggleProvider already reports expanded or collapsed.</comment>
+  </data>
 
   <!-- screen-reader names for controls
        in the larger editor views.  Sorted by view file. -->
@@ -624,6 +636,42 @@
   </data>
   <data name="CheckboxClaudeDesktop" xml:space="preserve">
     <value>Claude Desktop</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="LabelClientAbbrevClaudeDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="ProgressRestoreClaudeJson" xml:space="preserve">
+    <value>Restoring claude.json…</value>
+  </data>
+  <data name="ProgressRestoreClaudeHome" xml:space="preserve">
+    <value>Restoring the Claude home directory…</value>
+  </data>
+  <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
+    <value>Restoring Desktop config…</value>
+  </data>
+  <data name="ProgressRestoreDesktopProfiles" xml:space="preserve">
+    <value>Restoring Desktop profiles…</value>
+  </data>
+  <data name="ProgressRestoreDesktopActiveProfile" xml:space="preserve">
+    <value>Restoring Desktop active profile…</value>
+  </data>
+  <data name="ProgressRestoreApplying" xml:space="preserve">
+    <value>Applying restore…</value>
+  </data>
+  <data name="ProgressRestoreProjects" xml:space="preserve">
+    <value>Restoring projects…</value>
+  </data>
+  <data name="ProgressRestoreWorktrees" xml:space="preserve">
+    <value>Restoring worktrees…</value>
+  </data>
+  <data name="ProgressRestoreComplete" xml:space="preserve">
+    <value>Restore complete</value>
+  </data>
+  <data name="ProgressBackupDiscoveringProjects" xml:space="preserve">
+    <value>Discovering projects…</value>
   </data>
   <data name="LabelRetention" xml:space="preserve">
     <value>Retention</value>
@@ -1364,6 +1412,12 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   <data name="TipHeaderEffectiveOverridden" xml:space="preserve">
     <value>Checked when a narrower scope (e.g. local or project) sets this property explicitly, overriding this row's value</value>
   </data>
+  <data name="HeaderEffectiveSeverity" xml:space="preserve">
+    <value>Risk</value>
+  </data>
+  <data name="TipHeaderEffectiveSeverity" xml:space="preserve">
+    <value>How much this setting matters, judged at the scope that won and the value in effect — so it can differ from the same setting on the Properties tab, which judges the scope you are editing</value>
+  </data>
   <data name="ButtonCopyToClipboard" xml:space="preserve">
     <value>Copy to Clipboard</value>
   </data>
@@ -1388,6 +1442,54 @@ New terminals will pick up the change; existing terminals need to be restarted. 
   </data>
   <data name="StatusReloaded" xml:space="preserve">
     <value>Reloaded.</value>
+  </data>
+  <data name="StatusShareConfigCopiedToClipboard" xml:space="preserve">
+    <value>Configuration copied to the clipboard.</value>
+    <comment>Centre status pill after Share config. Windows and macOS have no share sheet, so the payload goes to the clipboard; say that rather than a generic "Shared".</comment>
+  </data>
+  <data name="StatusShareConfigOpenedInBrowser" xml:space="preserve">
+    <value>Configuration opened in your browser.</value>
+    <comment>Centre status pill after Share config handed a URI to the default browser.</comment>
+  </data>
+  <data name="StatusShareConfigOpenedMailClient" xml:space="preserve">
+    <value>Configuration handed to your mail client.</value>
+    <comment>Centre status pill after Share config handed a mailto: URL to the desktop mail handler (the Linux fallback).</comment>
+  </data>
+  <data name="StatusShareConfigRevealedInFileManager" xml:space="preserve">
+    <value>Configuration revealed in your file manager.</value>
+    <comment>Centre status pill after Share config revealed a file in Explorer, Finder or the Linux file manager.</comment>
+  </data>
+  <data name="StatusShareConfigUnavailable" xml:space="preserve">
+    <value>Sharing is not available on this system.</value>
+    <comment>Centre status pill when no share path exists at all - an unsupported OS, an empty payload, or no share service wired. Not a failure: nothing was attempted, so the pill auto-clears rather than sticking.</comment>
+  </data>
+  <data name="StatusShareConfigFailed" xml:space="preserve">
+    <value>Could not share the configuration — see the log for details.</value>
+    <comment>Centre status pill when a share path was attempted and did not work. Emitted as a Failure pill, which sticks until dismissed.</comment>
+  </data>
+  <data name="StatusShareLogRevealed" xml:space="preserve">
+    <value>Log file revealed in your file manager.</value>
+    <comment>Centre status pill after Share log revealed the log file in the platform's file manager. Say revealed, not shared - no platform here opens a share sheet.</comment>
+  </data>
+  <data name="StatusShareLogUnavailable" xml:space="preserve">
+    <value>Sharing the log is not available on this system.</value>
+    <comment>Centre status pill when sharing the log could not be attempted - unsupported platform, or the log file is not on disk. Not a failure, so the pill auto-clears.</comment>
+  </data>
+  <data name="StatusShareLogFailed" xml:space="preserve">
+    <value>Could not reveal the log file — see the log for details.</value>
+    <comment>Centre status pill when revealing the log was attempted and did not work. Emitted as a Failure pill, which sticks until dismissed.</comment>
+  </data>
+  <data name="StatusShareArchiveRevealed" xml:space="preserve">
+    <value>Backup archive revealed in your file manager.</value>
+    <comment>Centre status pill after Share on a backup row revealed the archive in the platform's file manager. Supplied to the shared backup page via BackupPageText.</comment>
+  </data>
+  <data name="StatusShareArchiveUnavailable" xml:space="preserve">
+    <value>Sharing the archive is not available on this system.</value>
+    <comment>Centre status pill when sharing the archive could not be attempted - no share service, unsupported platform, or the archive is gone. Not a failure.</comment>
+  </data>
+  <data name="StatusShareArchiveFailed" xml:space="preserve">
+    <value>Could not reveal the backup archive — see the log for details.</value>
+    <comment>Centre status pill when revealing the archive was attempted and did not work.</comment>
   </data>
   <data name="StatusNothingToExport" xml:space="preserve">
     <value>Nothing to export — settings not loaded yet.</value>
@@ -1951,6 +2053,9 @@ Cancel — keep the window open.</value>
   <data name="SaveDialogKindModified" xml:space="preserve">
     <value>Modified property</value>
     <comment>Tooltip + screen-reader name for the orange '~' kind pill in the Save-changes dialog.</comment>
+  </data>
+  <data name="TextSaveUnsafeChangeWarning" xml:space="preserve">
+    <value>{0} of these changes set a value that weakens a safety boundary. Review the flagged rows before saving.</value>
   </data>
 
   <data name="LabelMenuCopy" xml:space="preserve">
@@ -2874,6 +2979,66 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   <data name="StatusDeepLinkUnresolvedFmt" xml:space="preserve">
     <value>Couldn't open the deep link '{0}' — no such page or item.</value>
     <comment>Status-bar warning when a --deep-link path is well-formed but names nothing in this install. {0} = the path.</comment>
+  </data>
+  <data name="AutoNameNavigationTree" xml:space="preserve">
+    <value>Settings navigation</value>
+    <comment>Screen-reader name for the main settings navigation tree in MainWindow.</comment>
+  </data>
+  <data name="AutoNameAgentsSkillsTabs" xml:space="preserve">
+    <value>Sub-agents, skills and commands</value>
+    <comment>Screen-reader name for the tab strip on the sub-agents / skills / commands editor.</comment>
+  </data>
+  <data name="AutoNameBackupRestoreTabs" xml:space="preserve">
+    <value>Backup and restore</value>
+    <comment>Screen-reader name for the tab strip on the backup / restore page.</comment>
+  </data>
+  <data name="AutoNameEffectiveSettingsTabs" xml:space="preserve">
+    <value>Effective settings views</value>
+    <comment>Screen-reader name for the tab strip on the effective-settings page.</comment>
+  </data>
+  <data name="AutoNameMemoryTabs" xml:space="preserve">
+    <value>Memory tiers</value>
+    <comment>Screen-reader name for the tab strip on the memory editor (user / project tiers).</comment>
+  </data>
+  <data name="AutoNameSettingsGroupTabs" xml:space="preserve">
+    <value>Settings views</value>
+    <comment>Screen-reader name for the per-group tab strip (Properties / Effective / JSON).</comment>
+  </data>
+  <data name="SchemaBadgeBundled" xml:space="preserve">
+    <value>bundled</value>
+  </data>
+  <data name="SchemaBadgeFetchedFmt" xml:space="preserve">
+    <value>fetched {0}</value>
+  </data>
+  <data name="SchemaBadgeTooltipBundledFmt" xml:space="preserve">
+    <value>This section's settings are described by the schema built into this app (fingerprint {0}). The app tried to fetch a newer copy and could not — usually no network, or the download was too slow.</value>
+  </data>
+  <data name="SchemaBadgeTooltipFetchedFmt" xml:space="preserve">
+    <value>This section's settings are described by a schema downloaded at {0} (fingerprint {1}). The copy built into this app is used instead when the download is unavailable.</value>
+  </data>
+  <data name="SchemaBadgeTooltipNoUpstreamFmt" xml:space="preserve">
+    <value>This section's settings are described by the schema built into this app (fingerprint {0}). This product publishes no schema to download, so this copy is the only one.</value>
+  </data>
+  <data name="ButtonCheckForSchemaUpdates" xml:space="preserve">
+    <value>Check for schema updates</value>
+  </data>
+  <data name="TipCheckForSchemaUpdates" xml:space="preserve">
+    <value>Re-download the setting definitions these editors are built from. Takes effect after a reload.</value>
+  </data>
+  <data name="SchemaCheckChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="SchemaCheckUpToDate" xml:space="preserve">
+    <value>Schemas are up to date.</value>
+  </data>
+  <data name="SchemaCheckUpdatedFmt" xml:space="preserve">
+    <value>Updated: {0}. Reload the window to apply — the editors still show the previous version.</value>
+  </data>
+  <data name="SchemaCheckUnavailable" xml:space="preserve">
+    <value>Couldn't reach the schema server. Using the copy built into this app.</value>
+  </data>
+  <data name="SchemaCheckFailedFmt" xml:space="preserve">
+    <value>Couldn't load the schema for {0}. See the log for details.</value>
   </data>
   <data name="AutoNameRemoveEntry" xml:space="preserve">
     <value>Remove</value>
