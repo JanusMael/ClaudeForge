@@ -706,17 +706,30 @@ not an optional extra.
 
 ### ⭐ Decisions taken 2026-09-21 — locked, do not relitigate
 
-1. ⛔ **`LayeredEditors.*` does NOT go public on nuget.org. The direction is DISCARDED**, and with it
-   the draft `plans/00004-layerededitors-goes-public-on-nuget.md`, which was deleted while still
-   untracked. **`00004` is free for the next plan** — nothing was committed, so the number was never
-   consumed. ⚠ The proposal reached this repository **second-hand**, written into the working tree
-   by a peer session relaying a decision the maintainer had not given here; it was held untracked
-   precisely so that discarding it cost one `rm`. ⭐ **A plan that is only a draft is deleted, not
-   superseded** — the *new number referencing the old* rule governs plans that were **approved**,
-   and applying it to a draft would have permanently spent a number on a direction nobody took.
-   ⓘ The eleven ids keep publishing exactly as they do today: GitHub Packages, authenticated reads,
-   `scripts/Publish-Packages.ps1`.
-2. ⭐ **Pushing a fast-forward commit to `main` is ordinary work, not a disturbance.** The standing
+1. ⛔ **The RETROFIT is declined: `LayeredEditors.*` is not published to nuget.org from inside this
+   repository.** No trusted-publishing policy on `JanusMael/ClaudeForge`, no second release
+   workflow here, no remap of this repo's `nuget.config`. The draft that proposed it —
+   `plans/00004-layerededitors-goes-public-on-nuget.md` — was deleted while still untracked.
+   ⭐ **`00004` is free for the next plan**: nothing was committed, so the number was never consumed.
+   ⭐ **A plan that is only a draft is deleted, not superseded** — the *new number referencing the
+   old* rule governs plans that were **approved**, and applying it to a draft would have permanently
+   spent a number on a direction nobody took.
+   ⛔⛔ **This decision is NARROWER than it first reads, and the first version of this entry got it
+   wrong.** It said *"`LayeredEditors.*` does NOT go public on nuget.org. The direction is
+   DISCARDED"*, which a future session would have read as settling public publication for good.
+   **It does not.** What was declined is *publishing from here*; see decision 2.
+2. ⭐ **Extraction proceeds separately: the five `LayeredEditors.*` ids move to a new dedicated
+   repository `Bennewitz.Ninja.LayeredEditors` and publish to nuget.org from there.** Confirmed by
+   the maintainer 2026-09-21. ⭐ **Staged, and the order is the point** — the new repo publishes and
+   is **verified from the feed** before any change here removes the source. ⛔ **Nothing in this
+   repository changes yet.** The second half — deleting those five projects from `src/` and
+   consuming the packages instead — is a later, separate change, and is **not** approved by this
+   entry. ⓘ The plan lives outside this repo (`Bennewitz.Ninja.Templates`, draft); repointing
+   DiffView is a named follow-up owned by that project, not a gate.
+3. ⓘ **`AgentForge.*` and `JsonC` are untouched** and keep publishing exactly as today: GitHub
+   Packages, authenticated reads, `scripts/Publish-Packages.ps1`. The pending
+   `packages-v2026.3.921` is unaffected.
+4. ⭐ **Pushing a fast-forward commit to `main` is ordinary work, not a disturbance.** The standing
    bound is on **rewriting** `origin/main` — force-pushes and history surgery — not on landing an
    ordinary commit. ⚠ **`git push origin main` prints `remote: - Changes must be made through a pull
    request.` and then SUCCEEDS** for the repository owner. That line reads exactly like a rejection
@@ -724,15 +737,23 @@ not an optional extra.
    @{u}..HEAD`, never the `remote:` prose. Same lesson as the 2-ref push cap — the `remote:` lines
    are advisory and the **effect** is what must be measured.
 
-ⓘ **Measured while reconciling, and worth keeping even though the plan is gone.** 00001 gates public
+⚠ **How the wrong scope got recorded, because the mechanism will recur.** The question put to the
+maintainer named the *draft* — and that draft was the retrofit — so *"discard it"* was a correct
+answer to a narrower question than the entry then claimed. **A decision is only as wide as the
+question that produced it.** When recording one, write down what was actually asked, not the
+largest reading the answer permits.
+
+ⓘ **Measured while reconciling, and it outlives the discarded draft.** 00001 gates public
 publication on *"ClaudeForge, continuing OpenCodeForge work, and a third project"* having exercised
 these libraries. The third project exists — **DiffView** (`C:/c/cl/Bennewitz.Ninja.DiffView`) — but it
 consumes the **unprefixed** id `LayeredEditors.Avalonia.Diagnostics` at `1.0.1`, hand-packed from a
 ClaudeForge checkout into the sibling folder feed `../nuget-local`. ⛔ **It has exercised the CODE and
 never the `Bennewitz.Ninja.*` PACKAGES**, and its own `packageSourceMapping` matches `LayeredEditors.*`,
-which does **not** match `Bennewitz.Ninja.LayeredEditors.*`. So any future public publication of these
-ids would neither break DiffView nor reach it — it would keep resolving `1.0.1` from a folder. **Read
-00001's gate as met by the library and not by the packaging**, whenever it is next picked up.
+which does **not** match `Bennewitz.Ninja.LayeredEditors.*`. So publishing these ids would neither
+break DiffView nor reach it — it would keep resolving `1.0.1` from a folder, and a throwaway-project
+restore check would pass while the one real external consumer never moved. **Read 00001's gate as met
+by the library and not by the packaging.** ⚠ That pin is a hand-packed copy with no link back to the
+CalVer ids, so it drifts silently.
 
 ### ⭐ Decisions taken 2026-09-20, second batch — Phase E step 3, locked
 
