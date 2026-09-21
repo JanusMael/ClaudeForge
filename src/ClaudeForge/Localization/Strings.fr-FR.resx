@@ -601,7 +601,7 @@
     <value>Restauration de claude.json…</value>
   </data>
   <data name="ProgressRestoreClaudeHome" xml:space="preserve">
-    <value>Restauration de ~/.claude/…</value>
+    <value>Restauration du répertoire de base de Claude…</value>
   </data>
   <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
     <value>Restauration de la configuration Desktop…</value>

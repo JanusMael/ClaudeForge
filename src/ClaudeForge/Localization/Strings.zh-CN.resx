@@ -602,7 +602,7 @@
     <value>正在还原 claude.json…</value>
   </data>
   <data name="ProgressRestoreClaudeHome" xml:space="preserve">
-    <value>正在还原 ~/.claude/…</value>
+    <value>正在还原 Claude 主目录…</value>
   </data>
   <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
     <value>正在还原 Desktop 配置…</value>

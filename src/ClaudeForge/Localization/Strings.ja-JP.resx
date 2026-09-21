@@ -601,7 +601,7 @@
     <value>claude.json を復元しています…</value>
   </data>
   <data name="ProgressRestoreClaudeHome" xml:space="preserve">
-    <value>~/.claude/ を復元しています…</value>
+    <value>Claude ホームディレクトリを復元しています…</value>
   </data>
   <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
     <value>Desktop の設定を復元しています…</value>

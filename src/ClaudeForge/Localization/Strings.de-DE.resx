@@ -592,7 +592,7 @@
     <value>claude.json wird wiederhergestellt…</value>
   </data>
   <data name="ProgressRestoreClaudeHome" xml:space="preserve">
-    <value>~/.claude/ wird wiederhergestellt…</value>
+    <value>Claude-Basisverzeichnis wird wiederhergestellt…</value>
   </data>
   <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
     <value>Desktop-Konfiguration wird wiederhergestellt…</value>

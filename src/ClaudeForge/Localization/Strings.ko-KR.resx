@@ -601,7 +601,7 @@
     <value>claude.json 복원 중…</value>
   </data>
   <data name="ProgressRestoreClaudeHome" xml:space="preserve">
-    <value>~/.claude/ 복원 중…</value>
+    <value>Claude 홈 디렉터리 복원 중…</value>
   </data>
   <data name="ProgressRestoreDesktopConfig" xml:space="preserve">
     <value>Desktop 구성 복원 중…</value>
