@@ -19,7 +19,7 @@
 
 | | |
 |---|---|
-| Branch | ⛔⛔ **TWO NOW, and the active one changed on 2026-09-17.** This file is on **`release/claudeforge-on-packages`** — ClaudeForge only, cut from `feat/agentforge-opencodeforge` by subtraction in plans/00003 Phase 0. ⛔ **`feat/agentforge-opencodeforge` is PARKED: not deleted, not merged.** It is the OpenCodeForge continuation, it is pushed, and it is needed again at **Phase C0** to evidence that the neutral layer is neutral by *use* — the ~941 tests exercising `AgentForge.*` from the OpenCode side are the only proof of that, and the packages become immutable right after |
+| Branch | ✅ **`main` is the trunk again — PR #68 merged 2026-09-21 (`3de807d`), and `release/claudeforge-on-packages` is DELETED** (`delete_branch_on_merge: true`); its content is entirely in `main`, verified by an empty tree diff before deletion. ⛔ **`feat/agentforge-opencodeforge` is still PARKED: not deleted, not merged.** It is the only copy of OpenCodeForge and is needed again at **Phase C0** to evidence that the neutral layer is neutral by *use* |
 | HEAD | ⓘ **`git log -1` is the answer.** A hash cannot be written into the commit that produces it, and every attempt to name one here has needed a follow-up commit to correct it — including the one that added this very warning and then named a hash anyway, which is why the hash is now gone rather than merely deprecated |
 | Working tree | ✅ **CLEAN, level with `origin`, and the solution BUILDS — 0 errors, 0 warnings.** ⓘ This cell said the opposite for two sessions; Phase E step 3's test slice is finished. See *RESUME HERE* |
 | Pushed | ✅ **Level with `origin/feat/agentforge-opencodeforge`** as of 2026-09-17. ⚠ **The branch was FORCE-PUSHED on 2026-09-16** — every commit after `v2026.3.901` has a new SHA. Recovery ref: `backup/pre-trailer-rewrite-20260916`. ⚠ There is still **no PR**, and that is the open question, not the push. ⓘ This cell twice carried a wrong claim — first *"nothing has been pushed"* while the remote branch had existed for four days, then a commit count that was stale the moment anything followed it. `git status -sb` is the answer; what belongs here is whether a PR exists |
@@ -137,18 +137,18 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — Phase E is LANDED; two decisions are the maintainer's
+## ▶ RESUME HERE — one item left, and it is the maintainer's
 
 ✅ **The tree builds, the suite is green, and everything is pushed.** The state this section
 described for two sessions — `src/` compiling while the test projects did not — is gone.
 
 | | |
 |---|---|
-| Working tree | ✅ **CLEAN, and level with `origin/release/claudeforge-on-packages`.** ⓘ `git log -1` is the answer for HEAD; a hash written here is wrong by construction |
+| Working tree | ✅ **CLEAN on `main`, level with `origin/main`, 0 unpushed.** ⓘ `git log -1` is the answer for HEAD; a hash written here is wrong by construction |
 | Build | ✅ `dotnet build ClaudeForge.slnx -c Debug` — **0 errors, 0 warnings**, `src/` and `tests/` both |
-| Suite | ✅ **3,586 passed · 0 failed · 13 skipped**, Debug. ⚠ Compare the TOTAL (3,599), not the passed count — the skipped figure is machine-dependent, because the package-mode guards report `Assert.Inconclusive` rather than passing vacuously when `artifacts/localfeed` is empty |
+| Suite | ✅ **3,586 passed · 0 failed · 14 skipped**, Debug, at `5c843d8`. ⚠ Compare the TOTAL (3,599), not the passed count — the skipped figure is machine-dependent, because the package-mode guards report `Assert.Inconclusive` rather than passing vacuously when `artifacts/localfeed` is empty |
 | Trim gate | ✅ Release `win-x64` self-contained trimmed publish, **zero IL diagnostics**, 28.3 MB single file. ⚠ It needs `-p:AllowProjectReferencePublish=true` — the hatch `D3` records by name for a gate with no feed credentials. A bare Release publish is **correctly refused**, which is `D3` working, not a breakage |
-| CI | ⛔ **6/7 at `ee3e247`, and the one red is the SAME structural one** — `Published Version` is red by construction until the next package release. ⓘ It now fails to COMPILE rather than mismatching a version: this branch adds `ClaudeEnvironment` to the shared libraries and the published `2026.3.920` packages have no such type, so package mode cannot build at all. Expected, and cured only by `2026.3.921`. All three `Build & Test` platforms are green, so the local green is not one machine's luck |
+| CI | ⛔ **Only `Published Version` is red, and it is STRUCTURAL** — `Published Version` is red by construction until the next package release. ⓘ It now fails to COMPILE rather than mismatching a version: this branch adds `ClaudeEnvironment` to the shared libraries and the published `2026.3.920` packages have no such type, so package mode cannot build at all. Expected, and cured only by `2026.3.921`. All three `Build & Test` platforms are green, so the local green is not one machine's luck |
 
 ### What landed
 
