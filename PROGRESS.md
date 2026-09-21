@@ -2042,6 +2042,19 @@ pass, not a fix.
 
 **Decided 2026-09-21, in a choices pass — each was a question and is now settled:**
 
+- ✅ **NO app release is cut for this work, and none is needed.** Decided 2026-09-21: the changes
+  are entirely structural, and an app release would only be deleted again afterwards. ⭐ Nothing
+  depends on one — the `Published Version` red is cured by the **package** release, and
+  `## [Unreleased]` simply rides along whenever an app release is next cut.
+  ⓘ **A package release was never going to appear in Releases anyway**, which is worth knowing
+  before worrying about it: `release-packages.yml` states outright that it creates no GitHub
+  Release, because *"an entry with nothing to download for either of them belongs somewhere
+  else"*. So `packages-v2026.3.921` publishes eleven packages to the feed and leaves the Releases
+  page showing `ClaudeForge 2026.3.920` as latest.
+  ⚠ One consequence, stated so it is not a surprise later: `release.yml` takes an app release's
+  notes from the **merged PR body**, so #68's body is not consumed by anything until an app
+  release happens. It remains the PR's record either way.
+
 - ✅ **`main` takes this branch's tree WHOLESALE**, via `git merge -s ours origin/main` on the
   branch so the PR becomes mergeable and **`main` is never force-pushed**. ⛔ `-s ours`, not
   `-X ours`: the `-X` attempt produced a duplicated `Avalonia.Headless` ItemGroup and **ten**
