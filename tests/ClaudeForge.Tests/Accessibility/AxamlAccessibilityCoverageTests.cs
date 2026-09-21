@@ -453,8 +453,17 @@ public sealed class AxamlAccessibilityCoverageTests
             // whose LocalName literally contains a dot.  XDocument reads
             // this without namespace mangling because attached-property
             // attributes are unprefixed in the default xmlns.
+            //
+            // ⛔ The VALUE is checked, not just the attribute's presence.
+            // `AutomationProperties.Name=""` satisfies a presence test and announces nothing, so
+            // a presence-only scan reports coverage it does not have — and this is a RATCHETING
+            // baseline, so the over-count becomes the number future work is measured against.
+            // ⚠ The sibling runtime guard in LayeredEditors.Avalonia.Diagnostics.Tests already
+            // asked `IsNullOrWhiteSpace`; this markup scan did not. One property, two guards,
+            // and only one of them could see an empty name.
             bool hasName = el.Attributes()
-                             .Any(a => a.Name.LocalName == "AutomationProperties.Name");
+                             .Any(a => a.Name.LocalName == "AutomationProperties.Name"
+                                       && !string.IsNullOrWhiteSpace(a.Value));
 
             if (!hasName)
             {
