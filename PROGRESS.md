@@ -198,7 +198,20 @@ it, both worth keeping:
 
 ### Next, in order
 
-1. ⚠ **Open the PR against `main`** — *the maintainer's call, and the long-standing open question.*
+1. ✅ **PR #68 IS OPEN** — `release/claudeforge-on-packages` → `main`, body from
+   [`docs/PR-BODY-release-on-packages.md`](docs/PR-BODY-release-on-packages.md).
+   ⛔⛔ **It reports CONFLICTING: 60 conflicts — and they are a HISTORY-REWRITE ARTIFACT, not real
+   divergence.** The merge base is `3c7aaab` (2026-09-01), so git re-litigates three weeks of work
+   already hand-integrated, plus the `ClaudeForge.Sdk` → `AgentForge.Sdk` renames. `main` is only
+   **4 commits** past the recorded integration point `52f604d`, and all four are accounted for: the
+   TimeProvider.Testing bump (ported), the MAUI bump (not applicable — no MAUI dependency here), the
+   `#65` docs refresh and its merge commit. **No user-facing gap.** ⚠ Resolving by merging `main`
+   contradicts the locked decision that `git merge origin/main` is the wrong tool here; ports go
+   through `AGENTS.md` §*Hand-porting a fix*. **How to land this is a maintainer decision.**
+   ⓘ PR checks: 7 green (all three platforms, canary, trim, feed restore). Two red —
+   `Published Version` (structural, cured only by `2026.3.921`) and a **6-second** `CodeQL`
+   setup-level failure; the real `Analyze (C#)` passed in 4m, and CodeQL was green on the branch
+   itself, so that red is most likely the conflict denying it a merge commit.
    ⛔ The release notes do **not** come from `CHANGELOG.md`: `release.yml` reads the merged PR's
    body, else the tagged commit's message body. So the curated `## [Unreleased]` section reaches a
    release only through one of those two, which is a reason to open the PR before tagging rather
