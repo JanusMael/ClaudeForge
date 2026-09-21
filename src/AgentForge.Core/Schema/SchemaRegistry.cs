@@ -233,12 +233,20 @@ public sealed class SchemaRegistry : IDisposable
     /// <remarks>
     /// ⚠ <see cref="ClaudeCodeProductFor"/> is built FROM this, so the two cannot drift.
     /// </remarks>
-    public const string ClaudeCodeArchiveFolder = "ClaudeCode";
+    /// <remarks>
+    /// ⛔ <b><c>static readonly</c>, deliberately NOT <c>const</c>, for two independent reasons.</b>
+    /// A <c>const</c> is baked into every consumer's IL at compile time, so changing it in a
+    /// published package would not reach an assembly already compiled against the old value —
+    /// which is precisely the failure mode an immutable feed makes permanent. And it folded the
+    /// value-pinning assertions in <c>ExportManifestTests</c> and <c>BackupEngineTests</c> into
+    /// compile-time constants, which <c>MSTEST0032</c> correctly called always-true.
+    /// </remarks>
+    public static readonly string ClaudeCodeArchiveFolder = "ClaudeCode";
 
     /// <summary>The stable id of the Claude Code product, for identity comparisons.</summary>
     /// <remarks>Same reasoning as <see cref="ClaudeCodeArchiveFolder"/>, and the descriptor is
     /// built from it.</remarks>
-    public const string ClaudeCodeProductId = "claude-code";
+    public static readonly string ClaudeCodeProductId = "claude-code";
 
     public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>
         new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",
