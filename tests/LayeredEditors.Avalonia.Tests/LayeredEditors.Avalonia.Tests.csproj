@@ -12,6 +12,16 @@
         <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
     </ItemGroup>
 
+    <!-- The headless session bootstrap and its guard are LINKED, never copied, for the same
+         reason as the friend grants above: one file that is obviously complete beats one per
+         project. HeadlessSessionBootstrap builds the Avalonia application in [AssemblyInitialize]
+         instead of leaving it to whichever test dispatches first; read its remarks before
+         touching it, and only link it into a project that has an [AvaloniaTestApplication]. -->
+    <ItemGroup>
+        <Compile Include="../../HeadlessSessionBootstrap.cs" Link="Headless/HeadlessSessionBootstrap.cs"/>
+        <Compile Include="../../HeadlessSessionBootstrapTests.cs" Link="Headless/HeadlessSessionBootstrapTests.cs"/>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless" Version="12.1.2" />
     </ItemGroup>

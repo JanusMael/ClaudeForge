@@ -894,17 +894,76 @@ Both leave room for what is being seen. ⛔ Do not re-diagnose this as "a flaky 
 tests with two different exceptions in one class, green in isolation, is not a property of either
 test.
 
-⭐⭐ **2026-09-22 widened it past that one class, which is the strongest evidence yet.**
-`SchemaProvenanceBadgeTests.ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried` threw the
-**identical** `"The calling thread cannot access this object because a different thread owns it"`
-in `ClaudeForge.Tests` — on a **docs-only** PR (#73, `PROGRESS.md` and nothing else), where no
-product code changed at all, and the **same job passed in the duplicate CI run of the same commit**.
+✅✅ **ROOT-CAUSED AND FIXED 2026-09-22 — it was lazy application set-up, not "contamination".**
 
-⛔ So it is not `ReloadHardeningTests`, and it was never about that class. Any remaining reading
-that the two 2026-09-19 failures were a property of reload hardening is refuted: a third class is
-now affected by the same symptom, and the only thing all three share is the process-global headless
-session. ⚠ **A docs-only diff cannot regress product code** — treat a recurrence here as evidence
-about the harness, and do not go looking for it in whatever shipped that day.
+⛔ **The 2026-09-22 entry that stood here was wrong and is corrected rather than deleted.** It read
+this as a third class of the same process-global contamination, on the strength of a matching
+exception message. The message matched; the cause is more specific, and naming it "contamination"
+is what kept it unfixed for three weeks.
+
+`SchemaProvenanceBadgeTests.ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried` threw
+`"The calling thread cannot access this object because a different thread owns it"` on a PR whose
+whole diff was a Markdown file, while the **same job passed in the duplicate CI run of the identical
+commit**. Its stack is the answer:
+
+```
+HeadlessUnitTestSession.DispatchCore
+  -> EnsureIsolatedApplication()      <- the app is built HERE, inside a TEST
+    -> AppBuilder.SetupUnsafe()
+      -> AvaloniaHeadlessPlatform.Initialize -> Compositor..ctor
+        -> DefaultRenderLoop.Add -> Dispatcher.VerifyAccess   THROWS
+```
+
+⭐ **`HeadlessUnitTestSession.GetOrStartForAssembly` starts the session's THREAD; it does not build
+the Avalonia application.** `EnsureIsolatedApplication()` runs lazily from `DispatchCore`, so
+application set-up belonged to whichever test dispatched first — the exact ordering
+`HeadlessSessionBootstrap` was added to remove, and which its own XML doc claimed it had removed.
+**The bootstrap was load-bearing in name only.**
+
+⭐ **Proven twice, once without CI.** The stack above shows `SetupUnsafe()` running inside a test,
+which it can only do if set-up had not already happened. Then locally: strip the new warm-up
+dispatch and `Application.Current` is **null** at `[AssemblyInitialize]`; restore it and it is
+non-null. That is a direct measurement of the defect, not an inference from a flaky log.
+
+⚠ **Why the thread is ever wrong.** `Dispatcher.UIThread` is a lazily-resolved process-global that
+binds to whichever thread touches it first — the property `LiveLogWindow` already documents for the
+shipping app, where constructing an `AvaloniaObject` too early "forces `Dispatcher.UIThread` to
+resolve". In a full run a non-headless test can bind it to the MSTest thread; the session thread
+then builds the compositor and `VerifyAccess` fails. Alone, nothing gets there first — which is
+exactly the "green in isolation, flaky in the full run" signature, and why that signature pointed at
+*ordering* rather than at any test.
+
+**The fix** is one warm-up `Dispatch` in `[AssemblyInitialize]`, making the session thread the first
+toucher deterministically, on the one path MSTest guarantees runs before every test.
+`HeadlessSessionBootstrapTests` guards it and **was canaried**: removing the dispatch fails it with
+the message that names the cause.
+
+⚠ **What is NOT claimed.** The 2026-09-19 `IOException` (temp `settings.json` "used by another
+process") is a different fault and is untouched by this. The 2026-09-19 `Dispatcher.VerifyAccess` in
+`ReloadHardeningTests` is *probably* this same cause — same exception, same conditions — but its
+stack was not captured, so that is a reasonable inference and not a measurement. ⛔ **The local
+repro attempt failed: 0 of 6 full-assembly runs on Windows reproduced anything.** This was fixed
+from the stack trace and the canary, never from a reproduction, so do not treat a green local loop
+as evidence the fix works — the CI record is what will show that.
+
+✅ **THE OTHER EXPOSED ASSEMBLIES NOW TAKE THE SAME FIX, AS A LINKED FILE.**
+`HeadlessSessionBootstrap.cs` and `HeadlessSessionBootstrapTests.cs` sit at the repo root beside
+`AssemblyInfo.InternalsVisibleTo.cs` and are **linked, never copied**, by every project that runs a
+headless session — `ClaudeForge.Tests`, `LayeredEditors.Avalonia.Tests` and
+`LayeredEditors.Avalonia.Diagnostics.Tests`. `Assembly.GetExecutingAssembly()` resolves per
+compiled assembly, which is what makes one shared file correct: each warms up *its own* session.
+⭐ The guard is linked with it, so a project cannot take the fix and silently lose it.
+
+⛔ **The count was wrong when first recorded here, and the correction matters.** This said **four**
+assemblies were exposed. It is **two** — `AgentForge.Sdk.Tests` and `ClaudeForge.Sdk.Claude.Tests`
+match `HeadlessUnitTestSession` only in a **comment** inside their `Parallelization.cs`; neither has
+an `[AvaloniaTestApplication]` and neither runs a session. ⚠ **Linking the bootstrap into them would
+have broken them**: with no application to build, `[AssemblyInitialize]` becomes a hard failure for
+the whole assembly. A `grep -l` for a type name counts mentions, not uses.
+
+ⓘ Proof the link took effect rather than merely compiling: the two newly-linked assemblies went
+**216 → 219** and **92 → 95** tests, and the suite total moved **3,600 → 3,609** (+9 = 3 guards ×
+3 assemblies).
 
 ⓘ **Not fixed, deliberately, and it did not block the Phase D work**: CI was green on all five jobs
 at `19f3885`, and the local failures were re-run green. But a local full suite can no longer be
