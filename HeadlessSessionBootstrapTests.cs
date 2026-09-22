@@ -2,8 +2,11 @@ using System.Reflection;
 
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Threading;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Bennewitz.Ninja.TestSupport.Headless;
 
 /// <summary>
 /// Guards that <see cref="HeadlessSessionBootstrap"/> still does the thing it exists to do:
@@ -11,6 +14,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// dispatches first.
 /// </summary>
 /// <remarks>
+/// <para>
+/// ⭐ <b>LINKED alongside the bootstrap</b>, so every project that takes the fix also takes its
+/// guard. A project could otherwise link the bootstrap and never notice it had stopped working.
+/// </para>
 /// <para>
 /// ⛔ <b>The regression this catches is INVISIBLE without it.</b> Deleting the warm-up dispatch
 /// leaves every test passing on most runs — application set-up simply moves back into the first
@@ -25,7 +32,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// observe the world, set-up has happened either way. Only <c>[AssemblyInitialize]</c> can witness
 /// the difference, so it records what it saw and this asserts the record. A test that merely
 /// checked <c>Application.Current is not null</c> from here would pass in both worlds and guard
-/// nothing.
+/// nothing. ⚠ Canaried on 2026-09-22: with the warm-up removed the flag is <c>false</c> and this
+/// fails; with it, true.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -76,7 +84,7 @@ public sealed class HeadlessSessionBootstrapTests
         {
             Assert.IsNotNull(Application.Current,
                 "The application must exist on the session thread.");
-            Assert.IsTrue(global::Avalonia.Threading.Dispatcher.UIThread.CheckAccess(),
+            Assert.IsTrue(Dispatcher.UIThread.CheckAccess(),
                 "Dispatcher.UIThread must be owned by the session thread. If this fails, the "
                 + "global dispatcher was bound by some earlier toucher on another thread, which "
                 + "is the condition that makes compositor construction throw.");

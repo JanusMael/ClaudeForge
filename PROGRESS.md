@@ -946,12 +946,24 @@ repro attempt failed: 0 of 6 full-assembly runs on Windows reproduced anything.*
 from the stack trace and the canary, never from a reproduction, so do not treat a green local loop
 as evidence the fix works — the CI record is what will show that.
 
-⛔ **FOUR OTHER TEST ASSEMBLIES ARE STILL EXPOSED.** `AgentForge.Sdk.Tests`,
-`ClaudeForge.Sdk.Claude.Tests`, `LayeredEditors.Avalonia.Diagnostics.Tests` and
-`LayeredEditors.Avalonia.Tests` all use `HeadlessUnitTestSession` and have **no**
-`[AssemblyInitialize]` at all, so every one of them still builds its application in whichever test
-dispatches first. They have not misbehaved yet; nothing stops them. The repo's own linked-file
-precedent (`AssemblyInfo.InternalsVisibleTo.cs`) is the obvious shape for a shared bootstrap.
+✅ **THE OTHER EXPOSED ASSEMBLIES NOW TAKE THE SAME FIX, AS A LINKED FILE.**
+`HeadlessSessionBootstrap.cs` and `HeadlessSessionBootstrapTests.cs` sit at the repo root beside
+`AssemblyInfo.InternalsVisibleTo.cs` and are **linked, never copied**, by every project that runs a
+headless session — `ClaudeForge.Tests`, `LayeredEditors.Avalonia.Tests` and
+`LayeredEditors.Avalonia.Diagnostics.Tests`. `Assembly.GetExecutingAssembly()` resolves per
+compiled assembly, which is what makes one shared file correct: each warms up *its own* session.
+⭐ The guard is linked with it, so a project cannot take the fix and silently lose it.
+
+⛔ **The count was wrong when first recorded here, and the correction matters.** This said **four**
+assemblies were exposed. It is **two** — `AgentForge.Sdk.Tests` and `ClaudeForge.Sdk.Claude.Tests`
+match `HeadlessUnitTestSession` only in a **comment** inside their `Parallelization.cs`; neither has
+an `[AvaloniaTestApplication]` and neither runs a session. ⚠ **Linking the bootstrap into them would
+have broken them**: with no application to build, `[AssemblyInitialize]` becomes a hard failure for
+the whole assembly. A `grep -l` for a type name counts mentions, not uses.
+
+ⓘ Proof the link took effect rather than merely compiling: the two newly-linked assemblies went
+**216 → 219** and **92 → 95** tests, and the suite total moved **3,600 → 3,609** (+9 = 3 guards ×
+3 assemblies).
 
 ⓘ **Not fixed, deliberately, and it did not block the Phase D work**: CI was green on all five jobs
 at `19f3885`, and the local failures were re-run green. But a local full suite can no longer be
