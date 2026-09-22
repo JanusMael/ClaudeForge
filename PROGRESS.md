@@ -894,6 +894,18 @@ Both leave room for what is being seen. ⛔ Do not re-diagnose this as "a flaky 
 tests with two different exceptions in one class, green in isolation, is not a property of either
 test.
 
+⭐⭐ **2026-09-22 widened it past that one class, which is the strongest evidence yet.**
+`SchemaProvenanceBadgeTests.ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried` threw the
+**identical** `"The calling thread cannot access this object because a different thread owns it"`
+in `ClaudeForge.Tests` — on a **docs-only** PR (#73, `PROGRESS.md` and nothing else), where no
+product code changed at all, and the **same job passed in the duplicate CI run of the same commit**.
+
+⛔ So it is not `ReloadHardeningTests`, and it was never about that class. Any remaining reading
+that the two 2026-09-19 failures were a property of reload hardening is refuted: a third class is
+now affected by the same symptom, and the only thing all three share is the process-global headless
+session. ⚠ **A docs-only diff cannot regress product code** — treat a recurrence here as evidence
+about the harness, and do not go looking for it in whatever shipped that day.
+
 ⓘ **Not fixed, deliberately, and it did not block the Phase D work**: CI was green on all five jobs
 at `19f3885`, and the local failures were re-run green. But a local full suite can no longer be
 relied on first time, which is worth knowing before reading a single red run as a regression.
