@@ -137,12 +137,17 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — Opus 5.5 is published to the feed; the app tag is the maintainer's
+## ▶ RESUME HERE — `v2026.3.922` IS RELEASED; signing and winget are the maintainer's
 
-✅ **`packages-v2026.3.922` is published, the pin consumes it, and CI is fully green on `main`.**
-The release carries **Claude Opus 5.5**, plus the two unshipped fixes already sitting in the
-CHANGELOG's `[Unreleased]` (managed settings read from the real system directory, and
-`CLAUDE_CONFIG_DIR` honoured).
+✅ **`v2026.3.922` is published with six assets, built from the shared packages at `2026.3.922`.**
+It carries **Claude Opus 5.5** plus the two fixes that had been sitting unreleased (managed
+settings read from the real per-OS system directory, and `CLAUDE_CONFIG_DIR` honoured).
+
+⭐ **Opus 5.5 was confirmed IN THE SHIPPED BINARY, not inferred.** The single-file byte scan was
+**inconclusive** — the bundle compresses its payload, so a missing substring proves nothing — so
+the published `win-x64` asset was downloaded, run against a scratch `CLAUDE_CONFIG_DIR`, and driven
+to *Model & Effort*, which rendered `claude-opus-5-5` from the overlay resource inside the package.
+The UI also reported `v2026.3.922.0`.
 
 | | |
 |---|---|
@@ -151,7 +156,8 @@ CHANGELOG's `[Unreleased]` (managed settings read from the real system directory
 | Pin | ✅ **`SharedPackageVersion` = `2026.3.922`** in the root `Directory.Build.props` (PR #70) |
 | CI | ✅ green on `main`, **including `Published Version`** |
 | Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, across all **nine** test projects |
-| ⚠ Remaining | **The app tag `v2026.3.922` — the maintainer's, because it is irreversible.** Then the maintainer signs and submits to winget |
+| Release | ✅ **`v2026.3.922`, six assets**, run `35770630333`. ⭐ **The mode was READ, not assumed**: all six provenance logs carry `PACKAGE MODE … at 2026.3.922`, **zero** `ESCAPE HATCH` lines and **zero** IL warnings. Notes came from PR #72's body — `release.yml` resolves them from the PR whose merge commit is the tagged SHA, so the release PR must be the LAST thing merged before the tag |
+| ⚠ Remaining | **Signing, then the winget submission — the maintainer's, always.** `packaging/sign-release.ps1` needs a PIN; it signs, re-uploads **and submits**. ⓘ winget users are on **`2026.3.916`** because `.920` was deliberately skipped, so this submission jumps them across both. Fallback is `Resubmit-Winget.ps1`, which needs `-Force` |
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
@@ -188,9 +194,11 @@ release failure, which had the permission and set no credentials.
 
 ### Next, in order
 
-1. ⚠ **Cut the app release `v2026.3.922`** — irreversible, so it is the maintainer's call. Scope is
-   [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md). ⛔ The release notes do **not** come from
-   `CHANGELOG.md`: `release.yml` reads the merged PR's body, else the tagged commit's message body.
+1. ✅ **`v2026.3.922` is cut** — six assets, all six RIDs in package mode at `2026.3.922`.
+   ⛔ The release notes do **not** come from `CHANGELOG.md`: `release.yml` reads the body of the PR
+   whose **merge commit is the tagged SHA**, else the tagged commit's message body. So the release
+   PR has to be the last thing merged before the tag — tagging after a docs refresh publishes that
+   refresh as the notes. Scope is [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md).
 2. ⚠ **Sign, then submit to winget — the maintainer's, always.** `packaging/sign-release.ps1` needs
    a PIN; it signs, re-uploads **and submits**. ⓘ winget users are on **`2026.3.916`** because
    `.920` was deliberately skipped, so this submission jumps them across both. Fallback is
@@ -885,6 +893,18 @@ process-global Avalonia headless session, and VSTest runs separate test *assembl
 Both leave room for what is being seen. ⛔ Do not re-diagnose this as "a flaky test" — two different
 tests with two different exceptions in one class, green in isolation, is not a property of either
 test.
+
+⭐⭐ **2026-09-22 widened it past that one class, which is the strongest evidence yet.**
+`SchemaProvenanceBadgeTests.ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried` threw the
+**identical** `"The calling thread cannot access this object because a different thread owns it"`
+in `ClaudeForge.Tests` — on a **docs-only** PR (#73, `PROGRESS.md` and nothing else), where no
+product code changed at all, and the **same job passed in the duplicate CI run of the same commit**.
+
+⛔ So it is not `ReloadHardeningTests`, and it was never about that class. Any remaining reading
+that the two 2026-09-19 failures were a property of reload hardening is refuted: a third class is
+now affected by the same symptom, and the only thing all three share is the process-global headless
+session. ⚠ **A docs-only diff cannot regress product code** — treat a recurrence here as evidence
+about the harness, and do not go looking for it in whatever shipped that day.
 
 ⓘ **Not fixed, deliberately, and it did not block the Phase D work**: CI was green on all five jobs
 at `19f3885`, and the local failures were re-run green. But a local full suite can no longer be
