@@ -37,7 +37,7 @@ which is what the *Sharing worked on no platform* CHANGELOG entry is; the other 
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
-| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, one version. ✅ **Latest published: `2026.3.921`**, all eleven on the feed, and `SharedPackageVersion` consumes it. ⓘ This row named `2026.3.914` for three releases — the figure is not worth restating here, because `git ls-remote --tags origin 'packages-v*'` and `user/packages/nuget/<id>/versions` both answer it and neither goes stale |
+| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, one version. ✅ **Latest published: `2026.3.922`**, all eleven on the feed, and `SharedPackageVersion` consumes it. ⓘ This row named `2026.3.914` for three releases — the figure is not worth restating here, because `git ls-remote --tags origin 'packages-v*'` and `user/packages/nuget/<id>/versions` both answer it and neither goes stale |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
 | ⚠ Awaiting | **Nothing from the maintainer — the remaining work is the agent's.** ⓘ This cell twice carried a stale blocker. It said the maintainer was the only thing left while CI was red; then it said `packages-v2026.3.918` was local-only at `b373226` with red CI and had to be deleted and recreated. **Both are now false**: the tag is on `origin` at `19f3885`, `release-packages.yml` succeeded, and all eleven are on the feed at `2026.3.918`. ⛔ **The lesson is that a blocker cell outlives its blocker** — reconcile it against `git ls-remote --tags origin` and `gh run list`, never read it forward. ⛔ **Superseded 2026-09-20: D4 and D5 are DONE, and the only thing left in Phase D is `D6`, which IS the maintainer's** — cutting a `v*.*.*` tag is irreversible and outside the agent's standing permission. So this cell now reads the other way round: **the remaining Phase D work is the maintainer's, and Phase E is the agent's once the tag exists.** Scope for that decision is [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md). ⓘ `F12` FIXED on both branches; `F11` stays open by an earlier locked decision |
@@ -137,51 +137,81 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — the package release is DONE and CI is fully green
+## ▶ RESUME HERE — Opus 5.5 is published to the feed; the app tag is the maintainer's
 
-✅ **`packages-v2026.3.921` is published, the pin consumes it, and CI is 7/7.** The structural
-`Published Version` red — red by construction for the whole of Phase E — is **gone**, measured on
-run `35674982685` rather than inferred.
+✅ **`packages-v2026.3.922` is published, the pin consumes it, and CI is fully green on `main`.**
+The release carries **Claude Opus 5.5**, plus the two unshipped fixes already sitting in the
+CHANGELOG's `[Unreleased]` (managed settings read from the real system directory, and
+`CLAUDE_CONFIG_DIR` honoured).
 
 | | |
 |---|---|
-| Working tree | ✅ **CLEAN on `main`, level with `origin/main`, 0 unpushed.** ⓘ `git log -1` is the answer for HEAD |
-| Packages | ✅ **All ELEVEN on the feed at `2026.3.921`**, verified id by id against `user/packages/nuget/<id>/versions` — **not** by reading a green workflow. Preflight passed first (11 packages, one version, assembly `2026.3.921.2008`), and all eleven were confirmed **free** before the tag, because Gate 3 is skipped without a token |
-| Pin | ✅ **`SharedPackageVersion` = `2026.3.921`** in the root `Directory.Build.props` (`5062f5a`) |
-| CI | ✅ **7/7 GREEN** — all three `Build & Test` platforms, package canary, trim check, feed restore, **and `Published Version`** |
+| Working tree | ✅ **CLEAN on `main`, level with `origin/main`.** ⓘ `git log -1` is the answer for HEAD |
+| Packages | ✅ **All ELEVEN on the feed at `2026.3.922`**, verified id by id against the flat container — **not** by reading a green workflow. ⛔ **Discover the flat-container URL from the service index** (`PackageBaseAddress/3.0.0` → `.../download`); `<base>/<id>/index.json` 404s, and that 404 is indistinguishable from *"never published"*. A verification script guessing the path reported **0 of 11** against a feed that held all eleven |
+| Pin | ✅ **`SharedPackageVersion` = `2026.3.922`** in the root `Directory.Build.props` (PR #70) |
+| CI | ✅ green on `main`, **including `Published Version`** |
 | Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, across all **nine** test projects |
+| ⚠ Remaining | **The app tag `v2026.3.922` — the maintainer's, because it is irreversible.** Then the maintainer signs and submits to winget |
 
-### ⛔ The release was TWO halves, and the anchor named only one
+### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
-The previous resume anchor said `2026.3.921` was *"the only thing clearing the structural
-`Published Version` red"*. **Publishing alone does not clear it.** That job builds against
-`SharedPackageVersion`, which was still pinned to `2026.3.920` — the version with no
-`ClaudeEnvironment` — so the cure would have sat on the feed unused while CI kept failing with the
-identical `CS0246`, and the obvious reading (*"the tag didn't work"*) points at the wrong half.
+`model-catalog.json`, `claude-code-settings.overlay.json` and the enum-descriptions file are
+**`EmbeddedResource`s inside `AgentForge.Core`**, which is one of the eleven. The release publishes
+with `-p:UseSharedPackages=true`, so the app consumes the **package** at `SharedPackageVersion`,
+never the working tree.
 
-⭐ **A publish and the pin that consumes it are one release.** Bumping the pin is gated on the
-version actually existing, so the order is fixed: tag, verify the feed id by id, then bump. Write
-both halves down, because the second is invisible from the symptom.
+⭐ **Caught before the tag, and proven three independent ways.** Byte-scanning the cached packages
+showed `2026.3.917`, `.918` and `.921` all carry `claude-opus-5` and **none** carries
+`claude-opus-5-5`. CI then reproduced it from the other direction —
+`expected: "claude-opus-5-5"` / `actual: "claude-opus-5"` in `published-version`. Finally the
+published `2026.3.922` package was **downloaded and opened**, and its embedded catalog maps `opus`
+to `claude-opus-5-5`.
 
-### ⚠ What could not be verified locally, and why that is not a gap
+⛔ **Tagging on a green local suite would have shipped a release with no Opus 5.5 in it** — six
+assets, green workflow, nothing failing. This generalises beyond models: **any** bundled asset under
+a packable library ships through the package, so the three-step order applies to all of them.
 
-Package-mode restore **401s on this machine** — it has no `read:packages` token, which is the
-long-standing `C1` gap. So `dotnet build -p:UseSharedPackages=true` cannot be run here, and the pin
-bump was proven by **CI**, which holds credentials and is the designed gate for exactly this. ⛔ Do
-not read a local package-mode failure as a defect; check whether it is `NU1301 / 401` first.
+### ⛔ Correction: the `C1` / "no `read:packages`" claim was FALSE
+
+This document said package-mode restore 401s here for want of a `read:packages` grant. **It does
+not.** `gh auth status` shows `GH_TOKEN` carries `read:packages`; what was missing is handing the
+credential to NuGet:
+
+```powershell
+$env:NuGetPackageSourceCredentials_github = 'Username=<user>;Password=' + $env:GH_TOKEN
+```
+
+With that set, `Publish-Rid.ps1 -Rid win-x64` completed **in package mode at `2026.3.921`** on this
+machine — exit 0, 0 IL warnings, 0 `ESCAPE HATCH` lines, and only the three product-specific
+projects restored. ⭐ Permission and credential are independent halves — the same shape as the D6b
+release failure, which had the permission and set no credentials.
 
 ### Next, in order
 
-1. **Re-run `E1` in package mode** — `pwsh -NoProfile -File scripts/retest/Test-ScratchHomeIsolation.ps1`.
-   ⓘ This was blocked until now for a concrete reason: the published packages had no
-   `ClaudeEnvironment`, so only a `ProjectReference` build could be measured. `2026.3.921` removes
-   that. The **mechanism** was already proven 7/7 with 0 touches to the real `~/.claude`; what is
-   outstanding is the same measurement against a package-mode build.
-   ⚠ **A whole-home diff cannot be used** — a control with no app running showed **8 changes in
-   25s**.
-2. ⓘ **Nothing else is outstanding in this repository.** `AgentForge.*` and `JsonC` keep publishing
+1. ⚠ **Cut the app release `v2026.3.922`** — irreversible, so it is the maintainer's call. Scope is
+   [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md). ⛔ The release notes do **not** come from
+   `CHANGELOG.md`: `release.yml` reads the merged PR's body, else the tagged commit's message body.
+2. ⚠ **Sign, then submit to winget — the maintainer's, always.** `packaging/sign-release.ps1` needs
+   a PIN; it signs, re-uploads **and submits**. ⓘ winget users are on **`2026.3.916`** because
+   `.920` was deliberately skipped, so this submission jumps them across both. Fallback is
+   `Resubmit-Winget.ps1`, which needs `-Force`.
+3. **Re-run `E1` in package mode** — `pwsh -NoProfile -File scripts/retest/Test-ScratchHomeIsolation.ps1`.
+   ⓘ No longer blocked: a package-mode published build now exists locally (see the correction
+   above), which is what E1 was waiting for. The **mechanism** was already proven 7/7 with 0 touches
+   to the real `~/.claude`; what is outstanding is the same measurement against a package-mode build.
+   ⚠ **A whole-home diff cannot be used** — a control with no app running showed **8 changes in 25s**.
+4. ⓘ **Nothing else is outstanding in this repository.** `AgentForge.*` and `JsonC` keep publishing
    as they do today; the `LayeredEditors` extraction is another repo's work and changes nothing here
    until its packages are live and verified — see the 2026-09-21 decisions.
+
+### ⓘ New model launches are a catalog chore, not a schema refresh
+
+`scripts/refresh-schema.ps1` reported **all three schemas already up to date** for Opus 5.5:
+schemastore.org omits model names entirely, so a refresh can never be what adds a model. The work is
+`model-catalog.json` plus the two hand-curated overlays, per the checklist in
+[`docs/MODEL-CATALOG.md`](docs/MODEL-CATALOG.md). ⛔ **Never fill a model row from recall** — read the
+published lineup. Opus 5.5's default effort is **`medium`, not `high`**, the only model in the lineup
+whose default differs, and that would have been copied wrongly from Opus 5's row by anyone assuming.
 
 ## Done — plans 00003, Phase D: make the release actually consume them
 
