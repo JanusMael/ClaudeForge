@@ -48,17 +48,17 @@ catalog; a parity test (`ModelCatalogSchemaParityTests`) locks the schema's
 {
   "schemaVersion": 1,
   "models": [
-    { "id": "claude-opus-5", "alias": "opus", "label": "Opus 5",
+    { "id": "claude-opus-5-5", "alias": "opus", "label": "Opus 5.5",
       "legacy": false, "supports1m": true,
       "supportedEffortLevels": ["low","medium","high","xhigh","max"],
-      "defaultEffortLevel": "high", "supportsAutoMode": true },
+      "defaultEffortLevel": "medium", "supportsAutoMode": true },
     { "id": "claude-haiku-4-5", "alias": "haiku", "label": "Haiku 4.5",
       "legacy": false, "supports1m": false,
       "supportedEffortLevels": [], "defaultEffortLevel": null,
       "supportsAutoMode": false }
     // … sonnet 5, fable, legacy opus-4-8/4-7/4-6 + sonnet-4-6
   ],
-  "aliases": { "opus": "claude-opus-5", "sonnet": "claude-sonnet-5", … },
+  "aliases": { "opus": "claude-opus-5-5", "sonnet": "claude-sonnet-5", … },
   "effortLevels": [ { "id": "low", "order": 0, "persists": true }, …,
                     { "id": "max", "order": 4, "persists": false } ],
   "defaultModes": [ { "id": "default", … },
@@ -129,7 +129,7 @@ becomes valid; the Save-Changes preview surfaces every auto-edit.
 
 ## New model launch (the recurring release chore)
 
-When a new build ships and takes over a family alias — e.g. **Opus 5 becomes
+When a new build ships and takes over a family alias — e.g. **Opus 5.5 becomes
 what `opus` resolves to** — the model dropdowns do **not** update themselves.
 The bundled JSON-schema refresh (`scripts/refresh-schema.{ps1,sh}`) pulls from
 schemastore.org, which **omits model names entirely**; the pickers are driven by
@@ -163,7 +163,7 @@ credentials, `GET /v1/models` is the programmatic equivalent (`max_input_tokens`
    `validate-model-catalog.ps1` + the parity tests: **exactly one non-legacy row
    per family alias**.
 2. **`Schemas/claude-code-settings.overlay.json`** — in `model.examples`, swap
-   the family's pinned snapshot id (`claude-opus-4-8` → `claude-opus-5`) and the
+   the family's pinned snapshot id (`claude-opus-5` → `claude-opus-5-5`) and the
    matching `e.g.` in `model.description`. This array is the AutoCompleteBox
    suggestion list; the refresh never touches the overlay. (Do **not** add model
    values anywhere else in the overlay — see its `$comment` safety note.)
