@@ -31,13 +31,13 @@ which is what the *Sharing worked on no platform* CHANGELOG entry is; the other 
 `AGENTS.md` docs refresh and its merge commit. **No user-facing gap against `main`'s
 `v2026.3.916`.** |
 | Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, re-measured 2026-09-21 at `6a5c3c5` across all **nine** test projects. ⓘ +34 over the 3,552 of 2026-09-20: the relocation, descriptor-equality and home-bypass guards. ⚠ **Compare the TOTAL (3,600), not the passed count** — the skipped figure is machine-dependent, because the package-mode guards return `Assert.Inconclusive` rather than passing vacuously when `artifacts/localfeed` is empty. ⛔ **This row said `13 skipped · total 3,599` and the arithmetic never closed** (3,586 + 13 = 3,599 only if the skip count is the wrong one of the two). It is **14 / 3,600**; the resume row had the skips right and the total wrong. ⛔⛔ **Counting the summary lines is how the re-measure nearly reported a 200-test REGRESSION**: `dotnet test … \| tail -25` keeps only the last **six** of the nine per-assembly lines, so the three that scroll off (`AgentForge.Artifacts` 35, `JsonC` 73, `LayeredEditors.Avalonia.Diagnostics` 92 — **exactly 200**) look absent rather than truncated. **Count the assemblies against `find tests -name '*.csproj'` before believing a total** |
-| **CI on this branch** | ⛔ **6/7, and the one red is STRUCTURAL** — `Published Version` is red by construction until the next package release, and the row below says why. ✅ All three `Build & Test` platforms (windows, ubuntu, macos), the package canary, the feed restore and the trim check are green at `93bc2ac`. ⭐ **That is what makes the local green trustworthy** — a green suite on ONE platform is not the gate. ⛔⛔ It had once been RED for roughly twenty consecutive commits with no row here to say so, while every local gate stayed green. Check `gh run list` rather than trusting the rows above this one ⓘ **The red is now a COMPILE failure, not a version mismatch, and that is expected**: this branch adds `ClaudeEnvironment` to the shared libraries, and the published `2026.3.920` packages do not contain it — so package mode cannot build `src/` or `tests/` at all (`CS0246`, `CS0115`). Same cause as before, deeper symptom. `2026.3.921` cures it; nothing else can. |
+| **CI on `main`** | ✅ **7/7 GREEN** — all three `Build & Test` platforms (windows, ubuntu, macos), the package canary, the feed restore, the trim check **and `Published Version`**, measured on run `35674982685`. ⭐ **That is what makes the local green trustworthy** — a green suite on ONE platform is not the gate. ⛔⛔ CI had once been RED for roughly twenty consecutive commits with no row here to say so, while every local gate stayed green. Check `gh run list` rather than trusting the rows above this one. ⓘ **`Published Version` was red by construction for the whole of Phase E** and is now green: this branch added `ClaudeEnvironment` to the shared libraries, the published packages did not contain it, so package mode could not build `src/` or `tests/` at all (`CS0246`, `CS0115`). ⛔ **This row used to end *"`2026.3.921` cures it; nothing else can"* — that was WRONG, and cost nothing only because it was caught immediately.** Publishing the tag does not cure it on its own: the job builds against `SharedPackageVersion`, which stayed pinned at `2026.3.920` until `5062f5a` moved it. **A publish and the pin that consumes it are one release**; see *RESUME HERE*. |
 | Suite (parked branch) | **4,453 passed · 0 failed · 11 skipped**, Debug — verified 2026-09-19 at `0de0f4e`, after the shared libraries were resynced from the release branch (`+19` over 4,434: the `F7`/`F8` and template-part guards that arrived with the sync). ⛔ The 4,434 and 4,429 figures below are **superseded** — both ran against an older `AgentForge.Core` than the release branch's; see the C0 correction under *RESUME HERE*. 2026-09-16 added `+16` (`F3` share outcomes), `+12` (its two sibling surfaces), `+1` (package surface baseline), `+36` (the YAML front-matter union ported from `main`) and `+13` (deep links). ⚠ **The skipped count is machine-dependent, and 11 is the LUCKY reading.** One of the three package-mode guards is inconclusive rather than green when `artifacts/localfeed` holds no packages, so a clone that has never run the canary reports **12**. That is the guard refusing to claim a measurement it did not take |
 | Trim check | ✅ **6/6 six-RID ONE-app matrix, zero IL diagnostics — RE-RUN 2026-09-20 in PACKAGE MODE at `2026.3.918`** (linux-x64/arm64, win-x64/arm64, osx-x64/arm64). ⭐ **This is the first run that measured the PACKAGES rather than project-built code.** The 2026-09-18 run predates `D1`, so its evidence was project-mode however green it looked — the publish path only began selecting package mode when `Publish-Rid.ps1` gained the flag. ⭐ **The mode is READ, not assumed**: every one of the six logs carries `PACKAGE MODE: … at 2026.3.918` and none carries `ESCAPE HATCH`, and each log restores only the **three** product-specific projects, because the eleven arrived as packages. ⭐ **Zero was proven to mean "looked and found nothing"**: the detector was canaried 2026-09-18 against planted `IL2026` and `NETSDK1144` lines and matched 2 of 2, and each RID really trimmed — ILLink's *"Optimizing assemblies for size"* appears once per log; the six archives are 19.6–22.2 MB compressed. ⛔ **This row once claimed A5 would re-cover the matrix. It does not** — A5 publishes **win-x64 only**. ⚠ **Cross-published from Windows**, whereas `release.yml` builds each RID on its native host so the dylibs match; this gate therefore measures **trim analysis**, not native-payload correctness — `D6` is where a shipped artifact is measured. ⚠ **6/6, not 12/12**, because the release branch ships one app; the twelve-publish figure below is the parked branch's |
 | Trim check (parked branch) | ✅ **12/12 six-RID two-app matrix, zero IL diagnostics, 2026-09-14** — and for the first time on a trim mode Avalonia actually supports. Both apps moved `link` → **`partial`**; the move needs `<TrimmableAssembly Include="Avalonia.DesignerSupport"/>` or the publish dies on `NETSDK1144`. ⓘ The old warning on this row — that a green matrix meant nothing because `link` silently removed the accessibility tree — **was based on a measurement that does not reproduce; see `F5`** |
 | Accessibility of the shipped app | ✅ **168 UIA descendants on the published, trimmed, single-file build**, under both `link` and `partial`. Measured with `scripts/Audit-Accessibility.ps1`, which now settles before it walks |
 | Trim analyser | ⭐ **`EnableTrimAnalyzer` is on for everything under `src/`**, so the Roslyn half runs on **every build, Debug included**. ⚠ ILLink's whole-program pass, which is what the matrix above measures, still runs only on a publish |
-| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, all at `2026.3.914` |
+| Packaging | ⭐ `dotnet pack ClaudeForge.slnx -c Release` produces **exactly eleven** `.nupkg`, zero warnings, ids prefixed `Bennewitz.Ninja.`, one version. ✅ **Latest published: `2026.3.921`**, all eleven on the feed, and `SharedPackageVersion` consumes it. ⓘ This row named `2026.3.914` for three releases — the figure is not worth restating here, because `git ls-remote --tags origin 'packages-v*'` and `user/packages/nuget/<id>/versions` both answer it and neither goes stale |
 | Package canary | ✅ **PASSED** end to end on 2026-09-13. Run it with `pwsh -NoProfile -File scripts/package-canary.ps1` |
 | Package surface | ⭐ **Baselined 2026-09-16, and it was UNGUARDED until then.** `PublicSurfaceBaselineTests` pins all eleven packable assemblies' exported API against checked-in files under `tests/ClaudeForge.Tests/Architecture/PublicSurface/`. ⛔ The gap was measured, not supposed: `F3`'s breaking change to `IShareService` passed a 4,367-test green suite unnoticed, because `PublicSurfaceContractTests` covers `AgentForge.Sdk` only and checks house style, not API shape. ⚠ Established now because **nothing is on the feed yet** — after the first publish a baseline would have to be reconciled against immutable released versions |
 | ⚠ Awaiting | **Nothing from the maintainer — the remaining work is the agent's.** ⓘ This cell twice carried a stale blocker. It said the maintainer was the only thing left while CI was red; then it said `packages-v2026.3.918` was local-only at `b373226` with red CI and had to be deleted and recreated. **Both are now false**: the tag is on `origin` at `19f3885`, `release-packages.yml` succeeded, and all eleven are on the feed at `2026.3.918`. ⛔ **The lesson is that a blocker cell outlives its blocker** — reconcile it against `git ls-remote --tags origin` and `gh run list`, never read it forward. ⛔ **Superseded 2026-09-20: D4 and D5 are DONE, and the only thing left in Phase D is `D6`, which IS the maintainer's** — cutting a `v*.*.*` tag is irreversible and outside the agent's standing permission. So this cell now reads the other way round: **the remaining Phase D work is the maintainer's, and Phase E is the agent's once the tag exists.** Scope for that decision is [`docs/RELEASE-SCOPE.md`](docs/RELEASE-SCOPE.md). ⓘ `F12` FIXED on both branches; `F11` stays open by an earlier locked decision |
@@ -137,115 +137,51 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — one item left, and it is the maintainer's
+## ▶ RESUME HERE — the package release is DONE and CI is fully green
 
-✅ **The tree builds, the suite is green, and everything is pushed.** The state this section
-described for two sessions — `src/` compiling while the test projects did not — is gone.
+✅ **`packages-v2026.3.921` is published, the pin consumes it, and CI is 7/7.** The structural
+`Published Version` red — red by construction for the whole of Phase E — is **gone**, measured on
+run `35674982685` rather than inferred.
 
 | | |
 |---|---|
-| Working tree | ✅ **CLEAN on `main`, level with `origin/main`, 0 unpushed.** ⓘ `git log -1` is the answer for HEAD; a hash written here is wrong by construction |
-| Build | ✅ `dotnet build ClaudeForge.slnx -c Debug` — **0 errors, 0 warnings**, `src/` and `tests/` both |
-| Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, re-measured 2026-09-21 at `6a5c3c5` across all nine test projects. ⚠ Compare the TOTAL (3,600), not the passed count — the skipped figure is machine-dependent, because the package-mode guards report `Assert.Inconclusive` rather than passing vacuously when `artifacts/localfeed` is empty. ⓘ This row's total read `3,599`; see the status table for why the arithmetic never closed and for the truncation trap in re-measuring it |
-| Trim gate | ✅ Release `win-x64` self-contained trimmed publish, **zero IL diagnostics**, 28.3 MB single file. ⚠ It needs `-p:AllowProjectReferencePublish=true` — the hatch `D3` records by name for a gate with no feed credentials. A bare Release publish is **correctly refused**, which is `D3` working, not a breakage |
-| CI | ⛔ **Only `Published Version` is red, and it is STRUCTURAL** — `Published Version` is red by construction until the next package release. ⓘ It now fails to COMPILE rather than mismatching a version: this branch adds `ClaudeEnvironment` to the shared libraries and the published `2026.3.920` packages have no such type, so package mode cannot build at all. Expected, and cured only by `2026.3.921`. All three `Build & Test` platforms are green, so the local green is not one machine's luck |
+| Working tree | ✅ **CLEAN on `main`, level with `origin/main`, 0 unpushed.** ⓘ `git log -1` is the answer for HEAD |
+| Packages | ✅ **All ELEVEN on the feed at `2026.3.921`**, verified id by id against `user/packages/nuget/<id>/versions` — **not** by reading a green workflow. Preflight passed first (11 packages, one version, assembly `2026.3.921.2008`), and all eleven were confirmed **free** before the tag, because Gate 3 is skipped without a token |
+| Pin | ✅ **`SharedPackageVersion` = `2026.3.921`** in the root `Directory.Build.props` (`5062f5a`) |
+| CI | ✅ **7/7 GREEN** — all three `Build & Test` platforms, package canary, trim check, feed restore, **and `Published Version`** |
+| Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, across all **nine** test projects |
 
-### What landed
+### ⛔ The release was TWO halves, and the anchor named only one
 
-plans/00002 steps 3–6, plus two defects the work exposed.
+The previous resume anchor said `2026.3.921` was *"the only thing clearing the structural
+`Published Version` red"*. **Publishing alone does not clear it.** That job builds against
+`SharedPackageVersion`, which was still pinned to `2026.3.920` — the version with no
+`ClaudeEnvironment` — so the cure would have sat on the feed unused while CI kept failing with the
+identical `CS0246`, and the obvious reading (*"the tag didn't work"*) points at the wrong half.
 
-- **The test slice compiles.** 135 errors across the test projects and one sample, in four
-  mechanical shapes, each counted before it was applied and each matching: 39 client
-  constructions, 47 view-model constructions, 32 `FromExistingWorkspace` calls, 30 missing
-  usings. ⚠ **38 of the 39 client sites used the target-typed `Type x = new()` spelling**, which is
-  invisible to a search for `new Type(` — the same trap that has hidden sites here twice before.
-- **`ClaudeArtifactPaths` takes the environment** (step 3's second half). It was the *other* path
-  implementation, and leaving it would have shipped an app whose settings pages read the relocated
-  home while Memory and Agents & Skills read `~/.claude`. `ClaudeCodeClient` overrides a new
-  `AgentConfigClientCore.MemoryEnvironment` seam to supply it; without that override the whole
-  thread would be decorative.
-- **The parity and equality guards** (steps 3 and 4), and **`ResolvedHomeBypassTests`** (step 5).
-- ⭐ **`ProductionClaudeEnvironmentTests`, which step 5 did not ask for.** The composition root calls
-  `ClaudeEnvironment.FromProcess()` and nothing said it had to — flipping that one line to `Empty`
-  compiles, passes everything else, and silently ignores `CLAUDE_CONFIG_DIR` again. It is the exact
-  shape `ProductionSchemaRegistryTests` exists for, and it was an open gap until now.
-- **Baselines and CHANGELOG** (step 6). The public surface change is **breaking** and lands on an
-  immutable feed.
+⭐ **A publish and the pin that consumes it are one release.** Bumping the pin is gated on the
+version actually existing, so the order is fixed: tag, verify the feed id by id, then bump. Write
+both halves down, because the second is invisible from the symptom.
 
-### ⛔ Two defects found on the way, both user-facing and both silent
+### ⚠ What could not be verified locally, and why that is not a gap
 
-1. **All nine resx values said `Restoring ~/.claude/…`** regardless of where the restore was
-   writing. Only the neutral one could ever have been caught — the parity test pins the invariant
-   culture by design — so the eight translations were wrong with nothing able to report it.
-2. **`AppUpdateService.ResetForTesting` cleared the latch but not the environment.** Both are
-   process-statics; a later test asserting the uninitialised throw would have passed or failed on
-   test ORDER rather than on behaviour.
-
-### ⚠ What the step-5 scan measured, because the prediction was wrong
-
-Written down first, per the plan: **2** production sites holding `ClaudeEnvironment.Empty`. There
-are **7**. The five extra are deliberate and documented at the call site — three in `SchemaRegistry`
-that resolve a schema and never a path.
-
-⛔ **That is why the guard does NOT forbid `Empty`**: such a rule arrives with a seven-entry
-allow-list on day one, which is the list-that-grows anti-pattern. Two further measurements shaped
-it, both worth keeping:
-
-- **Nine of 17 raw `ClaudeEnvironment.Empty` matches are doc comments.** Comments are stripped, or
-  the scan reports its own documentation.
-- **The `".claude"` literal is at 8 production sites and SIX are project-scope.**
-  `CLAUDE_CONFIG_DIR` relocates the USER home; a repo's own `.claude/` is not moved by it.
+Package-mode restore **401s on this machine** — it has no `read:packages` token, which is the
+long-standing `C1` gap. So `dotnet build -p:UseSharedPackages=true` cannot be run here, and the pin
+bump was proven by **CI**, which holds credentials and is the designed gate for exactly this. ⛔ Do
+not read a local package-mode failure as a defect; check whether it is `NU1301 / 401` first.
 
 ### Next, in order
 
-1. ✅✅ **PR #68 IS MERGED** (`3de807d`, 2026-09-21) — `release/claudeforge-on-packages` → `main`, body from
-   [`docs/PR-BODY-release-on-packages.md`](docs/PR-BODY-release-on-packages.md).
-   ⓘ **It reported CONFLICTING before the merge: 60 conflicts — a HISTORY-REWRITE ARTIFACT, not real
-   divergence.** The merge base is `3c7aaab` (2026-09-01), so git re-litigates three weeks of work
-   already hand-integrated, plus the `ClaudeForge.Sdk` → `AgentForge.Sdk` renames. `main` is only
-   **4 commits** past the recorded integration point `52f604d`, and all four are accounted for: the
-   TimeProvider.Testing bump (ported), the MAUI bump (not applicable — no MAUI dependency here), the
-   `#65` docs refresh and its merge commit. **No user-facing gap.** ⚠ Resolving by merging `main`
-   contradicts the locked decision that `git merge origin/main` is the wrong tool here; ports go
-   through `AGENTS.md` §*Hand-porting a fix*. **How to land this is a maintainer decision.**
-   ⓘ PR checks: 7 green (all three platforms, canary, trim, feed restore). Two red —
-   `Published Version` (structural, cured only by `2026.3.921`) and `CodeQL`.
-   ⓘ **CORRECTED — the CodeQL red was first written here as “probably the conflict denying it a
-   merge commit”. That was wrong.** It reports *328 new alerts including 1 high severity*. The
-   count is an artifact of the diff being the whole branch (885 files) so everything reads as new;
-   the **high-severity one is `cs/zipslip` in `RestoreEngine`, and it is on `refs/heads/main`,
-   not here.** ⭐ This branch has **zero** high or critical alerts (72 note, 28 warning) and
-   **zero** `cs/zipslip` — its `RestoreEngine` does the canonical containment check
-   (`Path.GetFullPath` then `StartsWith(root + separator)`), plus UNC handling. **So the PR
-   REMOVES a live high-severity vulnerability from `main` rather than adding one.**
-   ⛔ The release notes do **not** come from `CHANGELOG.md`: `release.yml` reads the merged PR's
-   body, else the tagged commit's message body. So the curated `## [Unreleased]` section reaches a
-   release only through one of those two, which is a reason to open the PR before tagging rather
-   than after.
-2. ⚠ **Package release `2026.3.921`** — *the maintainer's call.* It is what greens the structural
-   `Published Version` red and carries Phase E's breaking surface change. ⛔ A published version can
-   never be replaced, and under day-resolution CalVer a second attempt on one day collides with an
-   immutable version — the recovery is tomorrow.
-3. ✅ **DONE — the scratch-home dividend is verified.** `scripts/retest/Test-ScratchHomeIsolation.ps1`
-   run 2026-09-21: **7/7** of ClaudeForge's artifacts landed in the scratch home, **0** of its copies
-   in the real `~/.claude` were touched, and all 7 were present there beforehand so the check could
-   not pass vacuously. Canaried — pointed at an exe that writes nothing it reports FAIL and exits 1.
-   ⛔ **The build was `ProjectReference`, not package mode**, and it could not be otherwise: the
-   published `2026.3.918` packages have no `ClaudeEnvironment`. The **mechanism** is proven; re-run it
-   against a package-mode build once `2026.3.921` exists. ⚠ **A whole-home diff cannot be used** — a
-   control with no app running showed **8 changes in 25s**, and the first draft reported a confident
-   false FAIL on exactly that churn.
-4. ✅ **DONE — `FootprintService`'s Claude-shaped default is GONE** (`46b140a`), and
-   `NeutralLayerDefaultsTests.KnownSites` is now **empty**. ⓘ This item read *"stays open, and
-   deliberately"* for one commit longer than it was true — the refactor it defers landed before the
-   refresh that carried it forward. Read the guard, not this list: the ratchet asserts its own
-   entries are live, so a stale exemption reddens. ⭐ Both constructor arguments are **required**,
-   so `new FootprintService()` does not compile — unrepresentable rather than merely detectable. The
-   second-order form went with it: `AgentConfigClientCore`'s `MemoryEnvironment` default was a
-   Claude-defaulting member the guard could **not** see, because its regex requires a `??`.
-   ⚠ **This is the SECOND breaking `AgentForge.Sdk` change in the pending release** — the
-   constructor signature, plus `MemoryEnvironment` replaced by `ArtifactPaths` +
-   `FootprintCategories`. Both land on an immutable feed at `2026.3.921`.
+1. **Re-run `E1` in package mode** — `pwsh -NoProfile -File scripts/retest/Test-ScratchHomeIsolation.ps1`.
+   ⓘ This was blocked until now for a concrete reason: the published packages had no
+   `ClaudeEnvironment`, so only a `ProjectReference` build could be measured. `2026.3.921` removes
+   that. The **mechanism** was already proven 7/7 with 0 touches to the real `~/.claude`; what is
+   outstanding is the same measurement against a package-mode build.
+   ⚠ **A whole-home diff cannot be used** — a control with no app running showed **8 changes in
+   25s**.
+2. ⓘ **Nothing else is outstanding in this repository.** `AgentForge.*` and `JsonC` keep publishing
+   as they do today; the `LayeredEditors` extraction is another repo's work and changes nothing here
+   until its packages are live and verified — see the 2026-09-21 decisions.
 
 ## Done — plans 00003, Phase D: make the release actually consume them
 
