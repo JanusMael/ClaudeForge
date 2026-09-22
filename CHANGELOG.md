@@ -14,7 +14,7 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
-## [Unreleased]
+## [2026.3.922] - 2026-09-22
 
 ### Added
 
