@@ -16,6 +16,15 @@ reconcile them against and renumbering them would be guesswork.
 
 ## [Unreleased]
 
+### Added
+
+- **Claude Opus 5.5.** The model picker and the `model` suggestion list now carry Opus 5.5
+  (`claude-opus-5-5`), and the `opus` alias resolves to it. Opus 5 keeps its row and stays
+  pinnable as an exact snapshot; it simply leaves the default picker and gives up the
+  alias. **Opus 5.5 defaults to `medium` effort rather than `high`** — the first model in
+  the lineup whose default differs from every other, which is recorded in the catalog and
+  is what an unrecognized effort value now coerces toward under `opus`.
+
 ### Fixed
 
 - **Enterprise policy is read from the directory Claude Code actually reads it from.**
