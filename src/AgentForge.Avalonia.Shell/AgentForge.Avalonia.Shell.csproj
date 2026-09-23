@@ -39,7 +39,7 @@
     <ItemGroup>
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
-        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.AvaloniaUI" Version="$(ScopedEditorsVersion)" />
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
         <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
     </ItemGroup>
