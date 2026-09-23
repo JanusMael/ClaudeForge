@@ -79,7 +79,7 @@ public sealed class NoDeadBrushTokensTests
     [
         // LIBRARY GUARD NARROWED — plans/00005. The builder was
         // src/LayeredEditors.Avalonia/Converters/AppSeverityToBrushConverter.cs; it now ships in the
-        // Bennewitz.Ninja.ScopedEditors.AvaloniaUI package, so the package is asked for its keys.
+        // Bennewitz.Ninja.ScopedEditors.Avalonia package, so the package is asked for its keys.
         new(@"^AppSeverity\w+Brush$",
             "package: " + nameof(AppSeverityToBrushConverter),
             null,

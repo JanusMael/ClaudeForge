@@ -38,7 +38,7 @@ public sealed class SeverityGlyphFontSizeMarkupTests
     /// Nine when first written: two in each app's <c>PropertyEditorWrapper</c> (the row dot and
     /// the <c>IsDangerNow</c> banner), plus the nav badge, search hit, both effective-value grids,
     /// the save dialog and OpenCodeForge's nav badge. The shared wrapper's two now ship in the
-    /// <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c> package (plans/00005).
+    /// <c>Bennewitz.Ninja.ScopedEditors.Avalonia</c> package (plans/00005).
     /// </remarks>
     // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 9; one site was OpenCodeForge's.
     // Restore it when OpenCodeForge rejoins.

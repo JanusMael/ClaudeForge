@@ -45,7 +45,7 @@
              formatter every other size in the apps uses.
              ⚠ Re-implementing it here instead would put a second byte-rounding rule in the
              codebase, and the two would drift in the decimal place nobody checks. -->
-        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.AvaloniaUI" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
         <!-- The service contracts: IDialogService, IShareService, ShareOutcome, and ISaveChangesPrompt,
              the dialog-service seam the save view-model implements. -->
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />

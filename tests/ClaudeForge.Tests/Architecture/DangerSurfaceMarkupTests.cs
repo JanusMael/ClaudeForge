@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// </para>
 /// <para>
 /// ⚠ <b>Both apps keep their own copy of the property wrapper.</b> OpenCodeForge renders the
-/// shared one, which since plans/00005 ships in the <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c>
+/// shared one, which since plans/00005 ships in the <c>Bennewitz.Ninja.ScopedEditors.Avalonia</c>
 /// package and is no longer source in this repository; ClaudeForge has its own under
 /// <c>src/ClaudeForge/Controls/</c>. A "shared library" fix does not reach both apps, and
 /// that asymmetry has already produced one live defect in this area — which is why the surfaces

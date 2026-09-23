@@ -54,7 +54,7 @@ public partial class PropertyEditorWrapper : UserControl
         // than the substring-filtered subset.  Pre-fix: after the user picked
         // "claude-3-5-sonnet" the chevron showed only entries containing that
         // string — usually just the one already selected.  Mirror of the
-        // library-side fix in the ScopedEditors.AvaloniaUI package's Controls/PropertyEditorWrapper.axaml.cs.
+        // library-side fix in the ScopedEditors.Avalonia package's Controls/PropertyEditorWrapper.axaml.cs.
         AutoCompleteFilterMode originalMode = autoComplete.FilterMode;
         autoComplete.FilterMode = AutoCompleteFilterMode.None;
 

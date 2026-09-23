@@ -313,7 +313,7 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Serilog (core + File + Trace sinks) flows transitively from the
-             Bennewitz.Ninja.AppServices.AvaloniaUI package reference below, which
+             Bennewitz.Ninja.AppServices.Avalonia package reference below, which
              publishes those packages with PrivateAssets="". No direct Serilog
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
@@ -325,10 +325,10 @@
     <ItemGroup>
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
-        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.AvaloniaUI" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
         <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
-        <PackageReference Include="Bennewitz.Ninja.AppServices.AvaloniaUI" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Avalonia" Version="$(AppServicesVersion)" />
         <PackageReference Include="Bennewitz.Ninja.AppServices.Logging" Version="$(AppServicesVersion)" />
     </ItemGroup>
 

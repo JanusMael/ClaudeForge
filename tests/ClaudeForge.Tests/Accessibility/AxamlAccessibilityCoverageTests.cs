@@ -148,7 +148,7 @@ public sealed class AxamlAccessibilityCoverageTests
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCode.Avalonia" and "OpenCodeForge"
         // were here; restore both when OpenCodeForge rejoins this tree.
         // LIBRARY GUARD NARROWED — plans/00005. "LayeredEditors.Avalonia" was here; it left as the
-        // Bennewitz.Ninja.ScopedEditors.AvaloniaUI package, and no markup scan there names its controls
+        // Bennewitz.Ninja.ScopedEditors.Avalonia package, and no markup scan there names its controls
         // yet. Restore that coverage IN THAT REPOSITORY. See PROGRESS.md.
     };
 

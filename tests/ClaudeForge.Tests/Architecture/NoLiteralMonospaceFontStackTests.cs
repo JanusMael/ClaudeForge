@@ -21,7 +21,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// </para>
 /// <para>
 /// ⭐ <b>The font is BUNDLED, which is what makes the rule enforceable.</b> JetBrains Mono NL
-/// ships inside the <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c> package (it was
+/// ships inside the <c>Bennewitz.Ninja.ScopedEditors.Avalonia</c> package (it was
 /// <c>LayeredEditors.Avalonia</c> until plans/00005), so there is no platform stack left to argue
 /// about — a literal stack is now always wrong, not merely inconsistent.
 /// </para>

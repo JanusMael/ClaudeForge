@@ -294,6 +294,16 @@ The UI also reported `v2026.3.922.0`.
     sites resolve; canaried with `#JetBrains Mona`, which reddens with Avalonia's own message. The
     remark that said "does not throw" is corrected. ⓘ Weight is NOT asserted: the peer measured that
     a missing weight silently resolves to the nearest face (600 → 700).
+14. ⛔ **Drift 1 is half-REVERSED: at `.924` the two package IDS are `.Avalonia` again** (developer's
+    decision, 2026-09-23, before anything was published — AppServices `a853070`, ScopedEditors
+    `6525d87`). AQ1004 governs namespaces and a package id is not one. So
+    `Bennewitz.Ninja.{AppServices,ScopedEditors}.Avalonia` ship `…AvaloniaUI.dll`; assemblies,
+    namespaces and `avares://ScopedEditors.AvaloniaUI/…` URIs stay `.AvaloniaUI`. ⚠ **Package and
+    assembly are now named differently** — an `avares://` URI written from the package name points at
+    nothing. The `.AvaloniaUI` ids will never exist on nuget.org, nothing is deprecated, and the real
+    `.924` is a new version of the ids pinned at `.923`. Here: three `PackageReference`s and the
+    comments naming the package changed; the local prerelease moved to **`-local.3`**, packed from
+    those two commits, with both `.nupkg`s checked to carry the `.AvaloniaUI` DLL.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
