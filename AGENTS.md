@@ -863,7 +863,45 @@ pwsh src/publish/publish.ps1 -All -Rids win-x64
 
 ---
 
-## 6. Pointer index — which doc owns which concern
+## 6. Claims about code that nothing checks
+
+One shape, four ways in: **a statement about the system that no mechanism can contradict.** Every
+row below has been paid for at least twice — once here, and once in an unrelated WPF→Avalonia port
+(TailBlazer, `feature/UpgradeToNet10`, unpushed; cited as narrative because there is no remote to
+link).
+
+⭐ §1 already bans two special cases of this — *"a guard's comment is not evidence the guard covers
+what it says"* and *"`Session.Dispatch(async () => …)` in a headless test CANNOT FAIL"*. This
+section is the general form, and those two rows remain the canonical instances. **Read them first;
+these rules exist because that pair was not enough on its own.**
+
+| Invariant | Failure signature if you break it | Canonical source |
+|-----------|-----------------------------------|------------------|
+| **A conditional written in the future tense stops being read once its condition is met.** "When X happens, do Y" is a plan, and nothing re-evaluates a plan. Write the condition as a check, or as a defect with a date — never as an intention. | Nothing is wrong at the line; the world moved and the line did not. `ci.yml` and `package-canary.ps1` both asserted the release published from the shared packages — **false for every release ever cut**, and defended only by the comments making the claim. In the port: two files said the container would move up *"when the shell gains tabs"*, and the shell had had tabs for a fortnight while the stale arrangement silently blocked a feature. | **The `ci.yml` fix is the model**: a build-time guard (`GuardShippingPublishUsesPackages`), *plus* rewording both comments to say the claim was false when written rather than deleting them. Where no check is possible, the comment carries a **date and a named condition**, so a later reader can tell whether it has expired. A comment that cannot expire visibly is the thing being banned. |
+| **A registration is not a caller.** An interface can have an implementation and a container registration on every side and still have **zero callers** on one. Grep for the **caller**, not the interface — and treat each half of a shared type's doc comment as a separate claim. | Every check that looks like a check passes: the grep finds it registered in both roots, the container resolves it, the composition-root test is green. The feature does not crash and shows no wrong value — it behaves as though its input never changes. Here: `SchemaRegistry` resolved perfectly and was constructed **OFFLINE by default**, so the shipped app validated against bundled schemas for a whole phase; `FootprintService` resolved perfectly and reported Claude's seven categories as OpenCode's, where a delete would have taken the other agent's data. In the port: a window-activation publisher had two implementations, two registrations and **no caller on one side for a fortnight**, defaulting to `true` — so "alert me while I'm in another window" behaved as if the window were always focused. | **`ProductionSchemaRegistryTests` is the existing instance of the right shape** — a *source* scan, and it had to be, because a registry deliberately does not expose whether it holds a client. ⛔ **There is no generic guard, and pretending otherwise is how this rule fails:** "grep for the caller" is a review habit, not a mechanism. The enforceable narrowing is **a seam whose implementation is *wiring* — an event hook, a subscription — earns its own named source-scanning test the moment it is written**, because no file's absence is conspicuous. |
+| **A correction that lands in one document does not reach the code it corrects** — and a correction naming a guard is not finished until that guard exists. | Three layers with no contact between them, all present in this repo when this row was written. `AgentForge.Core/Schema/SchemaDiskCache.cs` asserted in the **present tense** that "OpenCodeForge builds three registries at launch"; [`CLAUDE.md`](./CLAUDE.md) carried a dated correction saying exactly that (*"That was accurate when written"*); and the `SharedSchemaRegistryTests` that correction names **does not exist on this branch** — `find` returns nothing. ⚠ **Severity, precisely: a documentation defect, not a behavioural one.** The comment was the rationale for a per-artifact-path semaphore and **the semaphore was always correct**. Overclaiming it would be the same failure this section bans. ⛔ It shipped: `AgentForge.Core` is one of the eleven published packages. | **The correction goes at the site of the claim**; a copy elsewhere points *to* it, never the reverse. **Before naming a guard in a correction, `find` it** — a named test that does not exist reads exactly like one that does. A claim about a component on a branch this one cannot see is not checkable at all: give it a date and the branch name so the merge can re-run the row above over it. |
+| **A test's name, its remark, and its actual discriminating power are three different things, and only the third protects anything.** | A test that passes for a reason other than the one it advertises, or whose reach is narrower than its name. `AxamlAccessibilityCoverageTests` silently scanned **one hardcoded directory** and missed every AXAML file outside it. In the port: of three tests written for one fix, the remark claimed a particular one would have caught the original defect — **it would not have**; it resolved twice from one container and was always green, while the bug was two containers. | **Break the thing and watch the test fail, on both legs, before writing any remark about what it catches** — the §1 canary discipline, applied to the remark as well as the assertion. Where *reach* is the risk, **a sibling test asserts the scope of the first**: `AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory` is exactly that, and it is why narrowing the scan again turns something red. When a remark turns out to be wrong, **correct it in the file** rather than quietly — the wrong claim is worth more as a warning than as a tidy sentence. |
+
+### Two distinctions, because these rules overreach without them
+
+**A claim about what another component DOES decays; a record of why a decision WAS MADE does not.**
+Seven files under `src/` reference `OpenCodeForge`, and only **two** were the shape above. The rest
+are history (*"was `ClaudeForge.Controls.TipCell` until OpenCodeForge grew a grid of its own"*),
+past-tense rationale (`GithubReleaseChecker` on why `/releases/latest` was abandoned;
+`SearchResultViewModel` on what UIA announced before the fix), a placement argument, and
+`BackupPageOptions` documenting that `"opencode"` is a **value a host supplies** to a `required`
+property — API documentation illustrated by both hosts, not an assertion about either. ⛔ **Deleting
+those would delete the reasons things are the way they are.** The test that separates them: does the
+sentence describe what another component **does**, or what a caller must **supply**?
+
+**A count is a claim.** The "seven files" above began as a filename-level grep whose matches were
+never read; reading them split the seven two ways and produced a far sharper instance than the
+number had. ⭐ **Re-derive a count, never copy one** — and a total that reconciles is not evidence
+that the rows behind it do.
+
+---
+
+## 7. Pointer index — which doc owns which concern
 
 | Concern | Owning doc |
 |---------|------------|
