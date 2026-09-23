@@ -305,6 +305,14 @@ The UI also reported `v2026.3.922.0`.
     comments naming the package changed; the local prerelease moved to **`-local.3`**, packed from
     those two commits, with both `.nupkg`s checked to carry the `.AvaloniaUI` DLL.
 
+### ⏭ QUEUED — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3
+
+Starts **after `00005` merges**, on its own branch and PR. The converter is
+`Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs`, on that repository's `main` at **`17e6bd8`**
+— the commit to pin and name in each conversion commit. Already piloted on a scratch clone:
+`JsonC.Tests` converted with nothing unmapped, 0 warnings, 73 of 73. ⚠ Step 1 selects the MTP runner
+explicitly: an `xunit.v3` executable otherwise runs xUnit's native runner.
+
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
 `model-catalog.json`, `claude-code-settings.overlay.json` and the enum-descriptions file are
