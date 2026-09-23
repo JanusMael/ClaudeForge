@@ -103,7 +103,11 @@ internal sealed class SchemaDiskCache
     /// ⓘ <b>Corrected 2026-09-23.</b> This said <i>"OpenCodeForge builds three registries at
     /// launch"</i>, present tense. That was true when written and is not now —
     /// <c>CLAUDE.md</c> carries the dated correction, and <c>SharedSchemaRegistryTests</c> pins
-    /// both clients sharing one instance. The specific host is removed rather than re-counted,
+    /// both clients sharing one instance. ⛔ <b>That test is NOT on this branch</b>, and neither is
+    /// the shell it covers: both live on <c>feat/agentforge-opencodeforge</c>, parked by
+    /// <c>plans/00003</c> Phase 0. Naming a guard without saying where it is readable is the
+    /// second half of the same defect — see <c>AGENTS.md</c> §6, which this comment failed on its
+    /// first attempt. The specific host is removed rather than re-counted,
     /// because <b>this is a packaged neutral library</b>: the hazard belongs to any consumer that
     /// builds more than one registry, and a count of one host's registries is a fact this file can
     /// never see change. ⛔ The guard is unaffected and was never wrong — per-artifact-path
