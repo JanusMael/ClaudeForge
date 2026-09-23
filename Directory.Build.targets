@@ -51,8 +51,8 @@
       THIS file, and the publish strip, the dead-resx guard and the raw-hex guard below all stop
       running with nothing failing.
 
-      ⚠ WHICH REFERENCES SWITCH: those whose project file name begins `AgentForge.` or
-      `LayeredEditors.` — a rule, not a list, and PackageMetadataTests asserts that the set it
+      ⚠ WHICH REFERENCES SWITCH: those whose project file name begins `AgentForge.`, plus JsonC
+      by name — a rule, not a list, and PackageMetadataTests asserts that the set it
       matches is exactly the set of packable projects. A reference to a PRODUCT-specific library
       (ClaudeForge.Sdk.Claude, OpenCode.Avalonia, …) stays a ProjectReference, because none of
       those is packaged.
@@ -113,7 +113,6 @@
              it is a family of one. PackageMetadataTests asserts this set and the set of
              packable projects are the same set, in BOTH directions. -->
         <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\AgentForge.*\AgentForge.*.csproj" />
-        <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\LayeredEditors.*\LayeredEditors.*.csproj" />
         <_PackableSharedProject Include="$(MSBuildThisFileDirectory)src\JsonC\JsonC.csproj" />
 
         <!-- Full paths, so Remove can match. The transform carries metadata across, so any

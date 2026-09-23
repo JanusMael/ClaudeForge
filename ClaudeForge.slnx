@@ -18,13 +18,8 @@
         <Project Path="src/AgentForge.Artifacts/AgentForge.Artifacts.csproj"/>
         <Project Path="src/AgentForge.Sdk/AgentForge.Sdk.csproj"/>
         <Project Path="src/ClaudeForge.Sdk.Claude/ClaudeForge.Sdk.Claude.csproj"/>
-        <Project Path="src/LayeredEditors.Abstractions/LayeredEditors.Abstractions.csproj"/>
-        <Project Path="src/LayeredEditors.ViewModels/LayeredEditors.ViewModels.csproj"/>
-        <Project Path="src/LayeredEditors.Avalonia/LayeredEditors.Avalonia.csproj"/>
         <Project Path="src/AgentForge.Avalonia.Shell/AgentForge.Avalonia.Shell.csproj"/>
         <Project Path="src/ClaudeForge.Avalonia/ClaudeForge.Avalonia.csproj"/>
-        <Project Path="src/LayeredEditors.Avalonia.Services/LayeredEditors.Avalonia.Services.csproj"/>
-        <Project Path="src/LayeredEditors.Avalonia.Diagnostics/LayeredEditors.Avalonia.Diagnostics.csproj"/>
     </Folder>
     <Folder Name="/samples/">
         <Project Path="samples/ClaudeForge.Samples.McpServer/ClaudeForge.Samples.McpServer.csproj"/>
@@ -36,9 +31,6 @@
         <Project Path="tests/AgentForge.Artifacts.Tests/AgentForge.Artifacts.Tests.csproj"/>
         <Project Path="tests/AgentForge.Sdk.Tests/AgentForge.Sdk.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Sdk.Claude.Tests/ClaudeForge.Sdk.Claude.Tests.csproj"/>
-        <Project Path="tests/LayeredEditors.Avalonia.Tests/LayeredEditors.Avalonia.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Avalonia.Tests/ClaudeForge.Avalonia.Tests.csproj"/>
-        <Project
-            Path="tests/LayeredEditors.Avalonia.Diagnostics.Tests/LayeredEditors.Avalonia.Diagnostics.Tests.csproj"/>
     </Folder>
 </Solution>

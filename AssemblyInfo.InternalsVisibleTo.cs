@@ -43,13 +43,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("AgentForge.Core")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk")]
 
-// ── Shipping libraries: the schema-driven editor stack ───────────────────────────────────────
-[assembly: InternalsVisibleTo("LayeredEditors.Abstractions")]
-[assembly: InternalsVisibleTo("LayeredEditors.Avalonia")]
-[assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Diagnostics")]
-[assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Services")]
-[assembly: InternalsVisibleTo("LayeredEditors.ViewModels")]
-
 // ── Shipping library: a family of one, deliberately outside the AgentForge.* prefix ──────────
 [assembly: InternalsVisibleTo("JsonC")]
 
@@ -70,8 +63,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Tests")]
 [assembly: InternalsVisibleTo("JsonC.Tests")]
-[assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Diagnostics.Tests")]
-[assembly: InternalsVisibleTo("LayeredEditors.Avalonia.Tests")]
 
 // ══ WHAT THE GRANTS ARE ACTUALLY FOR ═════════════════════════════════════════════════════════
 //
