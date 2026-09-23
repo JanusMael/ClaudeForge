@@ -326,14 +326,10 @@ public class DefaultShareServiceTests
     /// <summary>No-op process launcher — prevents any real process from starting.</summary>
     private static readonly Func<ProcessStartInfo, Process?> NoOpLauncher = _ => null;
 
-    [TestMethod]
-    public async Task ShareTextAsync_DoesNotThrow()
-    {
-        // On any platform, calling ShareTextAsync on a service with no HWND
-        // and a non-Windows TFM should complete without throwing.
-        DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareTextAsync("Test Title", "Test body text", uri: null, CancellationToken.None);
-    }
+    // ⛔ No test shares TEXT WITHOUT A URI here. On Windows and macOS that path pipes into
+    // clip.exe / pbcopy directly — not through the injected launcher — so a test of it overwrites
+    // the developer's clipboard on every run. One did, until 2026-09-23. The package's own suite
+    // (AppServices.Tests) owns DefaultShareService's outcomes.
 
     [TestMethod]
     public async Task ShareFileAsync_DoesNotThrow_WhenFileDoesNotExist()

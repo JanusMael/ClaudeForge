@@ -198,7 +198,7 @@ The UI also reported `v2026.3.922.0`.
 | 1 · package references + `nuget.config` | ✅ Done — proven from an EMPTY cache with no credential |
 | 2 · namespace map | ✅ Done — 134 files, derived map, 0 unresolved, plus 1 base class and 15 `cref`s in the partially-qualified form |
 | 3 · service APIs | ✅ Done in code — every ignored `void`/`bool` now takes the command's token and a result; `Cancelled` answered explicitly |
-| 4 · `avares://` | ✅ Done in code — ⏳ the runtime font check (resolved family, with a control) is still owed |
+| 4 · `avares://` | ✅ Done — the runtime font check is a test now, with a control (drift 13) |
 | 5 · F12 windows | ✅ Done in code, on the `.924` hook — ⏳ "windows that FILL" in a real run is still owed |
 | 6 · delete the family | ✅ Done — `75d8961`: 5 `src` + 2 test projects, their baselines, slnx entries, friend grants and the selector line |
 | 7 · guards that named the family | ✅ Done — every narrowed guard canaried BOTH ways (drift 12); prose swept eleven → six |
@@ -286,12 +286,14 @@ The UI also reported `v2026.3.922.0`.
     controls. (`TemplatePartAutomationNameTests` and `ThemedBrushTrackingTests` DID move — they are in
     `ScopedEditors.Tests`.) ⓘ The F12 windows kept their English literals when they moved into the
     app, so they sit outside the resx rule; that is inherited, not new.
-13. ⚠ **Drift 9's word "silent" may be wrong for the font sites — REPORTED, not yet measured here.**
-    The ScopedEditors peer measured that a single-family `FontFamily` with a bad `avares://` path
-    THROWS at first layout (*"Could not create glyphTypeface"*); only a fallback list degrades
-    silently. `NoLiteralMonospaceFontStackTests`' remarks still say "does not throw". Step 4's owed
-    runtime check — lay out text in each family, with a bad-path control — settles it; correct the
-    remark then, from the measurement.
+13. ⛔ **Drift 9's word "silent" is WRONG for the font sites — measured here, 2026-09-23.** A
+    single-family `FontFamily` whose name does not resolve THROWS at first layout (*"Could not create
+    glyphTypeface"*); only a fallback list degrades silently. Step 4's runtime check is now a test,
+    `EveryBundledFontUri_LaysOutText`: it lays out text in every full `avares://…#Family` URI in
+    `src/` on the headless session, behind a nonexistent-family control that must fail. All three
+    sites resolve; canaried with `#JetBrains Mona`, which reddens with Avalonia's own message. The
+    remark that said "does not throw" is corrected. ⓘ Weight is NOT asserted: the peer measured that
+    a missing weight silently resolves to the nearest face (600 → 700).
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
