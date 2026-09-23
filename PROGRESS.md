@@ -137,7 +137,38 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — `v2026.3.922` IS RELEASED; signing and winget are the maintainer's
+## ▶ RESUME HERE — stage two is ACTIVE (`plans/00005`); `v2026.3.922` is released, signing and winget are the maintainer's
+
+### ▶ ACTIVE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23
+
+ClaudeForge **and** AgentForge move from the local `LayeredEditors.*` projects to the seven ids
+published on nuget.org at `2026.3.923` — `Bennewitz.Ninja.ScopedEditors.{Abstractions,ViewModels,Avalonia}`
+and `Bennewitz.Ninja.AppServices{,.Abstractions,.Logging,.Avalonia}` — and the `LayeredEditors` family
+is deleted. 134 files across seven consumers. Work happens on a feature branch and lands by PR.
+
+⛔ **[`plans/00004`](plans/00004-claudeforge-consumes-scopededitors-and-appservices.md) is SUPERSEDED,
+and it was approved on a false premise.** It scoped this to ClaudeForge alone. That cannot compile:
+`AgentForge.Avalonia.Shell` is the adapter layer between AgentForge's settings model and the editor
+abstractions, so its public API is built from `LayeredEditors` types, and ClaudeForge hands those
+adapters straight to the editor view-models
+(`src/ClaudeForge/ViewModels/Editors/DefaultEditorFactory.cs:133`). Repoint one side and the two ends
+are the same names over **different types**. ⭐ **`00004` measured namespace IMPORTS; the question was
+COUPLING** — whether renamed types cross a boundary to something that stays behind. The public-surface
+baseline answers that in one grep, and it was not consulted until the first implementation step.
+Caught before any source changed; the cost was one plan number. `00004` stays frozen as the record.
+
+⚠ **Things `00005` knows that are easy to lose:**
+
+- **The trim gate is vacuous on `2026.3.923`.** All seven assemblies shipped without
+  `[AssemblyMetadata("IsTrimmable","True")]` — read off the DLLs, against a control that has it — and
+  ClaudeForge publishes `TrimMode=partial`, which analyses only marked assemblies. Build on `.923`;
+  claim the gate only on **`2026.3.924`**, due 2026-09-24, proven by per-assembly size in
+  `obj/…/linked/` (the publish output is single-file, so it holds no DLLs to compare).
+- **The F12 and Shift+F12 windows would ship EMPTY.** They are held back from the packages, and the
+  package removed the wiring that fed them. `00005` rewires them locally.
+- **`Published Version` is red by construction** on the PR: the published `AgentForge.*` still
+  depend on the old types. It clears only after a post-merge `packages-v*` release — which is
+  **breaking** — and the pin bump. Publish and pin are one release.
 
 ✅ **`v2026.3.922` is published with six assets, built from the shared packages at `2026.3.922`.**
 It carries **Claude Opus 5.5** plus the two fixes that had been sitting unreleased (managed
