@@ -113,13 +113,16 @@ internal sealed class Program
         // 4. One-line logging pipeline: rolling file sink (8h buckets, 3d retention) +
         //    Trace + F12 live-log window + Avalonia logger bridge. All toggles left at
         //    their safe defaults; only AppName + LogsDirectory are mandatory.
-        AvaloniaDiagnosticsOptions loggingOptions = new()
+        AvaloniaDiagnostics.ConfigureLogging(new AvaloniaDiagnosticsOptions
         {
             AppName = "ClaudeForge",
             LogsDirectory = PlatformPaths.AppLogsDirectory,
-            // The Shift+F12 window that streams ConfigFileWatcher hits is no longer an option
-            // here: it stayed in ClaudeForge when the library moved, and ClaudeForgeDiagnostics
-            // wires it (plans/00005).
+            // The F12 and Shift+F12 windows stayed in ClaudeForge when the library moved
+            // (plans/00005). The package ships no viewer; these two hooks feed ours: the
+            // live-log sink joins the pipeline, and every EnqueueEvent line reaches the
+            // event window as well as the event file.
+            ConfigureLogger = ClaudeForgeDiagnostics.ConfigureLogger,
+            EventListener = ClaudeForgeDiagnostics.OnEventLine,
             // ⭐ The same stream, persisted. The tail window above is live-only, so "did the
             // watcher fire while I was editing?" was unanswerable once the window closed — and
             // impossible to hand to anyone else. This writes events-*.txt beside app-*.txt in the
@@ -130,12 +133,7 @@ internal sealed class Program
             // separator it parses back when pruning. "config-events" throws, and it throws
             // from ConfigureLogging - before any logging exists - so the app dies silently.
             EventLogFileNamePrefix = "events",
-        };
-        AvaloniaDiagnostics.ConfigureLogging(loggingOptions);
-
-        // ⛔ Immediately after ConfigureLogging, before anything can capture Log.Logger: this
-        //    feeds the F12 window, which the AppServices pipeline no longer does itself.
-        ClaudeForgeDiagnostics.AttachLiveLogWindow(loggingOptions);
+        });
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture
         //    value, unknown flag list) + the active-flags summary line.
@@ -193,7 +191,7 @@ internal sealed class Program
             // "did the user quit cleanly?" (both lines present, plus the
             // [App.Shutdown] one in between).
             Log.Information("Exiting ClaudeForge");
-            ClaudeForgeDiagnostics.CloseAndFlush();
+            Log.CloseAndFlush();
         }
     }
 
@@ -315,6 +313,6 @@ internal sealed class Program
             }
         }
 
-        ClaudeForgeDiagnostics.CloseAndFlush();
+        Log.CloseAndFlush();
     }
 }

@@ -195,10 +195,13 @@ The UI also reported `v2026.3.922.0`.
 
 | Step | State |
 |---|---|
-| 1 · package references + `nuget.config` | ✅ **Done at `2026.3.923`.** Proven with an **empty** package cache and HTTP cache and no credential set: all seven resolved from nuget.org, read from each `.nupkg.metadata`, and **nothing** came from `github` or `localfeed`. Builds 0 warnings / 0 errors; suite **3,595 / 0 / 14 — TOTAL 3,609**, 9/9 assemblies |
-| 2 – 5 | ⏳ **Wait for `2026.3.924`**, due 2026-09-24 — it renames two package ids (below) |
-| 6 | ⏳ **Waits for the test ports** into the package repositories — rule 1 |
-| 7 – 10 | After 6 |
+| 1 · package references + `nuget.config` | ✅ Done — proven from an EMPTY cache with no credential |
+| 2 · namespace map | ✅ Done — 134 files, derived map, 0 unresolved, plus 1 base class and 15 `cref`s in the partially-qualified form |
+| 3 · service APIs | ✅ Done in code — every ignored `void`/`bool` now takes the command's token and a result; `Cancelled` answered explicitly |
+| 4 · `avares://` | ✅ Done in code — ⏳ the runtime font check (resolved family, with a control) is still owed |
+| 5 · F12 windows | ✅ Done in code, on the `.924` hook — ⏳ "windows that FILL" in a real run is still owed |
+| 6 · delete the family | ⏳ Unblocked — both test ports have landed (AppServices `8b2caf2`, ScopedEditors `507b308`); port 1 verified here (10 = 10), port 2 not yet |
+| 7 – 10 | After 6. `ClaudeForge.Tests` fails 4 of 1,760 today, each owned by one of these steps |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00005` is never edited:
 
@@ -228,6 +231,38 @@ The UI also reported `v2026.3.922.0`.
    three test projects. ⚠ Two of those are the `LayeredEditors` test projects step 6 deletes, so the
    total falls by **6 there with no loss of coverage** — the same three tests still run in
    `ClaudeForge.Tests`. Account for them by name when the totals are reconciled.
+
+
+6. ⏳ **Building against LOCAL builds of `.924` until it is published** (maintainer, 2026-09-23: "work
+   around it"). Both families are packed from their committed source — ScopedEditors `56ff954`,
+   AppServices `4815c74` — at **prerelease** versions (`2026.3.924-local.1` / `-local.2`), because
+   the NuGet cache never re-extracts a version, so a local pack under the real `2026.3.924` would
+   silently shadow the published bits on this machine. They live in their **own** gitignored feed,
+   `artifacts/prerelease-924`, with its own temporary source — ⛔ NOT `artifacts/localfeed`, which is
+   the package canary's and which `EveryPackageInTheLocalFeedNamesOneVersion` holds to one version.
+   **The swap, once `.924` is indexed:** both versions → `2026.3.924`; delete the `prerelease924`
+   source and mapping; purge `~/.nuget/packages/bennewitz.ninja.{appservices,scopededitors}*`.
+7. **Decision 8 is implemented through the package's hook, not the local wrap** (maintainer,
+   2026-09-23). The hook shipped in the same `.924` —
+   `AvaloniaDiagnosticsOptions.ConfigureLogger` / `.EventListener` (AppServices `4815c74`) — so the
+   wait that made the wrap preferable no longer exists. Gone with it: flushing a pipeline Serilog
+   did not own, early `Log.Logger` captures bypassing F12, and a "call ours, not
+   `AvaloniaDiagnostics.EnqueueEvent`" trap. `ClaudeForgeDiagnostics` now only builds the windows.
+8. **Step 2's proof — "the solution compiles" — is only reachable together with step 3**, because
+   the service API is breaking. Step 2 landed as a non-compiling checkpoint on the branch.
+9. **Step 4: one of the four `avares://` sites fails LOUDLY, not silently.** A `StyleInclude` is
+   resolved by the XAML compiler (AVLN2000). The plan's "no build error" is true of the three
+   **font** sites only.
+10. **A fifth test category the plan's list missed:** `ClaudeForge.Tests` files that test package
+    code through its **public** API — `ShareOutcomeTests` / `ShareServiceTests` exercise
+    `DefaultShareService`, and two of `AccessibilityCoverageTests`' four tests guard
+    `FatalErrorDialog` / `NonFatalNoticeDialog`. They need no internals, so the internals scan could
+    not find them. They STAY: neither package repository has equivalents, so they are the only
+    coverage that code has.
+11. **`NoLiteralMonospaceFontStackTests` was misclassified** in the plan's measured table as "named
+    only in comments". It resolves `avares://<assembly>/Assets/Fonts` to `src/<assembly>/`, so it is
+    coupled to the family through the URI's **data**, which a grep for the literal cannot see. It is
+    step 7's work, and the one guard that validates step 4's font URIs statically.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 

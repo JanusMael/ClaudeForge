@@ -96,7 +96,7 @@
       variable, and a global property on the command line still outranks it.
     -->
     <PropertyGroup>
-        <AppServicesVersion>2026.3.924-local.1</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/localfeed. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
+        <AppServicesVersion>2026.3.924-local.2</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/localfeed. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
         <ScopedEditorsVersion>2026.3.924-local.1</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
     </PropertyGroup>
 

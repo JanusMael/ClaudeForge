@@ -20,7 +20,6 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Profile;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
@@ -5119,9 +5118,9 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _watchedFiles.TryGetValue(filePath, out descriptor);
         }
 
-        // ⛔ ClaudeForgeDiagnostics, not AvaloniaDiagnostics: the package method compiles too, but
-        //    writes only the event file, and the Shift+F12 window would silently stay empty.
-        ClaudeForgeDiagnostics.EnqueueEvent(
+        // Writes the event file, and reaches the Shift+F12 window through the EventListener
+        // hook Program.cs attaches.
+        AvaloniaDiagnostics.EnqueueEvent(
             $"{DateTime.Now:HH:mm:ss.fff}  [{Describe(descriptor)}]  {filePath}  — {disposition}");
     }
 
