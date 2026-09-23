@@ -186,9 +186,48 @@ The UI also reported `v2026.3.922.0`.
 | Packages | ✅ **All ELEVEN on the feed at `2026.3.922`**, verified id by id against the flat container — **not** by reading a green workflow. ⛔ **Discover the flat-container URL from the service index** (`PackageBaseAddress/3.0.0` → `.../download`); `<base>/<id>/index.json` 404s, and that 404 is indistinguishable from *"never published"*. A verification script guessing the path reported **0 of 11** against a feed that held all eleven |
 | Pin | ✅ **`SharedPackageVersion` = `2026.3.922`** in the root `Directory.Build.props` (PR #70) |
 | CI | ✅ green on `main`, **including `Published Version`** |
-| Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, across all **nine** test projects |
+| Suite | ✅ **3,595 passed · 0 failed · 14 skipped — TOTAL 3,609**, Debug, across all **nine** test projects, measured 2026-09-23. ⓘ It read 3,600 until PR #74 linked `HeadlessSessionBootstrapTests.cs` (3 tests) into three projects |
 | Release | ✅ **`v2026.3.922`, six assets**, run `35770630333`. ⭐ **The mode was READ, not assumed**: all six provenance logs carry `PACKAGE MODE … at 2026.3.922`, **zero** `ESCAPE HATCH` lines and **zero** IL warnings. Notes came from PR #72's body — `release.yml` resolves them from the PR whose merge commit is the tagged SHA, so the release PR must be the LAST thing merged before the tag |
 | ⚠ Remaining | **Signing, then the winget submission — the maintainer's, always.** `packaging/sign-release.ps1` needs a PIN; it signs, re-uploads **and submits**. ⓘ winget users are on **`2026.3.916`** because `.920` was deliberately skipped, so this submission jumps them across both. Fallback is `Resubmit-Winget.ps1`, which needs `-Force` |
+
+
+**Where `00005` stands:**
+
+| Step | State |
+|---|---|
+| 1 · package references + `nuget.config` | ✅ **Done at `2026.3.923`.** Proven with an **empty** package cache and HTTP cache and no credential set: all seven resolved from nuget.org, read from each `.nupkg.metadata`, and **nothing** came from `github` or `localfeed`. Builds 0 warnings / 0 errors; suite **3,595 / 0 / 14 — TOTAL 3,609**, 9/9 assemblies |
+| 2 – 5 | ⏳ **Wait for `2026.3.924`**, due 2026-09-24 — it renames two package ids (below) |
+| 6 | ⏳ **Waits for the test ports** into the package repositories — rule 1 |
+| 7 – 10 | After 6 |
+
+⚠ **Drift from the frozen plan** — recorded here, because `00005` is never edited:
+
+1. ⛔ **AQ1004 renames two package IDS in `.924`, not just namespaces.** `ScopedEditors.Avalonia` →
+   `ScopedEditors.AvaloniaUI` and `AppServices.Avalonia` → `AppServices.AvaloniaUI` — id, assembly,
+   namespace **and** `avares://` path all change. So the plan's namespace map and `avares://` targets
+   name the `.923` spellings; **step 9 is a rename, not a one-line pin bump**; and decision 9's "build
+   on `.923`" is moot, because steps 2 onward target the `.924` names directly — which also means the
+   trim gate is claimed on the marked version from the start. Two of step 1's references change when
+   `.924` lands; the other five, and both `nuget.config` patterns, already cover the new names.
+   ⓘ The two `.Avalonia` ids are deprecated on nuget.org, not removed: installable at `.923`, never
+   published to again.
+2. **`nuget.config` removals move to step 6.** Step 1 only **adds** the nuget.org patterns. While the
+   `LayeredEditors` projects exist, package mode still resolves them from `github` / `localfeed`, and
+   dropping that mapping early would route them to nuget.org, which has none.
+3. **The namespace map is DERIVED, not relayed.** All 87 old types were matched by name against the
+   published packages' own XML documentation: 81 matched, 0 ambiguous, and the 6 unmatched are the F12
+   cluster plus two internal JSON tokeniser types. The relayed map **missed** `LayeredEditors.Messages`
+   (→ `ScopedEditors.Messages`, shipped in the **ViewModels** package), `…Diagnostics.Binding`, and one
+   side each of the `…Diagnostics.Logging` and `…Diagnostics.Dialogs` splits. ⚠ **Re-derive it against
+   `.924`** rather than assume the rename is uniform.
+4. **Neither package repository carries tests for the moved code** — the move carried source only.
+   Maintainer, 2026-09-23: **port first; step 6 waits.** About 33 files, including a fourth category
+   the plan's list missed: `tests/ClaudeForge.Tests/Services/ShellLauncherWindowsTerminalTests.cs`,
+   which exercises `ShellLauncher` internals whose `InternalsVisibleTo` grant did not travel.
+5. **The baseline is 3,609, not 3,600.** PR #74 links `HeadlessSessionBootstrapTests.cs` (3 tests) into
+   three test projects. ⚠ Two of those are the `LayeredEditors` test projects step 6 deletes, so the
+   total falls by **6 there with no loss of coverage** — the same three tests still run in
+   `ClaudeForge.Tests`. Account for them by name when the totals are reconciled.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 

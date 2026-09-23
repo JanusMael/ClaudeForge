@@ -77,6 +77,30 @@
     </PropertyGroup>
 
     <!--
+      ══ THE SEVEN nuget.org PACKAGES THAT REPLACE LayeredEditors ════════════════════════════
+
+      plans/00005. TWO properties because the seven ids come from two repositories with
+      independent release cadences: Bennewitz.Ninja.AppServices (four ids) and
+      Bennewitz.Ninja.ScopedEditors (three). One version per repository, from one source, so
+      moving a pin is a one-line diff a human approves.
+
+      ⛔ UNLIKE SharedPackageVersion ABOVE, THESE ARE NEVER INERT. The seven are PackageReferences
+      in every mode; there is no project to fall back to, so every restore reads them.
+
+      ⛔ 2026.3.923 CARRIES NO IsTrimmable MARK. ClaudeForge publishes with TrimMode=partial,
+      which trims and analyses only marked assemblies, so on this version the seven are kept
+      whole and a clean trim result says nothing about them. Build on it; claim the trim gate
+      only on a version that carries the mark. See plans/00005.
+
+      No Condition, deliberately: the value in this file must beat a same-named environment
+      variable, and a global property on the command line still outranks it.
+    -->
+    <PropertyGroup>
+        <AppServicesVersion>2026.3.923</AppServicesVersion>
+        <ScopedEditorsVersion>2026.3.923</ScopedEditorsVersion>
+    </PropertyGroup>
+
+    <!--
       PDB policy — applies to all projects in the solution unless a project overrides.
   
       Debug:   portable PDB (separate .pdb file alongside the assembly).

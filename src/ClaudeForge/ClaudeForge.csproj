@@ -321,6 +321,19 @@
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
     </ItemGroup>
 
+    <!-- plans/00005 step 1: the nuget.org packages that replace the LayeredEditors projects.
+         Both are referenced for now; the LayeredEditors ProjectReferences below go in
+         step 2, together with the namespace changes that make them unnecessary. -->
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Avalonia" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Logging" Version="$(AppServicesVersion)" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Core\AgentForge.Core.csproj"/>
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>

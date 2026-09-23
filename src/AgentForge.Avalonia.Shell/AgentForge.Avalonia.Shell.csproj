@@ -31,6 +31,19 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     </ItemGroup>
 
+    <!-- plans/00005 step 1: the nuget.org packages that replace the LayeredEditors projects.
+         Both are referenced for now; the LayeredEditors ProjectReferences below go in
+         step 2, together with the namespace changes that make them unnecessary.
+         ⚠ This project is PACKABLE: every reference here becomes a dependency of its
+         published package, so it lists only what its source actually uses. -->
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
+    </ItemGroup>
+
     <ItemGroup>
         <!-- NavigationNodeViewModel already lives on the neutral LayeredEditors side, so
              deep-path resolution can reference it directly. Permitted by
