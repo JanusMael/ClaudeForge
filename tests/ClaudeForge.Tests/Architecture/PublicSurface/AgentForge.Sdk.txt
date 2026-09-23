@@ -188,10 +188,10 @@ class Bennewitz.Ninja.AgentForge.Sdk.Diagnostics.SensitiveKeys
     const System.String RedactedMarker
     static System.Boolean IsSensitive(System.String key)
 class Bennewitz.Ninja.AgentForge.Sdk.Dialogs.SdkDialogs
-    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage NotInstalled(System.String productName, System.String installUrl)
-    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage SaveFailed(System.String targetPath, System.String errorMessage)
-    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage SaveSucceeded(System.Collections.Generic.IReadOnlyList<System.String> writtenPaths)
-    static Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs.DialogMessage SchemaValidationFailed(System.String fieldDescription, System.String validationMessage, System.String docsUrl = null)
+    static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage NotInstalled(System.String productName, System.String installUrl)
+    static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SaveFailed(System.String targetPath, System.String errorMessage)
+    static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SaveSucceeded(System.Collections.Generic.IReadOnlyList<System.String> writtenPaths)
+    static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SchemaValidationFailed(System.String fieldDescription, System.String validationMessage, System.String docsUrl = null)
 class Bennewitz.Ninja.AgentForge.Sdk.Env.EnvVarKey
     const System.String AnthropicModel
     const System.String DisableAutoMemory

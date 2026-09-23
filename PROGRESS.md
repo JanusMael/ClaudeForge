@@ -202,7 +202,7 @@ The UI also reported `v2026.3.922.0`.
 | 5 · F12 windows | ✅ Done in code, on the `.924` hook — ⏳ "windows that FILL" in a real run is still owed |
 | 6 · delete the family | ✅ Done — `75d8961`: 5 `src` + 2 test projects, their baselines, slnx entries, friend grants and the selector line |
 | 7 · guards that named the family | ✅ Done — every narrowed guard canaried BOTH ways (drift 12); prose swept eleven → six |
-| 8 · `PublicSurface` baselines | ⏳ Next — the diff is the namespace move and nothing else, read line by line before it is accepted |
+| 8 · `PublicSurface` baselines | ✅ Done — remapped through the derived 81-type map, the diff leaves exactly three lines, all step 3's: `OpenFileLocationCommand` becomes `IAsyncRelayCommand`, `IsRevealInFileManagerSupported` is new. `AgentForge.Sdk` is the namespace move and nothing else |
 | 9 · real `.924` | ⏳ Waits on the publish — see drift 6 for the swap |
 | 10 · full gate | ⏳ After 9 |
 
