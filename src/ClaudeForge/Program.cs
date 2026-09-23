@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -112,18 +113,13 @@ internal sealed class Program
         // 4. One-line logging pipeline: rolling file sink (8h buckets, 3d retention) +
         //    Trace + F12 live-log window + Avalonia logger bridge. All toggles left at
         //    their safe defaults; only AppName + LogsDirectory are mandatory.
-        AvaloniaDiagnostics.ConfigureLogging(new AvaloniaDiagnosticsOptions
+        AvaloniaDiagnosticsOptions loggingOptions = new()
         {
             AppName = "ClaudeForge",
             LogsDirectory = PlatformPaths.AppLogsDirectory,
-            // Second live-tail window (opt-in): streams debounced ConfigFileWatcher
-            // hits so the user can watch external edits (Claude CLI, other editors)
-            // to the settings files in real time. Fed by MainWindowViewModel via
-            // AvaloniaDiagnostics.EnqueueEvent; launched from the F12 window header
-            // link or Shift+F12.
-            EnableEventTailWindow = true,
-            EventTailWindowTitle = "Live Config-File Events — Shift+F12 to hide",
-            EventTailLaunchLabel = "Config-file events ▸",
+            // The Shift+F12 window that streams ConfigFileWatcher hits is no longer an option
+            // here: it stayed in ClaudeForge when the library moved, and ClaudeForgeDiagnostics
+            // wires it (plans/00005).
             // ⭐ The same stream, persisted. The tail window above is live-only, so "did the
             // watcher fire while I was editing?" was unanswerable once the window closed — and
             // impossible to hand to anyone else. This writes events-*.txt beside app-*.txt in the
@@ -134,7 +130,12 @@ internal sealed class Program
             // separator it parses back when pruning. "config-events" throws, and it throws
             // from ConfigureLogging - before any logging exists - so the app dies silently.
             EventLogFileNamePrefix = "events",
-        });
+        };
+        AvaloniaDiagnostics.ConfigureLogging(loggingOptions);
+
+        // ⛔ Immediately after ConfigureLogging, before anything can capture Log.Logger: this
+        //    feeds the F12 window, which the AppServices pipeline no longer does itself.
+        ClaudeForgeDiagnostics.AttachLiveLogWindow(loggingOptions);
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture
         //    value, unknown flag list) + the active-flags summary line.
@@ -192,7 +193,7 @@ internal sealed class Program
             // "did the user quit cleanly?" (both lines present, plus the
             // [App.Shutdown] one in between).
             Log.Information("Exiting ClaudeForge");
-            Log.CloseAndFlush();
+            ClaudeForgeDiagnostics.CloseAndFlush();
         }
     }
 
@@ -314,6 +315,6 @@ internal sealed class Program
             }
         }
 
-        Log.CloseAndFlush();
+        ClaudeForgeDiagnostics.CloseAndFlush();
     }
 }

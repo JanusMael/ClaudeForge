@@ -7,7 +7,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+namespace Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
 /// <summary>
 /// A floating, instantiable "live tail" window: an auto-scrolling, selectable

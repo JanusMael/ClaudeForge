@@ -1,9 +1,8 @@
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Logging;
+namespace Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
 /// <summary>
 /// A Serilog <see cref="ILogEventSink"/> that enqueues rendered log messages

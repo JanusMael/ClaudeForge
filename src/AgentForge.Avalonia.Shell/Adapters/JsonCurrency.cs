@@ -14,7 +14,7 @@ namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 /// <para>
 /// extracted from <c>LayeredValueAdapter.Coerce</c> /
 /// <c>LayeredValueAdapter.Normalise</c> so consumers that aren't building an
-/// <see cref="LayeredEditors.Abstractions.IEditorValue"/> wrapper can still
+/// <see cref="Bennewitz.Ninja.ScopedEditors.Abstractions.IEditorValue"/> wrapper can still
 /// reach the same conversions.  In particular, when steps 2–6 of the
 /// leaf-editor migration delete the App-side bridge editors,
 /// the host's settings-group editor's

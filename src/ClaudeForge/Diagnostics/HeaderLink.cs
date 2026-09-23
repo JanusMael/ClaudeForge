@@ -7,7 +7,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+namespace Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
 /// <summary>
 /// Builds the underlined, hand-cursor <see cref="TextBlock"/> that the live windows use as a

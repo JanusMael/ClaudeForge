@@ -4,6 +4,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.ScopedEditors.Messages;
@@ -970,27 +971,37 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
 
     /// <summary>Reveal the supplied path in the platform file manager.</summary>
     [RelayCommand]
-    public void Reveal(string? path)
+    public async Task RevealAsync(string? path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             return;
         }
 
-        _shellLauncher?.RevealInFileManager(path);
+        if (_shellLauncher is not null)
+        {
+            LaunchResultLog.Report("[AgentsSkills] Reveal",
+                await _shellLauncher.RevealInFileManagerAsync(path, cancellationToken));
+        }
+
         Log.Information("[AgentsSkills.Command] action=Reveal");
     }
 
     /// <summary>Open the supplied path in the platform default editor.</summary>
     [RelayCommand]
-    public void OpenExternally(string? path)
+    public async Task OpenExternallyAsync(string? path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             return;
         }
 
-        _shellLauncher?.OpenInDefaultEditor(path);
+        if (_shellLauncher is not null)
+        {
+            LaunchResultLog.Report("[AgentsSkills] Open externally",
+                await _shellLauncher.OpenInDefaultEditorAsync(path, cancellationToken));
+        }
+
         Log.Information("[AgentsSkills.Command] action=OpenExternally");
     }
 

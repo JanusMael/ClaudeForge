@@ -238,7 +238,7 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
     /// </para>
     /// </remarks>
     [RelayCommand]
-    private async Task ShareConfigAsync()
+    private async Task ShareConfigAsync(CancellationToken cancellationToken)
     {
         if (_shareService is null)
         {
@@ -250,9 +250,17 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
 
         try
         {
-            ShareOutcome outcome = await _shareService.ShareTextAsync("Claude Config", EffectiveJson);
+            // uri: null -- the configuration is the payload; there is no link to share with it.
+            ShareOutcome outcome = await _shareService.ShareTextAsync(
+                "Claude Config", EffectiveJson, uri: null, cancellationToken);
             Log.Information("[EffectiveSettings] Share config outcome: {Outcome}", outcome);
             ReportShareOutcome(outcome);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The command's own token: a cancel is the user's decision, not a fault.
+            Log.Information("[EffectiveSettings] Share config cancelled");
+            ReportShareOutcome(ShareOutcome.Cancelled);
         }
         catch (Exception ex)
         {
@@ -276,7 +284,7 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
         // here, and the caller's catch reports it as a failure — loud, which is the right way for
         // this to fail.
 #pragma warning disable CS8524
-        (string text, bool isFailure) = outcome switch
+        (string? text, bool isFailure) = outcome switch
         {
             ShareOutcome.CopiedToClipboard => (Strings.StatusShareConfigCopiedToClipboard, false),
             ShareOutcome.OpenedInBrowser => (Strings.StatusShareConfigOpenedInBrowser, false),
@@ -284,10 +292,17 @@ public partial class EffectiveSettingsViewModel : ObservableObject, IDisposable,
             ShareOutcome.RevealedInFileManager => (Strings.StatusShareConfigRevealedInFileManager, false),
             ShareOutcome.Unavailable => (Strings.StatusShareConfigUnavailable, false),
             ShareOutcome.Failed => (Strings.StatusShareConfigFailed, true),
+
+            // ⭐ CS8509 caught this member the day it was added, exactly as the note above intends.
+            // The user cancelled: nothing failed and nothing needs saying.
+            ShareOutcome.Cancelled => (null, false),
         };
 #pragma warning restore CS8524
 
-        OnTerminalStatus?.Invoke(text, isFailure);
+        if (text is not null)
+        {
+            OnTerminalStatus?.Invoke(text, isFailure);
+        }
     }
 
     private void OnSdkChanged(object? sender, ClientChangedEventArgs e)

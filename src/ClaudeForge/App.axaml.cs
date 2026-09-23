@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Converters;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Services;
@@ -37,11 +38,13 @@ public class App : Application
         // such thread picks up the correct culture rather than the system default.
         LocalizationService.ApplyCulture();
 
-        // One-line post-framework-init bootstrap:
-        //   - LiveLogWindow.Initialize() — F12 window, hidden until F12 is pressed
+        // Post-framework-init bootstrap:
         //   - BindingValidationErrorLogger.Install() — logs coercion errors that
         //     land in DataValidationErrors.ErrorsProperty (bypasses Avalonia.Logging)
+        //   - then the F12 and Shift+F12 windows, hidden until their key is pressed.
+        //     They stayed in ClaudeForge when the library moved, so it builds them itself.
         AvaloniaDiagnostics.InstallAvaloniaHooks();
+        ClaudeForgeDiagnostics.InstallWindows();
 
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

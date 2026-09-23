@@ -36,20 +36,20 @@ file sealed class RecordingShareService : IShareService
     /// <summary>Set to throw from both methods, for the caller's catch path.</summary>
     public Exception? ThrowOnShare { get; set; }
 
-    public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
+    public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
     {
         TextCalls.Add(new ShareTextCall(title, text, uri));
         return ThrowOnShare is not null
-            ? Task.FromException<ShareOutcome>(ThrowOnShare)
-            : Task.FromResult(NextOutcome);
+            ? ValueTask.FromException<ShareOutcome>(ThrowOnShare)
+            : ValueTask.FromResult(NextOutcome);
     }
 
-    public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
+    public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
     {
         FileCalls.Add(new ShareFileCall(title, filePath));
         return ThrowOnShare is not null
-            ? Task.FromException<ShareOutcome>(ThrowOnShare)
-            : Task.FromResult(NextOutcome);
+            ? ValueTask.FromException<ShareOutcome>(ThrowOnShare)
+            : ValueTask.FromResult(NextOutcome);
     }
 }
 
@@ -332,7 +332,7 @@ public class DefaultShareServiceTests
         // On any platform, calling ShareTextAsync on a service with no HWND
         // and a non-Windows TFM should complete without throwing.
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareTextAsync("Test Title", "Test body text");
+        await svc.ShareTextAsync("Test Title", "Test body text", uri: null, CancellationToken.None);
     }
 
     [TestMethod]
@@ -341,14 +341,14 @@ public class DefaultShareServiceTests
         // Even with a non-existent path, the service must not throw —
         // it silently skips the Process.Start on macOS/Linux when the file is absent.
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip");
+        await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip", CancellationToken.None);
     }
 
     [TestMethod]
     public async Task ShareTextAsync_DoesNotThrow_WithUri()
     {
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareTextAsync("Test", "body", "https://example.com");
+        await svc.ShareTextAsync("Test", "body", "https://example.com", CancellationToken.None);
     }
 
     /// <summary>
@@ -393,7 +393,7 @@ public class DefaultShareServiceTests
             return null;
         });
 
-        await svc.ShareTextAsync("T", "body", "https://example.com");
+        await svc.ShareTextAsync("T", "body", "https://example.com", CancellationToken.None);
 
         // Exactly 0 or 1 launches depending on OS — the important thing is no exception.
         Assert.IsTrue(launchCount is 0 or 1,

@@ -9,10 +9,10 @@
     <!--
         Opt-in Semi theme via LayeredEditors.Avalonia. Remove this single include
         to fall back to Avalonia's built-in Fluent theme; add alternate bundles
-        under avares://LayeredEditors.Avalonia/Themes/ to swap looks.
+        under avares://ScopedEditors.AvaloniaUI/Themes/ to swap looks.
     -->
     <Application.Styles>
-        <StyleInclude Source="avares://LayeredEditors.Avalonia/Themes/SemiBundle.axaml" />
+        <StyleInclude Source="avares://ScopedEditors.AvaloniaUI/Themes/SemiBundle.axaml" />
         <!-- Allow tooltips to grow wide enough to show long content (e.g. JSON blobs)
              without excessive line wrapping. MaxWidth is a ceiling, not a forced width,
              so short tooltips remain compact. Avalonia constrains all popups to the
@@ -160,7 +160,7 @@
                 in exactly one place in markup. NoLiteralMonospaceFontStackTests fails the build
                 if a literal stack comes back.
             -->
-            <FontFamily x:Key="AppMonoFontFamily">avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL</FontFamily>
+            <FontFamily x:Key="AppMonoFontFamily">avares://ScopedEditors.AvaloniaUI/Assets/Fonts#JetBrains Mono NL</FontFamily>
 
             <!--
                 The ligature cut of the same family, for surfaces read for COMPREHENSION rather
@@ -173,7 +173,7 @@
                 because a ligature makes `!=` and `->` render as something the file does not
                 contain.
             -->
-            <FontFamily x:Key="AppMonoLigaturesFontFamily">avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono</FontFamily>
+            <FontFamily x:Key="AppMonoLigaturesFontFamily">avares://ScopedEditors.AvaloniaUI/Assets/Fonts#JetBrains Mono</FontFamily>
 
             <!--
                 App-owned theme-adaptive brushes.

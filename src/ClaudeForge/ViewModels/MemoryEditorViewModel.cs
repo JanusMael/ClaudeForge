@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
@@ -350,14 +351,15 @@ public sealed partial class MemoryEditorViewModel : ObservableObject, INavigable
 
     /// <summary>Reveal the supplied path in the platform file manager.</summary>
     [RelayCommand]
-    public void Reveal(string? path)
+    public async Task RevealAsync(string? path, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(path))
+        if (string.IsNullOrWhiteSpace(path) || _shellLauncher is null)
         {
             return;
         }
 
-        _shellLauncher?.RevealInFileManager(path);
+        LaunchResultLog.Report("[Memory] Reveal",
+            await _shellLauncher.RevealInFileManagerAsync(path, cancellationToken));
     }
 
     /// <summary>
@@ -372,14 +374,15 @@ public sealed partial class MemoryEditorViewModel : ObservableObject, INavigable
     /// <see cref="Reveal"/> but without the parent-folder + select indirection.
     /// </summary>
     [RelayCommand]
-    public void OpenInEditor(string? path)
+    public async Task OpenInEditorAsync(string? path, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(path))
+        if (string.IsNullOrWhiteSpace(path) || _shellLauncher is null)
         {
             return;
         }
 
-        _shellLauncher?.OpenInDefaultEditor(path);
+        LaunchResultLog.Report("[Memory] Open in editor",
+            await _shellLauncher.OpenInDefaultEditorAsync(path, cancellationToken));
     }
 
     /// <summary>

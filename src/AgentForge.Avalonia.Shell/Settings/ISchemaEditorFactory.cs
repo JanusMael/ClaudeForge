@@ -62,7 +62,7 @@ public interface ISchemaEditorFactory
     /// <para>
     /// ⛔ <b>This is not licence for search to classify.</b> Search holds neither the value nor
     /// the editing scope, so it asks the editor instead — see
-    /// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor"/>. The effective view
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.IDangerAnnotatedEditor"/>. The effective view
     /// is different in kind: a row there IS a (path, winning scope, winning value) triple, and
     /// those are the three inputs classification takes.
     /// </para>

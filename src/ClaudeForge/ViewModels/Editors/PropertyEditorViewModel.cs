@@ -9,19 +9,19 @@ using Bennewitz.Ninja.ScopedEditors.Abstractions;
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 
 /// <summary>
-/// App bridge class: extends the reusable <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel"/>
+/// App bridge class: extends the reusable <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel"/>
 /// with the Claude-specific <c>JsonNode / LayeredValue / ConfigScope</c> API used by
 /// specialized editors (Hooks, MCP servers, Permissions) that haven't yet been migrated
 /// to the library's interface contract.
 /// </summary>
 /// <remarks>
 /// Generic leaf editors (Boolean, String, Path, …) do NOT extend this class —
-/// they extend <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel"/>
+/// they extend <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel"/>
 /// directly from the library. App shims for those editors merely add backward-compat
 /// constructor overloads.
 /// </remarks>
 public abstract class PropertyEditorViewModel
-    : LayeredEditors.ViewModels.PropertyEditorViewModel
+    : Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel
 {
     protected PropertyEditorViewModel(SchemaNode schema, ConfigScope editingScope)
         : base(new SchemaNodeAdapter(schema), ConfigScopeAdapter.For(editingScope))
@@ -45,7 +45,7 @@ public abstract class PropertyEditorViewModel
     public string JsonPath => Path;
 
     /// <summary>
-    /// Legacy name for <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel.IsLocked"/>.
+    /// Legacy name for <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel.IsLocked"/>.
     /// Kept so that existing AXAML bindings (PropertyEditorWrapper) continue to work.
     /// </summary>
     public bool IsManagedLocked => IsLocked;
@@ -160,7 +160,7 @@ public abstract class PropertyEditorViewModel
 
     /// <summary>
     /// Marks the editor modified for any user-initiated change. Always sets
-    /// <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel.IsModified"/>
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel.IsModified"/>
     /// to <c>true</c> for transitions, and explicitly raises <c>PropertyChanged(IsModified)</c>
     /// when the flag was already <c>true</c>.
     /// </summary>

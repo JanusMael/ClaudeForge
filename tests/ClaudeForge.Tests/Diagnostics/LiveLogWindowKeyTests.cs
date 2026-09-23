@@ -2,9 +2,9 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 
 /// <summary>
 /// The live-log window's title promises "F12 to hide", and the host's F12 handler on its main

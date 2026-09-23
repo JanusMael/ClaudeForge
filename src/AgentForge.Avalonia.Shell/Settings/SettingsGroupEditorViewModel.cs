@@ -1231,7 +1231,7 @@ public partial class SettingsGroupEditorViewModel
     /// (<see cref="ISchemaEditorFactory.Danger"/>), so the Effective tab and the Properties tab
     /// of the same page cannot be driven by different tables. Accepting a separately-injected
     /// classifier here would let one page contradict itself, which is the failure
-    /// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor"/> was introduced to
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.IDangerAnnotatedEditor"/> was introduced to
     /// rule out on the search surface.
     /// </para>
     /// <para>

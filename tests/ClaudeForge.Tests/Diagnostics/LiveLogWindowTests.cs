@@ -1,6 +1,6 @@
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 
 /// <summary>
 /// Tests for the channel and enqueue behaviour of <see cref="LiveLogWindow"/>.

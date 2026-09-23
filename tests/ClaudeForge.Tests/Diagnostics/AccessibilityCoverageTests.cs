@@ -4,11 +4,11 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Dialogs;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Logging;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+using Bennewitz.Ninja.AppServices.AvaloniaUI.Dialogs;
+using Bennewitz.Ninja.AppServices.Logging;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Tests;
+namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 
 /// <summary>
 /// Guards the accessibility invariant from the root <c>AGENTS.md</c> for the UI this library
@@ -93,7 +93,7 @@ public sealed class AccessibilityCoverageTests
             {
                 using BucketedRollingFileSink sink = new(logsDirectory);
                 Window window = LiveLogWindow.RebuildWindowForTesting(
-                    sink,
+                    () => sink.CurrentFilePath,
                     logsDirectory,
                     extraActionLabel: "Events",
                     extraAction: () => { });

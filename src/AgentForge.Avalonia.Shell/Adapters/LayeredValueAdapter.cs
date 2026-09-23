@@ -50,7 +50,7 @@ public sealed class LayeredValueAdapter : IEditorValue
     /// <summary>
     /// enumerate every scope where the underlying
     /// <see cref="LayeredValue"/> has an explicit entry.  Used by the library
-    /// base <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel"/>
+    /// base <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel"/>
     /// to populate <c>OtherScopesWithData</c> on simple leaf editors so they
     /// render the "Defined in scopes:" affordance the same way compound
     /// editors already do.  <see cref="System.Linq.Enumerable.Distinct{T}(System.Collections.Generic.IEnumerable{T})"/>

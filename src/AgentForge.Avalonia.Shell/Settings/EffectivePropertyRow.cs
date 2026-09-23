@@ -40,7 +40,7 @@ public sealed record EffectivePropertyRow(
     /// </para>
     /// <para>
     /// ⛔ <b>Do not "unify" this with
-    /// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor.AssessDanger"/>.</b>
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.IDangerAnnotatedEditor.AssessDanger"/>.</b>
     /// Search asks the editor because search holds neither the value nor a scope and would have
     /// to invent both. A row here holds the real winning pair, so classifying is the accurate
     /// move and delegating would report the wrong scope's answer.
@@ -54,7 +54,7 @@ public sealed record EffectivePropertyRow(
 
     /// <summary>
     /// Whether to render a severity dot at all. Named to match
-    /// <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
     /// so the markup is the same shape on every danger surface.
     /// </summary>
     public bool HasDangerSeverity => Danger.Explanation is not null;

@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -284,7 +285,7 @@ public partial class MainWindow : Window
         // chord isn't swallowed by the modifier-less F12 branch below.
         if (e.Key == Key.F12 && e.KeyModifiers == KeyModifiers.Shift)
         {
-            AvaloniaDiagnostics.ToggleEventTailWindow();
+            ClaudeForgeDiagnostics.ToggleEventTailWindow();
             e.Handled = true;
             return;
         }
@@ -294,7 +295,7 @@ public partial class MainWindow : Window
         // handling keyboard shortcuts in code-behind rather than XAML KeyBindings.
         if (e.Key == Key.F12)
         {
-            AvaloniaDiagnostics.ToggleLiveLogWindow();
+            ClaudeForgeDiagnostics.ToggleLiveLogWindow();
             e.Handled = true;
             return;
         }

@@ -12,9 +12,8 @@ using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.Logging;
 
-namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
+namespace Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
 /// <summary>
 /// Manages the floating live-log window toggled by F12.
@@ -26,7 +25,7 @@ namespace Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics.UI;
 /// <para>
 /// <strong>Layout:</strong> a header strip at the top of the window shows the
 /// current on-disk log-file path reported by the backing
-/// <see cref="BucketedRollingFileSink"/>. Clicking the path opens the file in
+/// <see cref="Bennewitz.Ninja.AppServices.Logging.BucketedRollingFileSink"/>. Clicking the path opens the file in
 /// the OS default text editor; clicking "Open folder" opens the logs
 /// directory. The rest of the window is a virtualized <see cref="ListBox"/> of
 /// log lines.
@@ -111,7 +110,9 @@ public static class LiveLogWindow
     // Decoupling from the hard-coded fixed-path logger: the file sink + logs
     // directory are supplied by the bootstrap, so this window can display any
     // app's current-file path without knowing where the app chose to put logs.
-    private static BucketedRollingFileSink? _fileSink;
+    // A provider rather than the sink itself: since the extraction, the rolling-file sink belongs to
+    // AppServices' AvaloniaDiagnostics, which exposes only its current path.
+    private static Func<string?>? _logFilePathProvider;
     private static string? _logsDirectory;
     private static string _windowTitle = "Live Debug Logs — F12 to hide";
 
@@ -130,9 +131,8 @@ public static class LiveLogWindow
     /// <c>App.OnFrameworkInitializationCompleted</c>) before the first
     /// <see cref="ToggleWindow"/> call. Idempotent.
     /// </summary>
-    /// <param name="fileSink">Optional rolling-file sink whose
-    /// <see cref="BucketedRollingFileSink.CurrentFilePath"/> is used to populate
-    /// the header "log file" link. When <c>null</c> the link is hidden — the
+    /// <param name="logFilePath">Optional provider of the current rolling log file's path, used
+    /// to populate the header "log file" link. When <c>null</c> the link is hidden — the
     /// window still displays live log lines, just without the file-open
     /// affordance.</param>
     /// <param name="logsDirectory">Optional directory shown by the "Open folder"
@@ -145,7 +145,7 @@ public static class LiveLogWindow
     /// <param name="extraAction">Optional callback invoked when the
     /// <paramref name="extraActionLabel"/> link is clicked.</param>
     public static void Initialize(
-        BucketedRollingFileSink? fileSink = null,
+        Func<string?>? logFilePath = null,
         string? logsDirectory = null,
         string? windowTitle = null,
         string? extraActionLabel = null,
@@ -158,7 +158,7 @@ public static class LiveLogWindow
 
         _initialized = true;
 
-        _fileSink = fileSink;
+        _logFilePathProvider = logFilePath;
         _logsDirectory = logsDirectory;
         _extraActionLabel = extraActionLabel;
         _extraAction = extraAction;
@@ -216,7 +216,7 @@ public static class LiveLogWindow
     /// never starts a second reader on the channel. UI thread only.
     /// </summary>
     internal static Window RebuildWindowForTesting(
-        BucketedRollingFileSink? fileSink,
+        Func<string?>? logFilePath,
         string? logsDirectory,
         string? extraActionLabel,
         Action? extraAction)
@@ -228,7 +228,7 @@ public static class LiveLogWindow
             _window.Close();
         }
 
-        _fileSink = fileSink;
+        _logFilePathProvider = logFilePath;
         _logsDirectory = logsDirectory;
         _extraActionLabel = extraActionLabel;
         _extraAction = extraAction;
@@ -435,7 +435,7 @@ public static class LiveLogWindow
         // The "log file" link is only useful when a rolling-file sink was wired
         // up; otherwise the window runs sink-less (live view only) and we
         // suppress the header link entirely rather than showing an empty label.
-        if (_fileSink is not null)
+        if (_logFilePathProvider is not null)
         {
             TextBlock label = new()
             {
@@ -459,7 +459,7 @@ public static class LiveLogWindow
 
         if (!string.IsNullOrEmpty(_logsDirectory))
         {
-            if (_fileSink is not null)
+            if (_logFilePathProvider is not null)
             {
                 TextBlock separator = new()
                 {
@@ -560,15 +560,16 @@ public static class LiveLogWindow
     /// </summary>
     private static void RefreshLogPathLink()
     {
-        if (_logPathLink is null || _fileSink is null)
+        if (_logPathLink is null || _logFilePathProvider is null)
         {
             return;
         }
 
-        string? path = _fileSink.CurrentFilePath
-                       ?? (_logsDirectory is null
-                           ? null
-                           : Path.Combine(_logsDirectory, _fileSink.FileName(DateTime.UtcNow)));
+        // No predicted name before the first write, unlike when this held the sink itself:
+        // computing one needs the sink instance, which AppServices keeps private. Nothing is
+        // lost — this runs per appended line, and every line this window receives was written
+        // to the file by the same Serilog event, so the file exists by then.
+        string? path = _logFilePathProvider();
 
         if (path is null || path == _currentLogFilePath)
         {
