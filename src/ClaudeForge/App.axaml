@@ -7,7 +7,7 @@
              RequestedThemeVariant="Default">
 
     <!--
-        Opt-in Semi theme via LayeredEditors.Avalonia. Remove this single include
+        Opt-in Semi theme via ScopedEditors.AvaloniaUI. Remove this single include
         to fall back to Avalonia's built-in Fluent theme; add alternate bundles
         under avares://ScopedEditors.AvaloniaUI/Themes/ to swap looks.
     -->
@@ -148,7 +148,7 @@
 
                 ⭐ BUNDLED, not named. A stack is a request the platform answers however it
                 likes; the file is a guarantee. JetBrains Mono NL ships inside
-                LayeredEditors.Avalonia — see that csproj for why NL (no ligatures) is a
+                ScopedEditors.AvaloniaUI — see that package's csproj for why NL (no ligatures) is a
                 correctness choice on surfaces that show literal file bytes, and why exactly
                 three weights are embedded.
 
@@ -185,7 +185,7 @@
                 BarButtonBackgroundBrush — slightly darker/lighter than the bar so
                   toolbar and status-bar buttons have visible contrast in light mode.
                 AppLinkBrush — teal-blue used for "Browse suggestions" expander labels
-                  and other secondary action text (matches LayeredEditors LinkBrush hue).
+                  and other secondary action text (matches ScopedEditors LinkBrush hue).
                 AppCautionBrush — amber caution ACCENT: borders and glyphs, floor 3.0:1.
                   ⛔ NOT a text colour. It was one, at five sites, and every one of them
                   measured 3.07–3.19:1 against a 4.5:1 text floor (finding F4). An accent
@@ -442,7 +442,7 @@
 
     <!--
         Application-level DataTemplates for the three Claude-specific specialized editors.
-        These are not known by LayeredEditors.Avalonia, so they're registered here and
+        These are not known by ScopedEditors.AvaloniaUI, so they're registered here and
         resolved by fall-through when the APP's Controls/PropertyEditorWrapper.axaml
         ContentControl encounters a type it doesn't recognise.  (Not the library's
         wrapper: nothing in this app instantiates that one — every PropertyEditorWrapper

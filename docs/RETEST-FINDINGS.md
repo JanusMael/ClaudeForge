@@ -1106,7 +1106,7 @@ git diff release/claudeforge-on-packages feat/agentforge-opencodeforge \
 `1077e95` changed exactly one editor file — `src/ClaudeForge/ViewModels/Editors/ObjectPropertyEditorViewModel.cs`.
 
 ⚠ **There are TWO classes by that name and the repository already says so**, at
-[`IChildEditorHost.cs`](../src/LayeredEditors.ViewModels/IChildEditorHost.cs) — *"one here in the
+`IChildEditorHost.cs` (then in `LayeredEditors.ViewModels/`; since plans/00005 `ScopedEditors.ViewModels/IChildEditorHost.cs` in the `Bennewitz.Ninja.ScopedEditors` repo) — *"one here in the
 library and one in the app, and the app's does not derive from this one."* That comment exists
 because a **type test** against either class covers only half the object editors in play. The same
 split makes a **fix** against either class cover only half.

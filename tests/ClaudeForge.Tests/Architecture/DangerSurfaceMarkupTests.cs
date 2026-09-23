@@ -15,10 +15,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// markup.
 /// </para>
 /// <para>
-/// ⚠ <b>There are FOUR such files, not two, because both apps keep their own copy of the property
-/// wrapper.</b> OpenCodeForge renders the shared
-/// <c>LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml</c>; ClaudeForge has its own
-/// under <c>src/ClaudeForge/Controls/</c>. A "shared library" fix does not reach both apps, and
+/// ⚠ <b>Both apps keep their own copy of the property wrapper.</b> OpenCodeForge renders the
+/// shared one, which since plans/00005 ships in the <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c>
+/// package and is no longer source in this repository; ClaudeForge has its own under
+/// <c>src/ClaudeForge/Controls/</c>. A "shared library" fix does not reach both apps, and
 /// that asymmetry has already produced one live defect in this area — which is why the surfaces
 /// here are DISCOVERED by their <c>x:DataType</c> rather than listed.
 /// </para>
@@ -177,9 +177,12 @@ public sealed class DangerSurfaceMarkupTests
         }
 
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 7; one of the two search templates was
-        // OpenCodeForge's. Restore 7 when OpenCodeForge rejoins.
-        Assert.IsTrue(checkedFiles >= 6,
-            $"only {checkedFiles} file(s) mention DangerAccessibleText; two wrappers, one search "
+        // OpenCodeForge's. Restore it when OpenCodeForge rejoins.
+        // LIBRARY GUARD NARROWED — plans/00005. Was 6; the shared PropertyEditorWrapper moved to the
+        // Bennewitz.Ninja.ScopedEditors package, and no markup scan there checks it yet. Restore that
+        // coverage IN THAT REPOSITORY — the file is not coming back here as source. See PROGRESS.md.
+        Assert.IsTrue(checkedFiles >= 5,
+            $"only {checkedFiles} file(s) mention DangerAccessibleText; ClaudeForge's wrapper, one search "
             + "template, two effective-value grids and the save dialog carry it, so the scan has "
             + "lost its subjects and would pass without checking anything.");
 
@@ -191,7 +194,7 @@ public sealed class DangerSurfaceMarkupTests
     }
 
     /// <summary>
-    /// Both wrappers must agree on the banner, not just the dot.
+    /// The wrapper must carry the banner, not just the dot.
     /// </summary>
     /// <remarks>
     /// ⚠ The dot and the banner answer different questions — the tier versus "the value held
@@ -199,7 +202,7 @@ public sealed class DangerSurfaceMarkupTests
     /// warning that matters most, on the rows where something is actually wrong.
     /// </remarks>
     [TestMethod]
-    public void BothPropertyWrappersRenderTheIsDangerNowBanner()
+    public void ThePropertyWrapperRendersTheIsDangerNowBanner()
     {
         string repoRoot = FindRepoRoot();
 
@@ -207,9 +210,12 @@ public sealed class DangerSurfaceMarkupTests
             .Where(f => Path.GetFileName(f.Relative).Equals("PropertyEditorWrapper.axaml", StringComparison.Ordinal))
             .Select(f => f.Relative)];
 
-        Assert.AreEqual(2, wrappers.Count,
-            $"expected exactly 2 PropertyEditorWrapper.axaml files (the shared one in "
-            + $"LayeredEditors.Avalonia and ClaudeForge's own copy), found {wrappers.Count}: "
+        // LIBRARY GUARD NARROWED — plans/00005. Was 2; the shared wrapper moved to the
+        // Bennewitz.Ninja.ScopedEditors package. Its banner is unguarded until that repository
+        // scans it — see PROGRESS.md. Exactly 1 still fails loudly if ClaudeForge's copy disappears.
+        Assert.AreEqual(1, wrappers.Count,
+            $"expected exactly 1 PropertyEditorWrapper.axaml file (ClaudeForge's own), "
+            + $"found {wrappers.Count}: "
             + string.Join(", ", wrappers));
 
         List<string> missing = [.. AxamlFiles(repoRoot)

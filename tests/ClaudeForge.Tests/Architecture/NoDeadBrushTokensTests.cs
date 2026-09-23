@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 
@@ -32,7 +34,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// ⭐ <b>Those exemptions have to earn their keep, or they become an allow-list that outlives its
 /// reason.</b> <see cref="EveryComputedFamilyExemptionIsStillEarned"/> checks that the named source
 /// still constructs a key of that shape, so deleting a converter makes its exemption lapse and its
-/// tokens correctly report dead.
+/// tokens correctly report dead. A family whose builder ships in a PACKAGE (the severity family,
+/// since plans/00005) has no source here to read, so it is re-earned by calling the package's own
+/// key builder instead.
 /// </para>
 /// <para>
 /// ⚠ <b>Comments are stripped before the reference scan.</b> A key merely NAMED in prose is not a
@@ -54,49 +58,32 @@ public sealed class NoDeadBrushTokensTests
         "src/ClaudeForge/Resources/Compat/SimpleKeys.Semi.axaml",
     ];
 
-    /// <summary>
-    /// Tokens whose only consumer left with OpenCodeForge in plans/00003 Phase 0.
-    /// </summary>
-    /// <remarks>
-    /// ⛔ <b>TWO-APP GUARD NARROWED — plans/00003 Phase 0, and this entry has a NAMED EXIT.</b>
-    /// <c>EditorColors.axaml</c> records the consumer itself: <i>"OpenCodeKeybindEditorView.axaml
-    /// has named LE.DangerText (7 times) and LE.DangerBorder"</i>. That view is gone, so both are
-    /// genuinely dead.
-    /// <para>
-    /// ⚠ <b>They are exempted rather than deleted because deleting them is a SHARED-LIBRARY change,
-    /// and 00003 Phase A requires the shared surface be unchanged before the immutable
-    /// <c>packages-v*</c> tag</b> — that premise is what makes a Phase D failure attributable to the
-    /// pipeline rather than to two candidate causes.
-    /// </para>
-    /// <para>
-    /// ⛔ <b>Delete the tokens and this list in Phase E</b>, alongside 00002, where a shared-library
-    /// change is landing anyway. An allow-list with no exit is how a dead-token guard quietly stops
-    /// mattering, which is the failure this whole class exists to prevent.
-    /// </para>
-    /// </remarks>
-    private static readonly string[] DeadWithOpenCodeForge =
-    [
-        "LE.DangerBorder",
-        "LE.DangerText",
-    ];
-
     /// <param name="KeyPattern">The shape of key this family produces.</param>
     /// <param name="BuiltBy">
-    /// The source file that constructs it. Named so the exemption can be re-verified rather than
-    /// believed — see <see cref="EveryComputedFamilyExemptionIsStillEarned"/>.
+    /// The source file that constructs it, or the package type when the builder is not in this
+    /// repository. Named so the exemption can be re-verified rather than believed — see
+    /// <see cref="EveryComputedFamilyExemptionIsStillEarned"/>.
     /// </param>
     /// <param name="ConstructionPattern">
     /// How the key is built in that file. Matched against the source so a converter that stops
-    /// building keys stops exempting them.
+    /// building keys stops exempting them. <see langword="null"/> for a packaged builder.
+    /// </param>
+    /// <param name="PackageKeys">
+    /// For a builder that ships in a package: the keys it builds, asked of the package itself.
     /// </param>
     private sealed record ComputedFamily(
-        string KeyPattern, string BuiltBy, string ConstructionPattern);
+        string KeyPattern, string BuiltBy, string? ConstructionPattern,
+        Func<IEnumerable<string>>? PackageKeys = null);
 
     private static readonly ComputedFamily[] Families =
     [
+        // LIBRARY GUARD NARROWED — plans/00005. The builder was
+        // src/LayeredEditors.Avalonia/Converters/AppSeverityToBrushConverter.cs; it now ships in the
+        // Bennewitz.Ninja.ScopedEditors.AvaloniaUI package, so the package is asked for its keys.
         new(@"^AppSeverity\w+Brush$",
-            "src/LayeredEditors.Avalonia/Converters/AppSeverityToBrushConverter.cs",
-            @"\$""AppSeverity\{\w+\}Brush"""),
+            "package: " + nameof(AppSeverityToBrushConverter),
+            null,
+            static () => Enum.GetValues<AppSeverity>().Select(AppSeverityToBrushConverter.KeyFor)),
         new(@"^AppChangeKind\w+Brush$",
             "src/ClaudeForge/Converters/ChangeKindToBrushConverter.cs",
             @"\$""AppChangeKind\{\w+\}Brush"""),
@@ -140,12 +127,6 @@ public sealed class NoDeadBrushTokensTests
                 continue;
             }
 
-            // See DeadWithOpenCodeForge: exempt until Phase E, not forgiven.
-            if (DeadWithOpenCodeForge.Contains(key, StringComparer.Ordinal))
-            {
-                continue;
-            }
-
             int declared = Regex.Matches(axaml, $@"x:Key\s*=\s*""{Regex.Escape(key)}""").Count;
             int uses = Regex.Matches(axaml, Regex.Escape(key)).Count - declared
                        + Regex.Matches(code, Regex.Escape(key)).Count;
@@ -177,6 +158,22 @@ public sealed class NoDeadBrushTokensTests
 
         foreach (ComputedFamily family in Families)
         {
+            if (family.PackageKeys is not null)
+            {
+                // Earned only if the package still builds at least one key, and every key it builds
+                // has this shape — otherwise the pattern is exempting tokens nothing asks for.
+                string[] keys = [.. family.PackageKeys()];
+                string[] offShape = [.. keys.Where(k => !Regex.IsMatch(k, family.KeyPattern))];
+                if (keys.Length == 0 || offShape.Length > 0)
+                {
+                    stale.Add(
+                        $"{family.KeyPattern}: {family.BuiltBy} built {keys.Length} key(s), "
+                        + $"{offShape.Length} not of that shape: {string.Join(", ", offShape)}");
+                }
+
+                continue;
+            }
+
             string path = Path.Combine(repoRoot, family.BuiltBy.Replace('/', Path.DirectorySeparatorChar));
 
             if (!File.Exists(path))
@@ -189,7 +186,7 @@ public sealed class NoDeadBrushTokensTests
             // ("Looks up scope-brush-{id} from application resources"), so matching the raw file
             // would let a doc comment keep the exemption alive after the code that built the key
             // was deleted — the exemption would then hide every token of that shape, permanently.
-            if (!Regex.IsMatch(StripCsComments(File.ReadAllText(path)), family.ConstructionPattern))
+            if (!Regex.IsMatch(StripCsComments(File.ReadAllText(path)), family.ConstructionPattern!))
             {
                 stale.Add(
                     $"{family.KeyPattern}: {family.BuiltBy} no longer builds a key matching "

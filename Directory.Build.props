@@ -6,7 +6,8 @@
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <!-- ⛔ THE SINGULAR FORM IS LOAD-BEARING, and two projects once believed otherwise.
-             src/ClaudeForge and src/LayeredEditors.Avalonia.Services each declared a plural
+             src/ClaudeForge and LayeredEditors.Avalonia.Services (since plans/00005 the AppServices
+             packages) each declared a plural
              <TargetFrameworks> adding net10.0-windows10.0.19041.0, with comments saying it took
              precedence over this property. It does not: MSBuild cross-targets only when
              TargetFramework is EMPTY, so both projects built net10.0 alone for the whole life of
@@ -31,7 +32,7 @@
           The DEFAULT product, which is now the shared library family rather than either app.
 
           ⚠ This used to be `ClaudeForge`, which stamped that name into every assembly in the
-          repository — including AgentForge.* and LayeredEditors.*, which are product-neutral by
+          repository — including AgentForge.* and JsonC, which are product-neutral by
           design and are consumed by both apps. A shared library reporting itself as one of its
           two consumers is wrong in a file properties dialog, in a crash dump, and in any
           support bundle that lists loaded modules.

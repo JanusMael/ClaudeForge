@@ -82,15 +82,15 @@
     <!--
       ══ NuGet package identity and metadata ══  (plans/00001, work item 2)
 
-      Eleven of the seventeen projects under src/ become private NuGet packages on GitHub
+      Six of the nine projects under src/ become private NuGet packages on GitHub
       Packages; the two apps and the four product-specific halves do not.  This block says
       what a package IS, once, instead of seventeen times.
 
       ⛔ WHICH projects pack is the one thing it deliberately does NOT decide.  Every csproj
       under src/ states <IsPackable> for itself, true or false, and
       PackageMetadataTests.EverySrcProjectStatesIsPackableExplicitly fails if one defaults.
-      A guard asserting "the packable set is exactly these eleven" would need a list of the
-      eleven — the copy-of-the-truth this repo's guards exist to avoid.  Asserting that
+      A guard asserting "the packable set is exactly these six" would need a list of the
+      six — the copy-of-the-truth this repo's guards exist to avoid.  Asserting that
       nothing DEFAULTS is the non-vacuous form: a new project cannot be published, or
       skipped, by being forgotten.
     -->
@@ -100,7 +100,7 @@
 
           ⚠ $(AssemblyName) is NOT usable here, and using it would fail silently.
           Directory.Build.props is imported at the TOP of every csproj, before that file's
-          own <AssemblyName> is assigned, so it evaluates EMPTY and all eleven packages
+          own <AssemblyName> is assigned, so it evaluates EMPTY and all six packages
           would be called "Bennewitz.Ninja." — an id collision rather than an error.
           $(MSBuildProjectName) is the csproj file name; it is defined before any import,
           and it is what the SDK defaults AssemblyName to anyway.

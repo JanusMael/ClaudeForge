@@ -68,15 +68,15 @@ public sealed class AssemblyLayeringTests
     /// it, because the other <c>AgentForge.*</c> projects still satisfy "at least one".
     /// </para>
     /// <para>
-    /// ⓘ <c>LayeredEditors.*</c> is listed here for the first time as well. It was never scanned,
-    /// which was a gap rather than a decision: those projects are every bit as product-neutral.
-    /// Adding them found no violations.
+    /// ⓘ <c>LayeredEditors.*</c> was listed here too until plans/00005 moved that family into the
+    /// <c>Bennewitz.Ninja.ScopedEditors</c> packages. Its glob went with it: a stale
+    /// <c>LayeredEditors.*.dll</c> left in a test output folder would otherwise be loaded and
+    /// scanned as if it were still shared code built here.
     /// </para>
     /// </remarks>
     private static readonly string[] SharedProjectGlobs =
     [
         "AgentForge.*.csproj",
-        "LayeredEditors.*.csproj",
         "JsonC.csproj",
         "JsonC.*.csproj",
     ];
@@ -199,7 +199,7 @@ public sealed class AssemblyLayeringTests
     {
         // Mirrors SharedProjectGlobs. JsonC is matched exactly rather than as JsonC.*.dll, so
         // that its TEST assembly is not loaded and inspected as if it were a shared library.
-        string[] assemblyGlobs = ["AgentForge.*.dll", "LayeredEditors.*.dll", "JsonC.dll"];
+        string[] assemblyGlobs = ["AgentForge.*.dll", "JsonC.dll"];
 
         string[] sharedAssemblies =
         [

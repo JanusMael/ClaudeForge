@@ -285,7 +285,7 @@
         AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
                 <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
                      FileDrop is a reusable attached-property behaviour in
-                     LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
+                     ScopedEditors.AvaloniaUI.Behaviors that hides the Avalonia 12
                      IDataTransfer / DataFormat.File surface and filters payloads by
                      extension before invoking the command.  Routes to
                      RestoreFromDroppedArchiveCommand with the local file path as

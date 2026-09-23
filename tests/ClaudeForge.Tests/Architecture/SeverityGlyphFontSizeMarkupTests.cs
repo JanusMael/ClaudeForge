@@ -35,13 +35,17 @@ public sealed class SeverityGlyphFontSizeMarkupTests
     /// passes vacuously, and the zero then gets quoted as evidence the surfaces are fine.
     /// </summary>
     /// <remarks>
-    /// Nine at the time of writing: two in each app's <c>PropertyEditorWrapper</c> (the row dot
-    /// and the <c>IsDangerNow</c> banner), plus the nav badge, search hit, both effective-value
-    /// grids, the save dialog and OpenCodeForge's nav badge.
+    /// Nine when first written: two in each app's <c>PropertyEditorWrapper</c> (the row dot and
+    /// the <c>IsDangerNow</c> banner), plus the nav badge, search hit, both effective-value grids,
+    /// the save dialog and OpenCodeForge's nav badge. The shared wrapper's two now ship in the
+    /// <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c> package (plans/00005).
     /// </remarks>
     // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 9; one site was OpenCodeForge's.
-    // Restore 9 when OpenCodeForge rejoins.
-    private const int ExpectedGlyphSites = 8;
+    // Restore it when OpenCodeForge rejoins.
+    // LIBRARY GUARD NARROWED — plans/00005. Was 8; the shared PropertyEditorWrapper's two sites
+    // (the row dot and the IsDangerNow banner) moved to the Bennewitz.Ninja.ScopedEditors package,
+    // where no markup scan checks them yet. Restore that coverage IN THAT REPOSITORY. See PROGRESS.md.
+    private const int ExpectedGlyphSites = 6;
 
     /// <summary>
     /// A <c>TextBlock</c> whose <c>Text</c> comes from the severity glyph converter. Attributes
@@ -140,9 +144,11 @@ public sealed class SeverityGlyphFontSizeMarkupTests
         }
 
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 7; one of the seven was
-        // OpenCodeForge's. Restore 7 when OpenCodeForge rejoins.
-        Assert.IsTrue(users >= 6,
-            $"only {users} file(s) use SeverityToFontSize; six render a severity glyph, so the "
+        // OpenCodeForge's. Restore it when OpenCodeForge rejoins.
+        // LIBRARY GUARD NARROWED — plans/00005. Was 6; the shared PropertyEditorWrapper moved to the
+        // Bennewitz.Ninja.ScopedEditors package. Restore that coverage IN THAT REPOSITORY.
+        Assert.IsTrue(users >= 5,
+            $"only {users} file(s) use SeverityToFontSize; five render a severity glyph, so the "
             + "scan has lost its subjects and would pass without checking anything");
 
         Assert.IsTrue(missing.Count == 0,

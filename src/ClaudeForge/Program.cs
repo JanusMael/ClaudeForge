@@ -70,7 +70,7 @@ internal sealed class Program
         //     ClaudeForge: every PropertyEditorWrapper instantiated in this app
         //     resolves to Controls/PropertyEditorWrapper.axaml, including the
         //     recursive ones inside it.  The wiring matters anyway, because
-        //     LayeredEditors.Avalonia ships as a package and its wrapper is the
+        //     ScopedEditors.AvaloniaUI ships as a package and its wrapper is the
         //     default surface an external consumer gets — and because the
         //     deferred LEAF-EDITORS-4.2 consolidation would make it render here.
         //     Must run before any wrapper XAML is parsed (the {x:Static} markup

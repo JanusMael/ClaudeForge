@@ -104,7 +104,7 @@ public partial class BackupRestoreView : UserControl
     }
 
     // Drag-drop of a backup .zip onto the Restore tab is wired declaratively
-    // in BackupRestoreView.axaml via the LayeredEditors.Avalonia.Behaviors
+    // in BackupRestoreView.axaml via the ScopedEditors.AvaloniaUI.Behaviors
     // FileDrop attached behaviour:
     //
     //     behaviors:FileDrop.AllowedExtensions="zip"

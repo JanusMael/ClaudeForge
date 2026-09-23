@@ -32,9 +32,12 @@ the published product; the second app grew out of it rather than replacing it.
 
 ## How the assemblies layer
 
-Four families and one standalone, and the prefix tells you the layer:
+Three families and one standalone in this tree, one family consumed as packages, and the prefix
+tells you the layer:
 
-- **`LayeredEditors.*`** — the schema-driven editor library. Knows about JSON Schema, property
+- **`Bennewitz.Ninja.ScopedEditors.*`** — the schema-driven editor library, consumed from
+  nuget.org with its services in `Bennewitz.Ninja.AppServices.*`. It was `LayeredEditors.*` in
+  this tree until plans/00005 moved it to its own repository. Knows about JSON Schema, property
   editors, scopes and layered values. Knows nothing about Claude or OpenCode.
 - **`AgentForge.*`** — product-neutral agent-configuration machinery: the SDK, the settings
   core, backup/restore, artifact resolution, and the Avalonia shell (nav, search, save,
@@ -76,7 +79,7 @@ Where a product genuinely needs privileged access to neutral internals, the seam
 holds.
 
 ⭐ **Those grants are no longer per-project.** `AssemblyInfo.InternalsVisibleTo.cs` sits beside
-`ClaudeForge.slnx` and is **linked** — never copied — by all 29 projects as
+`ClaudeForge.slnx` and is **linked** — never copied — by every project as
 `../../AssemblyInfo.InternalsVisibleTo.cs`, relative and forward-slashed so Linux and macOS resolve
 it as Windows does. One list that is obviously complete, in place of a dozen that were individually
 precise and collectively unknowable.
@@ -91,7 +94,7 @@ or a raw `<AssemblyAttribute>`, both of which were in use before the consolidati
 
 ## The package layer
 
-The eleven shared projects — the `AgentForge.*` and `LayeredEditors.*` families plus `JsonC` —
+The six shared projects — the `AgentForge.*` family plus `JsonC` —
 are also published as NuGet packages, ids prefixed `Bennewitz.Ninja.`, to this repository's
 GitHub Packages feed. See [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)
 for the reasoning and the measurements.
@@ -144,7 +147,7 @@ script refuses on three grounds before the first upload and pushes one package a
 a day-resolution CalVer that also means **one package release per calendar day**: a second on the
 same day collides with an immutable version, and the recovery is tomorrow.
 
-⚠ **The tag prefix is deliberately neither app's.** The eleven serve both products, so riding
+⚠ **The tag prefix is deliberately neither app's.** The six serve both products, so riding
 ClaudeForge's `v*.*.*` would leave OpenCodeForge unable to publish shared code and tie a library
 fix to cutting a full app release.
 

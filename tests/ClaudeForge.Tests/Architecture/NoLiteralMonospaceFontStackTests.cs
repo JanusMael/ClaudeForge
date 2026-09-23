@@ -1,4 +1,7 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Avalonia.Headless;
+using Avalonia.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 
@@ -16,7 +19,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// </para>
 /// <para>
 /// ⭐ <b>The font is BUNDLED, which is what makes the rule enforceable.</b> JetBrains Mono NL
-/// ships inside <c>LayeredEditors.Avalonia</c>, so there is no platform stack left to argue
+/// ships inside the <c>Bennewitz.Ninja.ScopedEditors.AvaloniaUI</c> package (it was
+/// <c>LayeredEditors.Avalonia</c> until plans/00005), so there is no platform stack left to argue
 /// about — a literal stack is now always wrong, not merely inconsistent.
 /// </para>
 /// <para>
@@ -119,9 +123,16 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// <c>x:Static</c>, so a missing member is a build error — loud, and it duly failed a
     /// package-mode build. The font URI is a STRING; nothing checks it at all.
     /// </para>
+    /// <para>
+    /// ⚠ <b>Since plans/00005 the fonts ship in a PACKAGE, so there is no folder to look in.</b> A URI
+    /// naming an assembly built in this tree is still checked on disk; any other is resolved the way
+    /// the running app resolves it — Avalonia's <c>AssetLoader</c> over the consumed assembly's
+    /// embedded resources — so a renamed package assembly or a moved folder fails here rather than
+    /// at first layout.
+    /// </para>
     /// </remarks>
     [TestMethod]
-    public void EveryBundledFontUriPointsAtRealFontFiles()
+    public async Task EveryBundledFontUriPointsAtRealFontFiles()
     {
         Regex fontUri = new(
             @"avares://(?<asm>[^/]+)/(?<path>[^#""<]+)#",
@@ -144,12 +155,24 @@ public sealed class NoLiteralMonospaceFontStackTests
 
                 string assembly = m.Groups["asm"].Value;
                 string folder = m.Groups["path"].Value.Trim('/');
-                string onDisk = Path.Combine(RepoRoot(), "src", assembly, folder.Replace('/', Path.DirectorySeparatorChar));
 
-                if (!Directory.Exists(onDisk) ||
-                    Directory.GetFiles(onDisk, "*.ttf").Length == 0)
+                if (Directory.Exists(Path.Combine(RepoRoot(), "src", assembly)))
                 {
-                    offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf at {onDisk}");
+                    string onDisk = Path.Combine(RepoRoot(), "src", assembly, folder.Replace('/', Path.DirectorySeparatorChar));
+
+                    if (!Directory.Exists(onDisk) ||
+                        Directory.GetFiles(onDisk, "*.ttf").Length == 0)
+                    {
+                        offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf at {onDisk}");
+                    }
+
+                    continue;
+                }
+
+                int packaged = await PackagedFontCountAsync(assembly, folder);
+                if (packaged == 0)
+                {
+                    offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf embedded in the consumed {assembly} assembly");
                 }
             }
         }
@@ -167,6 +190,26 @@ public sealed class NoLiteralMonospaceFontStackTests
             "these silently, so this would ship as a wrong typeface rather than as an error.\n  " +
             string.Join("\n  ", offenders));
     }
+
+    /// <summary>
+    /// How many <c>.ttf</c> assets the consumed <paramref name="assembly"/> embeds under
+    /// <paramref name="folder"/>, asked of Avalonia's own loader. 0 when the assembly cannot be
+    /// loaded, because that is exactly the state in which the app would draw the fallback face.
+    /// Runs on the headless session: <c>AssetLoader</c> needs a platform to resolve through.
+    /// </summary>
+    private static Task<int> PackagedFontCountAsync(string assembly, string folder) =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly()).Dispatch(() =>
+        {
+            try
+            {
+                return AssetLoader.GetAssets(new Uri($"avares://{assembly}/{folder}/"), null)
+                    .Count(a => a.AbsolutePath.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (FileNotFoundException)
+            {
+                return 0;
+            }
+        }, CancellationToken.None);
 
     /// <summary>
     /// Matches a font stack that is asking for a fixed-pitch face. Deliberately broad: the point

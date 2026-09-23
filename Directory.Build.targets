@@ -4,7 +4,7 @@
       ══ The package version ══  (plans/00001, work item 3)
 
       One stamp, one source. AutoVersioning computes the version the assemblies carry and now
-      also exposes it as a plain MSBuild property, readable before compilation; the eleven
+      also exposes it as a plain MSBuild property, readable before compilation; the six
       packages take their version from that same property, so a package and the assembly inside
       it agree BY CONSTRUCTION rather than by two conventions that happen to line up.
 
@@ -12,7 +12,7 @@
       AutoPackageVersion is defined by the AutoVersioning package's own props, which arrive via
       the NuGet-generated import — AFTER Directory.Build.props. Assigned there it evaluates to
       EMPTY, and an empty PackageVersion does not fail: the SDK's default assignment has already
-      run, so all eleven pack at 1.0.0 exactly as they did before. This file is imported last,
+      run, so all six pack at 1.0.0 exactly as they did before. This file is imported last,
       which is the whole reason it is this file.
 
       ⚠ THE CONDITION IS NOT DEFENSIVE PADDING. Without it, a build in which AutoVersioning has
@@ -22,7 +22,7 @@
       from deep inside NuGet naming nothing the reader wrote down.
 
       ⓘ The canary passes -p:PackageVersion=<throwaway> on the command line. That is a GLOBAL
-      property and outranks this assignment, which is what lets one script pack eleven packages
+      property and outranks this assignment, which is what lets one script pack six packages
       at a per-run prerelease version without touching this file.
 
       PackageVersionLockstepTests reads the stamp back out of a BUILT DLL rather than out of the
@@ -57,8 +57,8 @@
       (ClaudeForge.Sdk.Claude, OpenCode.Avalonia, …) stays a ProjectReference, because none of
       those is packaged.
 
-      ⚠ WHICH PROJECTS SWITCH: every project that is not itself one of the eleven — both apps,
-      all four product-specific libraries, the sample, and all twelve test projects. The eleven
+      ⚠ WHICH PROJECTS SWITCH: every project that is not itself one of the six — the app, every
+      product-specific library, the sample, and every test project. The six
       keep referencing EACH OTHER by project in both modes, which is what `IsPackable != true`
       expresses. ⓘ The plan says "both apps and all twelve test projects"; that list is
       incomplete. A product library left on ProjectReference re-creates the duplicate-assembly
@@ -106,8 +106,8 @@
       hooks — plain evaluation, so restore and build see identical items and cannot disagree.
     -->
     <ItemGroup Condition="'$(_SwitchSharedReferences)' == 'true'">
-        <!-- The eleven, globbed off disk. Two family rules plus one exception, which is one
-             more than anybody wants: JsonC is a general-purpose JSONC reader with no agent
+        <!-- The six, globbed off disk. One family rule plus one exception, which is one more
+             than anybody wants: JsonC is a general-purpose JSONC reader with no agent
              knowledge, so it was renamed out of the AgentForge family before first publish
              rather than carrying a name that overclaims. It is named here explicitly because
              it is a family of one. PackageMetadataTests asserts this set and the set of
@@ -127,7 +127,7 @@
         <_SharedProjectReference Remove="@(_NonSharedProjectReference)" />
 
         <!-- Product-specific references stay projects; the shared ones become packages. Only
-             the ones this project actually referenced — adding all eleven everywhere would
+             the ones this project actually referenced — adding all six everywhere would
              compile fine and hide a missing dependency. -->
         <ProjectReference Remove="@(ProjectReference)" />
         <ProjectReference Include="@(_NonSharedProjectReference)" />
@@ -144,7 +144,7 @@
     <Target Name="ValidateSharedPackageVersion"
             BeforeTargets="CollectPackageReferences;BeforeBuild"
             Condition="'$(_SwitchSharedReferences)' == 'true' And '$(SharedPackageVersion)' == ''">
-        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the eleven Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value: 'pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly' prints the version it packed. See plans/00001 work item 5." />
+        <Error Text="UseSharedPackages=true needs SharedPackageVersion. It is the version of the six Bennewitz.Ninja.* packages to consume, and there is no safe default: falling back to the last-packed version would let a canary validate yesterday's build. Pack first and pass the same value: 'pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly' prints the version it packed. See plans/00001 work item 5." />
     </Target>
 
     <!--
@@ -189,7 +189,7 @@
             BeforeTargets="PrepareForPublish"
             Condition="'$(Configuration)' == 'Release' And '$(OutputType)' != 'Library' And '$(IsPackable)' != 'true'">
         <Error Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' != 'true'"
-               Text="Release publish of $(MSBuildProjectName) with UseSharedPackages unset. The release must be built from the eleven Bennewitz.Ninja.* packages, not from ProjectReference: that claim lived in two comments and was false for every release ever cut (plans/00003). Pass -p:UseSharedPackages=true — SharedPackageVersion is the committed pin in the root Directory.Build.props, so it needs no other input. If this publish deliberately wants project references, as the CI trim gate and the boot smoke do because neither has feed credentials, pass -p:AllowProjectReferencePublish=true; it is recorded by name in the publish log and the provenance record. See plans/00003, Phase D step D3." />
+               Text="Release publish of $(MSBuildProjectName) with UseSharedPackages unset. The release must be built from the six Bennewitz.Ninja.* packages, not from ProjectReference: that claim lived in two comments and was false for every release ever cut (plans/00003). Pass -p:UseSharedPackages=true — SharedPackageVersion is the committed pin in the root Directory.Build.props, so it needs no other input. If this publish deliberately wants project references, as the CI trim gate and the boot smoke do because neither has feed credentials, pass -p:AllowProjectReferencePublish=true; it is recorded by name in the publish log and the provenance record. See plans/00003, Phase D step D3." />
         <Message Condition="'$(UseSharedPackages)' != 'true' And '$(AllowProjectReferencePublish)' == 'true'"
                  Importance="high"
                  Text="ESCAPE HATCH USED: AllowProjectReferencePublish=true. $(MSBuildProjectName) is publishing $(Configuration) from ProjectReference, NOT from the Bennewitz.Ninja.* packages. Recorded deliberately — plans/00003 D3 requires a departure from package mode to name itself. A shipping release must never take this path." />

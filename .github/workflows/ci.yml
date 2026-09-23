@@ -132,7 +132,7 @@ jobs:
 
   # ── The package canary ───────────────────────────────────────────────────────
   #
-  # Eleven projects under src/ ship as NuGet packages on GitHub Packages (plans/00001) — PUBLIC,
+  # Six projects under src/ ship as NuGet packages on GitHub Packages (plans/00001) — PUBLIC,
   # though the feed still requires a token for every read. Everything else
   # consumes them as ProjectReference in development and PackageReference under
   # UseSharedPackages=true. Development mode is what every human runs, so PACKAGE mode is the
@@ -180,7 +180,7 @@ jobs:
         shell: pwsh
         run: ./scripts/package-canary.ps1 -RuntimeIdentifier linux-x64
 
-  # ── Does the app restore the eleven FROM THE PUBLISHED FEED? ────────────────
+  # ── Does the app restore the six FROM THE PUBLISHED FEED? ────────────────
   #
   # plans/00003 Phase D, D1 and D2. The canary job above proves package MODE works; it packs
   # locally and answers from artifacts/localfeed, so it says nothing about the feed. This job
@@ -230,7 +230,7 @@ jobs:
 
   # ── The published version, end to end ───────────────────────────────────────
   #
-  # plans/00003, Phase D step D4. `feed-restore` proves the eleven RESOLVE from the feed; this
+  # plans/00003, Phase D step D4. `feed-restore` proves the six RESOLVE from the feed; this
   # job proves the repository still WORKS when they do — the whole suite plus a real trimmed
   # publish, in package mode, at the version pinned in the root Directory.Build.props.
   #

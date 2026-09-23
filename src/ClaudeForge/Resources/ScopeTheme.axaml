@@ -3,7 +3,7 @@
 
     <!--
         Claude-specific scope badge colors.
-        Keys follow the convention expected by LayeredEditors.Avalonia.Converters.ScopeToBrushConverter:
+        Keys follow the convention expected by Converters/ScopeToBrushConverter.cs:
         "scope-brush-{scope.Id}" where Id is the lowercase IEditorScope.Id.
     -->
 

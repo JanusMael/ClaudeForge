@@ -200,8 +200,11 @@ The UI also reported `v2026.3.922.0`.
 | 3 · service APIs | ✅ Done in code — every ignored `void`/`bool` now takes the command's token and a result; `Cancelled` answered explicitly |
 | 4 · `avares://` | ✅ Done in code — ⏳ the runtime font check (resolved family, with a control) is still owed |
 | 5 · F12 windows | ✅ Done in code, on the `.924` hook — ⏳ "windows that FILL" in a real run is still owed |
-| 6 · delete the family | ⏳ Unblocked — both test ports have landed (AppServices `8b2caf2`, ScopedEditors `507b308`); port 1 verified here (10 = 10), port 2 not yet |
-| 7 – 10 | After 6. `ClaudeForge.Tests` fails 4 of 1,760 today, each owned by one of these steps |
+| 6 · delete the family | ✅ Done — `75d8961`: 5 `src` + 2 test projects, their baselines, slnx entries, friend grants and the selector line |
+| 7 · guards that named the family | ✅ Done — every narrowed guard canaried BOTH ways (drift 12); prose swept eleven → six |
+| 8 · `PublicSurface` baselines | ⏳ Next — the diff is the namespace move and nothing else, read line by line before it is accepted |
+| 9 · real `.924` | ⏳ Waits on the publish — see drift 6 for the swap |
+| 10 · full gate | ⏳ After 9 |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00005` is never edited:
 
@@ -225,7 +228,7 @@ The UI also reported `v2026.3.922.0`.
    `.924`** rather than assume the rename is uniform.
 4. **Neither package repository carries tests for the moved code** — the move carried source only.
    Maintainer, 2026-09-23: **port first; step 6 waits.** About 33 files, including a fourth category
-   the plan's list missed: `tests/ClaudeForge.Tests/Services/ShellLauncherWindowsTerminalTests.cs`,
+   the plan's list missed: `ShellLauncherWindowsTerminalTests.cs` (ported to `AppServices.Tests/Shell/`, deleted here),
    which exercises `ShellLauncher` internals whose `InternalsVisibleTo` grant did not travel.
 5. **The baseline is 3,609, not 3,600.** PR #74 links `HeadlessSessionBootstrapTests.cs` (3 tests) into
    three test projects. ⚠ Two of those are the `LayeredEditors` test projects step 6 deletes, so the
@@ -263,6 +266,32 @@ The UI also reported `v2026.3.922.0`.
     only in comments". It resolves `avares://<assembly>/Assets/Fonts` to `src/<assembly>/`, so it is
     coupled to the family through the URI's **data**, which a grep for the literal cannot see. It is
     step 7's work, and the one guard that validates step 4's font URIs statically.
+12. **Step 7 — what each guard became, and the coverage that left with the library.** Rule 1 held:
+    nothing was deleted without naming where its subject is now checked.
+
+    | Guard | Now | Canary |
+    |---|---|---|
+    | `DangerSurfaceMarkupTests` | app wrapper only; file floor 5 | ✅ floor and `IsDangerNow` banner both redden |
+    | `SeverityGlyphFontSizeMarkupTests` | 6 sites (was 8), 5 files | ✅ |
+    | `AxamlAccessibilityCoverageTests` | library project dropped, 6 directories | ✅ ratchet reddens on ONE removed attribute (a line drop that broke the XML "passed" the first time for the wrong reason) |
+    | `ThemeResourceIntegrityTests` | the two `LE.*` tests left; NEW guard reads the package's user-string heap for the `App*` tokens it asks the app for | ✅ both ways; found 2 keys + the `AppSeverity` fragment |
+    | `NoDeadBrushTokensTests` | severity family re-earned by calling the package's `KeyFor`; the `LE.Danger*` exemption retired — its named exit (the tokens leaving) was reached | ✅ both tests redden, and the exemption is shown load-bearing |
+    | `NoLiteralMonospaceFontStackTests` | a packaged URI is resolved by Avalonia's `AssetLoader` on the headless session | ✅ old assembly name and wrong folder each redden with the URI named |
+    | `PackageMetadataTests`, `AssemblyLayeringTests` | `LayeredEditors.` prefix / globs removed — a stale DLL in a test `bin/` would otherwise be scanned as shared code | — |
+    | `scripts/verify-feed-restore.ps1` | 11 ids → 6 — it would have failed CI's `feed-restore` | — |
+
+    ⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:** the
+    shared `PropertyEditorWrapper`'s danger banner and glyph sizing, the `LE.*` token
+    reference/declaration consistency, and the AXAML accessibility scan of the package's own
+    controls. (`TemplatePartAutomationNameTests` and `ThemedBrushTrackingTests` DID move — they are in
+    `ScopedEditors.Tests`.) ⓘ The F12 windows kept their English literals when they moved into the
+    app, so they sit outside the resx rule; that is inherited, not new.
+13. ⚠ **Drift 9's word "silent" may be wrong for the font sites — REPORTED, not yet measured here.**
+    The ScopedEditors peer measured that a single-family `FontFamily` with a bad `avares://` path
+    THROWS at first layout (*"Could not create glyphTypeface"*); only a fallback list degrades
+    silently. `NoLiteralMonospaceFontStackTests`' remarks still say "does not throw". Step 4's owed
+    runtime check — lay out text in each family, with a bad-path control — settles it; correct the
+    remark then, from the measurement.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
@@ -1946,7 +1975,7 @@ then the packaging plan's three unblocked items.
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
 
-`src/ClaudeForge`, `OpenCodeForge` and `src/LayeredEditors.Avalonia.Services` each declared
+`src/ClaudeForge`, `OpenCodeForge` and `LayeredEditors.Avalonia.Services` each declared
 `net10.0-windows10.0.19041.0` so `DefaultShareService` could compile against MAUI Essentials — each
 with a comment asserting the plural `<TargetFrameworks>` took precedence over the root's singular
 `<TargetFramework>`. **It does not.** MSBuild cross-targets only when `TargetFramework` is EMPTY,

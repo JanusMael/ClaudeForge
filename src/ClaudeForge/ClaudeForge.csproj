@@ -313,7 +313,7 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Serilog (core + File + Trace sinks) flows transitively from the
-             LayeredEditors.Avalonia.Diagnostics project reference below, which
+             Bennewitz.Ninja.AppServices.AvaloniaUI package reference below, which
              publishes those packages with PrivateAssets="". No direct Serilog
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
