@@ -171,9 +171,18 @@ public sealed class SeverityGlyphFontSizeMarkupTests
 
             yield return (
                 Path.GetRelativePath(repoRoot, path).Replace('\\', '/'),
-                File.ReadAllText(path));
+                StripXmlComments(File.ReadAllText(path)));
         }
     }
+
+    /// <summary>
+    /// Markup only. ⛔ Every check here is a text search, and the files document the very
+    /// bindings they check in their own comments — <c>PropertyEditorWrapper.axaml</c> names
+    /// <c>DangerAccessibleText</c> in the comment above its banner. Measured 2026-09-23: with
+    /// all three <c>{Binding DangerAccessibleText}</c> removed, the comment kept this class green.
+    /// </summary>
+    private static string StripXmlComments(string text) =>
+        Regex.Replace(text, "<!--.*?-->", " ", RegexOptions.Singleline);
 
     private static string FindRepoRoot()
     {
