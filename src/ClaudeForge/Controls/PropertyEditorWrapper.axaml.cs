@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;
 

@@ -10,9 +10,10 @@ using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Views;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Controls;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls;
+using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge;

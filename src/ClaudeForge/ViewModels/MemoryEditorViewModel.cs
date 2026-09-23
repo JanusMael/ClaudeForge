@@ -2,9 +2,9 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;

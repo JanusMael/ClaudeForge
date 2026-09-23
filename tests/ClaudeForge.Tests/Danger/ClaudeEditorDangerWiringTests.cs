@@ -3,8 +3,8 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 

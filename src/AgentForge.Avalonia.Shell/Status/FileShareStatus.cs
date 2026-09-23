@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 

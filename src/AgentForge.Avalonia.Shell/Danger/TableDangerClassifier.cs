@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
 

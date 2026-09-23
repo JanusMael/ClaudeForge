@@ -33,12 +33,17 @@
         <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
     </ItemGroup>
 
-    <!-- plans/00005 step 1: the nuget.org packages that replace the LayeredEditors projects.
-         Both are referenced for now; the LayeredEditors ProjectReferences below go in
-         step 2, together with the namespace changes that make them unnecessary.
+    <!-- plans/00005: the nuget.org packages that replaced the LayeredEditors projects.
          ⚠ This project is PACKABLE: every reference here becomes a dependency of its
          published package, so it lists only what its source actually uses. -->
     <ItemGroup>
+        <!--
+            For DialogMessage only. The SDK produces dialog models for a host to render, and that
+            contract is host-agnostic rather than agent-specific, so it lives in the service
+            abstractions, which depend on nothing. This is the product layer consuming the library
+            layer, the direction the repository split took. Before the split this project pulled in
+            the whole editor abstractions for this one type; it now depends on no editor code at all.
+        -->
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
     </ItemGroup>
 
@@ -57,13 +62,6 @@
              implementations, so the walk that serves Claude is the same one a second product
              composes differently. Framework-only and product-free — the edge points the safe way. -->
         <ProjectReference Include="..\AgentForge.Artifacts\AgentForge.Artifacts.csproj"/>
-        <!--
-            For DialogMessage only. The SDK produces dialog models for a host to render, and that
-            contract is host-agnostic rather than agent-specific — so it lives in the editor
-            abstractions, which depend on nothing. This is the product layer consuming the library
-            layer, which is the direction the eventual repository split needs.
-        -->
-        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
     </ItemGroup>
 
 </Project>

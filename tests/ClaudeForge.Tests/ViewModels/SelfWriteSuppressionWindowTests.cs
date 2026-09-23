@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;

@@ -22,7 +22,7 @@ using PermissionBucket = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matc
 using PermissionDefaultMode = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionDefaultMode;
 using PermissionRule = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionRule;
 using PermissionRuleNormalizer = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.PermissionRuleNormalizer;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 // Alias the SDK to disambiguate ConfigScope and reach the typed Permissions
 // accessor at every call site. Mirrors the previous editor migrations.

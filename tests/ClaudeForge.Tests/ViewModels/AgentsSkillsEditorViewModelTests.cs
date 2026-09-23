@@ -1,10 +1,10 @@
 using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

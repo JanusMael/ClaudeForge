@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Messages;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;

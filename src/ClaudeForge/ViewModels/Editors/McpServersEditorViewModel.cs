@@ -10,7 +10,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using McpServer = Bennewitz.Ninja.AgentForge.Sdk.McpServers.McpServer;

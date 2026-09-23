@@ -3,7 +3,8 @@ using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

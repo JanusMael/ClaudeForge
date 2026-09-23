@@ -1,6 +1,6 @@
 using System.Text;
 
-using Bennewitz.Ninja.LayeredEditors.ViewModels;
+using Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 

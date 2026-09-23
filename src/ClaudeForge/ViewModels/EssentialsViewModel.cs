@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -12,7 +12,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;

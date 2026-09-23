@@ -5,7 +5,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 

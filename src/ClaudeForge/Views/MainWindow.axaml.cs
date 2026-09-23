@@ -5,10 +5,10 @@ using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
+using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.Views;

@@ -32,19 +32,16 @@
         <PackageReference Include="Semi.Avalonia" Version="12.1.0" PrivateAssets="" />
     </ItemGroup>
 
-    <!-- plans/00005 step 1: the nuget.org packages that replace the LayeredEditors projects.
-         Both are referenced for now; the LayeredEditors ProjectReferences below go in
-         step 2, together with the namespace changes that make them unnecessary. -->
+    <!-- plans/00005: the nuget.org packages that replaced the LayeredEditors projects. -->
     <ItemGroup>
+        <!-- Neutral host-service interfaces (IPermissionPathPicker lives here: it is a file
+             picker, not a permissions type). -->
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
         <ProjectReference Include="..\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj" />
-        <!-- Neutral host-service interfaces (IPermissionPathPicker lives here: it is a file
-             picker, not a permissions type). -->
-        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
     </ItemGroup>
 
 </Project>

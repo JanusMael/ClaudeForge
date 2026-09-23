@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-             xmlns:libctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:libctrl="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls"
              xmlns:controls="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.AboutEditorView"

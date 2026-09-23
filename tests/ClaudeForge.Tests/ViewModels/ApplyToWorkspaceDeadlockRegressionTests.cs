@@ -1,10 +1,10 @@
 ﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel;
+using PropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel;
 // the App-bridge StringPropertyEditorViewModel was deleted;
 // reference the library leaf via alias.
-using StringEditor = Bennewitz.Ninja.LayeredEditors.ViewModels.StringPropertyEditorViewModel;
+using StringEditor = Bennewitz.Ninja.ScopedEditors.ViewModels.StringPropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

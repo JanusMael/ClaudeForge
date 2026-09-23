@@ -6,8 +6,8 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
+using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Localization;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge;

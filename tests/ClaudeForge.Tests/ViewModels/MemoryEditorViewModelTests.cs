@@ -11,7 +11,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

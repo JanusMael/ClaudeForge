@@ -31,46 +31,35 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     </ItemGroup>
 
-    <!-- plans/00005 step 1: the nuget.org packages that replace the LayeredEditors projects.
-         Both are referenced for now; the LayeredEditors ProjectReferences below go in
-         step 2, together with the namespace changes that make them unnecessary.
-         ⚠ This project is PACKABLE: every reference here becomes a dependency of its
-         published package, so it lists only what its source actually uses. -->
+    <!-- plans/00005: the editor and service libraries are external nuget.org packages, split out of
+         this repository. ⚠ This project is PACKABLE: every reference here becomes a dependency of
+         its published package, so it lists only what its source actually uses. All are neutral
+         libraries with no product knowledge, so the layering rule is unaffected. -->
     <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
+        <!-- NavigationNodeViewModel, used by deep-path resolution. -->
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
+        <!-- The editor abstractions the adapters implement: IEditorWorkspace, IEditorScope,
+             IEditorValue, IEditorSchema, IDangerClassifier, AppSeverity. -->
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
+        <!-- BytesToHumanReadableConverter.Format: the Backup page renders archive sizes with the
+             formatter every other size in the apps uses.
+             ⚠ Re-implementing it here instead would put a second byte-rounding rule in the
+             codebase, and the two would drift in the decimal place nobody checks. -->
         <PackageReference Include="Bennewitz.Ninja.ScopedEditors.AvaloniaUI" Version="$(ScopedEditorsVersion)" />
+        <!-- The service contracts: IDialogService, IShareService, ShareOutcome, and ISaveChangesPrompt,
+             the dialog-service seam the save view-model implements. -->
         <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
+        <!-- ShellLauncher.Instance, for Reveal in file manager on the Backup page. The one reason
+             this library depends on a concrete service rather than only its contract. -->
         <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
     </ItemGroup>
 
     <ItemGroup>
-        <!-- NavigationNodeViewModel already lives on the neutral LayeredEditors side, so
-             deep-path resolution can reference it directly. Permitted by
-             AssemblyLayeringTests: its rule forbids AgentForge.* -> ClaudeForge.* /
-             OpenCode.*, and LayeredEditors.* is neither. -->
-        <ProjectReference Include="..\LayeredEditors.ViewModels\LayeredEditors.ViewModels.csproj" />
-
         <!-- Search matches against schema shapes: SchemaSearchResult (Sdk) is what a
              product's client hands back for a query, and SchemaNode (Core, pulled in
              transitively) is what a settings-group page exposes. Both are neutral
              AgentForge.* types describing a config schema, not a product. -->
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj" />
-
-        <!-- ISaveChangesPrompt: the dialog-service seam the save view-model implements.
-             LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*, so the layering
-             rule permits it, and that project references only AgentForge.Abstractions
-             so there is no cycle back into the shell. -->
-        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj" />
-
-        <!-- BytesToHumanReadableConverter.Format: the Backup page renders archive sizes, and
-             that formatter is the one already used for every other size in the apps. Permitted
-             by AssemblyLayeringTests (LayeredEditors.* is neither ClaudeForge.* nor OpenCode.*)
-             and no cycle: LayeredEditors.Avalonia references only LayeredEditors.Abstractions
-             and LayeredEditors.ViewModels, never back into the shell.
-             ⚠ Re-implementing the formatter here instead would put a second byte-rounding rule
-             in the codebase, and the two would drift in the decimal place nobody checks. -->
-        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj" />
     </ItemGroup>
 
 </Project>

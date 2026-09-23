@@ -3,8 +3,8 @@
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:shell="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:libconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
-             xmlns:controls="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:libconv="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters"
+             xmlns:controls="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.GroupEffectiveView"
              x:DataType="shell:SettingsGroupEditorViewModel">

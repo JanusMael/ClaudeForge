@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.ViewModels;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 

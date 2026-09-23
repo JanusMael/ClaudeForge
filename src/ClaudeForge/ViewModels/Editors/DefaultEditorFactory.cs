@@ -4,8 +4,8 @@ using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Services;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 

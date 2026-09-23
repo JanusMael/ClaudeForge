@@ -4,7 +4,7 @@
              xmlns:ess="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
-             xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:leconv="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.EssentialsView"
              x:DataType="vm:EssentialsViewModel">
 
