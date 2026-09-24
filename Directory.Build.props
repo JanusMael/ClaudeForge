@@ -88,17 +88,17 @@
       ⛔ UNLIKE SharedPackageVersion ABOVE, THESE ARE NEVER INERT. The seven are PackageReferences
       in every mode; there is no project to fall back to, so every restore reads them.
 
-      ⛔ 2026.3.923 CARRIES NO IsTrimmable MARK. ClaudeForge publishes with TrimMode=partial,
-      which trims and analyses only marked assemblies, so on this version the seven are kept
-      whole and a clean trim result says nothing about them. Build on it; claim the trim gate
-      only on a version that carries the mark. See plans/00005.
+      ⛔ THE PIN MUST CARRY THE IsTrimmable MARK. ClaudeForge publishes with TrimMode=partial,
+      which trims and analyses only marked assemblies. 2026.3.923 shipped without it, so there
+      the seven were kept whole and a clean trim result said nothing about them; 2026.3.924
+      carries it on all seven (read from the DLLs). Check before moving the pin. See plans/00005.
 
       No Condition, deliberately: the value in this file must beat a same-named environment
       variable, and a global property on the command line still outranks it.
     -->
     <PropertyGroup>
-        <AppServicesVersion>2026.3.924-local.4</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/prerelease-924. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
-        <ScopedEditorsVersion>2026.3.924-local.5</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
+        <AppServicesVersion>2026.3.924</AppServicesVersion>
+        <ScopedEditorsVersion>2026.3.924</ScopedEditorsVersion>
     </PropertyGroup>
 
     <!--

@@ -203,8 +203,8 @@ The UI also reported `v2026.3.922.0`.
 | 6 · delete the family | ✅ Done — `75d8961`: 5 `src` + 2 test projects, their baselines, slnx entries, friend grants and the selector line |
 | 7 · guards that named the family | ✅ Done — every narrowed guard canaried BOTH ways (drift 12); prose swept eleven → six |
 | 8 · `PublicSurface` baselines | ✅ Done — remapped through the derived 81-type map, the diff leaves exactly three lines, all step 3's: `OpenFileLocationCommand` becomes `IAsyncRelayCommand`, `IsRevealInFileManagerSupported` is new. `AgentForge.Sdk` is the namespace move and nothing else |
-| 9 · real `.924` | ⏳ Waits on the publish — see drift 6 for the swap |
-| 10 · full gate | ⏳ After 9 |
+| 9 · real `.924` | ✅ Done 2026-09-24 — all seven ids verified on nuget.org's flat container **here**, not taken from the relay; tags `v2026.3.924` = AppServices `d1c5c9c`, ScopedEditors `4e44d8b`, the commits the local packs came from. Pins → `2026.3.924`; the `prerelease924` source, its mapping and `artifacts/prerelease-924` removed; every `-local.*` and both never-published `.avaloniaui` ids purged from the cache. Each restored package's `.nupkg.metadata` names `api.nuget.org` as its source |
+| 10 · full gate | ⏳ Local half done — 7 of 7 test assemblies (= 7 test csproj), 1,760 / 1,757 / 3 in `ClaudeForge.Tests`, build 0/0. ✅ **The trim gate is real now:** all seven `.924` DLLs carry `IsTrimmable` (all seven `.923` controls do not), a trimmed win-x64 Release publish reports 0 IL warnings, and every one of the seven is SMALLER in `obj/…/linked/` than in its package (e.g. `ScopedEditors.ViewModels` 66,048 → 54,784) — trimmed, not kept whole. ⏳ CI on the PR remains |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00005` is never edited:
 
