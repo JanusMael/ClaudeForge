@@ -976,8 +976,24 @@ public sealed class SchemaRegistry : IDisposable
     /// ⚠ <b>This rule is duplicated in <c>scripts/refresh-schema.ps1</c> and its <c>.sh</c>
     /// twin, and the three must agree.</b> The scripts strip at refresh time so the committed
     /// file resolves offline; this strips at load time so a fetched copy does too. A change
-    /// here needs the same change there — <c>SchemaStripParityTests</c> asserts this
-    /// implementation against the same fixtures the scripts are checked with.
+    /// here needs the same change there.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>Nothing enforces that, and this comment used to say something did.</b> It named
+    /// <c>SchemaStripParityTests</c>, "asserting this implementation against the same fixtures
+    /// the scripts are checked with". No such test exists on any branch, and there are no
+    /// shared fixtures — the scripts are not fixture-tested at all. What IS covered is each side
+    /// alone: <c>SchemaLoadPrecedenceTests</c> checks this method (idempotent, and an inline
+    /// <c>$ref</c> survives it), and <c>BundledOpenCodeSchemaTests</c> checks the scripts'
+    /// OUTPUT for the one real input. Nothing runs both on the same input.
+    /// </para>
+    /// <para>
+    /// ⓘ <b>Parity verified by inspection, 2026-09-23</b> — all three implementations
+    /// (this, <c>Remove-ExternalRefLine</c> in <c>refresh-schema.ps1</c>, the <c>awk</c> block
+    /// in <c>refresh-schema.sh</c>) use the same pattern and the same walk-back that drops the
+    /// preceding line's trailing comma when the <c>$ref</c> was the last key. ⚠ That is a
+    /// reading, not a mechanism: it is true as of that date and nothing will notice when it
+    /// stops being true.
     /// </para>
     /// <para>
     /// Textual, not parse-and-reserialise, for the same reason the scripts are: it keeps the

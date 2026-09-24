@@ -33,7 +33,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="Avalonia" Version="12.1.3" />
         <!-- Dialog model types (DialogMessage, DialogCategory, DialogSegment*) live in
              AgentForge.Abstractions. This library previously referenced ClaudeForge.Sdk
              for them, which meant a product-neutral services library depended on a

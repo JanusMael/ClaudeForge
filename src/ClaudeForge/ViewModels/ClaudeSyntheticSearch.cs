@@ -46,9 +46,14 @@ public static class ClaudeSyntheticSearch
     /// Kept here rather than on each card object so the search-side and the
     /// card-side lifecycles stay independent — queries match card ids without
     /// needing an <see cref="EssentialsViewModel"/> instance to be alive (e.g.
-    /// before the first navigation tree build). <c>ClaudeSyntheticSearchTests</c>
-    /// asserts every card id appears here, so a future card is not silently
-    /// un-searchable.
+    /// before the first navigation tree build).
+    /// <c>SearchViewModelTests.EssentialsTriggers_TableCovers_EveryCardId</c> asserts every
+    /// card id appears here, so a future card is not silently un-searchable. It reads the
+    /// ids from a live <see cref="EssentialsViewModel"/>'s <c>Cards</c> rather than from a
+    /// hand-kept list, and checks both directions — every key names a real card, every card
+    /// has a key — which is what makes that promise hold. ⓘ <b>Corrected 2026-09-23:</b> this
+    /// named <c>ClaudeSyntheticSearchTests</c>, a class that has never existed; the guard was
+    /// real, only its name was wrong.
     /// </remarks>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>>
         EssentialsTriggers = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
