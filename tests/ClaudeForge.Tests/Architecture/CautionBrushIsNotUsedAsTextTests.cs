@@ -29,7 +29,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// the one that was already correct.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class CautionBrushIsNotUsedAsTextTests
 {
     private const double TextFloor = 4.5;
@@ -52,7 +51,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
         ("AppSeverityCautionBrush", NonTextFloor, "the Caution severity glyph and banner border"),
     ];
 
-    [TestMethod]
+    [Fact]
     public void TheCautionAccentIsNeverUsedAsAForeground()
     {
         string repoRoot = FindRepoRoot();
@@ -70,12 +69,12 @@ public sealed class CautionBrushIsNotUsedAsTextTests
             }
         }
 
-        Assert.IsTrue(accentUses >= MinimumAccentUses,
+        Assert.True(accentUses >= MinimumAccentUses,
             $"only {accentUses} use(s) of AppCautionBrush found, expected at least "
             + $"{MinimumAccentUses}. The token has been renamed or removed, so this scan is no "
             + "longer checking anything and would pass over a reintroduced text use.");
 
-        Assert.IsTrue(offenders.Count == 0,
+        Assert.True(offenders.Count == 0,
             "AppCautionBrush is an ACCENT, chosen to clear the 3.0:1 non-text floor. Used as text "
             + "it measures about 3.1–3.2:1 against a 4.5:1 floor — the F4 defect, reintroduced:\n  "
             + string.Join("\n  ", offenders)
@@ -83,7 +82,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
             + "body text inside a bordered caution panel (see EssentialsView).");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryCautionRoleClearsItsContrastFloorOnEverySurface()
     {
         string appAxaml = File.ReadAllText(
@@ -118,10 +117,10 @@ public sealed class CautionBrushIsNotUsedAsTextTests
 
         // 2 variants x 3 roles x 2 surfaces. A miscount means a block or key stopped being found,
         // and every ratio after that would be computed against the wrong thing.
-        Assert.AreEqual(Variants.Length * Roles.Length * SurfaceKeys.Length, checkedPairs,
+        MessageAssert.Equal(Variants.Length * Roles.Length * SurfaceKeys.Length, checkedPairs,
             "the variant/token scan lost some of its subjects");
 
-        Assert.IsTrue(failures.Count == 0,
+        Assert.True(failures.Count == 0,
             $"{failures.Count} caution colour(s) are unreadable on a surface they are drawn on:\n  "
             + string.Join("\n  ", failures));
     }
@@ -130,7 +129,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
     /// ⚠ A themed key looked up with a null variant resolves to NOTHING, so a token present in one
     /// variant only is a total miss for whichever theme is active — not a half-fix.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheCautionTextTokenIsDeclaredInBothVariants()
     {
         string appAxaml = File.ReadAllText(
@@ -138,7 +137,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
 
         foreach (string variant in Variants)
         {
-            Assert.IsTrue(
+            Assert.True(
                 Regex.IsMatch(
                     VariantBlock(appAxaml, variant),
                     @"x:Key\s*=\s*""AppCautionTextBrush"""),
@@ -151,7 +150,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
     private static string VariantBlock(string axaml, string variant)
     {
         Match start = Regex.Match(axaml, $@"<ResourceDictionary\s+x:Key\s*=\s*""{variant}""");
-        Assert.IsTrue(start.Success, $"no {variant} ThemeDictionaries entry in App.axaml");
+        Assert.True(start.Success, $"no {variant} ThemeDictionaries entry in App.axaml");
 
         Match next = Regex.Match(
             axaml[(start.Index + start.Length)..],
@@ -167,7 +166,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
         Match m = Regex.Match(
             block, $@"x:Key\s*=\s*""{Regex.Escape(key)}""\s+Color\s*=\s*""(?<hex>#[0-9A-Fa-f]{{6,8}})""");
 
-        Assert.IsTrue(m.Success, $"{key} is not declared in the {variant} variant of App.axaml");
+        Assert.True(m.Success, $"{key} is not declared in the {variant} variant of App.axaml");
         return m.Groups["hex"].Value;
     }
 
@@ -223,7 +222,7 @@ public sealed class CautionBrushIsNotUsedAsTextTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

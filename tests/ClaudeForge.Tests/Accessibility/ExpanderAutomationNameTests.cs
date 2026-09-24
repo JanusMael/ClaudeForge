@@ -61,10 +61,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// not as a linter.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ExpanderAutomationNameTests
 {
-    [TestMethod]
+    [Fact]
     public void EveryExpanderInMarkup_DeclaresAnAutomationName()
     {
         string repoRoot = FindRepoRoot();
@@ -80,12 +79,12 @@ public sealed class ExpanderAutomationNameTests
         // success having measured nothing — the exact shape of a guard that passes because its
         // input vanished (a moved folder, a renamed element, a broken glob). `Inspected` exists on
         // the result for precisely this, so the check survives the rule moving out of this repo.
-        Assert.IsTrue(
+        Assert.True(
             result.Inspected > 0,
             "This scan found no <Expander> elements at all under src/. Either the markup moved or "
             + "the scan is looking in the wrong place; a green result here would mean nothing.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, result.Findings.Count,
             $"{result.Findings.Count} of {result.Inspected} Expander(s) declare no automation name. "
             + "Each one's header part will announce 'Avalonia.Controls.Grid' to a screen reader, "

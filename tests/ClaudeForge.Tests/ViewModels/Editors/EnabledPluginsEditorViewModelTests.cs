@@ -5,7 +5,6 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Plugins;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class EnabledPluginsEditorViewModelTests
 {
     private static SchemaNode PluginsSchema()
@@ -27,17 +26,17 @@ public class EnabledPluginsEditorViewModelTests
     // LoadFromLayered
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_EmptyObject_LeavesPluginsEmpty()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, new JsonObject()), ConfigScope.User);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Plugins);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_PopulatesEnabledAndDisabledPlugins()
     {
         JsonObject obj = new()
@@ -49,43 +48,43 @@ public class EnabledPluginsEditorViewModelTests
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(2, vm.Plugins.Count);
+        Assert.Equal(2, vm.Plugins.Count);
 
         PluginEntry pluginA = vm.Plugins.First(p => p.PluginRef == "a@m");
         PluginEntry pluginB = vm.Plugins.First(p => p.PluginRef == "b@m");
 
-        Assert.IsTrue(pluginA.Enabled);
-        Assert.IsFalse(pluginB.Enabled);
-        Assert.IsTrue(vm.IsModified);
+        Assert.True(pluginA.Enabled);
+        Assert.False(pluginB.Enabled);
+        Assert.True(vm.IsModified);
     }
 
     // -----------------------------------------------------------------------
     // AddPlugin
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void AddPlugin_AddsEntryWithEnabledTrue()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.NewPluginRef = "p@market";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Plugins.Count);
-        Assert.AreEqual("p@market", vm.Plugins[0].PluginRef);
-        Assert.IsTrue(vm.Plugins[0].Enabled);
+        Assert.Single(vm.Plugins);
+        Assert.Equal("p@market", vm.Plugins[0].PluginRef);
+        Assert.True(vm.Plugins[0].Enabled);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddPlugin_DoesNotAddEmpty()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.NewPluginRef = "  ";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
+        Assert.Empty(vm.Plugins);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddPlugin_DoesNotAddDuplicate()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
@@ -96,37 +95,37 @@ public class EnabledPluginsEditorViewModelTests
         vm.NewPluginRef = "p@m";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Plugins.Count);
+        Assert.Single(vm.Plugins);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddPlugin_ClearsNewPluginRef()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.NewPluginRef = "p@m";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.AreEqual(string.Empty, vm.NewPluginRef);
+        Assert.Equal(string.Empty, vm.NewPluginRef);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddPlugin_SetsIsModified()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
 
-        Assert.IsFalse(vm.IsModified);
+        Assert.False(vm.IsModified);
 
         vm.NewPluginRef = "p@m";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsModified);
+        Assert.True(vm.IsModified);
     }
 
     // -----------------------------------------------------------------------
     // RemovePlugin
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void RemovePlugin_RemovesEntry()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
@@ -135,29 +134,29 @@ public class EnabledPluginsEditorViewModelTests
 
         vm.RemovePluginCommand.Execute(vm.Plugins[0]);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
+        Assert.Empty(vm.Plugins);
     }
 
     // -----------------------------------------------------------------------
     // ResetToInherited — regression test for the HIGH bug that was fixed
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_ClearsPlugins_AndSetsIsModifiedFalse()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.NewPluginRef = "p@m";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsModified, "Precondition: IsModified should be true after adding a plugin.");
+        Assert.True(vm.IsModified, "Precondition: IsModified should be true after adding a plugin.");
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Plugins);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_AfterLoad_RestoresOnDiskPlugins_NotClearsThem()
     {
         // Regression: prior to the fix, OnResetToInherited called Plugins.Clear()
@@ -174,24 +173,24 @@ public class EnabledPluginsEditorViewModelTests
 
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.AreEqual(2, vm.Plugins.Count, "Precondition: load populated 2 plugins.");
-        Assert.IsTrue(vm.IsModified);
+        MessageAssert.Equal(2, vm.Plugins.Count, "Precondition: load populated 2 plugins.");
+        Assert.True(vm.IsModified);
 
         // User edits: add a third plugin.
         vm.NewPluginRef = "z@m";
         vm.AddPluginCommand.Execute(null);
-        Assert.AreEqual(3, vm.Plugins.Count);
+        Assert.Equal(3, vm.Plugins.Count);
 
         // User clicks Reset: must restore the original 2-plugin state, NOT clear.
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(2, vm.Plugins.Count,
+        MessageAssert.Equal(2, vm.Plugins.Count,
             "Reset must restore the on-disk state, not wipe to empty. The two original " +
             "plugins (x@m, y@m) must be back.");
         HashSet<string> loadedRefs = vm.Plugins.Select(p => p.PluginRef).ToHashSet();
-        Assert.IsTrue(loadedRefs.Contains("x@m"));
-        Assert.IsTrue(loadedRefs.Contains("y@m"));
-        Assert.IsFalse(loadedRefs.Contains("z@m"),
+        OrdinalAssert.Contains("x@m", loadedRefs);
+        OrdinalAssert.Contains("y@m", loadedRefs);
+        Assert.False(loadedRefs.Contains("z@m"),
             "The unsaved 'z@m' addition must have been discarded.");
     }
 
@@ -199,15 +198,15 @@ public class EnabledPluginsEditorViewModelTests
     // ToJsonValue
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ReturnsNull_WhenEmpty()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
 
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_IncludesEnabledAndDisabledEntries()
     {
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
@@ -223,16 +222,16 @@ public class EnabledPluginsEditorViewModelTests
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
 
-        Assert.IsNotNull(json);
-        Assert.IsTrue(json!["enabled@m"]!.GetValue<bool>());
-        Assert.IsFalse(json["disabled@m"]!.GetValue<bool>());
+        Assert.NotNull(json);
+        Assert.True(json!["enabled@m"]!.GetValue<bool>());
+        Assert.False(json["disabled@m"]!.GetValue<bool>());
     }
 
     // -----------------------------------------------------------------------
     // SDK-backed read path
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_ReadsThroughTypedAccessor()
     {
         // Verifies that when a client is supplied, the editor's initial state
@@ -260,10 +259,10 @@ public class EnabledPluginsEditorViewModelTests
             EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User, client);
             vm.LoadFromLayered(layered, ConfigScope.User);
 
-            Assert.AreEqual(1, vm.Plugins.Count, "SDK path should yield exactly 1 plugin (the SDK-set entry).");
-            Assert.AreEqual("from-sdk@m", vm.Plugins[0].PluginRef,
+            MessageAssert.Equal(1, vm.Plugins.Count, "SDK path should yield exactly 1 plugin (the SDK-set entry).");
+            MessageAssert.Equal("from-sdk@m", vm.Plugins[0].PluginRef,
                 "Editor must read from the SDK accessor, not the LayeredValue argument.");
-            Assert.IsTrue(vm.Plugins[0].Enabled);
+            Assert.True(vm.Plugins[0].Enabled);
         }
         finally
         {
@@ -282,7 +281,7 @@ public class EnabledPluginsEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_WithoutSdkClient_FallsBackToLegacyJsonPath()
     {
         // Inverse of the previous test: when no client is passed, the
@@ -295,12 +294,12 @@ public class EnabledPluginsEditorViewModelTests
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User, client: null);
         vm.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Plugins.Count);
-        Assert.AreEqual("legacy-only@m", vm.Plugins[0].PluginRef);
-        Assert.IsTrue(vm.Plugins[0].Enabled);
+        Assert.Single(vm.Plugins);
+        Assert.Equal("legacy-only@m", vm.Plugins[0].PluginRef);
+        Assert.True(vm.Plugins[0].Enabled);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_RoundTrip()
     {
         JsonObject original = new()
@@ -314,18 +313,18 @@ public class EnabledPluginsEditorViewModelTests
 
         JsonObject? result = vm.ToJsonValue() as JsonObject;
 
-        Assert.IsNotNull(result);
-        Assert.IsTrue(result!.ContainsKey("a@m"));
-        Assert.IsTrue(result.ContainsKey("b@m"));
-        Assert.IsTrue(result["a@m"]!.GetValue<bool>());
-        Assert.IsFalse(result["b@m"]!.GetValue<bool>());
+        Assert.NotNull(result);
+        Assert.True(result!.ContainsKey("a@m"));
+        Assert.True(result.ContainsKey("b@m"));
+        Assert.True(result["a@m"]!.GetValue<bool>());
+        Assert.False(result["b@m"]!.GetValue<bool>());
     }
 
     // -----------------------------------------------------------------------
     // Non-bool (array) value preservation — schema allows anyOf[array, bool]
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_ArrayValuePlugin_PreservedVerbatimOnRoundTrip()
     {
         // The enabledPlugins schema allows an array-of-strings value (enable
@@ -342,21 +341,20 @@ public class EnabledPluginsEditorViewModelTests
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
 
         JsonObject? result = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(result);
+        Assert.NotNull(result);
 
         // The plain bool round-trips as a bool.
-        Assert.IsTrue(result!["bool@m"] is JsonValue bv && bv.GetValue<bool>());
+        Assert.True(result!["bool@m"] is JsonValue bv && bv.GetValue<bool>());
 
         // The array round-trips verbatim — NOT coerced to `false`.
-        Assert.IsInstanceOfType(result["array@m"], typeof(JsonArray),
-            "An array-valued plugin must survive the round-trip as an array, not be coerced to a bool.");
+        MessageAssert.IsAssignableFrom<JsonArray>(result["array@m"], "An array-valued plugin must survive the round-trip as an array, not be coerced to a bool.");
         JsonArray arr = (JsonArray)result["array@m"]!;
-        Assert.AreEqual(2, arr.Count);
-        Assert.AreEqual("comp-a", arr[0]!.GetValue<string>());
-        Assert.AreEqual("comp-b", arr[1]!.GetValue<string>());
+        Assert.Equal(2, arr.Count);
+        Assert.Equal("comp-a", arr[0]!.GetValue<string>());
+        Assert.Equal("comp-b", arr[1]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ArrayValuePlugin_PreservedEvenWhenToggled()
     {
         // Re-audit HIGH regression lock: toggling the checkbox must NOT silently
@@ -369,20 +367,19 @@ public class EnabledPluginsEditorViewModelTests
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
 
         PluginEntry entry = vm.Plugins.Single(p => p.PluginRef == "array@m");
-        Assert.IsTrue(entry.HasPreservedValue, "An array-valued row must carry its preserved value.");
-        Assert.IsTrue(entry.Enabled, "An array-valued plugin surfaces as enabled (checked, disabled checkbox).");
+        Assert.True(entry.HasPreservedValue, "An array-valued row must carry its preserved value.");
+        Assert.True(entry.Enabled, "An array-valued plugin surfaces as enabled (checked, disabled checkbox).");
 
         entry.Enabled = !entry.Enabled; // one toggle
         entry.Enabled = !entry.Enabled; // and back — net-zero, UI looks untouched
 
         JsonObject? result = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(result);
-        Assert.IsInstanceOfType(result!["array@m"], typeof(JsonArray),
-            "The array must survive checkbox toggling — no silent coercion to bool.");
-        Assert.AreEqual("comp-a", ((JsonArray)result["array@m"]!)[0]!.GetValue<string>());
+        Assert.NotNull(result);
+        MessageAssert.IsAssignableFrom<JsonArray>(result!["array@m"], "The array must survive checkbox toggling — no silent coercion to bool.");
+        Assert.Equal("comp-a", ((JsonArray)result["array@m"]!)[0]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_NonBoolValue_RecoveredFromRawScope()
     {
         // The SDK accessor's entry list (PluginRef + Enabled) does not carry the array
@@ -407,14 +404,13 @@ public class EnabledPluginsEditorViewModelTests
             EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User, client);
             vm.LoadFromLayered(layered, ConfigScope.User);
 
-            Assert.IsTrue(vm.Plugins.Any(p => p.PluginRef == "array@m"),
+            Assert.True(vm.Plugins.Any(p => p.PluginRef == "array@m"),
                 "An array-valued plugin omitted by the SDK accessor must be recovered from the raw scope JSON.");
 
             JsonObject? result = vm.ToJsonValue() as JsonObject;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result!["array@m"], typeof(JsonArray),
-                "The recovered array must round-trip verbatim — not be dropped or coerced.");
-            Assert.AreEqual(2, ((JsonArray)result["array@m"]!).Count);
+            Assert.NotNull(result);
+            MessageAssert.IsAssignableFrom<JsonArray>(result!["array@m"], "The recovered array must round-trip verbatim — not be dropped or coerced.");
+            Assert.Equal(2, ((JsonArray)result["array@m"]!).Count);
         }
         finally
         {
@@ -433,7 +429,7 @@ public class EnabledPluginsEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_ArrayInWorkspace_AttachesPreservedAndRoundTrips()
     {
         // Companion to the recovery test: here the SDK workspace genuinely holds an
@@ -459,13 +455,12 @@ public class EnabledPluginsEditorViewModelTests
             vm.LoadFromLayered(layered, ConfigScope.User);
 
             PluginEntry entry = vm.Plugins.Single(p => p.PluginRef == "comp/plugin");
-            Assert.IsTrue(entry.HasPreservedValue, "The SDK-surfaced array row must get PreservedValue attached.");
+            Assert.True(entry.HasPreservedValue, "The SDK-surfaced array row must get PreservedValue attached.");
 
             JsonObject? result = vm.ToJsonValue() as JsonObject;
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result!["comp/plugin"], typeof(JsonArray),
-                "An array-valued plugin in the SDK workspace must round-trip as an array through the editor.");
-            Assert.AreEqual(2, ((JsonArray)result["comp/plugin"]!).Count);
+            Assert.NotNull(result);
+            MessageAssert.IsAssignableFrom<JsonArray>(result!["comp/plugin"], "An array-valued plugin in the SDK workspace must round-trip as an array through the editor.");
+            Assert.Equal(2, ((JsonArray)result["comp/plugin"]!).Count);
         }
         finally
         {
@@ -486,7 +481,7 @@ public class EnabledPluginsEditorViewModelTests
 
     // ── Force-fire delete-after-load ──────────────
 
-    [TestMethod]
+    [Fact]
     public void DeleteAfterLoad_FiresIsModified_ForceFireContract()
     {
         // Locks the force-fire contract — see PermissionsEditorViewModelTests
@@ -498,7 +493,7 @@ public class EnabledPluginsEditorViewModelTests
         };
         EnabledPluginsEditorViewModel vm = new(PluginsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPlugins(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.IsTrue(vm.IsModified, "Precondition: load with two plugins flags IsModified=true.");
+        Assert.True(vm.IsModified, "Precondition: load with two plugins flags IsModified=true.");
 
         int fired = 0;
         vm.PropertyChanged += (_, e) =>
@@ -513,7 +508,7 @@ public class EnabledPluginsEditorViewModelTests
         // IsModified stays latched true.
         vm.Plugins.RemoveAt(0);
 
-        Assert.IsTrue(fired >= 1,
+        Assert.True(fired >= 1,
             "Deleting a loaded plugin must fire PropertyChanged(IsModified) — locks the force-fire " +
             "contract symmetric to the MCP delete-after-load contract.");
     }

@@ -34,7 +34,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// mapping layer, which is host-independent.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ShareOutcomeTests
 {
     // ─────────────────────────────────────────────────────────────────────────
@@ -47,43 +46,43 @@ public sealed class ShareOutcomeTests
     /// <summary>A launcher that reports the process did not start, as <c>Process.Start</c> does.</summary>
     private static Process? NotLaunched(ProcessStartInfo _) => null;
 
-    [TestMethod]
+    [Fact]
     public async Task ShareText_WithNothingToShare_IsUnavailableRatherThanSuccess()
     {
         DefaultShareService svc = new(NotLaunched);
 
         ShareOutcome outcome = await svc.ShareTextAsync("title", string.Empty, uri: null, CancellationToken.None);
 
-        Assert.AreEqual(ShareOutcome.Unavailable, outcome,
+        MessageAssert.Equal(ShareOutcome.Unavailable, outcome,
             "An empty payload reaches no platform branch. Reporting anything else would be the " +
             "original defect restated: claiming an action that did not happen.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareText_WithUri_WhenLaunchSucceeds_IsOpenedInBrowser()
     {
         DefaultShareService svc = new(Launched);
 
         ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/", CancellationToken.None);
 
-        Assert.AreEqual(ShareOutcome.OpenedInBrowser, outcome,
+        MessageAssert.Equal(ShareOutcome.OpenedInBrowser, outcome,
             "Every platform hands a caller-supplied URI to the default browser.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareText_WithUri_WhenLaunchFails_IsFailed()
     {
         DefaultShareService svc = new(NotLaunched);
 
         ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/", CancellationToken.None);
 
-        Assert.AreEqual(ShareOutcome.Failed, outcome,
+        MessageAssert.Equal(ShareOutcome.Failed, outcome,
             "TryStart returned false, so Failed must be what reaches the caller. ⛔ This is the " +
             "assertion the whole change exists for: TryStart used to return void and swallow " +
             "the failure, which is why a broken share looked identical to a working one.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareFile_WhenPathIsNotOnDisk_IsUnavailableNotFailed()
     {
         DefaultShareService svc = new(Launched);
@@ -91,12 +90,12 @@ public sealed class ShareOutcomeTests
 
         ShareOutcome outcome = await svc.ShareFileAsync("title", missing, CancellationToken.None);
 
-        Assert.AreEqual(ShareOutcome.Unavailable, outcome,
+        MessageAssert.Equal(ShareOutcome.Unavailable, outcome,
             "Nothing was attempted, so this is not a failure. The two stay distinct because the " +
             "status pill keeps a failure on screen until dismissed and clears a non-failure.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareFile_WhenLaunchFails_IsFailed()
     {
         string path = Path.Combine(Path.GetTempPath(), $"share-outcome-{Guid.NewGuid():N}.txt");
@@ -109,8 +108,8 @@ public sealed class ShareOutcomeTests
 
             // Premise first: the file really is on disk, so this exercises the launch arm and
             // not the missing-path arm above, which returns Unavailable for a different reason.
-            Assert.IsTrue(File.Exists(path), "Setup failed: the file under test must exist.");
-            Assert.AreEqual(ShareOutcome.Failed, outcome,
+            Assert.True(File.Exists(path), "Setup failed: the file under test must exist.");
+            MessageAssert.Equal(ShareOutcome.Failed, outcome,
                 "An existing file whose file manager would not start is a failure, not an absence.");
         }
         finally
@@ -119,7 +118,7 @@ public sealed class ShareOutcomeTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareFile_WhenLaunchSucceeds_IsRevealedInFileManager()
     {
         string path = Path.Combine(Path.GetTempPath(), $"share-outcome-{Guid.NewGuid():N}.txt");
@@ -130,7 +129,7 @@ public sealed class ShareOutcomeTests
 
             ShareOutcome outcome = await svc.ShareFileAsync("title", path, CancellationToken.None);
 
-            Assert.AreEqual(ShareOutcome.RevealedInFileManager, outcome,
+            MessageAssert.Equal(ShareOutcome.RevealedInFileManager, outcome,
                 "All three platforms reveal the file rather than opening a share sheet, and the " +
                 "outcome must say so rather than claiming a share that is not available anywhere.");
         }
@@ -145,12 +144,12 @@ public sealed class ShareOutcomeTests
     /// <c>(int)ShareOutcome.Failed == 0</c>, which MSTEST0032 rejects as a constant the compiler
     /// can fold — correctly, and the pinned decision is a real one either way.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheDefaultOutcome_IsFailed_SoAnUnsetValueIsLoud()
     {
         string? zeroMember = Enum.GetName(default(ShareOutcome));
 
-        Assert.AreEqual(nameof(ShareOutcome.Failed), zeroMember,
+        MessageAssert.Equal(nameof(ShareOutcome.Failed), zeroMember,
             "⚠ Deliberate. A fake or a half-written implementation returning default(ShareOutcome) " +
             "must land on a pill that sticks, not on a success that clears itself after six " +
             "seconds. Renumbering the enum puts the honest direction on the quiet side.");
@@ -184,32 +183,32 @@ public sealed class ShareOutcomeTests
 
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
-        Assert.IsNotNull(captured,
+        MessageAssert.NotNull(captured,
             $"Sharing with outcome {outcome} emitted nothing at all — which is F3 itself: the " +
             "command completing without acknowledging anything in either direction.");
         return captured.Value;
     }
 
-    [TestMethod]
-    [DataRow(ShareOutcome.CopiedToClipboard, false)]
-    [DataRow(ShareOutcome.OpenedInBrowser, false)]
-    [DataRow(ShareOutcome.OpenedMailClient, false)]
-    [DataRow(ShareOutcome.RevealedInFileManager, false)]
-    [DataRow(ShareOutcome.Unavailable, false)]
-    [DataRow(ShareOutcome.Failed, true)]
+    [Theory]
+    [InlineData(ShareOutcome.CopiedToClipboard, false)]
+    [InlineData(ShareOutcome.OpenedInBrowser, false)]
+    [InlineData(ShareOutcome.OpenedMailClient, false)]
+    [InlineData(ShareOutcome.RevealedInFileManager, false)]
+    [InlineData(ShareOutcome.Unavailable, false)]
+    [InlineData(ShareOutcome.Failed, true)]
     public async Task EveryOutcome_EmitsANonEmptySentence_WithTheRightSeverity(
         ShareOutcome outcome, bool expectedIsFailure)
     {
         (string text, bool isFailure) = await ShareAndCapture(outcome);
 
-        Assert.IsFalse(string.IsNullOrWhiteSpace(text),
+        Assert.False(string.IsNullOrWhiteSpace(text),
             $"Outcome {outcome} must carry a sentence; an empty pill says as little as no pill.");
-        Assert.AreEqual(expectedIsFailure, isFailure,
+        MessageAssert.Equal(expectedIsFailure, isFailure,
             $"Outcome {outcome} must be reported at the right severity. ⚠ Only Failed sticks " +
             "until dismissed; Unavailable is not a failure, because nothing was attempted.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NoTwoOutcomes_ShareASentence()
     {
         // ⭐ This is the assertion the per-outcome rows cannot make. Each of those compares one
@@ -224,17 +223,17 @@ public sealed class ShareOutcomeTests
         {
             (string text, _) = await ShareAndCapture(outcome);
 
-            Assert.IsFalse(seen.TryGetValue(text, out ShareOutcome earlier),
+            Assert.False(seen.TryGetValue(text, out ShareOutcome earlier),
                 $"{outcome} and {earlier} both report \"{text}\". Every outcome exists because it " +
                 "is a different thing to tell the user; two sharing a sentence collapses that.");
             seen[text] = outcome;
         }
 
-        Assert.AreEqual(Enum.GetValues<ShareOutcome>().Length - 1, seen.Count,
+        MessageAssert.Equal(Enum.GetValues<ShareOutcome>().Length - 1, seen.Count,
             "Every declared outcome except Cancelled must have been reached and reported.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ACancelledShare_EmitsNoStatusAtAll()
     {
         // ⚠ The one outcome that must emit NOTHING — the reverse of F3, deliberately. F3 was a
@@ -245,10 +244,10 @@ public sealed class ShareOutcomeTests
 
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
-        Assert.IsNull(captured, "A cancelled share must not raise a status pill.");
+        MessageAssert.Null(captured, "A cancelled share must not raise a status pill.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CancellingTheCommand_WhileTheShareIsRunning_EmitsNoStatus()
     {
         // The realistic path: the service is still working when the user cancels, so the cancel
@@ -262,7 +261,7 @@ public sealed class ShareOutcomeTests
         vm.ShareConfigCommand.Cancel();
         await running;
 
-        Assert.IsNull(captured, "Cancelling the command must not be reported as a failure.");
+        MessageAssert.Null(captured, "Cancelling the command must not be reported as a failure.");
     }
 
     /// <summary>Waits on the caller's token and nothing else, so the only way out is a cancel.</summary>
@@ -278,7 +277,7 @@ public sealed class ShareOutcomeTests
             => throw new NotSupportedException("Effective settings shares text, not a file.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task WhenTheServiceThrows_TheFailureReachesTheUser()
     {
         EffectiveSettingsViewModel vm = new(MakeClient(), shareService: new ThrowingShareService());
@@ -287,16 +286,16 @@ public sealed class ShareOutcomeTests
 
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
-        Assert.IsNotNull(captured,
+        MessageAssert.NotNull(captured,
             "⛔ The catch used to log and return, under a comment about not surfacing a dialog. " +
             "It is the pill that was missing, not the dialog that was wanted.");
-        Assert.IsTrue(captured.Value.IsFailure,
+        Assert.True(captured.Value.IsFailure,
             "A throw is a failure, and a failure pill sticks until the user dismisses it.");
-        Assert.AreEqual(Strings.StatusShareConfigFailed, captured.Value.Text,
+        MessageAssert.Equal(Strings.StatusShareConfigFailed, captured.Value.Text,
             "The failure sentence comes from resx like every other user-visible string.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task WithNoShareServiceWired_TheUserIsToldSoRatherThanNothing()
     {
         EffectiveSettingsViewModel vm = new(MakeClient(), shareService: null);
@@ -305,12 +304,12 @@ public sealed class ShareOutcomeTests
 
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
-        Assert.IsNotNull(captured,
+        MessageAssert.NotNull(captured,
             "The button is clickable with no service wired, so pressing it must say something. " +
             "Returning quietly is the defect, not the guard against it.");
-        Assert.AreEqual(Strings.StatusShareConfigUnavailable, captured.Value.Text,
+        MessageAssert.Equal(Strings.StatusShareConfigUnavailable, captured.Value.Text,
             "Nothing was attempted, so this is the unavailable sentence.");
-        Assert.IsFalse(captured.Value.IsFailure,
+        Assert.False(captured.Value.IsFailure,
             "Absence is not failure: this pill auto-clears rather than waiting to be dismissed.");
     }
 

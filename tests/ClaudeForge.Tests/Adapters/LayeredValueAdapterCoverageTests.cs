@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// the latter covers behaviour, this file fills coverage gaps in the
 /// pure-function helpers.
 /// </remarks>
-[TestClass]
 public sealed class LayeredValueAdapterCoverageTests
 {
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -27,43 +26,43 @@ public sealed class LayeredValueAdapterCoverageTests
 
     // ── Normalise — scalar widening branches ───────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Normalise_Int_WidensToLong()
     {
         // The currency contract is `long` for whole numbers; `int`-typed
         // JsonValue must widen rather than escape as `int`.
         JsonValue node = JsonValue.Create(42);
         LayeredValueAdapter adapter = new(Layered("p", ConfigScope.User, node));
-        Assert.AreEqual((long)42, adapter.EffectiveValue);
+        Assert.Equal((long)42, adapter.EffectiveValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_Short_WidensToLong()
     {
         JsonValue node = JsonValue.Create((short)7);
         LayeredValueAdapter adapter = new(Layered("p", ConfigScope.User, node));
-        Assert.AreEqual((long)7, adapter.EffectiveValue);
+        Assert.Equal((long)7, adapter.EffectiveValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_Byte_WidensToLong()
     {
         JsonValue node = JsonValue.Create((byte)255);
         LayeredValueAdapter adapter = new(Layered("p", ConfigScope.User, node));
-        Assert.AreEqual((long)255, adapter.EffectiveValue);
+        Assert.Equal((long)255, adapter.EffectiveValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_Float_WidensToDouble()
     {
         // Currency is `double` for floating point; `float` must widen.
         JsonValue node = JsonValue.Create(2.5f);
         LayeredValueAdapter adapter = new(Layered("p", ConfigScope.User, node));
-        Assert.IsInstanceOfType(adapter.EffectiveValue, typeof(double));
-        Assert.AreEqual(2.5, (double)adapter.EffectiveValue!, 0.0001);
+        Assert.IsAssignableFrom<double>(adapter.EffectiveValue);
+        Assert.Equal(2.5, (double)adapter.EffectiveValue!, 0.0001);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_JsonElement_FallbackPath_HandlesParsedJson()
     {
         // Parsing JSON via JsonNode.Parse yields a JsonValue whose
@@ -72,19 +71,19 @@ public sealed class LayeredValueAdapterCoverageTests
         JsonObject parsed = JsonNode.Parse("""{"k":42,"f":3.14,"s":"hi","b":true}""")!.AsObject();
 
         LayeredValueAdapter kAdapter = new(Layered("k", ConfigScope.User, parsed["k"]));
-        Assert.AreEqual((long)42, kAdapter.EffectiveValue);
+        Assert.Equal((long)42, kAdapter.EffectiveValue);
 
         LayeredValueAdapter fAdapter = new(Layered("f", ConfigScope.User, parsed["f"]));
-        Assert.IsInstanceOfType(fAdapter.EffectiveValue, typeof(double));
+        Assert.IsAssignableFrom<double>(fAdapter.EffectiveValue);
 
         LayeredValueAdapter sAdapter = new(Layered("s", ConfigScope.User, parsed["s"]));
-        Assert.AreEqual("hi", sAdapter.EffectiveValue);
+        Assert.Equal("hi", sAdapter.EffectiveValue);
 
         LayeredValueAdapter bAdapter = new(Layered("b", ConfigScope.User, parsed["b"]));
-        Assert.IsTrue((bool?)bAdapter.EffectiveValue);
+        Assert.True((bool?)bAdapter.EffectiveValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_NestedObjectInsideArray_RecursesCorrectly()
     {
         // Validates that NormaliseArray recurses through NormaliseObject:
@@ -93,32 +92,32 @@ public sealed class LayeredValueAdapterCoverageTests
         JsonNode? node = JsonNode.Parse("""[{"name":"alice","age":30}]""");
         LayeredValueAdapter adapter = new(Layered("users", ConfigScope.User, node));
         IReadOnlyList<object?>? list = adapter.EffectiveValue as IReadOnlyList<object?>;
-        Assert.IsNotNull(list);
-        Assert.AreEqual(1, list!.Count);
+        Assert.NotNull(list);
+        Assert.Single(list!);
         IReadOnlyDictionary<string, object?>? dict = list[0] as IReadOnlyDictionary<string, object?>;
-        Assert.IsNotNull(dict);
-        Assert.AreEqual("alice", dict!["name"]);
-        Assert.AreEqual((long)30, dict["age"]);
+        Assert.NotNull(dict);
+        Assert.Equal("alice", dict!["name"]);
+        Assert.Equal((long)30, dict["age"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Normalise_NullJsonNode_ReturnsNull()
     {
         LayeredValueAdapter adapter = new(Layered("p", ConfigScope.User, null));
-        Assert.IsNull(adapter.EffectiveValue);
+        Assert.Null(adapter.EffectiveValue);
     }
 
     // ── EffectiveScope / IsOverridden ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EffectiveScope_NullWhenLayeredHasNoScope()
     {
         LayeredValue raw = new("p", []);
         LayeredValueAdapter adapter = new(raw);
-        Assert.IsNull(adapter.EffectiveScope);
+        Assert.Null(adapter.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsOverridden_PropagatesFromLayered()
     {
         LayeredValue raw = new("p",
@@ -133,10 +132,10 @@ public sealed class LayeredValueAdapterCoverageTests
         };
         LayeredValueAdapter adapter = new(raw);
         // Two distinct values across scopes => overridden.
-        Assert.IsTrue(adapter.IsOverridden);
+        Assert.True(adapter.IsOverridden);
     }
 
-    [TestMethod]
+    [Fact]
     public void GetValueAt_ReturnsPerScopeValue()
     {
         LayeredValue raw = new("p",
@@ -145,11 +144,11 @@ public sealed class LayeredValueAdapterCoverageTests
             new ScopeEntry(ConfigScope.Project, JsonValue.Create("project-val"), "/p"),
         ]);
         LayeredValueAdapter adapter = new(raw);
-        Assert.AreEqual("user-val", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
-        Assert.AreEqual("project-val", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.Project)));
+        Assert.Equal("user-val", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
+        Assert.Equal("project-val", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.Project)));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsDefinedAt_TrueWhereDefined_FalseWhereNot()
     {
         LayeredValue raw = new("p",
@@ -157,16 +156,16 @@ public sealed class LayeredValueAdapterCoverageTests
             new ScopeEntry(ConfigScope.User, JsonValue.Create("v"), "/u"),
         ]);
         LayeredValueAdapter adapter = new(raw);
-        Assert.IsTrue(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.User)));
-        Assert.IsFalse(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.Local)));
-        Assert.IsFalse(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.Project)));
+        Assert.True(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.User)));
+        Assert.False(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.Local)));
+        Assert.False(adapter.IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.Project)));
     }
 
-    [TestMethod]
+    [Fact]
     public void Path_ExposesLayeredJsonPath()
     {
         LayeredValue raw = new("permissions.allow", []);
         LayeredValueAdapter adapter = new(raw);
-        Assert.AreEqual("permissions.allow", adapter.Path);
+        Assert.Equal("permissions.allow", adapter.Path);
     }
 }

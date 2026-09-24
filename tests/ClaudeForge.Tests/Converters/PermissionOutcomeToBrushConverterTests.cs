@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Converters;
 /// refactor only if something states it independently.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class PermissionOutcomeToBrushConverterTests
 {
     private static Color ColorFor(object? value)
@@ -32,16 +31,16 @@ public sealed class PermissionOutcomeToBrushConverterTests
             parameter: null,
             CultureInfo.InvariantCulture);
 
-        Assert.IsInstanceOfType<ISolidColorBrush>(result, $"Expected a solid brush for '{value}'.");
+        MessageAssert.IsAssignableFrom<ISolidColorBrush>(result, $"Expected a solid brush for '{value}'.");
         return ((ISolidColorBrush)result!).Color;
     }
 
-    [TestMethod]
+    [Fact]
     public void AllowIsGreen_AskIsAmber_DenyIsRed()
     {
-        Assert.AreEqual(Color.FromRgb(0x2E, 0x7D, 0x32), ColorFor(PermissionOutcome.Allow));
-        Assert.AreEqual(Color.FromRgb(0xF4, 0xB4, 0x00), ColorFor(PermissionOutcome.Ask));
-        Assert.AreEqual(Color.FromRgb(0xD3, 0x2F, 0x2F), ColorFor(PermissionOutcome.Deny));
+        Assert.Equal(Color.FromRgb(0x2E, 0x7D, 0x32), ColorFor(PermissionOutcome.Allow));
+        Assert.Equal(Color.FromRgb(0xF4, 0xB4, 0x00), ColorFor(PermissionOutcome.Ask));
+        Assert.Equal(Color.FromRgb(0xD3, 0x2F, 0x2F), ColorFor(PermissionOutcome.Deny));
     }
 
     /// <remarks>
@@ -49,34 +48,34 @@ public sealed class PermissionOutcomeToBrushConverterTests
     /// grant — so it must not read as the green one. It is also the enum's zero value, the one that
     /// arrives by accident.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void DefaultIsNeutral_NotAllow()
     {
         Color neutral = ColorFor(PermissionOutcome.Default);
 
-        Assert.AreEqual(Color.FromRgb(0x9E, 0x9E, 0x9E), neutral);
-        Assert.AreNotEqual(
+        Assert.Equal(Color.FromRgb(0x9E, 0x9E, 0x9E), neutral);
+        MessageAssert.NotEqual(
             ColorFor(PermissionOutcome.Allow),
             neutral,
             "'No rule matched' must never be shown in the colour that means 'permitted'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AnythingThatIsNotAnOutcome_IsNeutralRatherThanThrowing()
     {
         // Bindings hand converters nulls and unset values during load and teardown. Throwing here
         // surfaces as a binding error and an uncoloured control, not as a useful failure.
-        Assert.AreEqual(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor(null));
-        Assert.AreEqual(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor("Allow"));
-        Assert.AreEqual(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor(42));
+        Assert.Equal(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor(null));
+        Assert.Equal(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor("Allow"));
+        Assert.Equal(Color.FromRgb(0x9E, 0x9E, 0x9E), ColorFor(42));
     }
 
-    [TestMethod]
+    [Fact]
     public void ConvertBack_IsNotSupported()
     {
         // A colour does not identify an outcome, and a two-way binding onto a status brush would
         // be a bug rather than a feature.
-        Assert.ThrowsExactly<NotSupportedException>(() =>
+        Assert.Throws<NotSupportedException>(() =>
             PermissionOutcomeToBrushConverter.Instance.ConvertBack(
                 Brushes.Red,
                 typeof(PermissionOutcome),

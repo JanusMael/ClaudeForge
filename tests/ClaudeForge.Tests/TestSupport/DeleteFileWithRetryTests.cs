@@ -13,20 +13,25 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 /// timer, and require the helper to outlast it. A bare <c>File.Delete</c> in the same
 /// position throws, which is what the first test pins.
 /// </remarks>
-[TestClass]
-public sealed class DeleteFileWithRetryTests
+public sealed class DeleteFileWithRetryTests : IDisposable
 {
     private string _dir = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public DeleteFileWithRetryTests() => Setup();
+
+    private void Setup()
     {
         _dir = Path.Combine(Path.GetTempPath(), "dfwr-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_dir);
     }
 
-    [TestCleanup]
-    public void Cleanup() => TestCleanupHelpers.DeleteDirectoryWithRetry(_dir);
+    private void Cleanup() => TestCleanupHelpers.DeleteDirectoryWithRetry(_dir);
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
 
     /// <summary>
     /// The premise. Without an open handle there is nothing to retry against and the whole
@@ -34,12 +39,12 @@ public sealed class DeleteFileWithRetryTests
     /// platform. On Unix an open handle does not block deletion at all, which is precisely
     /// why the original failure was Windows-only — so the assertion is made only there.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AnOpenHandleBlocksABareDelete_OnWindows()
     {
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Unix permits unlinking an open file; there is nothing to guard.");
+            Assert.Skip("Unix permits unlinking an open file; there is nothing to guard.");
             return;
         }
 
@@ -48,7 +53,7 @@ public sealed class DeleteFileWithRetryTests
 
         using FileStream hold = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        Assert.ThrowsExactly<IOException>(() => File.Delete(path),
+        MessageAssert.Throws<IOException>(() => File.Delete(path),
             "If a bare delete no longer throws while a handle is open, DeleteFileWithRetry "
             + "is guarding a hazard that no longer exists and should be reconsidered.");
     }
@@ -57,7 +62,7 @@ public sealed class DeleteFileWithRetryTests
     /// The behaviour the fix depends on: a handle held briefly — as a debounced background
     /// re-read holds one — must not fail the delete.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void RetriesUntilAHeldHandleIsReleased()
     {
         string path = Path.Combine(_dir, "briefly-locked.json");
@@ -88,7 +93,7 @@ public sealed class DeleteFileWithRetryTests
             hold.Dispose();
         }
 
-        Assert.IsFalse(File.Exists(path),
+        Assert.False(File.Exists(path),
             "The helper returned without deleting the file. It must either delete it or "
             + "throw — silently leaving it behind would let a test carry on against state "
             + "it believes is gone.");
@@ -98,12 +103,12 @@ public sealed class DeleteFileWithRetryTests
     /// A handle that is never released must surface as a failure, not be swallowed. A retry
     /// helper that gives up quietly turns a hard error into a mystery further downstream.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ThrowsWhenTheHandleIsNeverReleased()
     {
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Unix permits unlinking an open file, so this cannot fail there.");
+            Assert.Skip("Unix permits unlinking an open file, so this cannot fail there.");
             return;
         }
 
@@ -113,12 +118,12 @@ public sealed class DeleteFileWithRetryTests
         using FileStream hold = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
         // maxAttempts: 2 keeps the wait to ~50 ms rather than the default ~750 ms.
-        Assert.ThrowsExactly<IOException>(
+        Assert.Throws<IOException>(
             () => TestCleanupHelpers.DeleteFileWithRetry(path, maxAttempts: 2));
     }
 
     /// <summary>A path that is already gone is not an error — teardown ordering varies.</summary>
-    [TestMethod]
+    [Fact]
     public void MissingFileIsANoOp()
     {
         TestCleanupHelpers.DeleteFileWithRetry(Path.Combine(_dir, "never-existed.json"));

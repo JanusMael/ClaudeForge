@@ -79,16 +79,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// class is <c>[Ignore]</c>d any more.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class ReloadHardeningTests
+public sealed class ReloadHardeningTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ReloadHardeningTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_h3_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -103,8 +103,7 @@ public sealed class ReloadHardeningTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -120,6 +119,12 @@ public sealed class ReloadHardeningTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private string CcSettingsPath => Path.Combine(_sandbox, ".claude", "settings.json");
 
     private static MainWindowViewModel BuildViewModel()
@@ -129,7 +134,7 @@ public sealed class ReloadHardeningTests
 
     // ── H-1 recovery: malformed reload must not break subsequent reloads ──
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAllWorkspacesAsync_AfterMalformedBail_RecoversOnNextValidReload()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -138,14 +143,14 @@ public sealed class ReloadHardeningTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? initialCc = vm.ClaudeCodeSdk;
-            Assert.IsNotNull(initialCc);
+            Assert.NotNull(initialCc);
 
             // Step 1: write malformed JSON, reload bails (H-1 contract).
             await File.WriteAllTextAsync(CcSettingsPath, """{"model": invalid""");
             await vm.LoadAllWorkspacesAsync();
-            Assert.AreSame(initialCc, vm.ClaudeCodeSdk,
+            MessageAssert.Same(initialCc, vm.ClaudeCodeSdk,
                 "Precondition: malformed reload must preserve the existing SDK reference (H-1).");
-            Assert.IsNotNull(vm.StatusMessage);
+            Assert.NotNull(vm.StatusMessage);
 
             // Step 2: external editor finishes the truncate-then-rewrite —
             // the file is now valid again.  A subsequent reload must
@@ -155,18 +160,18 @@ public sealed class ReloadHardeningTests
             await File.WriteAllTextAsync(CcSettingsPath, """{"model":"sonnet"}""");
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.IsNotNull(vm.ClaudeCodeSdk);
-            Assert.AreNotSame(initialCc, vm.ClaudeCodeSdk,
+            Assert.NotNull(vm.ClaudeCodeSdk);
+            MessageAssert.NotSame(initialCc, vm.ClaudeCodeSdk,
                 "Recovery contract: after the malformed bail, the next valid reload MUST swap the SDK reference.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Reload concurrency: rapid back-to-back reloads must converge ──
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -200,22 +205,22 @@ public sealed class ReloadHardeningTests
             // the SDK doesn't expose model directly via the test seam,
             // but we CAN assert the SDK is non-null and the workspace
             // root contains the latest write.
-            Assert.IsNotNull(vm.ClaudeCodeSdk);
+            Assert.NotNull(vm.ClaudeCodeSdk);
             IReadOnlyList<DirtyDocumentSnapshot> doc = vm.ClaudeCodeSdk!.SnapshotDirtyDocuments();
             // SnapshotDirtyDocuments is empty on a freshly-loaded
             // workspace (no in-memory edits).  The relevant assertion
             // is structural: the post-reload state is consistent and
             // queryable.  The lack of deadlock is itself the assertion.
-            Assert.IsNotNull(doc);
+            Assert.NotNull(doc);
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── H-2 persistent tool VMs ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task PersistentToolVms_BackupVm_SurvivesReload_SameInstance()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -223,7 +228,7 @@ public sealed class ReloadHardeningTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             BackupRestoreViewModel? firstBackup = vm.GetBackupVmForTesting();
-            Assert.IsNotNull(firstBackup,
+            MessageAssert.NotNull(firstBackup,
                 "Precondition: BackupRestoreViewModel must be constructed during nav-tree build.");
 
             // Trigger a reload that would, pre-H-2, dispose-and-recreate
@@ -233,17 +238,17 @@ public sealed class ReloadHardeningTests
             await vm.LoadAllWorkspacesAsync();
 
             BackupRestoreViewModel? secondBackup = vm.GetBackupVmForTesting();
-            Assert.AreSame(firstBackup, secondBackup,
+            MessageAssert.Same(firstBackup, secondBackup,
                 "H-2 contract: BackupRestoreViewModel reference MUST survive workspace reload.  " +
                 "A fresh instance would lose any in-flight backup CTS, file watchers, and the " +
                 "user's pre-reload Backup-tab state.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistentToolVms_ProfilesVm_SurvivesReload_SameInstance()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -251,20 +256,20 @@ public sealed class ReloadHardeningTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             ProfilesViewModel? firstProfiles = vm.GetProfilesVmForTesting();
-            Assert.IsNotNull(firstProfiles);
+            Assert.NotNull(firstProfiles);
 
             await File.WriteAllTextAsync(CcSettingsPath, """{"model":"sonnet"}""");
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.AreSame(firstProfiles, vm.GetProfilesVmForTesting(),
+            MessageAssert.Same(firstProfiles, vm.GetProfilesVmForTesting(),
                 "H-2 contract: ProfilesViewModel reference MUST survive workspace reload.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistentToolVms_AboutVms_SurviveReload_SameInstance()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -278,23 +283,23 @@ public sealed class ReloadHardeningTests
             await vm.LoadAllWorkspacesAsync();
             AboutEditorViewModel? firstAboutCode = vm.GetAboutCodeVmForTesting();
             AboutEditorViewModel? firstAboutDesktop = vm.GetAboutDesktopVmForTesting();
-            Assert.IsNotNull(firstAboutCode);
-            Assert.IsNotNull(firstAboutDesktop);
+            Assert.NotNull(firstAboutCode);
+            Assert.NotNull(firstAboutDesktop);
 
             await File.WriteAllTextAsync(CcSettingsPath, """{"model":"sonnet"}""");
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.AreSame(firstAboutCode, vm.GetAboutCodeVmForTesting(),
+            MessageAssert.Same(firstAboutCode, vm.GetAboutCodeVmForTesting(),
                 "H-2 contract: Claude-Code AboutEditorViewModel reference MUST survive reload.");
-            Assert.AreSame(firstAboutDesktop, vm.GetAboutDesktopVmForTesting(),
+            MessageAssert.Same(firstAboutDesktop, vm.GetAboutDesktopVmForTesting(),
                 "H-2 contract: Claude-Desktop AboutEditorViewModel reference MUST survive reload.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistentToolVms_EssentialsVm_SurvivesReload_SameInstance()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -307,21 +312,21 @@ public sealed class ReloadHardeningTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             EssentialsViewModel? firstEssentials = vm.GetEssentialsVmForTesting();
-            Assert.IsNotNull(firstEssentials,
+            MessageAssert.NotNull(firstEssentials,
                 "Precondition: EssentialsViewModel must be constructed during nav-tree build.");
 
             await File.WriteAllTextAsync(CcSettingsPath, """{"model":"sonnet"}""");
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.AreSame(firstEssentials, vm.GetEssentialsVmForTesting(),
+            MessageAssert.Same(firstEssentials, vm.GetEssentialsVmForTesting(),
                 "H-2 contract: EssentialsViewModel reference MUST survive workspace reload.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistentToolVms_StaySameAcrossThreeReloads()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -333,19 +338,19 @@ public sealed class ReloadHardeningTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             BackupRestoreViewModel? initial = vm.GetBackupVmForTesting();
-            Assert.IsNotNull(initial);
+            Assert.NotNull(initial);
 
             for (int i = 0; i < 3; i++)
             {
                 await File.WriteAllTextAsync(CcSettingsPath, $$"""{"model":"v{{i}}"}""");
                 await vm.LoadAllWorkspacesAsync();
-                Assert.AreSame(initial, vm.GetBackupVmForTesting(),
+                MessageAssert.Same(initial, vm.GetBackupVmForTesting(),
                     $"BackupVm reference must persist across reload #{i + 1}.");
             }
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

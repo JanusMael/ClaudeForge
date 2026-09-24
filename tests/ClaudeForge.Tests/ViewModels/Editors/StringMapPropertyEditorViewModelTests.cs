@@ -9,7 +9,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// - duplicate-key Add overwrites existing entry
 /// - Reset clears rows and Add inputs
 /// </summary>
-[TestClass]
 public class StringMapPropertyEditorViewModelTests
 {
     private static SchemaNode ComplexSchema(string name = "modelOverrides")
@@ -39,18 +38,18 @@ public class StringMapPropertyEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initial_NoLayeredEntry_NoRows_NotModified()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_HydratesRowsFromObject()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -61,14 +60,14 @@ public class StringMapPropertyEditorViewModelTests
         };
         vm.LoadFromLayered(WithObject("modelOverrides", ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(2, vm.Items.Count);
-        Assert.IsTrue(vm.IsModified);
+        Assert.Equal(2, vm.Items.Count);
+        Assert.True(vm.IsModified);
 
         StringMapEntryViewModel sonnet = vm.Items.First(i => i.Key == "sonnet");
-        Assert.AreEqual("anthropic.claude-3.5-sonnet", sonnet.Value);
+        Assert.Equal("anthropic.claude-3.5-sonnet", sonnet.Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_RebuildsJsonObject_FromRows()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -78,14 +77,14 @@ public class StringMapPropertyEditorViewModelTests
         vm.NewValueText = "anthropic.claude-3.5-sonnet";
         vm.AddEntryCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsModified);
+        Assert.True(vm.IsModified);
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual(1, written.Count);
-        Assert.AreEqual("anthropic.claude-3.5-sonnet", written["sonnet"]?.GetValue<string>());
+        Assert.Single(written);
+        Assert.Equal("anthropic.claude-3.5-sonnet", written["sonnet"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void BareStringScope_HydratesEmpty_NoCrash()
     {
         // Repro of the user's pre-existing bad on-disk data:
@@ -101,12 +100,12 @@ public class StringMapPropertyEditorViewModelTests
 
         vm.LoadFromLayered(bad, ConfigScope.User);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_FlagsModified_AndPropagatesEntryEdits()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -114,7 +113,7 @@ public class StringMapPropertyEditorViewModelTests
 
         vm.NewKeyText = "sonnet";
         vm.AddEntryCommand.Execute(null);
-        Assert.IsTrue(vm.IsModified);
+        Assert.True(vm.IsModified);
 
         int modifiedFireCount = 0;
         vm.PropertyChanged += (_, e) =>
@@ -129,10 +128,10 @@ public class StringMapPropertyEditorViewModelTests
         // live-write path picks up the change (CommunityToolkit elides equal
         // bool assignments without the force-fire in MarkModified).
         vm.Items[0].Value = "anthropic.claude-3.5-sonnet";
-        Assert.IsTrue(modifiedFireCount > 0);
+        Assert.True(modifiedFireCount > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DuplicateKey_OverwritesExistingValue()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -146,24 +145,24 @@ public class StringMapPropertyEditorViewModelTests
         vm.NewValueText = "second";
         vm.AddEntryCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Items.Count);
-        Assert.AreEqual("second", vm.Items[0].Value);
+        Assert.Single(vm.Items);
+        Assert.Equal("second", vm.Items[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DisabledWhenKeyBlank()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
 
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null), "blank key");
+        Assert.False(vm.AddEntryCommand.CanExecute(null), "blank key");
         vm.NewKeyText = "  ";
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null), "whitespace key");
+        Assert.False(vm.AddEntryCommand.CanExecute(null), "whitespace key");
         vm.NewKeyText = "sonnet";
-        Assert.IsTrue(vm.AddEntryCommand.CanExecute(null));
+        Assert.True(vm.AddEntryCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_ShrinksItemsAndFlagsModified()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -186,11 +185,11 @@ public class StringMapPropertyEditorViewModelTests
         StringMapEntryViewModel first = vm.Items[0];
         vm.RemoveEntryCommand.Execute(first);
 
-        Assert.AreEqual(1, vm.Items.Count);
-        Assert.IsTrue(modifiedFireCount > 0);
+        Assert.Single(vm.Items);
+        Assert.True(modifiedFireCount > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_SkipsBlankKeys()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -203,10 +202,10 @@ public class StringMapPropertyEditorViewModelTests
         // ToJsonValue must skip it rather than emit "" : "".
         vm.Items[0].Key = string.Empty;
 
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_AfterLoad_RestoresOnDiskRows_NotClearsThem()
     {
         // Reset semantic consistency.  See
@@ -214,7 +213,7 @@ public class StringMapPropertyEditorViewModelTests
         StringMapPropertyEditorViewModel vm = NewVm();
         JsonObject obj = new() { ["sonnet"] = "a", ["opus"] = "b" };
         vm.LoadFromLayered(WithObject("modelOverrides", ConfigScope.User, obj), ConfigScope.User);
-        Assert.AreEqual(2, vm.Items.Count, "precondition: load populated 2 rows");
+        MessageAssert.Equal(2, vm.Items.Count, "precondition: load populated 2 rows");
 
         // User edits transient inputs.
         vm.NewKeyText = "haiku";
@@ -222,13 +221,13 @@ public class StringMapPropertyEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(2, vm.Items.Count,
+        MessageAssert.Equal(2, vm.Items.Count,
             "Reset must restore the original on-disk rows, not wipe to empty.");
-        Assert.AreEqual(string.Empty, vm.NewKeyText, "Reset clears transient input.");
-        Assert.AreEqual(string.Empty, vm.NewValueText, "Reset clears transient input.");
+        MessageAssert.Equal(string.Empty, vm.NewKeyText, "Reset clears transient input.");
+        MessageAssert.Equal(string.Empty, vm.NewValueText, "Reset clears transient input.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_WithoutPriorLoad_FallsBackToClear()
     {
         StringMapPropertyEditorViewModel vm = NewVm();
@@ -238,18 +237,18 @@ public class StringMapPropertyEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.AreEqual(string.Empty, vm.NewKeyText);
-        Assert.AreEqual(string.Empty, vm.NewValueText);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.Equal(string.Empty, vm.NewKeyText);
+        Assert.Equal(string.Empty, vm.NewValueText);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void KeySuggestions_PassedThrough()
     {
         string[] suggestions = ["sonnet", "opus", "haiku"];
         StringMapPropertyEditorViewModel vm = NewVm(suggestions);
-        CollectionAssert.AreEqual(suggestions, vm.KeySuggestions.ToArray());
+        Assert.Equal(suggestions, vm.KeySuggestions.ToArray());
     }
 }

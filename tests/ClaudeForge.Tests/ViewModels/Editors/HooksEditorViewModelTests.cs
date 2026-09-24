@@ -5,7 +5,6 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class HooksEditorViewModelTests
 {
     private static SchemaNode HooksSchema()
@@ -35,16 +34,16 @@ public class HooksEditorViewModelTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_CreatesAllKnownEventGroups()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
 
-        Assert.AreEqual(HookEventCatalog.CuratedOrder.Count, vm.EventGroups.Count);
+        Assert.Equal(HookEventCatalog.CuratedOrder.Count, vm.EventGroups.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_PopulatesHooksForMatchedEvent()
     {
         JsonObject obj = new()
@@ -59,12 +58,12 @@ public class HooksEditorViewModelTests
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
 
         HookEventGroup preGroup = vm.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(1, preGroup.Hooks.Count);
-        Assert.AreEqual("Bash", preGroup.Hooks[0].Matcher);
-        Assert.AreEqual("echo pre", preGroup.Hooks[0].CommandValue);
+        Assert.Single(preGroup.Hooks);
+        Assert.Equal("Bash", preGroup.Hooks[0].Matcher);
+        Assert.Equal("echo pre", preGroup.Hooks[0].CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddHook_CreatesNewEntry()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
@@ -73,11 +72,11 @@ public class HooksEditorViewModelTests
         HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PostToolUse");
         group.AddHookCommand.Execute(null);
 
-        Assert.AreEqual(1, group.Hooks.Count);
-        Assert.AreEqual(group.Hooks[0], group.SelectedHook);
+        Assert.Single(group.Hooks);
+        Assert.Equal(group.Hooks[0], group.SelectedHook);
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveHook_RemovesEntry()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
@@ -88,19 +87,19 @@ public class HooksEditorViewModelTests
         HookEntry hook = group.Hooks[0];
         group.RemoveHookCommand.Execute(hook);
 
-        Assert.AreEqual(0, group.Hooks.Count);
+        Assert.Empty(group.Hooks);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ReturnsNull_WhenNoHooks()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
 
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_IncludesOnlyGroupsWithHooks()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
@@ -112,9 +111,9 @@ public class HooksEditorViewModelTests
         group.Hooks[0].CommandValue = "echo hi";
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json);
-        Assert.AreEqual(1, json!.Count); // only PreToolUse
-        Assert.IsNotNull(json["PreToolUse"]);
+        Assert.NotNull(json);
+        Assert.Single(json!); // only PreToolUse
+        Assert.NotNull(json["PreToolUse"]);
     }
 
     // ── Selection preservation across reload ─────────────────────────────
@@ -135,7 +134,7 @@ public class HooksEditorViewModelTests
     // Fix: capture SelectedGroup?.EventName before clearing, restore by
     // name after rebuilding.
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_PreservesSelectedGroup_AcrossReload()
     {
         // Mirror the user's scenario: many events have hooks (so the
@@ -162,19 +161,19 @@ public class HooksEditorViewModelTests
         HookEventGroup stop = vm.EventGroups.First(g => g.EventName == "Stop");
         vm.SelectedGroup = stop;
         stop.Hooks.Add(new HookEntry { Matcher = "*", CommandValue = "echo c" });
-        Assert.AreEqual("Stop", vm.SelectedGroup?.EventName);
+        Assert.Equal("Stop", vm.SelectedGroup?.EventName);
 
         // Save flow runs, which somewhere along the way reloads the editor
         // (workspace.Changed → RebuildEditors → LoadFromLayered).
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, loaded), ConfigScope.User);
 
-        Assert.IsNotNull(vm.SelectedGroup);
-        Assert.AreEqual("Stop", vm.SelectedGroup!.EventName,
+        Assert.NotNull(vm.SelectedGroup);
+        MessageAssert.Equal("Stop", vm.SelectedGroup!.EventName,
             "After a reload, SelectedGroup must remain on the user's previously-chosen event group, "
             + "not snap back to the first non-empty group. See 3.10 user report.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_PicksFirstNonEmptyGroup_OnFirstLoad()
     {
         // Counter-test: on the FIRST load (no prior selection), the
@@ -193,12 +192,12 @@ public class HooksEditorViewModelTests
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, loaded), ConfigScope.User);
 
-        Assert.IsNotNull(vm.SelectedGroup);
-        Assert.AreEqual("Stop", vm.SelectedGroup!.EventName,
+        Assert.NotNull(vm.SelectedGroup);
+        MessageAssert.Equal("Stop", vm.SelectedGroup!.EventName,
             "First load with no prior selection should pick the first non-empty event group.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_FallsBack_WhenPriorEventNoLongerExists()
     {
         // Edge: prior selected event was an unknown name (e.g. user had
@@ -222,11 +221,11 @@ public class HooksEditorViewModelTests
 
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, loaded), ConfigScope.User);
 
-        Assert.AreEqual("UnknownEvent", vm.SelectedGroup?.EventName,
+        MessageAssert.Equal("UnknownEvent", vm.SelectedGroup?.EventName,
             "Selection by name should match across reloads even for non-KnownEventTypes entries.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_RestoresToSavedState()
     {
         // Arrange: load one PreToolUse hook from "disk", then add a PostToolUse hook
@@ -245,21 +244,21 @@ public class HooksEditorViewModelTests
         // Simulate an unsaved change: add a hook to PostToolUse group
         HookEventGroup postGroup = vm.EventGroups.First(g => g.EventName == "PostToolUse");
         postGroup.Hooks.Add(new HookEntry { Matcher = "*", CommandValue = "echo y" });
-        Assert.AreEqual(1, postGroup.Hooks.Count, "Setup: PostToolUse should have 1 hook after unsaved add");
+        MessageAssert.Equal(1, postGroup.Hooks.Count, "Setup: PostToolUse should have 1 hook after unsaved add");
 
         // Act: reset to saved state
         vm.ResetToInheritedCommand.Execute(null);
 
         // Assert: PostToolUse hook removed, PreToolUse hook restored
         HookEventGroup postAfter = vm.EventGroups.First(g => g.EventName == "PostToolUse");
-        Assert.AreEqual(0, postAfter.Hooks.Count, "PostToolUse hook should be removed after reset");
+        MessageAssert.Equal(0, postAfter.Hooks.Count, "PostToolUse hook should be removed after reset");
 
         HookEventGroup preAfter = vm.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(1, preAfter.Hooks.Count, "PreToolUse hook should be restored from saved state");
-        Assert.IsTrue(vm.IsModified, "IsModified should be true because hooks exist at this scope");
+        MessageAssert.Equal(1, preAfter.Hooks.Count, "PreToolUse hook should be restored from saved state");
+        Assert.True(vm.IsModified, "IsModified should be true because hooks exist at this scope");
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsAll_WhenScopeValueIsNull()
     {
         // When the saved layered value has no entry at the editing scope (scope value == null),
@@ -278,11 +277,11 @@ public class HooksEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsTrue(vm.EventGroups.All(g => g.Hooks.Count == 0));
-        Assert.IsFalse(vm.IsModified);
+        Assert.True(vm.EventGroups.All(g => g.Hooks.Count == 0));
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsAll_WithoutPriorLoad()
     {
         // Edge case: reset is called on a freshly-constructed VM where LoadFromLayered
@@ -297,15 +296,15 @@ public class HooksEditorViewModelTests
         // Directly call OnResetToInherited via the command (IsModified=true enables it).
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsTrue(vm.EventGroups.Count == 0 || vm.EventGroups.All(g => g.Hooks.Count == 0),
+        Assert.True(vm.EventGroups.Count == 0 || vm.EventGroups.All(g => g.Hooks.Count == 0),
             "All hooks must be cleared by the fallback reset path.");
-        Assert.IsFalse(vm.IsModified,
+        Assert.False(vm.IsModified,
             "IsModified must be false after reset with no prior load.");
     }
 
     // ── OtherScopesWithData tests ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void OtherScopesWithData_Empty_WhenOnlyEditingScopeHasHooks()
     {
         // Only User scope in layered → no OTHER scopes → empty list.
@@ -318,10 +317,10 @@ public class HooksEditorViewModelTests
         };
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
-        Assert.AreEqual(0, vm.OtherScopesWithData.Count);
+        Assert.Empty(vm.OtherScopesWithData);
     }
 
-    [TestMethod]
+    [Fact]
     public void OtherScopesWithData_ListsOtherScopesWithNonEmptyObjects()
     {
         // Both User and Project scopes define hooks — Project should appear as a badge.
@@ -351,12 +350,12 @@ public class HooksEditorViewModelTests
         };
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(layered, ConfigScope.User);
-        Assert.AreEqual(1, vm.OtherScopesWithData.Count);
+        Assert.Single(vm.OtherScopesWithData);
         // Step 3a: OtherScopesWithData is now IReadOnlyList<IEditorScope>; compare via Id.
-        Assert.AreEqual("project", vm.OtherScopesWithData[0].Id);
+        Assert.Equal("project", vm.OtherScopesWithData[0].Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void OtherScopesWithData_ExcludesEmptyObjects()
     {
         // Project scope present but its JSON object is empty — must not appear as a badge.
@@ -380,10 +379,10 @@ public class HooksEditorViewModelTests
         };
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(layered, ConfigScope.User);
-        Assert.AreEqual(0, vm.OtherScopesWithData.Count);
+        Assert.Empty(vm.OtherScopesWithData);
     }
 
-    [TestMethod]
+    [Fact]
     public void OtherScopesWithData_RefreshedAfterReset()
     {
         // After adding an unsaved hook and resetting, OtherScopesWithData must
@@ -422,14 +421,14 @@ public class HooksEditorViewModelTests
         // Reset → should reload from saved state; Project badge must still be present.
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.OtherScopesWithData.Count);
+        Assert.Single(vm.OtherScopesWithData);
         // Step 3a: OtherScopesWithData is now IReadOnlyList<IEditorScope>; compare via Id.
-        Assert.AreEqual("project", vm.OtherScopesWithData[0].Id);
+        Assert.Equal("project", vm.OtherScopesWithData[0].Id);
     }
 
     // ── Inline-edit IsModified regression tests ────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EditingLoadedHookCommandValue_SetsIsModified()
     {
         // Regression: changing CommandValue on a hook that was loaded from disk did not
@@ -452,11 +451,11 @@ public class HooksEditorViewModelTests
         vm.IsModified = false;
         entry.CommandValue = "updated-command";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing a loaded hook's CommandValue must mark the editor as modified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingLoadedHookMatcher_SetsIsModified()
     {
         // Regression counterpart for Matcher field.
@@ -476,11 +475,11 @@ public class HooksEditorViewModelTests
         vm.IsModified = false;
         entry.Matcher = "Write";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing a loaded hook's Matcher must mark the editor as modified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingLoadedHookMatcher_SubscriptionSurvivesReload()
     {
         // After a second LoadFromLayered the new entries must also be subscribed.
@@ -508,13 +507,13 @@ public class HooksEditorViewModelTests
         vm.IsModified = false;
         stopGroup.Hooks[0].CommandValue = "modified-after-reload";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Subscription must be established after each reload, not just the first.");
     }
 
     // ── ToJsonValue empty-command emission ─────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_EmitsEntriesWithEmptyCommandValue()
     {
         // Behaviour reversed.  Empty-CommandValue entries are
@@ -532,19 +531,19 @@ public class HooksEditorViewModelTests
         group.Hooks[0].CommandValue = string.Empty;
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json,
+        MessageAssert.NotNull(json,
             "ToJsonValue must emit empty-command entries so 'add hook' triggers a save-button change.");
-        Assert.IsTrue(json!.ContainsKey("PreToolUse"));
+        Assert.True(json!.ContainsKey("PreToolUse"));
         JsonArray arr = json["PreToolUse"]!.AsArray();
-        Assert.AreEqual(1, arr.Count);
+        Assert.Single(arr);
         JsonObject outer = arr[0]!.AsObject();
         JsonObject inner = outer["hooks"]!.AsArray()[0]!.AsObject();
-        Assert.AreEqual("command", inner["type"]!.GetValue<string>());
-        Assert.AreEqual(string.Empty, inner["command"]!.GetValue<string>(),
+        Assert.Equal("command", inner["type"]!.GetValue<string>());
+        MessageAssert.Equal(string.Empty, inner["command"]!.GetValue<string>(),
             "The command key must be present (even when empty) so the structural diff fires.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_PreservesGroupsWithOnlyEmptyEntries()
     {
         // Companion to the above: a group whose entries are all empty IS
@@ -557,9 +556,9 @@ public class HooksEditorViewModelTests
         group.AddHookCommand.Execute(null); // entry 2 — empty command
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json,
+        MessageAssert.NotNull(json,
             "ToJsonValue must include groups whose entries are pending fill-in so save enables.");
-        Assert.IsTrue(json!.ContainsKey("PostToolUse"),
+        Assert.True(json!.ContainsKey("PostToolUse"),
             "PostToolUse must NOT be omitted when entries are pending fill-in.");
     }
 
@@ -579,7 +578,7 @@ public class HooksEditorViewModelTests
     // intentionally do NOT pre-clear, exercising the real load → user-edit
     // path that the user actually hits.
 
-    [TestMethod]
+    [Fact]
     public void EditingLoadedHook_AfterLoad_FiresIsModifiedPropertyChanged()
     {
         JsonObject obj = new()
@@ -591,7 +590,7 @@ public class HooksEditorViewModelTests
         };
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
-        Assert.IsTrue(vm.IsModified, "Setup: load with non-null scope value sets IsModified=true.");
+        Assert.True(vm.IsModified, "Setup: load with non-null scope value sets IsModified=true.");
 
         int fired = 0;
         vm.PropertyChanged += (_, e) =>
@@ -605,13 +604,13 @@ public class HooksEditorViewModelTests
         HookEventGroup preGroup = vm.EventGroups.First(g => g.EventName == "PreToolUse");
         preGroup.Hooks[0].CommandValue = "echo edited";
 
-        Assert.IsTrue(fired >= 1,
+        Assert.True(fired >= 1,
             "Editing a loaded hook's CommandValue must fire PropertyChanged(IsModified) " +
             "even when the flag was already true from the prior load — otherwise the " +
             "live-write to the workspace never runs and Save stays disabled.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DeletingLoadedHook_AfterLoad_FiresIsModifiedPropertyChanged()
     {
         JsonObject obj = new()
@@ -636,62 +635,62 @@ public class HooksEditorViewModelTests
         HookEventGroup preGroup = vm.EventGroups.First(g => g.EventName == "PreToolUse");
         preGroup.RemoveHookCommand.Execute(preGroup.Hooks[0]);
 
-        Assert.IsTrue(fired >= 1,
+        Assert.True(fired >= 1,
             "Deleting a loaded hook must fire PropertyChanged(IsModified) so the workspace " +
             "live-write runs and Save enables — symmetric to the MCP delete-after-load contract.");
     }
 
     // ── Validation — HookEntry / HookEventGroup ──────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void HookEntry_BlankMatcher_HasValidationWarningTrue()
     {
         HookEntry entry = new() { Matcher = string.Empty, CommandValue = "echo hi" };
-        Assert.IsTrue(entry.HasValidationWarning,
+        Assert.True(entry.HasValidationWarning,
             "Blank Matcher must set HasValidationWarning=true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HookEntry_StarMatcher_MatcherIsValidTrue()
     {
         HookEntry entry = new() { Matcher = "*", CommandValue = "echo hi" };
-        Assert.IsTrue(entry.MatcherIsValid,
+        Assert.True(entry.MatcherIsValid,
             "'*' is the wildcard — it must be valid.");
-        Assert.IsFalse(entry.HasValidationWarning,
+        Assert.False(entry.HasValidationWarning,
             "A hook with '*' matcher and non-empty command must have no warning.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HookEntry_KnownToolMatcher_MatcherIsValidTrue()
     {
         HookEntry entry = new() { Matcher = "Bash", CommandValue = "echo hi" };
-        Assert.IsTrue(entry.MatcherIsValid,
+        Assert.True(entry.MatcherIsValid,
             "'Bash' is a known tool — MatcherIsValid must be true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HookEntry_UnknownMatcher_MatcherIsValidFalse()
     {
         HookEntry entry = new() { Matcher = "NotATool", CommandValue = "echo hi" };
-        Assert.IsFalse(entry.MatcherIsValid,
+        Assert.False(entry.MatcherIsValid,
             "'NotATool' is not a known tool — MatcherIsValid must be false.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HookEntry_BlankCommandValue_HasValidationWarningTrue()
     {
         HookEntry entry = new() { Matcher = "Bash", CommandValue = string.Empty };
-        Assert.IsTrue(entry.HasValidationWarning,
+        Assert.True(entry.HasValidationWarning,
             "Empty CommandValue must set HasValidationWarning=true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HookEventGroup_HasAnyHookWithWarning_TrueWhenAnyEntryIsInvalid()
     {
         HookEventGroup group = new("PreToolUse");
         group.Hooks.Add(new HookEntry { Matcher = "Bash", CommandValue = "echo hi" }); // valid
         group.Hooks.Add(new HookEntry { Matcher = string.Empty, CommandValue = "echo" }); // invalid
-        Assert.IsTrue(group.HasAnyHookWithWarning,
+        Assert.True(group.HasAnyHookWithWarning,
             "HasAnyHookWithWarning must be true when at least one hook has an empty Matcher.");
     }
 
@@ -699,7 +698,7 @@ public class HooksEditorViewModelTests
     // SDK-backed read path
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_ReadsThroughTypedAccessor()
     {
         string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-edit-hooks-" + Guid.NewGuid().ToString("N"));
@@ -744,15 +743,15 @@ public class HooksEditorViewModelTests
             // The PreToolUse group must contain the SDK-backed hook;
             // PostToolUse must NOT have the divergent layered hook.
             HookEventGroup? preToolUse = vm.EventGroups.FirstOrDefault(g => g.EventName == "PreToolUse");
-            Assert.IsNotNull(preToolUse);
-            Assert.AreEqual(1, preToolUse!.Hooks.Count, "SDK path must populate PreToolUse only.");
-            Assert.AreEqual("Bash", preToolUse.Hooks[0].Matcher);
-            Assert.AreEqual(HookCommandType.Command, preToolUse.Hooks[0].CommandType);
-            Assert.AreEqual("echo from-sdk", preToolUse.Hooks[0].CommandValue);
+            Assert.NotNull(preToolUse);
+            MessageAssert.Equal(1, preToolUse!.Hooks.Count, "SDK path must populate PreToolUse only.");
+            Assert.Equal("Bash", preToolUse.Hooks[0].Matcher);
+            Assert.Equal(HookCommandType.Command, preToolUse.Hooks[0].CommandType);
+            Assert.Equal("echo from-sdk", preToolUse.Hooks[0].CommandValue);
 
             HookEventGroup? postToolUse = vm.EventGroups.FirstOrDefault(g => g.EventName == "PostToolUse");
-            Assert.IsNotNull(postToolUse);
-            Assert.AreEqual(0, postToolUse!.Hooks.Count,
+            Assert.NotNull(postToolUse);
+            MessageAssert.Equal(0, postToolUse!.Hooks.Count,
                 "Divergent PostToolUse hook in the LayeredValue argument must be ignored when an SDK client is supplied.");
         }
         finally
@@ -772,7 +771,7 @@ public class HooksEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_WithoutSdkClient_FallsBackToLegacyJsonPath()
     {
         JsonObject legacy = new()
@@ -799,15 +798,15 @@ public class HooksEditorViewModelTests
         vm.LoadFromLayered(layered, ConfigScope.User);
 
         HookEventGroup? pre = vm.EventGroups.FirstOrDefault(g => g.EventName == "PreToolUse");
-        Assert.IsNotNull(pre);
-        Assert.AreEqual(1, pre!.Hooks.Count);
-        Assert.AreEqual("Edit", pre.Hooks[0].Matcher);
-        Assert.AreEqual("echo legacy", pre.Hooks[0].CommandValue);
+        Assert.NotNull(pre);
+        Assert.Single(pre!.Hooks);
+        Assert.Equal("Edit", pre.Hooks[0].Matcher);
+        Assert.Equal("echo legacy", pre.Hooks[0].CommandValue);
     }
 
     // ── Schema-derived event list + unrecognized-event notice ────────────────
 
-    [TestMethod]
+    [Fact]
     public void SchemaDerivedEvents_DriveEventGroups_IncludingNonCurated()
     {
         // A schema exposing a curated event plus one we don't curate: the editor
@@ -817,11 +816,11 @@ public class HooksEditorViewModelTests
         vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
 
         string[] names = vm.EventGroups.Select(g => g.EventName).ToArray();
-        CollectionAssert.AreEquivalent(new[] { "PreToolUse", "BrandNewEvent" }, names);
-        Assert.AreEqual("PreToolUse", names[0], "Curated events sort before non-curated schema events.");
+        MessageAssert.SameElements(new[] { "PreToolUse", "BrandNewEvent" }, names);
+        MessageAssert.Equal("PreToolUse", names[0], "Curated events sort before non-curated schema events.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UnrecognizedEventInConfig_SetsNotice()
     {
         // Schema knows only PreToolUse; the config carries a deprecated/unknown event.
@@ -833,13 +832,13 @@ public class HooksEditorViewModelTests
         HooksEditorViewModel vm = new(HooksSchemaWith("PreToolUse"), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.IsNotNull(vm.UnrecognizedEventsNotice, "An event not in the schema must raise the notice.");
-        StringAssert.Contains(vm.UnrecognizedEventsNotice!, "DeprecatedEvent");
-        Assert.IsFalse(vm.UnrecognizedEventsNotice!.Contains("PreToolUse"),
+        MessageAssert.NotNull(vm.UnrecognizedEventsNotice, "An event not in the schema must raise the notice.");
+        OrdinalAssert.Contains("DeprecatedEvent", vm.UnrecognizedEventsNotice!);
+        Assert.False(vm.UnrecognizedEventsNotice!.Contains("PreToolUse"),
             "A recognised event must not appear in the notice.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RecognizedEventsOnly_NoNotice()
     {
         JsonObject obj = new()
@@ -849,10 +848,10 @@ public class HooksEditorViewModelTests
         HooksEditorViewModel vm = new(HooksSchemaWith("PreToolUse", "Stop"), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.IsNull(vm.UnrecognizedEventsNotice, "All-recognised config must not raise the notice.");
+        MessageAssert.Null(vm.UnrecognizedEventsNotice, "All-recognised config must not raise the notice.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BareSchemaNode_NoNotice_EvenForUnknownConfigEvent()
     {
         // No schema event set (bare/offline node) → we can't judge, so stay forgiving.
@@ -863,11 +862,11 @@ public class HooksEditorViewModelTests
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithHooks(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.IsNull(vm.UnrecognizedEventsNotice,
+        MessageAssert.Null(vm.UnrecognizedEventsNotice,
             "A bare/offline schema (no event set) must not flag anything — forgiving by default.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EventGroups_CarrySchemaDescriptions_ForTooltipAndLabel()
     {
         SchemaNode schema = new("hooks", "hooks")
@@ -883,19 +882,19 @@ public class HooksEditorViewModelTests
         vm.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
 
         HookEventGroup cwd = vm.EventGroups.First(g => g.EventName == "CwdChanged");
-        Assert.AreEqual("Hooks that run when the working directory changes", cwd.Description);
-        Assert.IsTrue(cwd.HasDescription);
+        Assert.Equal("Hooks that run when the working directory changes", cwd.Description);
+        Assert.True(cwd.HasDescription);
 
         // A bare schema node (no descriptions) yields no per-event description,
         // so the tooltip + detail label stay hidden.
         HooksEditorViewModel bare = new(HooksSchema(), ConfigScope.User);
         bare.LoadFromLayered(new LayeredValue("hooks", []), ConfigScope.User);
-        Assert.IsFalse(bare.EventGroups.First().HasDescription);
+        Assert.False(bare.EventGroups.First().HasDescription);
     }
 
     // ── Command-type picker descriptions (SDK-first) ─────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CommandTypePicker_CarriesSchemaDescriptions_WhenClientPresent()
     {
         // With an SDK client, the Type ComboBox's per-type help text comes from the
@@ -918,9 +917,9 @@ public class HooksEditorViewModelTests
 
             HookEntry entry = group.Hooks[0];
             HookCommandTypeInfo command = entry.CommandTypeInfos.First(i => i.Value == HookCommandType.Command);
-            StringAssert.Contains(command.Description, "Bash command hook",
+            MessageAssert.Contains("Bash command hook", command.Description,
                 "The Type picker must show the schema's description, not the hardcoded fallback.");
-            Assert.AreNotEqual("Run a shell command", command.Description,
+            MessageAssert.NotEqual("Run a shell command", command.Description,
                 "The hardcoded fallback must be superseded by the schema description when a client is present.");
         }
         finally
@@ -940,7 +939,7 @@ public class HooksEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void CommandTypePicker_FallsBackToHardcoded_WithoutClient()
     {
         // No client (unit-test fixture / offline): the picker degrades to the hardcoded
@@ -953,7 +952,7 @@ public class HooksEditorViewModelTests
 
         HookEntry entry = group.Hooks[0];
         HookCommandTypeInfo command = entry.CommandTypeInfos.First(i => i.Value == HookCommandType.Command);
-        Assert.AreEqual("Run a shell command", command.Description,
+        MessageAssert.Equal("Run a shell command", command.Description,
             "Without a client the picker must use the offline DefaultCommandTypeInfos.");
     }
 }

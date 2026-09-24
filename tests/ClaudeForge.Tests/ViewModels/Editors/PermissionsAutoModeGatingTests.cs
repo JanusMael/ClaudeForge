@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// loading a doc with <c>defaultMode:"auto"</c> at a non-User scope keeps it
 /// "auto" (an unrelated later edit must not clobber it to "default").
 /// </summary>
-[TestClass]
 public sealed class PermissionsAutoModeGatingTests
 {
     private static (PermissionsEditorViewModel vm, ClaudeCodeClient client) Open(
@@ -48,32 +47,32 @@ public sealed class PermissionsAutoModeGatingTests
     private static List<string> ModeValues(PermissionsEditorViewModel vm)
         => vm.DefaultModeInfos.Select(i => i.Value).ToList();
 
-    [TestMethod]
+    [Fact]
     public void Auto_OnAutoCapableModel_AtUserScope_IsKeptAndOffered()
     {
         (PermissionsEditorViewModel vm, ClaudeCodeClient client) = Open(ConfigScope.User, "claude-opus-4-8", "auto");
         using (client)
         {
-            Assert.AreEqual("auto", vm.DefaultMode);
-            Assert.IsFalse(vm.ShowAutoModeWarning);
-            CollectionAssert.Contains(ModeValues(vm), "auto", "auto is offered for an auto-capable model at User scope.");
+            Assert.Equal("auto", vm.DefaultMode);
+            Assert.False(vm.ShowAutoModeWarning);
+            MessageAssert.Contains("auto", ModeValues(vm), "auto is offered for an auto-capable model at User scope.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Auto_OnNonAutoModel_IsAdvised_NotCoerced()
     {
         (PermissionsEditorViewModel vm, ClaudeCodeClient client) = Open(ConfigScope.User, "claude-haiku-4-5", "auto");
         using (client)
         {
-            Assert.AreEqual("auto", vm.DefaultMode, "Persisted auto is preserved, not coerced.");
-            Assert.IsTrue(vm.ShowAutoModeWarning, "An advisory explains it won't take effect.");
-            Assert.AreEqual("auto", EmittedDefaultMode(vm), "Save round-trips the original value.");
-            CollectionAssert.Contains(ModeValues(vm), "auto", "The current value stays visible (not blank).");
+            MessageAssert.Equal("auto", vm.DefaultMode, "Persisted auto is preserved, not coerced.");
+            Assert.True(vm.ShowAutoModeWarning, "An advisory explains it won't take effect.");
+            MessageAssert.Equal("auto", EmittedDefaultMode(vm), "Save round-trips the original value.");
+            MessageAssert.Contains("auto", ModeValues(vm), "The current value stays visible (not blank).");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Auto_AtNonUserScope_IsAdvised_NotClobbered()
     {
         // The high-severity regression: opus IS auto-capable, but auto is userScopeOnly,
@@ -81,34 +80,34 @@ public sealed class PermissionsAutoModeGatingTests
         (PermissionsEditorViewModel vm, ClaudeCodeClient client) = Open(ConfigScope.Project, "claude-opus-4-8", "auto");
         using (client)
         {
-            Assert.AreEqual("auto", vm.DefaultMode, "auto at Project scope is preserved.");
-            Assert.IsTrue(vm.ShowAutoModeWarning);
-            Assert.AreEqual("auto", EmittedDefaultMode(vm),
+            MessageAssert.Equal("auto", vm.DefaultMode, "auto at Project scope is preserved.");
+            Assert.True(vm.ShowAutoModeWarning);
+            MessageAssert.Equal("auto", EmittedDefaultMode(vm),
                 "An unrelated later edit live-writes ToJsonValue — it must still carry 'auto', not a coerced 'default'.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Auto_IsNotOfferedAsAFreshChoice_WhenIneligible()
     {
         // Current mode is 'default' (not auto), so auto is not re-added — it's simply filtered out.
         (PermissionsEditorViewModel vm, ClaudeCodeClient client) = Open(ConfigScope.Project, "claude-opus-4-8", "default");
         using (client)
         {
-            CollectionAssert.DoesNotContain(ModeValues(vm), "auto",
+            MessageAssert.DoesNotContain("auto", ModeValues(vm),
                 "auto is removed from the offerable choices at a non-User scope.");
-            Assert.IsFalse(vm.ShowAutoModeWarning, "No advisory when the current mode is eligible.");
+            Assert.False(vm.ShowAutoModeWarning, "No advisory when the current mode is eligible.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void NonAutoMode_IsUntouched()
     {
         (PermissionsEditorViewModel vm, ClaudeCodeClient client) = Open(ConfigScope.Project, "claude-haiku-4-5", "acceptEdits");
         using (client)
         {
-            Assert.AreEqual("acceptEdits", vm.DefaultMode, "Only auto is gated; other modes are unaffected.");
-            Assert.IsFalse(vm.ShowAutoModeWarning);
+            MessageAssert.Equal("acceptEdits", vm.DefaultMode, "Only auto is gated; other modes are unaffected.");
+            Assert.False(vm.ShowAutoModeWarning);
         }
     }
 }

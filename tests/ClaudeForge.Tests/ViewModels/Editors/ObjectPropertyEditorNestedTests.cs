@@ -14,7 +14,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// <see cref="PropertyEditorViewModel"/> so test assertions don't depend on
 /// the concrete library leaves' internals.
 /// </remarks>
-[TestClass]
 public sealed class ObjectPropertyEditorNestedTests
 {
     /// <summary>
@@ -40,18 +39,18 @@ public sealed class ObjectPropertyEditorNestedTests
 
     // ── ToJsonValue recursion ────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_AllChildrenReturnNull_ReturnsNull()
     {
         ObjectPropertyEditorViewModel vm = Parent(Leaf("a"), Leaf("b"));
         // FakeLeaf default Value is null → ToJsonValue() = null per leaf.
-        Assert.IsNull(vm.ToJsonValue(),
+        MessageAssert.Null(vm.ToJsonValue(),
             "Object editor must return null when every child returns null — otherwise "
             + "save would emit an empty {} which the workspace then strips, masking the "
             + "real 'no children set' state.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_SomeChildrenNull_OmitsThem()
     {
         FakeLeafEditor a = Leaf("a");
@@ -62,14 +61,14 @@ public sealed class ObjectPropertyEditorNestedTests
         ObjectPropertyEditorViewModel vm = Parent(a, b, c);
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json);
-        Assert.IsTrue(json.ContainsKey("a"));
-        Assert.IsFalse(json.ContainsKey("b"),
+        Assert.NotNull(json);
+        Assert.True(json.ContainsKey("a"));
+        Assert.False(json.ContainsKey("b"),
             "Children whose ToJsonValue returns null must NOT appear in the parent JSON.");
-        Assert.IsTrue(json.ContainsKey("c"));
+        Assert.True(json.ContainsKey("c"));
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_RecursivelyAssemblesNestedObjects()
     {
         // Two ObjectPropertyEditors chained: outer has [inner] as child;
@@ -86,15 +85,15 @@ public sealed class ObjectPropertyEditorNestedTests
             S("settings.nested", "nested"), ConfigScope.User, [inner]);
 
         JsonObject? json = outer.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json);
+        Assert.NotNull(json);
         JsonObject? innerJson = json["inner"] as JsonObject;
-        Assert.IsNotNull(innerJson);
-        Assert.IsTrue(innerJson["flag"]!.GetValue<bool>());
+        Assert.NotNull(innerJson);
+        Assert.True(innerJson["flag"]!.GetValue<bool>());
     }
 
     // ── LoadFromLayered per-scope projection ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_ProjectsParentScopesOntoChildren()
     {
         // Parent has entries at User and Local scopes; each entry is a JsonObject
@@ -121,14 +120,14 @@ public sealed class ObjectPropertyEditorNestedTests
         vm.LoadFromLayered(layered, ConfigScope.User);
 
         // Each child should see a JsonValue projected from its parent key.
-        Assert.IsNotNull(a.Value);
-        Assert.IsNotNull(b.Value);
-        Assert.AreEqual("local-a", a.Value!.GetValue<string>(),
+        Assert.NotNull(a.Value);
+        Assert.NotNull(b.Value);
+        MessageAssert.Equal("local-a", a.Value!.GetValue<string>(),
             "Child 'a' should observe the highest-priority projected value (Local in this fixture).");
-        Assert.AreEqual("local-b", b.Value!.GetValue<string>());
+        Assert.Equal("local-b", b.Value!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_ChildAbsentFromAllScopes_StaysUnmodified()
     {
         // Parent has an entry but it doesn't contain "absent" — child stays null + unmodified.
@@ -147,14 +146,14 @@ public sealed class ObjectPropertyEditorNestedTests
 
         vm.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.IsNotNull(present.Value, "Child 'present' must receive its projected value.");
-        Assert.IsNull(absent.Value,
+        MessageAssert.NotNull(present.Value, "Child 'present' must receive its projected value.");
+        MessageAssert.Null(absent.Value,
             "Child whose key is missing from every parent scope must remain null.");
-        Assert.IsFalse(absent.IsModified,
+        Assert.False(absent.IsModified,
             "Absent child must NOT be flagged as modified after LoadFromLayered.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_IsModifiedReflects_AnyChildModified()
     {
         JsonObject parent = new() { ["a"] = "x" };
@@ -172,7 +171,7 @@ public sealed class ObjectPropertyEditorNestedTests
 
         vm.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Object editor IsModified must be true when ANY child is modified after load.");
 
         // Empty parent — no child gets a value, no child is modified.
@@ -182,30 +181,30 @@ public sealed class ObjectPropertyEditorNestedTests
         b.Value = null;
         b.IsModified = false;
         vm.LoadFromLayered(emptyLayered, ConfigScope.User);
-        Assert.IsFalse(vm.IsModified,
+        Assert.False(vm.IsModified,
             "Object editor IsModified must be false when no child has a value at any scope.");
     }
 
     // ── Child IsModified propagation ──────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ChildIsModified_FlippingTrue_PropagatesToParent()
     {
         FakeLeafEditor a = Leaf("a");
         ObjectPropertyEditorViewModel vm = Parent(a);
 
-        Assert.IsFalse(vm.IsModified);
+        Assert.False(vm.IsModified);
 
         // Trigger the propagation by setting child IsModified directly. The fake
         // leaf inherits from the bridge whose IsModified is observable via
         // CommunityToolkit, so PropertyChanged fires.
         a.IsModified = true;
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Parent must observe a child going from unmodified → modified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ChildIsModified_SecondChildFlipsTrue_StillFiresPropertyChanged()
     {
         // The force-fire contract: when a SECOND child becomes modified while
@@ -217,7 +216,7 @@ public sealed class ObjectPropertyEditorNestedTests
         ObjectPropertyEditorViewModel vm = Parent(a, b);
 
         a.IsModified = true;
-        Assert.IsTrue(vm.IsModified, "Sanity: first child flips parent.");
+        Assert.True(vm.IsModified, "Sanity: first child flips parent.");
 
         int fires = 0;
         PropertyChangedEventHandler handler = (_, e) =>
@@ -237,14 +236,14 @@ public sealed class ObjectPropertyEditorNestedTests
             vm.PropertyChanged -= handler;
         }
 
-        Assert.IsTrue(fires >= 1,
+        Assert.True(fires >= 1,
             "Parent must fire PropertyChanged(IsModified) when a second child becomes "
             + "modified, even though the parent's bool value did not change.");
     }
 
     // ── Reset cascade ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ResetToInherited_CascadesToAllChildren()
     {
         // Construct parent BEFORE flipping children so the propagation handler
@@ -258,13 +257,13 @@ public sealed class ObjectPropertyEditorNestedTests
         a.IsModified = true;
         b.IsModified = true;
 
-        Assert.IsTrue(vm.CanReset, "Pre-condition: parent should be resettable when modified.");
+        Assert.True(vm.CanReset, "Pre-condition: parent should be resettable when modified.");
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsFalse(a.IsModified, "Reset must clear child A's IsModified.");
-        Assert.IsFalse(b.IsModified, "Reset must clear child B's IsModified.");
-        Assert.IsFalse(vm.IsModified,
+        Assert.False(a.IsModified, "Reset must clear child A's IsModified.");
+        Assert.False(b.IsModified, "Reset must clear child B's IsModified.");
+        Assert.False(vm.IsModified,
             "After cascading reset, the parent's IsModified must also be false.");
     }
 
@@ -290,7 +289,7 @@ public sealed class ObjectPropertyEditorNestedTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_AfterLoad_KeepsKeysNoChildModels()
     {
         // Two modelled keys, two the editor has no child for.
@@ -309,7 +308,7 @@ public sealed class ObjectPropertyEditorNestedTests
 
         // Premise: the editor really did ignore them — if it had children for these keys
         // the test would be asserting the ordinary path and proving nothing.
-        Assert.AreEqual(2, vm.Children.Count,
+        MessageAssert.Equal(2, vm.Children.Count,
             "Premise: only 'a' and 'b' are modelled; the other two keys have no child.");
 
         // The user edits ONE modelled key. This is the whole repro.
@@ -317,17 +316,17 @@ public sealed class ObjectPropertyEditorNestedTests
         a.IsModified = true;
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json);
-        Assert.AreEqual("edited", json["a"]!.GetValue<string>(), "The edit must land.");
-        Assert.AreEqual("/opt/thing", json["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
+        Assert.NotNull(json);
+        MessageAssert.Equal("edited", json["a"]!.GetValue<string>(), "The edit must land.");
+        MessageAssert.Equal("/opt/thing", json["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
             "An unmodelled key must survive an edit to a modelled sibling — the writer "
             + "diffs this object against the on-disk baseline, so a key missing here is a "
             + "key DELETED from the user's file.");
-        Assert.AreEqual("marker", json["RETEST_MARKER"]?.GetValue<string>(),
+        MessageAssert.Equal("marker", json["RETEST_MARKER"]?.GetValue<string>(),
             "Every unmodelled key survives, not just the first.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_UnmodelledNonScalarValues_SurviveStructurally()
     {
         // An unmodelled key is not always a string — a hand-written block the app has
@@ -346,12 +345,12 @@ public sealed class ObjectPropertyEditorNestedTests
         a.Value = JsonValue.Create("edited");
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json);
-        Assert.IsTrue(JsonNode.DeepEquals(nested, json["customBlock"]),
+        Assert.NotNull(json);
+        Assert.True(JsonNode.DeepEquals(nested, json["customBlock"]),
             "An unmodelled object/array value must round-trip structurally, not as text.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_UnmodelledKeys_AreClonedNotShared()
     {
         // Sharing the node would let a later edit of the emitted object reach back into
@@ -366,11 +365,11 @@ public sealed class ObjectPropertyEditorNestedTests
         first["opaque"] = "mutated";
 
         JsonObject second = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual("original", second["opaque"]!.GetValue<string>(),
+        MessageAssert.Equal("original", second["opaque"]!.GetValue<string>(),
             "Each emission must carry its own clone of the preserved value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ModelledChildWins_OverASameNamedCarriedKey()
     {
         // A key that IS modelled must never be captured as unmodelled — otherwise the
@@ -384,11 +383,11 @@ public sealed class ObjectPropertyEditorNestedTests
         a.Value = JsonValue.Create("edited");
 
         JsonObject json = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual("edited", json["a"]!.GetValue<string>(),
+        MessageAssert.Equal("edited", json["a"]!.GetValue<string>(),
             "The child's current value wins; the load-time copy must not shadow it.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_UnmodelledKeysAtOtherScopes_AreNotCarried()
     {
         // This editor writes ONE scope. Hoisting another scope's keys into it would
@@ -412,12 +411,12 @@ public sealed class ObjectPropertyEditorNestedTests
         vm.LoadFromLayered(layered, ConfigScope.User);
 
         JsonObject json = (JsonObject)vm.ToJsonValue()!;
-        Assert.IsFalse(json.ContainsKey("LOCAL_ONLY"),
+        Assert.False(json.ContainsKey("LOCAL_ONLY"),
             "A key that exists only at another scope must NOT be written into the editing "
             + "scope — that would promote an inherited value into an explicit override.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_UnmodelledKeysOnly_StillEmitsTheObject()
     {
         // No child has a value, but the scope's file holds keys this editor never showed.
@@ -429,15 +428,15 @@ public sealed class ObjectPropertyEditorNestedTests
         ObjectPropertyEditorViewModel vm = Parent(a);
         vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
 
-        Assert.IsNull(a.Value, "Premise: no child took a value from this object.");
+        MessageAssert.Null(a.Value, "Premise: no child took a value from this object.");
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(json,
+        MessageAssert.NotNull(json,
             "An object holding only unmodelled keys must not serialise as 'remove me'.");
-        Assert.AreEqual("keep me", json["UNSEEN"]!.GetValue<string>());
+        Assert.Equal("keep me", json["UNSEEN"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_NoUnmodelledKeys_StillReturnsNullWhenEmpty()
     {
         // The AGENTS.md §7 contract, unchanged: empty means "remove the key", never "{}".
@@ -449,12 +448,12 @@ public sealed class ObjectPropertyEditorNestedTests
 
         a.Value = null;
 
-        Assert.IsNull(vm.ToJsonValue(),
+        MessageAssert.Null(vm.ToJsonValue(),
             "With nothing carried and no child value, the editor must still return null so "
             + "the workspace removes the property rather than writing an empty object.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetToInherited_DropsCarriedKeys_SoThePropertyIsRemoved()
     {
         // Reset means "remove this property at this scope". Carrying keys through it would
@@ -465,8 +464,8 @@ public sealed class ObjectPropertyEditorNestedTests
         ObjectPropertyEditorViewModel vm = Parent(a);
         vm.LoadFromLayered(At(ConfigScope.User, onDisk), ConfigScope.User);
 
-        Assert.IsTrue(vm.CanReset, "Premise: there is something to reset.");
-        Assert.IsTrue(((JsonObject)vm.ToJsonValue()!).ContainsKey("UNSEEN"),
+        Assert.True(vm.CanReset, "Premise: there is something to reset.");
+        Assert.True(((JsonObject)vm.ToJsonValue()!).ContainsKey("UNSEEN"),
             "Premise: the carried key is being emitted before the reset — without this the "
             + "assertion below would pass on an editor that never carried anything.");
 
@@ -476,12 +475,12 @@ public sealed class ObjectPropertyEditorNestedTests
         // themselves, which is each leaf's own contract (and the fake here keeps its value).
         // What this object editor owes is that the keys it carried do not survive a reset.
         JsonObject? json = vm.ToJsonValue() as JsonObject;
-        Assert.IsFalse(json?.ContainsKey("UNSEEN") ?? false,
+        Assert.False(json?.ContainsKey("UNSEEN") ?? false,
             "A reset must drop the carried keys; otherwise a property the user believes "
             + "they cleared survives, rebuilt from keys the editor never showed them.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ReloadingADifferentScope_ReplacesTheCarriedKeys()
     {
         // The capture is per-load. A stale set from a previous scope would write another
@@ -490,15 +489,15 @@ public sealed class ObjectPropertyEditorNestedTests
         ObjectPropertyEditorViewModel vm = Parent(a);
 
         vm.LoadFromLayered(At(ConfigScope.User, new JsonObject { ["FIRST"] = "1" }), ConfigScope.User);
-        Assert.IsTrue(((JsonObject)vm.ToJsonValue()!).ContainsKey("FIRST"),
+        Assert.True(((JsonObject)vm.ToJsonValue()!).ContainsKey("FIRST"),
             "Premise: the first load carried FIRST.");
 
         vm.LoadFromLayered(At(ConfigScope.Local, new JsonObject { ["SECOND"] = "2" }), ConfigScope.Local);
 
         JsonObject json = (JsonObject)vm.ToJsonValue()!;
-        Assert.IsFalse(json.ContainsKey("FIRST"),
+        Assert.False(json.ContainsKey("FIRST"),
             "A re-load must replace the carried set, not accumulate it.");
-        Assert.IsTrue(json.ContainsKey("SECOND"));
+        Assert.True(json.ContainsKey("SECOND"));
     }
 
     // ── Collapse into prefix categories (large-object load perf) ──────
@@ -539,17 +538,17 @@ public sealed class ObjectPropertyEditorNestedTests
         return ParentWithNames(names.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void SmallObject_RendersInline_NoCategories()
     {
         ObjectPropertyEditorViewModel vm = ParentWithNames("a", "b", "c");
 
-        Assert.IsFalse(vm.IsCollapsible, "A small object renders inline, not as categories.");
-        Assert.AreEqual(0, vm.Categories.Count);
-        Assert.AreEqual(3, vm.Children.Count);
+        Assert.False(vm.IsCollapsible, "A small object renders inline, not as categories.");
+        Assert.Empty(vm.Categories);
+        Assert.Equal(3, vm.Children.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void MidSizedObject_StillRendersInline_NoAccordionImposed()
     {
         // A sandbox-sized object (35 children) must render inline exactly as it always did.
@@ -557,44 +556,44 @@ public sealed class ObjectPropertyEditorNestedTests
         // renders in acceptable time, so we must NOT impose a collapsed accordion on it.
         ObjectPropertyEditorViewModel vm = ParentWithNames(Prefixed("field", 35));
 
-        Assert.IsFalse(vm.IsCollapsible,
+        Assert.False(vm.IsCollapsible,
             "A mid-sized object must NOT be forced into a collapsed accordion.");
-        Assert.AreEqual(0, vm.Categories.Count);
-        Assert.AreEqual(35, vm.Children.Count);
+        Assert.Empty(vm.Categories);
+        Assert.Equal(35, vm.Children.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void HugeObject_NoUsefulPrefixes_SingleAllCategory_Collapsed()
     {
         // No shared prefix → one bounded "All" section (still collapsed → zero realized),
         // never a pile of singleton categories.
         ObjectPropertyEditorViewModel vm = ParentWithNames(Prefixed("field", 200));
 
-        Assert.IsTrue(vm.IsCollapsible);
-        Assert.AreEqual(1, vm.Categories.Count);
-        Assert.AreEqual("All", vm.Categories[0].Name);
-        Assert.AreEqual(200, vm.Categories[0].Count);
-        Assert.IsFalse(vm.Categories[0].IsExpanded, "Sections start collapsed.");
-        Assert.AreEqual(0, vm.Categories[0].VisibleChildren.Count,
+        Assert.True(vm.IsCollapsible);
+        Assert.Single(vm.Categories);
+        Assert.Equal("All", vm.Categories[0].Name);
+        Assert.Equal(200, vm.Categories[0].Count);
+        Assert.False(vm.Categories[0].IsExpanded, "Sections start collapsed.");
+        MessageAssert.Equal(0, vm.Categories[0].VisibleChildren.Count,
             "Collapsed → zero realized child editors (the multi-second-load fix).");
     }
 
-    [TestMethod]
+    [Fact]
     public void HugeObject_GroupsByBareNamePrefix_WithOther_AllCollapsed()
     {
         ObjectPropertyEditorViewModel vm = HugePrefixedParent();
 
-        Assert.IsTrue(vm.IsCollapsible);
-        CollectionAssert.AreEqual(
+        Assert.True(vm.IsCollapsible);
+        MessageAssert.SequenceEqual(
             new[] { "CLAUDE", "OTEL", "Other" },
             vm.Categories.Select(c => c.Name).ToArray(),
             "Categories are the BARE prefix (no trailing '_'), alphabetical, with Other last.");
-        Assert.AreEqual(2, vm.Categories.First(c => c.Name == "Other").Count);
-        Assert.AreEqual(0, vm.Categories.Sum(c => c.VisibleChildren.Count),
+        Assert.Equal(2, vm.Categories.First(c => c.Name == "Other").Count);
+        MessageAssert.Equal(0, vm.Categories.Sum(c => c.VisibleChildren.Count),
             "Every section starts collapsed → nothing realized on page load.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExpandingOneCategory_RealizesOnlyItsChildren()
     {
         ObjectPropertyEditorViewModel vm = HugePrefixedParent();
@@ -602,11 +601,11 @@ public sealed class ObjectPropertyEditorNestedTests
         PropertyCategoryViewModel claude = vm.Categories.First(c => c.Name == "CLAUDE");
         claude.IsExpanded = true;
 
-        Assert.AreEqual(80, claude.VisibleChildren.Count, "Expanded section binds its own children.");
-        Assert.AreEqual(0, vm.Categories.Where(c => c.Name != "CLAUDE").Sum(c => c.VisibleChildren.Count),
+        MessageAssert.Equal(80, claude.VisibleChildren.Count, "Expanded section binds its own children.");
+        MessageAssert.Equal(0, vm.Categories.Where(c => c.Name != "CLAUDE").Sum(c => c.VisibleChildren.Count),
             "Other sections stay collapsed → still nothing realized there.");
-        StringAssert.Contains(claude.Header, "80");
-        StringAssert.Contains(claude.Header, "CLAUDE");
+        OrdinalAssert.Contains("80", claude.Header);
+        OrdinalAssert.Contains("CLAUDE", claude.Header);
     }
 
     // ── Test plumbing ────────────────────────────────────────────────

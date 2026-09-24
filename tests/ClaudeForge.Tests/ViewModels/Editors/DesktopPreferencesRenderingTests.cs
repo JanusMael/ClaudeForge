@@ -15,7 +15,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// rendered children via a bare <c>ContentControl</c> which stripped the wrapper chrome,
 /// leaving checkboxes without any visible label.
 /// </summary>
-[TestClass]
 public class DesktopPreferencesRenderingTests
 {
     private static SchemaNode LoadDesktopPreferencesNode()
@@ -26,7 +25,7 @@ public class DesktopPreferencesRenderingTests
         string resourceName = ResourceHelper.AssetName("Schemas", "claude-desktop-config.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");
+        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
         using StreamReader reader = new(stream!);
         string json = reader.ReadToEnd();
 
@@ -36,13 +35,13 @@ public class DesktopPreferencesRenderingTests
         return top.First(n => n.Name == "preferences");
     }
 
-    [TestMethod]
+    [Fact]
     public void Preferences_ChildrenHaveDisplayNames()
     {
         SchemaNode prefsNode = LoadDesktopPreferencesNode();
 
-        Assert.AreEqual(SchemaValueType.Object, prefsNode.ValueType);
-        Assert.IsTrue(prefsNode.Properties.Count > 0, "preferences must expose child properties.");
+        Assert.Equal(SchemaValueType.Object, prefsNode.ValueType);
+        Assert.True(prefsNode.Properties.Count > 0, "preferences must expose child properties.");
 
         foreach (SchemaNode child in prefsNode.Properties)
         {
@@ -50,28 +49,28 @@ public class DesktopPreferencesRenderingTests
             // PropertyEditorViewModel.DisplayName exposes and what the XAML binds to.
             // Missing titles are what caused unlabeled checkboxes.
             string label = child.Title ?? child.Name;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(label),
+            Assert.False(string.IsNullOrWhiteSpace(label),
                 $"Preference '{child.Name}' must have a non-empty title/name for rendering.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Preferences_ObjectEditor_YieldsLabeledChildEditors()
     {
         SchemaNode prefsNode = LoadDesktopPreferencesNode();
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
         PropertyEditorViewModel editor = factory.Create(prefsNode, ConfigScope.User);
 
-        Assert.IsInstanceOfType(editor, typeof(ObjectPropertyEditorViewModel));
+        Assert.IsAssignableFrom<ObjectPropertyEditorViewModel>(editor);
         ObjectPropertyEditorViewModel obj = (ObjectPropertyEditorViewModel)editor;
 
-        Assert.IsTrue(obj.Children.Count > 0, "Object editor must produce child editors.");
+        Assert.True(obj.Children.Count > 0, "Object editor must produce child editors.");
         foreach (PropertyEditorViewModel childEditor in obj.Children)
         {
             // The nested Object DataTemplate recursion requires each child editor to expose
             // its own DisplayName — that's the label the recursive PropertyEditorWrapper
             // renders above the leaf control.
-            Assert.IsFalse(string.IsNullOrWhiteSpace(childEditor.DisplayName),
+            Assert.False(string.IsNullOrWhiteSpace(childEditor.DisplayName),
                 $"Child editor for '{childEditor.Schema.Name}' must have a DisplayName.");
         }
     }

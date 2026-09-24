@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// constructs the library type directly via the Claude schema/scope adapters
 /// and exercises the library API (ToValue / LoadFromValue / ResetToInherited).
 /// </summary>
-[TestClass]
 public class BooleanPropertyEditorViewModelTests
 {
     private static SchemaNode BoolSchema(string name = "testBool")
@@ -49,29 +48,29 @@ public class BooleanPropertyEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void InitialValue_IsNull_WhenNoLayeredEntry()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
         Load(vm, EmptyLayered(), ConfigScope.User);
 
-        Assert.IsNull(vm.Value);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.EffectiveScope);
+        Assert.Null(vm.Value);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_SetsValueFromScope()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
         Load(vm, LayeredWith("testBool", ConfigScope.User, true), ConfigScope.User);
 
-        Assert.IsTrue(vm.Value);
-        Assert.IsTrue(vm.IsModified);
-        Assert.AreEqual("user", vm.EffectiveScope?.Id);
+        Assert.True(vm.Value);
+        Assert.True(vm.IsModified);
+        Assert.Equal("user", vm.EffectiveScope?.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_DifferentScope_ValueIsNull()
     {
         // Value is set at Project scope, but we are editing User scope
@@ -79,50 +78,50 @@ public class BooleanPropertyEditorViewModelTests
         Load(vm, LayeredWith("testBool", ConfigScope.Project, false), ConfigScope.User);
 
         // GetValueAt(User) returns null since only Project has a value
-        Assert.IsNull(vm.Value);
+        Assert.Null(vm.Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsNull_WhenValueIsNull()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
-        Assert.IsNull(vm.ToValue());
+        Assert.Null(vm.ToValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsBool_WhenValueIsSet()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
         vm.Value = false;
 
         object? value = vm.ToValue();
-        Assert.IsNotNull(value);
-        Assert.IsFalse((bool?)value);
+        Assert.NotNull(value);
+        Assert.False((bool?)value);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetToInherited_ClearsValue()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
         vm.Value = true;
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsNull(vm.Value);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Null(vm.Value);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void CanReset_IsFalse_WhenNotModified()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
-        Assert.IsFalse(vm.CanReset);
+        Assert.False(vm.CanReset);
     }
 
-    [TestMethod]
+    [Fact]
     public void CanReset_IsTrue_WhenModified()
     {
         LibVm.BooleanPropertyEditorViewModel vm = NewVm();
         vm.Value = true;
-        Assert.IsTrue(vm.CanReset);
+        Assert.True(vm.CanReset);
     }
 }

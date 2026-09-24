@@ -38,7 +38,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// justification for this test from that finding.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class TrimModeIntegrityTests
 {
     /// <summary>The apps that publish a trimmed, self-contained artifact.</summary>
@@ -54,7 +53,7 @@ public sealed class TrimModeIntegrityTests
     private const string RequiredTrimMode = "partial";
     private const string DesignerSupport = "Avalonia.DesignerSupport";
 
-    [TestMethod]
+    [Fact]
     public void BothApps_TrimOnASupportedMode_NotLink()
     {
         string repoRoot = FindRepoRoot();
@@ -94,14 +93,14 @@ public sealed class TrimModeIntegrityTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             failures.Count,
             "Trim mode must be supported by Avalonia in every shipping app:\n"
             + string.Join("\n", failures));
     }
 
-    [TestMethod]
+    [Fact]
     public void BothApps_MarkDesignerSupportTrimmable_OrThePublishCannotSucceed()
     {
         string repoRoot = FindRepoRoot();
@@ -128,7 +127,7 @@ public sealed class TrimModeIntegrityTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             failures.Count,
             $"TrimMode={RequiredTrimMode} requires the {DesignerSupport} entry:\n"
@@ -144,7 +143,7 @@ public sealed class TrimModeIntegrityTests
     /// this one fails the moment the pair stops matching, which is the state that let
     /// OpenCodeForge publish untrimmed under a green CI check.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheTwoApps_DoNotDriftApartOnTrimSettings()
     {
         string repoRoot = FindRepoRoot();
@@ -155,7 +154,7 @@ public sealed class TrimModeIntegrityTests
         // the shape of test this class was written to replace.
         if (ShippingApps.Length < 2)
         {
-            Assert.Inconclusive(
+            Assert.Skip(
                 "Needs two shipping apps; this branch has "
                 + ShippingApps.Length
                 + ". Restore OpenCodeForge to ShippingApps when it rejoins.");
@@ -169,7 +168,7 @@ public sealed class TrimModeIntegrityTests
                 .FirstOrDefault() ?? "(none)")
             .ToArray();
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             modes[0],
             modes[1],
             $"{ShippingApps[0]} and {ShippingApps[1]} must trim identically, and they no longer do "
@@ -181,7 +180,7 @@ public sealed class TrimModeIntegrityTests
     private static XDocument LoadAppCsproj(string repoRoot, string app)
     {
         string path = Path.Combine(repoRoot, "src", app, app + ".csproj");
-        Assert.IsTrue(
+        Assert.True(
             File.Exists(path),
             $"Expected an app project at '{path}'. If the app was renamed or removed, update "
             + $"{nameof(ShippingApps)} in the same commit — deliberately, not by accident.");

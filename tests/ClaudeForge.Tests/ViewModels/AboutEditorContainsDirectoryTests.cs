@@ -10,17 +10,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// persistent User PATH. False-negatives here would append duplicate
 /// entries to the registry; false-positives would silently skip the add.
 /// </summary>
-[TestClass]
 public sealed class AboutEditorContainsDirectoryTests
 {
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_Empty_ReturnsFalse()
     {
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory("", @"C:/tools"));
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory(@"C:/tools", ""));
+        Assert.False(AboutEditorViewModel.ContainsDirectory("", @"C:/tools"));
+        Assert.False(AboutEditorViewModel.ContainsDirectory(@"C:/tools", ""));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_ExactMatch_ReturnsTrue()
     {
         char sep = Path.PathSeparator;
@@ -28,10 +27,10 @@ public sealed class AboutEditorContainsDirectoryTests
         string other = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\other" : "/opt/bin";
         string path = $"{other}{sep}{dir}{sep}{other}";
 
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, dir));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, dir));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_TrailingSeparatorIgnored()
     {
         // A directory like "C:\tools\" should match the same entry without a
@@ -42,25 +41,25 @@ public sealed class AboutEditorContainsDirectoryTests
         string withTrailing = dir + Path.DirectorySeparatorChar;
         string path = $"{dir}{sep}{withTrailing}";
 
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, dir));
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, withTrailing));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, dir));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, withTrailing));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_CaseInsensitiveOnWindows()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Case-insensitive comparison is Windows-specific");
+            Assert.Skip("Case-insensitive comparison is Windows-specific");
             return;
         }
 
         string path = @"C:\Tools\Foo;C:\WINDOWS\system32";
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, @"c:\tools\foo"));
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, @"C:\Windows\System32"));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, @"c:\tools\foo"));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, @"C:\Windows\System32"));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_NoMatch_ReturnsFalse()
     {
         char sep = Path.PathSeparator;
@@ -71,10 +70,10 @@ public sealed class AboutEditorContainsDirectoryTests
             ? @"C:\Users\u\AppData\Roaming\npm"
             : "/opt/claude";
 
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory(path, absent));
+        Assert.False(AboutEditorViewModel.ContainsDirectory(path, absent));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_WhitespacePaddedEntryStillMatches()
     {
         // Real-world User PATH values often contain stray spaces after `;`
@@ -83,10 +82,10 @@ public sealed class AboutEditorContainsDirectoryTests
         string dir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\tools" : "/usr/local/bin";
         string path = $" {dir} {Path.PathSeparator} /other";
 
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, dir));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, dir));
     }
 
-    [TestMethod]
+    [Fact]
     public void ContainsDirectory_EmptyEntriesAreSkipped()
     {
         // Consecutive separators ("C:\a;;C:\b") produce empty split tokens.
@@ -95,7 +94,7 @@ public sealed class AboutEditorContainsDirectoryTests
         string dir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\tools" : "/usr/local/bin";
         string path = $"{sep}{sep}{dir}{sep}{sep}";
 
-        Assert.IsTrue(AboutEditorViewModel.ContainsDirectory(path, dir));
-        Assert.IsFalse(AboutEditorViewModel.ContainsDirectory(path, ""));
+        Assert.True(AboutEditorViewModel.ContainsDirectory(path, dir));
+        Assert.False(AboutEditorViewModel.ContainsDirectory(path, ""));
     }
 }

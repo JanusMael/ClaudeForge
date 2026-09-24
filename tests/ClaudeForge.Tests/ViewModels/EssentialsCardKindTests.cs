@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// none of them log, and all of them render.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class EssentialsCardKindTests
 {
     private static EssentialsCardOptions Options(
@@ -39,49 +38,49 @@ public sealed class EssentialsCardKindTests
             LabelledOptions = labelled,
         };
 
-    [TestMethod]
+    [Fact]
     public void DerivedCard_WithAWriter_IsRejected()
     {
-        ArgumentException ex = Assert.ThrowsExactly<ArgumentException>(
+        ArgumentException ex = Assert.Throws<ArgumentException>(
             () => new EssentialsCardViewModel(Options(EssentialsCardKind.Derived, withWriter: true)));
 
-        StringAssert.Contains(ex.Message, "Derived", StringComparison.Ordinal);
+        Assert.Contains("Derived", ex.Message, StringComparison.Ordinal);
     }
 
-    [TestMethod]
-    [DataRow(EssentialsCardKind.Bool)]
-    [DataRow(EssentialsCardKind.Int)]
-    [DataRow(EssentialsCardKind.EnumString)]
-    [DataRow(EssentialsCardKind.StringList)]
+    [Theory]
+    [InlineData(EssentialsCardKind.Bool)]
+    [InlineData(EssentialsCardKind.Int)]
+    [InlineData(EssentialsCardKind.EnumString)]
+    [InlineData(EssentialsCardKind.StringList)]
     public void EditableCard_WithoutAWriter_IsRejected(EssentialsCardKind kind)
     {
-        Assert.ThrowsExactly<ArgumentException>(
+        Assert.Throws<ArgumentException>(
             () => new EssentialsCardViewModel(Options(kind, withWriter: false)));
     }
 
     /// <summary>The labelled kind is covered separately because it also needs its options.</summary>
-    [TestMethod]
+    [Fact]
     public void LabelledEnumCard_WithoutAWriter_IsRejected()
     {
-        Assert.ThrowsExactly<ArgumentException>(
+        Assert.Throws<ArgumentException>(
             () => new EssentialsCardViewModel(
                 Options(EssentialsCardKind.LabelledEnum, withWriter: false, [new("v", "l")])));
     }
 
-    [TestMethod]
+    [Fact]
     public void LabelledEnumCard_WithNoOptions_IsRejected()
     {
-        ArgumentException ex = Assert.ThrowsExactly<ArgumentException>(
+        ArgumentException ex = Assert.Throws<ArgumentException>(
             () => new EssentialsCardViewModel(
                 Options(EssentialsCardKind.LabelledEnum, withWriter: true, [])));
 
-        StringAssert.Contains(ex.Message, "at least one option", StringComparison.Ordinal);
+        Assert.Contains("at least one option", ex.Message, StringComparison.Ordinal);
     }
 
-    [TestMethod]
+    [Fact]
     public void NonLabelledCard_CarryingOptions_IsRejected()
     {
-        Assert.ThrowsExactly<ArgumentException>(
+        Assert.Throws<ArgumentException>(
             () => new EssentialsCardViewModel(
                 Options(EssentialsCardKind.Bool, withWriter: true, [new("v", "l")])));
     }
@@ -95,29 +94,29 @@ public sealed class EssentialsCardKindTests
     /// card. Fire-and-forget means a throw here would be an unobserved task exception, surfacing
     /// far from its cause or not at all.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task DerivedCard_WriteAsync_CompletesWithoutAWriter()
     {
         EssentialsCardViewModel card = new(Options(EssentialsCardKind.Derived, withWriter: false));
 
         await card.WriteAsync();
 
-        Assert.AreEqual(EssentialsCardKind.Derived, card.Kind);
+        Assert.Equal(EssentialsCardKind.Derived, card.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void DerivedCard_HasNoLabelledOptions_AndAnEmptyDerivedText()
     {
         EssentialsCardViewModel card = new(Options(EssentialsCardKind.Derived, withWriter: false));
 
-        Assert.AreEqual(0, card.LabelledOptions.Count);
-        Assert.AreEqual(string.Empty, card.DerivedText);
+        Assert.Empty(card.LabelledOptions);
+        Assert.Equal(string.Empty, card.DerivedText);
     }
 
     /// <summary>
     /// Selecting an option routes through the writer, exactly as the other three kinds' setters do.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SelectingAnOption_Writes()
     {
         int writes = 0;
@@ -138,15 +137,15 @@ public sealed class EssentialsCardKindTests
             },
         });
 
-        Assert.AreEqual(0, writes, "Construction must not write.");
+        MessageAssert.Equal(0, writes, "Construction must not write.");
 
         card.SelectedOption = chosen;
 
-        Assert.AreEqual(1, writes);
+        Assert.Equal(1, writes);
     }
 
     /// <summary>A selection made while loading is a read, not an edit, and must not write.</summary>
-    [TestMethod]
+    [Fact]
     public void SelectingAnOption_WhileLoading_DoesNotWrite()
     {
         int writes = 0;
@@ -171,14 +170,14 @@ public sealed class EssentialsCardKindTests
         card.SelectedOption = chosen;
         card.IsLoading = false;
 
-        Assert.AreEqual(0, writes);
+        Assert.Equal(0, writes);
     }
 
     /// <summary>
     /// The danger predicate re-runs on a selection change, so a card whose unsafe state IS a
     /// chosen option raises its banner without waiting for a reload.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SelectingAnOption_RecomputesDanger()
     {
         EssentialsEnumOption safe = new("safe", "Safe");
@@ -196,13 +195,13 @@ public sealed class EssentialsCardKindTests
             IsDangerPredicate = c => c.SelectedOption?.Value == "unsafe",
         });
 
-        Assert.IsFalse(card.IsDanger);
+        Assert.False(card.IsDanger);
 
         card.SelectedOption = unsafeOption;
-        Assert.IsTrue(card.IsDanger);
+        Assert.True(card.IsDanger);
 
         card.SelectedOption = safe;
-        Assert.IsFalse(card.IsDanger);
+        Assert.False(card.IsDanger);
     }
 
     /// <summary>
@@ -216,19 +215,19 @@ public sealed class EssentialsCardKindTests
     /// <c>EssentialsEnumOption { Value = …, Label = …, Description = … }</c>. Asserting the value
     /// is NOT returned matters just as much: <c>"NotSet"</c> is an internal discriminator.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void OptionToString_IsTheLabel_NotTheValue()
     {
         EssentialsEnumOption option = new("NotSet", "Not set", "Writes nothing.");
 
-        Assert.AreEqual("Not set", option.ToString());
+        Assert.Equal("Not set", option.ToString());
     }
 
-    [TestMethod]
+    [Fact]
     public void OptionHasDescription_TracksTheDescription()
     {
-        Assert.IsFalse(new EssentialsEnumOption("v", "l").HasDescription);
-        Assert.IsFalse(new EssentialsEnumOption("v", "l", string.Empty).HasDescription);
-        Assert.IsTrue(new EssentialsEnumOption("v", "l", "d").HasDescription);
+        Assert.False(new EssentialsEnumOption("v", "l").HasDescription);
+        Assert.False(new EssentialsEnumOption("v", "l", string.Empty).HasDescription);
+        Assert.True(new EssentialsEnumOption("v", "l", "d").HasDescription);
     }
 }

@@ -7,50 +7,49 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// entry, and tools order their operation groups safe-first.  These assertions
 /// guard against silent regressions when contributors add new rules.
 /// </summary>
-[TestClass]
 public sealed class CommonActionsTaxonomyTests
 {
     private static IReadOnlyList<ToolActionGroup> All => PermissionsEditorViewModel.AllToolGroups;
 
     // ── Structural shape ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void AllToolGroups_HasAtLeastFourTools_PlusCatchAll()
     {
         // Concrete tools (File, Bash, PowerShell, Web) + 1 catch-all.
         List<ToolActionGroup> concrete = All.Where(t => !t.IsCatchAll).ToList();
         List<ToolActionGroup> catchAll = All.Where(t => t.IsCatchAll).ToList();
 
-        Assert.IsTrue(concrete.Count >= 4,
+        Assert.True(concrete.Count >= 4,
             $"Expected at least 4 concrete tool groups; got {concrete.Count}.");
-        Assert.AreEqual(1, catchAll.Count,
+        MessageAssert.Equal(1, catchAll.Count,
             "Exactly one ToolActionGroup must have IsCatchAll = true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CatchAll_IsTrailingEntry()
     {
-        Assert.IsTrue(All.Count > 0);
-        Assert.IsTrue(All[^1].IsCatchAll,
+        Assert.True(All.Count > 0);
+        Assert.True(All[^1].IsCatchAll,
             "The catch-all wildcard tier must be the last entry of AllToolGroups so the View "
             + "renders it pinned at the bottom outside the per-tool accordion stack.");
         for (int i = 0; i < All.Count - 1; i++)
         {
-            Assert.IsFalse(All[i].IsCatchAll,
+            Assert.False(All[i].IsCatchAll,
                 $"Non-trailing entry {All[i].Tool} must not be marked IsCatchAll.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryTool_HasAtLeastOneOperationGroup_AndAtLeastOneItem()
     {
         foreach (ToolActionGroup tool in All)
         {
-            Assert.IsTrue(tool.OperationGroups.Count > 0,
+            Assert.True(tool.OperationGroups.Count > 0,
                 $"Tool '{tool.Tool}' has no operation groups; the AXAML would render an empty Expander.");
             foreach (CommonActionGroup group in tool.OperationGroups)
             {
-                Assert.IsTrue(group.Items.Count > 0,
+                Assert.True(group.Items.Count > 0,
                     $"Tool '{tool.Tool}' / group '{group.Header}' has no items; an empty group "
                     + "produces an orphan section header in the View.");
             }
@@ -59,7 +58,7 @@ public sealed class CommonActionsTaxonomyTests
 
     // ── Kind classification ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EveryRule_HasKindClassified()
     {
         // Defensive: this would fail at compile time today (CommonActionItem
@@ -69,12 +68,12 @@ public sealed class CommonActionsTaxonomyTests
                                           .SelectMany(t => t.OperationGroups)
                                           .SelectMany(g => g.Items)
                                           .ToList();
-        Assert.IsTrue(allItems.Count > 0, "AllToolGroups must contain rules.");
-        Assert.IsTrue(allItems.All(i => Enum.IsDefined(typeof(CommonActionKind), i.Kind)),
+        Assert.True(allItems.Count > 0, "AllToolGroups must contain rules.");
+        Assert.True(allItems.All(i => Enum.IsDefined(typeof(CommonActionKind), i.Kind)),
             "Every CommonActionItem.Kind must be a defined CommonActionKind value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownReadEntries_AreClassifiedRead()
     {
         AssertKindForRules(CommonActionKind.Read,
@@ -82,7 +81,7 @@ public sealed class CommonActionsTaxonomyTests
             "Bash(cat *)", "Bash(ls *)", "Bash(git status)", "Bash(git log *)");
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownWriteEntries_AreClassifiedWrite()
     {
         AssertKindForRules(CommonActionKind.Write,
@@ -90,7 +89,7 @@ public sealed class CommonActionsTaxonomyTests
             "Bash(git add *)", "Bash(git commit *)");
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownNetworkEntries_AreClassifiedNetwork()
     {
         AssertKindForRules(CommonActionKind.Network,
@@ -98,7 +97,7 @@ public sealed class CommonActionsTaxonomyTests
             "WebFetch", "WebSearch", "mcp__*");
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownDestructiveEntries_AreClassifiedDestructive()
     {
         // git push is irreversible (rewrites remote state visible to others).
@@ -114,7 +113,7 @@ public sealed class CommonActionsTaxonomyTests
 
     // ── Safe-first group ordering inside each tool ────────────────────
 
-    [TestMethod]
+    [Fact]
     public void OperationGroups_OrderedSafeFirstWithinTool()
     {
         // The contract: the FIRST item's kind in each group is non-decreasing
@@ -130,7 +129,7 @@ public sealed class CommonActionsTaxonomyTests
                                   .ToList();
             for (int i = 1; i < ranks.Count; i++)
             {
-                Assert.IsTrue(ranks[i] >= ranks[i - 1],
+                Assert.True(ranks[i] >= ranks[i - 1],
                     $"Tool '{tool.Tool}': operation group #{i} ('{tool.OperationGroups[i].Header}') "
                     + $"has rank {ranks[i]} but follows '{tool.OperationGroups[i - 1].Header}' "
                     + $"with rank {ranks[i - 1]}. Operation groups must be safe-first within a tool.");
@@ -140,7 +139,7 @@ public sealed class CommonActionsTaxonomyTests
 
     // ── Catch-all contents ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CatchAll_ItemsOrderedSafeFirst()
     {
         // The catch-all "All Tools" tier is the most consequential surface
@@ -156,7 +155,7 @@ public sealed class CommonActionsTaxonomyTests
             List<int> ranks = group.Items.Select(i => SafetyRank(i.Kind)).ToList();
             for (int i = 1; i < ranks.Count; i++)
             {
-                Assert.IsTrue(ranks[i] >= ranks[i - 1],
+                Assert.True(ranks[i] >= ranks[i - 1],
                     $"Catch-all group '{group.Header}': item #{i} ('{group.Items[i].Rule}', "
                     + $"{group.Items[i].Kind}) precedes item #{i - 1} ('{group.Items[i - 1].Rule}', "
                     + $"{group.Items[i - 1].Kind}) in safety rank. Catch-all items must be safe-first "
@@ -165,7 +164,7 @@ public sealed class CommonActionsTaxonomyTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void CatchAll_ContainsKnownWildcards()
     {
         ToolActionGroup catchAll = All.Single(t => t.IsCatchAll);
@@ -178,10 +177,10 @@ public sealed class CommonActionsTaxonomyTests
         // PowerShell is intentionally absent — its per-command entries in the
         // dedicated PowerShell expander carry the correct kind labels;
         // duplicating it here as Destructive would be misleading.
-        CollectionAssert.Contains(rules, "Bash");
-        CollectionAssert.Contains(rules, "WebFetch");
-        CollectionAssert.Contains(rules, "mcp__*");
-        CollectionAssert.DoesNotContain(rules, "PowerShell");
+        Assert.Contains("Bash", rules);
+        Assert.Contains("WebFetch", rules);
+        Assert.Contains("mcp__*", rules);
+        Assert.DoesNotContain("PowerShell", rules);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
@@ -195,9 +194,9 @@ public sealed class CommonActionsTaxonomyTests
         foreach (string rule in rules)
         {
             List<CommonActionItem> found = allItems.Where(i => i.Rule == rule).ToList();
-            Assert.IsTrue(found.Count > 0,
+            Assert.True(found.Count > 0,
                 $"Sanity: rule '{rule}' must exist somewhere in AllToolGroups.");
-            Assert.IsTrue(found.All(i => i.Kind == expected),
+            Assert.True(found.All(i => i.Kind == expected),
                 $"Rule '{rule}' must be classified as {expected}; saw "
                 + $"{string.Join(", ", found.Select(i => i.Kind.ToString()))}.");
         }

@@ -178,7 +178,8 @@ the defect.
 | 4d · ordinal fix | ✅ JsonC, Artifacts, Avalonia and Core re-converted from `46c73f8` with Templates **`d12e28a`**, which keeps MSTest's ORDINAL string comparison (drift 8); hand edits reapplied (`GitignoreReaderTests` came out byte-identical to its committed form). 0 differences, build 0 warnings |
 | 5a · `AgentForge.Sdk.Tests` | ✅ 370, 0 differences, build 0 warnings, Templates `d12e28a`. It has NO headless session any more (the plan's "1 file" predates `00005`). By hand: `[Parallelize]` → `CollectionPerClass`; **xUnit1031** suppressed by `#pragma` in the two files whose tests block ON PURPOSE (bounded `Wait()`s proving the reentrant lock and `ConfigureAwait(false)` hold) — awaiting would delete what they test |
 | 5b · `ClaudeForge.Sdk.Claude.Tests` | ✅ 208, 0 differences, build 0 warnings, Templates `d12e28a`; no headless session either. By hand: `[Parallelize]` → `CollectionPerClass` |
-| ▶ RESUME | **`ClaudeForge.Tests` next — the last, and the only headless one.** Converter: Templates `d12e28a` from a PRIVATE worktree (`git -C ../Bennewitz.Ninja.Templates worktree add <scratch>/templates-wt feat/mstest-to-xunit-rules`). ⚠ Pushing from here needs `-c credential.helper= -c "credential.helper=!gh auth git-credential"`: the stored git credential stopped answering on 2026-09-24, `gh` is logged in. Per-commit gate: full build must SUCCEED first — a failed build lets `--no-build` run stale MSTest binaries and compare clean |
+| 5c · `ClaudeForge.Tests` | ✅ 1,757 (was 1,760), build 0 warnings, Templates `d12e28a`, nothing unmapped. **The headless bootstrap is NOT ported** (the recorded decision: under `PerTest` isolation every `Dispatch` rebuilds the app, so the warm-up changed nothing and its guard was true by construction): `HeadlessSessionBootstrap.cs` and `HeadlessSessionBootstrapTests.cs` deleted with their links — the **3 intended `REMOVED`** in the name set. By hand, each with its reason in the file: `#pragma` for **xUnit1030** (`ConfigureAwait(false)` in `ClaudeEditorDangerWiringTests` — removing it would move continuations onto xUnit's context) and **xUnit1031** (`LiveLogWindowTests`, `McpServersEditorViewModelTests` — deliberate blocking). ⛔ **One real ORDER bug, exposed and fixed** — drift 10. Three whole-suite runs: 3,295 / 0 failed, differences = exactly the 3 removals |
+| ▶ RESUME | **Step 6** (drop MSTest, correct the prose), then **step 7** (gate: reconciliation list, CI, package canary, Release publish). Also owed before step 7: the ⏳ semantic audit in drift 8, and Templates PR #1 is not merged. Converter: Templates `d12e28a` from a PRIVATE worktree (`git -C ../Bennewitz.Ninja.Templates worktree add <scratch>/templates-wt feat/mstest-to-xunit-rules`). ⚠ Pushing Templates from here needs `-c credential.helper= -c "credential.helper=!gh auth git-credential"` |
 | 4 – 7 (rest) | ⏳ Rewriter dry-run over all seven: `ClaudeForge.Avalonia.Tests` maps cleanly; the other six list **40 UNMAPPED** sites — 5× assembly `[Parallelize]`, 1 sync `[Timeout]`, 5× `[Description]`, 16× 3-argument `AreEqual` in `ClaudeArtifactPathsTests`, 2× `AllItemsAreUnique(msg)`, 2× `CollectionAssert.AreNotEqual(msg)`, 2× named-argument `AreEqual`, 7× 4-argument `StartsWith`/`Contains`/`AreNotEqual`. Each is a rule for the TOOL first, never a hand patch |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00006` is never edited:
@@ -199,6 +200,9 @@ the defect.
 6. ⚠ **xUnit's TRX spells a method `Namespace.Class.Method(arg: value)`**, MSTest's the bare name — so
    `Compare-TestNames.ps1` normalises both, or every converted test would read as removed-and-added.
    Proven on the probe: its theory's two rows grouped as one method, count 2.
+7. ⚠ **Compare in the baseline's ENVIRONMENT.** `PackageVersionLockstepTests` is Inconclusive unless
+   `artifacts/localfeed` exists, and the package canary creates it — so a comparison after a canary run
+   shows one `NotExecuted -> Passed`. Delete `artifacts/localfeed` before comparing.
 8. ⛔⛔ **The first four conversions WEAKENED every string assertion, and every gate was green.**
    MSTest's `StringAssert.*` and string `Assert.Contains/StartsWith/EndsWith` are ORDINAL; xUnit's
    default to the CURRENT CULTURE, which ignores e.g. a soft hyphen — measured on both frameworks:
@@ -214,9 +218,26 @@ the defect.
    `Equals` is REFERENCE equality for an array; xUnit's `Equal` compares structurally — looser), and
    `AreEqual(string, string, ignoreCase)` (culture handling on each side). Both could only loosen a
    test that passes today; probe them before step 7's gate.
-7. ⚠ **Compare in the baseline's ENVIRONMENT.** `PackageVersionLockstepTests` is Inconclusive unless
-   `artifacts/localfeed` exists, and the package canary creates it — so a comparison after a canary run
-   shows one `NotExecuted -> Passed`. Delete `artifacts/localfeed` before comparing.
+9. ⛔ **xUnit v3 RANDOMISES test order per run** (`--seed`); MSTest always ran one fixed order. A suite
+   built around process-wide static seams can therefore meet orders it never met before. Measured on
+   `ClaudeForge.Tests` after the fix below: **20 orders** (seeds 1–8, 101–110, and seed 3 twice),
+   **no order-dependent failure**. Randomisation is KEPT — it is what found drift 10 — and a failure
+   is reproduced with the seed: `tests/ClaudeForge.Tests/bin/Debug/net10.0/ClaudeForge.Tests.exe --seed N`.
+   ⏳ The one failure in those 20 runs was `ReloadHardeningTests.LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock`
+   under seed 3, which then passed twice under the same seed — TIMING, not order: the open
+   `VerifyAccess` flake, and its message was lost again (the runner script kept names only).
+10. ⛔ **`ConfigScopeAdapterTests.ToConfigScope_ResolvesRealWrappersAndForeignScopesAlike` only ever
+    passed because of MSTest's declaration order.** `ConfigScopeAdapter`'s cache is process-wide, and
+    `ToConfigScope`'s id fallback searches every wrapped scope first; classmates wrap an
+    `other-product` ladder that also has a `Project` rung, so once one of them ran first a foreign
+    `"project"` resolved to THAT ladder (`Expected: Project / Actual: Project` — same name, different
+    ladder). Fixed, on the maintainer's choice (2026-09-24), by isolating the test:
+    `ConfigScopeAdapter.ForgetNonDefaultLaddersForTesting()` (internal) forgets only non-default-ladder
+    entries — default-ladder singletons are KEPT, because `For` promises one instance per scope and
+    production holds them — called from the class constructor. Canaried under 8 fixed seeds: without
+    it the test fails 8/8, with it passes 8/8. ⏳ **The production ambiguity remains**: once two
+    ladders share an id, resolving a foreign scope by id alone cannot say which ladder is meant. It
+    matters when OpenCodeForge rejoins; a follow-up, not part of the move.
 
 ### ✅ DONE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23, merged 2026-09-24 as #77
 

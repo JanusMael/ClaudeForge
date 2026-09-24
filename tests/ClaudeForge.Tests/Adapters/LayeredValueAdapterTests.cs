@@ -9,7 +9,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// SettingsWorkspaceAdapter). Each test exercises one documented edge case from the
 /// value-currency contract.
 /// </summary>
-[TestClass]
 public class LayeredValueAdapterTests
 {
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -26,7 +25,7 @@ public class LayeredValueAdapterTests
 
     // ── Scope priority inversion ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ConfigScopeAdapter_Priority_IsInverted_RelativeToConfigScope()
     {
         // ConfigScope (lower enum value = higher priority):
@@ -39,62 +38,62 @@ public class LayeredValueAdapterTests
         ConfigScopeAdapter project = ConfigScopeAdapter.For(ConfigScope.Project);
         ConfigScopeAdapter local = ConfigScopeAdapter.For(ConfigScope.Local);
 
-        Assert.IsTrue(managed.Priority > local.Priority, "Managed beats Local");
-        Assert.IsTrue(local.Priority > project.Priority, "Local beats Project");
-        Assert.IsTrue(project.Priority > user.Priority, "Project beats User");
+        Assert.True(managed.Priority > local.Priority, "Managed beats Local");
+        Assert.True(local.Priority > project.Priority, "Local beats Project");
+        Assert.True(project.Priority > user.Priority, "Project beats User");
     }
 
-    [TestMethod]
+    [Fact]
     public void ConfigScopeAdapter_Managed_IsReadOnly()
     {
-        Assert.IsTrue(ConfigScopeAdapter.For(ConfigScope.Managed).IsReadOnly);
+        Assert.True(ConfigScopeAdapter.For(ConfigScope.Managed).IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void ConfigScopeAdapter_User_IsNotReadOnly()
     {
-        Assert.IsFalse(ConfigScopeAdapter.For(ConfigScope.User).IsReadOnly);
+        Assert.False(ConfigScopeAdapter.For(ConfigScope.User).IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void ConfigScopeAdapter_Id_IsLowercaseEnumName()
     {
-        Assert.AreEqual("managed", ConfigScopeAdapter.For(ConfigScope.Managed).Id);
-        Assert.AreEqual("user", ConfigScopeAdapter.For(ConfigScope.User).Id);
-        Assert.AreEqual("project", ConfigScopeAdapter.For(ConfigScope.Project).Id);
-        Assert.AreEqual("local", ConfigScopeAdapter.For(ConfigScope.Local).Id);
+        Assert.Equal("managed", ConfigScopeAdapter.For(ConfigScope.Managed).Id);
+        Assert.Equal("user", ConfigScopeAdapter.For(ConfigScope.User).Id);
+        Assert.Equal("project", ConfigScopeAdapter.For(ConfigScope.Project).Id);
+        Assert.Equal("local", ConfigScopeAdapter.For(ConfigScope.Local).Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void ConfigScopeAdapter_For_ReturnsCachedSingleton()
     {
-        Assert.AreSame(ConfigScopeAdapter.For(ConfigScope.User), ConfigScopeAdapter.For(ConfigScope.User));
+        Assert.Same(ConfigScopeAdapter.For(ConfigScope.User), ConfigScopeAdapter.For(ConfigScope.User));
     }
 
     // ── LayeredValueAdapter – basic scalar round-trips ─────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_Bool_RoundTrips()
     {
         LayeredValue layered = LayeredWithJson("myBool", ConfigScope.User, JsonValue.Create(true));
         LayeredValueAdapter adapter = new(layered);
 
         ConfigScopeAdapter scope = ConfigScopeAdapter.For(ConfigScope.User);
-        Assert.IsTrue(adapter.IsDefinedAt(scope));
-        Assert.IsTrue((bool?)adapter.GetValueAt(scope));
-        Assert.IsTrue((bool?)adapter.EffectiveValue);
+        Assert.True(adapter.IsDefinedAt(scope));
+        Assert.True((bool?)adapter.GetValueAt(scope));
+        Assert.True((bool?)adapter.EffectiveValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_String_RoundTrips()
     {
         LayeredValue layered = LayeredWithJson("myStr", ConfigScope.User, JsonValue.Create("hello"));
         LayeredValueAdapter adapter = new(layered);
 
-        Assert.AreEqual("hello", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
+        Assert.Equal("hello", adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
     }
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_LongInteger_NormalisedToLong()
     {
         // JSON integers in range fit in long
@@ -102,11 +101,11 @@ public class LayeredValueAdapterTests
         LayeredValueAdapter adapter = new(LayeredWithJson("n", ConfigScope.User, node));
 
         object? value = adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User));
-        Assert.IsInstanceOfType<long>(value);
-        Assert.AreEqual(9_007_199_254_740_992L, (long)value!);
+        Assert.IsAssignableFrom<long>(value);
+        Assert.Equal(9_007_199_254_740_992L, (long)value!);
     }
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_SmallInteger_NormalisedToLong()
     {
         JsonValue node = JsonValue.Create(42);
@@ -114,24 +113,24 @@ public class LayeredValueAdapterTests
 
         object? value = adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User));
         // Must be long (or at least integral numeric)
-        Assert.IsNotNull(value);
-        Assert.AreEqual(42L, Convert.ToInt64(value));
+        Assert.NotNull(value);
+        Assert.Equal(42L, Convert.ToInt64(value));
     }
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_Double_NormalisedToDouble()
     {
         JsonValue node = JsonValue.Create(3.14);
         LayeredValueAdapter adapter = new(LayeredWithJson("n", ConfigScope.User, node));
 
         object? value = adapter.GetValueAt(ConfigScopeAdapter.For(ConfigScope.User));
-        Assert.IsInstanceOfType<double>(value);
-        Assert.AreEqual(3.14, (double)value!);
+        Assert.IsAssignableFrom<double>(value);
+        Assert.Equal(3.14, (double)value!);
     }
 
     // ── Explicit null vs absent ────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_ExplicitNull_IsDefinedAt_IsTrue()
     {
         // null JsonNode = key present with explicit null value
@@ -144,11 +143,11 @@ public class LayeredValueAdapterTests
         LayeredValueAdapter adapter = new(layered);
 
         ConfigScopeAdapter scope = ConfigScopeAdapter.For(ConfigScope.User);
-        Assert.IsTrue(adapter.IsDefinedAt(scope), "explicit null is still 'defined'");
-        Assert.IsNull(adapter.GetValueAt(scope), "GetValueAt returns null for explicit null");
+        Assert.True(adapter.IsDefinedAt(scope), "explicit null is still 'defined'");
+        MessageAssert.Null(adapter.GetValueAt(scope), "GetValueAt returns null for explicit null");
     }
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_AbsentScope_IsDefinedAt_IsFalse()
     {
         LayeredValue layered = LayeredWithJson("myKey", ConfigScope.Project, JsonValue.Create("v"));
@@ -156,13 +155,13 @@ public class LayeredValueAdapterTests
 
         // User scope was never set
         ConfigScopeAdapter userScope = ConfigScopeAdapter.For(ConfigScope.User);
-        Assert.IsFalse(adapter.IsDefinedAt(userScope));
-        Assert.IsNull(adapter.GetValueAt(userScope));
+        Assert.False(adapter.IsDefinedAt(userScope));
+        Assert.Null(adapter.GetValueAt(userScope));
     }
 
     // ── IsOverridden ──────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ValueAdapter_IsOverridden_True_WhenMultipleScopesDefined()
     {
         ScopeEntry[] entries =
@@ -177,12 +176,12 @@ public class LayeredValueAdapterTests
         };
         LayeredValueAdapter adapter = new(layered);
 
-        Assert.IsTrue(adapter.IsOverridden);
+        Assert.True(adapter.IsOverridden);
     }
 
     // ── SettingsWorkspaceAdapter ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void WorkspaceAdapter_SetValue_RaisesValueChanged()
     {
         SettingsDocument[] docs =
@@ -197,12 +196,12 @@ public class LayeredValueAdapterTests
 
         adapter.SetValue("myKey", "hello", ConfigScopeAdapter.For(ConfigScope.User));
 
-        Assert.IsNotNull(received);
-        Assert.AreEqual("myKey", received!.Path);
-        Assert.AreEqual("user", received.Scope.Id);
+        Assert.NotNull(received);
+        Assert.Equal("myKey", received!.Path);
+        Assert.Equal("user", received.Scope.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void WorkspaceAdapter_SetThenGet_RoundTrips()
     {
         SettingsDocument[] docs =
@@ -215,12 +214,12 @@ public class LayeredValueAdapterTests
         adapter.SetValue("flag", true, ConfigScopeAdapter.For(ConfigScope.User));
 
         IEditorValue val = adapter.GetValue("flag");
-        Assert.IsNotNull(val);
-        Assert.IsTrue(adapter.GetValue("flag").IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.User)));
-        Assert.IsTrue((bool?)adapter.GetValue("flag").GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
+        Assert.NotNull(val);
+        Assert.True(adapter.GetValue("flag").IsDefinedAt(ConfigScopeAdapter.For(ConfigScope.User)));
+        Assert.True((bool?)adapter.GetValue("flag").GetValueAt(ConfigScopeAdapter.For(ConfigScope.User)));
     }
 
-    [TestMethod]
+    [Fact]
     public void WorkspaceAdapter_RemoveValue_RaisesValueChanged()
     {
         SettingsDocument[] docs =
@@ -236,11 +235,11 @@ public class LayeredValueAdapterTests
         adapter.ValueChanged += (_, e) => removed = e;
         adapter.RemoveValue("myKey", ConfigScopeAdapter.For(ConfigScope.User));
 
-        Assert.IsNotNull(removed);
-        Assert.AreEqual("myKey", removed!.Path);
+        Assert.NotNull(removed);
+        Assert.Equal("myKey", removed!.Path);
     }
 
-    [TestMethod]
+    [Fact]
     public void WorkspaceAdapter_AvailableScopes_MatchesDocumentScopes()
     {
         SettingsDocument[] docs =
@@ -252,7 +251,7 @@ public class LayeredValueAdapterTests
         SettingsWorkspaceAdapter adapter = new(workspace);
 
         string[] ids = adapter.AvailableScopes.Select(s => s.Id).ToArray();
-        CollectionAssert.Contains(ids, "managed");
-        CollectionAssert.Contains(ids, "user");
+        Assert.Contains("managed", ids);
+        Assert.Contains("user", ids);
     }
 }

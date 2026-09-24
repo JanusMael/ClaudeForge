@@ -66,7 +66,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 ///   the existing label key rather than inventing a new one.</item>
 /// </list>
 /// </summary>
-[TestClass]
 public sealed class AxamlAccessibilityCoverageTests
 {
     /// <summary>
@@ -228,7 +227,7 @@ public sealed class AxamlAccessibilityCoverageTests
             // zero default by the missing-entry rule.
         };
 
-    [TestMethod]
+    [Fact]
     public void EveryViewsAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount()
     {
         string repoRoot = FindRepoRoot();
@@ -294,7 +293,7 @@ public sealed class AxamlAccessibilityCoverageTests
     /// <see cref="EveryViewsAxamlFile_AtOrBelowBaseline_UnnamedInteractiveControlCount"/>
     /// inspects.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory()
     {
         string repoRoot = FindRepoRoot();
@@ -317,7 +316,7 @@ public sealed class AxamlAccessibilityCoverageTests
             .Where(p => !projects.Contains(p))
             .ToList();
 
-        Assert.IsTrue(
+        Assert.True(
             missing.Count == 0,
             $"The AXAML scan found no files under these src/ projects: {string.Join(", ", missing)}. " +
             $"It reached only: {string.Join(", ", projects.OrderBy(p => p, StringComparer.Ordinal))}. " +
@@ -326,7 +325,7 @@ public sealed class AxamlAccessibilityCoverageTests
             "ProjectsThatMustContributeAxaml in the same commit.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Baseline_ConvergesToZero_FullBackfillTracker()
     {
         // Diagnostic-only test that reports the total unnamed-control debt
@@ -348,7 +347,7 @@ public sealed class AxamlAccessibilityCoverageTests
         Console.WriteLine(
             $"[AxamlAccessibilityCoverage] Total unnamed interactive controls remaining: {total}");
         // No assertion — informational only.
-        Assert.IsTrue(total >= 0);
+        Assert.True(total >= 0);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -402,7 +401,7 @@ public sealed class AxamlAccessibilityCoverageTests
     /// </summary>
     private static void AssertScanIsNonVacuous(string repoRoot, IReadOnlyList<string> axamlFiles)
     {
-        Assert.IsTrue(axamlFiles.Count >= 30,
+        Assert.True(axamlFiles.Count >= 30,
             $"Expected at least 30 AXAML files under {Path.Combine(repoRoot, "src")}, got " +
             $"{axamlFiles.Count}. The scan likely resolved the wrong path or narrowed its glob.");
 
@@ -411,14 +410,14 @@ public sealed class AxamlAccessibilityCoverageTests
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Count();
 
-        Assert.IsTrue(directories > 1,
+        Assert.True(directories > 1,
             $"The AXAML scan found files in only {directories} directory. This test exists because " +
             "the scan root was once hardcoded to src/ClaudeForge/Views; a single-directory result " +
             "means that regression is back.");
 
         // LIBRARY GUARD NARROWED — plans/00005. Was 8; LayeredEditors.Avalonia's Controls/ and
         // Themes/ left with the library. 6 is the measured count of distinct AXAML directories.
-        Assert.IsTrue(directories >= 6,
+        Assert.True(directories >= 6,
             $"Expected AXAML across at least 6 directories under src/, found {directories}. " +
             "The scan has narrowed — it must cover src/**/*.axaml.");
     }

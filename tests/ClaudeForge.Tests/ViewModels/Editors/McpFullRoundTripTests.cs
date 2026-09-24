@@ -8,7 +8,6 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class McpFullRoundTripTests
 {
     // ─── Fixture ─────────────────────────────────────────────────────────────
@@ -184,7 +183,7 @@ public class McpFullRoundTripTests
     //  Variant: stdio (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Stdio_AddNewServer_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(null);
@@ -195,15 +194,15 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.ServerCount);
+        Assert.Equal(1, fx.ServerCount);
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual("stdio", reloaded.Type);
-        Assert.AreEqual("/usr/bin/node", reloaded.Command);
-        Assert.AreEqual(1, reloaded.Args.Count);
-        Assert.AreEqual("main.js", reloaded.Args[0].Value);
+        Assert.Equal("stdio", reloaded.Type);
+        Assert.Equal("/usr/bin/node", reloaded.Command);
+        Assert.Single(reloaded.Args);
+        Assert.Equal("main.js", reloaded.Args[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_EditCommand_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "/old/path"));
@@ -211,10 +210,10 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("/new/path", fx.Server("alpha").Command);
+        Assert.Equal("/new/path", fx.Server("alpha").Command);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_AddArg_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "/usr/bin/node",
@@ -226,13 +225,13 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual(2, reloaded.Args.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, reloaded.Args.Count);
+        MessageAssert.SameElements(
             new[] { "main.js", "--port=3000" },
             reloaded.Args.Select(a => a.Value).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_RemoveArg_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node",
@@ -244,11 +243,11 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual(1, reloaded.Args.Count);
-        Assert.AreEqual("b.js", reloaded.Args[0].Value);
+        Assert.Single(reloaded.Args);
+        Assert.Equal("b.js", reloaded.Args[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_EditExistingArgValue_RoundTrips()
     {
         // Edits the typed Value of an existing ArgItem row — exercises the
@@ -259,10 +258,10 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("new.js", fx.Server("alpha").Args[0].Value);
+        Assert.Equal("new.js", fx.Server("alpha").Args[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_AddEnv_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node"));
@@ -274,12 +273,12 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual(1, reloaded.Env.Count);
-        Assert.AreEqual("API_KEY", reloaded.Env[0].Key);
-        Assert.AreEqual("abc", reloaded.Env[0].Value);
+        Assert.Single(reloaded.Env);
+        Assert.Equal("API_KEY", reloaded.Env[0].Key);
+        Assert.Equal("abc", reloaded.Env[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_EditExistingEnvValue_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node",
@@ -288,10 +287,10 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("new", fx.Server("alpha").Env[0].Value);
+        Assert.Equal("new", fx.Server("alpha").Env[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_EditExistingEnvKey_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node",
@@ -301,12 +300,12 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual(1, reloaded.Env.Count);
-        Assert.AreEqual("NEW_KEY", reloaded.Env[0].Key);
-        Assert.AreEqual("v", reloaded.Env[0].Value);
+        Assert.Single(reloaded.Env);
+        Assert.Equal("NEW_KEY", reloaded.Env[0].Key);
+        Assert.Equal("v", reloaded.Env[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Stdio_RemoveEnv_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node",
@@ -318,15 +317,15 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("alpha");
-        Assert.AreEqual(1, reloaded.Env.Count);
-        Assert.AreEqual("B", reloaded.Env[0].Key);
+        Assert.Single(reloaded.Env);
+        Assert.Equal("B", reloaded.Env[0].Key);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Variant: HTTP (transport-typed) (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Http_AddNewServer_WithUrlAndHeader_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(null);
@@ -337,16 +336,16 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.ServerCount);
+        Assert.Equal(1, fx.ServerCount);
         McpServerEntry reloaded = fx.Server("api");
-        Assert.AreEqual("http", reloaded.Type);
-        Assert.AreEqual("https://api.example.com", reloaded.Url);
-        Assert.AreEqual(1, reloaded.Headers.Count);
-        Assert.AreEqual("Authorization", reloaded.Headers[0].Key);
-        Assert.AreEqual("Bearer xyz", reloaded.Headers[0].Value);
+        Assert.Equal("http", reloaded.Type);
+        Assert.Equal("https://api.example.com", reloaded.Url);
+        Assert.Single(reloaded.Headers);
+        Assert.Equal("Authorization", reloaded.Headers[0].Key);
+        Assert.Equal("Bearer xyz", reloaded.Headers[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Http_EditUrl_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(HttpServer("api", "https://old.example.com"));
@@ -354,10 +353,10 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("https://new.example.com", fx.Server("api").Url);
+        Assert.Equal("https://new.example.com", fx.Server("api").Url);
     }
 
-    [TestMethod]
+    [Fact]
     public void Http_EditExistingHeaderValue_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(HttpServer("api", "https://x",
@@ -366,10 +365,10 @@ public class McpFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("new", fx.Server("api").Headers[0].Value);
+        Assert.Equal("new", fx.Server("api").Headers[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Http_RemoveHeader_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(HttpServer("api", "https://x",
@@ -381,15 +380,15 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("api");
-        Assert.AreEqual(1, reloaded.Headers.Count);
-        Assert.AreEqual("B", reloaded.Headers[0].Key);
+        Assert.Single(reloaded.Headers);
+        Assert.Equal("B", reloaded.Headers[0].Key);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Cross-variant: transport change (stdio ↔ http)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void ChangeTransportFromStdioToHttp_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("api", "/usr/bin/node",
@@ -403,33 +402,33 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         McpServerEntry reloaded = fx.Server("api");
-        Assert.AreEqual("http", reloaded.Type);
-        Assert.AreEqual("https://api.example.com", reloaded.Url);
+        Assert.Equal("http", reloaded.Type);
+        Assert.Equal("https://api.example.com", reloaded.Url);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Description (typed, Stop A surface)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void EditDescription_RoundTrips()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node",
             extras: new Dictionary<string, JsonNode?> { ["description"] = "old" }));
         McpServerEntry entry = fx.Server("alpha");
-        Assert.AreEqual("old", entry.Description, "precondition: description loaded");
+        MessageAssert.Equal("old", entry.Description, "precondition: description loaded");
         entry.Description = "new";
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("new", fx.Server("alpha").Description);
+        Assert.Equal("new", fx.Server("alpha").Description);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  PreservedFields — replay across multiple round-trips
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_UnknownSubKeys_SurviveSingleRoundTrip()
     {
         // The SDK does not model arbitrary future server-config keys.  A
@@ -446,13 +445,13 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "alpha");
-        Assert.IsTrue(inner.ContainsKey("customExtension"),
+        Assert.True(inner.ContainsKey("customExtension"),
             "PreservedFields must replay 'customExtension' on save.");
         JsonObject ext = inner["customExtension"]!.AsObject();
-        Assert.AreEqual("y", ext["x"]!.GetValue<string>());
+        Assert.Equal("y", ext["x"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_UnknownSubKeys_SurviveDoubleRoundTrip()
     {
         // The 2026-04-30 PreservedFields-replay bug class — fields survive
@@ -470,16 +469,16 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "alpha");
-        Assert.IsTrue(inner.ContainsKey("customExtension"),
+        Assert.True(inner.ContainsKey("customExtension"),
             "PreservedFields must SURVIVE a SECOND round-trip — this is the 2026-04-30 bug class.");
-        Assert.AreEqual("y", inner["customExtension"]!.AsObject()["x"]!.GetValue<string>());
+        Assert.Equal("y", inner["customExtension"]!.AsObject()["x"]!.GetValue<string>());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Multiple servers
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void RemoveServer_DropsFromOnDisk_OthersUnaffected()
     {
         JsonObject loaded = new()
@@ -488,20 +487,20 @@ public class McpFullRoundTripTests
             ["beta"] = new JsonObject { ["command"] = "node-b" },
         };
         using McpFixture fx = McpFixture.From(loaded);
-        Assert.AreEqual(2, fx.ServerCount);
+        Assert.Equal(2, fx.ServerCount);
 
         fx.Editor.RemoveServerCommand.Execute(fx.Server("alpha"));
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.ServerCount);
-        Assert.AreEqual("beta", fx.Editor.Servers[0].Name);
+        Assert.Equal(1, fx.ServerCount);
+        Assert.Equal("beta", fx.Editor.Servers[0].Name);
         JsonObject disk = fx.Doc.Root["mcpServers"]!.AsObject();
-        Assert.IsFalse(disk.ContainsKey("alpha"));
-        Assert.IsTrue(disk.ContainsKey("beta"));
+        Assert.False(disk.ContainsKey("alpha"));
+        Assert.True(disk.ContainsKey("beta"));
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveLastServer_DropsMcpServersKeyFromOnDisk()
     {
         using McpFixture fx = McpFixture.From(StdioServer("alpha", "node"));
@@ -511,7 +510,7 @@ public class McpFullRoundTripTests
 
         // ToJsonValue returns null when no servers remain → live-write
         // RemoveValue → workspace document loses the "mcpServers" key.
-        Assert.IsFalse(fx.Doc.Root.ContainsKey("mcpServers"),
+        Assert.False(fx.Doc.Root.ContainsKey("mcpServers"),
             "Removing the last server must drop the entire 'mcpServers' key from disk.");
     }
 
@@ -519,7 +518,7 @@ public class McpFullRoundTripTests
     //  Empty containers contract
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Stdio_EmptyArgsArray_OmittedFromOnDisk()
     {
         // Server with no args — the on-disk shape must NOT emit `"args": []`
@@ -532,9 +531,9 @@ public class McpFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "alpha");
-        Assert.IsFalse(inner.ContainsKey("args"),
+        Assert.False(inner.ContainsKey("args"),
             "Empty args array MUST NOT appear in on-disk JSON.");
-        Assert.IsFalse(inner.ContainsKey("env"),
+        Assert.False(inner.ContainsKey("env"),
             "Empty env object MUST NOT appear in on-disk JSON.");
     }
 }

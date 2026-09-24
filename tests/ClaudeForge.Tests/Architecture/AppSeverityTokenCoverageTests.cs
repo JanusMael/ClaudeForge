@@ -38,7 +38,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// unstyled.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class AppSeverityTokenCoverageTests
 {
     /// <summary>The <c>App.axaml</c> of each app that must declare the full set.</summary>
@@ -52,13 +51,13 @@ public sealed class AppSeverityTokenCoverageTests
 
     private static readonly string[] Variants = ["Light", "Dark"];
 
-    [TestMethod]
+    [Fact]
     public void EverySeverityHasABrushInBothVariantsOfBothApps()
     {
         string repoRoot = FindRepoRoot();
         AppSeverity[] severities = Enum.GetValues<AppSeverity>();
 
-        Assert.IsTrue(severities.Length >= 4,
+        Assert.True(severities.Length >= 4,
             $"expected at least 4 severities, found {severities.Length} — the scan below would "
             + "under-assert if the enum were emptied");
 
@@ -67,7 +66,7 @@ public sealed class AppSeverityTokenCoverageTests
         foreach (string relative in AppFiles)
         {
             string path = Path.Combine(repoRoot, relative.Replace('/', Path.DirectorySeparatorChar));
-            Assert.IsTrue(File.Exists(path), $"missing app file: {relative}");
+            Assert.True(File.Exists(path), $"missing app file: {relative}");
 
             string text = File.ReadAllText(path);
 
@@ -114,7 +113,7 @@ public sealed class AppSeverityTokenCoverageTests
     /// <c>AppSecondaryTextBrush</c>, which genuinely differs per theme.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EverySeveritysLightAndDarkColoursDiffer()
     {
         string repoRoot = FindRepoRoot();
@@ -142,7 +141,7 @@ public sealed class AppSeverityTokenCoverageTests
             }
         }
 
-        Assert.AreEqual(0, same.Count,
+        MessageAssert.Equal(0, same.Count,
             "a severity colour that is identical in both theme variants is the single-literal "
             + "problem this token replaced:\n" + string.Join('\n', same));
     }
@@ -155,7 +154,7 @@ public sealed class AppSeverityTokenCoverageTests
     /// so an unrecognised value must degrade to Neutral rather than raise. Cast an undeclared int
     /// to prove that rather than trusting the <c>switch</c>'s default arm by reading it.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheConverterReturnsABrushForEveryMemberAndForGarbage()
     {
         AppSeverityToBrushConverter converter = new();
@@ -164,16 +163,16 @@ public sealed class AppSeverityTokenCoverageTests
         {
             object result = converter.Convert(
                 severity, typeof(IBrush), null, CultureInfo.InvariantCulture);
-            Assert.IsInstanceOfType<IBrush>(result, $"{severity} produced {result?.GetType().Name}");
+            MessageAssert.IsAssignableFrom<IBrush>(result, $"{severity} produced {result?.GetType().Name}");
         }
 
         object garbage = converter.Convert(
             (AppSeverity)9999, typeof(IBrush), null, CultureInfo.InvariantCulture);
-        Assert.IsInstanceOfType<IBrush>(garbage, "an undeclared severity must not throw");
+        MessageAssert.IsAssignableFrom<IBrush>(garbage, "an undeclared severity must not throw");
 
         object wrongType = converter.Convert(
             "#FF0000", typeof(IBrush), null, CultureInfo.InvariantCulture);
-        Assert.IsInstanceOfType<IBrush>(wrongType, "a non-severity value must not throw");
+        MessageAssert.IsAssignableFrom<IBrush>(wrongType, "a non-severity value must not throw");
     }
 
     /// <summary>
@@ -193,7 +192,7 @@ public sealed class AppSeverityTokenCoverageTests
             $@"<ResourceDictionary\s+x:Key\s*=\s*""{variant}""\s*>(?<body>.*?)</ResourceDictionary>",
             RegexOptions.Singleline);
 
-        Assert.IsTrue(m.Success,
+        Assert.True(m.Success,
             $"{relative} has no <ResourceDictionary x:Key=\"{variant}\"> block — the App*Brush "
             + "tokens must live inside ResourceDictionary.ThemeDictionaries");
 

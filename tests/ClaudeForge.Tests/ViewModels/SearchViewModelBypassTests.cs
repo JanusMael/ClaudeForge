@@ -14,7 +14,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// <c>--dangerouslySkipPermissions</c> CLI-flag synthetic and the "disable bypass"
 /// Essentials card.
 /// </summary>
-[TestClass]
 public sealed class SearchViewModelBypassTests
 {
     /// <summary>This app's synthetic-row table — see <see cref="SearchViewModelTests"/>.</summary>
@@ -62,20 +61,20 @@ public sealed class SearchViewModelBypassTests
         => vm.SearchResults.FirstOrDefault(
             r => r.IsSynthetic && r.PropertyKey == EssentialsViewModel.CardIdDisableBypass);
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_Bypass_AddsDefaultModeSynthetic_WhenPermissionsNodePresent()
     {
         SearchViewModel vm = WithPermissionsTree();
         vm.ExecuteSearch("bypass");
 
         SearchResultViewModel? row = BypassRow(vm);
-        Assert.IsNotNull(row, "A bypass → defaultMode synthetic row should appear.");
-        Assert.IsTrue(row!.IsSynthetic);
-        Assert.AreEqual("permissions.defaultMode", row.PropertyKey);
-        StringAssert.Contains(row.PropertyDisplayName, "bypassPermissions");
+        MessageAssert.NotNull(row, "A bypass → defaultMode synthetic row should appear.");
+        Assert.True(row!.IsSynthetic);
+        Assert.Equal("permissions.defaultMode", row.PropertyKey);
+        OrdinalAssert.Contains("bypassPermissions", row.PropertyDisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_Bypass_OmitsSynthetic_WhenNoPermissionsNode()
     {
         NavigationNodeViewModel ccHeader = new("Claude Code");
@@ -84,20 +83,20 @@ public sealed class SearchViewModelBypassTests
 
         vm.ExecuteSearch("bypass");
 
-        Assert.IsNull(BypassRow(vm));
+        Assert.Null(BypassRow(vm));
     }
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_DisableBypass_DoesNotAddDefaultModeSynthetic()
     {
         SearchViewModel vm = WithPermissionsTree();
         vm.ExecuteSearch("disable bypass");
 
-        Assert.IsNull(BypassRow(vm),
+        MessageAssert.Null(BypassRow(vm),
             "'disable bypass' is the opposite intent (lock-out) — must not surface the bypass-select synthetic.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_Danger_DoesNotAddBypassDefaultModeSynthetic()
     {
         SearchViewModel vm = WithPermissionsTree();
@@ -105,39 +104,39 @@ public sealed class SearchViewModelBypassTests
 
         // The danger synthetic uses an empty PropertyKey; the bypass one uses
         // permissions.defaultMode. "danger" must not also fire the bypass row.
-        Assert.IsNull(BypassRow(vm));
+        Assert.Null(BypassRow(vm));
     }
 
     // ── Opposite-intent disambiguation (the double-fire regression) ────────
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_Bypass_SurfacesEnableDeepLink_NotTheDisableCard()
     {
         SearchViewModel vm = WithPermissionsAndEssentials();
         vm.ExecuteSearch("bypass");
 
-        Assert.IsNotNull(BypassRow(vm), "The enable deep-link should surface.");
-        Assert.IsNull(DisableBypassCard(vm),
+        MessageAssert.NotNull(BypassRow(vm), "The enable deep-link should surface.");
+        MessageAssert.Null(DisableBypassCard(vm),
             "The opposite-intent 'Disable bypass-permissions mode' card must be suppressed for an enable-bypass query.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_BypassPermissions_SurfacesEnableDeepLink_NotTheDisableCard()
     {
         SearchViewModel vm = WithPermissionsAndEssentials();
         vm.ExecuteSearch("bypass permissions");
 
-        Assert.IsNotNull(BypassRow(vm));
-        Assert.IsNull(DisableBypassCard(vm));
+        Assert.NotNull(BypassRow(vm));
+        Assert.Null(DisableBypassCard(vm));
     }
 
-    [TestMethod]
+    [Fact]
     public void ExecuteSearch_DisableBypass_SurfacesOnlyTheDisableCard()
     {
         SearchViewModel vm = WithPermissionsAndEssentials();
         vm.ExecuteSearch("disable bypass");
 
-        Assert.IsNull(BypassRow(vm), "'disable bypass' must not surface the enable deep-link.");
-        Assert.IsNotNull(DisableBypassCard(vm), "'disable bypass' should surface the lock-out card.");
+        MessageAssert.Null(BypassRow(vm), "'disable bypass' must not surface the enable deep-link.");
+        MessageAssert.NotNull(DisableBypassCard(vm), "'disable bypass' should surface the lock-out card.");
     }
 }

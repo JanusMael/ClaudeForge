@@ -50,7 +50,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// assembly does not land in another's.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class AssemblyLayeringTests
 {
     /// <summary>Name prefixes that identify a product-specific assembly or project.</summary>
@@ -118,12 +117,12 @@ public sealed class AssemblyLayeringTests
                  Directory.GetFiles(root, glob, SearchOption.AllDirectories)))
              .Distinct(StringComparer.OrdinalIgnoreCase)];
 
-    [TestMethod]
+    [Fact]
     public void AtLeastOneSharedProjectExists_SoTheseTestsAreNotVacuous()
     {
         // Without this, renaming the shared projects turns every assertion below into a
         // no-op pass — the classic way an architecture test quietly stops testing anything.
-        Assert.IsTrue(
+        Assert.True(
             SharedProjectFiles.Count > 0,
             $"No shared project matched {string.Join(", ", SharedProjectGlobs)} under {string.Join(" or ", ScannedRoots)}. "
             + "Either the shared projects were renamed (update this test) or they no longer "
@@ -133,14 +132,14 @@ public sealed class AssemblyLayeringTests
         // narrows the guard while this test keeps passing on the other's projects.
         foreach (string root in ScannedRoots)
         {
-            Assert.IsTrue(
+            Assert.True(
                 SharedProjectFiles.Any(p => p.StartsWith(root, StringComparison.OrdinalIgnoreCase)),
                 $"No shared project matched {string.Join(", ", SharedProjectGlobs)} under '{root}', so that directory is "
                 + "unguarded. If the shared projects there were renamed, update this test.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void SharedProjectsNeverDeclareAProductReference()
     {
         List<string> violations = [];
@@ -175,7 +174,7 @@ public sealed class AssemblyLayeringTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             violations.Count == 0,
             "A shared AgentForge project declares a ProjectReference to a product-specific "
             + "project, which breaks the foundation both apps are supposed to sit on:\n  "
@@ -194,7 +193,7 @@ public sealed class AssemblyLayeringTests
     private static string OutputDirectory =>
         Path.GetDirectoryName(typeof(AssemblyLayeringTests).Assembly.Location)!;
 
-    [TestMethod]
+    [Fact]
     public void SharedAssembliesNeverReferenceAProduct()
     {
         // Mirrors SharedProjectGlobs. JsonC is matched exactly rather than as JsonC.*.dll, so
@@ -208,7 +207,7 @@ public sealed class AssemblyLayeringTests
                 .Distinct(StringComparer.OrdinalIgnoreCase),
         ];
 
-        Assert.IsTrue(
+        Assert.True(
             sharedAssemblies.Length > 0,
             $"Nothing matching {string.Join(", ", assemblyGlobs)} in {OutputDirectory} — this "
             + "test cannot see the shared assemblies, so it is not guarding anything.");
@@ -240,7 +239,7 @@ public sealed class AssemblyLayeringTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             violations.Count == 0,
             "A shared AgentForge assembly has a compiled reference to a product-specific "
             + "assembly:\n  " + string.Join("\n  ", violations)

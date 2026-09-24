@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// - Add / Remove flow propagates IsModified
 /// - Reset clears rows and Add inputs
 /// </summary>
-[TestClass]
 public class McpServerListEditorViewModelTests
 {
     private static SchemaNode ArraySchema(string name = "allowedMcpServers")
@@ -41,17 +40,17 @@ public class McpServerListEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initial_NoLayeredEntry_NoRows_NotModified()
     {
         McpServerListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_HydratesAllThreeKinds()
     {
         JsonArray arr =
@@ -69,19 +68,19 @@ public class McpServerListEditorViewModelTests
         McpServerListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithArray("allowedMcpServers", ConfigScope.User, arr), ConfigScope.User);
 
-        Assert.AreEqual(3, vm.Items.Count);
+        Assert.Equal(3, vm.Items.Count);
 
         McpServerListEntryViewModel byName = vm.Items.Single(i => i.Kind == McpServerMatchKind.ByName);
-        Assert.AreEqual("alpha-mcp", byName.Text);
+        Assert.Equal("alpha-mcp", byName.Text);
 
         McpServerListEntryViewModel byCommand = vm.Items.Single(i => i.Kind == McpServerMatchKind.ByCommand);
-        Assert.AreEqual("node\n/path/to/server.js", byCommand.Text);
+        Assert.Equal("node\n/path/to/server.js", byCommand.Text);
 
         McpServerListEntryViewModel byUrl = vm.Items.Single(i => i.Kind == McpServerMatchKind.ByUrl);
-        Assert.AreEqual("https://*.example.com/*", byUrl.Text);
+        Assert.Equal("https://*.example.com/*", byUrl.Text);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_RebuildsArrayWithCorrectDiscriminators()
     {
         McpServerListEditorViewModel vm = NewVm();
@@ -100,15 +99,15 @@ public class McpServerListEditorViewModelTests
         vm.AddEntryCommand.Execute(null);
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
-        Assert.AreEqual(3, written.Count);
-        Assert.AreEqual("alpha-mcp", ((JsonObject)written[0]!)["serverName"]?.GetValue<string>());
+        Assert.Equal(3, written.Count);
+        Assert.Equal("alpha-mcp", ((JsonObject)written[0]!)["serverName"]?.GetValue<string>());
         JsonArray cmdArr = (JsonArray)((JsonObject)written[1]!)["serverCommand"]!;
-        Assert.AreEqual("node", cmdArr[0]?.GetValue<string>());
-        Assert.AreEqual("/srv/a.js", cmdArr[1]?.GetValue<string>());
-        Assert.AreEqual("https://x.example/*", ((JsonObject)written[2]!)["serverUrl"]?.GetValue<string>());
+        Assert.Equal("node", cmdArr[0]?.GetValue<string>());
+        Assert.Equal("/srv/a.js", cmdArr[1]?.GetValue<string>());
+        Assert.Equal("https://x.example/*", ((JsonObject)written[2]!)["serverUrl"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyItems_ReturnsNull_PreservingUndefinedSemantics()
     {
         // Per the schema description: undefined = no restriction (anything
@@ -117,10 +116,10 @@ public class McpServerListEditorViewModelTests
         // for "no restrictions configured via this editor".
         McpServerListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void BareStringScope_HydratesEmpty_NoCrash()
     {
         // Pre-existing bad data from the old StringArray fallback could have
@@ -138,10 +137,10 @@ public class McpServerListEditorViewModelTests
         vm.LoadFromLayered(lv, ConfigScope.User);
 
         // Element is a string, not an object — skipped during hydration.
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void ItemWithMultipleDiscriminators_Skipped()
     {
         // Schema requires exactly one of {serverName, serverCommand, serverUrl}.
@@ -158,22 +157,22 @@ public class McpServerListEditorViewModelTests
         ];
         McpServerListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithArray("allowedMcpServers", ConfigScope.User, arr), ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DisabledWhenTextBlank()
     {
         McpServerListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null));
+        Assert.False(vm.AddEntryCommand.CanExecute(null));
         vm.NewText = "  ";
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null));
+        Assert.False(vm.AddEntryCommand.CanExecute(null));
         vm.NewText = "alpha";
-        Assert.IsTrue(vm.AddEntryCommand.CanExecute(null));
+        Assert.True(vm.AddEntryCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankRow_SkippedOnSave()
     {
         McpServerListEditorViewModel vm = NewVm();
@@ -187,10 +186,10 @@ public class McpServerListEditorViewModelTests
 
         // Save must not emit `{ "serverName": "" }` — the editor returns null
         // (RemoveValue) when no row has a non-empty payload.
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ChangingKind_FlagsModified()
     {
         McpServerListEditorViewModel vm = NewVm();
@@ -208,10 +207,10 @@ public class McpServerListEditorViewModelTests
 
         vm.Items[0].Kind = McpServerMatchKind.ByUrl;
 
-        Assert.IsTrue(fired > 0);
+        Assert.True(fired > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_ShrinksItemsAndFlagsModified()
     {
         McpServerListEditorViewModel vm = NewVm();
@@ -233,11 +232,11 @@ public class McpServerListEditorViewModelTests
 
         vm.RemoveEntryCommand.Execute(vm.Items[0]);
 
-        Assert.AreEqual(1, vm.Items.Count);
-        Assert.IsTrue(fired > 0);
+        Assert.Single(vm.Items);
+        Assert.True(fired > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_AfterLoad_RestoresOnDiskRows_NotClearsThem()
     {
         // Reset semantic consistency.  Prior shape called
@@ -251,26 +250,26 @@ public class McpServerListEditorViewModelTests
         McpServerListEditorViewModel vm = NewVm();
         JsonArray arr = [new JsonObject { ["serverName"] = "alpha" }];
         vm.LoadFromLayered(WithArray("allowedMcpServers", ConfigScope.User, arr), ConfigScope.User);
-        Assert.AreEqual(1, vm.Items.Count, "precondition: load populated 1 row");
+        MessageAssert.Equal(1, vm.Items.Count, "precondition: load populated 1 row");
 
         // User edits: type into the new-row inputs + add a second row.
         vm.NewKind = McpServerMatchKind.ByUrl;
         vm.NewText = "https://x";
         vm.AddEntryCommand.Execute(null);
-        Assert.AreEqual(2, vm.Items.Count);
+        Assert.Equal(2, vm.Items.Count);
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Items.Count,
+        MessageAssert.Equal(1, vm.Items.Count,
             "Reset must restore the original on-disk row (1), not wipe to empty.");
-        Assert.AreEqual(McpServerMatchKind.ByName, vm.Items[0].Kind);
-        Assert.AreEqual("alpha", vm.Items[0].Text);
+        Assert.Equal(McpServerMatchKind.ByName, vm.Items[0].Kind);
+        Assert.Equal("alpha", vm.Items[0].Text);
 
-        Assert.AreEqual(string.Empty, vm.NewText, "Reset must clear the transient new-row input.");
-        Assert.AreEqual(McpServerMatchKind.ByName, vm.NewKind, "Reset must clear the transient new-row kind.");
+        MessageAssert.Equal(string.Empty, vm.NewText, "Reset must clear the transient new-row input.");
+        MessageAssert.Equal(McpServerMatchKind.ByName, vm.NewKind, "Reset must clear the transient new-row kind.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_WithoutPriorLoad_FallsBackToClear()
     {
         // Edge case: Reset is called on a freshly-constructed VM where
@@ -286,14 +285,14 @@ public class McpServerListEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.AreEqual(string.Empty, vm.NewText);
-        Assert.AreEqual(McpServerMatchKind.ByName, vm.NewKind);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.Equal(string.Empty, vm.NewText);
+        Assert.Equal(McpServerMatchKind.ByName, vm.NewKind);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Command_TrimsAndDropsBlankLines()
     {
         // Trailing newlines + whitespace shouldn't produce phantom "" array elements.
@@ -306,8 +305,8 @@ public class McpServerListEditorViewModelTests
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
         JsonArray cmdArr = (JsonArray)((JsonObject)written[0]!)["serverCommand"]!;
-        Assert.AreEqual(2, cmdArr.Count);
-        Assert.AreEqual("node", cmdArr[0]?.GetValue<string>());
-        Assert.AreEqual("/srv/a.js", cmdArr[1]?.GetValue<string>());
+        Assert.Equal(2, cmdArr.Count);
+        Assert.Equal("node", cmdArr[0]?.GetValue<string>());
+        Assert.Equal("/srv/a.js", cmdArr[1]?.GetValue<string>());
     }
 }

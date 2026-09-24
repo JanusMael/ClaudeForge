@@ -18,14 +18,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// values + change notifications stay consistent.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class EditingContextSummaryTests
+public sealed class EditingContextSummaryTests : IDisposable
 {
     private string _sandbox = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public EditingContextSummaryTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -34,8 +34,7 @@ public sealed class EditingContextSummaryTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         _vm.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
@@ -43,6 +42,12 @@ public sealed class EditingContextSummaryTests
         {
             TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -70,104 +75,104 @@ public sealed class EditingContextSummaryTests
     // No-project mode
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void NoProject_IsProjectOpenIsFalse()
     {
         _vm.ProjectRoot = null;
-        Assert.IsFalse(_vm.IsProjectOpen);
+        Assert.False(_vm.IsProjectOpen);
     }
 
-    [TestMethod]
+    [Fact]
     public void NoProject_FolderNameIsEmpty()
     {
         _vm.ProjectRoot = null;
-        Assert.AreEqual(string.Empty, _vm.ProjectFolderName);
+        Assert.Equal(string.Empty, _vm.ProjectFolderName);
     }
 
-    [TestMethod]
+    [Fact]
     public void NoProject_ClaudeDirPathIsEmpty()
     {
         _vm.ProjectRoot = null;
-        Assert.AreEqual(string.Empty, _vm.ProjectClaudeDirPath);
+        Assert.Equal(string.Empty, _vm.ProjectClaudeDirPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void NoProject_SummaryUsesNoProjectString()
     {
         _vm.ProjectRoot = null;
-        Assert.AreEqual(Strings.TextEditingContextNoProject, _vm.EditingContextSummary);
+        Assert.Equal(Strings.TextEditingContextNoProject, _vm.EditingContextSummary);
     }
 
-    [TestMethod]
+    [Fact]
     public void NoProject_IconIsHouse()
     {
         _vm.ProjectRoot = null;
-        Assert.AreEqual("🏠", _vm.EditingContextIcon);
+        Assert.Equal("🏠", _vm.EditingContextIcon);
     }
 
-    [TestMethod]
+    [Fact]
     public void UserSettingsPath_AlwaysAvailable()
     {
         // UserSettingsPath should always have a value, with or without a project open.
         _vm.ProjectRoot = null;
-        Assert.IsFalse(string.IsNullOrEmpty(_vm.UserSettingsPath));
-        Assert.IsTrue(_vm.UserSettingsPath.EndsWith("settings.json"));
+        Assert.False(string.IsNullOrEmpty(_vm.UserSettingsPath));
+        Assert.EndsWith("settings.json", _vm.UserSettingsPath);
     }
 
     // -----------------------------------------------------------------------
     // Project-open mode
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_IsProjectOpenIsTrue()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo");
-        Assert.IsTrue(_vm.IsProjectOpen);
+        Assert.True(_vm.IsProjectOpen);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_FolderNameIsLeaf()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo");
-        Assert.AreEqual("demo", _vm.ProjectFolderName);
+        Assert.Equal("demo", _vm.ProjectFolderName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_FolderName_TrailingSlashStripped()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo", trailingSeparator: true);
-        Assert.AreEqual("demo", _vm.ProjectFolderName,
+        MessageAssert.Equal("demo", _vm.ProjectFolderName,
             "Trailing separators must not produce an empty leaf name.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_ClaudeDirPathIsProjectDotClaude()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo");
-        Assert.IsTrue(_vm.ProjectClaudeDirPath.EndsWith(Path.Combine("demo", ".claude")),
+        Assert.True(_vm.ProjectClaudeDirPath.EndsWith(Path.Combine("demo", ".claude")),
             $"Expected ProjectClaudeDirPath to end with 'demo{Path.DirectorySeparatorChar}.claude' but got '{_vm.ProjectClaudeDirPath}'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_SummaryIncludesProjectName()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo");
-        StringAssert.Contains(_vm.EditingContextSummary, "demo",
+        MessageAssert.Contains("demo", _vm.EditingContextSummary,
             "Project-mode summary must include the project leaf name.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectOpen_IconIsFolder()
     {
         _vm.ProjectRoot = MakeProjectRoot("demo");
-        Assert.AreEqual("📁", _vm.EditingContextIcon);
+        Assert.Equal("📁", _vm.EditingContextIcon);
     }
 
     // -----------------------------------------------------------------------
     // Change-notification — open / close / reopen
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ProjectRootChange_RaisesPropertyChangedForDerivedProperties()
     {
         List<string?> seen = new();
@@ -178,34 +183,34 @@ public sealed class EditingContextSummaryTests
         // The [NotifyPropertyChangedFor] attributes on _projectRoot must
         // surface as PropertyChanged events for every derived UI property
         // — otherwise the status row and Welcome panel go stale on open/close.
-        CollectionAssert.Contains(seen, nameof(MainWindowViewModel.IsProjectOpen));
-        CollectionAssert.Contains(seen, nameof(MainWindowViewModel.ProjectFolderName));
-        CollectionAssert.Contains(seen, nameof(MainWindowViewModel.ProjectClaudeDirPath));
-        CollectionAssert.Contains(seen, nameof(MainWindowViewModel.EditingContextSummary));
-        CollectionAssert.Contains(seen, nameof(MainWindowViewModel.EditingContextIcon));
+        Assert.Contains(nameof(MainWindowViewModel.IsProjectOpen), seen);
+        Assert.Contains(nameof(MainWindowViewModel.ProjectFolderName), seen);
+        Assert.Contains(nameof(MainWindowViewModel.ProjectClaudeDirPath), seen);
+        Assert.Contains(nameof(MainWindowViewModel.EditingContextSummary), seen);
+        Assert.Contains(nameof(MainWindowViewModel.EditingContextIcon), seen);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectRoot_OpenCloseReopen_TransitionsThroughBothStates()
     {
         // Closed
         _vm.ProjectRoot = null;
-        Assert.IsFalse(_vm.IsProjectOpen);
+        Assert.False(_vm.IsProjectOpen);
 
         // Open A
         _vm.ProjectRoot = MakeProjectRoot("alpha");
-        Assert.IsTrue(_vm.IsProjectOpen);
-        Assert.AreEqual("alpha", _vm.ProjectFolderName);
+        Assert.True(_vm.IsProjectOpen);
+        Assert.Equal("alpha", _vm.ProjectFolderName);
 
         // Close
         _vm.ProjectRoot = null;
-        Assert.IsFalse(_vm.IsProjectOpen);
-        Assert.AreEqual(string.Empty, _vm.ProjectFolderName);
+        Assert.False(_vm.IsProjectOpen);
+        Assert.Equal(string.Empty, _vm.ProjectFolderName);
 
         // Open B
         _vm.ProjectRoot = MakeProjectRoot("beta");
-        Assert.IsTrue(_vm.IsProjectOpen);
-        Assert.AreEqual("beta", _vm.ProjectFolderName);
+        Assert.True(_vm.IsProjectOpen);
+        Assert.Equal("beta", _vm.ProjectFolderName);
     }
 
     // -----------------------------------------------------------------------

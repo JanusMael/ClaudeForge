@@ -9,7 +9,6 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class PermissionsFullRoundTripTests
 {
     // ─── Fixture ─────────────────────────────────────────────────────────────
@@ -186,7 +185,7 @@ public class PermissionsFullRoundTripTests
     //  Variant: Allow / Deny / Ask  (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void AllowList_AddRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
@@ -195,13 +194,13 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(2, fx.Editor.AllowList.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, fx.Editor.AllowList.Count);
+        MessageAssert.SameElements(
             new[] { "Read", "Bash(git status)" },
             RuleStrings(fx.Editor.AllowList));
     }
 
-    [TestMethod]
+    [Fact]
     public void AllowList_RemoveRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read", "Glob", "Grep"]));
@@ -210,11 +209,11 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(2, fx.Editor.AllowList.Count);
-        Assert.IsFalse(RuleStrings(fx.Editor.AllowList).Contains(first.Rule));
+        Assert.Equal(2, fx.Editor.AllowList.Count);
+        OrdinalAssert.DoesNotContain(first.Rule, RuleStrings(fx.Editor.AllowList));
     }
 
-    [TestMethod]
+    [Fact]
     public void DenyList_AddRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(deny: ["Bash(rm -rf *)"]));
@@ -223,10 +222,10 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(2, fx.Editor.DenyList.Count);
+        Assert.Equal(2, fx.Editor.DenyList.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void DenyList_RemoveRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(deny: ["Bash(rm *)", "Write"]));
@@ -235,10 +234,10 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.Editor.DenyList.Count);
+        Assert.Single(fx.Editor.DenyList);
     }
 
-    [TestMethod]
+    [Fact]
     public void AskList_AddRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms());
@@ -247,12 +246,12 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.Editor.AskList.Count);
+        Assert.Single(fx.Editor.AskList);
         // The specifier is preserved verbatim — " *" (optional args) is NOT rewritten to ":*".
-        Assert.AreEqual("Bash(git push *)", fx.Editor.AskList[0].Rule);
+        Assert.Equal("Bash(git push *)", fx.Editor.AskList[0].Rule);
     }
 
-    [TestMethod]
+    [Fact]
     public void AskList_RemoveRule_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(ask: ["Bash(git commit *)", "Bash(git push *)"]));
@@ -261,10 +260,10 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.Editor.AskList.Count);
+        Assert.Single(fx.Editor.AskList);
     }
 
-    [TestMethod]
+    [Fact]
     public void AllThreeLists_RoundTrip_Independently()
     {
         // Locks the contract that mutating one list does not affect the
@@ -280,45 +279,45 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        CollectionAssert.AreEquivalent(new[] { "Read", "Glob" }, RuleStrings(fx.Editor.AllowList));
-        CollectionAssert.AreEquivalent(new[] { "Write" }, RuleStrings(fx.Editor.DenyList));
-        CollectionAssert.AreEquivalent(new[] { "Edit" }, RuleStrings(fx.Editor.AskList));
+        MessageAssert.SameElements(new[] { "Read", "Glob" }, RuleStrings(fx.Editor.AllowList));
+        MessageAssert.SameElements(new[] { "Write" }, RuleStrings(fx.Editor.DenyList));
+        MessageAssert.SameElements(new[] { "Edit" }, RuleStrings(fx.Editor.AskList));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  DefaultMode (tri-ish state including null)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void DefaultMode_SetFromNull_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
-        Assert.IsNull(fx.Editor.DefaultMode, "precondition: defaultMode unset");
+        MessageAssert.Null(fx.Editor.DefaultMode, "precondition: defaultMode unset");
         fx.Editor.DefaultMode = "acceptEdits";
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("acceptEdits", fx.Editor.DefaultMode);
-        Assert.AreEqual("acceptEdits", PermsOnDisk(fx.Doc)["defaultMode"]!.GetValue<string>());
+        Assert.Equal("acceptEdits", fx.Editor.DefaultMode);
+        Assert.Equal("acceptEdits", PermsOnDisk(fx.Doc)["defaultMode"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultMode_ClearToNull_RemovesKeyFromOnDisk()
     {
         using PermsFixture fx = PermsFixture.From(Perms(
             allow: ["Read"],
             defaultMode: "plan"));
-        Assert.AreEqual("plan", fx.Editor.DefaultMode);
+        Assert.Equal("plan", fx.Editor.DefaultMode);
         fx.Editor.DefaultMode = null;
 
         fx.SaveAndReload();
 
-        Assert.IsNull(fx.Editor.DefaultMode);
-        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("defaultMode"),
+        Assert.Null(fx.Editor.DefaultMode);
+        Assert.False(PermsOnDisk(fx.Doc).ContainsKey("defaultMode"),
             "Cleared defaultMode MUST NOT survive on disk as null/empty.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultMode_Change_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"], defaultMode: "default"));
@@ -326,14 +325,14 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("bypassPermissions", fx.Editor.DefaultMode);
+        Assert.Equal("bypassPermissions", fx.Editor.DefaultMode);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  AdditionalDirectories
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void AdditionalDirectories_AddOne_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
@@ -342,11 +341,11 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.Editor.AdditionalDirectories.Count);
-        Assert.AreEqual("/srv/projects", fx.Editor.AdditionalDirectories[0]);
+        Assert.Single(fx.Editor.AdditionalDirectories);
+        Assert.Equal("/srv/projects", fx.Editor.AdditionalDirectories[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void AdditionalDirectories_RemoveOne_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(
@@ -356,11 +355,11 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.Editor.AdditionalDirectories.Count);
-        Assert.AreEqual("/b", fx.Editor.AdditionalDirectories[0]);
+        Assert.Single(fx.Editor.AdditionalDirectories);
+        Assert.Equal("/b", fx.Editor.AdditionalDirectories[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void AdditionalDirectories_EmptyList_OmittedFromOnDisk()
     {
         // Removing the last entry must not leave `"additionalDirectories": []`
@@ -372,7 +371,7 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("additionalDirectories"),
+        Assert.False(PermsOnDisk(fx.Doc).ContainsKey("additionalDirectories"),
             "Empty additionalDirectories array MUST NOT appear on disk.");
     }
 
@@ -380,20 +379,20 @@ public class PermissionsFullRoundTripTests
     //  DisableBypassPermissionsMode (schema string enum "disable" / absent; bool? UI)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void DisableBypassPermissionsMode_SetTrue_RoundTrips()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
-        Assert.IsNull(fx.Editor.DisableBypassPermissionsMode);
+        Assert.Null(fx.Editor.DisableBypassPermissionsMode);
         fx.Editor.DisableBypassPermissionsMode = true;
 
         fx.SaveAndReload();
 
-        Assert.IsTrue(fx.Editor.DisableBypassPermissionsMode);
-        Assert.AreEqual("disable", PermsOnDisk(fx.Doc)["disableBypassPermissionsMode"]!.GetValue<string>());
+        Assert.True(fx.Editor.DisableBypassPermissionsMode);
+        Assert.Equal("disable", PermsOnDisk(fx.Doc)["disableBypassPermissionsMode"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void DisableBypassPermissionsMode_SetFalse_CollapsesToAbsent()
     {
         // The schema value is the string "disable" (or absent) — there is NO on-disk
@@ -405,30 +404,30 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.IsNull(fx.Editor.DisableBypassPermissionsMode);
-        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
+        Assert.Null(fx.Editor.DisableBypassPermissionsMode);
+        Assert.False(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
     }
 
-    [TestMethod]
+    [Fact]
     public void DisableBypassPermissionsMode_ClearToNull_RemovesKeyFromOnDisk()
     {
         using PermsFixture fx = PermsFixture.From(Perms(
             allow: ["Read"],
             disableBypassPermissionsMode: true));
-        Assert.IsTrue(fx.Editor.DisableBypassPermissionsMode);
+        Assert.True(fx.Editor.DisableBypassPermissionsMode);
         fx.Editor.DisableBypassPermissionsMode = null;
 
         fx.SaveAndReload();
 
-        Assert.IsNull(fx.Editor.DisableBypassPermissionsMode);
-        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
+        Assert.Null(fx.Editor.DisableBypassPermissionsMode);
+        Assert.False(PermsOnDisk(fx.Doc).ContainsKey("disableBypassPermissionsMode"));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  PreservedFields — replay across multiple round-trips
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_UnknownSubKeys_SurviveSingleRoundTrip()
     {
         // Future schema additions — verify they round-trip via the
@@ -444,12 +443,12 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.IsTrue(PermsOnDisk(fx.Doc).ContainsKey("futureKey"),
+        Assert.True(PermsOnDisk(fx.Doc).ContainsKey("futureKey"),
             "PreservedFields must replay 'futureKey' on save.");
-        Assert.AreEqual("futureValue", PermsOnDisk(fx.Doc)["futureKey"]!.GetValue<string>());
+        Assert.Equal("futureValue", PermsOnDisk(fx.Doc)["futureKey"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_UnknownSubKeys_SurviveDoubleRoundTrip()
     {
         // bug class — fields survive ONE round-trip but
@@ -469,16 +468,16 @@ public class PermissionsFullRoundTripTests
         fx.Editor.AddDenyCommand.Execute(null);
         fx.SaveAndReload();
 
-        Assert.IsTrue(PermsOnDisk(fx.Doc).ContainsKey("futureKey"),
+        Assert.True(PermsOnDisk(fx.Doc).ContainsKey("futureKey"),
             "PreservedFields must SURVIVE a second round-trip.");
-        Assert.AreEqual("futureValue", PermsOnDisk(fx.Doc)["futureKey"]!.GetValue<string>());
+        Assert.Equal("futureValue", PermsOnDisk(fx.Doc)["futureKey"]!.GetValue<string>());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Workspace-removal contract
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void EmptyAllLists_NoDefaultMode_DropsPermissionsKeyFromOnDisk()
     {
         using PermsFixture fx = PermsFixture.From(Perms(allow: ["Read"]));
@@ -486,11 +485,11 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.IsFalse(fx.Doc.Root.ContainsKey("permissions"),
+        Assert.False(fx.Doc.Root.ContainsKey("permissions"),
             "When all lists are empty AND no other keys are set, the entire 'permissions' object MUST be removed.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyLists_DefaultModeSet_KeepsPermissionsKeyOnDisk()
     {
         using PermsFixture fx = PermsFixture.From(Perms(
@@ -500,18 +499,18 @@ public class PermissionsFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.IsTrue(fx.Doc.Root.ContainsKey("permissions"),
+        Assert.True(fx.Doc.Root.ContainsKey("permissions"),
             "DefaultMode alone must keep 'permissions' on disk.");
-        Assert.IsFalse(PermsOnDisk(fx.Doc).ContainsKey("allow"),
+        Assert.False(PermsOnDisk(fx.Doc).ContainsKey("allow"),
             "Empty allow list MUST NOT survive on disk.");
-        Assert.IsTrue(PermsOnDisk(fx.Doc).ContainsKey("defaultMode"));
+        Assert.True(PermsOnDisk(fx.Doc).ContainsKey("defaultMode"));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Empty-array contract on disk
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void RemoveAllAllowRules_OmitsAllowKeyFromOnDisk_WhenOtherListsHaveContent()
     {
         using PermsFixture fx = PermsFixture.From(Perms(
@@ -522,9 +521,9 @@ public class PermissionsFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject disk = PermsOnDisk(fx.Doc);
-        Assert.IsFalse(disk.ContainsKey("allow"),
+        Assert.False(disk.ContainsKey("allow"),
             "Empty allow list MUST NOT survive on disk.");
-        Assert.IsTrue(disk.ContainsKey("deny"),
+        Assert.True(disk.ContainsKey("deny"),
             "Other lists with content must persist.");
     }
 }

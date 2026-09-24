@@ -22,16 +22,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// These tests lock both halves of the contract — the node's presence in
 /// the navigation tree, and its selection on a fresh state.
 /// </summary>
-[TestClass]
-public sealed class NavigationTreeWelcomeNodeTests
+public sealed class NavigationTreeWelcomeNodeTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public NavigationTreeWelcomeNodeTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_welcomenode_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -46,8 +46,7 @@ public sealed class NavigationTreeWelcomeNodeTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -63,6 +62,12 @@ public sealed class NavigationTreeWelcomeNodeTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static MainWindowViewModel BuildViewModel()
     {
         SchemaRegistry schemaRegistry = new();
@@ -70,7 +75,7 @@ public sealed class NavigationTreeWelcomeNodeTests
         return new MainWindowViewModel(ClaudeEnvironment.Empty, schemaRegistry, dialog);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NavigationTree_AfterFirstLoad_ContainsWelcomeNodeAsFirstTopLevelEntry()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -78,22 +83,22 @@ public sealed class NavigationTreeWelcomeNodeTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.IsTrue(vm.NavigationTree.Count > 0,
+            Assert.True(vm.NavigationTree.Count > 0,
                 "NavigationTree must be populated after LoadAllWorkspacesAsync.");
 
             NavigationNodeViewModel first = vm.NavigationTree[0];
-            Assert.AreEqual("Welcome", first.Title,
+            MessageAssert.Equal("Welcome", first.Title,
                 "Welcome node must be the first top-level entry — it's the orientation landing spot.");
-            Assert.IsTrue(first.IsTopLevel);
-            Assert.IsNull(first.Editor,
+            Assert.True(first.IsTopLevel);
+            MessageAssert.Null(first.Editor,
                 "Welcome node must have NO Editor so ActiveEditor stays null and WelcomeView renders.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task FreshState_NoPersistedSelection_SelectsWelcomeByDefault()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -104,25 +109,25 @@ public sealed class NavigationTreeWelcomeNodeTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.IsNotNull(vm.SelectedNode,
+            MessageAssert.NotNull(vm.SelectedNode,
                 "Fresh-state SelectedNode must not be null — the user needs SOMETHING highlighted "
                 + "in the tree so they can tell where they are.");
-            Assert.AreEqual("Welcome", vm.SelectedNode!.Title,
+            MessageAssert.Equal("Welcome", vm.SelectedNode!.Title,
                 "On a fresh install, the default selection must be the Welcome node so new users "
                 + "see the orientation content instead of being dropped straight into the first "
                 + "Claude Code editor before they know what they're editing.");
-            Assert.IsNull(vm.ActiveEditor,
+            MessageAssert.Null(vm.ActiveEditor,
                 "Welcome node has no Editor, so ActiveEditor stays null and the existing "
                 + "WelcomeView renders.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Opt-out via the Welcome page's "Show on launch" checkbox (2026-05-19) ──
 
-    [TestMethod]
+    [Fact]
     public async Task ShowWelcomeOnLaunch_DefaultsToTrue_OnFreshState()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -131,15 +136,15 @@ public sealed class NavigationTreeWelcomeNodeTests
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.IsTrue(vm.ShowWelcomeOnLaunch,
+            Assert.True(vm.ShowWelcomeOnLaunch,
                 "Default for fresh state must be true so first-launch users see the Welcome page.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ToggleOff_RemovesWelcomeNodeFromTree()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -149,20 +154,20 @@ public sealed class NavigationTreeWelcomeNodeTests
             // (without requiring a relaunch).
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            Assert.IsTrue(vm.NavigationTree.Any(n => n.Title == "Welcome"),
+            Assert.True(vm.NavigationTree.Any(n => n.Title == "Welcome"),
                 "Pre-toggle baseline: Welcome node is in the tree.");
 
             vm.ShowWelcomeOnLaunch = false;
 
-            Assert.IsFalse(vm.NavigationTree.Any(n => n.Title == "Welcome"),
+            Assert.False(vm.NavigationTree.Any(n => n.Title == "Welcome"),
                 "After toggle-off, the Welcome node must be removed from the navigation tree.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ToggleOff_WhileOnWelcomePage_MovesSelectionToEssentials()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -174,22 +179,22 @@ public sealed class NavigationTreeWelcomeNodeTests
             // briefly bind to a stale removed node.
             using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
-            Assert.AreEqual("Welcome", vm.SelectedNode!.Title, "Baseline: selected Welcome.");
+            MessageAssert.Equal("Welcome", vm.SelectedNode!.Title, "Baseline: selected Welcome.");
 
             vm.ShowWelcomeOnLaunch = false;
 
-            Assert.IsNotNull(vm.SelectedNode);
-            Assert.AreNotEqual("Welcome", vm.SelectedNode!.Title,
+            Assert.NotNull(vm.SelectedNode);
+            MessageAssert.NotEqual("Welcome", vm.SelectedNode!.Title,
                 "After Welcome is removed, selection must move off it.");
-            Assert.AreEqual("Essentials", vm.SelectedNode.Title,
+            MessageAssert.Equal("Essentials", vm.SelectedNode.Title,
                 "Essentials is the natural successor — top-of-tree, user-actionable, has an Editor.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ToggleBackOn_RestoresWelcomeNode()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -200,20 +205,20 @@ public sealed class NavigationTreeWelcomeNodeTests
             await vm.LoadAllWorkspacesAsync();
 
             vm.ShowWelcomeOnLaunch = false;
-            Assert.IsFalse(vm.NavigationTree.Any(n => n.Title == "Welcome"));
+            Assert.DoesNotContain(vm.NavigationTree, n => n.Title == "Welcome");
 
             vm.ShowWelcomeOnLaunch = true;
 
             NavigationNodeViewModel first = vm.NavigationTree[0];
-            Assert.AreEqual("Welcome", first.Title,
+            MessageAssert.Equal("Welcome", first.Title,
                 "Toggling back on must re-insert Welcome at the top of the tree.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Construction_DoesNotPersistShowWelcomeNodeAsFalse_WithoutUserToggle()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -236,19 +241,19 @@ public sealed class NavigationTreeWelcomeNodeTests
             // explicitly invoke OnSelectedNodeChanged via assigning
             // SelectedNode to a non-Welcome node to drive a clean save.
             NavigationNodeViewModel? essentials = vm.NavigationTree.FirstOrDefault(n => n.Title == "Essentials");
-            Assert.IsNotNull(essentials);
+            Assert.NotNull(essentials);
             vm.SelectedNode = essentials;
 
             // Read the persisted state file.
             string stateFile = Path.Combine(_sandbox, ".claude", "cache",
                 "ClaudeForge-gui-state.json");
-            Assert.IsTrue(File.Exists(stateFile),
+            Assert.True(File.Exists(stateFile),
                 "Setup: SaveWindowState should have written the state file.");
             string json = await File.ReadAllTextAsync(stateFile);
             // Must either NOT contain showWelcomeNode (then it defaults true on load)
             // OR contain it set to true.  An explicit `"showWelcomeNode": false`
             // here proves the partial handler fired during construction.
-            Assert.IsFalse(
+            Assert.False(
                 json.Contains("\"showWelcomeNode\": false") ||
                 json.Contains("\"showWelcomeNode\":false"),
                 $"State file must NOT persist showWelcomeNode=false without a user toggle. "
@@ -257,17 +262,17 @@ public sealed class NavigationTreeWelcomeNodeTests
             // And on reload, ShowWelcomeOnLaunch must still be true.
             using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
-            Assert.IsTrue(vm2.ShowWelcomeOnLaunch,
+            Assert.True(vm2.ShowWelcomeOnLaunch,
                 "Round-trip: reloading after no-toggle construction must keep ShowWelcomeOnLaunch=true.");
-            Assert.IsTrue(vm2.NavigationTree.Any(n => n.Title == "Welcome"),
+            Assert.True(vm2.NavigationTree.Any(n => n.Title == "Welcome"),
                 "Round-trip: Welcome nav node must still be present after no-toggle reload.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistedOptOut_PreventsNodeFromAppearing_OnReload()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -284,20 +289,20 @@ public sealed class NavigationTreeWelcomeNodeTests
             using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
 
-            Assert.IsFalse(vm2.ShowWelcomeOnLaunch,
+            Assert.False(vm2.ShowWelcomeOnLaunch,
                 "Persisted opt-out must survive reconstruction.");
-            Assert.IsFalse(vm2.NavigationTree.Any(n => n.Title == "Welcome"),
+            Assert.False(vm2.NavigationTree.Any(n => n.Title == "Welcome"),
                 "Welcome node must NOT be added when the user has opted out.");
-            Assert.IsNotNull(vm2.SelectedNode);
-            Assert.AreEqual("Essentials", vm2.SelectedNode!.Title,
+            Assert.NotNull(vm2.SelectedNode);
+            MessageAssert.Equal("Essentials", vm2.SelectedNode!.Title,
                 "Default selection falls through to Essentials when Welcome is opted out.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LastNodeWasWelcome_ButPrefIsOff_FallsThroughToEssentials()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -332,17 +337,17 @@ public sealed class NavigationTreeWelcomeNodeTests
             using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
 
-            Assert.IsFalse(vm2.ShowWelcomeOnLaunch);
-            Assert.IsFalse(vm2.NavigationTree.Any(n => n.Title == "Welcome"));
-            Assert.IsNotNull(vm2.SelectedNode);
-            Assert.AreEqual("Essentials", vm2.SelectedNode!.Title,
+            Assert.False(vm2.ShowWelcomeOnLaunch);
+            Assert.DoesNotContain(vm2.NavigationTree, n => n.Title == "Welcome");
+            Assert.NotNull(vm2.SelectedNode);
+            MessageAssert.Equal("Essentials", vm2.SelectedNode!.Title,
                 "When the saved lastNode is Welcome but the user opted out, fall through "
                 + "to Essentials rather than the Claude-Code-first-child fallback (the user "
                 + "explicitly chose to skip Welcome).");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

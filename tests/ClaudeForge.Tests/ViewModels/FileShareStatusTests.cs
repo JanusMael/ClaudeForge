@@ -16,7 +16,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// a second copy would be a second chance to answer the same outcome differently, and the two
 /// surfaces are in different assemblies so nothing else would notice.
 /// </remarks>
-[TestClass]
 public sealed class FileShareStatusTests
 {
     private const string Revealed = "revealed-sentence";
@@ -30,39 +29,39 @@ public sealed class FileShareStatusTests
     // The mapper
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void RevealedInFileManager_IsTheSuccessAndDoesNotStick()
     {
         (string? text, bool isFailure) = Describe(ShareOutcome.RevealedInFileManager);
 
-        Assert.AreEqual(Revealed, text, "The revealed sentence is the one success a file share has.");
-        Assert.IsFalse(isFailure, "A success pill auto-clears; it must not wait to be dismissed.");
+        MessageAssert.Equal(Revealed, text, "The revealed sentence is the one success a file share has.");
+        Assert.False(isFailure, "A success pill auto-clears; it must not wait to be dismissed.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Unavailable_IsNotAFailure()
     {
         (string? text, bool isFailure) = Describe(ShareOutcome.Unavailable);
 
-        Assert.AreEqual(Unavailable, text);
-        Assert.IsFalse(isFailure,
+        Assert.Equal(Unavailable, text);
+        Assert.False(isFailure,
             "⚠ Nothing was attempted, so nothing went wrong. Reporting absence as failure would " +
             "leave a pill on screen demanding a dismiss for a non-event.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Failed_Sticks()
     {
         (string? text, bool isFailure) = Describe(ShareOutcome.Failed);
 
-        Assert.AreEqual(Failed, text);
-        Assert.IsTrue(isFailure, "A failure pill stays until the user dismisses it.");
+        Assert.Equal(Failed, text);
+        Assert.True(isFailure, "A failure pill stays until the user dismisses it.");
     }
 
-    [TestMethod]
-    [DataRow(ShareOutcome.CopiedToClipboard)]
-    [DataRow(ShareOutcome.OpenedInBrowser)]
-    [DataRow(ShareOutcome.OpenedMailClient)]
+    [Theory]
+    [InlineData(ShareOutcome.CopiedToClipboard)]
+    [InlineData(ShareOutcome.OpenedInBrowser)]
+    [InlineData(ShareOutcome.OpenedMailClient)]
     public void AnOutcomeAFileShareCannotProduce_IsReportedAsFailure(ShareOutcome impossible)
     {
         (string? text, bool isFailure) = Describe(impossible);
@@ -72,13 +71,13 @@ public sealed class FileShareStatusTests
         // a browser or reach a mail client. An implementation returning one is not honouring its
         // contract, and telling the user "revealed in your file manager" when it was not is the
         // exact class of lie F3 removed.
-        Assert.AreEqual(Failed, text,
+        MessageAssert.Equal(Failed, text,
             $"{impossible} cannot arise from ShareFileAsync, so it must not borrow the success " +
             "sentence — that would assert something the service did not do.");
-        Assert.IsTrue(isFailure, "A contract violation must not clear itself quietly.");
+        Assert.True(isFailure, "A contract violation must not clear itself quietly.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryOutcome_IsAnswered()
     {
         // Premise before claim: if ShareOutcome ever gains a member, this loop reaches it and the
@@ -93,17 +92,17 @@ public sealed class FileShareStatusTests
 
             if (outcome == ShareOutcome.Cancelled)
             {
-                Assert.IsNull(text, "Cancelled must say nothing.");
-                Assert.IsFalse(isFailure, "A cancel is not a failure.");
+                MessageAssert.Null(text, "Cancelled must say nothing.");
+                Assert.False(isFailure, "A cancel is not a failure.");
                 continue;
             }
 
-            Assert.IsFalse(string.IsNullOrWhiteSpace(text),
+            Assert.False(string.IsNullOrWhiteSpace(text),
                 $"{outcome} produced no sentence; an empty pill says as little as no pill.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Cancelled_SaysNothing_AndIsNotAFailure()
     {
         // ⛔ Not the catch-all. Cancelled arrived with the required CancellationToken; left to the
@@ -111,8 +110,8 @@ public sealed class FileShareStatusTests
         // and it would compile cleanly doing so.
         (string? text, bool isFailure) = Describe(ShareOutcome.Cancelled);
 
-        Assert.IsNull(text, "The user cancelled and knows it; there is nothing to say.");
-        Assert.IsFalse(isFailure, "A cancel is not a failure, so nothing should stick until dismissed.");
+        MessageAssert.Null(text, "The user cancelled and knows it; there is nothing to say.");
+        Assert.False(isFailure, "A cancel is not a failure, so nothing should stick until dismissed.");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -133,7 +132,7 @@ public sealed class FileShareStatusTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareLog_ReportsTheOutcome_RatherThanCompletingSilently()
     {
         OutcomeShareService svc = new(ShareOutcome.RevealedInFileManager);
@@ -146,15 +145,15 @@ public sealed class FileShareStatusTests
 
         await vm.ShareLogCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, svc.FileCalls, "Setup check: the command must have reached the service.");
-        Assert.IsNotNull(captured,
+        MessageAssert.Equal(1, svc.FileCalls, "Setup check: the command must have reached the service.");
+        MessageAssert.NotNull(captured,
             "⛔ This is the defect: Share log awaited the service and returned, telling the user " +
             "nothing in either direction.");
-        Assert.AreEqual(Strings.StatusShareLogRevealed, captured.Value.Text);
-        Assert.IsFalse(captured.Value.IsFailure);
+        Assert.Equal(Strings.StatusShareLogRevealed, captured.Value.Text);
+        Assert.False(captured.Value.IsFailure);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareLog_WhenTheServiceCannotAct_SaysSo()
     {
         OutcomeShareService svc = new(ShareOutcome.Unavailable);
@@ -167,16 +166,16 @@ public sealed class FileShareStatusTests
 
         await vm.ShareLogCommand.ExecuteAsync(null);
 
-        Assert.IsNotNull(captured);
-        Assert.AreEqual(Strings.StatusShareLogUnavailable, captured.Value.Text);
-        Assert.IsFalse(captured.Value.IsFailure, "Absence is not failure.");
+        Assert.NotNull(captured);
+        Assert.Equal(Strings.StatusShareLogUnavailable, captured.Value.Text);
+        Assert.False(captured.Value.IsFailure, "Absence is not failure.");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Share archive — backup row
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_ReportsTheOutcome_InTheHostsWords()
     {
         OutcomeShareService svc = new(ShareOutcome.RevealedInFileManager);
@@ -187,16 +186,16 @@ public sealed class FileShareStatusTests
 
         await vm.ShareBackupCommand.ExecuteAsync(MakeRow());
 
-        Assert.IsNotNull(captured,
+        MessageAssert.NotNull(captured,
             "Share on a backup row reported nothing before F3's sibling pass, even though " +
             "OnTerminalStatus was already wired for backup and restore outcomes.");
-        Assert.AreEqual(Strings.StatusShareArchiveRevealed, captured.Value.Text,
+        MessageAssert.Equal(Strings.StatusShareArchiveRevealed, captured.Value.Text,
             "⚠ Read off ClaudeForge's own resx through BackupPageText — the shell has no strings " +
             "of its own, and a hardcoded English literal here is what that seam exists to stop.");
-        Assert.IsFalse(captured.Value.IsFailure);
+        Assert.False(captured.Value.IsFailure);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_WithNoShareServiceWired_SaysUnavailable()
     {
         BackupRestoreViewModel vm = new(
@@ -206,14 +205,14 @@ public sealed class FileShareStatusTests
 
         await vm.ShareBackupCommand.ExecuteAsync(MakeRow());
 
-        Assert.IsNotNull(captured,
+        MessageAssert.NotNull(captured,
             "ⓘ This is OpenCodeForge's live path — it wires no share service, so the button did " +
             "nothing and said nothing. It now says why.");
-        Assert.AreEqual(Strings.StatusShareArchiveUnavailable, captured.Value.Text);
-        Assert.IsFalse(captured.Value.IsFailure);
+        Assert.Equal(Strings.StatusShareArchiveUnavailable, captured.Value.Text);
+        Assert.False(captured.Value.IsFailure);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_WithNoRow_StaysSilent()
     {
         OutcomeShareService svc = new(ShareOutcome.RevealedInFileManager);
@@ -224,8 +223,8 @@ public sealed class FileShareStatusTests
 
         await vm.ShareBackupCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, svc.FileCalls, "No row must forward nothing to the service.");
-        Assert.IsNull(captured,
+        MessageAssert.Equal(0, svc.FileCalls, "No row must forward nothing to the service.");
+        MessageAssert.Null(captured,
             "⚠ Deliberately the one silent path. No row selected is not an outcome — there is no " +
             "archive the user asked about, so there is nothing to report. A missing SERVICE is " +
             "different, and that one does speak.");

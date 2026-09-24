@@ -12,7 +12,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// were STILL being dropped on save. This test reproduces the exact
 /// editor flow to find the disconnect.
 /// </summary>
-[TestClass]
 public sealed class McpServersEditorRoundTripTests
 {
     private static SchemaNode McpServersSchema()
@@ -30,7 +29,7 @@ public sealed class McpServersEditorRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedFullSaveFlow_PreservesDescriptionField()
     {
         // End-to-end: editor loads, flushes via ToJsonValue, that JSON gets
@@ -67,24 +66,24 @@ public sealed class McpServersEditorRoundTripTests
 
         // Editor FLUSH (what ApplyToWorkspace does).
         JsonNode? flushed = vm.ToJsonValue();
-        Assert.IsNotNull(flushed);
+        Assert.NotNull(flushed);
         client.SetValue("mcpServers", flushed!);
 
         // Inspect workspace.Root AFTER the flush — this is what would be
         // written to disk on save.
         JsonObject afterFlush = doc.Root["mcpServers"]!.AsObject();
 
-        Assert.IsTrue(afterFlush["omega-memory"]!.AsObject().ContainsKey("description"),
+        Assert.True(afterFlush["omega-memory"]!.AsObject().ContainsKey("description"),
             $"omega-memory description must survive load+flush+SetValue.\n\n" +
             $"After flush:\n{afterFlush.ToJsonString(new JsonSerializerOptions { WriteIndented = true })}");
-        Assert.IsTrue(afterFlush["sequential-thinking"]!.AsObject().ContainsKey("description"),
+        Assert.True(afterFlush["sequential-thinking"]!.AsObject().ContainsKey("description"),
             "sequential-thinking description must survive load+flush+SetValue.");
 
-        Assert.AreEqual("Persistent agent memory",
+        Assert.Equal("Persistent agent memory",
             afterFlush["omega-memory"]!.AsObject()["description"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedFullSaveFlow_UserExactStructure_PreservesDescriptions()
     {
         // Five stdio servers, all with description fields.
@@ -143,12 +142,12 @@ public sealed class McpServersEditorRoundTripTests
         foreach (string serverName in new[]
                      { "omega-memory", "sequential-thinking", "context7", "insaits", "token-optimizer" })
         {
-            Assert.IsTrue(afterFlush[serverName]!.AsObject().ContainsKey("description"),
+            Assert.True(afterFlush[serverName]!.AsObject().ContainsKey("description"),
                 $"Description must survive for {serverName}.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedLoad_ToJsonValue_PreservesDescriptionField()
     {
         // The user's exact scenario simplified: one stdio server with a
@@ -178,14 +177,14 @@ public sealed class McpServersEditorRoundTripTests
 
         // Round-trip: emit the editor's view of the data.
         JsonObject? output = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(output, "ToJsonValue must produce output for non-empty server list.");
+        MessageAssert.NotNull(output, "ToJsonValue must produce output for non-empty server list.");
 
         JsonObject server = output!["omega-memory"]!.AsObject();
-        Assert.IsTrue(server.ContainsKey("description"),
+        Assert.True(server.ContainsKey("description"),
             $"Description must be preserved through editor round-trip.\n\n" +
             $"Input:\n{input.ToJsonString(new JsonSerializerOptions { WriteIndented = true })}\n\n" +
             $"Output:\n{output.ToJsonString(new JsonSerializerOptions { WriteIndented = true })}");
-        Assert.AreEqual("Persistent agent memory",
+        Assert.Equal("Persistent agent memory",
             server["description"]!.GetValue<string>());
     }
 }

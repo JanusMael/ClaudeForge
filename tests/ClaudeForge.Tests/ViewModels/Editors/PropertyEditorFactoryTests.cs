@@ -4,7 +4,6 @@ using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class PropertyEditorFactoryTests
 {
     private static SchemaNode Make(string name, SchemaValueType type,
@@ -14,52 +13,52 @@ public class PropertyEditorFactoryTests
             { ValueType = type, EnumValues = enumValues ?? [], Minimum = min, Maximum = max };
     }
 
-    [TestMethod]
+    [Fact]
     public void Boolean_CreatesBooleanEditor()
     {
-        Assert.IsInstanceOfType<LibVm.BooleanPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.BooleanPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Boolean), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void String_CreatesStringEditor()
     {
-        Assert.IsInstanceOfType<LibVm.StringPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.StringPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.String), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Path_CreatesPathEditor()
     {
-        Assert.IsInstanceOfType<LibVm.PathPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.PathPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Path), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Enum_CreatesEnumEditor()
     {
-        Assert.IsInstanceOfType<LibVm.EnumPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.EnumPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Enum, ["a", "b"]), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Integer_CreatesNumberEditor()
     {
-        Assert.IsInstanceOfType<LibVm.NumberPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.NumberPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Integer), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Number_CreatesNumberEditor()
     {
-        Assert.IsInstanceOfType<LibVm.NumberPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.NumberPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Number), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_StringItems_CreatesStringArrayEditor()
     {
-        Assert.IsInstanceOfType<LibVm.StringArrayPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.StringArrayPropertyEditorViewModel>(
             PropertyEditorFactory.Create(
                 new SchemaNode("x", "x")
                 {
@@ -68,18 +67,18 @@ public class PropertyEditorFactoryTests
                 }, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_NoItemsSchema_FallsBackToStringArray()
     {
         // Items unspecified → ValueType.Unknown → safe to render as strings.
-        Assert.IsInstanceOfType<LibVm.StringArrayPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<LibVm.StringArrayPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Array), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_AllowedMcpServers_DispatchesToMcpServerListEditor()
     {
-        Assert.IsInstanceOfType<McpServerListEditorViewModel>(
+        Assert.IsAssignableFrom<McpServerListEditorViewModel>(
             PropertyEditorFactory.Create(
                 new SchemaNode("allowedMcpServers", "allowedMcpServers")
                 {
@@ -89,10 +88,10 @@ public class PropertyEditorFactoryTests
                 }, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_DeniedMcpServers_DispatchesToMcpServerListEditor()
     {
-        Assert.IsInstanceOfType<McpServerListEditorViewModel>(
+        Assert.IsAssignableFrom<McpServerListEditorViewModel>(
             PropertyEditorFactory.Create(
                 new SchemaNode("deniedMcpServers", "deniedMcpServers")
                 {
@@ -102,10 +101,10 @@ public class PropertyEditorFactoryTests
                 }, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_StrictKnownMarketplaces_DispatchesToMarketplaceListEditor()
     {
-        Assert.IsInstanceOfType<MarketplaceListEditorViewModel>(
+        Assert.IsAssignableFrom<MarketplaceListEditorViewModel>(
             PropertyEditorFactory.Create(
                 new SchemaNode("strictKnownMarketplaces", "strictKnownMarketplaces")
                 {
@@ -115,10 +114,10 @@ public class PropertyEditorFactoryTests
                 }, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_BlockedMarketplaces_DispatchesToMarketplaceListEditor()
     {
-        Assert.IsInstanceOfType<MarketplaceListEditorViewModel>(
+        Assert.IsAssignableFrom<MarketplaceListEditorViewModel>(
             PropertyEditorFactory.Create(
                 new SchemaNode("blockedMarketplaces", "blockedMarketplaces")
                 {
@@ -128,7 +127,7 @@ public class PropertyEditorFactoryTests
                 }, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_OtherObjectItems_FallsBackToJsonRaw_NotStringArray()
     {
         // Anything we don't have a typed editor for stays on the JsonRaw safety
@@ -139,80 +138,80 @@ public class PropertyEditorFactoryTests
             ItemsSchema = new SchemaNode("someUnknownArrayProp[]", "someUnknownArrayProp[]")
                 { ValueType = SchemaValueType.Complex },
         };
-        Assert.IsInstanceOfType<JsonRawPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<JsonRawPropertyEditorViewModel>(
             PropertyEditorFactory.Create(schema, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Complex_Permissions_CreatesPermissionsEditor()
     {
         SchemaNode schema = new("permissions", "permissions") { ValueType = SchemaValueType.Complex };
-        Assert.IsInstanceOfType<PermissionsEditorViewModel>(
+        Assert.IsAssignableFrom<PermissionsEditorViewModel>(
             PropertyEditorFactory.Create(schema, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Complex_McpServers_CreatesMcpServersEditor()
     {
         SchemaNode schema = new("mcpServers", "mcpServers") { ValueType = SchemaValueType.Complex };
-        Assert.IsInstanceOfType<McpServersEditorViewModel>(
+        Assert.IsAssignableFrom<McpServersEditorViewModel>(
             PropertyEditorFactory.Create(schema, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Complex_Hooks_CreatesHooksEditor()
     {
         SchemaNode schema = new("hooks", "hooks") { ValueType = SchemaValueType.Complex };
-        Assert.IsInstanceOfType<HooksEditorViewModel>(
+        Assert.IsAssignableFrom<HooksEditorViewModel>(
             PropertyEditorFactory.Create(schema, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Object_CreatesObjectEditor()
     {
         SchemaNode schema = new("env", "env") { ValueType = SchemaValueType.Object };
-        Assert.IsInstanceOfType<ObjectPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<ObjectPropertyEditorViewModel>(
             PropertyEditorFactory.Create(schema, ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Unknown_FallsBackToJsonRawEditor()
     {
-        Assert.IsInstanceOfType<JsonRawPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<JsonRawPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("x", SchemaValueType.Unknown), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void Complex_ModelOverrides_DispatchesToStringMapEditor()
     {
         LibVm.PropertyEditorViewModel vm = PropertyEditorFactory.Create(
             Make("modelOverrides", SchemaValueType.Complex), ConfigScope.User);
-        Assert.IsInstanceOfType<StringMapPropertyEditorViewModel>(vm);
+        Assert.IsAssignableFrom<StringMapPropertyEditorViewModel>(vm);
         StringMapPropertyEditorViewModel smap = (StringMapPropertyEditorViewModel)vm;
         // Factory injects the same model-id list the standalone `model`
         // editor offers — sonnet must appear so the AutoCompleteBox
         // dropdown is populated.
-        CollectionAssert.Contains(smap.KeySuggestions.ToArray(), "sonnet");
+        Assert.Contains("sonnet", smap.KeySuggestions.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Complex_UnknownName_FallsBackToJsonRawEditor()
     {
-        Assert.IsInstanceOfType<JsonRawPropertyEditorViewModel>(
+        Assert.IsAssignableFrom<JsonRawPropertyEditorViewModel>(
             PropertyEditorFactory.Create(Make("someUnknownComplex", SchemaValueType.Complex), ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void EnumEditor_ReceivesOptions()
     {
         LibVm.EnumPropertyEditorViewModel vm = (LibVm.EnumPropertyEditorViewModel)PropertyEditorFactory.Create(
             Make("x", SchemaValueType.Enum, ["alpha", "beta"]), ConfigScope.User);
-        CollectionAssert.AreEqual(new[] { "alpha", "beta" }, vm.EnumOptions.ToArray());
+        Assert.Equal(new[] { "alpha", "beta" }, vm.EnumOptions.ToArray());
     }
 
     // ── CompositeEditorFactory ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Composite_RegisteredMatcher_WinsOverDefault()
     {
         CompositeEditorFactory factory = new();
@@ -224,10 +223,10 @@ public class PropertyEditorFactoryTests
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);
 
         // The matcher overrides the Boolean dispatch and returns a StringPropertyEditorViewModel
-        Assert.IsInstanceOfType<LibVm.StringPropertyEditorViewModel>(vm);
+        Assert.IsAssignableFrom<LibVm.StringPropertyEditorViewModel>(vm);
     }
 
-    [TestMethod]
+    [Fact]
     public void Composite_UnmatchedSchema_FallsThroughToDefault()
     {
         CompositeEditorFactory factory = new();
@@ -237,10 +236,10 @@ public class PropertyEditorFactoryTests
         SchemaNode schema = Make("other", SchemaValueType.Boolean);
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);
 
-        Assert.IsInstanceOfType<LibVm.BooleanPropertyEditorViewModel>(vm);
+        Assert.IsAssignableFrom<LibVm.BooleanPropertyEditorViewModel>(vm);
     }
 
-    [TestMethod]
+    [Fact]
     public void Composite_FirstMatchWins_WhenMultipleMatchersMatch()
     {
         CompositeEditorFactory factory = new();
@@ -256,10 +255,10 @@ public class PropertyEditorFactoryTests
         SchemaNode schema = Make("flag", SchemaValueType.Boolean);
         LibVm.PropertyEditorViewModel vm = factory.Create(schema, ConfigScope.User);
 
-        Assert.IsInstanceOfType<LibVm.StringPropertyEditorViewModel>(vm); // first matcher fires
+        Assert.IsAssignableFrom<LibVm.StringPropertyEditorViewModel>(vm); // first matcher fires
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultEditorFactory_Create_MatchesStaticShim()
     {
         DefaultEditorFactory factory = new();
@@ -268,7 +267,7 @@ public class PropertyEditorFactoryTests
         LibVm.PropertyEditorViewModel instanceResult = factory.Create(schema, ConfigScope.User);
         LibVm.PropertyEditorViewModel staticResult = PropertyEditorFactory.Create(schema, ConfigScope.User);
 
-        Assert.IsInstanceOfType<LibVm.BooleanPropertyEditorViewModel>(instanceResult);
-        Assert.IsInstanceOfType<LibVm.BooleanPropertyEditorViewModel>(staticResult);
+        Assert.IsAssignableFrom<LibVm.BooleanPropertyEditorViewModel>(instanceResult);
+        Assert.IsAssignableFrom<LibVm.BooleanPropertyEditorViewModel>(staticResult);
     }
 }

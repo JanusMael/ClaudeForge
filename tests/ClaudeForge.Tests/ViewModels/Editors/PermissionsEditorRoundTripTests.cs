@@ -15,7 +15,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// non-modeled keys during <c>LoadFromLayered</c>, replay them during
 /// <c>ToJsonValue</c>.
 /// </remarks>
-[TestClass]
 public sealed class PermissionsEditorRoundTripTests
 {
     private static SchemaNode PermissionsSchema()
@@ -33,7 +32,7 @@ public sealed class PermissionsEditorRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_PreservesAdditionalDirectories()
     {
         JsonObject input = new()
@@ -47,15 +46,15 @@ public sealed class PermissionsEditorRoundTripTests
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
         JsonObject output = (JsonObject)vm.ToJsonValue()!;
 
-        Assert.IsTrue(output.ContainsKey("additionalDirectories"),
+        Assert.True(output.ContainsKey("additionalDirectories"),
             "additionalDirectories must round-trip. Output:\n" +
             output.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
         JsonArray dirs = output["additionalDirectories"]!.AsArray();
-        Assert.AreEqual(2, dirs.Count);
-        Assert.AreEqual("/Users/alice/projects", dirs[0]!.GetValue<string>());
+        Assert.Equal(2, dirs.Count);
+        Assert.Equal("/Users/alice/projects", dirs[0]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_PreservesDisableBypassPermissionsMode()
     {
         // disableBypassPermissionsMode is a tri-state bool property on the editor, but
@@ -71,11 +70,11 @@ public sealed class PermissionsEditorRoundTripTests
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
         JsonObject output = (JsonObject)vm.ToJsonValue()!;
 
-        Assert.AreEqual("disable",
+        Assert.Equal("disable",
             output["disableBypassPermissionsMode"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_TypedPropertyEditsApply_UnknownsPreserved()
     {
         // Lock the contract: the editor's modeled fields ARE the source of
@@ -95,8 +94,8 @@ public sealed class PermissionsEditorRoundTripTests
         vm.DefaultMode = "acceptEdits";
 
         JsonObject output = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual("acceptEdits", output["defaultMode"]!.GetValue<string>());
-        Assert.AreEqual("/old/path",
+        Assert.Equal("acceptEdits", output["defaultMode"]!.GetValue<string>());
+        Assert.Equal("/old/path",
             output["additionalDirectories"]!.AsArray()[0]!.GetValue<string>());
     }
 }

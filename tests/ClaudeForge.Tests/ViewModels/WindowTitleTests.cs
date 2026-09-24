@@ -13,14 +13,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// "ClaudeForge — &lt;branch|folder|No Project Loaded&gt;[ *]"
 /// </code>
 /// </summary>
-[TestClass]
-public sealed class WindowTitleTests
+public sealed class WindowTitleTests : IDisposable
 {
     private string _sandbox = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public WindowTitleTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "wt-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -29,8 +29,7 @@ public sealed class WindowTitleTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         _vm.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
@@ -47,43 +46,49 @@ public sealed class WindowTitleTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // -----------------------------------------------------------------------
     // Prefix: app name only
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_AlwaysStartsWithAppTitle()
     {
         _vm.ProjectRoot = null;
-        StringAssert.StartsWith(_vm.WindowTitle, "ClaudeForge",
+        MessageAssert.StartsWith("ClaudeForge", _vm.WindowTitle,
             $"Expected '{Strings.AppTitle}' prefix; got '{_vm.WindowTitle}'.");
 
         _vm.ProjectRoot = _sandbox;
-        StringAssert.StartsWith(_vm.WindowTitle, "ClaudeForge");
+        OrdinalAssert.StartsWith("ClaudeForge", _vm.WindowTitle);
     }
 
     // -----------------------------------------------------------------------
     // Project indicator suffix
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_NoProject_AppendsNoProjectLoaded()
     {
         _vm.ProjectRoot = null;
-        Assert.AreEqual($"ClaudeForge — {Strings.TitleNoProjectLoaded}", _vm.WindowTitle);
+        Assert.Equal($"ClaudeForge — {Strings.TitleNoProjectLoaded}", _vm.WindowTitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_NonGitFolder_AppendsFolderName()
     {
         string projectDir = Path.Combine(_sandbox, "my-project");
         Directory.CreateDirectory(projectDir);
 
         _vm.ProjectRoot = projectDir;
-        Assert.AreEqual("ClaudeForge — my-project", _vm.WindowTitle);
+        Assert.Equal("ClaudeForge — my-project", _vm.WindowTitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_GitRepoOnBranch_AppendsBranchName()
     {
         string projectDir = Path.Combine(_sandbox, "git-project");
@@ -93,26 +98,26 @@ public sealed class WindowTitleTests
         File.WriteAllText(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/feature/auth\n");
 
         _vm.ProjectRoot = projectDir;
-        Assert.AreEqual("ClaudeForge — git-project - feature/auth", _vm.WindowTitle);
+        Assert.Equal("ClaudeForge — git-project - feature/auth", _vm.WindowTitle);
     }
 
     // -----------------------------------------------------------------------
     // Unsaved-changes asterisk (W4)
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_HasUnsavedChanges_AppendsAsterisk()
     {
         _vm.ProjectRoot = null;
         _vm.HasUnsavedChanges = true;
-        StringAssert.EndsWith(_vm.WindowTitle, " *");
+        OrdinalAssert.EndsWith(" *", _vm.WindowTitle);
 
         _vm.HasUnsavedChanges = false;
-        Assert.IsFalse(_vm.WindowTitle.EndsWith(" *"),
+        Assert.False(_vm.WindowTitle.EndsWith(" *"),
             "Title must NOT have trailing asterisk when HasUnsavedChanges is false.");
     }
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_GitRepoWithUnsavedChanges_BranchThenAsterisk()
     {
         string projectDir = Path.Combine(_sandbox, "dirty-repo");
@@ -124,7 +129,7 @@ public sealed class WindowTitleTests
         _vm.ProjectRoot = projectDir;
         _vm.HasUnsavedChanges = true;
 
-        Assert.AreEqual("ClaudeForge — dirty-repo - main *", _vm.WindowTitle,
+        MessageAssert.Equal("ClaudeForge — dirty-repo - main *", _vm.WindowTitle,
             "Format must be 'AppTitle — indicator *' (asterisk AFTER the indicator, not before).");
     }
 
@@ -132,7 +137,7 @@ public sealed class WindowTitleTests
     // Change notification
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_FiresPropertyChanged_OnProjectRootChange()
     {
         List<string> fired = new();
@@ -147,13 +152,13 @@ public sealed class WindowTitleTests
         _vm.ProjectRoot = Path.Combine(_sandbox, "trigger-change");
         Directory.CreateDirectory(_vm.ProjectRoot);
 
-        Assert.IsTrue(fired.Contains(nameof(MainWindowViewModel.WindowTitle)),
+        Assert.True(fired.Contains(nameof(MainWindowViewModel.WindowTitle)),
             "Changing ProjectRoot must raise PropertyChanged for WindowTitle so the " +
             "Window's bound Title actually re-renders.  Pre-fix: only HasUnsavedChanges " +
             "had the NotifyPropertyChangedFor wiring.");
     }
 
-    [TestMethod]
+    [Fact]
     public void WindowTitle_FiresPropertyChanged_OnHasUnsavedChangesFlip()
     {
         List<string> fired = new();
@@ -166,7 +171,7 @@ public sealed class WindowTitleTests
         };
 
         _vm.HasUnsavedChanges = true;
-        Assert.IsTrue(fired.Contains(nameof(MainWindowViewModel.WindowTitle)));
+        OrdinalAssert.Contains(nameof(MainWindowViewModel.WindowTitle), fired);
     }
 
     // -----------------------------------------------------------------------

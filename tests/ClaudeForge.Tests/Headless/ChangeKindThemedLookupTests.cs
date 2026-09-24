@@ -34,7 +34,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// <c>finally</c>; leaving it behind would re-theme every later headless test in the assembly.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ChangeKindThemedLookupTests
 {
     private static HeadlessUnitTestSession Session =>
@@ -44,7 +43,7 @@ public sealed class ChangeKindThemedLookupTests
     private const string LightSentinel = "#040506";
     private const string DarkSentinel = "#0D0E0F";
 
-    [TestMethod]
+    [Fact]
     public Task TheConverterResolvesThePerVariantToken_NotItsFallback() => Session.Dispatch(() =>
     {
         Application app = Application.Current
@@ -70,7 +69,7 @@ public sealed class ChangeKindThemedLookupTests
 
                     Color actual = ((ISolidColorBrush)result).Color;
 
-                    Assert.AreEqual(Color.Parse(expected), actual,
+                    MessageAssert.Equal(Color.Parse(expected), actual,
                         $"{kind} under {variant}: expected the declared token "
                         + $"{ChangeKindToBrushConverter.KeyFor(kind)} ({expected}) but got "
                         + $"{actual}. A themed key looked up without a variant resolves to nothing "
@@ -94,7 +93,7 @@ public sealed class ChangeKindThemedLookupTests
     /// Resolving at <c>Convert()</c>-time is what fixes that, and this asserts the fix rather than
     /// the intent.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public Task SwitchingThemeVariantChangesTheResolvedBrush() => Session.Dispatch(() =>
     {
         Application app = Application.Current!;
@@ -114,7 +113,7 @@ public sealed class ChangeKindThemedLookupTests
             Color dark = ((ISolidColorBrush)converter.Convert(
                 ChangeKind.Modified, typeof(IBrush), null, CultureInfo.InvariantCulture)).Color;
 
-            Assert.AreNotEqual(light, dark,
+            MessageAssert.NotEqual(light, dark,
                 "the same change kind resolved to the same colour in both variants, so the lookup "
                 + "is either variant-blind or cached. ⚠ Note the REAL tokens are intentionally "
                 + "identical across variants (see AppChangeKindTokenCoverageTests) — this test "

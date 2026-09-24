@@ -31,7 +31,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// green tests earlier in this project.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class EssentialsCardOptionsTests
 {
     private static EssentialsCardOptions Minimal(string viewInGroupTitle, string format) => new()
@@ -58,12 +57,12 @@ public sealed class EssentialsCardOptionsTests
             new FakeEnvironmentProvider());
     }
 
-    [TestMethod]
+    [Fact]
     public void TheDeepLinkLabelIsFormattedFromTheHostsFormatAndTheGroupTitle()
     {
         EssentialsCardViewModel card = new(Minimal("Permissions", "Go to {0} now"));
 
-        Assert.AreEqual("Go to Permissions now", card.ViewInGroupLabel);
+        Assert.Equal("Go to Permissions now", card.ViewInGroupLabel);
     }
 
     /// <summary>A card with no group home renders no button, so it gets no label.</summary>
@@ -71,13 +70,13 @@ public sealed class EssentialsCardOptionsTests
     /// ⚠ Empty rather than the format applied to an empty string: formatting would yield
     /// "View in " — a button labelled with a dangling preposition.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ACardWithNoGroupHomeGetsAnEmptyLabel()
     {
         EssentialsCardViewModel card = new(Minimal(string.Empty, "View in {0}"));
 
-        Assert.AreEqual(string.Empty, card.ViewInGroupLabel);
-        Assert.AreEqual(string.Empty, card.ViewInGroupTitle);
+        Assert.Equal(string.Empty, card.ViewInGroupLabel);
+        Assert.Equal(string.Empty, card.ViewInGroupTitle);
     }
 
     /// <summary>
@@ -97,7 +96,7 @@ public sealed class EssentialsCardOptionsTests
     /// transposition between two cards would leave every one of them non-empty.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryCardKeepsTheDeepLinkPathItTargets()
     {
         EssentialsViewModel vm = BuildVm();
@@ -138,12 +137,12 @@ public sealed class EssentialsCardOptionsTests
             }
         }
 
-        Assert.AreEqual(expected.Count, checkedCards,
+        MessageAssert.Equal(expected.Count, checkedCards,
             $"only {checkedCards} of {expected.Count} expected card ids were found — a card was "
             + "renamed or removed, and the missing ones are silently unchecked. Update this table "
             + "deliberately rather than letting the scan shrink.");
 
-        Assert.IsTrue(wrong.Count == 0,
+        Assert.True(wrong.Count == 0,
             $"{wrong.Count} card(s) lost or mismatched their deep-link path:\n"
             + string.Join('\n', wrong)
             + "\n\nWithout it the \"View in <group>\" button lands on the page instead of the "
@@ -160,7 +159,7 @@ public sealed class EssentialsCardOptionsTests
     /// host that FORGOT to supply one. Only comparing against
     /// <c>Strings.LabelEssentialsViewInGroupFmt</c> as the app resolves it can tell those apart.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryClaudeCardWithAGroupHomeUsesTheAppsOwnFormat()
     {
         EssentialsViewModel vm = BuildVm();
@@ -168,7 +167,7 @@ public sealed class EssentialsCardOptionsTests
         List<EssentialsCardViewModel> linked =
             [.. vm.Cards.Where(c => !string.IsNullOrEmpty(c.ViewInGroupTitle))];
 
-        Assert.IsTrue(linked.Count > 0,
+        Assert.True(linked.Count > 0,
             "no card declares a group home — the scan has lost its subjects and would pass "
             + "without checking anything");
 
@@ -186,7 +185,7 @@ public sealed class EssentialsCardOptionsTests
             }
         }
 
-        Assert.IsTrue(wrong.Count == 0,
+        Assert.True(wrong.Count == 0,
             $"{wrong.Count} of {linked.Count} card(s) are not using the app's deep-link format:\n"
             + string.Join('\n', wrong)
             + "\n\nThe shell cannot read a product's resources, so BuildCards must supply the "

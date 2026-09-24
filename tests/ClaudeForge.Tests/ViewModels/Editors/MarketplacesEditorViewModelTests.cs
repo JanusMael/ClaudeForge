@@ -6,7 +6,6 @@ using MarketplaceEntry = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces.Mar
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class MarketplacesEditorViewModelTests
 {
     private static SchemaNode MarketplacesSchema()
@@ -29,17 +28,17 @@ public class MarketplacesEditorViewModelTests
     // LoadFromLayered
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_EmptyObject_LeavesMarketplacesEmpty()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, new JsonObject()), ConfigScope.User);
 
-        Assert.AreEqual(0, vm.Marketplaces.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Marketplaces);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_Format1_CanonicalShape()
     {
         // Format 1 (schema-canonical): { source: { source: "url", url: "..." } }
@@ -58,14 +57,14 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("myM", vm.Marketplaces[0].Name);
-        Assert.AreEqual("url", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://x.com", vm.Marketplaces[0].SourceValue);
-        Assert.IsTrue(vm.IsModified);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("myM", vm.Marketplaces[0].Name);
+        Assert.Equal("url", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://x.com", vm.Marketplaces[0].SourceValue);
+        Assert.True(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_Format1_GithubType()
     {
         JsonObject obj = new()
@@ -83,12 +82,12 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("github", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("user/repo", vm.Marketplaces[0].SourceValue);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("github", vm.Marketplaces[0].SourceType);
+        Assert.Equal("user/repo", vm.Marketplaces[0].SourceValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_Format2_FlatShape()
     {
         // Format 2 (flat): { url: "...", type: "url" } — no nested source object
@@ -104,12 +103,12 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("url", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://x.com", vm.Marketplaces[0].SourceValue);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("url", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://x.com", vm.Marketplaces[0].SourceValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_Format3_StringShorthand()
     {
         // Format 3 (string shorthand): just "https://..." as the value
@@ -121,16 +120,16 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("url", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://x.com", vm.Marketplaces[0].SourceValue);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("url", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://x.com", vm.Marketplaces[0].SourceValue);
     }
 
     // -----------------------------------------------------------------------
     // AddMarketplace
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void AddMarketplace_AddsEntry()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -139,13 +138,13 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "https://x.com";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("M", vm.Marketplaces[0].Name);
-        Assert.AreEqual("url", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://x.com", vm.Marketplaces[0].SourceValue);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("M", vm.Marketplaces[0].Name);
+        Assert.Equal("url", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://x.com", vm.Marketplaces[0].SourceValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMarketplace_RejectsEmptyName()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -154,10 +153,10 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "https://x.com";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Marketplaces.Count);
+        Assert.Empty(vm.Marketplaces);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMarketplace_RejectsEmptyValue()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -166,10 +165,10 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "   ";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Marketplaces.Count);
+        Assert.Empty(vm.Marketplaces);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMarketplace_RejectsDuplicateName()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -183,10 +182,10 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "https://y.com";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
+        Assert.Single(vm.Marketplaces);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMarketplace_ClearsFields()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -195,15 +194,15 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "https://x.com";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.AreEqual(string.Empty, vm.NewName);
-        Assert.AreEqual(string.Empty, vm.NewSourceValue);
+        Assert.Equal(string.Empty, vm.NewName);
+        Assert.Equal(string.Empty, vm.NewSourceValue);
     }
 
     // -----------------------------------------------------------------------
     // RemoveMarketplace
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void RemoveMarketplace_RemovesEntry()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -214,14 +213,14 @@ public class MarketplacesEditorViewModelTests
 
         vm.RemoveMarketplaceCommand.Execute(vm.Marketplaces[0]);
 
-        Assert.AreEqual(0, vm.Marketplaces.Count);
+        Assert.Empty(vm.Marketplaces);
     }
 
     // -----------------------------------------------------------------------
     // ResetToInherited
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_ClearsAndSetsIsModifiedFalse()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -230,15 +229,15 @@ public class MarketplacesEditorViewModelTests
         vm.NewSourceValue = "https://x.com";
         vm.AddMarketplaceCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsModified, "Precondition: IsModified should be true after adding a marketplace.");
+        Assert.True(vm.IsModified, "Precondition: IsModified should be true after adding a marketplace.");
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Marketplaces.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Marketplaces);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_AfterLoad_RestoresOnDiskMarketplaces_NotClearsThem()
     {
         // Regression: prior to the fix, OnResetToInherited called Marketplaces.Clear()
@@ -260,26 +259,26 @@ public class MarketplacesEditorViewModelTests
 
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.AreEqual(1, vm.Marketplaces.Count, "Precondition: load populated 1 marketplace.");
-        Assert.IsTrue(vm.IsModified);
+        MessageAssert.Equal(1, vm.Marketplaces.Count, "Precondition: load populated 1 marketplace.");
+        Assert.True(vm.IsModified);
 
         // User edits: add a second marketplace.
         vm.NewName = "beta";
         vm.NewSourceType = "url";
         vm.NewSourceValue = "https://beta.example.com";
         vm.AddMarketplaceCommand.Execute(null);
-        Assert.AreEqual(2, vm.Marketplaces.Count);
+        Assert.Equal(2, vm.Marketplaces.Count);
 
         // User clicks Reset: must restore the original 1-entry state, NOT clear.
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count,
+        MessageAssert.Equal(1, vm.Marketplaces.Count,
             "Reset must restore the on-disk state, not wipe to empty.");
-        Assert.AreEqual("alpha", vm.Marketplaces[0].Name);
-        Assert.AreEqual("https://alpha.example.com", vm.Marketplaces[0].SourceValue);
+        Assert.Equal("alpha", vm.Marketplaces[0].Name);
+        Assert.Equal("https://alpha.example.com", vm.Marketplaces[0].SourceValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_GitType_EmitsUrlSourceKey_RoundTripsCleanly()
     {
         // Regression: prior to the fix, ToJsonValue had no "git" branch in the source-key
@@ -304,43 +303,43 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, loaded), ConfigScope.User);
 
-        Assert.AreEqual("git", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://git.example.com/repo.git", vm.Marketplaces[0].SourceValue);
+        Assert.Equal("git", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://git.example.com/repo.git", vm.Marketplaces[0].SourceValue);
 
         // Round-trip: ToJsonValue produces a structure that LoadFromLayered would
         // re-load to the same in-memory state.
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(emitted);
+        Assert.NotNull(emitted);
         JsonObject? entry = emitted!["g"] as JsonObject;
-        Assert.IsNotNull(entry);
+        Assert.NotNull(entry);
         JsonObject? sourceObj = entry!["source"] as JsonObject;
-        Assert.IsNotNull(sourceObj);
-        Assert.AreEqual("git", sourceObj!["source"]?.GetValue<string>(),
+        Assert.NotNull(sourceObj);
+        MessageAssert.Equal("git", sourceObj!["source"]?.GetValue<string>(),
             "The 'source' discriminator must round-trip as 'git'.");
-        Assert.AreEqual("https://git.example.com/repo.git", sourceObj["url"]?.GetValue<string>(),
+        MessageAssert.Equal("https://git.example.com/repo.git", sourceObj["url"]?.GetValue<string>(),
             "Git source value must serialise under the 'url' key (matches ExtractSourceValue's reverse mapping).");
 
         // And feeding the emitted shape back into LoadFromLayered must reproduce the entry.
         MarketplacesEditorViewModel vm2 = new(MarketplacesSchema(), ConfigScope.User);
         vm2.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, emitted), ConfigScope.User);
-        Assert.AreEqual(1, vm2.Marketplaces.Count);
-        Assert.AreEqual("git", vm2.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://git.example.com/repo.git", vm2.Marketplaces[0].SourceValue);
+        Assert.Single(vm2.Marketplaces);
+        Assert.Equal("git", vm2.Marketplaces[0].SourceType);
+        Assert.Equal("https://git.example.com/repo.git", vm2.Marketplaces[0].SourceValue);
     }
 
     // -----------------------------------------------------------------------
     // ToJsonValue
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ReturnsNull_WhenEmpty()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
 
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_UrlType_EmitsCorrectShape()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -351,16 +350,16 @@ public class MarketplacesEditorViewModelTests
 
         JsonObject? json = vm.ToJsonValue() as JsonObject;
 
-        Assert.IsNotNull(json);
+        Assert.NotNull(json);
         JsonObject? entry = json!["myMarket"] as JsonObject;
-        Assert.IsNotNull(entry);
+        Assert.NotNull(entry);
         JsonObject? source = entry!["source"] as JsonObject;
-        Assert.IsNotNull(source);
-        Assert.AreEqual("url", source!["source"]!.GetValue<string>());
-        Assert.AreEqual("https://example.com", source["url"]!.GetValue<string>());
+        Assert.NotNull(source);
+        Assert.Equal("url", source!["source"]!.GetValue<string>());
+        Assert.Equal("https://example.com", source["url"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_GithubType_UsesRepositoryKey()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -372,13 +371,13 @@ public class MarketplacesEditorViewModelTests
         JsonObject? json = vm.ToJsonValue() as JsonObject;
         JsonObject? source = (json!["ghMarket"] as JsonObject)!["source"] as JsonObject;
 
-        Assert.IsNotNull(source);
-        Assert.AreEqual("github", source!["source"]!.GetValue<string>());
-        Assert.AreEqual("user/repo", source["repository"]!.GetValue<string>());
-        Assert.IsNull(source["url"], "github type must use 'repository', not 'url'");
+        Assert.NotNull(source);
+        Assert.Equal("github", source!["source"]!.GetValue<string>());
+        Assert.Equal("user/repo", source["repository"]!.GetValue<string>());
+        MessageAssert.Null(source["url"], "github type must use 'repository', not 'url'");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_NpmType_UsesPackageKey()
     {
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
@@ -390,17 +389,17 @@ public class MarketplacesEditorViewModelTests
         JsonObject? json = vm.ToJsonValue() as JsonObject;
         JsonObject? source = (json!["npmMarket"] as JsonObject)!["source"] as JsonObject;
 
-        Assert.IsNotNull(source);
-        Assert.AreEqual("npm", source!["source"]!.GetValue<string>());
-        Assert.AreEqual("@scope/package", source["package"]!.GetValue<string>());
-        Assert.IsNull(source["url"], "npm type must use 'package', not 'url'");
+        Assert.NotNull(source);
+        Assert.Equal("npm", source!["source"]!.GetValue<string>());
+        Assert.Equal("@scope/package", source["package"]!.GetValue<string>());
+        MessageAssert.Null(source["url"], "npm type must use 'package', not 'url'");
     }
 
     // -----------------------------------------------------------------------
     // SDK-backed read path
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_ReadsThroughTypedAccessor()
     {
         // Same pattern as EnabledPlugins (4.3.6b): make the SDK and the
@@ -439,11 +438,11 @@ public class MarketplacesEditorViewModelTests
             MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User, client);
             vm.LoadFromLayered(layered, ConfigScope.User);
 
-            Assert.AreEqual(1, vm.Marketplaces.Count, "SDK path should yield exactly the SDK-set entry.");
-            Assert.AreEqual("from-sdk", vm.Marketplaces[0].Name);
-            Assert.AreEqual("github", vm.Marketplaces[0].SourceType,
+            MessageAssert.Equal(1, vm.Marketplaces.Count, "SDK path should yield exactly the SDK-set entry.");
+            Assert.Equal("from-sdk", vm.Marketplaces[0].Name);
+            MessageAssert.Equal("github", vm.Marketplaces[0].SourceType,
                 "SDK MarketplaceSourceKind.Github must round-trip to the editor's 'github' string.");
-            Assert.AreEqual("owner/repo", vm.Marketplaces[0].SourceValue);
+            Assert.Equal("owner/repo", vm.Marketplaces[0].SourceValue);
         }
         finally
         {
@@ -462,7 +461,7 @@ public class MarketplacesEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_WithoutSdkClient_FallsBackToLegacyJsonPath()
     {
         // When no client is passed, the editor's initial state must come
@@ -483,15 +482,15 @@ public class MarketplacesEditorViewModelTests
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User, client: null);
         vm.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Marketplaces.Count);
-        Assert.AreEqual("legacy-only", vm.Marketplaces[0].Name);
-        Assert.AreEqual("url", vm.Marketplaces[0].SourceType);
-        Assert.AreEqual("https://legacy.example/m", vm.Marketplaces[0].SourceValue);
+        Assert.Single(vm.Marketplaces);
+        Assert.Equal("legacy-only", vm.Marketplaces[0].Name);
+        Assert.Equal("url", vm.Marketplaces[0].SourceType);
+        Assert.Equal("https://legacy.example/m", vm.Marketplaces[0].SourceValue);
     }
 
     // ── Force-fire delete-after-load ──────────────
 
-    [TestMethod]
+    [Fact]
     public void DeleteAfterLoad_FiresIsModified_ForceFireContract()
     {
         // Locks the force-fire contract — see PermissionsEditorViewModelTests
@@ -517,7 +516,7 @@ public class MarketplacesEditorViewModelTests
         };
         MarketplacesEditorViewModel vm = new(MarketplacesSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithMarketplaces(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.IsTrue(vm.IsModified, "Precondition: load with two entries flags IsModified=true.");
+        Assert.True(vm.IsModified, "Precondition: load with two entries flags IsModified=true.");
 
         int fired = 0;
         vm.PropertyChanged += (_, e) =>
@@ -532,7 +531,7 @@ public class MarketplacesEditorViewModelTests
         // stays latched true; the [ObservableProperty] setter would elide.
         vm.Marketplaces.RemoveAt(0);
 
-        Assert.IsTrue(fired >= 1,
+        Assert.True(fired >= 1,
             "Deleting a loaded marketplace must fire PropertyChanged(IsModified) so the live-write " +
             "runs and Save enables — even though IsModified stays latched true.");
     }

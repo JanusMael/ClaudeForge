@@ -6,6 +6,13 @@ using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
+// ⓘ xUnit1030 (no ConfigureAwait(false) in a test) is suppressed in this file: under MSTest these
+// continuations always resumed on the pool, and removing the call would move them onto xUnit's
+// synchronization context — a behaviour change, which the xUnit move does not make (plans/00006
+// decision 5). The rule's concern, bypassing the parallel-thread limit, cannot arise in this
+// serial assembly.
+#pragma warning disable xUnit1030
+
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 
 /// <summary>
@@ -32,7 +39,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// including any added later.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ClaudeEditorDangerWiringTests
 {
     private static async Task<IReadOnlyList<SchemaNode>> TopLevelNodesAsync()
@@ -44,7 +50,7 @@ public sealed class ClaudeEditorDangerWiringTests
         return SchemaTreeBuilder.BuildTopLevel(root);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EveryEditorTheFactoryProducesCarriesTheDangerTable()
     {
         CompositeEditorFactory factory =
@@ -71,18 +77,18 @@ public sealed class ClaudeEditorDangerWiringTests
         // A scan that creates no editors proves nothing. The schema had 142 top-level keys when
         // this was written; the floor is deliberately far below that so an upstream trim does not
         // fail the build, but far above zero.
-        Assert.IsTrue(nodes.Count >= 100,
+        Assert.True(nodes.Count >= 100,
             $"only {nodes.Count} editors were created from claude-code-settings.json; the schema "
             + "reader or the factory is broken, and this test would otherwise pass having checked "
             + "almost nothing.");
 
-        Assert.IsTrue(unwired.Count == 0,
+        Assert.True(unwired.Count == 0,
             $"{unwired.Count} editor(s) came back with NO danger classifier, so their rows show "
             + $"no severity at all:\n  {string.Join("\n  ", unwired)}\n\n"
             + "Attach it at the single site in CompositeEditorFactory.Create, not in the "
             + "individual registrations.");
 
-        Assert.IsTrue(wrongTable.Count == 0,
+        Assert.True(wrongTable.Count == 0,
             $"{wrongTable.Count} editor(s) carry the wrong table:\n  {string.Join("\n  ", wrongTable)}");
     }
 
@@ -97,11 +103,11 @@ public sealed class ClaudeEditorDangerWiringTests
     /// appears in the node list this test walks. Measured, after the first draft asserted it here
     /// and failed.
     /// </remarks>
-    [TestMethod]
-    [DataRow("hooks")]
-    [DataRow("permissions")]
-    [DataRow("enabledPlugins")]
-    [DataRow("extraKnownMarketplaces")]
+    [Theory]
+    [InlineData("hooks")]
+    [InlineData("permissions")]
+    [InlineData("enabledPlugins")]
+    [InlineData("extraKnownMarketplaces")]
     public async Task ASpecialisedEditorCarriesTheDangerTableToo(string key)
     {
         CompositeEditorFactory factory =
@@ -109,13 +115,13 @@ public sealed class ClaudeEditorDangerWiringTests
         IReadOnlyList<SchemaNode> nodes = await TopLevelNodesAsync().ConfigureAwait(false);
 
         SchemaNode? node = nodes.FirstOrDefault(n => n.Name == key);
-        Assert.IsNotNull(node,
+        MessageAssert.NotNull(node,
             $"'{key}' is not a top-level schema node any more, so this registration may be dead — "
             + "check ClaudeEditorFactoryConfig.Register before deleting the row.");
 
         LibVm.PropertyEditorViewModel editor = factory.Create(node, ConfigScope.User);
 
-        Assert.AreSame(ClaudeDangerTable.Settings, editor.DangerClassifier,
+        MessageAssert.Same(ClaudeDangerTable.Settings, editor.DangerClassifier,
             $"The specialised editor for '{key}' ({editor.GetType().Name}) came back without the "
             + "danger table. Its registration returns before base.Create, so an attach in the "
             + "base class does not reach it.");
@@ -125,7 +131,7 @@ public sealed class ClaudeEditorDangerWiringTests
     /// A factory built with no classifier must still produce working editors — a caller that
     /// declares no danger policy is a supported state, not a crash.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task AFactoryWithNoClassifierStillProducesEditorsThatReportUnremarkable()
     {
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault(danger: null);
@@ -139,18 +145,18 @@ public sealed class ClaudeEditorDangerWiringTests
         {
             LibVm.PropertyEditorViewModel editor = factory.Create(node, ConfigScope.User);
 
-            Assert.IsNull(editor.DangerClassifier,
+            MessageAssert.Null(editor.DangerClassifier,
                 $"'{node.Name}' got a classifier from a factory explicitly built without one.");
-            Assert.AreEqual(DangerAssessment.Unremarkable, editor.Danger,
+            MessageAssert.Equal(DangerAssessment.Unremarkable, editor.Danger,
                 $"'{node.Name}' must fall back to Unremarkable rather than throwing.");
-            Assert.IsFalse(editor.HasDangerSeverity);
+            Assert.False(editor.HasDangerSeverity);
         }
     }
 
     /// <summary>
     /// The dot the user sees on a real page, through the real factory and the real table.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task ThePermissionsRowReportsCriticalThroughTheRealFactory()
     {
         CompositeEditorFactory factory =
@@ -160,9 +166,9 @@ public sealed class ClaudeEditorDangerWiringTests
         SchemaNode node = nodes.First(n => n.Name == "permissions");
         LibVm.PropertyEditorViewModel editor = factory.Create(node, ConfigScope.User);
 
-        Assert.AreEqual(AppSeverity.Critical, editor.Danger.Severity);
-        Assert.IsTrue(editor.HasDangerSeverity, "The wrapper renders the dot on this flag.");
-        Assert.IsTrue(editor.DangerAccessibleText.StartsWith("Critical:", StringComparison.Ordinal),
+        Assert.Equal(AppSeverity.Critical, editor.Danger.Severity);
+        Assert.True(editor.HasDangerSeverity, "The wrapper renders the dot on this flag.");
+        Assert.True(editor.DangerAccessibleText.StartsWith("Critical:", StringComparison.Ordinal),
             $"A screen reader must hear the tier and the reason, got '{editor.DangerAccessibleText}'.");
     }
 }

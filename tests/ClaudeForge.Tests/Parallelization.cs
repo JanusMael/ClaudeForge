@@ -5,4 +5,4 @@
 // stay serial. DoNotParallelize enforces that even if a global .runsettings
 // enables parallelization. See docs/ASYNC-FIRST-MIGRATION-PLAN.md / the
 // test-parallelism notes.
-[assembly: DoNotParallelize]
+[assembly: CollectionBehavior(DisableTestParallelization = true)]

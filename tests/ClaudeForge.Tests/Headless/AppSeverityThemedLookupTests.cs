@@ -36,7 +36,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// <c>finally</c>. Leaving it behind would re-theme every later headless test in the assembly.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class AppSeverityThemedLookupTests
 {
     private static HeadlessUnitTestSession Session =>
@@ -46,7 +45,7 @@ public sealed class AppSeverityThemedLookupTests
     private const string LightSentinel = "#010203";
     private const string DarkSentinel = "#0A0B0C";
 
-    [TestMethod]
+    [Fact]
     public Task TheConverterResolvesThePerVariantToken_NotItsFallback() => Session.Dispatch(() =>
     {
         Application app = Application.Current
@@ -72,7 +71,7 @@ public sealed class AppSeverityThemedLookupTests
 
                     Color actual = ((ISolidColorBrush)result).Color;
 
-                    Assert.AreEqual(Color.Parse(expected), actual,
+                    MessageAssert.Equal(Color.Parse(expected), actual,
                         $"{severity} under {variant}: expected the declared token "
                         + $"{AppSeverityToBrushConverter.KeyFor(severity)} ({expected}) but got "
                         + $"{actual}. A themed key looked up without a variant resolves to nothing "
@@ -96,7 +95,7 @@ public sealed class AppSeverityThemedLookupTests
     /// a theme change never reached it. Resolving at Convert()-time is what fixes that, and this
     /// asserts the fix rather than the intent.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public Task SwitchingThemeVariantChangesTheResolvedBrush() => Session.Dispatch(() =>
     {
         Application app = Application.Current!;
@@ -116,7 +115,7 @@ public sealed class AppSeverityThemedLookupTests
             Color dark = ((ISolidColorBrush)converter.Convert(
                 AppSeverity.Critical, typeof(IBrush), null, CultureInfo.InvariantCulture)).Color;
 
-            Assert.AreNotEqual(light, dark,
+            MessageAssert.NotEqual(light, dark,
                 "the same severity resolved to the same colour in both variants, so the lookup is "
                 + "either variant-blind or cached");
         }

@@ -21,13 +21,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// comparison instead, so the Save button correctly disables after Reset.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class HasUnsavedChangesRecheckTests
+public sealed class HasUnsavedChangesRecheckTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public HasUnsavedChangesRecheckTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -35,8 +35,7 @@ public sealed class HasUnsavedChangesRecheckTests
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         // Robust delete: each test constructs a MainWindowViewModel which
@@ -48,7 +47,13 @@ public sealed class HasUnsavedChangesRecheckTests
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task SetThenRevertSameValue_ClearsHasUnsavedChanges()
     {
         // Seed a User-scope settings.json with one key so the workspace has
@@ -62,24 +67,24 @@ public sealed class HasUnsavedChangesRecheckTests
             await vm.InitializeCommand.ExecuteAsync(null);
 
             // After load the workspace is clean.
-            Assert.IsFalse(vm.HasUnsavedChanges, "Fresh load must not flag unsaved changes.");
+            Assert.False(vm.HasUnsavedChanges, "Fresh load must not flag unsaved changes.");
 
             // Reach into the SDK client and mutate via the public surface —
             // the editor pipeline does not need to be exercised directly here;
             // we are testing the SDK Changed forwarder → HasActualChanges chain.
             // 4.3.7 step 14: prefer the SDK seam over the legacy workspace one.
             AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
-            Assert.IsNotNull(client, "Initialize must have created the Claude Code SDK client.");
+            MessageAssert.NotNull(client, "Initialize must have created the Claude Code SDK client.");
 
             client!.SetValue("model", "opus", ConfigScope.User);
-            Assert.IsTrue(vm.HasUnsavedChanges,
+            Assert.True(vm.HasUnsavedChanges,
                 "After a value change diverges from the baseline, HasUnsavedChanges must flip true.");
 
             // Set the value BACK to the baseline ("sonnet"). Document.IsDirty stays
             // latched true (one-way), but HasActualChanges() returns false because
             // the JSON content is structurally identical to the baseline.
             client.SetValue("model", "sonnet", ConfigScope.User);
-            Assert.IsFalse(vm.HasUnsavedChanges,
+            Assert.False(vm.HasUnsavedChanges,
                 "After setting the value back to baseline, HasUnsavedChanges must flip false " +
                 "even though IsDirty stays latched. This is the contract that makes Save " +
                 "correctly disable after a Reset on the MCP / Permissions / Hooks pages.");
@@ -90,7 +95,7 @@ public sealed class HasUnsavedChangesRecheckTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EditThenReset_FlipsHasUnsavedChangesBackToFalse()
     {
         // The Reset path goes through the editor's RemoveValue then re-SetValue
@@ -112,11 +117,11 @@ public sealed class HasUnsavedChangesRecheckTests
         {
             await vm.InitializeCommand.ExecuteAsync(null);
             AgentConfigClientCore? client = vm.GetClaudeCodeSdkClientForTesting();
-            Assert.IsNotNull(client);
+            Assert.NotNull(client);
 
             // Edit: deviate from baseline.
             client!.SetValue("model", "opus", ConfigScope.User);
-            Assert.IsTrue(vm.HasUnsavedChanges, "Edit must flip the Save button on.");
+            Assert.True(vm.HasUnsavedChanges, "Edit must flip the Save button on.");
 
             // Reset: simulate the two-step Reset path the live-write actually
             // performs — RemoveValue (clear in-memory edit) + SetValue (re-apply
@@ -125,7 +130,7 @@ public sealed class HasUnsavedChangesRecheckTests
             client.RemoveValue("model", ConfigScope.User);
             client.SetValue("model", "sonnet", ConfigScope.User);
 
-            Assert.IsFalse(vm.HasUnsavedChanges,
+            Assert.False(vm.HasUnsavedChanges,
                 "After a full Reset cycle (RemoveValue + restore-baseline-via-SetValue), " +
                 "HasUnsavedChanges must be false — even though the document's IsDirty " +
                 "latch is still true. This is the contract that makes Save correctly " +
@@ -141,7 +146,7 @@ public sealed class HasUnsavedChangesRecheckTests
     // Install-banner sticky-dismiss tests
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task InstallBanner_NotShown_WhenCodeSettingsFilePresent()
     {
         // IsClaudeCodeInstalled has a sandboxed fallback: File.Exists(UserSettingsPath).
@@ -156,7 +161,7 @@ public sealed class HasUnsavedChangesRecheckTests
         try
         {
             await vm.InitializeCommand.ExecuteAsync(null);
-            Assert.IsFalse(vm.ShowInstallBanner,
+            Assert.False(vm.ShowInstallBanner,
                 "When Code is detected (settings.json present) ShowInstallBanner must be false.");
         }
         finally
@@ -165,7 +170,7 @@ public sealed class HasUnsavedChangesRecheckTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Save_StaysEnabled_WhenUnsavedChanges_EvenWhileInstallBannerShows()
     {
         // Regression: the --showInstallBanner debug flag force-sets ShowInstallBanner=true
@@ -179,7 +184,7 @@ public sealed class HasUnsavedChangesRecheckTests
             vm.ShowInstallBanner = true;
             vm.HasUnsavedChanges = true;
 
-            Assert.IsTrue(vm.SaveCommand.CanExecute(null),
+            Assert.True(vm.SaveCommand.CanExecute(null),
                 "Save must be enabled when unsaved changes exist, regardless of the install banner.");
         }
         finally
@@ -188,7 +193,7 @@ public sealed class HasUnsavedChangesRecheckTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task InstallBanner_AutoClearsDismissedFlag_WhenProductAppears()
     {
         // Contract: if the user dismissed the banner (neither product was installed),
@@ -232,7 +237,7 @@ public sealed class HasUnsavedChangesRecheckTests
             await File.WriteAllTextAsync(settingsPath, "{}");
             await vm.ReloadCommand.ExecuteAsync(null);
 
-            Assert.IsFalse(vm.ShowInstallBanner,
+            Assert.False(vm.ShowInstallBanner,
                 "After reload finds Code installed, ShowInstallBanner must be false.");
 
             // ── leg 2: remove Code settings again — banner should re-show
@@ -246,7 +251,7 @@ public sealed class HasUnsavedChangesRecheckTests
 
             if (!PlatformPaths.IsDesktopInstalled)
             {
-                Assert.IsTrue(vm.ShowInstallBanner,
+                Assert.True(vm.ShowInstallBanner,
                     "After removing the only detected product, ShowInstallBanner must return " +
                     "to true — the auto-clear of _bannerDismissedByUser in leg 2 ensures " +
                     "the banner is not permanently suppressed.");

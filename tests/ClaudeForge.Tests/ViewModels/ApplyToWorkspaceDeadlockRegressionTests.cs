@@ -39,7 +39,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// editor list; with the fix, the original instances are preserved (no rebuild).
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ApplyToWorkspaceDeadlockRegressionTests
 {
     private static SettingsWorkspace MakeWorkspace(params (ConfigScope Scope, string Json)[] entries)
@@ -58,7 +57,7 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
         return new SchemaNode(jsonPath, name) { ValueType = type };
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyToWorkspace_SetsSelfWritingFlag_PreventingRebuildDuringWrite()
     {
         // Setup: a workspace with one editor, modified by the user.
@@ -79,18 +78,18 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
         // happened mid-write. Without the _selfWriting guard around the loop,
         // the synchronous workspace.Changed would call OnWorkspaceChanged ->
         // RebuildEditors -> editor list replaced.
-        Assert.AreEqual(1, vm.Editors.Count);
-        Assert.AreSame(editorBefore, vm.Editors[0],
+        Assert.Single(vm.Editors);
+        MessageAssert.Same(editorBefore, vm.Editors[0],
             "ApplyToWorkspace must not trigger RebuildEditors mid-loop. " +
             "If editor identity changes, _selfWriting was not set during the bulk-save " +
             "(2026-04-29 deadlock fix regression).");
 
         // And the value did make it through.
         LayeredValue layered = workspace.GetLayeredValue("model");
-        Assert.AreEqual("opus", layered.EffectiveValue!.GetValue<string>());
+        Assert.Equal("opus", layered.EffectiveValue!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyToWorkspace_CompletesPromptly_EvenWithMultipleModifiedEditors()
     {
         // Bound the call by a generous timeout so a regressed lock pattern
@@ -116,9 +115,9 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
             return true;
         }).WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.IsTrue(done);
-        Assert.AreEqual("x-a", workspace.GetLayeredValue("a").EffectiveValue!.GetValue<string>());
-        Assert.AreEqual("x-b", workspace.GetLayeredValue("b").EffectiveValue!.GetValue<string>());
-        Assert.AreEqual("x-c", workspace.GetLayeredValue("c").EffectiveValue!.GetValue<string>());
+        Assert.True(done);
+        Assert.Equal("x-a", workspace.GetLayeredValue("a").EffectiveValue!.GetValue<string>());
+        Assert.Equal("x-b", workspace.GetLayeredValue("b").EffectiveValue!.GetValue<string>());
+        Assert.Equal("x-c", workspace.GetLayeredValue("c").EffectiveValue!.GetValue<string>());
     }
 }

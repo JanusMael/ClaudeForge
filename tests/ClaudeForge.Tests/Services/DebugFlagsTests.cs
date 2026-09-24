@@ -9,63 +9,67 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// Each test calls <see cref="DebugFlags.ResetForTesting"/> in cleanup so
 /// flags do not bleed across tests (the class holds static state).
 /// </summary>
-[TestClass]
-public sealed class DebugFlagsTests
+public sealed class DebugFlagsTests : IDisposable
 {
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         DebugFlags.ResetForTesting();
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void Initialize_NoArgs_LeavesAllFlagsDefault()
     {
         DebugFlags.Initialize([]);
 
-        Assert.IsFalse(DebugFlags.ShowInstallBanner);
-        Assert.IsNull(DebugFlags.EmulatedPlatform);
-        Assert.IsFalse(DebugFlags.ShowAllNewBadges);
+        Assert.False(DebugFlags.ShowInstallBanner);
+        Assert.Null(DebugFlags.EmulatedPlatform);
+        Assert.False(DebugFlags.ShowAllNewBadges);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_ShowAllNew_SetsFlag()
     {
         // --showAllNew exposes the "✨ NEW" badge styling without
         // requiring a schema bump or hand-edited snapshot cache.
         DebugFlags.Initialize(["--showAllNew"]);
-        Assert.IsTrue(DebugFlags.ShowAllNewBadges);
+        Assert.True(DebugFlags.ShowAllNewBadges);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_ShowAllNew_IsCaseInsensitive()
     {
         DebugFlags.Initialize(["--SHOWALLNEW"]);
-        Assert.IsTrue(DebugFlags.ShowAllNewBadges);
+        Assert.True(DebugFlags.ShowAllNewBadges);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_ShowInstallBanner_SetsFlag()
     {
         DebugFlags.Initialize(["--showInstallBanner"]);
-        Assert.IsTrue(DebugFlags.ShowInstallBanner);
+        Assert.True(DebugFlags.ShowInstallBanner);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_FlagsAreCaseInsensitive()
     {
         DebugFlags.Initialize(["--SHOWINSTALLBANNER", "--LINUX"]);
-        Assert.IsTrue(DebugFlags.ShowInstallBanner);
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform);
+        Assert.True(DebugFlags.ShowInstallBanner);
+        Assert.Equal("linux", DebugFlags.EmulatedPlatform);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_UnknownArgs_AreIgnored()
     {
         // Avalonia and the debugger pass through their own args; the parser
         // must tolerate them without throwing or polluting flag state.
         DebugFlags.Initialize(["--showInstallBanner", "--unknown-arg", "/path/to/file"]);
-        Assert.IsTrue(DebugFlags.ShowInstallBanner,
+        Assert.True(DebugFlags.ShowInstallBanner,
             "Unknown args must not interfere with recognised flags.");
     }
 
@@ -73,57 +77,57 @@ public sealed class DebugFlagsTests
     // Platform emulation flags
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Linux_EmulatesLinuxPlatform()
     {
         DebugFlags.Initialize(["--linux"]);
 
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform);
-        Assert.IsTrue(PlatformInfo.Current.IsLinux,
+        Assert.Equal("linux", DebugFlags.EmulatedPlatform);
+        Assert.True(PlatformInfo.Current.IsLinux,
             "PlatformInfo.Current must be swapped for an emulated Linux instance.");
-        Assert.AreEqual("linux", PlatformInfo.Current.PlatformId);
+        Assert.Equal("linux", PlatformInfo.Current.PlatformId);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Macos_EmulatesMacOSPlatform()
     {
         DebugFlags.Initialize(["--macos"]);
 
-        Assert.AreEqual("macos", DebugFlags.EmulatedPlatform);
-        Assert.IsTrue(PlatformInfo.Current.IsMacOS);
-        Assert.AreEqual("macos", PlatformInfo.Current.PlatformId);
+        Assert.Equal("macos", DebugFlags.EmulatedPlatform);
+        Assert.True(PlatformInfo.Current.IsMacOS);
+        Assert.Equal("macos", PlatformInfo.Current.PlatformId);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Windows_EmulatesWindowsPlatform()
     {
         DebugFlags.Initialize(["--windows"]);
 
-        Assert.AreEqual("windows", DebugFlags.EmulatedPlatform);
-        Assert.IsTrue(PlatformInfo.Current.IsWindows);
-        Assert.AreEqual("windows", PlatformInfo.Current.PlatformId);
+        Assert.Equal("windows", DebugFlags.EmulatedPlatform);
+        Assert.True(PlatformInfo.Current.IsWindows);
+        Assert.Equal("windows", PlatformInfo.Current.PlatformId);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_LastPlatformFlagWins()
     {
         // Multiple platform flags are unusual but must be deterministic.
         DebugFlags.Initialize(["--macos", "--linux"]);
 
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+        MessageAssert.Equal("linux", DebugFlags.EmulatedPlatform,
             "Later flags overwrite earlier ones.");
-        Assert.IsTrue(PlatformInfo.Current.IsLinux);
+        Assert.True(PlatformInfo.Current.IsLinux);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_RestoresPlatformInfoToRuntime()
     {
         DebugFlags.Initialize(["--linux"]);
-        Assert.IsTrue(PlatformInfo.Current.IsLinux, "Setup: emulation active.");
+        Assert.True(PlatformInfo.Current.IsLinux, "Setup: emulation active.");
 
         DebugFlags.ResetForTesting();
 
-        Assert.AreSame(RuntimePlatformInfo.Instance, PlatformInfo.Current,
+        MessageAssert.Same(RuntimePlatformInfo.Instance, PlatformInfo.Current,
             "ResetForTesting must restore the runtime PlatformInfo so tests do not " +
             "leak emulation state into subsequent tests.");
     }
@@ -137,30 +141,30 @@ public sealed class DebugFlagsTests
     // for that — useful for verifying ResourceManager fallback behaviour).
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initialize_NoCultureFlag_LeavesOverrideNull()
     {
         DebugFlags.Initialize([]);
-        Assert.IsNull(DebugFlags.CultureOverride);
+        Assert.Null(DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_EnUs_AcceptedAndCanonicalised()
     {
         DebugFlags.Initialize(["--culture", "en-US"]);
-        Assert.AreEqual("en-US", DebugFlags.CultureOverride);
+        Assert.Equal("en-US", DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_ZhCn_AcceptedEvenThoughSatelliteExistsAsZhCN()
     {
         // Validates that the SHIPPED satellite culture (zh-CN) is accepted —
         // canonical form preserved.
         DebugFlags.Initialize(["--culture", "zh-CN"]);
-        Assert.AreEqual("zh-CN", DebugFlags.CultureOverride);
+        Assert.Equal("zh-CN", DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_FrFr_AcceptedDespiteNoSatellite()
     {
         // The user wants the flag to accept any real specific culture,
@@ -168,34 +172,34 @@ public sealed class DebugFlagsTests
         // falls back to the neutral resources automatically).  fr-FR has
         // no Strings.fr-FR.resx in this repo but is a real .NET culture.
         DebugFlags.Initialize(["--culture", "fr-FR"]);
-        Assert.AreEqual("fr-FR", DebugFlags.CultureOverride);
+        Assert.Equal("fr-FR", DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_CaseInsensitive_FlagName()
     {
         // The flag NAME is case-insensitive; the VALUE is canonicalised
         // via CultureInfo.GetCultureInfo (en-us → en-US, EN-US → en-US).
         DebugFlags.Initialize(["--CULTURE", "en-us"]);
-        Assert.AreEqual("en-US", DebugFlags.CultureOverride);
+        Assert.Equal("en-US", DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_GibberishCode_RejectedAndOverrideStaysNull()
     {
         DebugFlags.Initialize(["--culture", "xx-XX"]);
-        Assert.IsNull(DebugFlags.CultureOverride,
+        MessageAssert.Null(DebugFlags.CultureOverride,
             "Arbitrary 2-dash-2 codes that are not real cultures must be rejected.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_NotEvenDashed_Rejected()
     {
         DebugFlags.Initialize(["--culture", "not-a-real-code"]);
-        Assert.IsNull(DebugFlags.CultureOverride);
+        Assert.Null(DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_NeutralCulture_Rejected()
     {
         // The user spec calls out "2-dash-2" form: en-US, zh-CN, fr-FR.
@@ -203,27 +207,27 @@ public sealed class DebugFlagsTests
         // valid in .NET but rejected here so the flag's contract matches
         // the user's mental model.
         DebugFlags.Initialize(["--culture", "en"]);
-        Assert.IsNull(DebugFlags.CultureOverride,
+        MessageAssert.Null(DebugFlags.CultureOverride,
             "Neutral cultures (no region) must be rejected — user wants specific cultures only.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_EmptyValue_Rejected()
     {
         DebugFlags.Initialize(["--culture", ""]);
-        Assert.IsNull(DebugFlags.CultureOverride);
+        Assert.Null(DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_MissingValue_Rejected()
     {
         // --culture as the LAST arg with nothing after it must not crash
         // and must not set the override.
         DebugFlags.Initialize(["--culture"]);
-        Assert.IsNull(DebugFlags.CultureOverride);
+        Assert.Null(DebugFlags.CultureOverride);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_Culture_ConsumesNextArg_DoesNotMisparseAsFlag()
     {
         // The value MUST be consumed by --culture so the outer parse loop
@@ -234,49 +238,49 @@ public sealed class DebugFlagsTests
         // the consumed value and we want a regression test for that.)
         DebugFlags.Initialize(["--culture", "en-US", "--showInstallBanner"]);
 
-        Assert.AreEqual("en-US", DebugFlags.CultureOverride);
-        Assert.IsTrue(DebugFlags.ShowInstallBanner,
+        Assert.Equal("en-US", DebugFlags.CultureOverride);
+        Assert.True(DebugFlags.ShowInstallBanner,
             "The flag AFTER the --culture value must still be parsed normally.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryValidateCulture_RealSpecificCulture_ReturnsTrueAndCanonical()
     {
-        Assert.IsTrue(DebugFlags.TryValidateCulture("en-US", out string canonical));
-        Assert.AreEqual("en-US", canonical);
+        Assert.True(DebugFlags.TryValidateCulture("en-US", out string canonical));
+        Assert.Equal("en-US", canonical);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryValidateCulture_LowercaseInput_CanonicalisesCase()
     {
-        Assert.IsTrue(DebugFlags.TryValidateCulture("en-us", out string canonical));
-        Assert.AreEqual("en-US", canonical);
+        Assert.True(DebugFlags.TryValidateCulture("en-us", out string canonical));
+        Assert.Equal("en-US", canonical);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryValidateCulture_NeutralCulture_ReturnsFalse()
     {
-        Assert.IsFalse(DebugFlags.TryValidateCulture("en", out string _));
+        Assert.False(DebugFlags.TryValidateCulture("en", out string _));
     }
 
-    [TestMethod]
+    [Fact]
     public void TryValidateCulture_Gibberish_ReturnsFalse()
     {
-        Assert.IsFalse(DebugFlags.TryValidateCulture("xx-XX", out string _));
-        Assert.IsFalse(DebugFlags.TryValidateCulture("not-a-real-code", out string _));
-        Assert.IsFalse(DebugFlags.TryValidateCulture("", out string _));
-        Assert.IsFalse(DebugFlags.TryValidateCulture("   ", out string _));
+        Assert.False(DebugFlags.TryValidateCulture("xx-XX", out string _));
+        Assert.False(DebugFlags.TryValidateCulture("not-a-real-code", out string _));
+        Assert.False(DebugFlags.TryValidateCulture("", out string _));
+        Assert.False(DebugFlags.TryValidateCulture("   ", out string _));
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_ClearsCultureOverride()
     {
         DebugFlags.Initialize(["--culture", "en-US"]);
-        Assert.AreEqual("en-US", DebugFlags.CultureOverride);
+        Assert.Equal("en-US", DebugFlags.CultureOverride);
 
         DebugFlags.ResetForTesting();
 
-        Assert.IsNull(DebugFlags.CultureOverride);
+        Assert.Null(DebugFlags.CultureOverride);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -290,53 +294,53 @@ public sealed class DebugFlagsTests
     // rightmost segment — see AppUpdateService.SynthesiseSimulatedNextVersion.
     // ──────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Initialize_SimulateUpdate_SetsTheBooleanFlag()
     {
         DebugFlags.Initialize(["--simulate-update"]);
-        Assert.IsTrue(DebugFlags.SimulateUpdate,
+        Assert.True(DebugFlags.SimulateUpdate,
             "--simulate-update must set the boolean flag — no argument required.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_SimulateUpdate_CaseInsensitiveFlagName()
     {
         DebugFlags.Initialize(["--SIMULATE-UPDATE"]);
-        Assert.IsTrue(DebugFlags.SimulateUpdate,
+        Assert.True(DebugFlags.SimulateUpdate,
             "Flag name matching is case-insensitive (matches the parser's general convention).");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_SimulateUpdate_FollowedByOtherFlag_BothApply()
     {
         // Post-change: --simulate-update no longer consumes a following
         // argument.  An arg that looks like another flag should now be
         // processed normally by the outer loop.
         DebugFlags.Initialize(["--simulate-update", "--linux"]);
-        Assert.IsTrue(DebugFlags.SimulateUpdate,
+        Assert.True(DebugFlags.SimulateUpdate,
             "--simulate-update is consumed independently of any following args.");
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+        MessageAssert.Equal("linux", DebugFlags.EmulatedPlatform,
             "A following --linux must be processed as its own platform flag — " +
             "no greedy two-token consumption.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_NoSimulateUpdate_LeavesFlagFalse()
     {
         DebugFlags.Initialize(["--showAllNew"]);
-        Assert.IsFalse(DebugFlags.SimulateUpdate,
+        Assert.False(DebugFlags.SimulateUpdate,
             "SimulateUpdate defaults to false when the flag is absent.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_ClearsSimulateUpdate()
     {
         DebugFlags.Initialize(["--simulate-update"]);
-        Assert.IsTrue(DebugFlags.SimulateUpdate);
+        Assert.True(DebugFlags.SimulateUpdate);
 
         DebugFlags.ResetForTesting();
 
-        Assert.IsFalse(DebugFlags.SimulateUpdate);
+        Assert.False(DebugFlags.SimulateUpdate);
     }
 
     // -----------------------------------------------------------------------
@@ -348,69 +352,69 @@ public sealed class DebugFlagsTests
     // navigation tree, because a stale shortcut must never block startup.
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initialize_NoDeepLinkFlag_LeavesPathNull()
     {
         DebugFlags.Initialize([]);
-        Assert.IsNull(DebugFlags.DeepLinkPath);
+        Assert.Null(DebugFlags.DeepLinkPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_AcceptsAWellFormedPath()
     {
         DebugFlags.Initialize(["--deep-link", "agents-skills/skills/pdf"]);
-        Assert.AreEqual("agents-skills/skills/pdf", DebugFlags.DeepLinkPath);
+        Assert.Equal("agents-skills/skills/pdf", DebugFlags.DeepLinkPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_AcceptsAPageOnlyPath()
     {
         DebugFlags.Initialize(["--deep-link", "essentials"]);
-        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
+        Assert.Equal("essentials", DebugFlags.DeepLinkPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_CaseInsensitiveFlagName()
     {
         DebugFlags.Initialize(["--DEEP-LINK", "essentials"]);
-        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
+        Assert.Equal("essentials", DebugFlags.DeepLinkPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_MissingValue_IsIgnored()
     {
         // Last arg with nothing after it — must not throw or index past the end.
         DebugFlags.Initialize(["--deep-link"]);
-        Assert.IsNull(DebugFlags.DeepLinkPath);
+        Assert.Null(DebugFlags.DeepLinkPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_MalformedValue_IsRejected()
     {
         DebugFlags.Initialize(["--deep-link", "/leading-separator"]);
-        Assert.IsNull(DebugFlags.DeepLinkPath, "A malformed path must be rejected, not stored.");
+        MessageAssert.Null(DebugFlags.DeepLinkPath, "A malformed path must be rejected, not stored.");
 
         DebugFlags.ResetForTesting();
         DebugFlags.Initialize(["--deep-link", "a/b/c/d/e"]);
-        Assert.IsNull(DebugFlags.DeepLinkPath, "Too many segments must be rejected.");
+        MessageAssert.Null(DebugFlags.DeepLinkPath, "Too many segments must be rejected.");
 
         DebugFlags.ResetForTesting();
         DebugFlags.Initialize(["--deep-link", "a//b"]);
-        Assert.IsNull(DebugFlags.DeepLinkPath, "An empty interior segment must be rejected.");
+        MessageAssert.Null(DebugFlags.DeepLinkPath, "An empty interior segment must be rejected.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_ValueThenNextFlag_BothProcessed()
     {
         // The value must be consumed WITHOUT swallowing the flag that follows it.
         DebugFlags.Initialize(["--deep-link", "essentials", "--linux"]);
 
-        Assert.AreEqual("essentials", DebugFlags.DeepLinkPath);
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+        Assert.Equal("essentials", DebugFlags.DeepLinkPath);
+        MessageAssert.Equal("linux", DebugFlags.EmulatedPlatform,
             "A following --linux must be processed as its own flag — no greedy consumption.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_DeepLink_DoesNotSwallowAFollowingFlagAsItsValue()
     {
         // "--linux" is a legal NavDeepPath shape, so without care it would be
@@ -420,21 +424,21 @@ public sealed class DebugFlagsTests
         // the trade-off is visible rather than accidental.
         DebugFlags.Initialize(["--deep-link", "--linux"]);
 
-        Assert.AreEqual("--linux", DebugFlags.DeepLinkPath,
+        MessageAssert.Equal("--linux", DebugFlags.DeepLinkPath,
             "Positional consumption means a missing value eats the next token; " +
             "the resulting path simply fails to resolve later.");
-        Assert.IsNull(DebugFlags.EmulatedPlatform);
+        Assert.Null(DebugFlags.EmulatedPlatform);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_ClearsDeepLinkPath()
     {
         DebugFlags.Initialize(["--deep-link", "essentials"]);
-        Assert.IsNotNull(DebugFlags.DeepLinkPath);
+        Assert.NotNull(DebugFlags.DeepLinkPath);
 
         DebugFlags.ResetForTesting();
 
-        Assert.IsNull(DebugFlags.DeepLinkPath);
+        Assert.Null(DebugFlags.DeepLinkPath);
     }
 
     // ── --writer <legacy|jsonc> ──────────────────────────────────────────────
@@ -444,44 +448,44 @@ public sealed class DebugFlagsTests
     // writers produce different bytes, and a typo silently selecting the lossy one is
     // exactly the failure this flag exists to protect against.
 
-    [TestMethod]
+    [Fact]
     public void Initialize_NoWriterFlag_LeavesWriterUnset()
     {
         DebugFlags.Initialize([]);
 
-        Assert.IsNull(DebugFlags.ConfigWriterName,
+        MessageAssert.Null(DebugFlags.ConfigWriterName,
             "Unset means the default comment-preserving writer.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_WriterLegacy_SelectsLegacy()
     {
         DebugFlags.Initialize(["--writer", "legacy"]);
 
-        Assert.AreEqual("legacy", DebugFlags.ConfigWriterName);
+        Assert.Equal("legacy", DebugFlags.ConfigWriterName);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_WriterJsonc_IsAcceptedAndNormalized()
     {
         // Accepted so a script can pin the default explicitly and the flag reads
         // symmetrically; it resolves to the same writer as omitting the flag.
         DebugFlags.Initialize(["--writer", "JSONC"]);
 
-        Assert.AreEqual("jsonc", DebugFlags.ConfigWriterName,
+        MessageAssert.Equal("jsonc", DebugFlags.ConfigWriterName,
             "Value should be normalized to lower case so downstream comparisons are ordinal.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_WriterUnknownValue_FallsBackToTheSafeWriter()
     {
         DebugFlags.Initialize(["--writer", "legcy"]);
 
-        Assert.IsNull(DebugFlags.ConfigWriterName,
+        MessageAssert.Null(DebugFlags.ConfigWriterName,
             "A typo must fall back to the preserving writer, never to the lossy one.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_WriterMissingValue_DoesNotEatTheNextFlag()
     {
         // Contrast with --deep-link, which consumes positionally by design. Here the
@@ -489,29 +493,29 @@ public sealed class DebugFlagsTests
         // writer name and still takes effect as a flag.
         DebugFlags.Initialize(["--writer", "--linux"]);
 
-        Assert.IsNull(DebugFlags.ConfigWriterName);
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+        Assert.Null(DebugFlags.ConfigWriterName);
+        MessageAssert.Equal("linux", DebugFlags.EmulatedPlatform,
             "Validation against a closed set means the swallowed token is not silently lost "
             + "the way an unvalidated positional value would be.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialize_WriterAtEndOfArgs_IsIgnoredWithoutThrowing()
     {
         DebugFlags.Initialize(["--writer"]);
 
-        Assert.IsNull(DebugFlags.ConfigWriterName);
+        Assert.Null(DebugFlags.ConfigWriterName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_ClearsConfigWriterName()
     {
         DebugFlags.Initialize(["--writer", "legacy"]);
-        Assert.IsNotNull(DebugFlags.ConfigWriterName);
+        Assert.NotNull(DebugFlags.ConfigWriterName);
 
         DebugFlags.ResetForTesting();
 
-        Assert.IsNull(DebugFlags.ConfigWriterName,
+        MessageAssert.Null(DebugFlags.ConfigWriterName,
             "Static flag state must not bleed into the next test — a leaked 'legacy' here "
             + "would silently make other tests assert against the lossy writer.");
     }
@@ -562,7 +566,7 @@ public sealed class DebugFlagsTests
             @"available flags:(?<body>.*?)""\s*\)\s*;",
             RegexOptions.Singleline | RegexOptions.CultureInvariant);
 
-        Assert.IsTrue(message.Success,
+        Assert.True(message.Success,
             "Could not find the \"available flags:\" message in DebugFlags.cs. If it was "
             + "reworded, update this scan — otherwise both directions below pass vacuously.");
 
@@ -585,13 +589,13 @@ public sealed class DebugFlagsTests
     /// <c>--showInstallBanner</c> was missing. It was not — reading the file settled in seconds
     /// what a guess got wrong, which is the argument for having the check at all.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryFlagInitializeParses_IsAdvertisedByDebugHelp()
     {
         HashSet<string> parsed = ParsedFlagNames();
         HashSet<string> advertised = AdvertisedFlagNames();
 
-        Assert.IsTrue(parsed.Count > 5,
+        Assert.True(parsed.Count > 5,
             $"Only {parsed.Count} flag case(s) were found; the scan has lost its subject.");
 
         // --help-debug is an alias of --debug-help and needs no separate line.
@@ -603,7 +607,7 @@ public sealed class DebugFlagsTests
                 .Order(StringComparer.Ordinal),
         ];
 
-        Assert.AreEqual(0, undocumented.Count,
+        MessageAssert.Equal(0, undocumented.Count,
             $"{undocumented.Count} flag(s) are parsed but not listed by --debug-help: "
             + string.Join(", ", undocumented)
             + ". A flag nobody can discover is a flag nobody uses. Add it to the "
@@ -622,13 +626,13 @@ public sealed class DebugFlagsTests
     /// user it was a debug flag and told the next maintainer to look for a <c>case</c> that does
     /// not exist.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void DebugHelpAdvertisesNothingItCannotParse()
     {
         HashSet<string> parsed = ParsedFlagNames();
         HashSet<string> advertised = AdvertisedFlagNames();
 
-        Assert.IsTrue(advertised.Count > 5,
+        Assert.True(advertised.Count > 5,
             $"Only {advertised.Count} advertised flag(s) were found; the scan has lost its subject.");
 
         List<string> phantom =
@@ -636,7 +640,7 @@ public sealed class DebugFlagsTests
             .. advertised.Where(f => !parsed.Contains(f)).Order(StringComparer.Ordinal),
         ];
 
-        Assert.AreEqual(0, phantom.Count,
+        MessageAssert.Equal(0, phantom.Count,
             $"--debug-help advertises {phantom.Count} name(s) DebugFlags.Initialize does not "
             + "parse: " + string.Join(", ", phantom)
             + ". Either it is a CLI-bypass tool — which belongs in its own list, not this one, "
@@ -644,34 +648,34 @@ public sealed class DebugFlagsTests
     }
     // ── --schema-source ───────────────────────────────────────────────
 
-    [TestMethod]
-    [DataRow("bundled")]
-    [DataRow("fetched")]
-    [DataRow("BUNDLED")]
+    [Theory]
+    [InlineData("bundled")]
+    [InlineData("fetched")]
+    [InlineData("BUNDLED")]
     public void SchemaSource_AcceptsEitherValue_CaseInsensitively(string value)
     {
         DebugFlags.Initialize(["--schema-source", value]);
 
-        Assert.AreEqual(value.ToLowerInvariant(), DebugFlags.SchemaSourceName,
+        MessageAssert.Equal(value.ToLowerInvariant(), DebugFlags.SchemaSourceName,
             "The value is normalised to lower case so the Program.cs switch can match literals.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaSource_RejectsAnUnknownValue()
     {
         DebugFlags.Initialize(["--schema-source", "disk"]);
 
-        Assert.IsNull(DebugFlags.SchemaSourceName,
+        MessageAssert.Null(DebugFlags.SchemaSourceName,
             "An unrecognised source must leave the normal loading chain in place rather than "
             + "guessing which branch the user meant.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaSource_WithNoValue_IsIgnored()
     {
         DebugFlags.Initialize(["--schema-source"]);
 
-        Assert.IsNull(DebugFlags.SchemaSourceName);
+        Assert.Null(DebugFlags.SchemaSourceName);
     }
 
     /// <summary>
@@ -683,36 +687,36 @@ public sealed class DebugFlagsTests
     /// still be a valid flag in its own right. Consuming positionally — correct for
     /// <c>--deep-link</c>, where any string is a plausible path — would silently discard it.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void SchemaSource_WithAFlagAsItsValue_RejectsTheValueAndHonoursTheFlag()
     {
         DebugFlags.Initialize(["--schema-source", "--linux"]);
 
-        Assert.IsNull(DebugFlags.SchemaSourceName, "'--linux' is not a schema source.");
-        Assert.AreEqual("linux", DebugFlags.EmulatedPlatform,
+        MessageAssert.Null(DebugFlags.SchemaSourceName, "'--linux' is not a schema source.");
+        MessageAssert.Equal("linux", DebugFlags.EmulatedPlatform,
             "--linux was swallowed as --schema-source's value instead of being honoured.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaSource_AppearsInTheActiveFlagList()
     {
         DebugFlags.Initialize(["--schema-source", "bundled"]);
 
         DebugFlags.LogActiveFlags();
 
-        Assert.AreEqual("bundled", DebugFlags.SchemaSourceName,
+        MessageAssert.Equal("bundled", DebugFlags.SchemaSourceName,
             "Premise: the flag must be set for the listing to have anything to report.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaSource_IsClearedByResetForTesting()
     {
         DebugFlags.Initialize(["--schema-source", "fetched"]);
-        Assert.AreEqual("fetched", DebugFlags.SchemaSourceName, "Premise: it must be set first.");
+        MessageAssert.Equal("fetched", DebugFlags.SchemaSourceName, "Premise: it must be set first.");
 
         DebugFlags.ResetForTesting();
 
-        Assert.IsNull(DebugFlags.SchemaSourceName,
+        MessageAssert.Null(DebugFlags.SchemaSourceName,
             "A flag left set after a reset leaks into whatever test runs next.");
     }
 }

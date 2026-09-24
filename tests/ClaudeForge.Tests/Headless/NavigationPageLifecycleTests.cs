@@ -30,8 +30,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// beyond stale content.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class NavigationPageLifecycleTests
+public sealed class NavigationPageLifecycleTests : IDisposable
 {
     private string _sandbox = string.Empty;
 
@@ -104,8 +103,9 @@ public sealed class NavigationPageLifecycleTests
         }
     }
 
-    [TestInitialize]
-    public void Setup()
+    public NavigationPageLifecycleTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_navlifecycle_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -120,8 +120,7 @@ public sealed class NavigationPageLifecycleTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         DebugFlags.ResetForTesting();
         PlatformPaths.TestUserProfileOverride = null;
@@ -136,6 +135,12 @@ public sealed class NavigationPageLifecycleTests
         {
             _ = ex;
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private static MainWindowViewModel BuildViewModel()
@@ -153,7 +158,7 @@ public sealed class NavigationPageLifecycleTests
 
     // ── Dispatch is by interface, not by concrete type ────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task APageThisAppDoesNotOwn_StillGetsBothHooks()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -165,13 +170,13 @@ public sealed class NavigationPageLifecycleTests
         NavigationNodeViewModel secondNode = Attach(vm, "fake-two", second);
 
         vm.SelectedNode = firstNode;
-        Assert.AreEqual(1, first.Entered, "Arriving at a page must call OnNavigatedTo.");
-        Assert.AreEqual(0, first.Left);
+        MessageAssert.Equal(1, first.Entered, "Arriving at a page must call OnNavigatedTo.");
+        Assert.Equal(0, first.Left);
 
         vm.SelectedNode = secondNode;
-        Assert.AreEqual(1, first.Left, "Leaving a page must call OnNavigatedFrom exactly once.");
-        Assert.AreEqual(1, second.Entered);
-        Assert.AreEqual(true, first.LastReplacedFlag,
+        MessageAssert.Equal(1, first.Left, "Leaving a page must call OnNavigatedFrom exactly once.");
+        Assert.Equal(1, second.Entered);
+        MessageAssert.Equal(true, first.LastReplacedFlag,
             "A different editor took over, so the outgoing page is genuinely being replaced.");
 
         vm.Dispose();
@@ -183,7 +188,7 @@ public sealed class NavigationPageLifecycleTests
     /// the <em>same instance</em>, and a page that discards transient state on the way
     /// out must be told so it can keep it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task SameEditorInstanceTakingOver_IsReportedAsNotReplaced()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -196,14 +201,14 @@ public sealed class NavigationPageLifecycleTests
         vm.SelectedNode = oldNode;
         vm.SelectedNode = rebuiltNode;
 
-        Assert.AreEqual(1, shared.Left, "The hook still fires — only the flag differs.");
-        Assert.AreEqual(false, shared.LastReplacedFlag,
+        MessageAssert.Equal(1, shared.Left, "The hook still fires — only the flag differs.");
+        MessageAssert.Equal(false, shared.LastReplacedFlag,
             "The incoming editor IS this instance, so it is not being replaced.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task APageDeclaringNeitherHook_IsSafeToNavigateThroughBothWays()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -216,7 +221,7 @@ public sealed class NavigationPageLifecycleTests
         vm.SelectedNode = other;
         vm.SelectedNode = silent;
 
-        Assert.AreSame(silent, vm.SelectedNode,
+        MessageAssert.Same(silent, vm.SelectedNode,
             "The default no-op hooks must let navigation complete normally.");
 
         vm.Dispose();
@@ -224,7 +229,7 @@ public sealed class NavigationPageLifecycleTests
 
     // ── The real pages' leave behaviour ───────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task LeavingASettingsGroup_ClearsTheFilterTheNextVisitWouldInherit()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -238,17 +243,17 @@ public sealed class NavigationPageLifecycleTests
 
         vm.SelectedNode = groupNode;
         group.FilterText = "cleanup";
-        Assert.AreEqual("cleanup", group.FilterText, "Precondition: the filter is set.");
+        MessageAssert.Equal("cleanup", group.FilterText, "Precondition: the filter is set.");
 
         vm.SelectedNode = vm.NavigationTree.First(n => n.NodeId == MainWindowViewModel.NavIdEssentials);
 
-        Assert.AreEqual(string.Empty, group.FilterText,
+        MessageAssert.Equal(string.Empty, group.FilterText,
             "Navigating away must clear the group's filter so the next visit starts unfiltered.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LeavingTheEnvironmentPage_ClearsItsFilter()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -260,17 +265,17 @@ public sealed class NavigationPageLifecycleTests
 
         vm.SelectedNode = envNode;
         env.FilterText = "PATH";
-        Assert.AreEqual("PATH", env.FilterText, "Precondition: the filter is set.");
+        MessageAssert.Equal("PATH", env.FilterText, "Precondition: the filter is set.");
 
         vm.SelectedNode = vm.NavigationTree.First(n => n.NodeId == MainWindowViewModel.NavIdEssentials);
 
-        Assert.AreEqual(string.Empty, env.FilterText,
+        MessageAssert.Equal(string.Empty, env.FilterText,
             "Navigating away must clear the Environment page's filter.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LeavingAgentsSkills_ForADifferentPage_ClearsItsNavigationFilter()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -282,11 +287,11 @@ public sealed class NavigationPageLifecycleTests
 
         vm.SelectedNode = agentsNode;
         agents.ApplyNavigationFilter("pdf");
-        Assert.AreEqual("pdf", agents.FilterText, "Precondition: the reveal filter is applied.");
+        MessageAssert.Equal("pdf", agents.FilterText, "Precondition: the reveal filter is applied.");
 
         vm.SelectedNode = vm.NavigationTree.First(n => n.NodeId == MainWindowViewModel.NavIdEssentials);
 
-        Assert.AreEqual(string.Empty, agents.FilterText,
+        MessageAssert.Equal(string.Empty, agents.FilterText,
             "Leaving for a different page must clear the reveal filter.");
 
         vm.Dispose();
@@ -296,7 +301,7 @@ public sealed class NavigationPageLifecycleTests
     /// The counterpart to the test above, and the reason the flag exists: when the
     /// incoming editor is this same instance, the filter must survive.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task AgentsSkills_KeepsItsFilter_WhenTheSameEditorInstanceTakesOver()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -313,7 +318,7 @@ public sealed class NavigationPageLifecycleTests
         NavigationNodeViewModel rebuilt = Attach(vm, "agents-skills-rebuilt", agents);
         vm.SelectedNode = rebuilt;
 
-        Assert.AreEqual("pdf", agents.FilterText,
+        MessageAssert.Equal("pdf", agents.FilterText,
             "The user never navigated away, so the reveal filter must survive.");
 
         vm.Dispose();

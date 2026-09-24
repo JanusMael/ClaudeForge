@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// constructs the library type directly via the Claude schema/scope adapters
 /// and exercises the library API (ToValue / LoadFromValue).
 /// </summary>
-[TestClass]
 public class EnumPropertyEditorViewModelTests
 {
     private static SchemaNode EnumSchema(params string[] values)
@@ -53,60 +52,60 @@ public class EnumPropertyEditorViewModelTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void EnumOptions_ReflectSchemaValues()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("a", "b", "c"));
-        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, vm.EnumOptions.ToArray());
+        Assert.Equal(new[] { "a", "b", "c" }, vm.EnumOptions.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void StrictEnum_DoesNotAllowFreeForm()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("a", "b"));
-        Assert.IsTrue(vm.IsStrictEnum);
-        Assert.IsFalse(vm.AllowsFreeForm);
+        Assert.True(vm.IsStrictEnum);
+        Assert.False(vm.AllowsFreeForm);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnumPromotedFromExamples_AllowsFreeForm()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(FreeFormSchema("alpha", "beta"));
-        Assert.IsTrue(vm.AllowsFreeForm);
-        Assert.IsFalse(vm.IsStrictEnum);
+        Assert.True(vm.AllowsFreeForm);
+        Assert.False(vm.IsStrictEnum);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_SetsSelectedValue()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("x", "y"));
         Load(vm, LayeredWith(ConfigScope.User, "x"), ConfigScope.User);
-        Assert.AreEqual("x", vm.SelectedValue);
-        Assert.IsTrue(vm.IsModified);
+        Assert.Equal("x", vm.SelectedValue);
+        Assert.True(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsNull_WhenNoSelection()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("a"));
-        Assert.IsNull(vm.ToValue());
+        Assert.Null(vm.ToValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsString_WhenSelected()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("a", "b"));
         vm.SelectedValue = "b";
-        Assert.AreEqual("b", vm.ToValue());
+        Assert.Equal("b", vm.ToValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsSelection()
     {
         LibVm.EnumPropertyEditorViewModel vm = NewVm(EnumSchema("a"));
         vm.SelectedValue = "a";
         vm.ResetToInheritedCommand.Execute(null);
-        Assert.IsNull(vm.SelectedValue);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Null(vm.SelectedValue);
+        Assert.False(vm.IsModified);
     }
 }

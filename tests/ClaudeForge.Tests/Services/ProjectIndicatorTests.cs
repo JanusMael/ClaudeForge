@@ -10,20 +10,19 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// null/empty path → "No Project Loaded", git repo → branch name (or short
 /// SHA for detached HEAD), non-git folder → folder name.
 /// </summary>
-[TestClass]
-public sealed class ProjectIndicatorTests
+public sealed class ProjectIndicatorTests : IDisposable
 {
     private string _tmpRoot = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ProjectIndicatorTests() => Setup();
+
+    private void Setup()
     {
         _tmpRoot = Path.Combine(Path.GetTempPath(), "pi-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tmpRoot);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -38,42 +37,48 @@ public sealed class ProjectIndicatorTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── Tier 1: empty / null path ────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_NullPath_ReturnsNoProjectLoaded()
     {
-        Assert.AreEqual(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator(null));
+        Assert.Equal(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_EmptyPath_ReturnsNoProjectLoaded()
     {
-        Assert.AreEqual(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator(string.Empty));
+        Assert.Equal(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator(string.Empty));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_WhitespacePath_ReturnsNoProjectLoaded()
     {
         // Empty-string whitespace SHOULD NOT be treated as a real project
         // root — user clearly hasn't picked one.
-        Assert.AreEqual(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator("   "));
-        Assert.AreEqual(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator("\t"));
+        Assert.Equal(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator("   "));
+        Assert.Equal(Strings.TitleNoProjectLoaded, ProjectIndicator.BuildIndicator("\t"));
     }
 
     // ── Tier 2: git repo ─────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_GitRepoOnNamedBranch_ReturnsBranchName()
     {
         string gitDir = Path.Combine(_tmpRoot, ".git");
         Directory.CreateDirectory(gitDir);
         File.WriteAllText(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
 
-        Assert.IsTrue(ProjectIndicator.BuildIndicator(_tmpRoot).EndsWith("- main"));
+        Assert.EndsWith("- main", ProjectIndicator.BuildIndicator(_tmpRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_GitRepoOnSlashedBranch_PreservesSlashes()
     {
         // Branch names like "feature/auth" or "release/v1.2" contain
@@ -83,10 +88,10 @@ public sealed class ProjectIndicatorTests
         Directory.CreateDirectory(gitDir);
         File.WriteAllText(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/feature/auth\n");
 
-        Assert.IsTrue(ProjectIndicator.BuildIndicator(_tmpRoot).EndsWith("- feature/auth"));
+        Assert.EndsWith("- feature/auth", ProjectIndicator.BuildIndicator(_tmpRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_GitRepoInDetachedHead_ReturnsShortSha()
     {
         string gitDir = Path.Combine(_tmpRoot, ".git");
@@ -95,10 +100,10 @@ public sealed class ProjectIndicatorTests
         File.WriteAllText(Path.Combine(gitDir, "HEAD"), "a1b2c3d4e5f6789012345678901234567890abcd\n");
 
         // Helper truncates to git's default short-sha length (7).
-        Assert.IsTrue(ProjectIndicator.BuildIndicator(_tmpRoot).EndsWith("- a1b2c3d"));
+        Assert.EndsWith("- a1b2c3d", ProjectIndicator.BuildIndicator(_tmpRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_GitRepoWithMissingHEADFile_FallsBackToFolderName()
     {
         // .git directory exists but HEAD is missing — corrupt repo or
@@ -107,10 +112,10 @@ public sealed class ProjectIndicatorTests
         Directory.CreateDirectory(gitDir);
 
         string folderName = Path.GetFileName(_tmpRoot);
-        Assert.AreEqual(folderName, ProjectIndicator.BuildIndicator(_tmpRoot));
+        Assert.Equal(folderName, ProjectIndicator.BuildIndicator(_tmpRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_GitWorktreePointer_FollowsToWorktreeHead()
     {
         // Worktree case: <project>/.git is a FILE with "gitdir: <path>"
@@ -126,26 +131,26 @@ public sealed class ProjectIndicatorTests
         File.WriteAllText(Path.Combine(worktreeDir, ".git"), $"gitdir: {worktreeGitDir}\n");
         File.WriteAllText(Path.Combine(worktreeGitDir, "HEAD"), "ref: refs/heads/feature/x\n");
 
-        Assert.AreEqual("wt-feature - feature/x", ProjectIndicator.BuildIndicator(worktreeDir));
+        Assert.Equal("wt-feature - feature/x", ProjectIndicator.BuildIndicator(worktreeDir));
     }
 
     // ── Tier 3: non-git folder ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_NonGitFolder_ReturnsFolderName()
     {
         // No .git at all — fall through to the leaf folder name.
         string folderName = Path.GetFileName(_tmpRoot);
-        Assert.AreEqual(folderName, ProjectIndicator.BuildIndicator(_tmpRoot));
+        Assert.Equal(folderName, ProjectIndicator.BuildIndicator(_tmpRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildIndicator_FolderWithTrailingSeparator_StripsItBeforeNameExtraction()
     {
         // "C:\projects\foo\" and "C:\projects\foo" both should resolve to "foo".
         // Same on POSIX: "/home/user/foo/" → "foo".
         string folderName = Path.GetFileName(_tmpRoot);
         string withTrailing = _tmpRoot + Path.DirectorySeparatorChar;
-        Assert.AreEqual(folderName, ProjectIndicator.BuildIndicator(withTrailing));
+        Assert.Equal(folderName, ProjectIndicator.BuildIndicator(withTrailing));
     }
 }

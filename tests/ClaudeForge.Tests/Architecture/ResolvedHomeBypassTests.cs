@@ -37,7 +37,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// suppressed.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ResolvedHomeBypassTests
 {
     /// <summary>
@@ -81,12 +80,12 @@ public sealed class ResolvedHomeBypassTests
     private static readonly Regex ManagedLiteral =
         new(@"""managed-(settings|mcp)", RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void NoProductionCodeResolvesTheClaudeHomeOutsideTheSanctionedAccessors()
     {
         string repoRoot = FindRepoRoot();
         string srcDir = Path.Combine(repoRoot, "src");
-        Assert.IsTrue(Directory.Exists(srcDir), $"Expected production sources at '{srcDir}'.");
+        Assert.True(Directory.Exists(srcDir), $"Expected production sources at '{srcDir}'.");
 
         List<string> violations = [];
         Dictionary<string, int> allowedSeen = new(StringComparer.Ordinal);
@@ -139,21 +138,21 @@ public sealed class ResolvedHomeBypassTests
             }
         }
 
-        Assert.IsTrue(filesScanned > 100, $"Only {filesScanned} production files scanned — src/ moved.");
+        Assert.True(filesScanned > 100, $"Only {filesScanned} production files scanned — src/ moved.");
 
         // ⛔ The other half of the canary, and the one that is easy to omit: a scan that matches
         // NOTHING passes. If the sanctioned sites stopped being seen, the regexes have drifted and
         // this guard is green while guarding nothing.
         foreach (string rule in new[] { "profile-read", "config-dir-read", "home-compose", "managed-compose" })
         {
-            Assert.IsTrue(
+            Assert.True(
                 allowedSeen.GetValueOrDefault(rule) > 0,
                 $"Rule '{rule}' matched no sanctioned site at all. Either the accessor it guards was "
                 + "removed (drop the rule and its allow-list entry) or the pattern no longer matches "
                 + "the code — in which case this rule is guarding nothing and passing.");
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, violations.Count,
             $"{violations.Count} production site(s) resolve the Claude home outside the sanctioned "
             + "accessors. Each compiles and passes every test while silently reading ~/.claude for a "

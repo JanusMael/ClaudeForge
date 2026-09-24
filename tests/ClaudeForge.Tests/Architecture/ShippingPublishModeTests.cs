@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// See <c>plans/00003-release-built-from-shared-packages.md</c>, Phase D step D3.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ShippingPublishModeTests
 {
     /// <summary>The MSBuild target under guard.</summary>
@@ -49,13 +48,13 @@ public sealed class ShippingPublishModeTests
     /// succeeds, and the guard reports nothing forever. The same is true of a condition that stops
     /// selecting this project. Neither shows up as a failure anywhere.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheGuardExistsAndHangsOffThePublishPipeline()
     {
         XElement guard = LoadGuardTarget();
 
         string hook = guard.Attribute("BeforeTargets")?.Value ?? string.Empty;
-        Assert.IsTrue(
+        Assert.True(
             hook.Contains("Publish", StringComparison.Ordinal),
             $"'{GuardTargetName}' must hang off a PUBLISH target, and its BeforeTargets is "
             + $"'{hook}'. Hooked on a build target it would fail every developer's Release build; "
@@ -63,12 +62,12 @@ public sealed class ShippingPublishModeTests
             + "the state this guard was written to end.");
 
         XElement? error = guard.Elements().FirstOrDefault(e => e.Name.LocalName == "Error");
-        Assert.IsNotNull(error,
+        MessageAssert.NotNull(error,
             $"'{GuardTargetName}' has no <Error>. A target that only prints is not a guard: the "
             + "release would go on publishing from ProjectReference while announcing that it had.");
 
         string errorCondition = error.Attribute("Condition")?.Value ?? string.Empty;
-        Assert.IsTrue(
+        Assert.True(
             errorCondition.Contains(PackageModeProperty, StringComparison.Ordinal)
             && errorCondition.Contains(HatchProperty, StringComparison.Ordinal),
             $"The <Error> condition must name both '{PackageModeProperty}' and '{HatchProperty}', "
@@ -87,7 +86,7 @@ public sealed class ShippingPublishModeTests
     /// when its condition stopped matching, or when the publish never reached it. The positive
     /// line is what makes the archived provenance readable without re-deriving anything.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void BothModesAnnounceThemselvesAtHighImportance()
     {
         XElement guard = LoadGuardTarget();
@@ -96,7 +95,7 @@ public sealed class ShippingPublishModeTests
             .Where(e => e.Name.LocalName == "Message")
             .ToList();
 
-        Assert.AreEqual(2, messages.Count,
+        MessageAssert.Equal(2, messages.Count,
             $"'{GuardTargetName}' must carry exactly two <Message> elements — one naming the hatch "
             + "when it is taken, one stating package mode when it is not — and it carries "
             + $"{messages.Count}. Dropping the package-mode line is the regression that makes an "
@@ -105,14 +104,14 @@ public sealed class ShippingPublishModeTests
         foreach (XElement message in messages)
         {
             string importance = message.Attribute("Importance")?.Value ?? string.Empty;
-            Assert.AreEqual("high", importance,
+            MessageAssert.Equal("high", importance,
                 "Every mode announcement must be Importance=\"high\". Publish-Rid.ps1 and the CI "
                 + "jobs run at default verbosity, where a normal-importance message is not printed "
                 + "— so the evidence would exist and never reach the log that archives it.");
         }
 
         string texts = string.Concat(messages.Select(m => m.Attribute("Text")?.Value));
-        Assert.IsTrue(texts.Contains(HatchProperty, StringComparison.Ordinal),
+        Assert.True(texts.Contains(HatchProperty, StringComparison.Ordinal),
             $"Neither <Message> names '{HatchProperty}'. The plan's requirement is that a departure "
             + "from package mode names ITSELF; a line saying only that something was unusual sends "
             + "the reader looking for which knob was turned.");
@@ -127,12 +126,12 @@ public sealed class ShippingPublishModeTests
     /// author into removing the explanation rather than the flag — punishing documentation and
     /// catching nothing. What must not appear is a live argument.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheReleasePublishTakesPackageModeAndNoHatch()
     {
         string script = ReadRepoFile(Path.Combine("src", "publish", "Publish-Rid.ps1"));
 
-        Assert.IsTrue(
+        Assert.True(
             script.Contains($"-p:{PackageModeProperty}=true", StringComparison.Ordinal),
             "Publish-Rid.ps1 holds the only 'dotnet publish' in the release chain, and it no longer "
             + $"passes -p:{PackageModeProperty}=true. Without that flag every RID of the release is "
@@ -149,7 +148,7 @@ public sealed class ShippingPublishModeTests
             .Select(line => line.Trim())
             .ToArray();
 
-        Assert.AreEqual(0, offending.Length,
+        MessageAssert.Equal(0, offending.Length,
             $"Publish-Rid.ps1 passes '{HatchProperty}' on a live line: "
             + string.Join(" | ", offending)
             + ". The hatch exists for the CI trim gate and the boot smoke, which have no feed "
@@ -162,9 +161,9 @@ public sealed class ShippingPublishModeTests
     /// Every publish that is NOT the release names its departure, rather than being exempted
     /// somewhere the reader cannot see.
     /// </summary>
-    [TestMethod]
-    [DataRow("src/publish/Smoke-PublishedBinary.ps1", "the boot smoke")]
-    [DataRow(".github/workflows/ci.yml", "the CI trim gate")]
+    [Theory]
+    [InlineData("src/publish/Smoke-PublishedBinary.ps1", "the boot smoke")]
+    [InlineData(".github/workflows/ci.yml", "the CI trim gate")]
     public void TheNonReleasePublishSitesDeclareTheHatchByName(string relativePath, string what)
     {
         string content = ReadRepoFile(relativePath.Replace('/', Path.DirectorySeparatorChar));
@@ -178,7 +177,7 @@ public sealed class ShippingPublishModeTests
             '\n',
             content.Split('\n').Where(line => !line.TrimStart().StartsWith('#')));
 
-        Assert.IsTrue(
+        Assert.True(
             live.Contains($"-p:{HatchProperty}=true", StringComparison.Ordinal),
             $"{relativePath} publishes a shipping app in Release and does not pass "
             + $"-p:{HatchProperty}=true, so {what} fails the guard. ⚠ The fix is the flag, never a "
@@ -195,7 +194,7 @@ public sealed class ShippingPublishModeTests
     /// so the run that built the shipped binary recorded its mode into a file nothing kept. A guard
     /// whose output is discarded is a guard nobody can cite afterwards.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheReleaseArchivesTheProvenanceLogs()
     {
         string workflow = ReadRepoFile(Path.Combine(".github", "workflows", "release.yml"));
@@ -208,7 +207,7 @@ public sealed class ShippingPublishModeTests
             .Count(line => line.TrimStart().StartsWith("path:", StringComparison.Ordinal)
                 && line.Contains("src/dist/logs/", StringComparison.Ordinal));
 
-        Assert.AreEqual(3, uploads,
+        MessageAssert.Equal(3, uploads,
             "release.yml must archive the publish logs from all three publish jobs (Windows, Linux "
             + $"and macOS) and names 'src/dist/logs/' on {uploads} line(s). Each host publishes its "
             + "own RIDs, so a missing job is a platform whose shipped binary has no record of the "
@@ -220,7 +219,7 @@ public sealed class ShippingPublishModeTests
     {
         string targetsPath = Path.Combine(FindRepoRoot(), "Directory.Build.targets");
 
-        Assert.IsTrue(File.Exists(targetsPath),
+        Assert.True(File.Exists(targetsPath),
             $"The root Directory.Build.targets is missing ('{targetsPath}'). It carries the "
             + "shared-library reference switch, the publish strip and this guard; the subject is "
             + "gone, not merely renamed.");
@@ -229,7 +228,7 @@ public sealed class ShippingPublishModeTests
             .FirstOrDefault(e => e.Name.LocalName == "Target"
                 && e.Attribute("Name")?.Value == GuardTargetName);
 
-        Assert.IsNotNull(guard,
+        MessageAssert.NotNull(guard,
             $"'{GuardTargetName}' is not in the root Directory.Build.targets. Renaming or removing "
             + "it restores a world where the release can publish from ProjectReference while every "
             + "gate stays green — which is exactly what happened for the life of the feature.");
@@ -242,7 +241,7 @@ public sealed class ShippingPublishModeTests
     {
         string fullPath = Path.Combine(FindRepoRoot(), relativePath);
 
-        Assert.IsTrue(File.Exists(fullPath),
+        Assert.True(File.Exists(fullPath),
             $"'{relativePath}' is missing ('{fullPath}'). This guard's subject moved; point it at "
             + "the new path rather than deleting the assertion.");
 

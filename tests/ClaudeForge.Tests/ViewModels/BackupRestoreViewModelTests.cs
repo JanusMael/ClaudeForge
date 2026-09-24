@@ -47,10 +47,9 @@ internal static class BackupPageTestOptions
 /// Behaviour tests for <see cref="BackupRestoreViewModel"/>. Uses a stub dialog
 /// service so prompt flow is deterministic and requires no UI.
 /// </summary>
-[TestClass]
 public sealed class BackupRestoreViewModelTests
 {
-    [TestMethod]
+    [Fact]
     public void Refresh_AppliesCredentialsPreference()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
@@ -58,11 +57,11 @@ public sealed class BackupRestoreViewModelTests
             CredentialsPreference = true,
         };
         vm.Refresh();
-        Assert.IsTrue(vm.IncludeCredentials,
+        Assert.True(vm.IncludeCredentials,
             "Refresh should mirror the remembered credential choice into the checkbox.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_NullPreferenceLeavesCheckboxUnchecked()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
@@ -70,11 +69,11 @@ public sealed class BackupRestoreViewModelTests
             CredentialsPreference = null,
         };
         vm.Refresh();
-        Assert.IsFalse(vm.IncludeCredentials,
+        Assert.False(vm.IncludeCredentials,
             "When no preference is remembered the checkbox must start unchecked (safe default).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BackupCommand_AlwaysPromptsForCredentialsOnNonSanitizedBackups()
     {
         // the old "prompt-once, remember preference" pattern
@@ -96,12 +95,12 @@ public sealed class BackupRestoreViewModelTests
         try
         {
             await vm.BackupCommand.ExecuteAsync(null);
-            Assert.AreEqual(1, dialog.ConfirmCalls,
+            MessageAssert.Equal(1, dialog.ConfirmCalls,
                 "First non-Sanitized backup must raise the credentials prompt.");
 
             // Second invocation — must prompt again (no more remembered preference).
             await vm.BackupCommand.ExecuteAsync(null);
-            Assert.AreEqual(2, dialog.ConfirmCalls,
+            MessageAssert.Equal(2, dialog.ConfirmCalls,
                 "Subsequent non-Sanitized backups must ALSO raise the prompt — " +
                 "the old 'remember once' behaviour was removed 2026-05-15.");
         }
@@ -134,7 +133,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BackupCommand_CredentialsDialogDismissedViaX_AbortsBackup()
     {
         // regression for the X-close-proceeds bug.
@@ -170,10 +169,10 @@ public sealed class BackupRestoreViewModelTests
             string[] zips = Directory.Exists(vm.BackupDirectory)
                 ? Directory.GetFiles(vm.BackupDirectory, "*.zip")
                 : [];
-            Assert.AreEqual(0, zips.Length,
+            MessageAssert.Equal(0, zips.Length,
                 "X-dismissing the credentials prompt must abort the backup. " +
                 "Pre-fix bug: X collapsed to 'Omit' and proceeded silently.");
-            Assert.IsTrue(dialog.ConfirmCalls >= 1,
+            Assert.True(dialog.ConfirmCalls >= 1,
                 "The credentials prompt should have fired before the abort.");
         }
         finally
@@ -205,7 +204,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BackupCommand_Sanitized_SkipsCredentialsPromptEntirely()
     {
         // Sanitized mode hard-drops credentials (BackupEngine.ShouldSkipHomeFile)
@@ -226,10 +225,10 @@ public sealed class BackupRestoreViewModelTests
         try
         {
             await vm.BackupCommand.ExecuteAsync(null);
-            Assert.AreEqual(0, dialog.ConfirmCalls,
+            MessageAssert.Equal(0, dialog.ConfirmCalls,
                 "Sanitized-mode backups must NOT raise the credentials prompt — " +
                 "the credentials file is dropped regardless of the user's answer.");
-            Assert.IsFalse(vm.IncludeCredentials,
+            Assert.False(vm.IncludeCredentials,
                 "Sanitized mode force-clears IncludeCredentials so no carry-over " +
                 "from a prior non-Sanitized backup can leak credentials in.");
         }
@@ -262,7 +261,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreCommand_DirtyGuard_PromptsInOrder()
     {
         StubDialogService dialog = new() { ConfirmReturns = false }; // user always declines
@@ -286,7 +285,7 @@ public sealed class BackupRestoreViewModelTests
         await vm.RestoreCommand.ExecuteAsync(row);
 
         // Two sequential prompts: Save-first?  → No.  Discard?  → No.  Cancel.
-        Assert.AreEqual(2, dialog.ConfirmCalls,
+        MessageAssert.Equal(2, dialog.ConfirmCalls,
             "Dirty-guard flow must show Save-first then Discard prompts when the user declines both.");
     }
 
@@ -299,7 +298,7 @@ public sealed class BackupRestoreViewModelTests
     /// "[Create Backup] → unsaved-changes prompt → Save → dialog title says
     /// 'Restore Preview' even though we're backing up."
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task BackupCommand_DirtyGuard_PassesIsRestoreContextFalseToSave()
     {
         bool? capturedContext = null;
@@ -325,9 +324,9 @@ public sealed class BackupRestoreViewModelTests
         {
             await vm.BackupCommand.ExecuteAsync(null);
 
-            Assert.IsNotNull(capturedContext,
+            MessageAssert.NotNull(capturedContext,
                 "SaveAllWorkspaces should have been invoked once the user accepted the dirty-prompt.");
-            Assert.IsFalse(capturedContext!.Value,
+            Assert.False(capturedContext!.Value,
                 "Backup-flow pre-save guard MUST pass isRestoreContext: false so the " +
                 "SaveDialog uses 'Save Changes' / 'Saving N changes' labels, not the " +
                 "restore-themed 'Restore Preview' / 'Restoring N changes' / 'will be restored to'.");
@@ -367,7 +366,7 @@ public sealed class BackupRestoreViewModelTests
     /// Symmetric to the Backup test — pins the Restore flow's correct context
     /// against the same callback signature change.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task RestoreCommand_DirtyGuard_PassesIsRestoreContextTrueToSave()
     {
         bool? capturedContext = null;
@@ -394,14 +393,14 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.RestoreCommand.ExecuteAsync(row);
 
-        Assert.IsNotNull(capturedContext,
+        MessageAssert.NotNull(capturedContext,
             "SaveAllWorkspaces should have been invoked once the user accepted the dirty-prompt.");
-        Assert.IsTrue(capturedContext!.Value,
+        Assert.True(capturedContext!.Value,
             "Restore-flow pre-save guard MUST pass isRestoreContext: true so the " +
             "SaveDialog uses 'Restore Preview' / 'Restoring N changes' / 'will be restored to' labels.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_SetsIsBusyDuringConfirmDialog()
     {
         bool isBusyDuringDialog = false;
@@ -424,13 +423,13 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.DeleteCommand.ExecuteAsync(row);
 
-        Assert.IsTrue(isBusyDuringDialog,
+        Assert.True(isBusyDuringDialog,
             "IsBusy must be true while the delete confirmation dialog is showing.");
-        Assert.IsFalse(vm.IsBusy,
+        Assert.False(vm.IsBusy,
             "IsBusy must be reset to false after DeleteAsync completes.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Dispose_UnsubscribesPersistentStateChanged()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
@@ -449,29 +448,29 @@ public sealed class BackupRestoreViewModelTests
         EventHandler? evt = field?.GetValue(vm) as EventHandler;
         evt?.Invoke(vm, EventArgs.Empty);
 
-        Assert.AreEqual(0, callCount,
+        MessageAssert.Equal(0, callCount,
             "No handlers should fire after Dispose() nulls PersistentStateChanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupModeConverter_ConvertsBothDirections()
     {
         object? result = BackupModeConverter.IsSettingsOnly.Convert(
             BackupMode.SettingsOnly, typeof(bool), null, CultureInfo.InvariantCulture);
-        Assert.IsTrue((bool?)result);
+        Assert.True((bool?)result);
 
         result = BackupModeConverter.IsFull.Convert(
             BackupMode.SettingsOnly, typeof(bool), null, CultureInfo.InvariantCulture);
-        Assert.IsFalse((bool?)result);
+        Assert.False((bool?)result);
 
         object? back = BackupModeConverter.IsFull.ConvertBack(
             true, typeof(BackupMode), null, CultureInfo.InvariantCulture);
-        Assert.AreEqual(BackupMode.Full, back);
+        Assert.Equal(BackupMode.Full, back);
     }
 
     // ── New hardening tests ──────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task BackupAsync_WhenCreateDirectoryThrows_ResetsIsBackingUpAndShowsAlert()
     {
         // Create a temp file so BackupDirectory points at a file, causing CreateDirectory to throw.
@@ -487,9 +486,9 @@ public sealed class BackupRestoreViewModelTests
 
             await vm.BackupCommand.ExecuteAsync(null);
 
-            Assert.IsFalse(vm.IsBusy,
+            Assert.False(vm.IsBusy,
                 "IsBusy must be reset to false even when CreateDirectory throws (finally block).");
-            Assert.IsTrue(alertDialog.AlertCalls >= 1,
+            Assert.True(alertDialog.AlertCalls >= 1,
                 "ShowAlertAsync must be called at least once with the failure message.");
         }
         finally
@@ -505,7 +504,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_WhenCallbackThrows_DoesNotLeakException()
     {
         // If OnRestoreCompleted throws, the exception must be swallowed (logged only).
@@ -537,7 +536,7 @@ public sealed class BackupRestoreViewModelTests
         // Must not throw even if the restore path has an error.
         await vm.RestoreCommand.ExecuteAsync(row);
 
-        Assert.IsFalse(vm.IsBusy,
+        Assert.False(vm.IsBusy,
             "IsBusy must be reset to false after restore completes (success or failure).");
         // Note: the callback won't fire for a non-existent archive (no successful restore),
         // but this verifies the command path terminates cleanly and IsBusy is always reset.
@@ -548,7 +547,7 @@ public sealed class BackupRestoreViewModelTests
     //  UI-flow paths
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseBackupDirectoryAsync_FirstSet_MirrorsToRestore()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/backups" };
@@ -559,13 +558,13 @@ public sealed class BackupRestoreViewModelTests
         // to RestoreDirectory so the user doesn't have to configure both.
         await vm.BrowseBackupDirectoryCommand.ExecuteAsync(null);
 
-        Assert.AreEqual("/tmp/backups", vm.BackupDirectory);
-        Assert.AreEqual("/tmp/backups", vm.RestoreDirectory,
+        Assert.Equal("/tmp/backups", vm.BackupDirectory);
+        MessageAssert.Equal("/tmp/backups", vm.RestoreDirectory,
             "First-set must mirror BackupDirectory to RestoreDirectory.");
-        Assert.AreEqual(1, dlg.PickFolderCalls);
+        Assert.Equal(1, dlg.PickFolderCalls);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseBackupDirectoryAsync_AlreadyConfigured_NoMirror()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/new-backup-dir" };
@@ -578,12 +577,12 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.BrowseBackupDirectoryCommand.ExecuteAsync(null);
 
-        Assert.AreEqual("/tmp/new-backup-dir", vm.BackupDirectory);
-        Assert.AreEqual("/tmp/old-restore-dir", vm.RestoreDirectory,
+        Assert.Equal("/tmp/new-backup-dir", vm.BackupDirectory);
+        MessageAssert.Equal("/tmp/old-restore-dir", vm.RestoreDirectory,
             "When RestoreDirectory is already set, BrowseBackupDirectory must NOT mirror.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseBackupDirectoryAsync_UserCancels_NoStateChange()
     {
         StubDialogService dlg = new() { PickFolderReturns = null };
@@ -592,11 +591,11 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.BrowseBackupDirectoryCommand.ExecuteAsync(null);
 
-        Assert.AreEqual("/tmp/x", vm.BackupDirectory,
+        MessageAssert.Equal("/tmp/x", vm.BackupDirectory,
             "User dismissing the folder picker must leave BackupDirectory unchanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseRestoreDirectoryAsync_FirstSet_MirrorsToBackup()
     {
         StubDialogService dlg = new() { PickFolderReturns = "/tmp/restore" };
@@ -605,12 +604,12 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.BrowseRestoreDirectoryCommand.ExecuteAsync(null);
 
-        Assert.AreEqual("/tmp/restore", vm.RestoreDirectory);
-        Assert.AreEqual("/tmp/restore", vm.BackupDirectory,
+        Assert.Equal("/tmp/restore", vm.RestoreDirectory);
+        MessageAssert.Equal("/tmp/restore", vm.BackupDirectory,
             "First-set must mirror RestoreDirectory to BackupDirectory.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseRestoreDirectoryAsync_UserCancels_NoStateChange()
     {
         StubDialogService dlg = new() { PickFolderReturns = null };
@@ -619,10 +618,10 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.BrowseRestoreDirectoryCommand.ExecuteAsync(null);
 
-        Assert.AreEqual("/tmp/x", vm.RestoreDirectory);
+        Assert.Equal("/tmp/x", vm.RestoreDirectory);
     }
 
-    [TestMethod]
+    [Fact]
     public void OnBackupDirectoryChanged_AfterInit_FiresPersistentStateChanged()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
@@ -633,12 +632,12 @@ public sealed class BackupRestoreViewModelTests
 
         vm.BackupDirectory = "/tmp/changed";
 
-        Assert.AreEqual(1, fired,
+        MessageAssert.Equal(1, fired,
             "After init, mutating BackupDirectory must fire PersistentStateChanged "
             + "so MainWindowViewModel persists the new path to gui-state.json.");
     }
 
-    [TestMethod]
+    [Fact]
     public void OnRestoreDirectoryChanged_AfterInit_FiresPersistentStateChanged()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
@@ -649,10 +648,10 @@ public sealed class BackupRestoreViewModelTests
 
         vm.RestoreDirectory = "/tmp/changed";
 
-        Assert.AreEqual(1, fired);
+        Assert.Equal(1, fired);
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_SuppressesPersistentStateChanged_DuringInitialSeed()
     {
         // Refresh sets _initialized=false, seeds from Initial* properties,
@@ -670,67 +669,67 @@ public sealed class BackupRestoreViewModelTests
 
         vm.Refresh();
 
-        Assert.AreEqual(0, fired,
+        MessageAssert.Equal(0, fired,
             "Refresh's initial seed must NOT fire PersistentStateChanged — only "
             + "user-initiated edits after initialisation should trigger persistence.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HasRestoreDirectory_TracksRestoreDirectoryEmptiness()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
-        Assert.IsFalse(vm.HasRestoreDirectory);
+        Assert.False(vm.HasRestoreDirectory);
 
         vm.RestoreDirectory = "/tmp/x";
-        Assert.IsTrue(vm.HasRestoreDirectory);
+        Assert.True(vm.HasRestoreDirectory);
 
         vm.RestoreDirectory = string.Empty;
-        Assert.IsFalse(vm.HasRestoreDirectory);
+        Assert.False(vm.HasRestoreDirectory);
     }
 
-    [TestMethod]
+    [Fact]
     public void HasNeverBackedUp_TracksLastBackupUtcNullness()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
         // Default null → never backed up.
-        Assert.IsTrue(vm.HasNeverBackedUp);
+        Assert.True(vm.HasNeverBackedUp);
 
         vm.LastBackupUtc = DateTime.UtcNow.AddDays(-1);
         // Setting after construction does NOT fire the property-changed pipeline
         // for HasNeverBackedUp because LastBackupUtc is a plain auto-property.
         // The label itself recomputes lazily (it's an expression-body), so the
         // value flips correctly even without notification.
-        Assert.IsFalse(vm.HasNeverBackedUp);
+        Assert.False(vm.HasNeverBackedUp);
     }
 
-    [TestMethod]
+    [Fact]
     public void LastBackupLabel_NullUtc_RendersNeverString()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
-        Assert.AreEqual(
+        Assert.Equal(
             Strings.LabelLastBackupNever,
             vm.LastBackupLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public void CanCreateBackup_FalseWhenNoDirectory()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
-        Assert.IsFalse(vm.CanCreateBackup,
+        Assert.False(vm.CanCreateBackup,
             "Without a backup directory the Create command must be disabled.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowMsixTab_FalseWhenStatusIsNull()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
-        Assert.IsFalse(vm.ShowMsixTab,
+        Assert.False(vm.ShowMsixTab,
             "MsixStatus is null by default → ShowMsixTab must be false on every platform.");
     }
 
     // ── ShareBackupAsync — null-safety + happy-path delegation ────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackupAsync_NullShareService_NoOp()
     {
         // Construct WITHOUT a share service.  The command must short-circuit
@@ -740,19 +739,19 @@ public sealed class BackupRestoreViewModelTests
         // Pass = no exception thrown.
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackupAsync_NullRow_NoOp()
     {
         RecordingShareService share = new();
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create(), share);
         await vm.ShareBackupCommand.ExecuteAsync(null);
-        Assert.AreEqual(0, share.ShareFileCalls,
+        MessageAssert.Equal(0, share.ShareFileCalls,
             "Null row must short-circuit without invoking the share service.");
     }
 
     // ── remaining BackupRestoreViewModel paths ──
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackupAsync_WithRowAndService_ForwardsToShareService()
     {
         // Happy path: a non-null row + non-null share service → forwards
@@ -776,11 +775,11 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
 
-        Assert.AreEqual(1, share.ShareFileCalls);
-        Assert.AreEqual("/tmp/example.zip", share.LastFilePath);
+        Assert.Equal(1, share.ShareFileCalls);
+        Assert.Equal("/tmp/example.zip", share.LastFilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackupAsync_ShareServiceThrows_DoesNotPropagate()
     {
         // The command must catch share-service exceptions internally so a
@@ -805,7 +804,7 @@ public sealed class BackupRestoreViewModelTests
         await vm.ShareBackupCommand.ExecuteAsync(row);
     }
 
-    [TestMethod]
+    [Fact]
     public void OpenFileLocation_NullRow_NoOp()
     {
         // Sync command — null row must short-circuit before reaching
@@ -816,7 +815,7 @@ public sealed class BackupRestoreViewModelTests
         // Pass = no NullReferenceException trying to deref row.Entry.
     }
 
-    [TestMethod]
+    [Fact]
     public async Task FixMsixAsync_NotOnWindowsOrNoFix_EarlyReturn()
     {
         // FixMsixAsync guards on (!OperatingSystem.IsWindows() || IsBusy)
@@ -828,12 +827,12 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.FixMsixCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, dialog.ConfirmCalls,
+        MessageAssert.Equal(0, dialog.ConfirmCalls,
             "FixMsix must NOT show a confirm dialog when MsixStatus.NeedsFix is unset.");
-        Assert.IsFalse(vm.IsBusy);
+        Assert.False(vm.IsBusy);
     }
 
-    [TestMethod]
+    [Fact]
     public void CancelOperation_NoActiveOperation_NoThrow()
     {
         // CancelOperation = _operationCts?.Cancel() — must be a no-op
@@ -848,7 +847,7 @@ public sealed class BackupRestoreViewModelTests
     //  Drag-drop restore
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_NullOrEmptyPath_NoOp()
     {
         StubDialogService dialog = new();
@@ -858,13 +857,13 @@ public sealed class BackupRestoreViewModelTests
         await vm.RestoreFromDroppedArchiveAsync(string.Empty);
         await vm.RestoreFromDroppedArchiveAsync("   ");
 
-        Assert.AreEqual(0, dialog.AlertCalls,
+        MessageAssert.Equal(0, dialog.AlertCalls,
             "Empty / whitespace paths should silently no-op — they represent the " +
             "'no payload' case rather than a user error worth alerting on.");
-        Assert.AreEqual(0, dialog.ConfirmCalls);
+        Assert.Equal(0, dialog.ConfirmCalls);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_NonZipExtension_ShowsInvalidAlert()
     {
         // Defence-in-depth: the View's DragOver gate filters to .zip before
@@ -881,10 +880,10 @@ public sealed class BackupRestoreViewModelTests
         {
             await vm.RestoreFromDroppedArchiveAsync(tmp);
 
-            Assert.AreEqual(1, dialog.AlertCalls,
+            MessageAssert.Equal(1, dialog.AlertCalls,
                 "Non-zip drops must surface an error alert so the user " +
                 "understands why nothing happened.");
-            Assert.AreEqual(0, dialog.ConfirmCalls,
+            MessageAssert.Equal(0, dialog.ConfirmCalls,
                 "Confirm prompt must not fire — extension check happens first.");
         }
         finally
@@ -900,7 +899,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_CorruptZip_ShowsInvalidAlert()
     {
         // A .zip extension but random bytes inside — TryReadEntry returns
@@ -917,9 +916,9 @@ public sealed class BackupRestoreViewModelTests
         {
             await vm.RestoreFromDroppedArchiveAsync(tmp);
 
-            Assert.AreEqual(1, dialog.AlertCalls,
+            MessageAssert.Equal(1, dialog.AlertCalls,
                 "Corrupt zip must surface the 'not a valid backup' alert.");
-            Assert.AreEqual(0, dialog.ConfirmCalls);
+            Assert.Equal(0, dialog.ConfirmCalls);
         }
         finally
         {
@@ -934,7 +933,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_MissingFile_ShowsInvalidAlert()
     {
         // A .zip path that doesn't exist on disk — TryReadEntry returns
@@ -947,12 +946,12 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.RestoreFromDroppedArchiveAsync(missing);
 
-        Assert.AreEqual(1, dialog.AlertCalls,
+        MessageAssert.Equal(1, dialog.AlertCalls,
             "A non-existent path under a .zip name must still alert — silently " +
             "no-oping would be confusing to a user who just dropped a file.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_ValidZip_FiresConfirmPrompt()
     {
         // Construct a real backup zip so TryReadEntry returns a non-corrupt
@@ -973,17 +972,17 @@ public sealed class BackupRestoreViewModelTests
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
-            Assert.IsTrue(created.Succeeded, "Test prerequisite: backup must create.");
+            Assert.True(created.Succeeded, "Test prerequisite: backup must create.");
 
             StubDialogService dialog = new() { ConfirmReturns = false }; // user cancels
             BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
             await vm.RestoreFromDroppedArchiveAsync(zipPath);
 
-            Assert.AreEqual(1, dialog.ConfirmCalls,
+            MessageAssert.Equal(1, dialog.ConfirmCalls,
                 "Valid backup zip must fire exactly one confirm prompt before any " +
                 "guard the click-from-list path runs (dirty-workspace etc.).");
-            Assert.AreEqual(0, dialog.AlertCalls,
+            MessageAssert.Equal(0, dialog.AlertCalls,
                 "No error alert on the happy path — validation passed.");
         }
         finally
@@ -1004,7 +1003,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_ConfirmDismissedViaX_DoesNotRestore()
     {
         // Universal X-dismiss contract: confirming-by-X must abort, never
@@ -1023,7 +1022,7 @@ public sealed class BackupRestoreViewModelTests
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
-            Assert.IsTrue(created.Succeeded);
+            Assert.True(created.Succeeded);
 
             // Wire up a sentinel for "did we proceed past the confirm prompt?"
             // If we did, the dirty-workspace check or the cross-platform
@@ -1037,7 +1036,7 @@ public sealed class BackupRestoreViewModelTests
 
             await vm.RestoreFromDroppedArchiveAsync(zipPath);
 
-            Assert.AreEqual(1, dialog.ConfirmCalls,
+            MessageAssert.Equal(1, dialog.ConfirmCalls,
                 "X-dismissing the drop-restore prompt must abort BEFORE the " +
                 "dirty-workspace prompt fires.  Pre-fix bug: X would collapse " +
                 "to 'cancel' and silently proceed.");
@@ -1060,7 +1059,7 @@ public sealed class BackupRestoreViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreFromDroppedArchive_WhileBusy_NoOp()
     {
         // Re-entrancy guard — same shape as RestoreCommand's IsBusy check.
@@ -1074,8 +1073,8 @@ public sealed class BackupRestoreViewModelTests
 
         await vm.RestoreFromDroppedArchiveAsync("C:/does-not-matter.zip");
 
-        Assert.AreEqual(0, dialog.AlertCalls);
-        Assert.AreEqual(0, dialog.ConfirmCalls,
+        Assert.Equal(0, dialog.AlertCalls);
+        MessageAssert.Equal(0, dialog.ConfirmCalls,
             "Drop-restore while another operation is in flight must silently no-op " +
             "rather than queue or race the live operation.");
     }
@@ -1114,7 +1113,7 @@ public sealed class BackupRestoreViewModelTests
     //  BackupRowViewModel + BackupModeConverter formatters
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_DisplayFormatters_ReadFromEntry()
     {
         BackupEntry entry = new()
@@ -1134,19 +1133,19 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
-        Assert.AreEqual("backup-2026.zip", row.DisplayName);
-        StringAssert.Contains(row.DisplayDate, "2026");
-        StringAssert.Contains(row.DisplaySize, "MB");
-        Assert.AreEqual("Windows", row.DisplayPlatform);
-        Assert.AreEqual("SettingsOnly", row.DisplayMode);
+        Assert.Equal("backup-2026.zip", row.DisplayName);
+        OrdinalAssert.Contains("2026", row.DisplayDate);
+        OrdinalAssert.Contains("MB", row.DisplaySize);
+        Assert.Equal("Windows", row.DisplayPlatform);
+        Assert.Equal("SettingsOnly", row.DisplayMode);
         // Short form for the cell (2026-05-19) — "ClaudeCode" → "Code".
-        Assert.AreEqual("Code", row.DisplayClients);
+        Assert.Equal("Code", row.DisplayClients);
         // Tooltip retains the full product name for hover-disambiguation.
-        StringAssert.Contains(row.DisplayClientsTooltip, "ClaudeCode");
-        Assert.IsTrue(row.IsRestorable);
+        OrdinalAssert.Contains("ClaudeCode", row.DisplayClientsTooltip);
+        Assert.True(row.IsRestorable);
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_CorruptArchive_NotRestorable()
     {
         // BackupEntry.IsCorrupt is a computed property — true when Manifest is null.
@@ -1159,12 +1158,12 @@ public sealed class BackupRestoreViewModelTests
             Manifest = null, // → IsCorrupt = true
         };
         BackupRowViewModel row = new(entry);
-        Assert.IsFalse(row.IsRestorable);
-        Assert.AreEqual("?", row.DisplayPlatform,
+        Assert.False(row.IsRestorable);
+        MessageAssert.Equal("?", row.DisplayPlatform,
             "Missing manifest renders platform as '?'.");
-        Assert.AreEqual("—", row.DisplayMode);
-        Assert.AreEqual("corrupt", row.DisplayClients);
-        StringAssert.Contains(row.DisplayClientsTooltip, "Manifest is unreadable",
+        Assert.Equal("—", row.DisplayMode);
+        Assert.Equal("corrupt", row.DisplayClients);
+        MessageAssert.Contains("Manifest is unreadable", row.DisplayClientsTooltip,
             "Corrupt-archive tooltip should explain the empty cell.");
     }
 
@@ -1174,7 +1173,7 @@ public sealed class BackupRestoreViewModelTests
     // freeing space for the File name flex column.  Hover-tooltip retains
     // the long product names for disambiguation.
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_DisplayClients_AbbreviatesBothProducts()
     {
         BackupEntry entry = new()
@@ -1192,13 +1191,13 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
-        Assert.AreEqual("Code+Desktop", row.DisplayClients,
+        MessageAssert.Equal("Code+Desktop", row.DisplayClients,
             "Both ClaudeCode and ClaudeDesktop must compact to their short forms in the cell.");
-        StringAssert.Contains(row.DisplayClientsTooltip, "ClaudeCode");
-        StringAssert.Contains(row.DisplayClientsTooltip, "ClaudeDesktop");
+        OrdinalAssert.Contains("ClaudeCode", row.DisplayClientsTooltip);
+        OrdinalAssert.Contains("ClaudeDesktop", row.DisplayClientsTooltip);
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_DisplayMode_SanitizedRow_IsCompactWithFullTooltip()
     {
         // cell label shortened from "Sanitized (for sharing)"
@@ -1220,15 +1219,15 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry);
 
-        Assert.AreEqual("Sanitized", row.DisplayMode,
+        MessageAssert.Equal("Sanitized", row.DisplayMode,
             "Sanitized cell label must be the compact form.");
-        StringAssert.Contains(row.DisplayModeTooltip, "for sharing",
+        MessageAssert.Contains("for sharing", row.DisplayModeTooltip,
             "Tooltip must carry the long-form explanation.");
-        StringAssert.Contains(row.DisplayModeTooltip, "not restorable",
+        MessageAssert.Contains("not restorable", row.DisplayModeTooltip,
             "Tooltip should also surface the not-restorable consequence.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_DisplayModeTooltip_NonSanitized_MirrorsDisplayMode()
     {
         // For non-Sanitized modes the tooltip mirrors the cell value so
@@ -1248,12 +1247,12 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry);
 
-        Assert.AreEqual("Full", row.DisplayMode);
-        Assert.AreEqual(row.DisplayMode, row.DisplayModeTooltip,
+        Assert.Equal("Full", row.DisplayMode);
+        MessageAssert.Equal(row.DisplayMode, row.DisplayModeTooltip,
             "Tooltip must mirror DisplayMode for non-Sanitized rows.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_DisplayClients_UnknownClientFallsBackToRawName()
     {
         // Future-proof: if a new product name appears in the manifest that the
@@ -1276,15 +1275,15 @@ public sealed class BackupRestoreViewModelTests
         BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
         // "ClaudeCode" abbreviates to "Code"; "ClaudeFutureProduct" passes through verbatim.
-        Assert.AreEqual("Code+ClaudeFutureProduct", row.DisplayClients);
+        Assert.Equal("Code+ClaudeFutureProduct", row.DisplayClients);
     }
 
-    [TestMethod]
-    [DataRow("claudecode", "Code")]
-    [DataRow("CLAUDECODE", "Code")]
-    [DataRow("ClaudeCode", "Code")]
-    [DataRow("claudedesktop", "Desktop")]
-    [DataRow("ClaudeDESKTOP", "Desktop")]
+    [Theory]
+    [InlineData("claudecode", "Code")]
+    [InlineData("CLAUDECODE", "Code")]
+    [InlineData("ClaudeCode", "Code")]
+    [InlineData("claudedesktop", "Desktop")]
+    [InlineData("ClaudeDESKTOP", "Desktop")]
     public void BackupRowViewModel_DisplayClients_AbbreviationIsCaseInsensitive(
         string manifestValue, string expectedAbbrev)
     {
@@ -1308,7 +1307,7 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry, BackupPageTestOptions.Abbreviations);
 
-        Assert.AreEqual(expectedAbbrev, row.DisplayClients,
+        MessageAssert.Equal(expectedAbbrev, row.DisplayClients,
             $"'{manifestValue}' must abbreviate case-insensitively.");
     }
 
@@ -1320,7 +1319,7 @@ public sealed class BackupRestoreViewModelTests
     //  L2 — BackupRowViewModel inherits ObservableObject
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_IsObservableObject()
     {
         // The row class itself is a plain DTO over the immutable
@@ -1338,7 +1337,7 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(entry);
 
-        Assert.IsInstanceOfType<ObservableObject>(row,
+        MessageAssert.IsAssignableFrom<ObservableObject>(row,
             "BackupRowViewModel must inherit ObservableObject so future " +
             "mutators have a working PropertyChanged wire (L2 contract).");
     }
@@ -1347,7 +1346,7 @@ public sealed class BackupRestoreViewModelTests
     //  L3 — Defence-in-depth: IsRestorable=false for Sanitized rows
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_SanitizedBackup_IsNotRestorable()
     {
         // The View's OnRestoreBackup handler early-returns when the
@@ -1364,16 +1363,16 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(sanitizedEntry);
 
-        Assert.IsFalse(row.IsRestorable,
+        Assert.False(row.IsRestorable,
             "Sanitized backups must not be restorable — the row-level guard " +
             "is the visual signal AND the early-return source for the View's " +
             "OnRestoreBackup defence-in-depth check (L3).");
-        Assert.IsTrue(row.IsSanitized,
+        Assert.True(row.IsSanitized,
             "IsSanitized must mirror the manifest Mode so the View can render " +
             "the yellow chip on the row.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_SettingsOnlyBackup_IsRestorable()
     {
         BackupEntry settingsOnlyEntry = new()
@@ -1386,11 +1385,11 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(settingsOnlyEntry);
 
-        Assert.IsTrue(row.IsRestorable);
-        Assert.IsFalse(row.IsSanitized);
+        Assert.True(row.IsRestorable);
+        Assert.False(row.IsSanitized);
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupRowViewModel_CorruptBackup_IsNotRestorable()
     {
         // No manifest → row is treated as corrupt → IsRestorable false.
@@ -1404,7 +1403,7 @@ public sealed class BackupRestoreViewModelTests
         };
         BackupRowViewModel row = new(corruptEntry);
 
-        Assert.IsFalse(row.IsRestorable,
+        Assert.False(row.IsRestorable,
             "Corrupt backups (no manifest) must not be restorable.");
     }
 
@@ -1418,7 +1417,7 @@ public sealed class BackupRestoreViewModelTests
     // a dependency on the real BackupEngine / filesystem sandbox.
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CreateBackup_PropagatesInitialProjectRoot_AsExplicitProjectDir()
     {
         const string projectRoot = @"C:/repos/MyApp";
@@ -1429,9 +1428,9 @@ public sealed class BackupRestoreViewModelTests
 
         BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
-        Assert.IsNotNull(request.ExplicitProjectDirs,
+        MessageAssert.NotNull(request.ExplicitProjectDirs,
             "ExplicitProjectDirs must never be null — empty array if no project open.");
-        CollectionAssert.AreEqual(new[] { projectRoot }, request.ExplicitProjectDirs.ToArray(),
+        MessageAssert.SequenceEqual(new[] { projectRoot }, request.ExplicitProjectDirs.ToArray(),
             "When InitialProjectRoot is set, BuildBackupRequest must thread it into " +
             "ExplicitProjectDirs verbatim — that's how BackupEngine.AddProjectClaudeData " +
             "learns to include the project's `.claude` directory.");
@@ -1446,23 +1445,23 @@ public sealed class BackupRestoreViewModelTests
     //  untested end to end, in a feature whose whole job is choosing what to copy.
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SelectableProducts_DefaultToEveryHostedProduct_Selected()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
 
-        Assert.AreEqual(2, vm.SelectableProducts.Count,
+        MessageAssert.Equal(2, vm.SelectableProducts.Count,
             "Both hosted products must be offered.");
-        Assert.IsTrue(vm.SelectableProducts.All(p => p.IsSelected),
+        Assert.True(vm.SelectableProducts.All(p => p.IsSelected),
             "Default is everything included — the behaviour the two checkboxes had.");
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { Strings.CheckboxClaudeCode, Strings.CheckboxClaudeDesktop },
             vm.SelectableProducts.Select(p => p.DisplayName).ToArray(),
             "Labels must still come from the resource table, in display order — the nine "
             + "locale translations are unchanged by moving the checkboxes into a template.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildBackupRequest_CarriesOnlyTheSelectedProducts()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
@@ -1473,15 +1472,15 @@ public sealed class BackupRestoreViewModelTests
 
         BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
-        Assert.AreEqual(1, request.Products.Count,
+        MessageAssert.Equal(1, request.Products.Count,
             "Only the still-selected product may be requested.");
-        Assert.IsFalse(request.Includes(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
+        Assert.False(request.Includes(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
             "Deselecting Claude Code must actually exclude it — otherwise the checkbox is "
             + "decorative and the user's choice is silently ignored.");
-        Assert.IsTrue(request.Includes(SchemaRegistry.ClaudeDesktopProduct));
+        Assert.True(request.Includes(SchemaRegistry.ClaudeDesktopProduct));
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildBackupRequest_WithNothingSelected_RequestsNoProducts()
     {
         // Legal and deliberately not gated: the engine produces a valid empty archive
@@ -1494,10 +1493,10 @@ public sealed class BackupRestoreViewModelTests
 
         BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
-        Assert.AreEqual(0, request.Products.Count);
+        Assert.Empty(request.Products);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectableProducts_ComeFromTheInjectedProductList()
     {
         // The shell passes its own section list, so the checkboxes cannot drift from the
@@ -1508,15 +1507,15 @@ public sealed class BackupRestoreViewModelTests
 
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create([other]));
 
-        Assert.AreEqual(1, vm.SelectableProducts.Count);
-        Assert.AreEqual("Other Agent", vm.SelectableProducts[0].DisplayName,
+        Assert.Single(vm.SelectableProducts);
+        MessageAssert.Equal("Other Agent", vm.SelectableProducts[0].DisplayName,
             "An unrecognised product falls back to its descriptor's display name.");
 
         BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
-        Assert.IsTrue(request.Includes(other));
+        Assert.True(request.Includes(other));
     }
 
-    [TestMethod]
+    [Fact]
     public void CreateBackup_WithNullProjectRoot_PassesEmptyExplicitProjectDirs()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create())
@@ -1526,22 +1525,22 @@ public sealed class BackupRestoreViewModelTests
 
         BackupRequest request = vm.BuildBackupRequest(@"C:/tmp/test-backup.zip");
 
-        Assert.IsNotNull(request.ExplicitProjectDirs,
+        MessageAssert.NotNull(request.ExplicitProjectDirs,
             "ExplicitProjectDirs must be empty (not null) when no project is open.");
-        Assert.AreEqual(0, request.ExplicitProjectDirs.Count,
+        MessageAssert.Equal(0, request.ExplicitProjectDirs.Count,
             "No project open → no entries in ExplicitProjectDirs " +
             "(preserves pre-fix behaviour for user-level-only backups).");
     }
 
-    [TestMethod]
+    [Fact]
     public void BackupIncludesProjectLabel_RendersBothShapes()
     {
         BackupRestoreViewModel vm = new(new StubDialogService(), BackupPageTestOptions.Create());
 
         // Shape 1: no project open.
-        Assert.IsNull(vm.OpenProjectName,
+        MessageAssert.Null(vm.OpenProjectName,
             "OpenProjectName must be null when InitialProjectRoot is unset.");
-        Assert.AreEqual(Strings.LabelBackupNoProjectOpen, vm.BackupIncludesProjectLabel,
+        MessageAssert.Equal(Strings.LabelBackupNoProjectOpen, vm.BackupIncludesProjectLabel,
             "With no project open the label must render the resx string for the " +
             "user-level-only state.");
 
@@ -1554,9 +1553,9 @@ public sealed class BackupRestoreViewModelTests
         const string projectRoot = @"C:/repos/MyApp";
         vm.InitialProjectRoot = projectRoot;
 
-        Assert.AreEqual("MyApp", vm.OpenProjectName,
+        MessageAssert.Equal("MyApp", vm.OpenProjectName,
             "OpenProjectName must be the bare folder name (Path.GetFileName) of the trimmed root.");
-        Assert.AreEqual(
+        MessageAssert.Equal(
             string.Format(CultureInfo.CurrentCulture, Strings.LabelBackupIncludesProject, "MyApp"),
             vm.BackupIncludesProjectLabel,
             "With a project open the label must format the resx template with the project name.");
@@ -1564,9 +1563,9 @@ public sealed class BackupRestoreViewModelTests
         // The [NotifyPropertyChangedFor] decorators on InitialProjectRoot MUST raise
         // PropertyChanged for both computed properties — that's how the Backup-tab
         // TextBlock re-renders without a Refresh() call.
-        Assert.IsTrue(propertyChanges.Contains(nameof(BackupRestoreViewModel.OpenProjectName)),
+        Assert.True(propertyChanges.Contains(nameof(BackupRestoreViewModel.OpenProjectName)),
             "Setting InitialProjectRoot must raise PropertyChanged for OpenProjectName.");
-        Assert.IsTrue(propertyChanges.Contains(nameof(BackupRestoreViewModel.BackupIncludesProjectLabel)),
+        Assert.True(propertyChanges.Contains(nameof(BackupRestoreViewModel.BackupIncludesProjectLabel)),
             "Setting InitialProjectRoot must raise PropertyChanged for BackupIncludesProjectLabel — " +
             "this is what drives the mid-session project-switch refresh on the Backup tab.");
     }

@@ -36,8 +36,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// real one would make the result a property of the machine the suite runs on.
 /// </para>
 /// </remarks>
-[TestClass]
-public sealed class SchemaProvenanceBadgeTests
+public sealed class SchemaProvenanceBadgeTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
@@ -75,8 +74,9 @@ public sealed class SchemaProvenanceBadgeTests
         }
     }
 
-    [TestInitialize]
-    public void Setup()
+    public SchemaProvenanceBadgeTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "cfbadge_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -91,8 +91,7 @@ public sealed class SchemaProvenanceBadgeTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -108,6 +107,12 @@ public sealed class SchemaProvenanceBadgeTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static async Task<MainWindowViewModel> LoadedAsync(HttpMessageHandler handler)
     {
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
@@ -120,7 +125,7 @@ public sealed class SchemaProvenanceBadgeTests
         NavigationNodeViewModel? header = vm.NavigationTree
             .FirstOrDefault(n => string.Equals(n.NodeId, nodeId, StringComparison.Ordinal));
 
-        Assert.IsNotNull(header, $"Premise: the '{nodeId}' section header must be in the tree.");
+        MessageAssert.NotNull(header, $"Premise: the '{nodeId}' section header must be in the tree.");
         return header;
     }
 
@@ -138,7 +143,7 @@ public sealed class SchemaProvenanceBadgeTests
         return probe.ProvenanceFor(product.SchemaFileName)!.ShortSha;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task WithNoNetwork_BothSectionsSayBundled()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -148,23 +153,23 @@ public sealed class SchemaProvenanceBadgeTests
             foreach (string nodeId in new[] { MainWindowViewModel.NavIdClaudeCode, MainWindowViewModel.NavIdClaudeDesktop })
             {
                 NavigationNodeViewModel header = Header(vm, nodeId);
-                Assert.AreEqual(Strings.SchemaBadgeBundled, header.Badge,
+                MessageAssert.Equal(Strings.SchemaBadgeBundled, header.Badge,
                     $"'{nodeId}' should report the bundled copy when the network refuses.");
-                Assert.IsFalse(string.IsNullOrWhiteSpace(header.BadgeTooltip),
+                Assert.False(string.IsNullOrWhiteSpace(header.BadgeTooltip),
                     "A badge with no hover text leaves the fingerprint unreachable.");
             }
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     /// <summary>
     /// With the network answering, Claude Code fetches and Claude Desktop does not — because
     /// Desktop has nowhere to fetch from, not because anything failed.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task WithAReachableNetwork_ClaudeCodeFetches_DesktopStaysBundled()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -172,27 +177,27 @@ public sealed class SchemaProvenanceBadgeTests
             // Premise, asserted rather than assumed: the two products differ in exactly the
             // way this test is about. If Desktop ever gains a published schema, this test is
             // making a claim about the wrong thing and should say so here.
-            StringAssert.StartsWith(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaUrl, "https://",
+            Assert.StartsWith("https://", SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaUrl,
                 StringComparison.OrdinalIgnoreCase);
-            Assert.IsFalse(
+            Assert.False(
                 SchemaRegistry.ClaudeDesktopProduct.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase),
                 "Premise: Claude Desktop's schema is hand-maintained and has no upstream URL.");
 
             MainWindowViewModel vm = await LoadedAsync(new ServingHandler());
 
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
-            Assert.IsNotNull(cc.Badge);
-            StringAssert.StartsWith(cc.Badge, "fetched", StringComparison.Ordinal,
+            Assert.NotNull(cc.Badge);
+            MessageAssert.StartsWith("fetched", cc.Badge, StringComparison.Ordinal,
                 "Claude Code reported the bundled copy while the network was answering.");
 
             NavigationNodeViewModel dt = Header(vm, MainWindowViewModel.NavIdClaudeDesktop);
-            Assert.AreEqual(Strings.SchemaBadgeBundled, dt.Badge,
+            MessageAssert.Equal(Strings.SchemaBadgeBundled, dt.Badge,
                 "Claude Desktop has no upstream, so a reachable network cannot change its badge.");
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     /// <summary>
@@ -203,7 +208,7 @@ public sealed class SchemaProvenanceBadgeTests
     /// pass just as well if the applier had been written to use that string unconditionally —
     /// so the sibling test below pins the other direction on the same run of the same code.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task ClaudeDesktop_SaysThereIsNothingToDownload_NotThatDownloadingFailed()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -217,11 +222,11 @@ public sealed class SchemaProvenanceBadgeTests
             string failedFetch = string.Format(
                 CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipBundledFmt, sha);
 
-            Assert.AreNotEqual(noUpstream, failedFetch,
+            MessageAssert.NotEqual(noUpstream, failedFetch,
                 "Premise: the two bundled tooltips must be different strings, or this test "
                 + "cannot distinguish them.");
 
-            Assert.AreEqual(noUpstream, dt.BadgeTooltip,
+            MessageAssert.Equal(noUpstream, dt.BadgeTooltip,
                 "Claude Desktop's schema is hand-maintained and no fetch is ever attempted for "
                 + "it. The failed-fetch tooltip would send the reader looking for a network "
                 + "problem they do not have.");
@@ -229,14 +234,14 @@ public sealed class SchemaProvenanceBadgeTests
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     /// <summary>
     /// The other direction: a product that DOES have an upstream, which fell back to bundled,
     /// gets the tooltip that says the fetch was tried.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -248,18 +253,18 @@ public sealed class SchemaProvenanceBadgeTests
             string failedFetch = string.Format(
                 CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipBundledFmt, sha);
 
-            Assert.AreEqual(failedFetch, cc.BadgeTooltip,
+            MessageAssert.Equal(failedFetch, cc.BadgeTooltip,
                 "Claude Code does have an upstream, so falling back to bundled IS a failed "
                 + "fetch and the tooltip should say so.");
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     /// <summary>The tooltip carries the short fingerprint, which is what a bug report needs.</summary>
-    [TestMethod]
+    [Fact]
     public async Task TheTooltipCarriesTheFingerprint()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -269,15 +274,15 @@ public sealed class SchemaProvenanceBadgeTests
 
             string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
 
-            Assert.IsNotNull(cc.BadgeTooltip);
-            StringAssert.Contains(cc.BadgeTooltip, sha, StringComparison.Ordinal,
+            Assert.NotNull(cc.BadgeTooltip);
+            MessageAssert.Contains(sha, cc.BadgeTooltip, StringComparison.Ordinal,
                 "The tooltip omits the fingerprint, so two installs cannot be compared from a "
                 + "screenshot — which is the case the badge exists for.");
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     /// <summary>
@@ -289,7 +294,7 @@ public sealed class SchemaProvenanceBadgeTests
     /// established. This does not exercise the null-provenance branch in the applier: those
     /// rows never reach it.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task RowsWithNoSchemaCarryNoBadge()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -302,18 +307,18 @@ public sealed class SchemaProvenanceBadgeTests
             List<NavigationNodeViewModel> others =
                 [.. vm.NavigationTree.Where(n => !sectionIds.Contains(n.NodeId, StringComparer.Ordinal))];
 
-            Assert.IsTrue(others.Count > 0, "Premise: the tree holds rows besides the two sections.");
+            Assert.True(others.Count > 0, "Premise: the tree holds rows besides the two sections.");
 
             foreach (NavigationNodeViewModel row in others)
             {
-                Assert.IsTrue(string.IsNullOrEmpty(row.Badge),
+                Assert.True(string.IsNullOrEmpty(row.Badge),
                     $"'{row.Title}' owns no schema but claims provenance '{row.Badge}'.");
             }
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

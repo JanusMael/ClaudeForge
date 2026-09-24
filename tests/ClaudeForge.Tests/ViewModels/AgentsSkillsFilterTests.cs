@@ -34,14 +34,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 ///   </item>
 /// </list>
 /// </summary>
-[TestClass]
-public sealed class AgentsSkillsFilterTests
+public sealed class AgentsSkillsFilterTests : IDisposable
 {
     private string _sandbox = string.Empty;
     private string _project = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public AgentsSkillsFilterTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_asfilter_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -51,8 +51,7 @@ public sealed class AgentsSkillsFilterTests
         Directory.CreateDirectory(_project);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         foreach (string dir in new[] { _sandbox, _project })
@@ -69,6 +68,12 @@ public sealed class AgentsSkillsFilterTests
                 _ = ex;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string Home => Path.Combine(_sandbox, ".claude");
@@ -95,7 +100,7 @@ public sealed class AgentsSkillsFilterTests
         return new ArtifactRowViewModel(entry) { Subtitle = subtitle };
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_EmptyFilter_ReturnsEverythingIncludingHeaders()
     {
         List<object> flat =
@@ -107,22 +112,22 @@ public sealed class AgentsSkillsFilterTests
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, string.Empty);
 
-        Assert.AreEqual(3, result.Count);
-        CollectionAssert.AreEqual(flat, result);
+        Assert.Equal(3, result.Count);
+        Assert.Equal(flat, result);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_MatchesName_CaseInsensitively()
     {
         List<object> flat = [Row("AlphaSkill", "User"), Row("beta", "User")];
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "alpha");
 
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("AlphaSkill", ((ArtifactRowViewModel)result[0]).DisplayName);
+        Assert.Single(result);
+        Assert.Equal("AlphaSkill", ((ArtifactRowViewModel)result[0]).DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_MatchesDescription()
     {
         List<object> flat =
@@ -133,22 +138,22 @@ public sealed class AgentsSkillsFilterTests
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "pdf");
 
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("alpha", ((ArtifactRowViewModel)result[0]).DisplayName);
+        Assert.Single(result);
+        Assert.Equal("alpha", ((ArtifactRowViewModel)result[0]).DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_MatchesSource()
     {
         List<object> flat = [Row("alpha", "User"), Row("beta", "Plugin")];
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "plugin");
 
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("beta", ((ArtifactRowViewModel)result[0]).DisplayName);
+        Assert.Single(result);
+        Assert.Equal("beta", ((ArtifactRowViewModel)result[0]).DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_DropsHeaderWhoseGroupHasNoSurvivingRow()
     {
         List<object> flat =
@@ -163,12 +168,12 @@ public sealed class AgentsSkillsFilterTests
         // as an orphan above nothing.
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "alpha");
 
-        Assert.AreEqual(2, result.Count);
-        Assert.AreEqual("Yours", ((ArtifactSectionHeaderViewModel)result[0]).Header);
-        Assert.AreEqual("alpha", ((ArtifactRowViewModel)result[1]).DisplayName);
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Yours", ((ArtifactSectionHeaderViewModel)result[0]).Header);
+        Assert.Equal("alpha", ((ArtifactRowViewModel)result[1]).DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_KeepsHeaderWhenARowBeneathItSurvives()
     {
         List<object> flat =
@@ -181,12 +186,12 @@ public sealed class AgentsSkillsFilterTests
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "alpha");
 
-        Assert.AreEqual(4, result.Count, "Both groups have a match, so both headers stay.");
-        Assert.AreEqual("Yours", ((ArtifactSectionHeaderViewModel)result[0]).Header);
-        Assert.AreEqual("Plugin", ((ArtifactSectionHeaderViewModel)result[2]).Header);
+        MessageAssert.Equal(4, result.Count, "Both groups have a match, so both headers stay.");
+        Assert.Equal("Yours", ((ArtifactSectionHeaderViewModel)result[0]).Header);
+        Assert.Equal("Plugin", ((ArtifactSectionHeaderViewModel)result[2]).Header);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_NoMatches_ReturnsEmptyWithNoHeaders()
     {
         List<object> flat =
@@ -195,10 +200,10 @@ public sealed class AgentsSkillsFilterTests
             Row("alpha", "User"),
         ];
 
-        Assert.AreEqual(0, AgentsSkillsEditorViewModel.ApplyFilter(flat, "zzz").Count);
+        Assert.Empty(AgentsSkillsEditorViewModel.ApplyFilter(flat, "zzz"));
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_ProjectsTheSameRowInstances()
     {
         // Selection (the multi-select groundwork) lives on the row, so filtering
@@ -209,11 +214,11 @@ public sealed class AgentsSkillsFilterTests
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "alpha");
 
-        Assert.AreSame(row, result[0], "ApplyFilter must not construct new rows.");
-        Assert.IsTrue(((ArtifactRowViewModel)result[0]).IsSelected, "Row state must survive filtering.");
+        MessageAssert.Same(row, result[0], "ApplyFilter must not construct new rows.");
+        Assert.True(((ArtifactRowViewModel)result[0]).IsSelected, "Row state must survive filtering.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_ReturnsMaterializedList_NotALazyQuery()
     {
         // The view re-enumerates the bound collection on layout passes; a lazy
@@ -224,10 +229,10 @@ public sealed class AgentsSkillsFilterTests
 
         // Mutating the source afterwards must not change an already-returned list.
         flat.Add(Row("alpha2", "User"));
-        Assert.AreEqual(1, result.Count);
+        Assert.Single(result);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyFilter_UnknownItemType_FailsOpen()
     {
         // A third item kind must stay visible rather than silently vanish the
@@ -236,13 +241,13 @@ public sealed class AgentsSkillsFilterTests
 
         List<object> result = AgentsSkillsEditorViewModel.ApplyFilter(flat, "zzz");
 
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("a plain string", result[0]);
+        Assert.Single(result);
+        Assert.Equal("a plain string", result[0]);
     }
 
     // ── VM-level behaviour ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task FilterText_NarrowsAllThreeSegments()
     {
         Write(Path.Combine(Home, "agents", "pdf-agent.md"), "---\nname: pdf-agent\n---\n\nB.\n");
@@ -255,13 +260,13 @@ public sealed class AgentsSkillsFilterTests
 
         vm.FilterText = "pdf";
 
-        Assert.AreEqual(1, vm.FilteredAgentItems.OfType<ArtifactRowViewModel>().Count());
-        Assert.AreEqual(1, vm.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count());
-        Assert.AreEqual(1, vm.FilteredCommandItems.OfType<ArtifactRowViewModel>().Count());
-        Assert.IsTrue(vm.HasActiveFilter);
+        Assert.Single(vm.FilteredAgentItems.OfType<ArtifactRowViewModel>());
+        Assert.Single(vm.FilteredSkillItems.OfType<ArtifactRowViewModel>());
+        Assert.Single(vm.FilteredCommandItems.OfType<ArtifactRowViewModel>());
+        Assert.True(vm.HasActiveFilter);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ClearFilterCommand_RestoresFullLists()
     {
         Write(Path.Combine(Home, "agents", "alpha.md"), "---\nname: alpha\n---\n\nB.\n");
@@ -270,15 +275,15 @@ public sealed class AgentsSkillsFilterTests
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         vm.FilterText = "alpha";
-        Assert.AreEqual(1, vm.FilteredAgentItems.OfType<ArtifactRowViewModel>().Count());
+        Assert.Single(vm.FilteredAgentItems.OfType<ArtifactRowViewModel>());
 
         vm.ClearFilterCommand.Execute(null);
 
-        Assert.AreEqual(2, vm.FilteredAgentItems.OfType<ArtifactRowViewModel>().Count());
-        Assert.IsFalse(vm.HasActiveFilter);
+        Assert.Equal(2, vm.FilteredAgentItems.OfType<ArtifactRowViewModel>().Count());
+        Assert.False(vm.HasActiveFilter);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_RaisesFilteredListNotifications()
     {
         // Regression guard: the view binds the computed projections, so a rebuild
@@ -297,15 +302,15 @@ public sealed class AgentsSkillsFilterTests
 
         await vm.RefreshAsync();
 
-        Assert.IsTrue(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredAgentItems)),
+        Assert.True(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredAgentItems)),
             "RefreshAsync must raise FilteredAgentItems.");
-        Assert.IsTrue(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredSkillItems)),
+        Assert.True(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredSkillItems)),
             "RefreshAsync must raise FilteredSkillItems.");
-        Assert.IsTrue(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredCommandItems)),
+        Assert.True(raised.Contains(nameof(AgentsSkillsEditorViewModel.FilteredCommandItems)),
             "RefreshAsync must raise FilteredCommandItems.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DescriptionFill_ReRaisesFilteredLists_SoDescriptionMatchesAppear()
     {
         // Subtitles arrive asynchronously, so a filter on a description can only
@@ -341,31 +346,31 @@ public sealed class AgentsSkillsFilterTests
         // announcement happened — presence alone would pass on the refresh's raise.
         int skillRaises = raised.Count(
             n => n == nameof(AgentsSkillsEditorViewModel.FilteredSkillItems));
-        Assert.IsTrue(skillRaises >= 2,
+        Assert.True(skillRaises >= 2,
             "The description fill must re-raise the filtered lists when it completes; "
             + $"expected >= 2 FilteredSkillItems raises (refresh + fill), saw {skillRaises}.");
 
         // And the description is now actually matchable.
         vm.FilterText = "pdf";
-        Assert.AreEqual(1, vm.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count());
+        Assert.Single(vm.FilteredSkillItems.OfType<ArtifactRowViewModel>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyNavigationFilter_FlagsNavigationThenUserEditClearsIt()
     {
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
         vm.ApplyNavigationFilter("alpha");
-        Assert.AreEqual("alpha", vm.FilterText);
-        Assert.IsTrue(vm.FilterFromNavigation, "A navigation-applied filter must raise the navigated frame.");
+        Assert.Equal("alpha", vm.FilterText);
+        Assert.True(vm.FilterFromNavigation, "A navigation-applied filter must raise the navigated frame.");
 
         // A subsequent user edit is not navigation, so the frame drops.
         vm.FilterText = "alphab";
-        Assert.IsFalse(vm.FilterFromNavigation);
+        Assert.False(vm.FilterFromNavigation);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyNavigationFilter_WithEmpty_DoesNotFlagNavigation()
     {
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
@@ -373,11 +378,11 @@ public sealed class AgentsSkillsFilterTests
 
         vm.ApplyNavigationFilter(null);
 
-        Assert.AreEqual(string.Empty, vm.FilterText);
-        Assert.IsFalse(vm.FilterFromNavigation, "An empty navigation filter narrows nothing, so no frame.");
+        Assert.Equal(string.Empty, vm.FilterText);
+        Assert.False(vm.FilterFromNavigation, "An empty navigation filter narrows nothing, so no frame.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ClearFilter_AfterNavigationFilter_DropsTheFrame()
     {
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
@@ -386,11 +391,11 @@ public sealed class AgentsSkillsFilterTests
 
         vm.ClearFilterCommand.Execute(null);
 
-        Assert.IsFalse(vm.FilterFromNavigation);
-        Assert.IsFalse(vm.HasActiveFilter);
+        Assert.False(vm.FilterFromNavigation);
+        Assert.False(vm.HasActiveFilter);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RowCounts_TrackTheActiveSegmentAndFilter()
     {
         Write(Path.Combine(Home, "agents", "alpha.md"), "---\nname: alpha\n---\n\nB.\n");
@@ -401,28 +406,28 @@ public sealed class AgentsSkillsFilterTests
         await vm.RefreshAsync();
 
         // Segment 0 = sub-agents.
-        Assert.AreEqual(2, vm.TotalRowCount);
-        Assert.AreEqual(2, vm.VisibleRowCount);
+        Assert.Equal(2, vm.TotalRowCount);
+        Assert.Equal(2, vm.VisibleRowCount);
 
         vm.FilterText = "alpha";
-        Assert.AreEqual(2, vm.TotalRowCount, "Total is the unfiltered count.");
-        Assert.AreEqual(1, vm.VisibleRowCount);
+        MessageAssert.Equal(2, vm.TotalRowCount, "Total is the unfiltered count.");
+        Assert.Equal(1, vm.VisibleRowCount);
 
         // FilterSummary is formatted in the VM because the format takes two
         // arguments — a single-binding AXAML StringFormat would leave a literal
         // "{1}" on screen.  Assert both numbers actually made it in.
-        StringAssert.Contains(vm.FilterSummary, "1");
-        StringAssert.Contains(vm.FilterSummary, "2");
-        Assert.IsFalse(vm.FilterSummary.Contains('{'), "The format must be fully substituted.");
+        OrdinalAssert.Contains("1", vm.FilterSummary);
+        OrdinalAssert.Contains("2", vm.FilterSummary);
+        Assert.False(vm.FilterSummary.Contains('{'), "The format must be fully substituted.");
 
         // Switching segment re-reads both counts.
         vm.FilterText = string.Empty;
         vm.SelectedSegmentIndex = 1;
-        Assert.AreEqual(1, vm.TotalRowCount);
-        Assert.AreEqual(1, vm.VisibleRowCount);
+        Assert.Equal(1, vm.TotalRowCount);
+        Assert.Equal(1, vm.VisibleRowCount);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AllRows_CoversEverySegment()
     {
         Write(Path.Combine(Home, "agents", "alpha.md"), "---\nname: alpha\n---\n\nB.\n");
@@ -432,7 +437,7 @@ public sealed class AgentsSkillsFilterTests
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "alpha", "beta", "gamma" },
             vm.AllRows.Select(r => r.DisplayName).ToArray());
     }

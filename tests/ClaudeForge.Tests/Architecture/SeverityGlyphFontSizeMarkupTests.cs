@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// what it could not load.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SeverityGlyphFontSizeMarkupTests
 {
     /// <summary>
@@ -73,7 +72,7 @@ public sealed class SeverityGlyphFontSizeMarkupTests
         @"<\w+:AppSeverityToFontSizeConverter\s+x:Key\s*=\s*""SeverityToFontSize""",
         RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void EverySeverityGlyphSizesItselfFromTheSeverity()
     {
         string repoRoot = FindRepoRoot();
@@ -106,13 +105,13 @@ public sealed class SeverityGlyphFontSizeMarkupTests
             }
         }
 
-        Assert.AreEqual(ExpectedGlyphSites, sites,
+        MessageAssert.Equal(ExpectedGlyphSites, sites,
             $"found {sites} severity-glyph element(s), expected {ExpectedGlyphSites}. Either the "
             + "discovery pattern has stopped matching — in which case this test is no longer "
             + "checking anything — or a surface was added or removed and the count needs a "
             + "deliberate update.");
 
-        Assert.IsTrue(problems.Count == 0,
+        Assert.True(problems.Count == 0,
             $"{problems.Count} severity glyph(s) do not size themselves:\n  "
             + string.Join("\n  ", problems));
     }
@@ -122,7 +121,7 @@ public sealed class SeverityGlyphFontSizeMarkupTests
     /// at runtime, leaving the glyph at its inherited size — the defect back, with the markup
     /// looking fixed.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryFileUsingTheSizeConverterAlsoDeclaresIt()
     {
         string repoRoot = FindRepoRoot();
@@ -147,11 +146,11 @@ public sealed class SeverityGlyphFontSizeMarkupTests
         // OpenCodeForge's. Restore it when OpenCodeForge rejoins.
         // LIBRARY GUARD NARROWED — plans/00005. Was 6; the shared PropertyEditorWrapper moved to the
         // Bennewitz.Ninja.ScopedEditors package. Restore that coverage IN THAT REPOSITORY.
-        Assert.IsTrue(users >= 5,
+        Assert.True(users >= 5,
             $"only {users} file(s) use SeverityToFontSize; five render a severity glyph, so the "
             + "scan has lost its subjects and would pass without checking anything");
 
-        Assert.IsTrue(missing.Count == 0,
+        Assert.True(missing.Count == 0,
             "these files bind SeverityToFontSize without declaring it, so the binding resolves to "
             + $"nothing and the glyph keeps its inherited size:\n  {string.Join("\n  ", missing)}");
     }
@@ -192,7 +191,7 @@ public sealed class SeverityGlyphFontSizeMarkupTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

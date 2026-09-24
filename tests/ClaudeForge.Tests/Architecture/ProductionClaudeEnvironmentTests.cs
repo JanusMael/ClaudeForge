@@ -35,7 +35,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// supposed to be used.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ProductionClaudeEnvironmentTests
 {
     /// <summary>The app assemblies — i.e. every composition root this repo ships.</summary>
@@ -66,7 +65,7 @@ public sealed class ProductionClaudeEnvironmentTests
     private static readonly Regex FromProcess = new(
         @"ClaudeEnvironment\.FromProcess\s*\(", RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void NoAppCompositionRootBuildsADefaultedClaudeEnvironment()
     {
         string repoRoot = FindRepoRoot();
@@ -77,7 +76,7 @@ public sealed class ProductionClaudeEnvironmentTests
         foreach (string appDir in AppProjectDirs)
         {
             string dir = Path.Combine(repoRoot, "src", appDir);
-            Assert.IsTrue(Directory.Exists(dir), $"Expected an app project at '{dir}'.");
+            Assert.True(Directory.Exists(dir), $"Expected an app project at '{dir}'.");
 
             foreach (string file in Directory.EnumerateFiles(dir, "*.cs", SearchOption.AllDirectories))
             {
@@ -110,19 +109,19 @@ public sealed class ProductionClaudeEnvironmentTests
             }
         }
 
-        Assert.IsTrue(filesScanned > 20, $"Only {filesScanned} app files scanned — src/ moved.");
+        Assert.True(filesScanned > 20, $"Only {filesScanned} app files scanned — src/ moved.");
 
         // ⛔ The half that stops this passing while guarding nothing. If the app stopped calling
         // FromProcess entirely — the exact defect — the violation list could still be empty,
         // because "reads no environment at all" is not "reads a defaulted one".
-        Assert.IsTrue(
+        Assert.True(
             fromProcessSites > 0,
             "No app source calls ClaudeEnvironment.FromProcess() at all. Either the composition "
             + "root stopped reading the environment — which silently ignores CLAUDE_CONFIG_DIR for "
             + "every user who set it — or this scan no longer matches the code, in which case it "
             + "is green and guarding nothing.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, violations.Count,
             $"{violations.Count} app site(s) build a DEFAULTED ClaudeEnvironment. That resolves the "
             + "default home, so CLAUDE_CONFIG_DIR is ignored — silently, with nothing failing. The "

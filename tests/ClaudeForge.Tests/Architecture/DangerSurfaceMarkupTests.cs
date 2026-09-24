@@ -28,7 +28,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// a reflection- or loader-based scan would silently skip what it could not load.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class DangerSurfaceMarkupTests
 {
     /// <summary>
@@ -86,7 +85,7 @@ public sealed class DangerSurfaceMarkupTests
     /// </summary>
     private static readonly string[] RequiredBindings = ["HasDangerSeverity", "DangerAccessibleText"];
 
-    [TestMethod]
+    [Fact]
     public void EveryDangerSurfaceRendersItsSeverity()
     {
         string repoRoot = FindRepoRoot();
@@ -136,14 +135,14 @@ public sealed class DangerSurfaceMarkupTests
                 }
             }
 
-            Assert.IsTrue(found.Count >= surface.Minimum,
+            Assert.True(found.Count >= surface.Minimum,
                 $"expected at least {surface.Minimum} template(s) with "
                 + $"x:DataType=\"…:{surface.DataType}\", found {found.Count} "
                 + $"({string.Join(", ", found)}). The discovery pattern has stopped matching and "
                 + "this test is no longer checking anything.");
         }
 
-        Assert.IsTrue(problems.Count == 0,
+        Assert.True(problems.Count == 0,
             $"{problems.Count} danger surface(s) render without severity:\n  "
             + string.Join("\n  ", problems)
             + "\n\nA row with no dot tells the user the setting is unremarkable. Bind "
@@ -155,7 +154,7 @@ public sealed class DangerSurfaceMarkupTests
     /// always wins — so a severity glyph annotated that way announces the glyph character and
     /// nothing else. Measured via UIA; see <c>docs/AVALONIA-GOTCHAS.md</c>.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheSeverityGlyphIsAnnotatedWithHelpTextNotName()
     {
         string repoRoot = FindRepoRoot();
@@ -181,12 +180,12 @@ public sealed class DangerSurfaceMarkupTests
         // LIBRARY GUARD NARROWED — plans/00005. Was 6; the shared PropertyEditorWrapper moved to the
         // Bennewitz.Ninja.ScopedEditors package, and no markup scan there checks it yet. Restore that
         // coverage IN THAT REPOSITORY — the file is not coming back here as source. See PROGRESS.md.
-        Assert.IsTrue(checkedFiles >= 5,
+        Assert.True(checkedFiles >= 5,
             $"only {checkedFiles} file(s) mention DangerAccessibleText; ClaudeForge's wrapper, one search "
             + "template, two effective-value grids and the save dialog carry it, so the scan has "
             + "lost its subjects and would pass without checking anything.");
 
-        Assert.IsTrue(offenders.Count == 0,
+        Assert.True(offenders.Count == 0,
             "AutomationProperties.Name is ignored on a TextBlock (its Text wins), so these "
             + $"annotations announce nothing:\n  {string.Join("\n  ", offenders)}\n\n"
             + "Use AutomationProperties.HelpText. Do not wrap the glyph to work around it — a "
@@ -201,7 +200,7 @@ public sealed class DangerSurfaceMarkupTests
     /// right now is the unsafe one" — so a wrapper carrying only the dot silently drops the
     /// warning that matters most, on the rows where something is actually wrong.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ThePropertyWrapperRendersTheIsDangerNowBanner()
     {
         string repoRoot = FindRepoRoot();
@@ -213,7 +212,7 @@ public sealed class DangerSurfaceMarkupTests
         // LIBRARY GUARD NARROWED — plans/00005. Was 2; the shared wrapper moved to the
         // Bennewitz.Ninja.ScopedEditors package. Its banner is unguarded until that repository
         // scans it — see PROGRESS.md. Exactly 1 still fails loudly if ClaudeForge's copy disappears.
-        Assert.AreEqual(1, wrappers.Count,
+        MessageAssert.Equal(1, wrappers.Count,
             $"expected exactly 1 PropertyEditorWrapper.axaml file (ClaudeForge's own), "
             + $"found {wrappers.Count}: "
             + string.Join(", ", wrappers));
@@ -223,7 +222,7 @@ public sealed class DangerSurfaceMarkupTests
             .Where(f => !f.Text.Contains("IsDangerNow", StringComparison.Ordinal))
             .Select(f => f.Relative)];
 
-        Assert.IsTrue(missing.Count == 0,
+        Assert.True(missing.Count == 0,
             $"wrapper(s) with no IsDangerNow banner: {string.Join(", ", missing)}. The dot alone "
             + "says the setting matters; only the banner says the current value is wrong.");
     }
@@ -264,7 +263,7 @@ public sealed class DangerSurfaceMarkupTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

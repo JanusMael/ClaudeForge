@@ -17,13 +17,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// end of <c>LoadAllWorkspacesAsync</c>.  No specialised fakes — we want the
 /// integration with the real schema-validation pipeline.
 /// </remarks>
-[TestClass]
-public sealed class SchemaBannerTests
+public sealed class SchemaBannerTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public SchemaBannerTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -31,8 +31,7 @@ public sealed class SchemaBannerTests
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (!Directory.Exists(_sandbox))
@@ -54,19 +53,25 @@ public sealed class SchemaBannerTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     /// <summary>
     /// Setting <see cref="MainWindowViewModel.SchemaErrors"/> to a non-empty
     /// list flips <see cref="MainWindowViewModel.HasSchemaErrors"/> to true
     /// and updates the banner text and the show-details command's
     /// CanExecute.  This is the property contract the banner AXAML binds to.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SchemaErrors_Setter_DrivesHasSchemaErrors_BannerText_AndCanExecute()
     {
         using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
-        Assert.IsFalse(vm.HasSchemaErrors, "Empty list must report no errors.");
-        Assert.IsFalse(vm.ShowSchemaErrorsCommand.CanExecute(null),
+        Assert.False(vm.HasSchemaErrors, "Empty list must report no errors.");
+        Assert.False(vm.ShowSchemaErrorsCommand.CanExecute(null),
             "Show-details command must be disabled when there are no errors.");
 
         vm.SchemaErrors =
@@ -77,10 +82,10 @@ public sealed class SchemaBannerTests
                 "Value must be one of: sonnet, opus."),
         ];
 
-        Assert.IsTrue(vm.HasSchemaErrors, "Non-empty list must flip HasSchemaErrors true.");
-        Assert.IsTrue(vm.ShowSchemaErrorsCommand.CanExecute(null),
+        Assert.True(vm.HasSchemaErrors, "Non-empty list must flip HasSchemaErrors true.");
+        Assert.True(vm.ShowSchemaErrorsCommand.CanExecute(null),
             "Show-details command must enable when errors are present.");
-        StringAssert.Contains(vm.SchemaErrorsBannerText, "2",
+        MessageAssert.Contains("2", vm.SchemaErrorsBannerText,
             "Banner headline must include the error count.");
     }
 
@@ -89,20 +94,20 @@ public sealed class SchemaBannerTests
     /// empty list (e.g. user fixed the file externally and reloaded)
     /// re-disables the banner without leaving the command stuck enabled.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SchemaErrors_ClearedToEmpty_RestoresClean()
     {
         using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
         vm.SchemaErrors =
             [new SchemaValidationError("settings.json", "/x", "y")];
-        Assert.IsTrue(vm.HasSchemaErrors);
+        Assert.True(vm.HasSchemaErrors);
 
         vm.SchemaErrors = [];
 
-        Assert.IsFalse(vm.HasSchemaErrors,
+        Assert.False(vm.HasSchemaErrors,
             "Resetting to an empty list must hide the banner.");
-        Assert.IsFalse(vm.ShowSchemaErrorsCommand.CanExecute(null),
+        Assert.False(vm.ShowSchemaErrorsCommand.CanExecute(null),
             "Resetting to an empty list must disable the show-details command.");
     }
 
@@ -113,7 +118,7 @@ public sealed class SchemaBannerTests
     /// <c>InitializeCommand</c> runs (which calls
     /// <c>LoadAllWorkspacesAsync</c> internally).
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task PostReload_ValidationFindsOutOfSchemaKey_PopulatesBanner()
     {
         // Seed a settings.json with an unknown key under permissions.
@@ -136,9 +141,9 @@ public sealed class SchemaBannerTests
 
             // Validation runs at the end of LoadAllWorkspacesAsync; the SDK
             // client emits at least one violation for the invalid key.
-            Assert.IsTrue(vm.HasSchemaErrors,
+            Assert.True(vm.HasSchemaErrors,
                 "An out-of-schema property in the seeded settings must surface as a banner.");
-            Assert.IsTrue(vm.SchemaErrors.Any(e =>
+            Assert.True(vm.SchemaErrors.Any(e =>
                     e.InstancePath.Contains("gestate", StringComparison.OrdinalIgnoreCase)),
                 "At least one validation error must reference the offending 'gestate' property.");
         }

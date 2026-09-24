@@ -24,10 +24,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// See <c>plans/00001-shared-libraries-as-private-nuget-packages.md</c>, work item 2.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class PackageMetadataTests
 {
-    [TestMethod]
+    [Fact]
     public void EverySrcProjectStatesIsPackableExplicitly()
     {
         string repoRoot = FindRepoRoot();
@@ -36,14 +35,14 @@ public sealed class PackageMetadataTests
         // The premise. IsPackable=true is only meaningful while the shared block supplies the
         // identity those packages are published under; without it eleven packages would pack
         // under their bare assembly names with no repository, licence or readme.
-        Assert.IsTrue(
+        Assert.True(
             Declares(srcProps, "PackageId"),
             "src/Directory.Build.props no longer declares <PackageId>. That block is what gives "
             + "every packable project its identity, licence, repository and readme, so this "
             + "guard's premise is gone: re-read it before deleting it.");
 
         string readme = Path.Combine(repoRoot, "src", "PACKAGE-README.md");
-        Assert.IsTrue(File.Exists(readme),
+        Assert.True(File.Exists(readme),
             "src/PACKAGE-README.md is missing. src/Directory.Build.props sets "
             + "<PackageReadmeFile>README.md</PackageReadmeFile> and packs this file for every "
             + "project that has no README.md of its own, so pack would fail with NU5039 for "
@@ -67,10 +66,10 @@ public sealed class PackageMetadataTests
             }
         }
 
-        Assert.IsTrue(scanned > 0,
+        Assert.True(scanned > 0,
             "Scanned no project files under src/; the scan has been narrowed to nothing.");
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These projects under src/ do not state <IsPackable>true</IsPackable> or "
             + "<IsPackable>false</IsPackable>. A library that says nothing DEFAULTS to packable, "
             + "so it would be pushed to the private feed by the next release and could never be "
@@ -89,7 +88,7 @@ public sealed class PackageMetadataTests
     /// a <c>src/Directory.Build.targets</c>, which could read it, is the worse option. This test
     /// is what makes <c>$(MSBuildProjectName)</c> safe to use in its place.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EverySrcProjectsAssemblyNameMatchesItsFileName()
     {
         string repoRoot = FindRepoRoot();
@@ -101,7 +100,7 @@ public sealed class PackageMetadataTests
             .Select(e => e.Value.Trim())
             .LastOrDefault() ?? string.Empty;
 
-        Assert.IsTrue(
+        Assert.True(
             packageId.Contains("$(MSBuildProjectName)", StringComparison.Ordinal),
             "src/Directory.Build.props no longer derives <PackageId> from $(MSBuildProjectName) "
             + $"(it reads '{packageId}'). The file-name/assembly-name agreement below only "
@@ -130,7 +129,7 @@ public sealed class PackageMetadataTests
             }
         }
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These projects' <AssemblyName> differs from their csproj file name, so the package "
             + "id derived from the file name would not name the assembly inside it. Rename the "
             + "file to match, or give that project an explicit <PackageId>. Offenders: "
@@ -147,7 +146,7 @@ public sealed class PackageMetadataTests
     /// were about to do. Silence looks like an answer here, exactly as it does for
     /// <c>IsPackable</c> above.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryPackableProjectDescribesItself()
     {
         string repoRoot = FindRepoRoot();
@@ -182,10 +181,10 @@ public sealed class PackageMetadataTests
             }
         }
 
-        Assert.IsTrue(packable > 0,
+        Assert.True(packable > 0,
             "Found no packable project under src/, so this guard is measuring nothing.");
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These packable projects have no <Description>, so the SDK supplies its placeholder "
             + "and the package ships with the literal text \"Package Description\" on its feed "
             + "page — a published version cannot be replaced. Offenders: "
@@ -213,7 +212,7 @@ public sealed class PackageMetadataTests
     /// restore — but only once someone runs the canary.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheSwitchesNamePrefixSelectsExactlyThePackableProjects()
     {
         string repoRoot = FindRepoRoot();
@@ -258,13 +257,13 @@ public sealed class PackageMetadataTests
         byName.Sort(StringComparer.Ordinal);
         byPackability.Sort(StringComparer.Ordinal);
 
-        Assert.IsTrue(byPackability.Count > 0,
+        Assert.True(byPackability.Count > 0,
             "No packable project under src/, so this guard is measuring nothing.");
 
         string[] packableButNotPrefixed = byPackability.Except(byName, StringComparer.Ordinal).ToArray();
         string[] prefixedButNotPackable = byName.Except(byPackability, StringComparer.Ordinal).ToArray();
 
-        Assert.AreEqual(0, packableButNotPrefixed.Length,
+        MessageAssert.Equal(0, packableButNotPrefixed.Length,
             "These projects are packaged but the reference switch's selector does not match them "
             + "(prefixes: " + string.Join(", ", prefixes) + "; exact: " + string.Join(", ", exactNames)
             + "), so it will NOT rewrite references to them. In package mode they stay "
@@ -273,7 +272,7 @@ public sealed class PackageMetadataTests
             + "with it. Offenders: "
             + string.Join(", ", packableButNotPrefixed));
 
-        Assert.AreEqual(0, prefixedButNotPackable.Length,
+        MessageAssert.Equal(0, prefixedButNotPackable.Length,
             "These projects carry a shared-library name prefix but are not packaged, so in "
             + "package mode the switch rewrites references to them into PackageReferences for "
             + "packages that are never published, and restore fails. Either mark them packable "

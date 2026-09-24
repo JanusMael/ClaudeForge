@@ -13,7 +13,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 ///   • duplicate add is a no-op (we don't silently corrupt by clobbering)
 ///   • Reset clears everything
 /// </summary>
-[TestClass]
 public class PluginConfigsEditorViewModelTests
 {
     private static SchemaNode ComplexSchema(string name = "pluginConfigs")
@@ -43,17 +42,17 @@ public class PluginConfigsEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initial_Empty_NotModified()
     {
         PluginConfigsEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.AreEqual(0, vm.Plugins.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Plugins);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Hydrate_PluginWithMcpServerWithConfigs_PopulatesAllThreeLevels()
     {
         JsonObject disk = new()
@@ -78,21 +77,21 @@ public class PluginConfigsEditorViewModelTests
         PluginConfigsEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithObject("pluginConfigs", ConfigScope.User, disk), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Plugins.Count);
+        Assert.Single(vm.Plugins);
         PluginConfigEntryViewModel plugin = vm.Plugins[0];
-        Assert.AreEqual("everything-claude-code@anthropic-plugins", plugin.PluginId);
-        Assert.AreEqual(2, plugin.Servers.Count);
+        Assert.Equal("everything-claude-code@anthropic-plugins", plugin.PluginId);
+        Assert.Equal(2, plugin.Servers.Count);
 
         PluginServerConfigViewModel gh = plugin.Servers.Single(s => s.ServerName == "github");
-        Assert.AreEqual(2, gh.Configs.Count);
-        Assert.AreEqual("ghp_xxx", gh.Configs.Single(c => c.Key == "githubToken").Value);
-        Assert.AreEqual("owner/repo", gh.Configs.Single(c => c.Key == "defaultRepo").Value);
+        Assert.Equal(2, gh.Configs.Count);
+        Assert.Equal("ghp_xxx", gh.Configs.Single(c => c.Key == "githubToken").Value);
+        Assert.Equal("owner/repo", gh.Configs.Single(c => c.Key == "defaultRepo").Value);
 
         PluginServerConfigViewModel exa = plugin.Servers.Single(s => s.ServerName == "exa");
-        Assert.AreEqual("exa_xxx", exa.Configs.Single(c => c.Key == "exaApiKey").Value);
+        Assert.Equal("exa_xxx", exa.Configs.Single(c => c.Key == "exaApiKey").Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_Lossless_ForStringTypedConfigs()
     {
         JsonObject disk = new()
@@ -110,13 +109,13 @@ public class PluginConfigsEditorViewModelTests
         vm.LoadFromLayered(WithObject("pluginConfigs", ConfigScope.User, disk), ConfigScope.User);
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual(
+        MessageAssert.Equal(
             disk.ToJsonString(),
             written.ToJsonString(),
             "Round-trip of string-typed configs must be byte-identical to disk shape.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NonStringConfigValues_PreservedOpaquely_AcrossRoundTrip()
     {
         // The schema allows number / boolean / array<string> for leaf
@@ -144,24 +143,24 @@ public class PluginConfigsEditorViewModelTests
 
         PluginServerConfigViewModel server = vm.Plugins.Single().Servers.Single();
         // Only the string-typed config row was surfaced.
-        Assert.AreEqual(1, server.Configs.Count);
-        Assert.AreEqual("stringValue", server.Configs[0].Key);
+        Assert.Single(server.Configs);
+        Assert.Equal("stringValue", server.Configs[0].Key);
 
         JsonObject writtenServer = (JsonObject)((JsonObject)((JsonObject)vm.ToJsonValue()!)
             ["my-plugin@market"]!)["mcpServers"]!["multi-typed-server"]!;
 
         // String row replayed.
-        Assert.AreEqual("abc", writtenServer["stringValue"]?.GetValue<string>());
+        Assert.Equal("abc", writtenServer["stringValue"]?.GetValue<string>());
         // Non-string opaque values replayed at their original types.
-        Assert.AreEqual(42, writtenServer["numericValue"]?.GetValue<int>());
-        Assert.IsTrue(writtenServer["boolValue"]?.GetValue<bool>());
+        Assert.Equal(42, writtenServer["numericValue"]?.GetValue<int>());
+        Assert.True(writtenServer["boolValue"]?.GetValue<bool>());
         JsonArray arr = (JsonArray)writtenServer["arrayValue"]!;
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "x", "y", "z" },
             arr.Select(n => n!.GetValue<string>()).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_Plugin_AppendsAndFiresModified()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -179,13 +178,13 @@ public class PluginConfigsEditorViewModelTests
         vm.NewPluginId = "new-plugin@market";
         vm.AddPluginCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Plugins.Count);
-        Assert.AreEqual("new-plugin@market", vm.Plugins[0].PluginId);
-        Assert.AreEqual(string.Empty, vm.NewPluginId);
-        Assert.IsTrue(fired > 0, "Adding a plugin must fire IsModified.");
+        Assert.Single(vm.Plugins);
+        Assert.Equal("new-plugin@market", vm.Plugins[0].PluginId);
+        Assert.Equal(string.Empty, vm.NewPluginId);
+        Assert.True(fired > 0, "Adding a plugin must fire IsModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_Server_FiresModified_ThroughForwarding()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -206,13 +205,13 @@ public class PluginConfigsEditorViewModelTests
         plugin.NewServerName = "server-a";
         plugin.AddServerCommand.Execute(null);
 
-        Assert.AreEqual(1, plugin.Servers.Count);
-        Assert.IsTrue(fired > 0,
+        Assert.Single(plugin.Servers);
+        Assert.True(fired > 0,
             "Adding a server must propagate IsModified up through the "
             + "plugin's Servers PropertyChanged forwarding.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_Config_FiresModified_ThroughTwoLevelForwarding()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -237,13 +236,13 @@ public class PluginConfigsEditorViewModelTests
         server.NewConfigValue = "secret";
         server.AddConfigCommand.Execute(null);
 
-        Assert.AreEqual(1, server.Configs.Count);
-        Assert.IsTrue(fired > 0,
+        Assert.Single(server.Configs);
+        Assert.True(fired > 0,
             "Adding a config row must propagate IsModified all the way up "
             + "through server's Configs → plugin's Servers → editor's MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditConfigValue_FiresModified_AtAllThreeLevels()
     {
         JsonObject disk = new()
@@ -269,14 +268,14 @@ public class PluginConfigsEditorViewModelTests
         };
 
         vm.Plugins[0].Servers[0].Configs[0].Value = "new";
-        Assert.IsTrue(fired > 0);
+        Assert.True(fired > 0);
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual("new",
+        Assert.Equal("new",
             ((JsonObject)((JsonObject)((JsonObject)written["p@m"]!)["mcpServers"]!)["s"]!)["k"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DuplicatePluginId_NoOps()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -285,10 +284,10 @@ public class PluginConfigsEditorViewModelTests
         vm.AddPluginCommand.Execute(null);
         vm.NewPluginId = "p@m";
         vm.AddPluginCommand.Execute(null);
-        Assert.AreEqual(1, vm.Plugins.Count);
+        Assert.Single(vm.Plugins);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DuplicateServerName_NoOps()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -301,10 +300,10 @@ public class PluginConfigsEditorViewModelTests
         plugin.AddServerCommand.Execute(null);
         plugin.NewServerName = "s";
         plugin.AddServerCommand.Execute(null);
-        Assert.AreEqual(1, plugin.Servers.Count);
+        Assert.Single(plugin.Servers);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DuplicateConfigKey_OverwritesValue()
     {
         // Different from plugin / server: a duplicate config key is a
@@ -327,11 +326,11 @@ public class PluginConfigsEditorViewModelTests
         server.NewConfigValue = "second";
         server.AddConfigCommand.Execute(null);
 
-        Assert.AreEqual(1, server.Configs.Count);
-        Assert.AreEqual("second", server.Configs[0].Value);
+        Assert.Single(server.Configs);
+        Assert.Equal("second", server.Configs[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankPluginId_SkippedOnSave()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -341,12 +340,12 @@ public class PluginConfigsEditorViewModelTests
         // Direct mutation: simulate a blanked id.
         vm.Plugins[0].PluginId = string.Empty;
 
-        Assert.IsNull(vm.ToJsonValue(),
+        MessageAssert.Null(vm.ToJsonValue(),
             "All-blank-pluginId entries reduce to an empty map and the "
             + "editor returns null (RemoveValue) rather than `{}`.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankServerName_SkippedOnSave()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -360,11 +359,11 @@ public class PluginConfigsEditorViewModelTests
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
         JsonObject mcp = (JsonObject)((JsonObject)written["p@m"]!)["mcpServers"]!;
-        Assert.AreEqual(0, mcp.Count,
+        MessageAssert.Equal(0, mcp.Count,
             "Blank server name must be skipped — schema requires a non-empty key.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankConfigKey_SkippedOnSave()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -382,11 +381,11 @@ public class PluginConfigsEditorViewModelTests
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
         JsonObject serverObj = (JsonObject)((JsonObject)((JsonObject)written["p@m"]!)["mcpServers"]!)["s"]!;
-        Assert.AreEqual(0, serverObj.Count,
+        MessageAssert.Equal(0, serverObj.Count,
             "Blank config key must be skipped — would round-trip as `\"\":\"v\"`.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_AtEachLevel_PropagatesAndUpdatesOnDiskShape()
     {
         JsonObject disk = new()
@@ -408,22 +407,22 @@ public class PluginConfigsEditorViewModelTests
         PluginConfigEntryViewModel p1 = vm.Plugins.Single(p => p.PluginId == "p1@m");
         PluginServerConfigViewModel s1 = p1.Servers.Single(s => s.ServerName == "s1");
         p1.RemoveServerCommand.Execute(s1);
-        Assert.AreEqual(1, p1.Servers.Count);
+        Assert.Single(p1.Servers);
 
         // Remove a plugin (p2 — no servers).
         vm.RemovePluginCommand.Execute(vm.Plugins.Single(p => p.PluginId == "p2@m"));
 
         JsonObject written = (JsonObject)vm.ToJsonValue()!;
-        Assert.AreEqual(1, written.Count);
-        Assert.IsTrue(written.ContainsKey("p1@m"));
-        Assert.IsFalse(written.ContainsKey("p2@m"));
+        Assert.Single(written);
+        Assert.True(written.ContainsKey("p1@m"));
+        Assert.False(written.ContainsKey("p2@m"));
 
         JsonObject p1Servers = (JsonObject)((JsonObject)written["p1@m"]!)["mcpServers"]!;
-        Assert.AreEqual(1, p1Servers.Count);
-        Assert.IsTrue(p1Servers.ContainsKey("s2"));
+        Assert.Single(p1Servers);
+        Assert.True(p1Servers.ContainsKey("s2"));
     }
 
-    [TestMethod]
+    [Fact]
     public void BareStringScope_HydratesEmpty_NoCrash()
     {
         // Repro of the modelOverrides-style on-disk corruption: the
@@ -439,12 +438,12 @@ public class PluginConfigsEditorViewModelTests
         PluginConfigsEditorViewModel vm = NewVm();
         vm.LoadFromLayered(bad, ConfigScope.User);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Plugins);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_AfterLoad_RestoresOnDiskPlugins_NotClearsThem()
     {
         // Reset semantic consistency.  See
@@ -461,18 +460,18 @@ public class PluginConfigsEditorViewModelTests
         };
         PluginConfigsEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithObject("pluginConfigs", ConfigScope.User, disk), ConfigScope.User);
-        Assert.AreEqual(1, vm.Plugins.Count, "precondition: load populated 1 plugin");
+        MessageAssert.Equal(1, vm.Plugins.Count, "precondition: load populated 1 plugin");
         vm.NewPluginId = "buffered";
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Plugins.Count,
+        MessageAssert.Equal(1, vm.Plugins.Count,
             "Reset must restore the at-load plugin entry, not wipe to empty.");
-        Assert.AreEqual("p@m", vm.Plugins[0].PluginId);
-        Assert.AreEqual(string.Empty, vm.NewPluginId, "Reset clears transient input.");
+        Assert.Equal("p@m", vm.Plugins[0].PluginId);
+        MessageAssert.Equal(string.Empty, vm.NewPluginId, "Reset clears transient input.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_WithoutPriorLoad_FallsBackToClear()
     {
         PluginConfigsEditorViewModel vm = NewVm();
@@ -481,10 +480,10 @@ public class PluginConfigsEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Plugins.Count);
-        Assert.AreEqual(string.Empty, vm.NewPluginId);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Plugins);
+        Assert.Equal(string.Empty, vm.NewPluginId);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
     // -----------------------------------------------------------------------
@@ -492,7 +491,7 @@ public class PluginConfigsEditorViewModelTests
     // editor, not the JsonRaw fallback)
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Factory_DispatchesPluginConfigsToTypedEditor()
     {
         SchemaNode schema = new("pluginConfigs", "pluginConfigs")
@@ -500,6 +499,6 @@ public class PluginConfigsEditorViewModelTests
             ValueType = SchemaValueType.Complex,
         };
         PropertyEditorViewModel vm = PropertyEditorFactory.Create(schema, ConfigScope.User);
-        Assert.IsInstanceOfType<PluginConfigsEditorViewModel>(vm);
+        Assert.IsAssignableFrom<PluginConfigsEditorViewModel>(vm);
     }
 }

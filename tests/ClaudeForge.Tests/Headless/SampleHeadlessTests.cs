@@ -65,13 +65,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// actually reports Failed before trusting a green run.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SampleHeadlessTests
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
-    [TestMethod]
+    [Fact]
     public Task Headless_Dispatcher_RunsActionOnUIThread()
     {
         return Session.Dispatch(() =>
@@ -80,12 +79,12 @@ public sealed class SampleHeadlessTests
             // says so.  This is the canonical "harness is alive" smoke
             // test — a regression on this method means the headless
             // session itself didn't spin up.
-            Assert.IsTrue(Dispatcher.UIThread.CheckAccess(),
+            Assert.True(Dispatcher.UIThread.CheckAccess(),
                 "Action body must execute on the headless UI thread.");
         }, CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public Task Headless_Window_LayoutCompletes()
     {
         return Session.Dispatch(() =>
@@ -101,9 +100,9 @@ public sealed class SampleHeadlessTests
             };
             window.Show();
 
-            Assert.AreEqual(400, window.Width);
-            Assert.AreEqual(300, window.Height);
-            Assert.IsTrue(window.IsVisible);
+            Assert.Equal(400, window.Width);
+            Assert.Equal(300, window.Height);
+            Assert.True(window.IsVisible);
 
             window.Close();
         }, CancellationToken.None);

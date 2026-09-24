@@ -14,7 +14,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Catalog;
 /// catalog (not hardcoded arrays) and that the GUI localization seam covers
 /// every catalogued default mode.
 /// </summary>
-[TestClass]
 public sealed class ModelCatalogConsumerTests
 {
     private static ClaudeConfigClientBase MakeClient(string userJson = "{}")
@@ -31,20 +30,20 @@ public sealed class ModelCatalogConsumerTests
     private static SchemaNode PermissionsSchema()
         => new("permissions", "permissions") { ValueType = SchemaValueType.Complex };
 
-    [TestMethod]
+    [Fact]
     public void CatalogLocalization_MapsEveryDefaultMode()
     {
         foreach (string id in ModelCatalogProvider.Default.AllDefaultModes.Select(d => d.Id))
         {
             string label = CatalogLocalization.DefaultModeLabel(id);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(label), $"No label for default mode '{id}'.");
-            Assert.AreNotEqual(id, label, $"Default mode '{id}' fell through to the raw-id fallback.");
-            Assert.IsFalse(string.IsNullOrWhiteSpace(CatalogLocalization.DefaultModeDescription(id)),
+            Assert.False(string.IsNullOrWhiteSpace(label), $"No label for default mode '{id}'.");
+            MessageAssert.NotEqual(id, label, $"Default mode '{id}' fell through to the raw-id fallback.");
+            Assert.False(string.IsNullOrWhiteSpace(CatalogLocalization.DefaultModeDescription(id)),
                 $"No description for default mode '{id}'.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void PermissionsEditor_DefaultModeInfos_ComeFromCatalog()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -52,53 +51,53 @@ public sealed class ModelCatalogConsumerTests
         // Alias entries (e.g. "manual" → "default") are deliberately NOT offered —
         // they'd read as a duplicate of the mode they alias — so the offered list
         // mirrors the catalog's real modes, in order.
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             ModelCatalogProvider.Default.AllDefaultModes.Where(d => !d.IsAlias).Select(d => d.Id).ToList(),
             vm.DefaultModeInfos.Select(i => i.Value).ToList(),
             "DefaultModeInfos must mirror the catalog's non-alias default modes, in order.");
 
         DefaultModeInfo? delegateInfo = vm.DefaultModeInfos.FirstOrDefault(i => i.Value == "delegate");
-        Assert.IsNotNull(delegateInfo);
-        Assert.IsTrue(delegateInfo!.IsExperimental, "delegate is experimental in the catalog.");
+        Assert.NotNull(delegateInfo);
+        Assert.True(delegateInfo!.IsExperimental, "delegate is experimental in the catalog.");
 
         // Lock the alias contract in both directions: the catalog carries the alias
         // (so the settings enum stays in parity with the schema and a persisted
         // value round-trips), but the editor never offers it as a choice.
-        Assert.IsTrue(
+        Assert.True(
             ModelCatalogProvider.Default.AllDefaultModes.Any(d => d.Id == "manual" && d.AliasOf == "default"),
             "The catalog must carry 'manual' as an alias of 'default' — the schema's defaultMode enum includes it.");
-        Assert.IsFalse(
+        Assert.False(
             vm.DefaultModeInfos.Any(i => i.Value == "manual"),
             "An alias must not be offered as a separate choice; 'manual' is just 'default' relabelled.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Essentials_ModelCard_OptionsFromCatalog_AndEditable()
     {
         EssentialsViewModel vm = MakeEssentials();
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdModel)!;
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             ModelCatalogProvider.Default.ModelSuggestions().ToList(),
             card.EnumOptions.ToList(),
             "Model card options must come from the catalog suggestions.");
-        Assert.IsTrue(card.AllowsFreeForm, "Model card must be free-form (editable).");
-        Assert.IsTrue(card.IsFreeFormEnumString);
-        Assert.IsFalse(card.IsStrictEnumString);
+        Assert.True(card.AllowsFreeForm, "Model card must be free-form (editable).");
+        Assert.True(card.IsFreeFormEnumString);
+        Assert.False(card.IsStrictEnumString);
     }
 
-    [TestMethod]
+    [Fact]
     public void Essentials_EffortCard_OptionsFromCatalog_OmitMax()
     {
         EssentialsViewModel vm = MakeEssentials();
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdEffortLevel)!;
 
         // No model set → lenient persistable set (omits session-only "max").
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             ModelCatalogProvider.Default.PersistableEffortLevels(null).ToList(),
             card.EnumOptions.ToList());
-        CollectionAssert.DoesNotContain(card.EnumOptions.ToList(), "max");
-        Assert.IsTrue(card.IsStrictEnumString, "Effort is a strict enum (not editable).");
-        Assert.IsFalse(card.AllowsFreeForm);
+        Assert.DoesNotContain("max", card.EnumOptions.ToList());
+        Assert.True(card.IsStrictEnumString, "Effort is a strict enum (not editable).");
+        Assert.False(card.AllowsFreeForm);
     }
 }

@@ -7,8 +7,7 @@ using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
-public class PermissionsEditorViewModelTests
+public class PermissionsEditorViewModelTests : IDisposable
 {
     private static SchemaNode PermissionsSchema()
     {
@@ -38,29 +37,29 @@ public class PermissionsEditorViewModelTests
                  .ToList();
     }
 
-    [TestMethod]
+    [Fact]
     public void InitialState_AllListsEmpty()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
-        Assert.AreEqual(0, vm.AllowList.Count);
-        Assert.AreEqual(0, vm.DenyList.Count);
-        Assert.AreEqual(0, vm.AskList.Count);
-        Assert.IsNull(vm.DefaultMode);
+        Assert.Empty(vm.AllowList);
+        Assert.Empty(vm.DenyList);
+        Assert.Empty(vm.AskList);
+        Assert.Null(vm.DefaultMode);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAllow_AddsToList()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.NewAllowText = "Bash(git status)";
         vm.AddAllowCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.AllowList.Count);
-        Assert.AreEqual("Bash(git status)", vm.AllowList[0].Rule);
-        Assert.AreEqual(string.Empty, vm.NewAllowText);
+        Assert.Single(vm.AllowList);
+        Assert.Equal("Bash(git status)", vm.AllowList[0].Rule);
+        Assert.Equal(string.Empty, vm.NewAllowText);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddDeny_NoDuplicates()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -69,10 +68,10 @@ public class PermissionsEditorViewModelTests
         vm.NewDenyText = "Bash(rm -rf *)";
         vm.AddDenyCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.DenyList.Count);
+        Assert.Single(vm.DenyList);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAsk_AddsToList_AndClearsInputAndError()
     {
         // Mirrors the AddAllow / AddDeny coverage so the three
@@ -84,15 +83,15 @@ public class PermissionsEditorViewModelTests
         vm.NewAskText = "Bash(git push *)";
         vm.AddAskCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.AskList.Count);
+        Assert.Single(vm.AskList);
         // The specifier is preserved verbatim — a trailing " *" (optional args) is
         // NOT rewritten to ":*" (which would change match semantics).
-        Assert.AreEqual("Bash(git push *)", vm.AskList[0].Rule);
-        Assert.AreEqual(string.Empty, vm.NewAskText, "Input must be cleared after a successful add.");
-        Assert.AreEqual(string.Empty, vm.NewAskError, "Error must be cleared after a successful add.");
+        Assert.Equal("Bash(git push *)", vm.AskList[0].Rule);
+        MessageAssert.Equal(string.Empty, vm.NewAskText, "Input must be cleared after a successful add.");
+        MessageAssert.Equal(string.Empty, vm.NewAskError, "Error must be cleared after a successful add.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAllow_InvalidRule_PopulatesErrorAndDoesNotAdd()
     {
         // Validates the error-path branch of the shared TryAddRule helper:
@@ -101,14 +100,14 @@ public class PermissionsEditorViewModelTests
         vm.NewAllowText = "NotAToolName(whatever)";
         vm.AddAllowCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.AllowList.Count);
-        Assert.IsFalse(string.IsNullOrEmpty(vm.NewAllowError),
+        Assert.Empty(vm.AllowList);
+        Assert.False(string.IsNullOrEmpty(vm.NewAllowError),
             "Diagnose() must populate NewAllowError for a syntactically invalid rule.");
-        Assert.AreEqual("NotAToolName(whatever)", vm.NewAllowText,
+        MessageAssert.Equal("NotAToolName(whatever)", vm.NewAllowText,
             "Input is preserved on validation failure so the user can edit and retry.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveAllow_RemovesEntry()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -116,10 +115,10 @@ public class PermissionsEditorViewModelTests
         vm.AddAllowCommand.Execute(null);
         vm.RemoveAllowCommand.Execute(vm.AllowList[0]);
 
-        Assert.AreEqual(0, vm.AllowList.Count);
+        Assert.Empty(vm.AllowList);
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingRuleInline_MarksModifiedAndRoundTripsThroughJson()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -129,17 +128,17 @@ public class PermissionsEditorViewModelTests
         // Simulate a user edit on the inline TextBox.
         vm.AllowList[0].Rule = "Bash(git log)";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing a rule inline must flag the editor as modified so ApplyToWorkspace picks it up.");
 
         JsonArray? arr = (vm.ToJsonValue() as JsonObject)?["allow"] as JsonArray;
-        Assert.IsNotNull(arr);
-        Assert.AreEqual(1, arr!.Count);
-        Assert.AreEqual("Bash(git log)", arr[0]!.GetValue<string>(),
+        Assert.NotNull(arr);
+        Assert.Single(arr!);
+        MessageAssert.Equal("Bash(git log)", arr[0]!.GetValue<string>(),
             "ToJsonValue must reflect the edited rule text, not the original.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_PopulatesAllLists()
     {
         JsonObject obj = new()
@@ -153,21 +152,21 @@ public class PermissionsEditorViewModelTests
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, obj), ConfigScope.User);
 
-        Assert.AreEqual("default", vm.DefaultMode);
-        Assert.AreEqual(1, vm.AllowList.Count);
-        Assert.AreEqual(2, vm.DenyList.Count);
-        Assert.AreEqual(1, vm.AskList.Count);
-        Assert.IsTrue(vm.IsModified);
+        Assert.Equal("default", vm.DefaultMode);
+        Assert.Single(vm.AllowList);
+        Assert.Equal(2, vm.DenyList.Count);
+        Assert.Single(vm.AskList);
+        Assert.True(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_ReturnsNull_WhenEmpty()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_IncludesAllLists()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -178,13 +177,13 @@ public class PermissionsEditorViewModelTests
         vm.AddDenyCommand.Execute(null);
 
         JsonObject? node = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(node);
-        Assert.AreEqual("allow", node!["defaultMode"]!.GetValue<string>());
-        Assert.AreEqual(1, (node["allow"] as JsonArray)!.Count);
-        Assert.AreEqual(1, (node["deny"] as JsonArray)!.Count);
+        Assert.NotNull(node);
+        Assert.Equal("allow", node!["defaultMode"]!.GetValue<string>());
+        Assert.Single((node["allow"] as JsonArray)!);
+        Assert.Single((node["deny"] as JsonArray)!);
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsAllLists()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -193,16 +192,16 @@ public class PermissionsEditorViewModelTests
         vm.AddAllowCommand.Execute(null);
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsNull(vm.DefaultMode);
-        Assert.AreEqual(0, vm.AllowList.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Null(vm.DefaultMode);
+        Assert.Empty(vm.AllowList);
+        Assert.False(vm.IsModified);
     }
 
     // -----------------------------------------------------------------------
     // Common Actions — new tests
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void CommonActions_ExcludesRulesAlreadyInAllowList()
     {
         // A rule already present in the editing scope must not appear in Common Actions.
@@ -211,12 +210,12 @@ public class PermissionsEditorViewModelTests
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, obj), ConfigScope.User);
 
         List<string> rules = FlattenRules(vm);
-        CollectionAssert.DoesNotContain(rules, "Read",
+        MessageAssert.DoesNotContain("Read", rules,
             "Read is already in allow — must be hidden from Common Actions.");
-        CollectionAssert.Contains(rules, "Glob", "Glob is not in any list — must remain visible in Common Actions.");
+        MessageAssert.Contains("Glob", rules, "Glob is not in any list — must remain visible in Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CommonActions_ExcludesRulesInheritedFromAncestorScope()
     {
         // A rule set in an ancestor (User) scope must be excluded from Common Actions
@@ -239,71 +238,71 @@ public class PermissionsEditorViewModelTests
         vm.LoadFromLayered(layered, ConfigScope.Local);
 
         // AllowList is empty because Local has no value — but "Bash" must still be hidden.
-        Assert.AreEqual(0, vm.AllowList.Count, "Editing scope (Local) has no allow entries.");
+        MessageAssert.Equal(0, vm.AllowList.Count, "Editing scope (Local) has no allow entries.");
         List<string> rules = FlattenRules(vm);
-        CollectionAssert.DoesNotContain(rules, "Bash",
+        MessageAssert.DoesNotContain("Bash", rules,
             "Bash is set in an ancestor scope and must not appear in Common Actions.");
         // A rule not set in any scope should still be present.
-        CollectionAssert.Contains(rules, "Glob",
+        MessageAssert.Contains("Glob", rules,
             "Glob is not set in any scope — it must remain visible in Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddToAllow_ViaCommonActionsCommand_AppendsRuleAndRemovesFromCommonActions()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.AddToAllowCommand.Execute("Read");
 
-        Assert.AreEqual(1, vm.AllowList.Count);
-        Assert.AreEqual("Read", vm.AllowList[0].Rule);
-        CollectionAssert.DoesNotContain(FlattenRules(vm), "Read",
+        Assert.Single(vm.AllowList);
+        Assert.Equal("Read", vm.AllowList[0].Rule);
+        MessageAssert.DoesNotContain("Read", FlattenRules(vm),
             "After adding Read to Allow, it must be removed from Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddToDeny_ViaCommonActionsCommand_AppendsRuleAndRemovesFromCommonActions()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.AddToDenyCommand.Execute("Write");
 
-        Assert.AreEqual(1, vm.DenyList.Count);
-        Assert.AreEqual("Write", vm.DenyList[0].Rule);
-        CollectionAssert.DoesNotContain(FlattenRules(vm), "Write",
+        Assert.Single(vm.DenyList);
+        Assert.Equal("Write", vm.DenyList[0].Rule);
+        MessageAssert.DoesNotContain("Write", FlattenRules(vm),
             "After adding Write to Deny, it must be removed from Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddToAsk_ViaCommonActionsCommand_AppendsRuleAndRemovesFromCommonActions()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.AddToAskCommand.Execute("WebFetch");
 
-        Assert.AreEqual(1, vm.AskList.Count);
-        Assert.AreEqual("WebFetch", vm.AskList[0].Rule);
-        CollectionAssert.DoesNotContain(FlattenRules(vm), "WebFetch",
+        Assert.Single(vm.AskList);
+        Assert.Equal("WebFetch", vm.AskList[0].Rule);
+        MessageAssert.DoesNotContain("WebFetch", FlattenRules(vm),
             "After adding WebFetch to Ask, it must be removed from Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveRule_ReappearsInCommonActions()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
 
         // Add "Read" so it disappears from Common Actions.
         vm.AddToAllowCommand.Execute("Read");
-        CollectionAssert.DoesNotContain(FlattenRules(vm), "Read",
+        MessageAssert.DoesNotContain("Read", FlattenRules(vm),
             "Read must be absent from Common Actions immediately after being added to Allow.");
 
         // Remove it — it should reappear in Common Actions.
         PermissionRuleViewModel entry = vm.AllowList[0];
         vm.RemoveAllowCommand.Execute(entry);
 
-        Assert.AreEqual(0, vm.AllowList.Count);
-        CollectionAssert.Contains(FlattenRules(vm), "Read",
+        Assert.Empty(vm.AllowList);
+        MessageAssert.Contains("Read", FlattenRules(vm),
             "After removing Read from Allow, it must reappear in Common Actions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CommonActions_AllGroupsHidden_WhenAllRulesSet()
     {
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
@@ -318,9 +317,9 @@ public class PermissionsEditorViewModelTests
             vm.AddAllowCommand.Execute(null);
         }
 
-        Assert.AreEqual(0, vm.ToolActionGroups.Count,
+        MessageAssert.Equal(0, vm.ToolActionGroups.Count,
             "With every candidate rule set, all Common Actions tool groups must be hidden.");
-        Assert.IsFalse(vm.HasCommonActions,
+        Assert.False(vm.HasCommonActions,
             "HasCommonActions must be false when ToolActionGroups is empty.");
     }
 
@@ -328,7 +327,7 @@ public class PermissionsEditorViewModelTests
     // SDK-backed read path
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFromLayered_WithSdkClient_ReadsThroughTypedAccessor()
     {
         string tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-edit-perm-" + Guid.NewGuid().ToString("N"));
@@ -355,11 +354,11 @@ public class PermissionsEditorViewModelTests
             PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User, client);
             vm.LoadFromLayered(layered, ConfigScope.User);
 
-            Assert.AreEqual(1, vm.AllowList.Count, "SDK path should yield exactly the SDK-set allow rule.");
-            Assert.AreEqual("Bash(git status)", vm.AllowList[0].Rule);
-            Assert.AreEqual(1, vm.DenyList.Count);
-            Assert.AreEqual("Bash(rm *)", vm.DenyList[0].Rule);
-            Assert.AreEqual("acceptEdits", vm.DefaultMode,
+            MessageAssert.Equal(1, vm.AllowList.Count, "SDK path should yield exactly the SDK-set allow rule.");
+            Assert.Equal("Bash(git status)", vm.AllowList[0].Rule);
+            Assert.Single(vm.DenyList);
+            Assert.Equal("Bash(rm *)", vm.DenyList[0].Rule);
+            MessageAssert.Equal("acceptEdits", vm.DefaultMode,
                 "SDK PermissionDefaultMode.AcceptEdits must surface as the camelCase 'acceptEdits' string.");
         }
         finally
@@ -379,7 +378,7 @@ public class PermissionsEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_WithoutSdkClient_FallsBackToLegacyJsonPath()
     {
         JsonObject legacy = new()
@@ -392,14 +391,14 @@ public class PermissionsEditorViewModelTests
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User, client: null);
         vm.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.AreEqual(1, vm.AllowList.Count);
-        Assert.AreEqual("Bash(echo *)", vm.AllowList[0].Rule);
-        Assert.AreEqual("plan", vm.DefaultMode);
+        Assert.Single(vm.AllowList);
+        Assert.Equal("Bash(echo *)", vm.AllowList[0].Rule);
+        Assert.Equal("plan", vm.DefaultMode);
     }
 
     // ── Force-fire delete-after-load ──────────────
 
-    [TestMethod]
+    [Fact]
     public void DeleteAfterLoad_FiresIsModified_ForceFireContract()
     {
         // CommunityToolkit's [ObservableProperty]-generated setter elides
@@ -416,7 +415,7 @@ public class PermissionsEditorViewModelTests
         };
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.IsTrue(vm.IsModified, "Precondition: load with non-empty allow flags IsModified=true.");
+        Assert.True(vm.IsModified, "Precondition: load with non-empty allow flags IsModified=true.");
 
         int fired = 0;
         vm.PropertyChanged += (_, e) =>
@@ -432,14 +431,14 @@ public class PermissionsEditorViewModelTests
         // the explicit re-raise in MarkModified must fire.
         vm.AllowList.RemoveAt(0);
 
-        Assert.IsTrue(fired >= 1,
+        Assert.True(fired >= 1,
             "Deleting a loaded rule must fire PropertyChanged(IsModified) so the live-write " +
             "runs and Save enables — even though IsModified stays latched true.");
     }
 
     // ── Reset-bug regression (smoke) ──────
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_AfterLoad_RestoresOnDiskRules_NotClearsThem()
     {
         // Regression: prior to the fix, OnResetToInherited called Clear() on
@@ -460,34 +459,34 @@ public class PermissionsEditorViewModelTests
 
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.AreEqual(3, vm.AllowList.Count, "precondition: 3 allow rules loaded");
-        Assert.AreEqual(1, vm.DenyList.Count, "precondition: 1 deny rule loaded");
-        Assert.IsTrue(vm.IsModified);
+        MessageAssert.Equal(3, vm.AllowList.Count, "precondition: 3 allow rules loaded");
+        MessageAssert.Equal(1, vm.DenyList.Count, "precondition: 1 deny rule loaded");
+        Assert.True(vm.IsModified);
 
         // User edits: delete one allow rule + add a new ask rule.
         vm.AllowList.RemoveAt(0);
-        Assert.AreEqual(2, vm.AllowList.Count);
+        Assert.Equal(2, vm.AllowList.Count);
 
         vm.NewAskText = "Bash(npm install *)";
         vm.AddAskCommand.Execute(null);
-        Assert.AreEqual(1, vm.AskList.Count);
+        Assert.Single(vm.AskList);
 
         // User clicks Reset: must restore the original on-disk state — 3 allow
         // rules, 1 deny rule, 0 ask rules — NOT wipe to empty.
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(3, vm.AllowList.Count,
+        MessageAssert.Equal(3, vm.AllowList.Count,
             "Reset must restore on-disk allow rules, not wipe to empty.");
-        Assert.AreEqual(1, vm.DenyList.Count,
+        MessageAssert.Equal(1, vm.DenyList.Count,
             "Reset must restore on-disk deny rules.");
-        Assert.AreEqual(0, vm.AskList.Count,
+        MessageAssert.Equal(0, vm.AskList.Count,
             "Reset must drop the unsaved ask addition.");
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "Bash(git status)", "Read", "Glob" },
             vm.AllowList.Select(r => r.Rule).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void OnResetToInherited_AfterLoad_ClearsAskListUnsavedAdditions()
     {
         // Companion test: load with Allow + Deny only, user adds Ask, hits Reset.
@@ -500,16 +499,16 @@ public class PermissionsEditorViewModelTests
 
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, loaded), ConfigScope.User);
-        Assert.AreEqual(1, vm.AllowList.Count);
+        Assert.Single(vm.AllowList);
 
         vm.NewAskText = "Bash(git push *)";
         vm.AddAskCommand.Execute(null);
-        Assert.AreEqual(1, vm.AskList.Count);
+        Assert.Single(vm.AskList);
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.AllowList.Count, "Reset must keep the original allow rule.");
-        Assert.AreEqual(0, vm.AskList.Count, "Reset must drop the unsaved ask addition.");
+        MessageAssert.Equal(1, vm.AllowList.Count, "Reset must keep the original allow rule.");
+        MessageAssert.Equal(0, vm.AskList.Count, "Reset must drop the unsaved ask addition.");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -521,13 +520,18 @@ public class PermissionsEditorViewModelTests
     //  non-Windows hosts AND keeps it hidden across rule-edit rebuilds.
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformInfo.ResetForTesting();
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void BuildToolGroups_IncludesWslGroup_WithExpectedOperationGroups()
     {
         // Pure static-data assertion: AllToolGroups is unconditional, the
@@ -535,26 +539,26 @@ public class PermissionsEditorViewModelTests
         ToolActionGroup? wsl = PermissionsEditorViewModel.AllToolGroups
                                                          .SingleOrDefault(g => g.Tool == "WSL");
 
-        Assert.IsNotNull(wsl, "AllToolGroups must include a tool group named 'WSL'.");
-        Assert.AreEqual(5, wsl!.OperationGroups.Count,
+        MessageAssert.NotNull(wsl, "AllToolGroups must include a tool group named 'WSL'.");
+        MessageAssert.Equal(5, wsl!.OperationGroups.Count,
             "WSL group must have 5 operation groups (SearchView, GitRead, GitWrite, Runtimes, Network).");
 
         List<string> allRules = wsl.OperationGroups.SelectMany(g => g.Items).Select(i => i.Rule).ToList();
-        CollectionAssert.Contains(allRules, "Bash(wsl ls *)",
+        MessageAssert.Contains("Bash(wsl ls *)", allRules,
             "SearchView operation must include `Bash(wsl ls *)`.");
-        CollectionAssert.Contains(allRules, "Bash(wsl git status)",
+        MessageAssert.Contains("Bash(wsl git status)", allRules,
             "GitRead operation must include `Bash(wsl git status)`.");
-        CollectionAssert.Contains(allRules, "Bash(wsl git add *)",
+        MessageAssert.Contains("Bash(wsl git add *)", allRules,
             "GitWrite operation must include `Bash(wsl git add *)`.");
-        CollectionAssert.Contains(allRules, "Bash(wsl npm *)",
+        MessageAssert.Contains("Bash(wsl npm *)", allRules,
             "Runtimes operation must include `Bash(wsl npm *)`.");
-        CollectionAssert.Contains(allRules, "Bash(wsl curl *)",
+        MessageAssert.Contains("Bash(wsl curl *)", allRules,
             "Network operation must include `Bash(wsl curl *)`.");
     }
 
-    [TestMethod]
-    [DataRow("linux")]
-    [DataRow("macos")]
+    [Theory]
+    [InlineData("linux")]
+    [InlineData("macos")]
     public void ToolActionGroups_OnNonWindows_OmitsWslGroup(string platformId)
     {
         // Emulate a non-Windows host BEFORE constructing the VM so the ctor
@@ -566,13 +570,13 @@ public class PermissionsEditorViewModelTests
 
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
 
-        Assert.IsFalse(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
+        Assert.False(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
             $"WSL group must NOT appear in ToolActionGroups when emulating {platformId}.");
-        Assert.IsTrue(vm.ToolActionGroups.Any(g => g.Tool == "PowerShell"),
+        Assert.True(vm.ToolActionGroups.Any(g => g.Tool == "PowerShell"),
             "Other groups (PowerShell here) must still appear — only WSL is platform-gated.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToolActionGroups_OnWindows_IncludesWslGroup()
     {
         PlatformInfo.OverrideForDebug(
@@ -581,12 +585,12 @@ public class PermissionsEditorViewModelTests
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
 
         ToolActionGroup? wsl = vm.ToolActionGroups.SingleOrDefault(g => g.Tool == "WSL");
-        Assert.IsNotNull(wsl, "WSL group must appear in ToolActionGroups when emulating Windows.");
-        Assert.AreEqual(5, wsl!.OperationGroups.Count,
+        MessageAssert.NotNull(wsl, "WSL group must appear in ToolActionGroups when emulating Windows.");
+        MessageAssert.Equal(5, wsl!.OperationGroups.Count,
             "All 5 WSL operation groups must be present on Windows.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RebuildToolGroups_OnNonWindows_KeepsWslGroupHidden_AfterRuleEdit()
     {
         // Locks the SECOND filter site (the one in RebuildToolGroups, fired
@@ -598,20 +602,20 @@ public class PermissionsEditorViewModelTests
             EmulatedPlatformInfo.ForId("linux"));
 
         PermissionsEditorViewModel vm = new(PermissionsSchema(), ConfigScope.User);
-        Assert.IsFalse(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
+        Assert.False(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
             "Baseline: WSL group absent at construction time on Linux.");
 
         // Trigger a rule-list edit — any non-WSL rule will do.
         vm.NewAllowText = "Bash(git status)";
         vm.AddAllowCommand.Execute(null);
 
-        Assert.IsFalse(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
+        Assert.False(vm.ToolActionGroups.Any(g => g.Tool == "WSL"),
             "WSL group must remain absent after a non-WSL rule edit triggers "
             + "RebuildToolGroups.  If this fails, the second VisibleToolGroupsForPlatform "
             + "call is missing in RebuildToolGroups.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CommonActions_AddingRule_PreservesExpandedAccordion()
     {
         // Regression: clicking an Allow/Deny/Ask button on the Common tab triggers
@@ -629,42 +633,42 @@ public class PermissionsEditorViewModelTests
         vm.AddToAllowCommand.Execute("Read");
 
         ToolActionGroup? bashAfter = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "Bash" && !t.IsCatchAll);
-        Assert.IsNotNull(bashAfter, "Precondition: the Bash group must still exist after adding an unrelated rule.");
-        Assert.IsTrue(bashAfter!.IsExpanded,
+        MessageAssert.NotNull(bashAfter, "Precondition: the Bash group must still exist after adding an unrelated rule.");
+        Assert.True(bashAfter!.IsExpanded,
             "The expanded Bash accordion must stay expanded after adding a rule — it must not collapse.");
 
         // A group the user never expanded must NOT spuriously expand across the rebuild.
         ToolActionGroup? file = vm.ToolActionGroups.FirstOrDefault(t => t.Tool == "File" && !t.IsCatchAll);
-        Assert.IsNotNull(file, "Precondition: the File group survives (keeps Glob/Grep after Read is added).");
-        Assert.IsFalse(file!.IsExpanded, "A never-expanded group must remain collapsed across the rebuild.");
+        MessageAssert.NotNull(file, "Precondition: the File group survives (keeps Glob/Grep after Read is added).");
+        Assert.False(file!.IsExpanded, "A never-expanded group must remain collapsed across the rebuild.");
     }
 
-    [TestMethod]
-    [DataRow("Bash(wsl ls *)")]
-    [DataRow("Bash(wsl find *)")]
-    [DataRow("Bash(wsl grep *)")]
-    [DataRow("Bash(wsl cat *)")]
-    [DataRow("Bash(wsl git status)")]
-    [DataRow("Bash(wsl git log *)")]
-    [DataRow("Bash(wsl git diff *)")]
-    [DataRow("Bash(wsl git add *)")]
-    [DataRow("Bash(wsl git commit *)")]
-    [DataRow("Bash(wsl git push *)")]
-    [DataRow("Bash(wsl dotnet *)")]
-    [DataRow("Bash(wsl npm *)")]
-    [DataRow("Bash(wsl npm run *)")]
-    [DataRow("Bash(wsl node *)")]
-    [DataRow("Bash(wsl python *)")]
-    [DataRow("Bash(wsl python3 *)")]
-    [DataRow("Bash(wsl curl *)")]
-    [DataRow("Bash(wsl wget *)")]
+    [Theory]
+    [InlineData("Bash(wsl ls *)")]
+    [InlineData("Bash(wsl find *)")]
+    [InlineData("Bash(wsl grep *)")]
+    [InlineData("Bash(wsl cat *)")]
+    [InlineData("Bash(wsl git status)")]
+    [InlineData("Bash(wsl git log *)")]
+    [InlineData("Bash(wsl git diff *)")]
+    [InlineData("Bash(wsl git add *)")]
+    [InlineData("Bash(wsl git commit *)")]
+    [InlineData("Bash(wsl git push *)")]
+    [InlineData("Bash(wsl dotnet *)")]
+    [InlineData("Bash(wsl npm *)")]
+    [InlineData("Bash(wsl npm run *)")]
+    [InlineData("Bash(wsl node *)")]
+    [InlineData("Bash(wsl python *)")]
+    [InlineData("Bash(wsl python3 *)")]
+    [InlineData("Bash(wsl curl *)")]
+    [InlineData("Bash(wsl wget *)")]
     public void WslSampleRules_PassPermissionRuleValidation(string rule)
     {
         // Locks the rule-pattern contract: if the $defs.permissionRule
         // regex ever tightens in a way that breaks `Bash(wsl …)`, this
         // test fails first and points at the WSL canonical-rule set as
         // the right thing to revisit.
-        Assert.IsTrue(PermissionRuleViewModel.IsValid(rule),
+        Assert.True(PermissionRuleViewModel.IsValid(rule),
             $"Canonical WSL rule '{rule}' must pass PermissionRuleViewModel.IsValid. "
             + $"Diagnose: {PermissionRuleViewModel.Diagnose(rule)}");
     }
@@ -708,7 +712,7 @@ public class PermissionsEditorViewModelTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void UncoveredSchemaKey_IsAutoSurfacedEditably_NotDroppedToPreservedBag()
     {
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
@@ -717,10 +721,10 @@ public class PermissionsEditorViewModelTests
         // disableAutoMode is not a bespoke-rendered key, so it must be auto-surfaced.
         LibVm.PropertyEditorViewModel? surfaced =
             vm.AutoSurfacedEditors.SingleOrDefault(e => e.Schema.Name == "disableAutoMode");
-        Assert.IsNotNull(surfaced, "disableAutoMode must be auto-surfaced as an editable editor.");
+        MessageAssert.NotNull(surfaced, "disableAutoMode must be auto-surfaced as an editable editor.");
 
         // ...and as the by-TYPE editor (enum -> dropdown), never the String/raw fallback.
-        Assert.AreEqual("EnumPropertyEditorViewModel", surfaced!.GetType().Name,
+        MessageAssert.Equal("EnumPropertyEditorViewModel", surfaced!.GetType().Name,
             "An enum schema key must auto-surface as an enum dropdown, not a string/raw editor.");
 
         // NO bespoke-covered key may be auto-surfaced (else it double-renders).
@@ -731,11 +735,11 @@ public class PermissionsEditorViewModelTests
             "defaultMode", "allow", "deny", "ask",
             "disableBypassPermissionsMode", "additionalDirectories",
         };
-        Assert.IsFalse(vm.AutoSurfacedEditors.Any(e => coveredKeys.Contains(e.Schema.Name)),
+        Assert.False(vm.AutoSurfacedEditors.Any(e => coveredKeys.Contains(e.Schema.Name)),
             "No bespoke-covered key may be auto-surfaced (would double-render).");
     }
 
-    [TestMethod]
+    [Fact]
     public void UncoveredSchemaKey_RoundTripsThroughAutoSurfacedEditor()
     {
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
@@ -750,16 +754,16 @@ public class PermissionsEditorViewModelTests
         // would pass via the preserved bag.
         LibVm.EnumPropertyEditorViewModel enumEditor =
             (LibVm.EnumPropertyEditorViewModel)vm.AutoSurfacedEditors.Single(e => e.Schema.Name == "disableAutoMode");
-        Assert.AreEqual("disable", enumEditor.SelectedValue,
+        MessageAssert.Equal("disable", enumEditor.SelectedValue,
             "disableAutoMode must load into its auto-surfaced editor, not the opaque preserved bag.");
 
         JsonObject? result = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(result, "A permissions object with a set key must serialize to a JsonObject.");
-        Assert.AreEqual("disable", (string?)result!["disableAutoMode"],
+        MessageAssert.NotNull(result, "A permissions object with a set key must serialize to a JsonObject.");
+        MessageAssert.Equal("disable", (string?)result!["disableAutoMode"],
             "disableAutoMode must round-trip through its auto-surfaced editor, not be dropped.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingAutoSurfacedChild_MarksEditorModified()
     {
         // The Save-enable payoff: a user edit to an auto-surfaced child must
@@ -769,31 +773,31 @@ public class PermissionsEditorViewModelTests
 
         // Baseline: no permissions value at this scope -> not modified.
         vm.LoadFromLayered(new LayeredValue("permissions", []), ConfigScope.User);
-        Assert.IsFalse(vm.IsModified, "Baseline: an unset scope must not be modified.");
+        Assert.False(vm.IsModified, "Baseline: an unset scope must not be modified.");
 
         // Simulate the user picking the enum value in the auto-surfaced dropdown.
         LibVm.EnumPropertyEditorViewModel enumEditor =
             (LibVm.EnumPropertyEditorViewModel)vm.AutoSurfacedEditors.Single(e => e.Schema.Name == "disableAutoMode");
         enumEditor.SelectedValue = "disable";
 
-        Assert.IsTrue(enumEditor.IsModified,
+        Assert.True(enumEditor.IsModified,
             "Setting the child's value must mark the child modified (precondition for the bubble).");
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing an auto-surfaced child must bubble up and mark the permissions editor modified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NoFactory_AutoSurfacedEditorsEmpty_BackCompatPreserved()
     {
         // Legacy / test fixtures construct without a factory; nothing is
         // auto-surfaced and behaviour matches the pre-feature editor (the
         // 27 existing fixtures above all use this no-factory path).
         PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User);
-        Assert.AreEqual(0, vm.AutoSurfacedEditors.Count,
+        MessageAssert.Equal(0, vm.AutoSurfacedEditors.Count,
             "Without an editor factory the editor must not auto-surface any keys.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UncoveredSchemaKey_UnsupportedShape_IsStillSurfaced_NotSilentlyDropped()
     {
         // The no-silent-drop guarantee must hold even for a key whose shape the
@@ -812,12 +816,12 @@ public class PermissionsEditorViewModelTests
 
         LibVm.PropertyEditorViewModel? surfaced =
             vm.AutoSurfacedEditors.SingleOrDefault(e => e.Schema.Name == "futureBlob");
-        Assert.IsNotNull(surfaced, "An unsupported-shape uncovered key must still be surfaced (editable), not dropped.");
-        Assert.AreEqual("JsonRawPropertyEditorViewModel", surfaced!.GetType().Name,
+        MessageAssert.NotNull(surfaced, "An unsupported-shape uncovered key must still be surfaced (editable), not dropped.");
+        MessageAssert.Equal("JsonRawPropertyEditorViewModel", surfaced!.GetType().Name,
             "An unclassifiable shape must fall back to the validated raw-JSON editor.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_NativeAndAutoSurfacedKeys_CoexistWithCorrectValues()
     {
         // A covered key (defaultMode, native path) and an uncovered key
@@ -826,21 +830,21 @@ public class PermissionsEditorViewModelTests
         // contributes its own, neither clobbers the other.
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault();
         PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client: null, factory);
-        Assert.IsFalse(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "defaultMode"),
+        Assert.False(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "defaultMode"),
             "defaultMode is covered; it must not also be auto-surfaced.");
 
         JsonObject perms = new() { ["defaultMode"] = "default", ["disableAutoMode"] = "disable" };
         vm.LoadFromLayered(LayeredWithPermissions(ConfigScope.User, perms), ConfigScope.User);
 
         JsonObject? result = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(result);
-        Assert.AreEqual("default", (string?)result!["defaultMode"],
+        Assert.NotNull(result);
+        MessageAssert.Equal("default", (string?)result!["defaultMode"],
             "Covered key must round-trip via the native path.");
-        Assert.AreEqual("disable", (string?)result["disableAutoMode"],
+        MessageAssert.Equal("disable", (string?)result["disableAutoMode"],
             "Uncovered key must round-trip via the auto-surfaced editor.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SdkPath_AutoSurfacedKey_RoundTripsAlongsideSdkSourcedRules()
     {
         // Production config: an SDK client is present (rules read through the
@@ -870,13 +874,13 @@ public class PermissionsEditorViewModelTests
             PermissionsEditorViewModel vm = new(PermissionsSchemaWithChildren(), ConfigScope.User, client, factory);
             vm.LoadFromLayered(layered, ConfigScope.User);
 
-            Assert.AreEqual(1, vm.AllowList.Count, "Rule must come from the SDK accessor.");
-            Assert.IsTrue(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "disableAutoMode"),
+            MessageAssert.Equal(1, vm.AllowList.Count, "Rule must come from the SDK accessor.");
+            Assert.True(vm.AutoSurfacedEditors.Any(e => e.Schema.Name == "disableAutoMode"),
                 "disableAutoMode must be auto-surfaced even in the SDK-backed path.");
 
             JsonObject? result = vm.ToJsonValue() as JsonObject;
-            Assert.IsNotNull(result);
-            Assert.AreEqual("disable", (string?)result!["disableAutoMode"],
+            Assert.NotNull(result);
+            MessageAssert.Equal("disable", (string?)result!["disableAutoMode"],
                 "Auto-surfaced disableAutoMode must round-trip in the SDK-backed configuration.");
         }
         finally

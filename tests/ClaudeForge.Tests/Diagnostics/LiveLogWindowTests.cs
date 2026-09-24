@@ -1,5 +1,10 @@
 using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 
+// ⓘ xUnit1031 (no blocking on a task) is suppressed in this file: the concurrency test blocks on
+// Task.WaitAll by design, as it did under MSTest. Making it async would rewrite the test, which the
+// xUnit move does not do (plans/00006 decision 5).
+#pragma warning disable xUnit1031
+
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 
 /// <summary>
@@ -11,30 +16,29 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 /// which is safe to call from any thread without Avalonia being initialised.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class LiveLogWindowTests
 {
-    [TestMethod]
+    [Fact]
     public void EnqueueLog_DoesNotThrow_WhenCalledBeforeInitialise()
     {
         // Must never throw even when the window hasn't been created yet.
         LiveLogWindow.EnqueueLog("hello before init");
     }
 
-    [TestMethod]
+    [Fact]
     public void EnqueueLog_DoesNotThrow_WhenCalledWithEmptyString()
     {
         LiveLogWindow.EnqueueLog(string.Empty);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnqueueLog_DoesNotThrow_WhenCalledWithLongMessage()
     {
         string big = new('x', 100_000);
         LiveLogWindow.EnqueueLog(big);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnqueueLog_DoesNotThrow_WhenCalledConcurrently()
     {
         // The channel accepts concurrent writers (SingleWriter = false).
@@ -44,7 +48,7 @@ public sealed class LiveLogWindowTests
         Task.WaitAll(tasks);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnqueueLog_DropOldest_WhenChannelFull()
     {
         // Flood the channel well past its 5000-item capacity. DropOldest must

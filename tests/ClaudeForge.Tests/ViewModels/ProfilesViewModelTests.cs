@@ -23,21 +23,20 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 ///     dialog-flow paths is the bang-for-buck win identified in the
 ///     coverage doc.
 /// </summary>
-[TestClass]
-public sealed class ProfilesViewModelTests
+public sealed class ProfilesViewModelTests : IDisposable
 {
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ProfilesViewModelTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "pvm-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -51,6 +50,12 @@ public sealed class ProfilesViewModelTests
         {
             /* best-effort */
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private static ProfilesViewModel NewVm(StubDialogService? dlg = null)
@@ -80,40 +85,40 @@ public sealed class ProfilesViewModelTests
 
     // ── Constructor argument validation ───────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Constructor_NullDialogService_Throws()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new ProfilesViewModel(ClaudeEnvironment.Empty, null!));
+        Assert.Throws<ArgumentNullException>(() => new ProfilesViewModel(ClaudeEnvironment.Empty, null!));
     }
 
     // ── DesktopAvailable property surface ─────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void DesktopAvailable_TracksPlatformPathsIsDesktopInstalled()
     {
         ProfilesViewModel vm = NewVm();
         // The sandbox doesn't put a Desktop config there, so on a fresh
         // override DesktopAvailable should be false. Only assertion: the
         // property is non-null and matches PlatformPaths' decision.
-        Assert.AreEqual(PlatformPaths.IsDesktopInstalled, vm.DesktopAvailable);
+        Assert.Equal(PlatformPaths.IsDesktopInstalled, vm.DesktopAvailable);
     }
 
     // ── Refresh — empty state ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Refresh_EmptyProfilesDirectory_PopulatesStatusMessage()
     {
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
 
-        Assert.AreEqual(0, vm.Profiles.Count);
-        Assert.AreEqual(
+        Assert.Empty(vm.Profiles);
+        MessageAssert.Equal(
             Strings.StatusNoCliProfiles,
             vm.StatusMessage,
             "Empty profile directory must surface the 'no profiles' status string.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_PopulatesRowsFromDisk()
     {
         CreateProfile("work", withSettings: true, withClaudeMd: false, withMcp: true);
@@ -122,18 +127,18 @@ public sealed class ProfilesViewModelTests
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
 
-        Assert.AreEqual(2, vm.Profiles.Count);
+        Assert.Equal(2, vm.Profiles.Count);
         ProfileRowViewModel work = vm.Profiles.Single(p => p.Name == "work");
-        Assert.IsTrue(work.HasSettings);
-        Assert.IsFalse(work.HasClaudeMd);
-        Assert.IsTrue(work.HasMcp);
+        Assert.True(work.HasSettings);
+        Assert.False(work.HasClaudeMd);
+        Assert.True(work.HasMcp);
 
         ProfileRowViewModel personal = vm.Profiles.Single(p => p.Name == "personal");
-        Assert.IsTrue(personal.HasClaudeMd);
-        Assert.IsFalse(personal.HasMcp);
+        Assert.True(personal.HasClaudeMd);
+        Assert.False(personal.HasMcp);
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_PreservesSelection_WhenNamedProfileStillExists()
     {
         CreateProfile("alpha");
@@ -147,12 +152,12 @@ public sealed class ProfilesViewModelTests
         CreateProfile("gamma");
         vm.Refresh();
 
-        Assert.AreEqual(3, vm.Profiles.Count);
-        Assert.AreEqual("beta", vm.SelectedProfile?.Name,
+        Assert.Equal(3, vm.Profiles.Count);
+        MessageAssert.Equal("beta", vm.SelectedProfile?.Name,
             "Refresh must restore selection by name when the named profile still exists.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_FirstTime_SelectsActiveProfile_WhenSet()
     {
         CreateProfile("alpha");
@@ -165,12 +170,12 @@ public sealed class ProfilesViewModelTests
         // No prior selection → fallback chain prefers IsCliActive over the
         // first row in disk order.  This matches the user expectation that
         // "the active profile should be selected when I open the page".
-        Assert.AreEqual("beta", vm.SelectedProfile?.Name,
+        MessageAssert.Equal("beta", vm.SelectedProfile?.Name,
             "First Refresh must prefer the CLI-active profile over the first "
             + "profile in disk-walk order.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_FirstTime_FallsBackToFirstProfile_WhenNoActive()
     {
         // Two profiles, neither marked active. The fallback chain ends at
@@ -182,133 +187,133 @@ public sealed class ProfilesViewModelTests
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
 
-        Assert.IsNotNull(vm.SelectedProfile,
+        MessageAssert.NotNull(vm.SelectedProfile,
             "When no profile is CLI-active, Refresh still selects SOMETHING from "
             + "the available profiles so the page isn't blank on first open.");
     }
 
     // ── CanApply / CanSync / CanDelete predicates ────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CanApply_FalseWhenNoSelection()
     {
         ProfilesViewModel vm = NewVm();
-        Assert.IsFalse(vm.ApplyCommand.CanExecute(null));
+        Assert.False(vm.ApplyCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanApply_TrueWhenProfileSelected_AndNotBusy()
     {
         CreateProfile("work");
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
-        Assert.IsTrue(vm.ApplyCommand.CanExecute(null));
+        Assert.True(vm.ApplyCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanApply_FalseWhenBusy_EvenWithSelection()
     {
         CreateProfile("work");
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
         vm.IsBusy = true;
-        Assert.IsFalse(vm.ApplyCommand.CanExecute(null));
+        Assert.False(vm.ApplyCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanSync_FalseWhenNoSelection()
     {
-        Assert.IsFalse(NewVm().SyncCommand.CanExecute(null));
+        Assert.False(NewVm().SyncCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanDelete_FalseWhenNoSelection()
     {
-        Assert.IsFalse(NewVm().DeleteCommand.CanExecute(null));
+        Assert.False(NewVm().DeleteCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanDelete_TrueWithSelection_FalseWhenBusy()
     {
         CreateProfile("work");
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
-        Assert.IsTrue(vm.DeleteCommand.CanExecute(null));
+        Assert.True(vm.DeleteCommand.CanExecute(null));
         vm.IsBusy = true;
-        Assert.IsFalse(vm.DeleteCommand.CanExecute(null));
+        Assert.False(vm.DeleteCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanApplyDesktop_FalseWhenNoDesktopSelection()
     {
-        Assert.IsFalse(NewVm().ApplyDesktopCommand.CanExecute(null));
+        Assert.False(NewVm().ApplyDesktopCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanDeleteDesktop_FalseWhenNoDesktopSelection()
     {
-        Assert.IsFalse(NewVm().DeleteDesktopCommand.CanExecute(null));
+        Assert.False(NewVm().DeleteDesktopCommand.CanExecute(null));
     }
 
     // ── NewProfileAsync — input-validation branches ──────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_UserCancelsInput_NoOps()
     {
         StubDialogService dlg = new() { InputReturns = null };
         ProfilesViewModel vm = NewVm(dlg);
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.InputCalls);
-        Assert.AreEqual(0, dlg.AlertCalls,
+        Assert.Equal(1, dlg.InputCalls);
+        MessageAssert.Equal(0, dlg.AlertCalls,
             "Cancelling the input dialog must not open an alert.");
-        Assert.AreEqual(0, vm.Profiles.Count);
+        Assert.Empty(vm.Profiles);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_BlankName_NoOpsSilently()
     {
         StubDialogService dlg = new() { InputReturns = "   " };
         ProfilesViewModel vm = NewVm(dlg);
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, dlg.AlertCalls,
+        MessageAssert.Equal(0, dlg.AlertCalls,
             "Whitespace-only name short-circuits the same way Cancel does.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_ReservedName_OpensAlert()
     {
         StubDialogService dlg = new() { InputReturns = "(global)" };
         ProfilesViewModel vm = NewVm(dlg);
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.AlertCalls);
-        Assert.AreEqual("Invalid Name", dlg.LastAlertTitle);
+        Assert.Equal(1, dlg.AlertCalls);
+        Assert.Equal("Invalid Name", dlg.LastAlertTitle);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_GlobalAlias_AlsoReserved()
     {
         StubDialogService dlg = new() { InputReturns = "GLOBAL" };
         ProfilesViewModel vm = NewVm(dlg);
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.AlertCalls,
+        MessageAssert.Equal(1, dlg.AlertCalls,
             "'global' (any casing) must be rejected as reserved.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_DotName_OpensAlert()
     {
         StubDialogService dlg = new() { InputReturns = "." };
         ProfilesViewModel vm = NewVm(dlg);
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.AlertCalls);
+        Assert.Equal(1, dlg.AlertCalls);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NewProfileAsync_DuplicateName_OpensAlert()
     {
         CreateProfile("work");
@@ -317,29 +322,29 @@ public sealed class ProfilesViewModelTests
         vm.Refresh();
         await vm.NewProfileCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.AlertCalls);
-        Assert.AreEqual("Profile Exists", dlg.LastAlertTitle);
+        Assert.Equal(1, dlg.AlertCalls);
+        Assert.Equal("Profile Exists", dlg.LastAlertTitle);
     }
 
     // ── DeleteAsync — confirmation branch ────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_UserCancelsConfirm_NothingDeleted()
     {
         CreateProfile("work");
         StubDialogService dlg = new() { ConfirmReturns = false };
         ProfilesViewModel vm = NewVm(dlg);
         vm.Refresh();
-        Assert.IsTrue(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "work")));
+        Assert.True(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "work")));
 
         await vm.DeleteCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsTrue(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "work")),
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.True(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "work")),
             "Cancelling the destructive confirm must NOT delete the profile.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_ConfirmedWhenSelected_RemovesProfileDir_AndFiresCallback()
     {
         CreateProfile("work");
@@ -350,25 +355,25 @@ public sealed class ProfilesViewModelTests
         vm.OnProfileDeleted = name => deletedNotifications.Add(name);
 
         vm.Refresh();
-        Assert.AreEqual(1, vm.Profiles.Count);
+        Assert.Single(vm.Profiles);
 
         await vm.DeleteCommand.ExecuteAsync(null);
 
-        Assert.IsFalse(
+        Assert.False(
             Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "work")),
             "Confirmed delete must remove the profile directory.");
-        CollectionAssert.AreEqual(new[] { "work" }, deletedNotifications);
-        Assert.AreEqual(0, vm.Profiles.Count,
+        Assert.Equal(new[] { "work" }, deletedNotifications);
+        MessageAssert.Equal(0, vm.Profiles.Count,
             "Refresh after delete must rebuild the list with the deleted profile gone.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_ActiveProfile_ClearsCliPointer()
     {
         CreateProfile("work");
         // Mark "work" as the currently-active CLI profile.
         ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "work");
-        Assert.AreEqual("work", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty));
+        Assert.Equal("work", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty));
 
         StubDialogService dlg = new() { ConfirmReturns = true };
         ProfilesViewModel vm = NewVm(dlg);
@@ -376,26 +381,26 @@ public sealed class ProfilesViewModelTests
 
         await vm.DeleteCommand.ExecuteAsync(null);
 
-        Assert.IsNull(ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
+        MessageAssert.Null(ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
             "Deleting the CLI-active profile must clear the activation pointer "
             + "so Claude Code is not pointing at a deleted directory.");
     }
 
     // ── DesktopProfile predicates ────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CanSyncDesktop_FalseWhenNoSelection()
     {
-        Assert.IsFalse(NewVm().SyncDesktopCommand.CanExecute(null));
+        Assert.False(NewVm().SyncDesktopCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void RefreshDesktop_EmptyDir_PopulatesStatusMessage()
     {
         ProfilesViewModel vm = NewVm();
         vm.Refresh();
-        Assert.AreEqual(0, vm.DesktopProfiles.Count);
-        Assert.AreEqual(
+        Assert.Empty(vm.DesktopProfiles);
+        Assert.Equal(
             Strings.StatusNoDesktopProfiles,
             vm.DesktopStatusMessage);
     }
@@ -462,7 +467,7 @@ public sealed class ProfilesViewModelTests
 
     // ── sync command execution paths ──────────
 
-    [TestMethod]
+    [Fact]
     public async Task SyncAsync_NoSelection_NoOp()
     {
         // SyncAsync's first guard returns immediately when SelectedProfile
@@ -474,11 +479,11 @@ public sealed class ProfilesViewModelTests
 
         await vm.SyncCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls,
+        MessageAssert.Equal(0, dlg.ConfirmCalls,
             "Confirm dialog must not appear when SelectedProfile is null.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SyncAsync_UserCancelsConfirm_NoSync()
     {
         // User says no to the confirm dialog → no SyncFromLiveAsync runs,
@@ -495,16 +500,16 @@ public sealed class ProfilesViewModelTests
 
         await vm.SyncCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
+        Assert.Equal(1, dlg.ConfirmCalls);
         // Profile's settings.json should NOT contain the live-state edit
         // because the user cancelled.
         string profileSettings = await File.ReadAllTextAsync(
             Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"));
-        Assert.AreEqual("{}", profileSettings,
+        MessageAssert.Equal("{}", profileSettings,
             "User declined the sync confirm — profile state must remain unchanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SyncAsync_UserConfirms_CopiesLiveIntoProfile()
     {
         CreateProfile("p");
@@ -519,32 +524,32 @@ public sealed class ProfilesViewModelTests
 
         await vm.SyncCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
+        Assert.Equal(1, dlg.ConfirmCalls);
         // Profile settings.json now contains the live state.
         string profileSettings = await File.ReadAllTextAsync(
             Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"));
-        StringAssert.Contains(profileSettings, "haiku",
+        MessageAssert.Contains("haiku", profileSettings,
             "Confirmed sync must overwrite the profile from the live files.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SyncCommand_CanExecute_FollowsCanSyncPredicate()
     {
         // Predicate-tracked CanExecute: false until a profile is selected,
         // true once selection is non-null.
         ProfilesViewModel vm = NewVm();
-        Assert.IsFalse(vm.SyncCommand.CanExecute(null));
+        Assert.False(vm.SyncCommand.CanExecute(null));
 
         CreateProfile("p");
         vm.Refresh();
         vm.SelectedProfile = vm.Profiles.First(p => p.Name == "p");
 
-        Assert.IsTrue(vm.SyncCommand.CanExecute(null));
+        Assert.True(vm.SyncCommand.CanExecute(null));
     }
 
     // ── ExportCommand.CanExecute — locks the GUI button-enable contract ────
 
-    [TestMethod]
+    [Fact]
     public void ExportCommand_CanExecute_FalseInitially_TrueAfterSelection()
     {
         // regression for the user-reported "Export button
@@ -555,21 +560,21 @@ public sealed class ProfilesViewModelTests
         // so the button must transition from disabled → enabled
         // synchronously on selection change.
         ProfilesViewModel vm = NewVm();
-        Assert.IsFalse(vm.ExportCommand.CanExecute(null),
+        Assert.False(vm.ExportCommand.CanExecute(null),
             "Export must be disabled before any profile is selected.");
 
         CreateProfile("p");
         vm.Refresh();
         vm.SelectedProfile = vm.Profiles.First(p => p.Name == "p");
 
-        Assert.IsTrue(vm.ExportCommand.CanExecute(null),
+        Assert.True(vm.ExportCommand.CanExecute(null),
             "Export must enable as soon as a profile is selected (and IsBusy is false).  " +
             "If this fails, the [NotifyCanExecuteChangedFor(nameof(ExportCommand))] " +
             "attribute on _selectedProfile is missing or the source generator did not " +
             "wire the CanExecuteChanged event.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExportCommand_CanExecute_FalseWhileIsBusy()
     {
         // Locks the IsBusy interlock on the predicate side: even with
@@ -580,14 +585,14 @@ public sealed class ProfilesViewModelTests
         CreateProfile("p");
         vm.Refresh();
         vm.SelectedProfile = vm.Profiles.First(p => p.Name == "p");
-        Assert.IsTrue(vm.ExportCommand.CanExecute(null), "precondition: enabled.");
+        Assert.True(vm.ExportCommand.CanExecute(null), "precondition: enabled.");
 
         vm.IsBusy = true;
-        Assert.IsFalse(vm.ExportCommand.CanExecute(null),
+        Assert.False(vm.ExportCommand.CanExecute(null),
             "Export must disable while IsBusy=true.");
 
         vm.IsBusy = false;
-        Assert.IsTrue(vm.ExportCommand.CanExecute(null),
+        Assert.True(vm.ExportCommand.CanExecute(null),
             "Export must re-enable when IsBusy returns to false.");
     }
 
@@ -605,7 +610,7 @@ public sealed class ProfilesViewModelTests
     // ── ApplyAsync / ExportAsync / ImportAsync: these async commands were at 0% coverage;
     //    each test isolates one branch of the method's decision tree.
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyAsync_UserDeclinesConfirm_NoApply()
     {
         // Confirm dialog returns false → ProfileEngine.ApplyProfileToLiveAsync
@@ -621,13 +626,13 @@ public sealed class ProfilesViewModelTests
 
         await vm.ApplyCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.AreEqual("""{"live":"original"}""",
+        Assert.Equal(1, dlg.ConfirmCalls);
+        MessageAssert.Equal("""{"live":"original"}""",
             await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json")),
             "Decline must preserve live settings.json.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyAsync_UserConfirms_OverwritesLiveFromProfile()
     {
         // Profile has settings.json with one shape; live has a different
@@ -647,15 +652,15 @@ public sealed class ProfilesViewModelTests
 
         await vm.ApplyCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.AreEqual("""{"from":"profile"}""",
+        Assert.Equal(1, dlg.ConfirmCalls);
+        MessageAssert.Equal("""{"from":"profile"}""",
             await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json")),
             "Confirmed apply must copy profile settings.json into the live location.");
-        Assert.AreEqual("p", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
+        MessageAssert.Equal("p", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
             "Apply must update the active-profile pointer.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ApplyAsync_NoSelection_NoOp()
     {
         // First guard: no SelectedProfile → return immediately, no dialog.
@@ -664,11 +669,11 @@ public sealed class ProfilesViewModelTests
 
         await vm.ApplyCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls,
+        MessageAssert.Equal(0, dlg.ConfirmCalls,
             "No SelectedProfile → no dialog must appear (defence-in-depth past CanApply).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ExportAsync_UserCancelsFilePicker_NoExport()
     {
         // PickSaveFileAsync returns null → early-return; no export file
@@ -681,13 +686,13 @@ public sealed class ProfilesViewModelTests
 
         await vm.ExportCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.PickSaveFileCalls,
+        MessageAssert.Equal(1, dlg.PickSaveFileCalls,
             "Save-file picker must have appeared once.");
         // No status string set (would be StatusProfileExportedFmt on success).
-        Assert.IsNull(vm.StatusMessage);
+        Assert.Null(vm.StatusMessage);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ExportAsync_UserPicksDestination_WritesProfileJson()
     {
         // PickSaveFileAsync returns a path → ProfileEngine.ExportProfileAsync
@@ -704,17 +709,17 @@ public sealed class ProfilesViewModelTests
 
         await vm.ExportCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.PickSaveFileCalls);
-        Assert.IsTrue(File.Exists(destPath),
+        Assert.Equal(1, dlg.PickSaveFileCalls);
+        Assert.True(File.Exists(destPath),
             $"Export must have written the profile JSON to {destPath}.");
         string content = await File.ReadAllTextAsync(destPath);
-        StringAssert.Contains(content, "\"name\"",
+        MessageAssert.Contains("\"name\"", content,
             "Exported file must contain the ExportedProfile envelope.");
-        Assert.IsNotNull(vm.StatusMessage,
+        MessageAssert.NotNull(vm.StatusMessage,
             "Successful export must populate StatusMessage.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ImportAsync_UserCancelsFilePicker_NoImport()
     {
         // PickFileAsync returns null → early-return; no profile created.
@@ -723,12 +728,12 @@ public sealed class ProfilesViewModelTests
 
         await vm.ImportCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.PickFileCalls);
-        Assert.AreEqual(0, vm.Profiles.Count,
+        Assert.Equal(1, dlg.PickFileCalls);
+        MessageAssert.Equal(0, vm.Profiles.Count,
             "User cancelled → no profile dir should appear under profiles/.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ImportAsync_UserPicksValidProfileJson_CreatesProfile()
     {
         // Round-trip: Export "p", delete the profile dir, then Import the
@@ -747,10 +752,10 @@ public sealed class ProfilesViewModelTests
 
         await vm.ImportCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, dlg.PickFileCalls);
-        Assert.IsTrue(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "p")),
+        Assert.Equal(1, dlg.PickFileCalls);
+        Assert.True(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "p")),
             "Import must have re-created the profile directory.");
-        Assert.AreEqual(1, vm.Profiles.Count,
+        MessageAssert.Equal(1, vm.Profiles.Count,
             "Refresh after import must surface the re-created profile.");
     }
 }

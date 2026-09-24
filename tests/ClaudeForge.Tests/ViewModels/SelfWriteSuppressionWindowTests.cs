@@ -17,16 +17,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// milliseconds.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class SelfWriteSuppressionWindowTests
+public sealed class SelfWriteSuppressionWindowTests : IAsyncDisposable
 {
     private string _sandbox = null!;
     private FakeTimeProvider _time = null!;
     private SchemaRegistry _schemaRegistry = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public SelfWriteSuppressionWindowTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -47,8 +47,7 @@ public sealed class SelfWriteSuppressionWindowTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService(), timeProvider: _time);
     }
 
-    [TestCleanup]
-    public async Task Cleanup()
+    private async Task Cleanup()
     {
         if (_vm.LastAutomaticReload is { } reload)
         {
@@ -63,36 +62,42 @@ public sealed class SelfWriteSuppressionWindowTests
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
-    [TestMethod]
+    public async ValueTask DisposeAsync()
+    {
+        await Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void BeforeAnySelfWrite_NothingIsSuppressed()
     {
         // The default deadline is DateTimeOffset.MinValue, so a watcher event on a freshly
         // constructed view-model must read as a genuine external edit.
-        Assert.IsFalse(_vm.IsWithinSelfWriteSuppressionWindow(),
+        Assert.False(_vm.IsWithinSelfWriteSuppressionWindow(),
             "With no save having happened, a watcher event is an external edit and must reload.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ImmediatelyAfterStamping_TheWindowIsOpen()
     {
         _vm.StampSelfWriteSuppressionWindow();
 
-        Assert.IsTrue(_vm.IsWithinSelfWriteSuppressionWindow(),
+        Assert.True(_vm.IsWithinSelfWriteSuppressionWindow(),
             "The watcher re-firing on our own write must not trigger a reload.");
     }
 
-    [TestMethod]
+    [Fact]
     public void JustInsideTheWindow_IsStillSuppressed()
     {
         _vm.StampSelfWriteSuppressionWindow();
 
         _time.Advance(MainWindowViewModel.SelfWriteSuppressionWindow - TimeSpan.FromMilliseconds(1));
 
-        Assert.IsTrue(_vm.IsWithinSelfWriteSuppressionWindow(),
+        Assert.True(_vm.IsWithinSelfWriteSuppressionWindow(),
             "One millisecond before the deadline is still inside the window.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AtTheDeadline_SuppressionHasLapsed()
     {
         _vm.StampSelfWriteSuppressionWindow();
@@ -101,21 +106,21 @@ public sealed class SelfWriteSuppressionWindowTests
 
         // The comparison is strict (now < deadline), so the boundary itself is already outside.
         // This is the half that was previously unassertable without a real two-second sleep.
-        Assert.IsFalse(_vm.IsWithinSelfWriteSuppressionWindow(),
+        Assert.False(_vm.IsWithinSelfWriteSuppressionWindow(),
             "At the deadline the window has closed and an external edit must reload again.");
     }
 
-    [TestMethod]
+    [Fact]
     public void WellAfterTheWindow_SuppressionHasLapsed()
     {
         _vm.StampSelfWriteSuppressionWindow();
 
         _time.Advance(TimeSpan.FromMinutes(5));
 
-        Assert.IsFalse(_vm.IsWithinSelfWriteSuppressionWindow());
+        Assert.False(_vm.IsWithinSelfWriteSuppressionWindow());
     }
 
-    [TestMethod]
+    [Fact]
     public void StampingAgain_ExtendsTheWindowFromTheNewNow()
     {
         // A second save inside an open window must push the deadline out, not leave it where the
@@ -127,7 +132,7 @@ public sealed class SelfWriteSuppressionWindowTests
         _vm.StampSelfWriteSuppressionWindow();
         _time.Advance(MainWindowViewModel.SelfWriteSuppressionWindow - TimeSpan.FromMilliseconds(1));
 
-        Assert.IsTrue(_vm.IsWithinSelfWriteSuppressionWindow(),
+        Assert.True(_vm.IsWithinSelfWriteSuppressionWindow(),
             "The re-stamp must restart the window from the second save, not keep the first deadline.");
     }
 

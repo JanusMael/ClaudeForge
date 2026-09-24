@@ -22,7 +22,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// right keys the right way).
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class TableDangerClassifierTests
 {
     private sealed record Scope(string Id) : IEditorScope
@@ -41,7 +40,7 @@ public sealed class TableDangerClassifierTests
 
     // ── The no-inherit guarantee — the assertion that must be able to fail ────
 
-    [TestMethod]
+    [Fact]
     public void AnAncestorsValuePredicateIsNeverRunAgainstADescendantsValue()
     {
         // `parent` has a predicate that WOULD fire on the descendant's value. That is the whole
@@ -53,15 +52,15 @@ public sealed class TableDangerClassifierTests
 
         DangerAssessment inherited = classifier.Classify("parent.child", AnyScope, "boom");
 
-        Assert.AreEqual(AppSeverity.Critical, inherited.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, inherited.Severity,
             "the tier IS inherited — that is what makes a per-top-level-key table cover a nested schema");
-        Assert.IsFalse(inherited.IsDangerNow,
+        Assert.False(inherited.IsDangerNow,
             "the ancestor's predicate was written for the parent's own value shape and must never "
             + "be evaluated against a descendant's value");
-        Assert.AreEqual("area", inherited.Explanation);
+        Assert.Equal("area", inherited.Explanation);
     }
 
-    [TestMethod]
+    [Fact]
     public void AnExactMatchDoesRunItsOwnValuePredicate()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -69,14 +68,14 @@ public sealed class TableDangerClassifierTests
             ["parent"] = new() { Tier = AppSeverity.Critical, Why = "area", Unsafe = IsBoom },
         });
 
-        Assert.IsTrue(classifier.Classify("parent", AnyScope, "boom").IsDangerNow);
-        Assert.IsFalse(classifier.Classify("parent", AnyScope, "fine").IsDangerNow);
+        Assert.True(classifier.Classify("parent", AnyScope, "boom").IsDangerNow);
+        Assert.False(classifier.Classify("parent", AnyScope, "fine").IsDangerNow);
     }
 
     /// <summary>
     /// Paired with the test above: an ancestor rule must not suppress a descendant's OWN rule.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ADescendantWithItsOwnRuleIsEvaluatedNormally()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -87,14 +86,14 @@ public sealed class TableDangerClassifierTests
 
         DangerAssessment a = classifier.Classify("parent.child", AnyScope, "boom");
 
-        Assert.AreEqual(AppSeverity.Critical, a.Severity, "the descendant's own tier wins");
-        Assert.IsTrue(a.IsDangerNow, "and its own predicate runs");
-        Assert.AreEqual("leaf", a.Explanation);
+        MessageAssert.Equal(AppSeverity.Critical, a.Severity, "the descendant's own tier wins");
+        Assert.True(a.IsDangerNow, "and its own predicate runs");
+        Assert.Equal("leaf", a.Explanation);
     }
 
     // ── Specificity ───────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ALiteralSegmentBeatsAWildcardAtTheSameDepth()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -103,11 +102,11 @@ public sealed class TableDangerClassifierTests
             ["a.b"] = new() { Tier = AppSeverity.Critical, Why = "literal" },
         });
 
-        Assert.AreEqual("literal", classifier.Classify("a.b", AnyScope, null).Explanation);
-        Assert.AreEqual("wildcard", classifier.Classify("a.zzz", AnyScope, null).Explanation);
+        Assert.Equal("literal", classifier.Classify("a.b", AnyScope, null).Explanation);
+        Assert.Equal("wildcard", classifier.Classify("a.zzz", AnyScope, null).Explanation);
     }
 
-    [TestMethod]
+    [Fact]
     public void ADeeperPatternBeatsAShallowerOne()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -116,12 +115,12 @@ public sealed class TableDangerClassifierTests
             ["a.b.c"] = new() { Tier = AppSeverity.Critical, Why = "deep" },
         });
 
-        Assert.AreEqual("deep", classifier.Classify("a.b.c", AnyScope, null).Explanation);
-        Assert.AreEqual("shallow", classifier.Classify("a.b", AnyScope, null).Explanation,
+        Assert.Equal("deep", classifier.Classify("a.b.c", AnyScope, null).Explanation);
+        MessageAssert.Equal("shallow", classifier.Classify("a.b", AnyScope, null).Explanation,
             "a.b.c is longer than the path, so it must not match at all");
     }
 
-    [TestMethod]
+    [Fact]
     public void AWildcardMatchesExactlyOneSegmentNotSeveral()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -129,15 +128,15 @@ public sealed class TableDangerClassifierTests
             ["a.*.c"] = new() { Tier = AppSeverity.Critical, Why = "matched" },
         });
 
-        Assert.AreEqual("matched", classifier.Classify("a.b.c", AnyScope, null).Explanation);
+        Assert.Equal("matched", classifier.Classify("a.b.c", AnyScope, null).Explanation);
 
         // `*` must not swallow "b.x" — a.b.x.c is not this pattern.
-        Assert.AreEqual(DangerAssessment.Unremarkable, classifier.Classify("a.b.x.c", AnyScope, null));
+        Assert.Equal(DangerAssessment.Unremarkable, classifier.Classify("a.b.x.c", AnyScope, null));
     }
 
     // ── Scope escalation ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EscalationRaisesTheTierOnlyAtTheNamedScope()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -150,13 +149,13 @@ public sealed class TableDangerClassifierTests
             },
         });
 
-        Assert.AreEqual(AppSeverity.Critical,
+        Assert.Equal(AppSeverity.Critical,
             classifier.Classify("secret", new Scope("shared"), null).Severity);
-        Assert.AreEqual(AppSeverity.Caution,
+        Assert.Equal(AppSeverity.Caution,
             classifier.Classify("secret", new Scope("private"), null).Severity);
     }
 
-    [TestMethod]
+    [Fact]
     public void ANullScopeNeverRaisesTheTier()
     {
         // An escalation predicate that would say "yes" to anything it is handed, including null.
@@ -172,11 +171,11 @@ public sealed class TableDangerClassifierTests
 
         // The rule's own predicate is what decides, so a table CAN escalate on null if it insists
         // — this test pins that the mechanism passes null through rather than inventing a scope.
-        Assert.AreEqual(AppSeverity.Critical, classifier.Classify("secret", scope: null, null).Severity,
+        MessageAssert.Equal(AppSeverity.Critical, classifier.Classify("secret", scope: null, null).Severity,
             "the mechanism must hand the rule a null scope id, not fabricate one");
     }
 
-    [TestMethod]
+    [Fact]
     public void EscalationIsNotAppliedToAnInheritedMatch()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -189,13 +188,13 @@ public sealed class TableDangerClassifierTests
             },
         });
 
-        Assert.AreEqual(AppSeverity.Caution,
+        MessageAssert.Equal(AppSeverity.Caution,
             classifier.Classify("parent.child", new Scope("shared"), null).Severity,
             "an inherited assessment carries the base tier; escalation is an exact-match concern, "
             + "consistent with the value predicate");
     }
 
-    [TestMethod]
+    [Fact]
     public void ACustomEscalatedTierIsHonoured()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -209,13 +208,13 @@ public sealed class TableDangerClassifierTests
             },
         });
 
-        Assert.AreEqual(AppSeverity.Caution, classifier.Classify("x", AnyScope, null).Severity,
+        MessageAssert.Equal(AppSeverity.Caution, classifier.Classify("x", AnyScope, null).Severity,
             "EscalatedTier defaults to Critical but must be overridable");
     }
 
     // ── Edges ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void AnUnmatchedOrEmptyPathIsUnremarkable()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -223,11 +222,11 @@ public sealed class TableDangerClassifierTests
             ["a"] = new() { Tier = AppSeverity.Critical, Why = "a" },
         });
 
-        Assert.AreEqual(DangerAssessment.Unremarkable, classifier.Classify("zzz", AnyScope, null));
-        Assert.AreEqual(DangerAssessment.Unremarkable, classifier.Classify(string.Empty, AnyScope, null));
+        Assert.Equal(DangerAssessment.Unremarkable, classifier.Classify("zzz", AnyScope, null));
+        Assert.Equal(DangerAssessment.Unremarkable, classifier.Classify(string.Empty, AnyScope, null));
     }
 
-    [TestMethod]
+    [Fact]
     public void ClassifiedPathsReportsEveryPatternVerbatimIncludingWildcards()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal)
@@ -236,18 +235,18 @@ public sealed class TableDangerClassifierTests
             ["b.*.c"] = new() { Tier = AppSeverity.Info, Why = "b" },
         });
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "a", "b.*.c" },
             classifier.ClassifiedPaths.ToArray(),
             "a coverage test needs the patterns as written, so it can match rather than string-compare");
     }
 
-    [TestMethod]
+    [Fact]
     public void AnEmptyTableClassifiesNothingRatherThanThrowing()
     {
         TableDangerClassifier classifier = new(new Dictionary<string, DangerRule>(StringComparer.Ordinal));
 
-        Assert.AreEqual(DangerAssessment.Unremarkable, classifier.Classify("anything", AnyScope, null));
-        Assert.AreEqual(0, classifier.ClassifiedPaths.Count);
+        Assert.Equal(DangerAssessment.Unremarkable, classifier.Classify("anything", AnyScope, null));
+        Assert.Empty(classifier.ClassifiedPaths);
     }
 }

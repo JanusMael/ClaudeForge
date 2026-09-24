@@ -46,7 +46,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// family exemption already covers those two — and it closes the hiding place for free.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class NoDeadBrushTokensTests
 {
     /// <summary>
@@ -104,13 +103,13 @@ public sealed class NoDeadBrushTokensTests
     private static readonly Regex Declaration =
         new(@"<(?<element>\w*Brush)\s+x:Key\s*=\s*""(?<key>[^""]+)""", RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void EveryDeclaredBrushTokenIsUsedBySomething()
     {
         string repoRoot = FindRepoRoot();
         Dictionary<string, SortedSet<string>> declarations = DeclarationsOutsideShims(repoRoot);
 
-        Assert.IsTrue(declarations.Count >= MinimumDeclarations,
+        Assert.True(declarations.Count >= MinimumDeclarations,
             $"only {declarations.Count} brush token(s) found outside the compat shims, expected at "
             + $"least {MinimumDeclarations}. The declaration pattern has stopped matching, so this "
             + "test is no longer checking anything.");
@@ -137,7 +136,7 @@ public sealed class NoDeadBrushTokensTests
             }
         }
 
-        Assert.IsTrue(dead.Count == 0,
+        Assert.True(dead.Count == 0,
             $"{dead.Count} brush token(s) are declared and never used:\n  "
             + string.Join("\n  ", dead)
             + "\n\nDelete the declaration, or wire it up. A token nobody references still carries a "
@@ -150,7 +149,7 @@ public sealed class NoDeadBrushTokensTests
     /// ⭐ Keeps the exemptions honest. An exemption whose converter is gone would go on hiding real
     /// dead tokens forever, and nothing else would ever say so.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryComputedFamilyExemptionIsStillEarned()
     {
         string repoRoot = FindRepoRoot();
@@ -194,7 +193,7 @@ public sealed class NoDeadBrushTokensTests
             }
         }
 
-        Assert.IsTrue(stale.Count == 0,
+        Assert.True(stale.Count == 0,
             $"{stale.Count} computed-family exemption(s) no longer describe the code:\n  "
             + string.Join("\n  ", stale)
             + "\n\nRemove the exemption. While it stands it hides every token of that shape from "
@@ -205,7 +204,7 @@ public sealed class NoDeadBrushTokensTests
     /// The shim exclusion is by PATH, so a move or rename silently turns 260 shim entries into
     /// reported dead tokens. Failing here names the cause instead.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheCompatShimsAreWhereTheExclusionExpects()
     {
         string repoRoot = FindRepoRoot();
@@ -214,12 +213,12 @@ public sealed class NoDeadBrushTokensTests
         {
             string path = Path.Combine(repoRoot, shim.Replace('/', Path.DirectorySeparatorChar));
 
-            Assert.IsTrue(File.Exists(path),
+            Assert.True(File.Exists(path),
                 $"{shim} is excluded from the dead-token scan but does not exist. If it moved, "
                 + "update CompatShims — otherwise its entries will be reported as dead tokens, "
                 + "which they are not: their consumers are templates inside theme packages.");
 
-            Assert.IsTrue(Declaration.Matches(File.ReadAllText(path)).Count > 20,
+            Assert.True(Declaration.Matches(File.ReadAllText(path)).Count > 20,
                 $"{shim} declares almost no brushes, so it is probably no longer the shim this "
                 + "exclusion was written for");
         }
@@ -286,7 +285,7 @@ public sealed class NoDeadBrushTokensTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

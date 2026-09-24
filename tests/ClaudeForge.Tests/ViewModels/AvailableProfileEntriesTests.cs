@@ -10,15 +10,15 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// <see cref="MainWindowViewModel.SelectedProfileEntry"/>, and the
 /// <see cref="MainWindowViewModel.CanDeleteProfile"/> gate.
 /// </summary>
-[TestClass]
-public sealed class AvailableProfileEntriesTests
+public sealed class AvailableProfileEntriesTests : IAsyncDisposable
 {
     private string _sandbox = null!;
     private SchemaRegistry _schemaRegistry = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public AvailableProfileEntriesTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -31,8 +31,7 @@ public sealed class AvailableProfileEntriesTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, _schemaRegistry, new NullDialogService());
     }
 
-    [TestCleanup]
-    public async Task Cleanup()
+    private async Task Cleanup()
     {
         // Drain the two fire-and-forget hops a test in this class can start before deleting the
         // sandbox they write into. Assigning SelectedProfile runs OnSelectedProfileChanged, which
@@ -78,6 +77,12 @@ public sealed class AvailableProfileEntriesTests
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        await Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -98,25 +103,25 @@ public sealed class AvailableProfileEntriesTests
     // AvailableProfileEntries — structure
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_AlwaysStartsWithGlobal()
     {
         IReadOnlyList<UnifiedProfileEntry> entries = _vm.AvailableProfileEntries;
 
-        Assert.IsTrue(entries.Count >= 1);
-        Assert.AreEqual(UnifiedProfileEntry.GlobalName, entries[0].Name);
-        Assert.IsTrue(entries[0].IsGlobal);
+        Assert.True(entries.Count >= 1);
+        Assert.Equal(UnifiedProfileEntry.GlobalName, entries[0].Name);
+        Assert.True(entries[0].IsGlobal);
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_NoProfiles_ContainsOnlyGlobal()
     {
         IReadOnlyList<UnifiedProfileEntry> entries = _vm.AvailableProfileEntries;
 
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_CliOnlyProfile_HasCliTrueHasDesktopFalse()
     {
         CreateCliProfile("work");
@@ -124,11 +129,11 @@ public sealed class AvailableProfileEntriesTests
         IReadOnlyList<UnifiedProfileEntry> entries = _vm.AvailableProfileEntries;
         UnifiedProfileEntry work = entries.Single(e => e.Name == "work");
 
-        Assert.IsTrue(work.HasCli);
-        Assert.IsFalse(work.HasDesktop);
+        Assert.True(work.HasCli);
+        Assert.False(work.HasDesktop);
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_DesktopOnlyProfile_HasCliTrueIsFalse()
     {
         CreateDesktopProfile("home");
@@ -136,11 +141,11 @@ public sealed class AvailableProfileEntriesTests
         IReadOnlyList<UnifiedProfileEntry> entries = _vm.AvailableProfileEntries;
         UnifiedProfileEntry home = entries.Single(e => e.Name == "home");
 
-        Assert.IsFalse(home.HasCli);
-        Assert.IsTrue(home.HasDesktop);
+        Assert.False(home.HasCli);
+        Assert.True(home.HasDesktop);
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_SharedProfile_MergedWithBothFlags()
     {
         CreateCliProfile("work");
@@ -149,13 +154,13 @@ public sealed class AvailableProfileEntriesTests
         IReadOnlyList<UnifiedProfileEntry> entries = _vm.AvailableProfileEntries;
         UnifiedProfileEntry work = entries.Single(e => e.Name == "work");
 
-        Assert.IsTrue(work.HasCli);
-        Assert.IsTrue(work.HasDesktop);
+        Assert.True(work.HasCli);
+        Assert.True(work.HasDesktop);
         // Must appear only once in the list
-        Assert.AreEqual(1, entries.Count(e => e.Name == "work"));
+        Assert.Single(entries, e => e.Name == "work");
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_CliOnlyBeforeDesktopOnly()
     {
         // "zzz" CLI-only should sort before "aaa" Desktop-only in the merged list
@@ -167,11 +172,11 @@ public sealed class AvailableProfileEntriesTests
         int cliIdx = entries.ToList().FindIndex(e => e.Name == "zzz-cli");
         int dtIdx = entries.ToList().FindIndex(e => e.Name == "aaa-desktop");
 
-        Assert.IsTrue(cliIdx < dtIdx,
+        Assert.True(cliIdx < dtIdx,
             "CLI-only profiles must appear before Desktop-only profiles regardless of alphabetical order.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AvailableProfileEntries_SharedProfileSortedWithinCliGroup()
     {
         CreateCliProfile("beta");
@@ -181,23 +186,23 @@ public sealed class AvailableProfileEntriesTests
         // skip global at index 0
         List<string> names = entries.Skip(1).Select(e => e.Name).ToList();
 
-        Assert.AreEqual("alpha", names[0]);
-        Assert.AreEqual("beta", names[1]);
+        Assert.Equal("alpha", names[0]);
+        Assert.Equal("beta", names[1]);
     }
 
     // -----------------------------------------------------------------------
     // SelectedProfileEntry
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void SelectedProfileEntry_DefaultsToGlobal()
     {
         // SelectedProfile is initialised from saved state; sandbox has no state file
         // so it falls back to GlobalProfileSentinel.
-        Assert.IsTrue(_vm.SelectedProfileEntry!.IsGlobal);
+        Assert.True(_vm.SelectedProfileEntry!.IsGlobal);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedProfileEntry_ReturnsMatchingEntry()
     {
         CreateCliProfile("work");
@@ -205,12 +210,12 @@ public sealed class AvailableProfileEntriesTests
 
         UnifiedProfileEntry? entry = _vm.SelectedProfileEntry;
 
-        Assert.IsNotNull(entry);
-        Assert.AreEqual("work", entry.Name);
-        Assert.IsTrue(entry.HasCli);
+        Assert.NotNull(entry);
+        Assert.Equal("work", entry.Name);
+        Assert.True(entry.HasCli);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedProfileEntry_CaseInsensitiveMatch()
     {
         CreateCliProfile("Work");
@@ -218,11 +223,11 @@ public sealed class AvailableProfileEntriesTests
 
         UnifiedProfileEntry? entry = _vm.SelectedProfileEntry;
 
-        Assert.IsNotNull(entry);
-        Assert.AreEqual("Work", entry.Name); // returns the canonical name from the filesystem
+        Assert.NotNull(entry);
+        Assert.Equal("Work", entry.Name); // returns the canonical name from the filesystem
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedProfileEntry_Set_UpdatesSelectedProfile()
     {
         CreateCliProfile("personal");
@@ -230,45 +235,45 @@ public sealed class AvailableProfileEntriesTests
 
         _vm.SelectedProfileEntry = entry;
 
-        Assert.AreEqual("personal", _vm.SelectedProfile);
+        Assert.Equal("personal", _vm.SelectedProfile);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedProfileEntry_SetNull_ResetsToGlobalSentinel()
     {
         _vm.SelectedProfileEntry = null;
 
-        Assert.AreEqual(UnifiedProfileEntry.GlobalName, _vm.SelectedProfile);
+        Assert.Equal(UnifiedProfileEntry.GlobalName, _vm.SelectedProfile);
     }
 
     // -----------------------------------------------------------------------
     // CanDeleteProfile
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void CanDeleteProfile_FalseWhenGlobalIsSelected()
     {
         // SelectedProfile is "(global)" by default in a clean sandbox
-        Assert.IsFalse(_vm.DeleteProfileCommand.CanExecute(null));
+        Assert.False(_vm.DeleteProfileCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanDeleteProfile_TrueForCliProfile()
     {
         CreateCliProfile("work");
         _vm.SelectedProfile = "work";
 
-        Assert.IsTrue(_vm.DeleteProfileCommand.CanExecute(null));
+        Assert.True(_vm.DeleteProfileCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void CanDeleteProfile_FalseForDesktopOnlyProfile()
     {
         // Desktop-only profiles cannot be deleted from the toolbar — use the Profiles page.
         CreateDesktopProfile("home");
         _vm.SelectedProfile = "home";
 
-        Assert.IsFalse(_vm.DeleteProfileCommand.CanExecute(null));
+        Assert.False(_vm.DeleteProfileCommand.CanExecute(null));
     }
 
     // -----------------------------------------------------------------------

@@ -14,7 +14,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// mode picks the restore title" from "both modes happen to read the same key".
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SaveDialogTextTests
 {
     private static SaveDialogText Fake => new()
@@ -34,36 +33,36 @@ public sealed class SaveDialogTextTests
         UnsafeChangeWarningFormat = "unsafe {0}",
     };
 
-    [TestMethod]
+    [Fact]
     public void EveryModeDependentLookup_PicksTheMatchingHalf()
     {
         SaveDialogText t = Fake;
 
-        Assert.AreEqual("save-title", t.TitleFor(SaveDialogMode.Save));
-        Assert.AreEqual("restore-title", t.TitleFor(SaveDialogMode.Restore));
-        Assert.AreEqual("save-confirm", t.ConfirmButtonFor(SaveDialogMode.Save));
-        Assert.AreEqual("restore-confirm", t.ConfirmButtonFor(SaveDialogMode.Restore));
-        Assert.AreEqual("saving {0} in {1}", t.SummaryFormatFor(SaveDialogMode.Save));
-        Assert.AreEqual("restoring {0} in {1}", t.SummaryFormatFor(SaveDialogMode.Restore));
-        Assert.AreEqual("written-to", t.ActionVerbFor(SaveDialogMode.Save));
-        Assert.AreEqual("restored-to", t.ActionVerbFor(SaveDialogMode.Restore));
+        Assert.Equal("save-title", t.TitleFor(SaveDialogMode.Save));
+        Assert.Equal("restore-title", t.TitleFor(SaveDialogMode.Restore));
+        Assert.Equal("save-confirm", t.ConfirmButtonFor(SaveDialogMode.Save));
+        Assert.Equal("restore-confirm", t.ConfirmButtonFor(SaveDialogMode.Restore));
+        Assert.Equal("saving {0} in {1}", t.SummaryFormatFor(SaveDialogMode.Save));
+        Assert.Equal("restoring {0} in {1}", t.SummaryFormatFor(SaveDialogMode.Restore));
+        Assert.Equal("written-to", t.ActionVerbFor(SaveDialogMode.Save));
+        Assert.Equal("restored-to", t.ActionVerbFor(SaveDialogMode.Restore));
     }
 
-    [TestMethod]
+    [Fact]
     public void AccessibleName_IsDistinctPerChangeKind()
     {
         SaveDialogText t = Fake;
 
-        Assert.AreEqual("added", t.AccessibleNameFor(ChangeKind.Added));
-        Assert.AreEqual("removed", t.AccessibleNameFor(ChangeKind.Removed));
-        Assert.AreEqual("modified", t.AccessibleNameFor(ChangeKind.Modified));
+        Assert.Equal("added", t.AccessibleNameFor(ChangeKind.Added));
+        Assert.Equal("removed", t.AccessibleNameFor(ChangeKind.Removed));
+        Assert.Equal("modified", t.AccessibleNameFor(ChangeKind.Modified));
     }
 
     /// <summary>
     /// The dialog formats the summary itself, so the host's format string has to be a
     /// composite one taking the change count then the file count — in that order.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SummaryLine_SubstitutesChangeCountThenFileCount()
     {
         SaveChangesDialogViewModel dlg = new()
@@ -90,7 +89,7 @@ public sealed class SaveDialogTextTests
             ],
         };
 
-        Assert.AreEqual("saving 4 in 2", dlg.SummaryLine,
+        MessageAssert.Equal("saving 4 in 2", dlg.SummaryLine,
             "{0} is the total change count across sections; {1} is the number of sections.");
     }
 
@@ -99,7 +98,7 @@ public sealed class SaveDialogTextTests
     /// members are <c>required</c> — but a <em>duplicated</em> one can, and it would
     /// silently make two different labels identical.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ClaudeText_FillsEverySlot_WithDistinctModeDependentWording()
     {
         SaveDialogText t = ClaudeSaveDialogText.Create();
@@ -120,15 +119,15 @@ public sealed class SaveDialogTextTests
                      (nameof(t.KindModified), t.KindModified),
                  })
         {
-            Assert.IsFalse(string.IsNullOrWhiteSpace(value), $"{name} must carry text.");
+            Assert.False(string.IsNullOrWhiteSpace(value), $"{name} must carry text.");
         }
 
-        Assert.AreNotEqual(t.SaveTitle, t.RestoreTitle);
-        Assert.AreNotEqual(t.SaveConfirmButton, t.RestoreConfirmButton);
-        Assert.AreNotEqual(t.SaveSummaryFormat, t.RestoreSummaryFormat);
-        Assert.AreNotEqual(t.WillBeWrittenTo, t.WillBeRestoredTo);
-        Assert.AreNotEqual(t.KindAdded, t.KindRemoved);
-        Assert.AreNotEqual(t.KindAdded, t.KindModified);
-        Assert.AreNotEqual(t.KindRemoved, t.KindModified);
+        Assert.NotEqual(t.SaveTitle, t.RestoreTitle);
+        Assert.NotEqual(t.SaveConfirmButton, t.RestoreConfirmButton);
+        Assert.NotEqual(t.SaveSummaryFormat, t.RestoreSummaryFormat);
+        Assert.NotEqual(t.WillBeWrittenTo, t.WillBeRestoredTo);
+        Assert.NotEqual(t.KindAdded, t.KindRemoved);
+        Assert.NotEqual(t.KindAdded, t.KindModified);
+        Assert.NotEqual(t.KindRemoved, t.KindModified);
     }
 }

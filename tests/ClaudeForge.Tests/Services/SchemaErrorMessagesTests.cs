@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// the schema (which would change the InstancePath) immediately surfaces
 /// here instead of silently regressing the user-facing error text.
 /// </summary>
-[TestClass]
 public sealed class SchemaErrorMessagesTests
 {
     private static SchemaValidationError Make(string path, string message)
@@ -21,19 +20,19 @@ public sealed class SchemaErrorMessagesTests
 
     // ── Permission rule errors (pre-existing branch — sanity coverage) ──
 
-    [TestMethod]
+    [Fact]
     public void Friendly_PermissionRuleError_ProducesActionableHelp()
     {
         SchemaValidationError err = Make("/permissions/allow/0", "Some raw schema gibberish");
         string msg = SchemaErrorMessages.Friendly(err);
 
-        StringAssert.Contains(msg, "Invalid permission rule syntax");
-        StringAssert.Contains(msg, "Bash(*)");
+        OrdinalAssert.Contains("Invalid permission rule syntax", msg);
+        OrdinalAssert.Contains("Bash(*)", msg);
     }
 
     // ── Unknown hook event ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Friendly_UnknownHookEvent_PreToolPattern_SuggestsMatcher()
     {
         // The user's exact 2026-05-01 mistake: picked "PreBashToolUse" from
@@ -41,40 +40,40 @@ public sealed class SchemaErrorMessagesTests
         SchemaValidationError err = Make("/hooks/PreBashToolUse", "All values fail against the false schema");
         string msg = SchemaErrorMessages.Friendly(err);
 
-        StringAssert.Contains(msg, "PreBashToolUse",
+        MessageAssert.Contains("PreBashToolUse", msg,
             "Message should name the offending event so the user can locate it.");
-        StringAssert.Contains(msg, "PreToolUse",
+        MessageAssert.Contains("PreToolUse", msg,
             "Message should suggest the canonical event name.");
-        StringAssert.Contains(msg, "Bash",
+        MessageAssert.Contains("Bash", msg,
             "Message should suggest the tool name as the matcher.");
-        Assert.IsFalse(msg.Contains("false schema"),
+        Assert.False(msg.Contains("false schema"),
             "Translated message must not leak JsonSchema.Net validator jargon.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Friendly_UnknownHookEvent_PostToolPattern_SuggestsMatcher()
     {
         SchemaValidationError err = Make("/hooks/PostFileEditToolUse", "All values fail against the false schema");
         string msg = SchemaErrorMessages.Friendly(err);
 
-        StringAssert.Contains(msg, "PostToolUse");
-        StringAssert.Contains(msg, "FileEdit");
+        OrdinalAssert.Contains("PostToolUse", msg);
+        OrdinalAssert.Contains("FileEdit", msg);
     }
 
-    [TestMethod]
+    [Fact]
     public void Friendly_UnknownHookEvent_NonToolPattern_GenericGuidance()
     {
         // Made-up event that doesn't match the Pre/Post<Tool>ToolUse regex.
         SchemaValidationError err = Make("/hooks/Wibble", "All values fail against the false schema");
         string msg = SchemaErrorMessages.Friendly(err);
 
-        StringAssert.Contains(msg, "Wibble");
-        StringAssert.Contains(msg, "not a recognised hook event");
-        StringAssert.Contains(msg, "PreToolUse",
+        OrdinalAssert.Contains("Wibble", msg);
+        OrdinalAssert.Contains("not a recognised hook event", msg);
+        MessageAssert.Contains("PreToolUse", msg,
             "Generic-pattern message should still hint at the standard event names.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Friendly_UnrecognisedError_FallsThroughToRawMessage()
     {
         // Anything not matched by the translation table must surface the
@@ -83,12 +82,12 @@ public sealed class SchemaErrorMessagesTests
         SchemaValidationError err = Make("/some/unrelated/path", "minLength constraint failed");
         string msg = SchemaErrorMessages.Friendly(err);
 
-        Assert.AreEqual("minLength constraint failed", msg);
+        Assert.Equal("minLength constraint failed", msg);
     }
 
     // ── Format envelope ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Format_SingleError_RendersBulletedBlock()
     {
         SchemaValidationError[] errors =
@@ -98,16 +97,16 @@ public sealed class SchemaErrorMessagesTests
 
         string rendered = SchemaErrorMessages.Format(errors);
 
-        StringAssert.Contains(rendered, "1 validation error was found");
-        StringAssert.Contains(rendered, "settings.json:");
-        StringAssert.Contains(rendered, "•");
-        StringAssert.Contains(rendered, "PreToolUse",
+        OrdinalAssert.Contains("1 validation error was found", rendered);
+        OrdinalAssert.Contains("settings.json:", rendered);
+        OrdinalAssert.Contains("•", rendered);
+        MessageAssert.Contains("PreToolUse", rendered,
             "Format should embed the friendly message, not the raw validator text.");
-        Assert.IsFalse(rendered.Contains("false schema"),
+        Assert.False(rendered.Contains("false schema"),
             "The bulleted block must use the friendly translation, not the raw validator jargon.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Format_EnumError_ShowsCurrentValueAndAllowedValues()
     {
         // The killer case: "should match one of the enum values" alone doesn't tell the
@@ -124,15 +123,15 @@ public sealed class SchemaErrorMessagesTests
 
         string rendered = SchemaErrorMessages.Format(errors);
 
-        StringAssert.Contains(rendered, "current value: \"max\"",
+        MessageAssert.Contains("current value: \"max\"", rendered,
             "The offending value should be shown so the user sees what they have.");
-        StringAssert.Contains(rendered, "allowed values: low, medium, high, xhigh",
+        MessageAssert.Contains("allowed values: low, medium, high, xhigh", rendered,
             "The permitted enum values should be listed so the user knows the valid options.");
-        StringAssert.Contains(rendered, "(Local scope)",
+        MessageAssert.Contains("(Local scope)", rendered,
             "settings.local.json should be labelled with its scope.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Format_UnenrichedError_RendersExactlyAsBefore()
     {
         // Errors without Value/AllowedValues (the common path) must not gain blank
@@ -141,9 +140,9 @@ public sealed class SchemaErrorMessagesTests
 
         string rendered = SchemaErrorMessages.Format(errors);
 
-        Assert.IsFalse(rendered.Contains("current value:"),
+        Assert.False(rendered.Contains("current value:"),
             "No value line should appear when the error carries no Value.");
-        Assert.IsFalse(rendered.Contains("allowed values:"),
+        Assert.False(rendered.Contains("allowed values:"),
             "No allowed-values line should appear when the error carries no AllowedValues.");
     }
 }

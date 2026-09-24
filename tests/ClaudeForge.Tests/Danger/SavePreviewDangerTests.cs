@@ -25,7 +25,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// — or pass vacuously — whenever policy changes.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SavePreviewDangerTests
 {
     private const string ArrayKey = "permissions";
@@ -104,7 +103,7 @@ public sealed class SavePreviewDangerTests
     /// false negative on exactly the keys this dialog exists to catch, and every other assertion
     /// here passes under it.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ArrayChange_IsClassifiedAgainstTheWholeArray_NotTheChangedElement()
     {
         // The key must already BE an array for the element-wise diff to fire — see Dirty().
@@ -115,17 +114,17 @@ public sealed class SavePreviewDangerTests
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code", Table())], Text);
 
-        Assert.IsNotNull(dlg);
+        Assert.NotNull(dlg);
         SaveChangeEntryViewModel entry = Entry(dlg!, ArrayKey);
 
         // Premise: this really is the fragment-carrying diff shape, not a whole-value Added row.
-        Assert.AreEqual(ChangeKind.Added, entry.Kind);
-        Assert.AreEqual("\"Bash(rm -rf *)\"", entry.FullNewValue,
+        Assert.Equal(ChangeKind.Added, entry.Kind);
+        MessageAssert.Equal("\"Bash(rm -rf *)\"", entry.FullNewValue,
             "precondition: the diff carries ONE ELEMENT, not the array. If this ever becomes the "
             + "whole array, the assertion below stops testing anything.");
 
-        Assert.AreEqual(AppSeverity.Critical, entry.Danger.Severity);
-        Assert.IsTrue(entry.Danger.IsDangerNow,
+        Assert.Equal(AppSeverity.Critical, entry.Danger.Severity);
+        Assert.True(entry.Danger.IsDangerNow,
             "the predicate must receive the whole array (IReadOnlyList) as it will exist on disk. "
             + "Passing PropertyDiff.NewValue hands it a single element's string, which matches no "
             + "list pattern and reports the change safe.");
@@ -133,7 +132,7 @@ public sealed class SavePreviewDangerTests
 
     // ── The ordinary cases ───────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void UnsafeScalarChange_IsFlaggedAsDangerNow()
     {
         AgentConfigClientCore client = Dirty(ConfigScope.User, null, (ToggleKey, JsonValue.Create(true)));
@@ -142,15 +141,15 @@ public sealed class SavePreviewDangerTests
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code", Table())], Text);
 
         SaveChangeEntryViewModel entry = Entry(dlg!, ToggleKey);
-        Assert.AreEqual(AppSeverity.Critical, entry.Danger.Severity);
-        Assert.IsTrue(entry.Danger.IsDangerNow, "a JSON true must reach the predicate as a bool");
-        Assert.IsTrue(entry.HasDangerSeverity);
-        Assert.AreEqual(
+        Assert.Equal(AppSeverity.Critical, entry.Danger.Severity);
+        Assert.True(entry.Danger.IsDangerNow, "a JSON true must reach the predicate as a bool");
+        Assert.True(entry.HasDangerSeverity);
+        Assert.Equal(
             "Critical: Skips the permission prompt for every tool call.",
             entry.DangerAccessibleText);
     }
 
-    [TestMethod]
+    [Fact]
     public void SafeValueAtADangerousKey_KeepsTheTierButIsNotDangerNow()
     {
         AgentConfigClientCore client = Dirty(ConfigScope.User, null, (ToggleKey, JsonValue.Create(false)));
@@ -159,16 +158,16 @@ public sealed class SavePreviewDangerTests
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code", Table())], Text);
 
         SaveChangeEntryViewModel entry = Entry(dlg!, ToggleKey);
-        Assert.AreEqual(AppSeverity.Critical, entry.Danger.Severity);
-        Assert.IsFalse(entry.Danger.IsDangerNow);
-        Assert.IsTrue(entry.HasDangerSeverity, "a triaged key still renders its dot");
+        Assert.Equal(AppSeverity.Critical, entry.Danger.Severity);
+        Assert.False(entry.Danger.IsDangerNow);
+        Assert.True(entry.HasDangerSeverity, "a triaged key still renders its dot");
     }
 
     /// <summary>
     /// The scope used is the DOCUMENT's — the file being written — which is what makes escalation
     /// meaningful on this surface.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EscalationUsesTheScopeOfTheFileBeingWritten()
     {
         SaveChangesDialogViewModel? atUser = SaveDialogBuilder.Build(
@@ -178,13 +177,13 @@ public sealed class SavePreviewDangerTests
             [new DirtySource(Dirty(ConfigScope.Project, null, (SecretKey, JsonValue.Create("helper"))),
                 "Claude Code", Table())], Text);
 
-        Assert.AreEqual(AppSeverity.Caution, Entry(atUser!, SecretKey).Danger.Severity);
-        Assert.AreEqual(AppSeverity.Critical, Entry(atProject!, SecretKey).Danger.Severity,
+        Assert.Equal(AppSeverity.Caution, Entry(atUser!, SecretKey).Danger.Severity);
+        MessageAssert.Equal(AppSeverity.Critical, Entry(atProject!, SecretKey).Danger.Severity,
             "writing the same credential into the git-committed project file is the case that "
             + "escalates, and this dialog is the last moment anyone can stop it");
     }
 
-    [TestMethod]
+    [Fact]
     public void WithoutATable_EntriesAreUnremarkable()
     {
         AgentConfigClientCore client = Dirty(ConfigScope.User, null, (ToggleKey, JsonValue.Create(true)));
@@ -193,9 +192,9 @@ public sealed class SavePreviewDangerTests
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code")], Text);
 
         SaveChangeEntryViewModel entry = Entry(dlg!, ToggleKey);
-        Assert.AreSame(DangerAssessment.Unremarkable, entry.Danger);
-        Assert.IsFalse(entry.HasDangerSeverity);
-        Assert.IsFalse(dlg!.HasUnsafeChanges);
+        Assert.Same(DangerAssessment.Unremarkable, entry.Danger);
+        Assert.False(entry.HasDangerSeverity);
+        Assert.False(dlg!.HasUnsafeChanges);
     }
 
     // ── The per-source policy: the reason DirtySource exists ─────────────────
@@ -210,7 +209,7 @@ public sealed class SavePreviewDangerTests
     /// quiet for most keys, since the schemas barely overlap, and confidently wrong on any that
     /// collide.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EachSourceIsClassifiedByItsOwnTable()
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
@@ -222,13 +221,13 @@ public sealed class SavePreviewDangerTests
             ],
             Text);
 
-        Assert.IsNotNull(dlg);
+        Assert.NotNull(dlg);
         SaveChangeSectionViewModel withTable = dlg!.Sections.Single(s => s.WorkspaceName == "Has A Table");
         SaveChangeSectionViewModel without = dlg.Sections.Single(s => s.WorkspaceName == "Has No Table");
 
-        Assert.AreEqual(AppSeverity.Critical,
+        Assert.Equal(AppSeverity.Critical,
             withTable.Entries.Single(e => e.Key == ToggleKey).Danger.Severity);
-        Assert.IsFalse(without.Entries.Single(e => e.Key == ToggleKey).HasDangerSeverity,
+        Assert.False(without.Entries.Single(e => e.Key == ToggleKey).HasDangerSeverity,
             "the second product declares no policy, so the identical key must carry no severity — "
             + "borrowing the first product's table would be a false claim, not a convenience");
     }
@@ -242,7 +241,7 @@ public sealed class SavePreviewDangerTests
     /// ⚠ Counting the tier instead would fire on almost every real save — a banner nobody reads,
     /// which is the failure the row-level banner was designed around too.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheHeadlineCountsUnsafeValues_NotMerelyDangerousKeys()
     {
         AgentConfigClientCore client = Dirty(ConfigScope.User, null,
@@ -253,14 +252,14 @@ public sealed class SavePreviewDangerTests
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code", Table())], Text);
 
-        Assert.IsNotNull(dlg);
-        Assert.AreEqual(3, dlg!.Sections.SelectMany(s => s.Entries).Count(e => e.HasDangerSeverity),
+        Assert.NotNull(dlg);
+        MessageAssert.Equal(3, dlg!.Sections.SelectMany(s => s.Entries).Count(e => e.HasDangerSeverity),
             "precondition: all three keys are triaged and carry a dot");
-        Assert.AreEqual(1, dlg.UnsafeChangeCount,
+        MessageAssert.Equal(1, dlg.UnsafeChangeCount,
             "only the toggle holds an unsafe value; the array's value is safe and the credential "
             + "key has no predicate at all");
-        Assert.IsTrue(dlg.HasUnsafeChanges);
-        Assert.IsTrue(dlg.UnsafeChangeWarning.Contains('1', StringComparison.Ordinal));
+        Assert.True(dlg.HasUnsafeChanges);
+        Assert.True(dlg.UnsafeChangeWarning.Contains('1', StringComparison.Ordinal));
     }
 
     // ── One statement of the policy, read by two consumers ───────────────────
@@ -285,7 +284,7 @@ public sealed class SavePreviewDangerTests
     /// <c>ClaudeEditorFactoryConfig.CreateDefault</c> classifier-free.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EachProductSectionCarriesItsOwnPolicy_StatedOnce()
     {
         using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
@@ -295,15 +294,15 @@ public sealed class SavePreviewDangerTests
         ProductSection desktop = vm.Sections.Single(
             s => s.Product.Id == SchemaRegistry.ClaudeDesktopProduct.Id);
 
-        Assert.IsNotNull(code.Danger,
+        MessageAssert.NotNull(code.Danger,
             "Claude Code's section must carry its table — this is the single place it is stated, "
             + "and both the settings pages and the save dialog read it from here");
-        Assert.IsNull(desktop.Danger,
+        MessageAssert.Null(desktop.Danger,
             "Claude Desktop has no triaged table. Reusing Claude Code's would label one product "
             + "with another's threat model.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TheHeadlineIsHiddenWhenNothingPendingIsUnsafe()
     {
         AgentConfigClientCore client = Dirty(ConfigScope.User, null,
@@ -312,9 +311,9 @@ public sealed class SavePreviewDangerTests
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code", Table())], Text);
 
-        Assert.AreEqual(0, dlg!.UnsafeChangeCount);
-        Assert.IsFalse(dlg.HasUnsafeChanges);
-        Assert.AreEqual(string.Empty, dlg.UnsafeChangeWarning);
+        Assert.Equal(0, dlg!.UnsafeChangeCount);
+        Assert.False(dlg.HasUnsafeChanges);
+        Assert.Equal(string.Empty, dlg.UnsafeChangeWarning);
     }
 
     /// <summary>

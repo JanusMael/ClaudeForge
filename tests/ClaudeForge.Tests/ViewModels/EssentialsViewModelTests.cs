@@ -25,7 +25,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// exercising the production SetValue / GetEffective / Env path.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class EssentialsViewModelTests
 {
     /// <summary>Builds a ClaudeCodeClient over an in-memory User workspace.</summary>
@@ -47,22 +46,22 @@ public sealed class EssentialsViewModelTests
 
     // ── Card list shape ──────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Cards_PinnedSet_HasElevenCards()
     {
         EssentialsViewModel vm = MakeVm();
-        Assert.AreEqual(11, vm.Cards.Count,
+        MessageAssert.Equal(11, vm.Cards.Count,
             "Pinned set is hand-curated; promoting / demoting a card must update both " +
             "EssentialsViewModel.BuildCards and this test in lock-step.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Cards_AllIdsAreUnique()
     {
         EssentialsViewModel vm = MakeVm();
         List<string> ids = vm.Cards.Select(c => c.Id).ToList();
         int unique = ids.Distinct().Count();
-        Assert.AreEqual(ids.Count, unique, "Each card Id must be unique — search deep-links use Id as key.");
+        MessageAssert.Equal(ids.Count, unique, "Each card Id must be unique — search deep-links use Id as key.");
     }
 
     /// <summary>
@@ -81,18 +80,18 @@ public sealed class EssentialsViewModelTests
     /// therefore what a forgotten argument would produce — is never right here.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryCardHasANonNeutralSeverity()
     {
         EssentialsViewModel vm = MakeVm();
 
-        Assert.IsTrue(vm.Cards.Count > 0, "no cards built — the assertion below would be vacuous");
+        Assert.True(vm.Cards.Count > 0, "no cards built — the assertion below would be vacuous");
 
         foreach (EssentialsCardViewModel c in vm.Cards)
         {
-            Assert.IsTrue(Enum.IsDefined(c.Severity),
+            Assert.True(Enum.IsDefined(c.Severity),
                 $"card '{c.Id}' has severity {(int)c.Severity}, which is not a declared member");
-            Assert.AreNotEqual(AppSeverity.Neutral, c.Severity,
+            MessageAssert.NotEqual(AppSeverity.Neutral, c.Severity,
                 $"card '{c.Id}' is pinned to the Essentials page, so it is not unremarkable — "
                 + "Neutral is the enum's zero value and reads as a forgotten argument");
         }
@@ -106,13 +105,13 @@ public sealed class EssentialsViewModelTests
     /// assertion above and quietly destroy the distinction the dot exists to draw. The old hex
     /// strings were three distinct values; the enum must still be.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheCardsUseMoreThanOneSeverity()
     {
         EssentialsViewModel vm = MakeVm();
         List<AppSeverity> distinct = vm.Cards.Select(c => c.Severity).Distinct().ToList();
 
-        Assert.IsTrue(distinct.Count >= 3,
+        Assert.True(distinct.Count >= 3,
             "expected at least three distinct severities across the cards (the migration replaced "
             + "#D32F2F / #F4B400 / #1976D2), got: "
             + string.Join(", ", distinct.OrderBy(d => d)));
@@ -125,7 +124,7 @@ public sealed class EssentialsViewModelTests
     /// first, security knobs in the middle, rarely-touched update knob
     /// at the end.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Cards_AreInUserSpecifiedOrder()
     {
         EssentialsViewModel vm = MakeVm();
@@ -146,13 +145,13 @@ public sealed class EssentialsViewModelTests
             EssentialsViewModel.CardIdAutoUpdatesChannel, // 11
         ];
 
-        CollectionAssert.AreEqual(expected, ids,
+        MessageAssert.SequenceEqual(expected, ids,
             "Display order is part of the design contract — BuildCards must produce these card ids in this exact sequence.");
     }
 
     // ── Round-trip through the SDK ───────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task BoolCard_WriteThroughSdk_PersistsToWorkspace()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -165,11 +164,11 @@ public sealed class EssentialsViewModelTests
         card.BoolValue = true;
 
         // Read back via the typed accessor we'd expect the GUI editor pages to use.
-        Assert.IsTrue(client.GetEffective<bool?>("enableAllProjectMcpServers"),
+        Assert.True(client.GetEffective<bool?>("enableAllProjectMcpServers"),
             "Setting BoolValue=true must persist through SetValue to settings.json.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BoolCard_NullValue_RemovesProperty()
     {
         ClaudeConfigClientBase client = MakeClient("""{"enableAllProjectMcpServers": true}""");
@@ -177,17 +176,17 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdEnableAllProjectMcp)!;
-        Assert.IsTrue(card.BoolValue, "Initial read should pick up the User-scope value.");
+        Assert.True(card.BoolValue, "Initial read should pick up the User-scope value.");
 
         // null = inherit / remove — auto-write fires RemoveValue path.
         card.BoolValue = null;
 
         // After removal, the effective value falls back to default(bool?) = null.
-        Assert.IsNull(client.GetEffective<bool?>("enableAllProjectMcpServers"),
+        MessageAssert.Null(client.GetEffective<bool?>("enableAllProjectMcpServers"),
             "BoolValue=null must remove the key from the User document.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnumCard_WriteThroughSdk_PersistsModel()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -197,11 +196,11 @@ public sealed class EssentialsViewModelTests
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdModel)!;
         card.EnumValue = "opus";
 
-        Assert.AreEqual("opus", client.GetEffective<string>("model"),
+        MessageAssert.Equal("opus", client.GetEffective<string>("model"),
             "EnumValue write must round-trip through the SDK.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task IntCard_EnvVarRoundTrip_PersistsToEnvMap()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -211,11 +210,11 @@ public sealed class EssentialsViewModelTests
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxThinkingTokens)!;
         card.IntValue = 32000;
 
-        Assert.AreEqual("32000", client.Env.Get(EnvVarKey.MaxThinkingTokens),
+        MessageAssert.Equal("32000", client.Env.Get(EnvVarKey.MaxThinkingTokens),
             "IntValue=32000 on the MAX_THINKING_TOKENS card must write to env.MAX_THINKING_TOKENS.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task IntCard_NullValue_RemovesEnvKey()
     {
         ClaudeConfigClientBase client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "32000"}}""");
@@ -223,15 +222,15 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxThinkingTokens)!;
-        Assert.AreEqual(32000, card.IntValue, "Initial read should parse the on-disk env value.");
+        MessageAssert.Equal(32000, card.IntValue, "Initial read should parse the on-disk env value.");
 
         card.IntValue = null;
 
-        Assert.IsNull(client.Env.Get(EnvVarKey.MaxThinkingTokens),
+        MessageAssert.Null(client.Env.Get(EnvVarKey.MaxThinkingTokens),
             "IntValue=null must remove the env-map key.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task StringListCard_AddEntry_PersistsArray()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -243,13 +242,13 @@ public sealed class EssentialsViewModelTests
         card.AddStringListEntryCommand.Execute(null);
 
         JsonArray? arr = client.GetEffective<JsonArray>("sandbox.network.allowedDomains");
-        Assert.IsNotNull(arr);
-        CollectionAssert.AreEqual(
+        Assert.NotNull(arr);
+        Assert.Equal(
             new[] { "github.com" },
             arr.Select(n => n!.GetValue<string>()).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task StringListCard_RemoveEntry_PersistsRemoval()
     {
         ClaudeConfigClientBase client = MakeClient(
@@ -258,54 +257,54 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdSandboxDomains)!;
-        Assert.AreEqual(2, card.StringListValues.Count, "Initial read should pick up both domains.");
+        MessageAssert.Equal(2, card.StringListValues.Count, "Initial read should pick up both domains.");
 
         card.RemoveStringListEntryCommand.Execute("github.com");
 
         JsonArray? arr = client.GetEffective<JsonArray>("sandbox.network.allowedDomains");
-        Assert.IsNotNull(arr);
-        CollectionAssert.AreEqual(
+        Assert.NotNull(arr);
+        Assert.Equal(
             new[] { "registry.npmjs.org" },
             arr.Select(n => n!.GetValue<string>()).ToArray());
     }
 
     // ── Danger banner predicates ─────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task DangerBanner_EnableAllMcp_FiresOnTrue()
     {
         EssentialsViewModel vm = MakeVm();
         await vm.RefreshAsync();
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdEnableAllProjectMcp)!;
 
-        Assert.IsFalse(card.IsDanger, "Default (null) value must not show the danger banner.");
+        Assert.False(card.IsDanger, "Default (null) value must not show the danger banner.");
 
         card.BoolValue = true;
-        Assert.IsTrue(card.IsDanger, "BoolValue=true on the auto-trust-MCP card MUST trigger the danger banner.");
+        Assert.True(card.IsDanger, "BoolValue=true on the auto-trust-MCP card MUST trigger the danger banner.");
 
         card.BoolValue = false;
-        Assert.IsFalse(card.IsDanger, "BoolValue=false must clear the danger banner.");
+        Assert.False(card.IsDanger, "BoolValue=false must clear the danger banner.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DangerBanner_SandboxEnabled_FiresOnFalse()
     {
         EssentialsViewModel vm = MakeVm();
         await vm.RefreshAsync();
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdSandboxEnabled)!;
 
-        Assert.IsFalse(card.IsDanger, "Default (null = inherit) must not show the banner.");
+        Assert.False(card.IsDanger, "Default (null = inherit) must not show the banner.");
 
         card.BoolValue = false;
-        Assert.IsTrue(card.IsDanger, "Sandbox disabled MUST trigger the danger banner.");
+        Assert.True(card.IsDanger, "Sandbox disabled MUST trigger the danger banner.");
 
         card.BoolValue = true;
-        Assert.IsFalse(card.IsDanger, "Sandbox enabled clears the banner.");
+        Assert.False(card.IsDanger, "Sandbox enabled clears the banner.");
     }
 
     // ── Env-var source attribution ───────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task EnvSource_PrefersSettingsJson_OverOsUser()
     {
         ClaudeConfigClientBase client = MakeClient("""{"env": {"MAX_THINKING_TOKENS": "1000"}}""");
@@ -316,15 +315,15 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxThinkingTokens)!;
-        Assert.IsTrue(card.HasSettingsJsonSource);
-        Assert.IsTrue(card.HasOsUserSource);
-        Assert.AreEqual(
+        Assert.True(card.HasSettingsJsonSource);
+        Assert.True(card.HasOsUserSource);
+        MessageAssert.Equal(
             Strings.LabelEssentialsEnvSourceSettings,
             card.EffectiveEnvSourceLabel,
             "settings.json must win over OS user-scope env.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnvSource_OsUser_WhenSettingsJsonIsEmpty()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -335,24 +334,24 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxOutputTokens)!;
-        Assert.IsFalse(card.HasSettingsJsonSource);
-        Assert.IsTrue(card.HasOsUserSource);
-        Assert.AreEqual(
+        Assert.False(card.HasSettingsJsonSource);
+        Assert.True(card.HasOsUserSource);
+        Assert.Equal(
             Strings.LabelEssentialsEnvSourceUser,
             card.EffectiveEnvSourceLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnvSource_None_WhenNoneSet()
     {
         EssentialsViewModel vm = MakeVm();
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxThinkingTokens)!;
-        Assert.IsFalse(card.HasSettingsJsonSource);
-        Assert.IsFalse(card.HasOsUserSource);
-        Assert.IsFalse(card.HasOsMachineSource);
-        Assert.AreEqual(
+        Assert.False(card.HasSettingsJsonSource);
+        Assert.False(card.HasOsUserSource);
+        Assert.False(card.HasOsMachineSource);
+        Assert.Equal(
             Strings.LabelEssentialsEnvSourceNone,
             card.EffectiveEnvSourceLabel);
     }
@@ -366,7 +365,7 @@ public sealed class EssentialsViewModelTests
     /// reads must run on a thread-pool worker via Task.Run.  This test
     /// fails if anyone removes the wrap.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_RunsEnvProbeOnThreadPool()
     {
         ThreadCapturingEnvProvider env = new();
@@ -397,9 +396,9 @@ public sealed class EssentialsViewModelTests
             throw threadFault;
         }
 
-        Assert.IsTrue(env.SawProbe,
+        Assert.True(env.SawProbe,
             "Test invariant: at least one env-var card must have called GetVariables.");
-        Assert.IsTrue(env.AllProbesFromThreadPool,
+        Assert.True(env.AllProbesFromThreadPool,
             "GetVariables must run on a thread-pool thread — " +
             "did someone remove the Task.Run(...) wrap in EssentialsViewModel.UpdateEnvSourceLabelsAsync?");
     }
@@ -419,7 +418,7 @@ public sealed class EssentialsViewModelTests
     /// the card and asserts the SDK reflects it — fails if anyone widens
     /// the IsLoading scope back over the await.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void IntValueWrite_NotSuppressed_WhileReadIsInAsyncPhase()
     {
         // Gated env provider: GetVariables blocks the thread-pool worker
@@ -444,7 +443,7 @@ public sealed class EssentialsViewModelTests
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxOutputTokens)!;
         card.IntValue = 60000;
 
-        Assert.AreEqual("60000", client.Env.Get(EnvVarKey.MaxOutputTokens),
+        MessageAssert.Equal("60000", client.Env.Get(EnvVarKey.MaxOutputTokens),
             "User write into IntValue was silently suppressed.  " +
             "Either IsLoading guard scope widened back over the await, or " +
             "OnIntValueChanged short-circuit ran while IsLoading was still set.");
@@ -462,7 +461,7 @@ public sealed class EssentialsViewModelTests
     /// RefreshAsync(B) to simulate a profile switch, then write to
     /// IntValue and assert the new client picks it up.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task IntValueWrite_AfterRefreshWithNewClient_PropagatesToNewClient()
     {
         ClaudeConfigClientBase clientA = MakeClient();
@@ -476,16 +475,16 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync(clientB);
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdMaxOutputTokens)!;
-        Assert.IsNull(card.IntValue, "Precondition: both clients have empty env, so card reads null.");
+        MessageAssert.Null(card.IntValue, "Precondition: both clients have empty env, so card reads null.");
 
         // Simulate user typing 60000 into the spinner.
         card.IntValue = 60000;
 
-        Assert.AreEqual("60000", clientB.Env.Get(EnvVarKey.MaxOutputTokens),
+        MessageAssert.Equal("60000", clientB.Env.Get(EnvVarKey.MaxOutputTokens),
             "After RefreshAsync(B), writes from the card should land on client B (the current one).");
-        Assert.IsNull(clientA.Env.Get(EnvVarKey.MaxOutputTokens),
+        MessageAssert.Null(clientA.Env.Get(EnvVarKey.MaxOutputTokens),
             "Client A should NOT receive the write (it was superseded by client B).");
-        Assert.IsTrue(clientB.HasUnsavedChanges,
+        Assert.True(clientB.HasUnsavedChanges,
             "Client B's workspace should be marked dirty by the env write.");
     }
 
@@ -497,7 +496,7 @@ public sealed class EssentialsViewModelTests
     /// but the user still sees the symptom, the bug is upstream of the
     /// SDK / SaveDialogBuilder (binding, MWVM wiring, etc.).
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task IntValueWrite_AppearsInSaveDialogDiff()
     {
         ClaudeConfigClientBase client = MakeClient();
@@ -510,7 +509,7 @@ public sealed class EssentialsViewModelTests
 
         SaveChangesDialogViewModel? summary = SaveDialogBuilder.Build(
             [new DirtySource(client, "Claude Code")], ClaudeSaveDialogText.Create());
-        Assert.IsNotNull(summary,
+        MessageAssert.NotNull(summary,
             "SaveDialogBuilder returned null even though HasUnsavedChanges should be true — " +
             "this means JsonDiff didn't pick up the env change.");
         List<SaveChangeEntryViewModel> allEntries = summary.Sections.SelectMany(s => s.Entries).ToList();
@@ -523,7 +522,7 @@ public sealed class EssentialsViewModelTests
             allEntries.Any(e => e.Key.Contains("MAX_OUTPUT_TOKENS", StringComparison.Ordinal))
             || allEntries.Any(e => e.Key == "env"
                                    && (e.NewValue ?? "").Contains("MAX_OUTPUT_TOKENS", StringComparison.Ordinal));
-        Assert.IsTrue(envChangeVisible,
+        Assert.True(envChangeVisible,
             "Save dialog summary does not surface MAX_OUTPUT_TOKENS.  Entries: " +
             string.Join(", ", allEntries.Select(e => $"{e.Kind} {e.Key} → {e.NewValue}")));
     }
@@ -584,24 +583,24 @@ public sealed class EssentialsViewModelTests
 
     // ── Amber callout (search deep-link target) ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ActivateAmberCalloutFor_SetsFlagOnTargetCard()
     {
         EssentialsViewModel vm = MakeVm();
         await vm.RefreshAsync();
 
-        Assert.IsTrue(vm.Cards.All(c => !c.ShowAmberCallout),
+        Assert.True(vm.Cards.All(c => !c.ShowAmberCallout),
             "Precondition: no callout active before deep-link.");
 
         vm.ActivateAmberCalloutFor(EssentialsViewModel.CardIdSandboxEnabled);
 
         EssentialsCardViewModel sandbox = vm.GetCardById(EssentialsViewModel.CardIdSandboxEnabled)!;
-        Assert.IsTrue(sandbox.ShowAmberCallout);
+        Assert.True(sandbox.ShowAmberCallout);
         // No spillage onto other cards.
-        Assert.AreEqual(1, vm.Cards.Count(c => c.ShowAmberCallout));
+        Assert.Single(vm.Cards, c => c.ShowAmberCallout);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ActivateAmberCalloutFor_UnknownId_NoOp()
     {
         EssentialsViewModel vm = MakeVm();
@@ -610,12 +609,12 @@ public sealed class EssentialsViewModelTests
         // Should not throw, should not flip any flag.
         vm.ActivateAmberCalloutFor("not-a-card-id");
 
-        Assert.IsTrue(vm.Cards.All(c => !c.ShowAmberCallout));
+        Assert.True(vm.Cards.All(c => !c.ShowAmberCallout));
     }
 
     // ── Deep-link target resolution ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Cards_AllHaveViewInGroupTitle()
     {
         // Every card must carry a non-empty home-group title so the
@@ -623,14 +622,14 @@ public sealed class EssentialsViewModelTests
         EssentialsViewModel vm = MakeVm();
         foreach (EssentialsCardViewModel c in vm.Cards)
         {
-            Assert.IsFalse(string.IsNullOrEmpty(c.ViewInGroupTitle),
+            Assert.False(string.IsNullOrEmpty(c.ViewInGroupTitle),
                 $"Card {c.Id} must declare a home group.");
         }
     }
 
     // ── Reload contract ──────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_WithNewClient_RebindsValues()
     {
         ClaudeConfigClientBase firstClient = MakeClient("""{"model": "haiku"}""");
@@ -638,17 +637,17 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel modelCard = vm.GetCardById(EssentialsViewModel.CardIdModel)!;
-        Assert.AreEqual("haiku", modelCard.EnumValue, "Initial read.");
+        MessageAssert.Equal("haiku", modelCard.EnumValue, "Initial read.");
 
         // Simulate workspace reload: swap in a fresh client and re-bind.
         ClaudeConfigClientBase secondClient = MakeClient("""{"model": "opus"}""");
         await vm.RefreshAsync(secondClient);
 
-        Assert.AreEqual("opus", modelCard.EnumValue,
+        MessageAssert.Equal("opus", modelCard.EnumValue,
             "RefreshAsync(newClient) must rebind every card to the new client and re-read values.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisableBypassCard_ReadsAndWritesDisableString_NotBoolean()
     {
         // permissions.disableBypassPermissionsMode is a STRING enum ["disable"], not a
@@ -661,19 +660,19 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync();
 
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdDisableBypass)!;
-        Assert.IsTrue(card.BoolValue, "\"disable\" on disk must read as checked.");
+        Assert.True(card.BoolValue, "\"disable\" on disk must read as checked.");
 
         card.BoolValue = false; // unchecking removes the key (no on-disk "false")
-        Assert.IsNull(client.GetScopeValue("permissions.disableBypassPermissionsMode", ConfigScope.User),
+        MessageAssert.Null(client.GetScopeValue("permissions.disableBypassPermissionsMode", ConfigScope.User),
             "Unchecking must remove the key, never write a boolean.");
 
         card.BoolValue = true; // checking writes the string "disable"
-        Assert.AreEqual("disable",
+        MessageAssert.Equal("disable",
             client.GetScopeValue("permissions.disableBypassPermissionsMode", ConfigScope.User)?.GetValue<string>(),
             "Checking must persist the string \"disable\", not a boolean.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ModelCard_WhitespaceValue_IsNotPinned()
     {
         // The free-form model combo, left as whitespace, must be treated as "unset" —
@@ -685,11 +684,11 @@ public sealed class EssentialsViewModelTests
         EssentialsCardViewModel card = vm.GetCardById(EssentialsViewModel.CardIdModel)!;
         card.EnumValue = "   "; // user types only whitespace
 
-        Assert.IsNull(client.GetScopeValue("model", ConfigScope.User),
+        MessageAssert.Null(client.GetScopeValue("model", ConfigScope.User),
             "A whitespace-only model value must be treated as unset, not pinned as model=\" \".");
     }
 
-    [TestMethod]
+    [Fact]
     public void Dispose_IsIdempotent()
     {
         EssentialsViewModel vm = MakeVm();
@@ -697,7 +696,7 @@ public sealed class EssentialsViewModelTests
         vm.Dispose(); // second call must not throw
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_AfterDispose_DoesNotThrow()
     {
         // The XML doc promises a refresh requested after disposal is a safe no-op.
@@ -710,7 +709,7 @@ public sealed class EssentialsViewModelTests
         await vm.RefreshAsync(MakeClient()); // also with a (would-be) rebind client
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Dispose_WhileRefreshSuspendedAtEnvProbe_DoesNotFault()
     {
         // Gate OPEN during construction: the ctor's fire-and-forget RefreshAsync
@@ -735,7 +734,7 @@ public sealed class EssentialsViewModelTests
         // GetVariables, about to block on the closed gate) before disposing — so the
         // refresh is provably suspended at the probe, holding the refresh gate, when
         // Dispose runs.
-        Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)),
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)),
             "The parked refresh never reached the env-var probe.");
 
         vm.Dispose();

@@ -1,5 +1,4 @@
-﻿global using Microsoft.VisualStudio.TestTools.UnitTesting;
-global using Bennewitz.Ninja.AgentForge.Core.Settings;
+﻿global using Bennewitz.Ninja.AgentForge.Core.Settings;
 global using Bennewitz.Ninja.AgentForge.Core.Schema;
 // ClaudeMergePolicy: every workspace these tests build is a Claude workspace, so the
 // policy argument appears in ~20 files. Global, for the same reason ConfigScope is.

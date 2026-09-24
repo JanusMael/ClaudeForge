@@ -84,7 +84,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// one app from having a token the other has no use for.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ThemeResourceIntegrityTests
 {
     /// <summary>
@@ -137,7 +136,7 @@ public sealed class ThemeResourceIntegrityTests
     /// computed family fails here until something covers it, rather than passing unnoticed.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryAppTokenTheEditorPackageRequests_IsDeclaredByClaudeForge()
     {
         string repoRoot = FindRepoRoot();
@@ -164,12 +163,12 @@ public sealed class ThemeResourceIntegrityTests
             .Order(StringComparer.Ordinal)];
 
         // Premise before claim: a reader that found nothing, or found only fragments, proves nothing.
-        Assert.IsTrue(satisfied.Count > 0,
+        Assert.True(satisfied.Count > 0,
             $"Found {literals.Count} App* literal(s) in {typeof(AppSeverityToBrushConverter).Assembly.GetName().Name}, "
             + "none of them a key ClaudeForge declares. The metadata read or the declaration scan is "
             + "broken, so this guard would pass without checking anything.");
 
-        Assert.AreEqual(0, unexplained.Count,
+        MessageAssert.Equal(0, unexplained.Count,
             "The editor package asks for App* token(s) ClaudeForge does not declare:\n  "
             + string.Join("\n  ", unexplained)
             + "\n\nDeclare each in src/ClaudeForge/App.axaml (both theme variants). An unresolvable "
@@ -230,7 +229,7 @@ public sealed class ThemeResourceIntegrityTests
     /// in that direction.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryAppTokenAsharedLibraryNeeds_IsDeclaredByEveryApp()
     {
         string repoRoot = FindRepoRoot();
@@ -250,7 +249,7 @@ public sealed class ThemeResourceIntegrityTests
         // passing vacuously. Restore the assertion when OpenCodeForge rejoins.
         if (appDirs.Count < 2)
         {
-            Assert.Inconclusive(
+            Assert.Skip(
                 "Needs two app projects to compare; found "
                 + appDirs.Count
                 + " under "
@@ -301,7 +300,7 @@ public sealed class ThemeResourceIntegrityTests
             }
         }
 
-        Assert.IsTrue(checkedPairs >= 1,
+        Assert.True(checkedPairs >= 1,
             "Found no App* token references in any library either app consumes. The reference "
             + "pattern or the project-graph walk is broken, so this guard would pass vacuously.");
 

@@ -24,7 +24,6 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
-[TestClass]
 public class HooksFullRoundTripTests
 {
     // ─── Fixture ─────────────────────────────────────────────────────────────
@@ -316,7 +315,7 @@ public class HooksFullRoundTripTests
     //  Schema descriptions via the production (FromExistingWorkspace) client path
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void EventDescriptions_Populate_ViaFromExistingWorkspaceClient()
     {
         // Regression: the GUI builds its SDK client via FromExistingWorkspace (see
@@ -329,16 +328,16 @@ public class HooksFullRoundTripTests
         using HooksFixture fx = HooksFixture.From(null);
 
         HookEventGroup cwd = fx.Editor.EventGroups.First(g => g.EventName == "CwdChanged");
-        Assert.IsTrue(cwd.HasDescription,
+        Assert.True(cwd.HasDescription,
             "Event descriptions must populate via the FromExistingWorkspace client (the GUI path).");
-        StringAssert.Contains(cwd.Description!, "working directory");
+        OrdinalAssert.Contains("working directory", cwd.Description!);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Variant: Command  (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Command_AddNewHook_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(null);
@@ -351,14 +350,14 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.HookCount("PreToolUse"));
+        Assert.Equal(1, fx.HookCount("PreToolUse"));
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual("Bash", reloaded.Matcher);
-        Assert.AreEqual(HookCommandType.Command, reloaded.CommandType);
-        Assert.AreEqual("echo hi", reloaded.CommandValue);
+        Assert.Equal("Bash", reloaded.Matcher);
+        Assert.Equal(HookCommandType.Command, reloaded.CommandType);
+        Assert.Equal("echo hi", reloaded.CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Command_EditCommandValue_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(CommandHook("PreToolUse", "Bash", "echo before"));
@@ -367,10 +366,10 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("echo after", fx.FirstHook("PreToolUse").CommandValue);
+        Assert.Equal("echo after", fx.FirstHook("PreToolUse").CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void Command_EditMatcher_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(CommandHook("PreToolUse", "Bash", "echo x"));
@@ -379,10 +378,10 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual("Edit", fx.FirstHook("PreToolUse").Matcher);
+        Assert.Equal("Edit", fx.FirstHook("PreToolUse").Matcher);
     }
 
-    [TestMethod]
+    [Fact]
     public void Command_RemoveHook_DropsFromOnDisk()
     {
         using HooksFixture fx = HooksFixture.From(CommandHook("PreToolUse", "Bash", "echo x"));
@@ -391,11 +390,11 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(0, fx.HookCount("PreToolUse"),
+        MessageAssert.Equal(0, fx.HookCount("PreToolUse"),
             "Removed hook must be absent from the reloaded editor.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Command_EditTimeout_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(CommandHook("PreToolUse", "Bash", "echo x"));
@@ -404,31 +403,31 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(60, fx.FirstHook("PreToolUse").Timeout);
+        Assert.Equal(60, fx.FirstHook("PreToolUse").Timeout);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Variant: Prompt  (× mutation)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Prompt_LoadAndSave_PreservesType_AndValueKey()
     {
         using HooksFixture fx = HooksFixture.From(PromptHook("UserPromptSubmit", "*", "Add tests for this change"));
         HookEntry entry = fx.FirstHook("UserPromptSubmit");
-        Assert.AreEqual(HookCommandType.Prompt, entry.CommandType);
-        Assert.AreEqual("Add tests for this change", entry.CommandValue);
+        Assert.Equal(HookCommandType.Prompt, entry.CommandType);
+        Assert.Equal("Add tests for this change", entry.CommandValue);
 
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("UserPromptSubmit");
-        Assert.AreEqual(HookCommandType.Prompt, reloaded.CommandType);
-        Assert.AreEqual("Add tests for this change", reloaded.CommandValue);
+        Assert.Equal(HookCommandType.Prompt, reloaded.CommandType);
+        Assert.Equal("Add tests for this change", reloaded.CommandValue);
         // On-disk: emits "prompt" key, NOT "command".
         JsonObject inner = InnerOnDisk(fx.Doc, "UserPromptSubmit");
-        Assert.IsTrue(inner.ContainsKey("prompt"),
+        Assert.True(inner.ContainsKey("prompt"),
             "Prompt-typed hook must emit 'prompt' value-key on disk.");
-        Assert.IsFalse(inner.ContainsKey("command"),
+        Assert.False(inner.ContainsKey("command"),
             "Prompt-typed hook MUST NOT emit 'command' (would be a different schema branch).");
     }
 
@@ -436,7 +435,7 @@ public class HooksFullRoundTripTests
     //  Variant: URL  (× mutation, including the headers / env-vars matrix)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void Url_AddHook_WithHeaderAndEnvVar_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(null);
@@ -455,15 +454,15 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(HookCommandType.Url, reloaded.CommandType);
-        Assert.AreEqual(1, reloaded.Headers.Count);
-        Assert.AreEqual("Authorization", reloaded.Headers[0].Key);
-        Assert.AreEqual("Bearer xyz", reloaded.Headers[0].Value);
-        Assert.AreEqual(1, reloaded.AllowedEnvVars.Count);
-        Assert.AreEqual("SECRET_TOKEN", reloaded.AllowedEnvVars[0]);
+        Assert.Equal(HookCommandType.Url, reloaded.CommandType);
+        Assert.Single(reloaded.Headers);
+        Assert.Equal("Authorization", reloaded.Headers[0].Key);
+        Assert.Equal("Bearer xyz", reloaded.Headers[0].Value);
+        Assert.Single(reloaded.AllowedEnvVars);
+        Assert.Equal("SECRET_TOKEN", reloaded.AllowedEnvVars[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_AddHeaderToExisting_RoundTrips()
     {
         // Load with one header, add a second, save, reload.  Verifies
@@ -481,12 +480,12 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(2, reloaded.Headers.Count);
-        Assert.IsTrue(reloaded.Headers.Any(h => h.Key == "A" && h.Value == "1"));
-        Assert.IsTrue(reloaded.Headers.Any(h => h.Key == "B" && h.Value == "2"));
+        Assert.Equal(2, reloaded.Headers.Count);
+        Assert.Contains(reloaded.Headers, h => h.Key == "A" && h.Value == "1");
+        Assert.Contains(reloaded.Headers, h => h.Key == "B" && h.Value == "2");
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_RemoveHeaderFromExisting_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook(
@@ -499,11 +498,11 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(1, reloaded.Headers.Count);
-        Assert.AreEqual("B", reloaded.Headers[0].Key);
+        Assert.Single(reloaded.Headers);
+        Assert.Equal("B", reloaded.Headers[0].Key);
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_EditHeaderValue_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook(
@@ -515,10 +514,10 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual("new", reloaded.Headers[0].Value);
+        Assert.Equal("new", reloaded.Headers[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_EditHeaderKey_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook(
@@ -530,10 +529,10 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual("Authorization", reloaded.Headers[0].Key);
+        Assert.Equal("Authorization", reloaded.Headers[0].Key);
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_AddAllowedEnvVarToExisting_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook(
@@ -546,13 +545,13 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(2, reloaded.AllowedEnvVars.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, reloaded.AllowedEnvVars.Count);
+        MessageAssert.SameElements(
             new[] { "FIRST", "SECOND" },
             reloaded.AllowedEnvVars.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_RemoveAllowedEnvVar_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook(
@@ -564,11 +563,11 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(1, reloaded.AllowedEnvVars.Count);
-        Assert.AreEqual("SECOND", reloaded.AllowedEnvVars[0]);
+        Assert.Single(reloaded.AllowedEnvVars);
+        Assert.Equal("SECOND", reloaded.AllowedEnvVars[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Url_EditTimeout_RoundTrips()
     {
         using HooksFixture fx = HooksFixture.From(UrlHook("PreToolUse", "Bash", "https://x.com/", timeout: 30));
@@ -577,14 +576,14 @@ public class HooksFullRoundTripTests
 
         fx.SaveAndReload();
 
-        Assert.AreEqual(120, fx.FirstHook("PreToolUse").Timeout);
+        Assert.Equal(120, fx.FirstHook("PreToolUse").Timeout);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Cross-variant: type discriminator change
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void ChangeCommandTypeFromCommandToUrl_PreservesValueKeyShapeOnDisk()
     {
         // Load as command, switch to URL, save.  The on-disk shape must
@@ -597,18 +596,18 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(HookCommandType.Url, reloaded.CommandType);
-        Assert.AreEqual("https://x.com/hook", reloaded.CommandValue);
+        Assert.Equal(HookCommandType.Url, reloaded.CommandType);
+        Assert.Equal("https://x.com/hook", reloaded.CommandValue);
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("url", inner["type"]!.GetValue<string>());
-        Assert.IsTrue(inner.ContainsKey("url"),
+        Assert.Equal("url", inner["type"]!.GetValue<string>());
+        Assert.True(inner.ContainsKey("url"),
             "URL-typed hook must emit the 'url' value-key after type change.");
-        Assert.IsFalse(inner.ContainsKey("command"),
+        Assert.False(inner.ContainsKey("command"),
             "Stale 'command' value-key MUST NOT survive a type change.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ChangeCommandTypeFromUrlToCommand_DropsUrlOnlySubFields_OnDisk()
     {
         // URL hook with headers + allowedEnvVars.  Switch to command.
@@ -630,13 +629,13 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEntry reloaded = fx.FirstHook("PreToolUse");
-        Assert.AreEqual(HookCommandType.Command, reloaded.CommandType);
-        Assert.AreEqual("echo migrated", reloaded.CommandValue);
+        Assert.Equal(HookCommandType.Command, reloaded.CommandType);
+        Assert.Equal("echo migrated", reloaded.CommandValue);
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("command", inner["type"]!.GetValue<string>());
-        Assert.IsTrue(inner.ContainsKey("command"));
-        Assert.IsFalse(inner.ContainsKey("url"),
+        Assert.Equal("command", inner["type"]!.GetValue<string>());
+        Assert.True(inner.ContainsKey("command"));
+        Assert.False(inner.ContainsKey("url"),
             "Command-typed hook MUST NOT emit a stale 'url' field.");
     }
 
@@ -644,7 +643,7 @@ public class HooksFullRoundTripTests
     //  PreservedFields — replay across multiple round-trips
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_AsyncStatusMessageModel_SurviveSingleRoundTrip()
     {
         // The SDK / editor does not natively model `async`, `statusMessage`,
@@ -662,16 +661,16 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.IsTrue(inner.ContainsKey("async"),
+        Assert.True(inner.ContainsKey("async"),
             "PreservedFields must replay 'async' on save.");
-        Assert.IsTrue(inner["async"]!.GetValue<bool>());
-        Assert.IsTrue(inner.ContainsKey("statusMessage"));
-        Assert.AreEqual("Running", inner["statusMessage"]!.GetValue<string>());
-        Assert.IsTrue(inner.ContainsKey("model"));
-        Assert.AreEqual("claude-sonnet", inner["model"]!.GetValue<string>());
+        Assert.True(inner["async"]!.GetValue<bool>());
+        Assert.True(inner.ContainsKey("statusMessage"));
+        Assert.Equal("Running", inner["statusMessage"]!.GetValue<string>());
+        Assert.True(inner.ContainsKey("model"));
+        Assert.Equal("claude-sonnet", inner["model"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_AsyncStatusMessageModel_SurviveDoubleRoundTrip()
     {
         // The 2026-04-30 PreservedFields-replay bug class — fields survive
@@ -692,16 +691,16 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.IsTrue(inner.ContainsKey("async"),
+        Assert.True(inner.ContainsKey("async"),
             "PreservedFields must SURVIVE a second round-trip.  This is the 2026-04-30 bug class.");
-        Assert.IsTrue(inner.ContainsKey("statusMessage"));
-        Assert.IsTrue(inner.ContainsKey("model"));
-        Assert.IsTrue(inner["async"]!.GetValue<bool>());
-        Assert.AreEqual("Running", inner["statusMessage"]!.GetValue<string>());
-        Assert.AreEqual("claude-sonnet", inner["model"]!.GetValue<string>());
+        Assert.True(inner.ContainsKey("statusMessage"));
+        Assert.True(inner.ContainsKey("model"));
+        Assert.True(inner["async"]!.GetValue<bool>());
+        Assert.Equal("Running", inner["statusMessage"]!.GetValue<string>());
+        Assert.Equal("claude-sonnet", inner["model"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void PreservedFields_DoNotShadowTypedHeaderEdits()
     {
         // When the user edits a TYPED field (Headers, AllowedEnvVars,
@@ -719,7 +718,7 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("new", inner["headers"]!.AsObject()["A"]!.GetValue<string>(),
+        MessageAssert.Equal("new", inner["headers"]!.AsObject()["A"]!.GetValue<string>(),
             "Typed Headers edit must win; PreservedFields must not replay the stale value.");
     }
 
@@ -727,7 +726,7 @@ public class HooksFullRoundTripTests
     //  Multiple-hook scenarios (matcher grouping + ordering)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void MultipleHooks_SameMatcher_GroupTogetherOnDisk_AfterRoundTrip()
     {
         using HooksFixture fx = HooksFixture.From(null);
@@ -749,20 +748,20 @@ public class HooksFullRoundTripTests
 
         // Both hooks should reload, sharing the matcher group.
         HookEventGroup reloadedGroup = fx.Editor.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(2, reloadedGroup.Hooks.Count);
-        Assert.IsTrue(reloadedGroup.Hooks.All(h => h.Matcher == "Bash"));
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, reloadedGroup.Hooks.Count);
+        Assert.True(reloadedGroup.Hooks.All(h => h.Matcher == "Bash"));
+        MessageAssert.SameElements(
             new[] { "echo first", "echo second" },
             reloadedGroup.Hooks.Select(h => h.CommandValue).ToList());
 
         // On-disk: ONE outer entry (single matcher key) with TWO inner entries.
         JsonArray outerArr = fx.Doc.Root["hooks"]!.AsObject()["PreToolUse"]!.AsArray();
-        Assert.AreEqual(1, outerArr.Count, "Same-matcher hooks must share one outer entry on disk.");
+        MessageAssert.Equal(1, outerArr.Count, "Same-matcher hooks must share one outer entry on disk.");
         JsonArray innerArr = outerArr[0]!.AsObject()["hooks"]!.AsArray();
-        Assert.AreEqual(2, innerArr.Count);
+        Assert.Equal(2, innerArr.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void MultipleHooks_DifferentMatchers_SeparateOuterEntriesOnDisk()
     {
         using HooksFixture fx = HooksFixture.From(null);
@@ -783,16 +782,16 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         HookEventGroup reloadedGroup = fx.Editor.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(2, reloadedGroup.Hooks.Count);
+        Assert.Equal(2, reloadedGroup.Hooks.Count);
         JsonArray outerArr = fx.Doc.Root["hooks"]!.AsObject()["PreToolUse"]!.AsArray();
-        Assert.AreEqual(2, outerArr.Count, "Different-matcher hooks must produce separate outer entries.");
+        MessageAssert.Equal(2, outerArr.Count, "Different-matcher hooks must produce separate outer entries.");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Workspace-removal contract (empty editor → no hooks key on disk)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void RemoveLastHook_DropsHooksKeyFromOnDisk()
     {
         using HooksFixture fx = HooksFixture.From(CommandHook("PreToolUse", "Bash", "echo x"));
@@ -804,7 +803,7 @@ public class HooksFullRoundTripTests
         // ToJsonValue returns null when no hooks remain; the live-write
         // path translates null → RemoveValue("hooks", scope), so the
         // workspace document must NOT have a "hooks" key.
-        Assert.IsFalse(fx.Doc.Root.ContainsKey("hooks"),
+        Assert.False(fx.Doc.Root.ContainsKey("hooks"),
             "Removing the last hook must drop the entire 'hooks' key from disk (vs. leaving an empty object).");
     }
 
@@ -818,7 +817,7 @@ public class HooksFullRoundTripTests
     //  HookEntry.IngestOpaqueJson bridge.
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void OpaqueAgentHook_RoundTripsVerbatim_TypeAndCustomFieldsBothPreserved()
     {
         // Unknown hook types ("agent" /
@@ -847,9 +846,9 @@ public class HooksFullRoundTripTests
         using HooksFixture fx = HooksFixture.From(loaded);
         HookEntry entry = fx.FirstHook("PreToolUse");
 
-        Assert.IsTrue(entry.IsOpaque,
+        Assert.True(entry.IsOpaque,
             "SDK-backed load must propagate opaque-type preservation via OpaqueInnerJson → _opaqueJson.");
-        StringAssert.Contains(entry.CommandValue, "agent",
+        MessageAssert.Contains("agent", entry.CommandValue,
             "Synthetic CommandValue must surface the opaque type so the user sees what's there.");
 
         // Mutate the matcher (which IS owned by the OUTER entry, not
@@ -859,18 +858,18 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("agent", inner["type"]!.GetValue<string>(),
+        MessageAssert.Equal("agent", inner["type"]!.GetValue<string>(),
             "Type discriminator MUST survive SDK round-trip after H-5b.");
-        Assert.AreEqual("code-reviewer", inner["agentId"]!.GetValue<string>(),
+        MessageAssert.Equal("code-reviewer", inner["agentId"]!.GetValue<string>(),
             "Custom fields on opaque-typed hooks must round-trip verbatim.");
-        Assert.AreEqual("preserved", inner["customField"]!.GetValue<string>());
+        Assert.Equal("preserved", inner["customField"]!.GetValue<string>());
 
         // Outer matcher reflects the user's edit.
         JsonObject outer = fx.Doc.Root["hooks"]!.AsObject()["PreToolUse"]!.AsArray()[0]!.AsObject();
-        Assert.AreEqual("Edit", outer["matcher"]!.GetValue<string>());
+        Assert.Equal("Edit", outer["matcher"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void OpaqueAgentHook_SurvivesDoubleRoundTrip()
     {
         // The 2026-04-30 PreservedFields-survives-once-but-not-twice bug
@@ -903,14 +902,14 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("agent", inner["type"]!.GetValue<string>(),
+        MessageAssert.Equal("agent", inner["type"]!.GetValue<string>(),
             "OpaqueInnerJson must SURVIVE a second round-trip.");
-        Assert.AreEqual("linter", inner["agentId"]!.GetValue<string>());
-        Assert.IsTrue(inner.ContainsKey("nestedObj"));
-        Assert.AreEqual("2", inner["nestedObj"]!.AsObject()["depth"]!.GetValue<string>());
+        Assert.Equal("linter", inner["agentId"]!.GetValue<string>());
+        Assert.True(inner.ContainsKey("nestedObj"));
+        Assert.Equal("2", inner["nestedObj"]!.AsObject()["depth"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void OpaqueHttpHook_RoundTripsVerbatim()
     {
         // The schema's other unknown-to-the-editor type — verify the same
@@ -936,7 +935,7 @@ public class HooksFullRoundTripTests
         };
         using HooksFixture fx = HooksFixture.From(loaded);
         HookEntry entry = fx.FirstHook("PreToolUse");
-        Assert.IsTrue(entry.IsOpaque,
+        Assert.True(entry.IsOpaque,
             "Schema 'http' type is unknown to the editor's variant set " +
             "(editor uses 'url') and must be preserved opaque.");
 
@@ -944,13 +943,13 @@ public class HooksFullRoundTripTests
         fx.SaveAndReload();
 
         JsonObject inner = InnerOnDisk(fx.Doc, "PreToolUse");
-        Assert.AreEqual("http", inner["type"]!.GetValue<string>(),
+        MessageAssert.Equal("http", inner["type"]!.GetValue<string>(),
             "'http' type discriminator must survive SDK round-trip.");
-        Assert.AreEqual("https://example.com/webhook", inner["url"]!.GetValue<string>());
-        Assert.AreEqual("preserved", inner["headers"]!.AsObject()["X-Trace"]!.GetValue<string>());
+        Assert.Equal("https://example.com/webhook", inner["url"]!.GetValue<string>());
+        Assert.Equal("preserved", inner["headers"]!.AsObject()["X-Trace"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void UnknownEventName_SurvivesSaveReload_AndEditsToOtherEvents()
     {
         // A hook under an event NAME the schema doesn't recognise (deprecated,
@@ -961,13 +960,13 @@ public class HooksFullRoundTripTests
         using HooksFixture fx = HooksFixture.From(CommandHook("SomeLegacyEvent", "*", "echo legacy"));
 
         // Present after the initial SDK-backed load, as its own group.
-        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"), "Unknown event loads as its own group.");
+        MessageAssert.Equal(1, fx.HookCount("SomeLegacyEvent"), "Unknown event loads as its own group.");
 
         // Survives a save + reload untouched (ToJsonValue emits every group with
         // hooks, filtering by NONE of the event names).
         fx.SaveAndReload();
-        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"), "Unknown event must survive save+reload.");
-        Assert.AreEqual("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
+        MessageAssert.Equal(1, fx.HookCount("SomeLegacyEvent"), "Unknown event must survive save+reload.");
+        Assert.Equal("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
 
         // Editing a DIFFERENT (recognised) event and saving must not drop it.
         HookEntry added = fx.AddHookTo("PreToolUse");
@@ -975,9 +974,9 @@ public class HooksFullRoundTripTests
         added.CommandValue = "echo new";
         fx.SaveAndReload();
 
-        Assert.AreEqual(1, fx.HookCount("SomeLegacyEvent"),
+        MessageAssert.Equal(1, fx.HookCount("SomeLegacyEvent"),
             "Editing another event must leave the unknown event intact.");
-        Assert.AreEqual("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
-        Assert.AreEqual(1, fx.HookCount("PreToolUse"));
+        Assert.Equal("echo legacy", fx.FirstHook("SomeLegacyEvent").CommandValue);
+        Assert.Equal(1, fx.HookCount("PreToolUse"));
     }
 }

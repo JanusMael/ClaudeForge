@@ -27,14 +27,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// would be wrong and would fail on the real tree.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class NavigationNodeIdTests
+public sealed class NavigationNodeIdTests : IDisposable
 {
     private string _sandbox = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public NavigationNodeIdTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -44,8 +44,7 @@ public sealed class NavigationNodeIdTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         _vm.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
@@ -55,7 +54,13 @@ public sealed class NavigationNodeIdTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task EveryNonDividerNode_HasANodeId()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
@@ -77,14 +82,14 @@ public sealed class NavigationNodeIdTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             missing.Count,
             "Every non-divider nav node needs a NodeId or it can never be deep-linked. Missing: "
             + string.Join(", ", missing));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Dividers_HaveNoNodeId()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
@@ -94,11 +99,11 @@ public sealed class NavigationNodeIdTests
         // sibling-uniqueness invariant below.
         foreach (NavigationNodeViewModel node in _vm.NavigationTree.Where(n => n.IsDivider))
         {
-            Assert.IsNull(node.NodeId, "Divider nodes must not carry a NodeId.");
+            MessageAssert.Null(node.NodeId, "Divider nodes must not carry a NodeId.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TopLevelNodeIds_AreUnique()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
@@ -113,13 +118,13 @@ public sealed class NavigationNodeIdTests
                                      .Select(g => g.Key)
                                      .ToList();
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             duplicates.Count,
             "Duplicate top-level NodeIds make a deep link ambiguous: " + string.Join(", ", duplicates));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ChildNodeIds_AreUniqueWithinTheirParent()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
@@ -138,40 +143,40 @@ public sealed class NavigationNodeIdTests
                    .Select(g => $"{parent.Title}/{g.Key}"));
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             problems.Count,
             "Sibling NodeIds must be unique or a deep link resolves to the wrong child: "
             + string.Join(", ", problems));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task KnownNodeIds_ResolveThroughNavDeepPath()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
 
         // End-to-end sanity: the ids the tree actually carries are the ones the
         // grammar can address. Guards against a slug drifting from its constant.
-        Assert.IsTrue(
+        Assert.True(
             NavDeepPath.Resolve([MainWindowViewModel.NavIdAgentsSkills], _vm.NavigationTree).Resolved,
             "agents-skills must resolve.");
-        Assert.IsTrue(
+        Assert.True(
             NavDeepPath.Resolve([MainWindowViewModel.NavIdEssentials], _vm.NavigationTree).Resolved,
             "essentials must resolve.");
 
         NavDeepPathResolution cc = NavDeepPath.Resolve([MainWindowViewModel.NavIdClaudeCode], _vm.NavigationTree);
-        Assert.IsTrue(cc.Resolved, "claude-code must resolve.");
-        Assert.IsTrue(cc.Node!.Children.Count > 0, "Precondition: the Claude Code header should have children.");
+        Assert.True(cc.Resolved, "claude-code must resolve.");
+        Assert.True(cc.Node!.Children.Count > 0, "Precondition: the Claude Code header should have children.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SettingsGroupChildIds_MatchTheirSluggedTitle()
     {
         await _vm.InitializeCommand.ExecuteAsync(null);
 
         NavigationNodeViewModel? cc = _vm.NavigationTree
                                          .FirstOrDefault(n => n.NodeId == MainWindowViewModel.NavIdClaudeCode);
-        Assert.IsNotNull(cc);
+        Assert.NotNull(cc);
 
         // Every settings-group child derives its id from its title, so a
         // deep-link author can predict the id from what the sidebar shows.
@@ -183,14 +188,14 @@ public sealed class NavigationNodeIdTests
                 continue;
             }
 
-            Assert.AreEqual(
+            MessageAssert.Equal(
                 NavDeepPath.Slug(child.Title),
                 child.NodeId,
                 $"Group child '{child.Title}' should carry the slug of its title.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task KnownTopLevelNodeIds_MatchTheBuiltTree()
     {
         // The list backs the usage message a rejected --deep-link prints to the
@@ -215,9 +220,9 @@ public sealed class NavigationNodeIdTests
         // absent from this particular tree.
         advertisedButAbsent.Remove(MainWindowViewModel.NavIdWelcome);
 
-        Assert.AreEqual(0, advertisedButAbsent.Count,
+        MessageAssert.Equal(0, advertisedButAbsent.Count,
             "Advertised ids that don't exist in the tree: " + string.Join(", ", advertisedButAbsent));
-        Assert.AreEqual(0, presentButUnadvertised.Count,
+        MessageAssert.Equal(0, presentButUnadvertised.Count,
             "Addressable top-level pages missing from the usage message: "
             + string.Join(", ", presentButUnadvertised));
     }
