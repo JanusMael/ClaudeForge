@@ -23,14 +23,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// 4.3.3 contract real-world coverage rather than a mocked-out approximation.
 /// </para>
 /// </remarks>
-[TestClass]
-public class ClaudeCodeClientLifecycleTests
+public class ClaudeCodeClientLifecycleTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public ClaudeCodeClientLifecycleTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-sdk-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -39,8 +39,7 @@ public class ClaudeCodeClientLifecycleTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -56,9 +55,15 @@ public class ClaudeCodeClientLifecycleTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── OpenAsync ─────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task OpenAsync_LoadsUserScopeWorkspace_FromEmptyDisk()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -66,27 +71,27 @@ public class ClaudeCodeClientLifecycleTests
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         // Empty disk → no documents are dirty, so HasUnsavedChanges is false.
-        Assert.IsFalse(client.HasUnsavedChanges,
+        Assert.False(client.HasUnsavedChanges,
             "A freshly-opened client over empty disk must report HasUnsavedChanges=false.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PublicMethods_BeforeOpen_ThrowInvalidOperation()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
 
-        Assert.ThrowsExactly<InvalidOperationException>(
+        MessageAssert.Throws<InvalidOperationException>(
             () => client.GetEffective<string>("model"),
             "GetEffective before OpenAsync must fail loudly.");
 
-        Assert.ThrowsExactly<InvalidOperationException>(
+        MessageAssert.Throws<InvalidOperationException>(
             () => client.SetValue("model", "opus"),
             "SetValue before OpenAsync must fail loudly.");
     }
 
     // ── SetValue / GetEffective round-trip ────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValue_GetEffective_RoundTripsStringAtUserScope()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -95,11 +100,11 @@ public class ClaudeCodeClientLifecycleTests
         client.SetValue("model", "claude-opus-4");
 
         string? effective = client.GetEffective<string>("model");
-        Assert.AreEqual("claude-opus-4", effective);
-        Assert.IsTrue(client.HasUnsavedChanges, "SetValue must mark the workspace dirty.");
+        Assert.Equal("claude-opus-4", effective);
+        Assert.True(client.HasUnsavedChanges, "SetValue must mark the workspace dirty.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SetValue_NestedPath_StoresUnderTopLevelObject()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -110,29 +115,29 @@ public class ClaudeCodeClientLifecycleTests
         client.SetValue("permissions.defaultMode", "auto");
 
         string? nested = client.GetEffective<string>("permissions.defaultMode");
-        Assert.AreEqual("auto", nested);
+        Assert.Equal("auto", nested);
 
         // Reading the parent object via GetEffective returns the JsonObject form.
         JsonObject? parent = client.GetEffective<JsonObject>("permissions");
-        Assert.IsNotNull(parent);
-        Assert.AreEqual("auto", parent!["defaultMode"]?.GetValue<string>());
+        Assert.NotNull(parent);
+        Assert.Equal("auto", parent!["defaultMode"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RemoveValue_TopLevel_ClearsAndMarksClean()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "opus");
-        Assert.AreEqual("opus", client.GetEffective<string>("model"));
+        Assert.Equal("opus", client.GetEffective<string>("model"));
 
         client.RemoveValue("model", ConfigScope.User);
 
-        Assert.IsNull(client.GetEffective<string>("model"));
+        Assert.Null(client.GetEffective<string>("model"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RemoveValue_NestedPath_RemovesOnlyTheNestedKey()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -144,37 +149,37 @@ public class ClaudeCodeClientLifecycleTests
         client.RemoveValue("permissions.defaultMode", ConfigScope.User);
 
         // defaultMode gone; allow survives.
-        Assert.IsNull(client.GetEffective<string>("permissions.defaultMode"));
+        Assert.Null(client.GetEffective<string>("permissions.defaultMode"));
         JsonArray? allow = client.GetEffective<JsonArray>("permissions.allow");
-        Assert.IsNotNull(allow);
-        Assert.AreEqual(1, allow!.Count);
+        Assert.NotNull(allow);
+        Assert.Single(allow!);
     }
 
     // ── SaveAsync / ReloadAsync ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SaveAsync_PersistsToDisk_AndClearsUnsavedFlag()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         client.SetValue("model", "claude-sonnet-4");
-        Assert.IsTrue(client.HasUnsavedChanges);
+        Assert.True(client.HasUnsavedChanges);
 
         await client.SaveAsync(force: true, ct: CancellationToken.None);
 
-        Assert.IsFalse(client.HasUnsavedChanges,
+        Assert.False(client.HasUnsavedChanges,
             "After SaveAsync the workspace must report no unsaved changes.");
 
         // Verify on disk.
         string settingsPath = Path.Combine(_tempDir, ".claude", "settings.json");
-        Assert.IsTrue(File.Exists(settingsPath),
+        Assert.True(File.Exists(settingsPath),
             $"settings.json should have been written to {settingsPath}.");
         string json = await File.ReadAllTextAsync(settingsPath);
-        StringAssert.Contains(json, "claude-sonnet-4");
+        OrdinalAssert.Contains("claude-sonnet-4", json);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReloadAsync_DiscardsUnsavedInMemoryEdits()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -186,20 +191,20 @@ public class ClaudeCodeClientLifecycleTests
 
         // Make an in-memory edit.
         client.SetValue("model", "uncommitted-edit");
-        Assert.AreEqual("uncommitted-edit", client.GetEffective<string>("model"));
-        Assert.IsTrue(client.HasUnsavedChanges);
+        Assert.Equal("uncommitted-edit", client.GetEffective<string>("model"));
+        Assert.True(client.HasUnsavedChanges);
 
         // Reload from disk discards the edit.
         await client.ReloadAsync(CancellationToken.None);
 
-        Assert.AreEqual("baseline", client.GetEffective<string>("model"),
+        MessageAssert.Equal("baseline", client.GetEffective<string>("model"),
             "Reload must replace in-memory state with the on-disk baseline.");
-        Assert.IsFalse(client.HasUnsavedChanges);
+        Assert.False(client.HasUnsavedChanges);
     }
 
     // ── Changed event ─────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValue_RaisesChangedEvent_WithMutationKindAndPath()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -210,12 +215,12 @@ public class ClaudeCodeClientLifecycleTests
 
         client.SetValue("model", "opus");
 
-        Assert.AreEqual(1, captured.Count);
-        Assert.AreEqual(ClientChangeKind.Mutation, captured[0].Kind);
-        Assert.AreEqual("model", captured[0].Path);
+        Assert.Single(captured);
+        Assert.Equal(ClientChangeKind.Mutation, captured[0].Kind);
+        Assert.Equal("model", captured[0].Path);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SaveAsync_RaisesSavedKind_WithNullPath()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -234,13 +239,13 @@ public class ClaudeCodeClientLifecycleTests
 
         await client.SaveAsync(force: true, CancellationToken.None);
 
-        Assert.AreEqual(1, savedEvents.Count);
-        Assert.IsNull(savedEvents[0].Path);
+        Assert.Single(savedEvents);
+        Assert.Null(savedEvents[0].Path);
     }
 
     // ── Disposal ──────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Dispose_DoubleCall_IsSafe()
     {
         ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -249,21 +254,21 @@ public class ClaudeCodeClientLifecycleTests
         client.Dispose(); // must not throw
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PublicMethods_AfterDispose_ThrowObjectDisposed()
     {
         ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
         client.Dispose();
 
-        Assert.ThrowsExactly<ObjectDisposedException>(() => client.GetEffective<string>("model"));
-        Assert.ThrowsExactly<ObjectDisposedException>(() => client.SetValue("model", "opus"));
-        Assert.ThrowsExactly<ObjectDisposedException>(() => _ = client.HasUnsavedChanges);
+        Assert.Throws<ObjectDisposedException>(() => client.GetEffective<string>("model"));
+        Assert.Throws<ObjectDisposedException>(() => client.SetValue("model", "opus"));
+        Assert.Throws<ObjectDisposedException>(() => _ = client.HasUnsavedChanges);
     }
 
     // ── DefaultScope ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValue_WithoutExplicitScope_TargetsDefaultScope()
     {
         // Construct with a non-default DefaultScope so we can distinguish from
@@ -273,13 +278,13 @@ public class ClaudeCodeClientLifecycleTests
 
         client.SetValue("model", "opus");
 
-        Assert.AreEqual(ConfigScope.User, client.DefaultScope);
-        Assert.AreEqual("opus", client.GetEffective<string>("model"));
+        Assert.Equal(ConfigScope.User, client.DefaultScope);
+        Assert.Equal("opus", client.GetEffective<string>("model"));
     }
 
     // ── EditableScopes (4.3.7 step 7) ────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ChangedEvent_FiresOnSdkInitiatedWrite_WithPath()
     {
         // SDK SetValue suppresses the workspace forwarder while it does the
@@ -299,11 +304,11 @@ public class ClaudeCodeClientLifecycleTests
 
         client.SetValue("model", "opus");
 
-        Assert.AreEqual(1, events.Count, "SDK SetValue must fire exactly one Mutation event.");
-        Assert.AreEqual("model", events[0].Path);
+        MessageAssert.Equal(1, events.Count, "SDK SetValue must fire exactly one Mutation event.");
+        Assert.Equal("model", events[0].Path);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ChangedEvent_FiresOnDirectWorkspaceWrite_WithoutPath()
     {
         // Forwarder regression: when the underlying workspace is mutated
@@ -329,18 +334,18 @@ public class ClaudeCodeClientLifecycleTests
         // pokes at internals; production code paths use the public surface.
         FieldInfo? workspaceField = typeof(AgentConfigClientCore)
             .GetField("_workspace", BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.IsNotNull(workspaceField);
+        Assert.NotNull(workspaceField);
         SettingsWorkspace workspace = (SettingsWorkspace)workspaceField!.GetValue(client)!;
 
         workspace.SetValue("model", JsonValue.Create("opus"), ConfigScope.User);
 
-        Assert.AreEqual(1, events.Count,
+        MessageAssert.Equal(1, events.Count,
             "Direct workspace.SetValue must propagate via the SDK's Changed forwarder.");
-        Assert.IsNull(events[0].Path,
+        MessageAssert.Null(events[0].Path,
             "Forwarded events have no path info — the workspace.Changed event doesn't carry it.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EditableScopes_NoProjectRoot_ReturnsUserOnly()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -348,11 +353,11 @@ public class ClaudeCodeClientLifecycleTests
 
         IReadOnlyList<ConfigScope> scopes = client.EditableScopes;
 
-        Assert.AreEqual(1, scopes.Count);
-        Assert.AreEqual(ConfigScope.User, scopes[0]);
+        Assert.Single(scopes);
+        Assert.Equal(ConfigScope.User, scopes[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EditableScopes_BeforeOpenAsync_FallsBackToUser()
     {
         // The accessor is callable before OpenAsync — covers the brief
@@ -362,11 +367,11 @@ public class ClaudeCodeClientLifecycleTests
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         IReadOnlyList<ConfigScope> scopes = client.EditableScopes;
 
-        Assert.AreEqual(1, scopes.Count);
-        Assert.AreEqual(ConfigScope.User, scopes[0]);
+        Assert.Single(scopes);
+        Assert.Equal(ConfigScope.User, scopes[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EditableScopes_WithProjectRoot_IncludesProjectAndLocal()
     {
         // With a projectRoot supplied, the workspace loads Project + Local
@@ -387,7 +392,7 @@ public class ClaudeCodeClientLifecycleTests
 
         // Managed is always excluded (read-only). Order matches
         // ConfigScope's int values: Local=1, Project=2, User=3.
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { ConfigScope.Local, ConfigScope.Project, ConfigScope.User },
             scopes.ToArray());
     }

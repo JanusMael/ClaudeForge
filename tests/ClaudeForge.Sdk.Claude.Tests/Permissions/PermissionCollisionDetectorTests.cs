@@ -8,7 +8,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 /// redundancy via exact match, bare-tool / whole-server coverage, and Bash
 /// prefix subsumption — while staying silent on unrelated rules.
 /// </summary>
-[TestClass]
 public sealed class PermissionCollisionDetectorTests
 {
     private static List<PermissionRule> Rules(params string[] rules) =>
@@ -27,98 +26,98 @@ public sealed class PermissionCollisionDetectorTests
             Rules(deny ?? []),
             Rules(ask ?? []));
 
-    [TestMethod]
+    [Fact]
     public void ExactRuleInDifferentBucket_IsConflict()
     {
         PermissionCollision? c = Detect(
             "Bash(git push:*)", PermissionBucket.Allow, deny: ["Bash(git push:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Deny, c.ExistingBucket);
     }
 
-    [TestMethod]
+    [Fact]
     public void SpaceFormVsColonForm_NormalizeAndConflict()
     {
         // Candidate space form normalizes to colon form and collides with the
         // colon-form rule already in another bucket.
         PermissionCollision? c = Detect(
             "Bash(git push *)", PermissionBucket.Allow, deny: ["Bash(git push:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void GitStatus_UnderGitStatusStar_SameBucket_IsRedundant()
     {
         // The user's example: adding Bash(git status) when Bash(git status *) exists.
         PermissionCollision? c = Detect(
             "Bash(git status)", PermissionBucket.Allow, allow: ["Bash(git status *)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShellPrefixSubsumption_SameBucket_IsRedundant()
     {
         // Bash(git:*) covers Bash(git status).
         PermissionCollision? c = Detect(
             "Bash(git status)", PermissionBucket.Allow, allow: ["Bash(git:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShellPrefixSubsumption_CrossBucket_IsConflict()
     {
         // Deny Bash(git:*) covers a candidate Allow Bash(git push).
         PermissionCollision? c = Detect(
             "Bash(git push)", PermissionBucket.Allow, deny: ["Bash(git:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Deny, c.ExistingBucket);
     }
 
-    [TestMethod]
+    [Fact]
     public void BareTool_CoversSpecific_SameBucket_IsRedundant()
     {
         PermissionCollision? c = Detect(
             "Bash(git status)", PermissionBucket.Allow, allow: ["Bash"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void McpWholeServer_CoversSpecificTool_IsRedundant()
     {
         PermissionCollision? c = Detect(
             "mcp__github__create_issue", PermissionBucket.Allow, allow: ["mcp__github"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void UnrelatedShellCommands_NoCollision()
     {
-        Assert.IsNull(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Bash(npm test)"]));
+        Assert.Null(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Bash(npm test)"]));
     }
 
-    [TestMethod]
+    [Fact]
     public void DifferentTool_NoCollision()
     {
-        Assert.IsNull(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Read(src/**)"]));
-        Assert.IsNull(Detect("mcp__github", PermissionBucket.Allow, allow: ["mcp__slack"]));
+        Assert.Null(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Read(src/**)"]));
+        Assert.Null(Detect("mcp__github", PermissionBucket.Allow, allow: ["mcp__slack"]));
     }
 
-    [TestMethod]
+    [Fact]
     public void ExactSameBucket_NoFinding_DedupeIsCallersJob()
     {
-        Assert.IsNull(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Bash(git status)"]));
+        Assert.Null(Detect("Bash(git status)", PermissionBucket.Allow, allow: ["Bash(git status)"]));
     }
 
     // ── A5: cross-bucket precedence (Deny > Ask > Allow) ─────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CrossBucket_DenyAndAskBothOverlap_PrefersDeny()
     {
         // A5 regression: a candidate added to Allow that overlaps BOTH an Ask and a
@@ -127,13 +126,13 @@ public sealed class PermissionCollisionDetectorTests
         PermissionCollision? c = Detect(
             "Bash(git push:*)", PermissionBucket.Allow,
             deny: ["Bash(git push:*)"], ask: ["Bash(git push:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket,
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        MessageAssert.Equal(PermissionBucket.Deny, c.ExistingBucket,
             "Deny outranks Ask — the higher-impact conflict must be reported.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Conflict_PreferredOverRedundant()
     {
         // A same-bucket redundant sibling AND a cross-bucket conflict both exist;
@@ -142,12 +141,12 @@ public sealed class PermissionCollisionDetectorTests
             "Bash(git push:*)", PermissionBucket.Allow,
             allow: ["Bash(git:*)"],   // covers the candidate → same-bucket redundant
             deny: ["Bash(git push:*)"]); // exact in another bucket → conflict
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Deny, c.ExistingBucket);
     }
 
-    [TestMethod]
+    [Fact]
     public void CrossBucket_AskConflict_PreferredOverRedundantAllow()
     {
         // Completes the precedence matrix: a candidate added to Allow overlaps an Ask
@@ -158,92 +157,92 @@ public sealed class PermissionCollisionDetectorTests
             "Bash(git push:*)", PermissionBucket.Allow,
             allow: ["Bash(git:*)"],     // covers the candidate → same-bucket redundant
             ask: ["Bash(git push:*)"]); // exact in another bucket → conflict
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Ask, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Ask, c.ExistingBucket);
     }
 
     // ── B5: MCP cross-bucket conflict + server-name mismatch ─────────────────
 
-    [TestMethod]
+    [Fact]
     public void Mcp_WholeServerDeny_vs_SpecificAllow_IsConflict()
     {
         // Deny mcp__github (whole server) covers a candidate Allow of one tool.
         PermissionCollision? c = Detect(
             "mcp__github__create_issue", PermissionBucket.Allow, deny: ["mcp__github"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Deny, c.ExistingBucket);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_WholeServerCandidate_vs_SpecificExisting_SameBucket_IsRedundant()
     {
         // Candidate is the whole server; an existing specific-tool rule is subsumed.
         PermissionCollision? c = Detect(
             "mcp__github", PermissionBucket.Allow, allow: ["mcp__github__create_issue"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_ServerNameCaseDiffers_NoCollision()
     {
         // MCP server names are compared Ordinal (case-sensitive) and are not
         // lowercased by the normalizer — different case = different server.
-        Assert.IsNull(Detect(
+        Assert.Null(Detect(
             "mcp__GitHub__create_issue", PermissionBucket.Allow, deny: ["mcp__github"]));
     }
 
     // ── B9: PowerShell case-insensitive subsumption ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void PowerShellPrefixSubsumption_CaseInsensitive_SameBucket_IsRedundant()
     {
         // PowerShell matching is case-insensitive, so PowerShell(Get-ChildItem:*)
         // covers PowerShell(get-childitem) despite the case difference.
         PermissionCollision? c = Detect(
             "PowerShell(get-childitem)", PermissionBucket.Allow, allow: ["PowerShell(Get-ChildItem:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void PowerShellPrefixSubsumption_CaseInsensitive_CrossBucket_IsConflict()
     {
         PermissionCollision? c = Detect(
             "PowerShell(get-childitem)", PermissionBucket.Allow, deny: ["PowerShell(Get-ChildItem:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
-        Assert.AreEqual(PermissionBucket.Deny, c.ExistingBucket);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.Equal(PermissionBucket.Deny, c.ExistingBucket);
     }
 
     // ── B13: space-star ↔ colon-star representative collapse (both directions) ─
 
-    [TestMethod]
+    [Fact]
     public void SpaceStarCandidate_ColonStarExisting_SameBucket_IsRedundant()
     {
         PermissionCollision? c = Detect(
             "Bash(git push *)", PermissionBucket.Allow, allow: ["Bash(git push:*)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void ColonStarCandidate_SpaceStarExisting_SameBucket_IsRedundant()
     {
         PermissionCollision? c = Detect(
             "Bash(git push:*)", PermissionBucket.Allow, allow: ["Bash(git push *)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Redundant, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Redundant, c.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void ColonStarCandidate_SpaceStarExisting_CrossBucket_IsConflict()
     {
         PermissionCollision? c = Detect(
             "Bash(git push:*)", PermissionBucket.Allow, deny: ["Bash(git push *)"]);
-        Assert.IsNotNull(c);
-        Assert.AreEqual(PermissionCollisionKind.Conflict, c.Kind);
+        Assert.NotNull(c);
+        Assert.Equal(PermissionCollisionKind.Conflict, c.Kind);
     }
 }

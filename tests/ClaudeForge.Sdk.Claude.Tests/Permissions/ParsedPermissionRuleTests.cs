@@ -9,114 +9,113 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 /// (<see cref="PermissionRule.TryParse"/>) rejects, because it must faithfully
 /// decompose whatever is already in a user's settings.
 /// </summary>
-[TestClass]
 public sealed class ParsedPermissionRuleTests
 {
-    [TestMethod]
+    [Fact]
     public void BareTool_MatchesAllUses()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("Read");
-        Assert.AreEqual("Read", p.ToolName);
-        Assert.IsTrue(p.IsBareTool);
-        Assert.IsNull(p.Specifier);
-        Assert.IsTrue(p.MatchesAllUses);
-        Assert.IsFalse(p.IsMcp);
+        Assert.Equal("Read", p.ToolName);
+        Assert.True(p.IsBareTool);
+        Assert.Null(p.Specifier);
+        Assert.True(p.MatchesAllUses);
+        Assert.False(p.IsMcp);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToolWithSpecifier_SplitsToolAndContent()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("Bash(git push *)");
-        Assert.AreEqual("Bash", p.ToolName);
-        Assert.AreEqual("git push *", p.Specifier);
-        Assert.IsFalse(p.IsBareTool);
-        Assert.IsFalse(p.MatchesAllUses);
+        Assert.Equal("Bash", p.ToolName);
+        Assert.Equal("git push *", p.Specifier);
+        Assert.False(p.IsBareTool);
+        Assert.False(p.MatchesAllUses);
     }
 
-    [TestMethod]
+    [Fact]
     public void StarSpecifier_MatchesAllUses()
     {
         // Bash(*) is equivalent to bare Bash per the spec — even though the
         // strict editor gate rejects it, evaluation must treat it as all-uses.
         ParsedPermissionRule p = ParsedPermissionRule.Parse("Bash(*)");
-        Assert.AreEqual("Bash", p.ToolName);
-        Assert.AreEqual("*", p.Specifier);
-        Assert.IsTrue(p.MatchesAllUses);
+        Assert.Equal("Bash", p.ToolName);
+        Assert.Equal("*", p.Specifier);
+        Assert.True(p.MatchesAllUses);
     }
 
-    [TestMethod]
+    [Fact]
     public void WebFetchDomain_KeepsDomainSpecifier()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("WebFetch(domain:example.com)");
-        Assert.AreEqual("WebFetch", p.ToolName);
-        Assert.AreEqual("domain:example.com", p.Specifier);
+        Assert.Equal("WebFetch", p.ToolName);
+        Assert.Equal("domain:example.com", p.Specifier);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_ServerOnly_MeansAllTools()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("mcp__puppeteer");
-        Assert.IsTrue(p.IsMcp);
-        Assert.AreEqual("puppeteer", p.McpServer);
-        Assert.IsNull(p.McpTool);
-        Assert.IsTrue(p.McpAllTools);
-        Assert.IsTrue(p.MatchesAllUses);
+        Assert.True(p.IsMcp);
+        Assert.Equal("puppeteer", p.McpServer);
+        Assert.Null(p.McpTool);
+        Assert.True(p.McpAllTools);
+        Assert.True(p.MatchesAllUses);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_WildcardTool_MeansAllTools()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("mcp__puppeteer__*");
-        Assert.IsTrue(p.IsMcp);
-        Assert.AreEqual("puppeteer", p.McpServer);
-        Assert.IsNull(p.McpTool);
-        Assert.IsTrue(p.McpAllTools);
+        Assert.True(p.IsMcp);
+        Assert.Equal("puppeteer", p.McpServer);
+        Assert.Null(p.McpTool);
+        Assert.True(p.McpAllTools);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_SpecificTool_CapturesServerAndTool()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("mcp__puppeteer__navigate");
-        Assert.IsTrue(p.IsMcp);
-        Assert.AreEqual("puppeteer", p.McpServer);
-        Assert.AreEqual("navigate", p.McpTool);
-        Assert.IsFalse(p.McpAllTools);
-        Assert.IsFalse(p.MatchesAllUses);
+        Assert.True(p.IsMcp);
+        Assert.Equal("puppeteer", p.McpServer);
+        Assert.Equal("navigate", p.McpTool);
+        Assert.False(p.McpAllTools);
+        Assert.False(p.MatchesAllUses);
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_CapturesName()
     {
         ParsedPermissionRule p = ParsedPermissionRule.Parse("Agent(Explore)");
-        Assert.AreEqual("Agent", p.ToolName);
-        Assert.AreEqual("Explore", p.Specifier);
+        Assert.Equal("Agent", p.ToolName);
+        Assert.Equal("Explore", p.Specifier);
     }
 
-    [TestMethod]
+    [Fact]
     public void HalfTyped_MissingCloseParen_StillDecomposes()
     {
         // Live-preview robustness: a rule the user is mid-typing should still
         // decompose so the gloss/preview can update.
         ParsedPermissionRule p = ParsedPermissionRule.Parse("Bash(git push");
-        Assert.AreEqual("Bash", p.ToolName);
-        Assert.AreEqual("git push", p.Specifier);
+        Assert.Equal("Bash", p.ToolName);
+        Assert.Equal("git push", p.Specifier);
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyOrWhitespace_FailsToParse()
     {
-        Assert.IsFalse(ParsedPermissionRule.TryParse("", out _));
-        Assert.IsFalse(ParsedPermissionRule.TryParse("   ", out _));
-        Assert.IsFalse(ParsedPermissionRule.TryParse(null, out _));
-        Assert.ThrowsExactly<ArgumentException>(() => ParsedPermissionRule.Parse("  "));
+        Assert.False(ParsedPermissionRule.TryParse("", out _));
+        Assert.False(ParsedPermissionRule.TryParse("   ", out _));
+        Assert.False(ParsedPermissionRule.TryParse(null, out _));
+        Assert.Throws<ArgumentException>(() => ParsedPermissionRule.Parse("  "));
     }
 
-    [TestMethod]
+    [Fact]
     public void PermissionRule_Decompose_DelegatesToParsed()
     {
         PermissionRule rule = PermissionRule.Parse("Bash(npm *)");
         ParsedPermissionRule p = rule.Decompose();
-        Assert.AreEqual("Bash", p.ToolName);
-        Assert.AreEqual("npm *", p.Specifier);
+        Assert.Equal("Bash", p.ToolName);
+        Assert.Equal("npm *", p.Specifier);
     }
 }

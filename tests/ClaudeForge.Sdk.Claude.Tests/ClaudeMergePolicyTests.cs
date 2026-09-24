@@ -22,7 +22,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// user's and starts replacing it.
 /// </para>
 /// </remarks>
-[TestClass]
 public class ClaudeMergePolicyTests
 {
     /// <summary>
@@ -43,7 +42,7 @@ public class ClaudeMergePolicyTests
         "companyAnnouncements",
     ];
 
-    [TestMethod]
+    [Fact]
     public void EveryDocumentedPath_Unions_EvenWhenTheValuesAreNotArrays()
     {
         // everyValueIsArray: false isolates the DECLARATION from the inference — a pass here
@@ -51,44 +50,44 @@ public class ClaudeMergePolicyTests
         // even against an empty list, which is exactly how the list moved unnoticed.
         foreach (string path in DeclaredUnionPaths)
         {
-            Assert.IsTrue(
+            Assert.True(
                 ClaudeMergePolicy.Instance.UnionsAt(path, everyValueIsArray: false),
                 $"'{path}' is documented as merging across scopes. If it stops unioning, a "
                 + "lower scope's entries are silently dropped instead of contributed.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void UndeclaredScalarPath_DoesNotUnion()
     {
         // The counter-direction: without this, a policy that returned true unconditionally
         // would satisfy the test above and quietly union every scalar in the file.
-        Assert.IsFalse(
+        Assert.False(
             ClaudeMergePolicy.Instance.UnionsAt("model", everyValueIsArray: false),
             "A scalar setting must be won outright by the highest-priority scope.");
-        Assert.IsFalse(
+        Assert.False(
             ClaudeMergePolicy.Instance.UnionsAt("permissions.defaultMode", everyValueIsArray: false),
             "A nested scalar is no different — the dotted path is not itself a union hint.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UndeclaredPath_Unions_WhenEveryScopeHoldsAnArray()
     {
         // Claude infers union-ness for array paths its list does not name; the list records
         // what the docs state, not an exhaustive schema walk. Pinned because it is precisely
         // what OpenCode must NOT do — replacing is its default for arrays it has not listed
         // (Spike S1) — so the two products differ here and the difference is easy to lose.
-        Assert.IsTrue(
+        Assert.True(
             ClaudeMergePolicy.Instance.UnionsAt("someFutureArraySetting", everyValueIsArray: true),
             "An all-array path unions even when undeclared.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UnionOrder_IsHighestPriorityFirst()
     {
         // Claude presents the winning scope's entries first. OpenCode was measured doing the
         // opposite (Spike S1), so this is a real product difference rather than a default.
-        Assert.AreEqual(
+        Assert.Equal(
             MergeUnionOrder.HighestPriorityFirst,
             ClaudeMergePolicy.Instance.UnionOrder);
     }

@@ -10,14 +10,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Models;
 /// and the default-mode gating (auto needs an auto-capable model AND User scope)
 /// is computed where the catalog alone can't express it.
 /// </summary>
-[TestClass]
-public sealed class ModelCatalogAccessorTests
+public sealed class ModelCatalogAccessorTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public ModelCatalogAccessorTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-models-acc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -25,8 +25,7 @@ public sealed class ModelCatalogAccessorTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -42,6 +41,12 @@ public sealed class ModelCatalogAccessorTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static async Task<ClaudeCodeClient> OpenAsync()
     {
         ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -49,49 +54,49 @@ public sealed class ModelCatalogAccessorTests
         return client;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Models_IsReachable_AndPopulated()
     {
         using ClaudeCodeClient client = await OpenAsync();
-        Assert.IsTrue(client.Models.AllModels.Count >= 6);
-        Assert.IsTrue(client.Models.AllDefaultModes.Any(d => d.Id == "bypassPermissions"));
+        Assert.True(client.Models.AllModels.Count >= 6);
+        Assert.Contains(client.Models.AllDefaultModes, d => d.Id == "bypassPermissions");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EffortQueries_DelegateToCatalog()
     {
         using ClaudeCodeClient client = await OpenAsync();
-        Assert.IsFalse(client.Models.IsEffortSupported("claude-sonnet-4-6", "xhigh"));
-        Assert.IsTrue(client.Models.IsEffortSupported("claude-opus-4-8", "xhigh"));
-        Assert.AreEqual("high", client.Models.NearestAnalogEffort("claude-sonnet-4-6", "xhigh"));
-        CollectionAssert.DoesNotContain(client.Models.PersistableEffortLevels("claude-opus-4-8").ToList(), "max");
+        Assert.False(client.Models.IsEffortSupported("claude-sonnet-4-6", "xhigh"));
+        Assert.True(client.Models.IsEffortSupported("claude-opus-4-8", "xhigh"));
+        Assert.Equal("high", client.Models.NearestAnalogEffort("claude-sonnet-4-6", "xhigh"));
+        Assert.DoesNotContain("max", client.Models.PersistableEffortLevels("claude-opus-4-8").ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task IsDefaultModeAllowed_AutoGatedByModelAndScope()
     {
         using ClaudeCodeClient client = await OpenAsync();
 
         // auto: needs an auto-capable model AND User scope.
-        Assert.IsTrue(client.Models.IsDefaultModeAllowed("auto", "claude-opus-4-8", ConfigScope.User));
-        Assert.IsFalse(client.Models.IsDefaultModeAllowed("auto", "claude-opus-4-8", ConfigScope.Project),
+        Assert.True(client.Models.IsDefaultModeAllowed("auto", "claude-opus-4-8", ConfigScope.User));
+        Assert.False(client.Models.IsDefaultModeAllowed("auto", "claude-opus-4-8", ConfigScope.Project),
             "auto is ignored outside User scope.");
-        Assert.IsFalse(client.Models.IsDefaultModeAllowed("auto", "claude-haiku-4-5", ConfigScope.User),
+        Assert.False(client.Models.IsDefaultModeAllowed("auto", "claude-haiku-4-5", ConfigScope.User),
             "Haiku does not support auto.");
-        Assert.IsTrue(client.Models.IsDefaultModeAllowed("auto", null, ConfigScope.User),
+        Assert.True(client.Models.IsDefaultModeAllowed("auto", null, ConfigScope.User),
             "Unset/unknown model is lenient — the default model is auto-capable.");
 
         // non-gated modes are allowed everywhere.
-        Assert.IsTrue(client.Models.IsDefaultModeAllowed("default", "claude-haiku-4-5", ConfigScope.Project));
-        Assert.IsTrue(client.Models.IsDefaultModeAllowed("bypassPermissions", null, ConfigScope.Project));
+        Assert.True(client.Models.IsDefaultModeAllowed("default", "claude-haiku-4-5", ConfigScope.Project));
+        Assert.True(client.Models.IsDefaultModeAllowed("bypassPermissions", null, ConfigScope.Project));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ModelSuggestions_OmitsLegacyByDefault()
     {
         using ClaudeCodeClient client = await OpenAsync();
         IReadOnlyList<string> suggestions = client.Models.ModelSuggestions();
-        CollectionAssert.Contains(suggestions.ToList(), "opus");
-        CollectionAssert.DoesNotContain(suggestions.ToList(), "claude-opus-4-6", "Legacy ids are hidden by default.");
+        Assert.Contains("opus", suggestions.ToList());
+        MessageAssert.DoesNotContain("claude-opus-4-6", suggestions.ToList(), "Legacy ids are hidden by default.");
     }
 }

@@ -20,7 +20,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// Stops B (more typed properties — Hook timeout, headers, etc.) and C
 /// (UI affordances) are deferred.
 /// </remarks>
-[TestClass]
 public sealed class TypedSurfaceStopATests
 {
     private static SettingsWorkspace MakeWorkspace(JsonObject settings)
@@ -37,7 +36,7 @@ public sealed class TypedSurfaceStopATests
 
     // ── McpServer.Description ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void McpServer_Description_ReadsFromTypedProperty()
     {
         JsonObject input = new()
@@ -56,11 +55,11 @@ public sealed class TypedSurfaceStopATests
         using ClaudeCodeClient client = MakeClient(ws);
 
         McpServer? server = client.McpServers.Get("s");
-        Assert.IsNotNull(server);
-        Assert.AreEqual("test description", server!.Description);
+        Assert.NotNull(server);
+        Assert.Equal("test description", server!.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void McpServer_Description_NotInPreservedFields_AfterPromotion()
     {
         // After promoting Description to typed, it should NOT appear in
@@ -82,16 +81,16 @@ public sealed class TypedSurfaceStopATests
         using ClaudeCodeClient client = MakeClient(ws);
 
         McpServer server = client.McpServers.Get("s")!;
-        Assert.AreEqual("test", server.Description);
+        Assert.Equal("test", server.Description);
 
         // PreservedFields should contain "future" but NOT "description".
-        Assert.IsNotNull(server.PreservedFields);
-        Assert.IsTrue(server.PreservedFields!.ContainsKey("future"));
-        Assert.IsFalse(server.PreservedFields.ContainsKey("description"),
+        Assert.NotNull(server.PreservedFields);
+        Assert.True(server.PreservedFields!.ContainsKey("future"));
+        Assert.False(server.PreservedFields.ContainsKey("description"),
             "After promotion, description must not be in PreservedFields — typed property is single source of truth.");
     }
 
-    [TestMethod]
+    [Fact]
     public void McpServer_Description_RoundTripsViaTypedProperty()
     {
         // Construct a fresh server programmatically (no on-disk JSON to
@@ -106,14 +105,14 @@ public sealed class TypedSurfaceStopATests
 
         JsonObject output = (JsonObject)client.GetScopeValue("mcpServers", ConfigScope.User)!;
         JsonObject entry = output["s"]!.AsObject();
-        Assert.AreEqual("programmatically set", entry["description"]!.GetValue<string>());
+        Assert.Equal("programmatically set", entry["description"]!.GetValue<string>());
 
         // Re-read via typed accessor.
         McpServer roundTripped = client.McpServers.Get("s")!;
-        Assert.AreEqual("programmatically set", roundTripped.Description);
+        Assert.Equal("programmatically set", roundTripped.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void McpServer_TypedDescription_WinsOverColliding_PreservedField()
     {
         // Defensive: if a caller manually injects "description" into
@@ -132,14 +131,14 @@ public sealed class TypedSurfaceStopATests
         client.McpServers.Set("s", server);
 
         JsonObject output = (JsonObject)client.GetScopeValue("mcpServers", ConfigScope.User)!;
-        Assert.AreEqual("fresh",
+        MessageAssert.Equal("fresh",
             output["s"]!.AsObject()["description"]!.GetValue<string>(),
             "Typed Description must win on collision with a PreservedFields entry of the same key.");
     }
 
     // ── IPermissionsAccessor.AdditionalDirectories ────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Permissions_AdditionalDirectories_ReadsFromEffectiveView()
     {
         JsonObject input = new()
@@ -153,13 +152,13 @@ public sealed class TypedSurfaceStopATests
         using ClaudeCodeClient client = MakeClient(ws);
 
         IReadOnlyList<string> dirs = client.Permissions.AdditionalDirectories;
-        Assert.AreEqual(2, dirs.Count);
-        CollectionAssert.AreEqual(
+        Assert.Equal(2, dirs.Count);
+        Assert.Equal(
             new[] { "/Users/alice/projects", "~/work" },
             dirs.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Permissions_AdditionalDirectoriesAt_ReadsFromSpecificScope()
     {
         JsonObject input = new()
@@ -173,11 +172,11 @@ public sealed class TypedSurfaceStopATests
         using ClaudeCodeClient client = MakeClient(ws);
 
         IReadOnlyList<string> dirs = client.Permissions.AdditionalDirectoriesAt(ConfigScope.User);
-        Assert.AreEqual(1, dirs.Count);
-        Assert.AreEqual("/scope/specific", dirs[0]);
+        Assert.Single(dirs);
+        Assert.Equal("/scope/specific", dirs[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Permissions_AddAdditionalDirectory_AppendsToList()
     {
         SettingsWorkspace ws = MakeWorkspace(new JsonObject());
@@ -188,11 +187,11 @@ public sealed class TypedSurfaceStopATests
         client.Permissions.AddAdditionalDirectory("/foo"); // dedup — no-op
 
         IReadOnlyList<string> dirs = client.Permissions.AdditionalDirectoriesAt(ConfigScope.User);
-        Assert.AreEqual(2, dirs.Count);
-        CollectionAssert.AreEqual(new[] { "/foo", "/bar" }, dirs.ToList());
+        Assert.Equal(2, dirs.Count);
+        Assert.Equal(new[] { "/foo", "/bar" }, dirs.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Permissions_RemoveAdditionalDirectory_RemovesEntry()
     {
         JsonObject input = new()
@@ -205,14 +204,14 @@ public sealed class TypedSurfaceStopATests
         SettingsWorkspace ws = MakeWorkspace(input);
         using ClaudeCodeClient client = MakeClient(ws);
 
-        Assert.IsTrue(client.Permissions.RemoveAdditionalDirectory("/bar"));
+        Assert.True(client.Permissions.RemoveAdditionalDirectory("/bar"));
         IReadOnlyList<string> dirs = client.Permissions.AdditionalDirectoriesAt(ConfigScope.User);
-        CollectionAssert.AreEqual(new[] { "/foo", "/baz" }, dirs.ToList());
+        Assert.Equal(new[] { "/foo", "/baz" }, dirs.ToList());
 
-        Assert.IsFalse(client.Permissions.RemoveAdditionalDirectory("/notthere"));
+        Assert.False(client.Permissions.RemoveAdditionalDirectory("/notthere"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Permissions_RemoveLastAdditionalDirectory_DropsKeyEntirely()
     {
         // When the array empties, the key should be removed from the JSON
@@ -234,13 +233,13 @@ public sealed class TypedSurfaceStopATests
         client.Permissions.RemoveAdditionalDirectory("/only");
 
         JsonObject permissions = (JsonObject)client.GetScopeValue("permissions", ConfigScope.User)!;
-        Assert.IsFalse(permissions.ContainsKey("additionalDirectories"),
+        Assert.False(permissions.ContainsKey("additionalDirectories"),
             "Empty additionalDirectories must be removed from permissions, not left as []");
-        Assert.IsTrue(permissions.ContainsKey("defaultMode"),
+        Assert.True(permissions.ContainsKey("defaultMode"),
             "Sibling fields must survive the nested remove.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Permissions_AdditionalDirectories_PreservesOtherFields()
     {
         // Adding an additional directory must not disturb other permissions
@@ -262,9 +261,9 @@ public sealed class TypedSurfaceStopATests
         client.Permissions.AddAdditionalDirectory("/extra");
 
         JsonObject permissions = (JsonObject)client.GetScopeValue("permissions", ConfigScope.User)!;
-        Assert.AreEqual("default", permissions["defaultMode"]!.GetValue<string>());
-        Assert.AreEqual("Read", permissions["allow"]!.AsArray()[0]!.GetValue<string>());
-        Assert.AreEqual("disable", permissions["disableBypassPermissionsMode"]!.GetValue<string>());
-        Assert.AreEqual("/extra", permissions["additionalDirectories"]!.AsArray()[0]!.GetValue<string>());
+        Assert.Equal("default", permissions["defaultMode"]!.GetValue<string>());
+        Assert.Equal("Read", permissions["allow"]!.AsArray()[0]!.GetValue<string>());
+        Assert.Equal("disable", permissions["disableBypassPermissionsMode"]!.GetValue<string>());
+        Assert.Equal("/extra", permissions["additionalDirectories"]!.AsArray()[0]!.GetValue<string>());
     }
 }

@@ -9,92 +9,91 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 /// forward-slash for Read/Edit/Write path specifiers (anchors preserved);
 /// everything else untouched; never throws.
 /// </summary>
-[TestClass]
 public sealed class PermissionRuleNormalizerTests
 {
-    [TestMethod]
+    [Fact]
     public void Bash_TrailingSpaceStar_IsPreservedVerbatim()
     {
         // " *" (optional args) and ":*" (literal colon + remainder) are DISTINCT
         // match semantics, so the normalizer must NOT rewrite one into the other.
-        Assert.AreEqual("Bash(git push *)", PermissionRuleNormalizer.Normalize("Bash(git push *)"));
+        Assert.Equal("Bash(git push *)", PermissionRuleNormalizer.Normalize("Bash(git push *)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void PowerShell_TrailingSpaceStar_IsPreservedVerbatim()
     {
-        Assert.AreEqual(
+        Assert.Equal(
             "PowerShell(Get-ChildItem *)",
             PermissionRuleNormalizer.Normalize("PowerShell(Get-ChildItem *)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void ColonStar_IsPreservedVerbatim()
     {
-        Assert.AreEqual("Bash(git push:*)", PermissionRuleNormalizer.Normalize("Bash(git push:*)"));
-        Assert.AreEqual(
+        Assert.Equal("Bash(git push:*)", PermissionRuleNormalizer.Normalize("Bash(git push:*)"));
+        Assert.Equal(
             "PowerShell(Get-ChildItem:*)",
             PermissionRuleNormalizer.Normalize("PowerShell(Get-ChildItem:*)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Shell_NonTrailingOrNoStar_Untouched()
     {
-        Assert.AreEqual("Bash(npm run build)", PermissionRuleNormalizer.Normalize("Bash(npm run build)"));
-        Assert.AreEqual("Bash(ls*)", PermissionRuleNormalizer.Normalize("Bash(ls*)"));
-        Assert.AreEqual("Bash(* install)", PermissionRuleNormalizer.Normalize("Bash(* install)"));
+        Assert.Equal("Bash(npm run build)", PermissionRuleNormalizer.Normalize("Bash(npm run build)"));
+        Assert.Equal("Bash(ls*)", PermissionRuleNormalizer.Normalize("Bash(ls*)"));
+        Assert.Equal("Bash(* install)", PermissionRuleNormalizer.Normalize("Bash(* install)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Shell_CommandBackslashes_NotPathNormalized()
     {
         // Backslashes in a shell command are literal text matched against the real
         // command line — must NOT be rewritten to forward slashes.
-        Assert.AreEqual(
+        Assert.Equal(
             @"PowerShell(Get-Content .\src\a.txt)",
             PermissionRuleNormalizer.Normalize(@"PowerShell(Get-Content .\src\a.txt)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Path_Backslashes_BecomeForwardSlashes()
     {
-        Assert.AreEqual("Read(src/app/**)", PermissionRuleNormalizer.Normalize(@"Read(src\app\**)"));
-        Assert.AreEqual("Edit(src/main.ts)", PermissionRuleNormalizer.Normalize(@"Edit(src\main.ts)"));
-        Assert.AreEqual("Write(out/gen/**)", PermissionRuleNormalizer.Normalize(@"Write(out\gen\**)"));
+        Assert.Equal("Read(src/app/**)", PermissionRuleNormalizer.Normalize(@"Read(src\app\**)"));
+        Assert.Equal("Edit(src/main.ts)", PermissionRuleNormalizer.Normalize(@"Edit(src\main.ts)"));
+        Assert.Equal("Write(out/gen/**)", PermissionRuleNormalizer.Normalize(@"Write(out\gen\**)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Path_ForwardSlashAnchors_Preserved()
     {
         // The four anchors use forward slashes already; only backslashes change,
         // so these pass through verbatim.
-        Assert.AreEqual("Read(//etc/hosts)", PermissionRuleNormalizer.Normalize("Read(//etc/hosts)"));
-        Assert.AreEqual("Read(~/.ssh/**)", PermissionRuleNormalizer.Normalize("Read(~/.ssh/**)"));
-        Assert.AreEqual("Read(/src/**)", PermissionRuleNormalizer.Normalize("Read(/src/**)"));
-        Assert.AreEqual("Read(./local/**)", PermissionRuleNormalizer.Normalize("Read(./local/**)"));
+        Assert.Equal("Read(//etc/hosts)", PermissionRuleNormalizer.Normalize("Read(//etc/hosts)"));
+        Assert.Equal("Read(~/.ssh/**)", PermissionRuleNormalizer.Normalize("Read(~/.ssh/**)"));
+        Assert.Equal("Read(/src/**)", PermissionRuleNormalizer.Normalize("Read(/src/**)"));
+        Assert.Equal("Read(./local/**)", PermissionRuleNormalizer.Normalize("Read(./local/**)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Path_WindowsAbsolute_SeparatorsNormalized()
     {
-        Assert.AreEqual("Read(C:/Users/me/**)", PermissionRuleNormalizer.Normalize(@"Read(C:\Users\me\**)"));
+        Assert.Equal("Read(C:/Users/me/**)", PermissionRuleNormalizer.Normalize(@"Read(C:\Users\me\**)"));
     }
 
-    [TestMethod]
+    [Fact]
     public void WebMcpAgentBare_Untouched()
     {
-        Assert.AreEqual("WebFetch(domain:example.com)", PermissionRuleNormalizer.Normalize("WebFetch(domain:example.com)"));
-        Assert.AreEqual("mcp__github", PermissionRuleNormalizer.Normalize("mcp__github"));
-        Assert.AreEqual("mcp__github__create_issue", PermissionRuleNormalizer.Normalize("mcp__github__create_issue"));
-        Assert.AreEqual("Agent(Explore)", PermissionRuleNormalizer.Normalize("Agent(Explore)"));
-        Assert.AreEqual("Bash", PermissionRuleNormalizer.Normalize("Bash"));
-        Assert.AreEqual("Read", PermissionRuleNormalizer.Normalize("Read"));
+        Assert.Equal("WebFetch(domain:example.com)", PermissionRuleNormalizer.Normalize("WebFetch(domain:example.com)"));
+        Assert.Equal("mcp__github", PermissionRuleNormalizer.Normalize("mcp__github"));
+        Assert.Equal("mcp__github__create_issue", PermissionRuleNormalizer.Normalize("mcp__github__create_issue"));
+        Assert.Equal("Agent(Explore)", PermissionRuleNormalizer.Normalize("Agent(Explore)"));
+        Assert.Equal("Bash", PermissionRuleNormalizer.Normalize("Bash"));
+        Assert.Equal("Read", PermissionRuleNormalizer.Normalize("Read"));
     }
 
-    [TestMethod]
+    [Fact]
     public void NullOrEmpty_ReturnedAsIs()
     {
-        Assert.AreEqual("", PermissionRuleNormalizer.Normalize(""));
-        Assert.AreEqual("   ", PermissionRuleNormalizer.Normalize("   "));
+        Assert.Equal("", PermissionRuleNormalizer.Normalize(""));
+        Assert.Equal("   ", PermissionRuleNormalizer.Normalize("   "));
     }
 }

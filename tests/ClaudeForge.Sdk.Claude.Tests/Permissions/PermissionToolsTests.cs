@@ -9,10 +9,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 /// <c>Pwsh</c>/<c>Monitor</c> drift). These tests lock it to the bundled schema and
 /// to the regex behaviour, so any future drift fails CI.
 /// </summary>
-[TestClass]
 public class PermissionToolsTests
 {
-    [TestMethod]
+    [Fact]
     public void Names_MatchTheSchemaPermissionRuleAlternation()
     {
         // CORE REQUIREMENT: a list that mirrors the schema must be schema-driven, not
@@ -36,7 +35,7 @@ public class PermissionToolsTests
             }
         }
 
-        Assert.IsNotNull(resName, "Bundled claude-code-settings.json embedded resource must exist in Core.");
+        MessageAssert.NotNull(resName, "Bundled claude-code-settings.json embedded resource must exist in Core.");
 
         string json;
         using (System.IO.Stream stream = core.GetManifestResourceStream(resName!)!)
@@ -47,34 +46,34 @@ public class PermissionToolsTests
 
         System.Text.Json.Nodes.JsonNode root = System.Text.Json.Nodes.JsonNode.Parse(json)!;
         string? pattern = root["$defs"]?["permissionRule"]?["pattern"]?.GetValue<string>();
-        Assert.IsFalse(string.IsNullOrEmpty(pattern), "$defs.permissionRule.pattern must exist.");
+        Assert.False(string.IsNullOrEmpty(pattern), "$defs.permissionRule.pattern must exist.");
 
         // Extract the leading tool-name alternation: ^((Agent|Bash|...|Write)(...
         System.Text.RegularExpressions.Match m =
             System.Text.RegularExpressions.Regex.Match(pattern!, @"\(\(([A-Za-z|]+)\)");
-        Assert.IsTrue(m.Success, $"Could not extract the tool-name alternation from: {pattern}");
+        Assert.True(m.Success, $"Could not extract the tool-name alternation from: {pattern}");
         string[] schemaNames = m.Groups[1].Value.Split('|');
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new System.Collections.Generic.List<string>(PermissionTools.Names),
             schemaNames,
             "PermissionTools.Names must match the schema's permissionRule tool-name alternation "
             + "exactly. If the schema changed, update PermissionTools.Names (the single source).");
     }
 
-    [TestMethod]
+    [Fact]
     public void RulePattern_AcceptsEveryKnownTool_RejectsUnknownAndAllWildcard()
     {
         foreach (string tool in PermissionTools.Names)
         {
-            Assert.IsTrue(PermissionTools.RuleRegex.IsMatch(tool), $"Bare tool '{tool}' must be valid.");
+            Assert.True(PermissionTools.RuleRegex.IsMatch(tool), $"Bare tool '{tool}' must be valid.");
         }
 
-        Assert.IsFalse(PermissionTools.RuleRegex.IsMatch("NotARealTool"), "Unknown tool must be rejected.");
-        Assert.IsFalse(
+        Assert.False(PermissionTools.RuleRegex.IsMatch("NotARealTool"), "Unknown tool must be rejected.");
+        Assert.False(
             PermissionTools.RuleRegex.IsMatch("Bash(*)"),
             "All-wildcard parens content must be rejected by the strict lookahead.");
-        Assert.IsTrue(PermissionTools.RuleRegex.IsMatch("Bash(git status)"), "A real pattern must be accepted.");
-        Assert.IsTrue(PermissionTools.RuleRegex.IsMatch("mcp__server__tool"), "mcp__ rules must be accepted.");
+        Assert.True(PermissionTools.RuleRegex.IsMatch("Bash(git status)"), "A real pattern must be accepted.");
+        Assert.True(PermissionTools.RuleRegex.IsMatch("mcp__server__tool"), "mcp__ rules must be accepted.");
     }
 }

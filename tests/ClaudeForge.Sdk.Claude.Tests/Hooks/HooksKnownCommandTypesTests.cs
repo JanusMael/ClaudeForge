@@ -11,14 +11,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Hooks;
 /// any GUI or schema plumbing. The command-variant counterpart to
 /// <see cref="HooksKnownEventsTests"/> (which covers the lifecycle events).
 /// </summary>
-[TestClass]
-public sealed class HooksKnownCommandTypesTests
+public sealed class HooksKnownCommandTypesTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public HooksKnownCommandTypesTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-hooks-cmdtypes-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -26,8 +26,7 @@ public sealed class HooksKnownCommandTypesTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -43,7 +42,13 @@ public sealed class HooksKnownCommandTypesTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task KnownCommandTypes_ExposesSchemaVariants()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -53,12 +58,12 @@ public sealed class HooksKnownCommandTypesTests
 
         // The bundled schema defines the standard hook command variants; the accessor
         // surfaces them — no GUI or schema plumbing needed by the consumer.
-        CollectionAssert.Contains(types, "command");
-        CollectionAssert.Contains(types, "prompt");
-        CollectionAssert.Contains(types, "http");
+        Assert.Contains("command", types);
+        Assert.Contains("prompt", types);
+        Assert.Contains("http", types);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task KnownCommandTypes_CarrySchemaDescriptions_ForTypeAndFields()
     {
         // Headless consumers get the schema DESCRIPTIONS too — the per-type help text
@@ -67,20 +72,20 @@ public sealed class HooksKnownCommandTypesTests
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         HookCommandVariantInfo command = client.Hooks.KnownCommandTypes.First(v => v.Type == "command");
-        StringAssert.Contains(command.Description!, "Bash command hook");
+        OrdinalAssert.Contains("Bash command hook", command.Description!);
 
         HookFieldInfo ifField = command.Fields.First(f => f.Name == "if");
-        Assert.IsFalse(string.IsNullOrWhiteSpace(ifField.Description),
+        Assert.False(string.IsNullOrWhiteSpace(ifField.Description),
             "KnownCommandTypes must carry field descriptions, not just field names.");
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownCommandTypes_BeforeOpen_StillResolvesFromBundledSchema()
     {
         // Unlike the lifecycle events (which read the cached schema node and so need an
         // open), the command variants read the bundled schema directly, so a headless
         // caller gets a usable list even before OpenAsync.
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
-        Assert.IsTrue(client.Hooks.KnownCommandTypes.Any(v => v.Type == "command"));
+        Assert.Contains(client.Hooks.KnownCommandTypes, v => v.Type == "command");
     }
 }

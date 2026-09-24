@@ -13,7 +13,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// preservation of fields the SDK doesn't natively model. Same bug class
 /// as the McpServersAccessor fix in commit e39d97d.
 /// </summary>
-[TestClass]
 public sealed class MarketplacesAccessorRoundTripTests
 {
     private static SettingsWorkspace MakeWorkspace(JsonObject marketplacesBlock)
@@ -29,7 +28,7 @@ public sealed class MarketplacesAccessorRoundTripTests
             ws, ConfigScope.User, new SchemaRegistry());
     }
 
-    [TestMethod]
+    [Fact]
     public void Get_PreservesOuterDescriptionField()
     {
         JsonObject input = new()
@@ -48,13 +47,13 @@ public sealed class MarketplacesAccessorRoundTripTests
         using ClaudeCodeClient client = MakeClient(ws);
 
         MarketplaceEntry? entry = client.Marketplaces.Get("everything-claude-code");
-        Assert.IsNotNull(entry);
-        Assert.IsNotNull(entry!.PreservedFields);
-        Assert.AreEqual("Plugin marketplace for ECC",
+        Assert.NotNull(entry);
+        Assert.NotNull(entry!.PreservedFields);
+        Assert.Equal("Plugin marketplace for ECC",
             entry.PreservedFields!["description"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Set_RoundTrip_PreservesDescriptionField()
     {
         JsonObject input = new()
@@ -77,13 +76,13 @@ public sealed class MarketplacesAccessorRoundTripTests
 
         JsonObject output = (JsonObject)client.GetScopeValue("extraKnownMarketplaces", ConfigScope.User)!;
         JsonObject mp = output["mp1"]!.AsObject();
-        Assert.IsTrue(mp.ContainsKey("description"),
+        Assert.True(mp.ContainsKey("description"),
             "Description must round-trip. Output:\n" +
             mp.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        Assert.AreEqual("A description", mp["description"]!.GetValue<string>());
+        Assert.Equal("A description", mp["description"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Set_RoundTrip_PreservesUnknownInnerSourceField()
     {
         // A future schema addition might add fields to the source object
@@ -108,7 +107,7 @@ public sealed class MarketplacesAccessorRoundTripTests
 
         JsonObject output = (JsonObject)client.GetScopeValue("extraKnownMarketplaces", ConfigScope.User)!;
         JsonObject sourceObj = output["mp1"]!.AsObject()["source"]!.AsObject();
-        Assert.IsTrue(sourceObj.ContainsKey("futureField"));
-        Assert.AreEqual("value", sourceObj["futureField"]!.GetValue<string>());
+        Assert.True(sourceObj.ContainsKey("futureField"));
+        Assert.Equal("value", sourceObj["futureField"]!.GetValue<string>());
     }
 }
