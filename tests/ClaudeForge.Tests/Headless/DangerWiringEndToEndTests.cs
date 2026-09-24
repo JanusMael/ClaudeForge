@@ -102,7 +102,7 @@ public sealed class DangerWiringEndToEndTests
     [TestMethod]
     public async Task ClaudeCodesSettingsPages_CarryItsDangerTable()
     {
-        MainWindowViewModel vm = BuildViewModel();
+        using MainWindowViewModel vm = BuildViewModel();
         await vm.LoadAllWorkspacesAsync();
 
         List<SettingsGroupEditorViewModel> groups = GroupsUnder(vm, "Claude Code");
@@ -126,7 +126,7 @@ public sealed class DangerWiringEndToEndTests
     [TestMethod]
     public async Task ClaudeDesktopsSettingsPages_CarryNoTable()
     {
-        MainWindowViewModel vm = BuildViewModel();
+        using MainWindowViewModel vm = BuildViewModel();
         await vm.LoadAllWorkspacesAsync();
 
         List<SettingsGroupEditorViewModel> groups = GroupsUnder(vm, "Claude Desktop");

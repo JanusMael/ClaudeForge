@@ -135,7 +135,7 @@ public sealed class ReloadHardeningTests
         bool ran = await Session.Dispatch(async () =>
         {
             // Initial valid load.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? initialCc = vm.ClaudeCodeSdk;
             Assert.IsNotNull(initialCc);
@@ -178,7 +178,7 @@ public sealed class ReloadHardeningTests
             // Before that serialisation existed, one call's ClaudeCodeSdk.Dispose() landed
             // while another was inside BuildNavigationTreeAsync and this threw
             // ObjectDisposedException.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             // Mutate the file each time so a successful reload would
@@ -220,7 +220,7 @@ public sealed class ReloadHardeningTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             BackupRestoreViewModel? firstBackup = vm.GetBackupVmForTesting();
             Assert.IsNotNull(firstBackup,
@@ -248,7 +248,7 @@ public sealed class ReloadHardeningTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             ProfilesViewModel? firstProfiles = vm.GetProfilesVmForTesting();
             Assert.IsNotNull(firstProfiles);
@@ -274,7 +274,7 @@ public sealed class ReloadHardeningTests
             // ShowClaudeCodePathWarning banner.  Pre-H-2, a reload
             // would lose the "user clicked Add to PATH" state
             // mid-session.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             AboutEditorViewModel? firstAboutCode = vm.GetAboutCodeVmForTesting();
             AboutEditorViewModel? firstAboutDesktop = vm.GetAboutDesktopVmForTesting();
@@ -304,7 +304,7 @@ public sealed class ReloadHardeningTests
             // mid-keystroke int / string list value the user is editing.
             // A reload that ditches the VM would reset the callout and lose
             // the in-flight value mid-typing.  Pin the H-2 contract.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             EssentialsViewModel? firstEssentials = vm.GetEssentialsVmForTesting();
             Assert.IsNotNull(firstEssentials,
@@ -330,7 +330,7 @@ public sealed class ReloadHardeningTests
             // multiple reload cycles, not just one.  Catches a class
             // of bug where the cache is populated on first build and
             // discarded on second, which a single-reload test would miss.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             BackupRestoreViewModel? initial = vm.GetBackupVmForTesting();
             Assert.IsNotNull(initial);

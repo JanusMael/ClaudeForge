@@ -63,7 +63,7 @@ public sealed class SchemaBannerTests
     [TestMethod]
     public void SchemaErrors_Setter_DrivesHasSchemaErrors_BannerText_AndCanExecute()
     {
-        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
+        using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
         Assert.IsFalse(vm.HasSchemaErrors, "Empty list must report no errors.");
         Assert.IsFalse(vm.ShowSchemaErrorsCommand.CanExecute(null),
@@ -92,7 +92,7 @@ public sealed class SchemaBannerTests
     [TestMethod]
     public void SchemaErrors_ClearedToEmpty_RestoresClean()
     {
-        MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
+        using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
         vm.SchemaErrors =
             [new SchemaValidationError("settings.json", "/x", "y")];

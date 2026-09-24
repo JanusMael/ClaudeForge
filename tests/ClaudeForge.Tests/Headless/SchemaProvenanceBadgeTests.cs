@@ -143,7 +143,7 @@ public sealed class SchemaProvenanceBadgeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
 
             foreach (string nodeId in new[] { MainWindowViewModel.NavIdClaudeCode, MainWindowViewModel.NavIdClaudeDesktop })
             {
@@ -208,7 +208,7 @@ public sealed class SchemaProvenanceBadgeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new ServingHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new ServingHandler());
             NavigationNodeViewModel dt = Header(vm, MainWindowViewModel.NavIdClaudeDesktop);
 
             string sha = await BundledShaAsync(SchemaRegistry.ClaudeDesktopProduct);
@@ -241,7 +241,7 @@ public sealed class SchemaProvenanceBadgeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
             string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
@@ -264,7 +264,7 @@ public sealed class SchemaProvenanceBadgeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
             string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
@@ -294,7 +294,7 @@ public sealed class SchemaProvenanceBadgeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
 
             string[] sectionIds =
                 [MainWindowViewModel.NavIdClaudeCode, MainWindowViewModel.NavIdClaudeDesktop];

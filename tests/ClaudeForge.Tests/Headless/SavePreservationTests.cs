@@ -118,7 +118,7 @@ public sealed class SavePreservationTests
         string after = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = BuildViewModel();
+                using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
                 Assert.IsNotNull(vm.ClaudeCodeSdk, "Precondition: the CC SDK client must be loaded.");
 
@@ -168,7 +168,7 @@ public sealed class SavePreservationTests
         string after = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = BuildViewModel();
+                using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
                 Assert.IsNotNull(vm.ClaudeCodeSdk);
 
@@ -217,7 +217,7 @@ public sealed class SavePreservationTests
         string after = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = BuildViewModel();
+                using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
                 Assert.IsNotNull(vm.ClaudeCodeSdk);
 
@@ -247,7 +247,7 @@ public sealed class SavePreservationTests
         (string Cc, string Dt) after = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = BuildViewModel();
+                using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
 
                 Assert.AreEqual(2, vm.Sections.Count(s => s.Client is not null),
@@ -284,7 +284,7 @@ public sealed class SavePreservationTests
         bool dirty = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = BuildViewModel();
+                using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
                 Assert.IsFalse(vm.HasUnsavedChanges, "Precondition: a fresh load is clean.");
 
