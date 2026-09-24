@@ -327,6 +327,19 @@ The UI also reported `v2026.3.922.0`.
     at **1,606 tests, 0 skipped** — 154 short of 1,760, with the 3 skips missing too, and nothing
     failed. Four runs since (one isolated, three full-suite) each report 1,760. It left no TRX, so
     the cause is unknown. If a total ever reads short again, capture the TRX before rerunning.
+16. **Step 10's first CI run (`859cf41`) — two jobs red by construction, one real guard defect.**
+    - ⛔ **`Feed Restore` is red by construction too**, not only `Published Version` as the plan
+      named: both restore the PUBLISHED AgentForge packages at `SharedPackageVersion` `2026.3.922`,
+      which depend on `LayeredEditors.*` ids this branch no longer maps (step 6), so NU1101. Re-adding
+      the mapping would not help — `.922`'s AgentForge is built against the old types. Both clear only
+      with the post-merge, BREAKING `packages-v*` release plus the pin bump.
+    - ✅ **`PackageVersionLockstepTests` treated the prefix as the family.** It called every
+      `Bennewitz.Ninja.*` dependency a sibling that must share the pack's version, so AgentForge's
+      dependencies on ScopedEditors/AppServices `2026.3.924` read as six drifts and failed the package
+      canary. A sibling is now a package IN the packed feed; a premise asserts at least one sibling
+      dependency was checked; canaried by pointing AgentForge.Sdk's AgentForge.Core dependency at
+      `9.9.9` inside the feed. ⓘ Locally it had only ever been **Inconclusive** (no feed) — one of
+      the "3 skipped". The full canary now passes locally, with that test measuring.
 
 ### ⏭ QUEUED — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3
 

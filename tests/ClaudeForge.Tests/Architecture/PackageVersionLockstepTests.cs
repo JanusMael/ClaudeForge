@@ -195,6 +195,14 @@ public sealed class PackageVersionLockstepTests
     /// packed output in an ordinary test run and a green tick would claim a measurement that was
     /// never taken. <c>scripts/package-canary.ps1</c> produces one.
     /// </para>
+    /// <para>
+    /// ⛔ <b>A sibling is a package IN THIS FEED, not anything named <c>Bennewitz.Ninja.*</c>.</b>
+    /// Since plans/00005 the packed AgentForge packages depend on
+    /// <c>Bennewitz.Ninja.ScopedEditors.*</c> and <c>Bennewitz.Ninja.AppServices*</c>: the same prefix,
+    /// other repositories, their own versions. Matching on the prefix reported those six
+    /// dependencies as version drift and failed the package canary on the first CI run that could
+    /// restore. The rule is unchanged for what this repository packs.
+    /// </para>
     /// </remarks>
     [TestMethod]
     public void EveryPackageInTheLocalFeedNamesOneVersion()
@@ -216,20 +224,22 @@ public sealed class PackageVersionLockstepTests
 
         Dictionary<string, string> versions = [];
         List<string> mismatchedDependencies = [];
+        var nuspecs = packages.Select(ReadNuspec).ToList();
+        HashSet<string> siblings = new(nuspecs.Select(n => n.Id), StringComparer.OrdinalIgnoreCase);
+        int siblingDependencies = 0;
 
-        foreach (string path in packages)
+        foreach ((string id, string version, List<(string Id, string Version)> dependencies) in nuspecs)
         {
-            (string id, string version, IEnumerable<(string Id, string Version)> dependencies) =
-                ReadNuspec(path);
-
             versions[id] = version;
 
             foreach ((string depId, string depVersion) in dependencies)
             {
-                if (!depId.StartsWith(PackagePrefix, StringComparison.Ordinal))
+                if (!siblings.Contains(depId))
                 {
                     continue;
                 }
+
+                siblingDependencies++;
 
                 // NuGet writes a bare version as the lower bound of an inclusive-minimum range,
                 // so a dependency pinned to 2026.3.914 reads back as exactly that string.
@@ -247,6 +257,13 @@ public sealed class PackageVersionLockstepTests
             + "resolve a mixed set: "
             + string.Join(", ", versions.Select(kv => kv.Key + " = " + kv.Value))
             + ". The feed is packed in one shot at one version; delete it and re-pack.");
+
+        // Premise: the packed set does depend on itself (AgentForge.Sdk on AgentForge.Core, and so
+        // on). Zero would mean the sibling set or the nuspec reader broke, and the check below
+        // would pass having compared nothing.
+        Assert.IsTrue(siblingDependencies > 0,
+            $"No package in '{feed}' depends on another package in it, so no version agreement "
+            + "was checked. The nuspec reader or the sibling set is broken.");
 
         Assert.AreEqual(0, mismatchedDependencies.Count,
             "These packages depend on a sibling at a version other than their own, which is what "
