@@ -180,7 +180,7 @@ the defect.
 | 5b · `ClaudeForge.Sdk.Claude.Tests` | ✅ 208, 0 differences, build 0 warnings, Templates `d12e28a`; no headless session either. By hand: `[Parallelize]` → `CollectionPerClass` |
 | 5c · `ClaudeForge.Tests` | ✅ 1,757 (was 1,760), build 0 warnings, Templates `d12e28a`, nothing unmapped. **The headless bootstrap is NOT ported** (the recorded decision: under `PerTest` isolation every `Dispatch` rebuilds the app, so the warm-up changed nothing and its guard was true by construction): `HeadlessSessionBootstrap.cs` and `HeadlessSessionBootstrapTests.cs` deleted with their links — the **3 intended `REMOVED`** in the name set. By hand, each with its reason in the file: `#pragma` for **xUnit1030** (`ConfigureAwait(false)` in `ClaudeEditorDangerWiringTests` — removing it would move continuations onto xUnit's context) and **xUnit1031** (`LiveLogWindowTests`, `McpServersEditorViewModelTests` — deliberate blocking). ⛔ **One real ORDER bug, exposed and fixed** — drift 10. Three whole-suite runs: 3,295 / 0 failed, differences = exactly the 3 removals |
 | 6 · drop MSTest, correct the prose | ✅ `tests/Directory.Build.props` references `xunit.v3` + TrxReport unconditionally; `MSTest`, `EnableMSTestRunner`, the per-project `UseXunitV3` switch and the dead `Microsoft.NET.Test.Sdk` / `coverlet.collector` entries are gone. Live docs rewritten to xUnit: `CLAUDE.md` (now also says order is RANDOMISED and how to reproduce with `--seed`), `PLATFORM.md`, root `AGENTS.md`, and the area `AGENTS.md` files under `Settings/`, `AgentForge.Sdk/`, `ViewModels/` and `ViewModels/Editors/`, plus the template in `SampleHeadlessTests`. No MSTest code remains anywhere; what still says "MSTest" is history in comments, `CHANGELOG.md`, `PROGRESS.md` history and approved plans. All seven TRX report executor `xunit 3.2.2`; build 0 warnings; the only differences are the 3 removed bootstrap tests |
-| ▶ RESUME | **Step 7 — the gate**: the reconciliation list (the 3 removed bootstrap tests, the `Inconclusive` → `Skip` accounting of drift 8's 22 sites, theory-row display names), CI green on three OSes, the package canary's own output, and a trimmed Release publish. Also owed first: the ⏳ semantic audit in drift 8, and Templates PR #1 is not merged. Converter: Templates `d12e28a` from a PRIVATE worktree. ⚠ Pushing Templates from here needs `-c credential.helper= -c "credential.helper=!gh auth git-credential"` |
+| ▶ RESUME | **Step 7 — the gate**: the reconciliation list (the 3 removed bootstrap tests, the `Inconclusive` → `Skip` accounting of drift 8's 22 sites, theory-row display names), CI green on three OSes, the package canary's own output, and a trimmed Release publish. Drift 8's audit is measured; its one open item (collection-typed `AreEqual`) is a follow-up needing a compilation-backed scan, not a blocker. Templates PR #1 is not merged. Converter: Templates `d12e28a` from a PRIVATE worktree. ⚠ Pushing Templates from here needs `-c credential.helper= -c "credential.helper=!gh auth git-credential"` |
 | 4 – 7 (rest) | ⏳ Rewriter dry-run over all seven: `ClaudeForge.Avalonia.Tests` maps cleanly; the other six list **40 UNMAPPED** sites — 5× assembly `[Parallelize]`, 1 sync `[Timeout]`, 5× `[Description]`, 16× 3-argument `AreEqual` in `ClaudeArtifactPathsTests`, 2× `AllItemsAreUnique(msg)`, 2× `CollectionAssert.AreNotEqual(msg)`, 2× named-argument `AreEqual`, 7× 4-argument `StartsWith`/`Contains`/`AreNotEqual`. Each is a rule for the TOOL first, never a hand patch |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00006` is never edited:
@@ -215,10 +215,17 @@ the defect.
    committed JsonC tests and **0** after. ⭐ The lesson generalises: a conversion can keep every
    name and every outcome and still change what a test PROVES — check the semantics of each
    mapping on both frameworks, not only that the suite stays green.
-   ⏳ **Not yet audited the same way:** `Assert.AreEqual(a, b)` where `a`/`b` are collections (MSTest's
-   `Equals` is REFERENCE equality for an array; xUnit's `Equal` compares structurally — looser), and
-   `AreEqual(string, string, ignoreCase)` (culture handling on each side). Both could only loosen a
-   test that passes today; probe them before step 7's gate.
+   ✅ **The other two suspects, measured on both frameworks (2026-09-24):**
+   `AreEqual(string, string, ignoreCase: true)` — MSTest compares under the invariant CULTURE, so it
+   passes on the soft-hyphen case where xUnit's `Equal(…, ignoreCase: true)` fails: xUnit is
+   STRICTER there, which can only surface as a visible failure (none — the suite is green); `ß`/`SS`
+   and `i`/`I` behave the same on both. ⏳ **`AreEqual(a, b)` on a COLLECTION-typed value is LOOSER**:
+   MSTest's `Equals` is reference equality for an array or `List<T>` (an equal copy FAILS), xUnit's
+   `Equal` compares structurally (an equal copy passes). A converted site therefore still passes, but
+   would no longer catch code that starts returning a copy where it returned the same instance.
+   Unlike the ordinal case this cannot be settled syntactically — it needs each argument's TYPE —
+   so it is a follow-up for a semantic (compilation-backed) scan, not a converter rule. Nested
+   `CollectionAssert.AreEqual` agrees on both sides.
 9. ⛔ **xUnit v3 RANDOMISES test order per run** (`--seed`); MSTest always ran one fixed order. A suite
    built around process-wide static seams can therefore meet orders it never met before. Measured on
    `ClaudeForge.Tests` after the fix below: **20 orders** (seeds 1–8, 101–110, and seed 3 twice),
