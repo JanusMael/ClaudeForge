@@ -102,13 +102,13 @@
                         colour, because colour alone excludes colour-blind users and
                         Critical-vs-Caution sits exactly on the red-green axis. Geometric shapes
                         rather than emoji — emoji need a system emoji font and render as tofu
-                        without one (see AVALONIA-GOTCHAS).
+                        without one (see XamlQuality's docs/avalonia-gotchas.md).
 
                         ⛔ AutomationProperties.HelpText is NOT decoration here. A coloured shape
                         conveys nothing to a screen reader, so DangerAccessibleText names the tier
                         AND the consequence; without it this whole surface would be sighted-only.
                         HelpText and not Name: on a TextBlock the Text ALWAYS wins and an explicit
-                        Name is ignored outright (measured via UIA — see AVALONIA-GOTCHAS).
+                        Name is ignored outright (measured via UIA — see XamlQuality's docs/avalonia-gotchas.md).
 
                         Hidden entirely when the product says nothing about this path.
                     -->

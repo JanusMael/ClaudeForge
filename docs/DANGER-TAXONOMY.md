@@ -74,7 +74,7 @@ because colour alone excludes colour-blind users and **Critical-vs-Caution sits 
 red–green axis** — the single most common deficiency. The shape carries the tier on its own.
 
 ⛔ **Geometric shapes, never emoji.** Emoji need a system emoji font and render as tofu without
-one. See [`AVALONIA-GOTCHAS.md`](./AVALONIA-GOTCHAS.md).
+one. See [XamlQuality's `avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md).
 
 ⛔ **A coloured shape conveys nothing to a screen reader.** Every severity indicator carries
 `AutomationProperties.HelpText` naming the tier *and* the consequence. `HelpText`, never `Name`:
@@ -291,5 +291,5 @@ and its accessible name anyway.
 ## See also
 
 - [`UI-STYLE-GUIDE.md`](./UI-STYLE-GUIDE.md) §3b — the rendering rules and the full token table
-- [`AVALONIA-GOTCHAS.md`](./AVALONIA-GOTCHAS.md) — automation-name traps, emoji/tofu, themed lookup
+- [XamlQuality's `avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md) — automation-name traps, emoji/tofu, themed lookup
 - [`../AGENTS.md`](../AGENTS.md) §1 — the danger family stated as a hard invariant

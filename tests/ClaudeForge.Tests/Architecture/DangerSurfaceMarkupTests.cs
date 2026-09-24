@@ -153,7 +153,7 @@ public sealed class DangerSurfaceMarkupTests
     /// <summary>
     /// ⛔ <c>AutomationProperties.Name</c> is IGNORED on a <c>TextBlock</c> — the <c>Text</c>
     /// always wins — so a severity glyph annotated that way announces the glyph character and
-    /// nothing else. Measured via UIA; see <c>docs/AVALONIA-GOTCHAS.md</c>.
+    /// nothing else. Measured via UIA; see XamlQuality's <c>docs/avalonia-gotchas.md</c>.
     /// </summary>
     [TestMethod]
     public void TheSeverityGlyphIsAnnotatedWithHelpTextNotName()

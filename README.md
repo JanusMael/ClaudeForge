@@ -314,7 +314,7 @@ Conceptually distinct from debug flags: command-line arguments that run a task a
 | [DISCLAIMER.md](./DISCLAIMER.md) | What this software does to your machine and what that means for your data. |
 | [AGENTS.md](./AGENTS.md) | LLM-shaped operational rules: hard invariants, cross-cutting checklists, anti-patterns, test seams. |
 | [.github/WORKFLOWS.md](./.github/WORKFLOWS.md) | CI / release workflow reference — what each job does, how to trigger a release, secrets and variables map. |
-| [docs/AVALONIA-GOTCHAS.md](./docs/AVALONIA-GOTCHAS.md) | Avalonia 12 + .NET 10 foot-guns hit while building this app. |
+| [XamlQuality's avalonia-gotchas.md](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md) | Avalonia 12 + .NET 10 foot-guns hit while building this app. |
 | [docs/ESSENTIALS-PAGE.md](./docs/ESSENTIALS-PAGE.md) | The Essentials page's curated card list, severity tiers, add-a-card checklist. |
 | [docs/LINUX-DESKTOP-INTEGRATION.md](./docs/LINUX-DESKTOP-INTEGRATION.md) | X11 vs Wayland window-icon resolution, `.desktop` install for per-user / packager. |
 | [docs/CLAUDECTX-COMPATIBILITY.md](./docs/CLAUDECTX-COMPATIBILITY.md) | Profile interop contract with the [claudectx](https://github.com/foxj77/claudectx) CLI. |
