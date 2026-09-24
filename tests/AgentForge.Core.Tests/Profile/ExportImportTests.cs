@@ -518,7 +518,7 @@ public sealed class ExportImportTests : IDisposable
         Assert.Equal("claude-sonnet-4-5", settings["model"]!.GetValue<string>());
 
         string claudeMd = await File.ReadAllTextAsync(ProfileMd("shared"));
-        Assert.Contains("Shared guidelines", claudeMd);
+        OrdinalAssert.Contains("Shared guidelines", claudeMd);
 
         JsonObject mcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("shared")))!.AsObject();
         Assert.True(mcp.ContainsKey("context7"));

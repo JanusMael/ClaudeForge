@@ -254,7 +254,7 @@ public sealed class ProfileEngineTests : IDisposable
         await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "dev");
 
         string synced = await File.ReadAllTextAsync(ProfileSettings("dev"));
-        Assert.Contains("dark", synced);
-        Assert.Contains("newKey", synced);
+        OrdinalAssert.Contains("dark", synced);
+        OrdinalAssert.Contains("newKey", synced);
     }
 }

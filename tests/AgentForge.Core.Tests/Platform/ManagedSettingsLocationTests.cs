@@ -44,7 +44,7 @@ public sealed class ManagedSettingsLocationTests : IDisposable
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
 
-        Assert.EndsWith(
+        OrdinalAssert.EndsWith(
             "/Library/Application Support/ClaudeCode",
             Normalize(PlatformPaths.ManagedSettingsRoot));
     }
@@ -54,7 +54,7 @@ public sealed class ManagedSettingsLocationTests : IDisposable
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("linux"));
 
-        Assert.EndsWith("/etc/claude-code", Normalize(PlatformPaths.ManagedSettingsRoot));
+        OrdinalAssert.EndsWith("/etc/claude-code", Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class ManagedSettingsLocationTests : IDisposable
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
 
         // True on every host: the branch selected is the Windows one, whatever root it resolves.
-        Assert.EndsWith("/ClaudeCode", Normalize(PlatformPaths.ManagedSettingsRoot));
+        OrdinalAssert.EndsWith("/ClaudeCode", Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
     /// <summary>

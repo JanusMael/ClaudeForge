@@ -247,7 +247,7 @@ public sealed class FileSystemArtifactSourceTests : IDisposable
 
         var source = new SkillDirectoryArtifactSource(Identity(ArtifactKind.Skill), _root, "SKILL.md");
 
-        Assert.EndsWith("SKILL.md", source.Enumerate().Single().Location);
+        OrdinalAssert.EndsWith("SKILL.md", source.Enumerate().Single().Location);
     }
 
     [Fact]

@@ -109,8 +109,8 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
         MessageAssert.Contains("\"schemaVersion\": 1", json,
             "The frozen archive is a v1 manifest. If this fails, the fixture was regenerated — "
             + "restore it from git rather than updating this assertion.");
-        Assert.Contains("\"ClaudeCode\"", json);
-        Assert.Contains("\"ClaudeDesktop\"", json);
+        OrdinalAssert.Contains("\"ClaudeCode\"", json);
+        OrdinalAssert.Contains("\"ClaudeDesktop\"", json);
     }
 
     // ── That it still restores ─────────────────────────────────────────────
@@ -128,13 +128,13 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
         // ~/.claude.json — the product root file.
         string claudeJson = Path.Combine(_fakeHome, ".claude.json");
         Assert.True(File.Exists(claudeJson), "ClaudeCode/claude.json must land at ~/.claude.json.");
-        Assert.Contains("\"fixture\"", await File.ReadAllTextAsync(claudeJson));
+        OrdinalAssert.Contains("\"fixture\"", await File.ReadAllTextAsync(claudeJson));
 
         // ~/.claude/settings.json — the claude-dir subtree.
         string settings = Path.Combine(_fakeHome, ".claude", "settings.json");
         Assert.True(File.Exists(settings),
             "ClaudeCode/claude-dir/settings.json must land at ~/.claude/settings.json.");
-        Assert.Contains("\"opus\"", await File.ReadAllTextAsync(settings));
+        OrdinalAssert.Contains("\"opus\"", await File.ReadAllTextAsync(settings));
 
         // A nested file under claude-dir, to prove the subtree is walked rather than one level.
         Assert.True(

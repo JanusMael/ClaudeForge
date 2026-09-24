@@ -61,7 +61,7 @@ public class ConfigFileLoaderTests
 
             string written = await File.ReadAllTextAsync(path);
             Assert.True(written.Contains('\n'), "Expected indented JSON with newlines.");
-            Assert.Contains("opus", written);
+            OrdinalAssert.Contains("opus", written);
             Assert.False(doc.IsDirty);
         }
         finally
@@ -254,7 +254,7 @@ public class ConfigFileLoaderTests
 
             // A should be written with the new value.
             string aText = await File.ReadAllTextAsync(pathA);
-            Assert.Contains("\"new\"", aText);
+            OrdinalAssert.Contains("\"new\"", aText);
 
             // B should NOT have been written — the file should still not exist.
             Assert.False(File.Exists(pathB),

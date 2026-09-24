@@ -55,7 +55,7 @@ public sealed class PermissionTesterViewModelTests
         vm.CommandText = "obscure-cmd";
 
         Assert.Equal(PermissionOutcome.Default, vm.Outcome);
-        Assert.Contains("AcceptEdits", vm.Explanation);
+        OrdinalAssert.Contains("AcceptEdits", vm.Explanation);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class PermissionTesterViewModelTests
         vm.CommandText = "git push origin main";
 
         Assert.Equal(PermissionOutcome.Deny, vm.Outcome);
-        Assert.Contains("Managed", vm.Explanation);
+        OrdinalAssert.Contains("Managed", vm.Explanation);
         // The dedicated scope callout names the owning scope in merged view.
         Assert.True(vm.HasMatchedScope);
         Assert.Equal("Managed", vm.MatchedScopeLabel);

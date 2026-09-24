@@ -240,7 +240,7 @@ public sealed class ReleaseTagSchemeTests
     {
         string url = GithubReleaseChecker.ReleasesUrlFor(GithubReleaseChecker.DefaultRepository);
 
-        Assert.EndsWith("/releases?per_page=100", url);
+        OrdinalAssert.EndsWith("/releases?per_page=100", url);
         Assert.False(url.Contains("/releases/latest", StringComparison.Ordinal),
             "/releases/latest is repository-wide and cannot be scoped to one app.");
     }

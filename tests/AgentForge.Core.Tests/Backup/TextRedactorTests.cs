@@ -69,7 +69,7 @@ public sealed class TextRedactorTests
     {
         string input = "OPENROUTER_KEY=sk-or-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         string output = TextRedactor.Redact(input);
-        Assert.DoesNotContain("sk-or-AAA", output);
+        OrdinalAssert.DoesNotContain("sk-or-AAA", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ public sealed class TextRedactorTests
         string body = new string('A', 22) + "_" + new string('B', 59);
         string input = $"GH_PAT=github_pat_{body}";
         string output = TextRedactor.Redact(input);
-        Assert.DoesNotContain("github_pat_AA", output);
+        OrdinalAssert.DoesNotContain("github_pat_AA", output);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class TextRedactorTests
     {
         string input = "SLACK_BOT_TOKEN=xoxb-AAAAAAAAAAAAAAAA-real-bot-token";
         string output = TextRedactor.Redact(input);
-        Assert.DoesNotContain("xoxb-AAAAAAA", output);
+        OrdinalAssert.DoesNotContain("xoxb-AAAAAAA", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -172,8 +172,8 @@ public sealed class TextRedactorTests
     {
         string input1 = "Authorization: Bearer abc123XYZ_def-456+ghi/789=jkl";
         string input2 = "authorization: bearer abc123XYZ_def-456+ghi/789=jkl";
-        Assert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input1));
-        Assert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input2));
+        OrdinalAssert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input1));
+        OrdinalAssert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input2));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ public sealed class TextRedactorTests
         string output = TextRedactor.Redact(input);
         Assert.False(output.Contains("plaintext"),
             "Plain VAR=value assignments (no export prefix) must also redact.");
-        Assert.Contains("ANTHROPIC_API_KEY=", output);
+        OrdinalAssert.Contains("ANTHROPIC_API_KEY=", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -272,7 +272,7 @@ public sealed class TextRedactorTests
         Assert.False(output.Contains("AKIAIOSFODNN7"), "AWS access key not redacted");
         Assert.False(output.Contains("xyzabc123def"), "Bearer token not redacted");
         // Bash structure preserved
-        Assert.Contains("#!/bin/bash", output);
-        Assert.Contains("export ANTHROPIC_API_KEY", output);
+        OrdinalAssert.Contains("#!/bin/bash", output);
+        OrdinalAssert.Contains("export ANTHROPIC_API_KEY", output);
     }
 }

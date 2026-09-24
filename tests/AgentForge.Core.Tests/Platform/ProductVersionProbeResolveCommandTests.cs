@@ -59,10 +59,10 @@ public sealed class ProductVersionProbeResolveCommandTests
         // verbatim and does NOT merge them with the inner path quotes —
         // this is the only robust way to pass a path with spaces and
         // metacharacters through cmd unmodified.
-        Assert.StartsWith("/s /c ", cmd.Args);
+        OrdinalAssert.StartsWith("/s /c ", cmd.Args);
         // Inner path must be quoted so spaces don't split the argv.
-        Assert.Contains($"\"{shim}\"", cmd.Args);
-        Assert.Contains("--version", cmd.Args);
+        OrdinalAssert.Contains($"\"{shim}\"", cmd.Args);
+        OrdinalAssert.Contains("--version", cmd.Args);
     }
 
     [Fact]
@@ -78,8 +78,8 @@ public sealed class ProductVersionProbeResolveCommandTests
         ProductVersionProbe.ResolvedCommand cmd = ProductVersionProbe.ResolveCommand(shim);
 
         Assert.Equal("cmd.exe", cmd.Exe);
-        Assert.StartsWith("/s /c ", cmd.Args);
-        Assert.Contains($"\"{shim}\"", cmd.Args);
+        OrdinalAssert.StartsWith("/s /c ", cmd.Args);
+        OrdinalAssert.Contains($"\"{shim}\"", cmd.Args);
     }
 
     [Fact]
@@ -95,10 +95,10 @@ public sealed class ProductVersionProbeResolveCommandTests
         ProductVersionProbe.ResolvedCommand cmd = ProductVersionProbe.ResolveCommand(shim);
 
         Assert.Equal("powershell.exe", cmd.Exe);
-        Assert.Contains("-NoProfile", cmd.Args);
-        Assert.Contains("-ExecutionPolicy Bypass", cmd.Args);
-        Assert.Contains($"-File \"{shim}\"", cmd.Args);
-        Assert.Contains("--version", cmd.Args);
+        OrdinalAssert.Contains("-NoProfile", cmd.Args);
+        OrdinalAssert.Contains("-ExecutionPolicy Bypass", cmd.Args);
+        OrdinalAssert.Contains($"-File \"{shim}\"", cmd.Args);
+        OrdinalAssert.Contains("--version", cmd.Args);
     }
 
     [Fact]

@@ -21,13 +21,13 @@ public sealed class HookCommandVariantsTests
         // The bundled schema defines the standard hook command shapes; the parse must
         // surface each variant keyed by its `type` const, carrying the schema description.
         HookCommandVariantInfo command = variants.First(v => v.Type == "command");
-        Assert.Contains("Bash command hook", command.Description!);
+        OrdinalAssert.Contains("Bash command hook", command.Description!);
 
         HookCommandVariantInfo prompt = variants.First(v => v.Type == "prompt");
-        Assert.Contains("LLM prompt hook", prompt.Description!);
+        OrdinalAssert.Contains("LLM prompt hook", prompt.Description!);
 
         HookCommandVariantInfo http = variants.First(v => v.Type == "http");
-        Assert.Contains("HTTP webhook hook", http.Description!);
+        OrdinalAssert.Contains("HTTP webhook hook", http.Description!);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public sealed class HookCommandVariantsTests
 
         // Field descriptions flow through for the per-field tooltips headless consumers use.
         HookFieldInfo ifField = command.Fields.First(f => f.Name == "if");
-        Assert.Contains("permission-rule-syntax", ifField.Description!);
+        OrdinalAssert.Contains("permission-rule-syntax", ifField.Description!);
 
         Assert.True(command.Fields.Any(f => f.Name == "timeout"),
             "The command variant's fields must include timeout.");

@@ -731,7 +731,7 @@ public sealed class RestoreEngineTests : IDisposable
 
         MessageAssert.Equal(1, journal.Sidecars.Count,
             "Exactly the overwritten file gets a sidecar — b.txt had no live copy to move aside.");
-        Assert.EndsWith("a.txt.pre-restore-20260519-120000.bak", journal.Sidecars[0]);
+        OrdinalAssert.EndsWith("a.txt.pre-restore-20260519-120000.bak", journal.Sidecars[0]);
         Assert.True(File.Exists(journal.Sidecars[0]),
             "The recorded path must be the real one on disk, or the sweep deletes nothing.");
     }

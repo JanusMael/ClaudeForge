@@ -165,7 +165,7 @@ public class SchemaTreeBuilderTests
             @"{""type"":""string"",""description"":""DEPRECATED. Use newProp instead.""}");
         Assert.True(node.IsDeprecated);
         Assert.NotNull(node.Description);
-        Assert.StartsWith("DEPRECATED", node.Description);
+        OrdinalAssert.StartsWith("DEPRECATED", node.Description);
     }
 
     [Fact]

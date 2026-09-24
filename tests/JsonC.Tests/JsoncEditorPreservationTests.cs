@@ -44,8 +44,8 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
-        Assert.Contains("// why we pin the model", after);
-        Assert.Contains("// inline note", after);
+        OrdinalAssert.Contains("// why we pin the model", after);
+        OrdinalAssert.Contains("// inline note", after);
         Assert.Equal(
             """
             {
@@ -73,8 +73,8 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "effortLevel", JsonValue.Create("low"));
 
-        Assert.Contains("/* a block", after);
-        Assert.Contains("spanning lines */", after);
+        OrdinalAssert.Contains("/* a block", after);
+        OrdinalAssert.Contains("spanning lines */", after);
         MessageAssert.Equal(before.Replace("\"high\"", "\"low\""), after,
                         "Only the edited value's span should differ.");
     }
@@ -210,7 +210,7 @@ public sealed class JsoncEditorPreservationTests
                                             JsonValue.Create("acceptEdits"));
 
         Assert.Equal(before.Replace("\"ask\"", "\"acceptEdits\""), after);
-        Assert.Contains("// preserve this", after);
+        OrdinalAssert.Contains("// preserve this", after);
     }
 
     [Fact]

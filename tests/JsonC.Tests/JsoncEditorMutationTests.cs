@@ -47,7 +47,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        Assert.Contains("\"model\"", after);
+        OrdinalAssert.Contains("\"model\"", after);
         Assert.Equal("{" + Environment.NewLine + "  \"model\": \"opus\"" + Environment.NewLine + "}", after);
     }
 
@@ -64,8 +64,8 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "effortLevel", JsonValue.Create("high"));
 
         AssertStillValid(after);
-        Assert.Contains("// a note after the last member", after);
-        Assert.Contains("\"effortLevel\": \"high\"", after);
+        OrdinalAssert.Contains("// a note after the last member", after);
+        OrdinalAssert.Contains("\"effortLevel\": \"high\"", after);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(string.Empty, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        Assert.Contains("\"model\": \"opus\"", after);
+        OrdinalAssert.Contains("\"model\": \"opus\"", after);
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        Assert.StartsWith("// my hand-written header", after);
-        Assert.Contains("\"model\": \"opus\"", after);
+        OrdinalAssert.StartsWith("// my hand-written header", after);
+        OrdinalAssert.Contains("\"model\": \"opus\"", after);
     }
 
     // ── Removal ──────────────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "permissions.allow");
 
         AssertStillValid(after);
-        Assert.Contains("// keep", after);
+        OrdinalAssert.Contains("// keep", after);
         Assert.Equal(
             """
             {

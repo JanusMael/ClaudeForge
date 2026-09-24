@@ -255,7 +255,7 @@ public sealed class SchemaDeprecatedTests
         // CLAUDE_CODE_X appears in both nodes — should only be in the result once.
         MessageAssert.Equal(1, all.Count(v => v == "CLAUDE_CODE_X"),
             "Duplicate suggestions across nodes must be de-duplicated.");
-        Assert.Contains("ANTHROPIC_Y", all);
+        OrdinalAssert.Contains("ANTHROPIC_Y", all);
     }
 
     // Note: a bundled-schema smoke test for IsUndocumented was removed because all

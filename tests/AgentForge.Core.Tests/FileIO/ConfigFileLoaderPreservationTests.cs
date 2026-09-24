@@ -82,8 +82,8 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
 
         MessageAssert.Equal(original.Replace("\"sonnet\"", "\"opus\""), after,
                         "Only the edited value's span should differ from the original.");
-        Assert.Contains("// pinned deliberately", after);
-        Assert.Contains("/* the permissions block is reviewed quarterly */", after);
+        OrdinalAssert.Contains("// pinned deliberately", after);
+        OrdinalAssert.Contains("/* the permissions block is reviewed quarterly */", after);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         MessageAssert.Equal(original.Replace("\"ask\"", "\"acceptEdits\""), after,
                         "Replacing the parent object in memory must still produce a leaf-level "
                         + "edit on disk — otherwise the comment inside it would be destroyed.");
-        Assert.Contains("// keep this note", after);
+        OrdinalAssert.Contains("// keep this note", after);
     }
 
     /// <summary>
@@ -187,6 +187,6 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         Assert.False(after.Contains("this will not survive", StringComparison.Ordinal),
                        "The legacy writer is lossy by construction — that is why it is the "
                        + "fallback and not the default.");
-        Assert.Contains("\"opus\"", after);
+        OrdinalAssert.Contains("\"opus\"", after);
     }
 }

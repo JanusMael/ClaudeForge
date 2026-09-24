@@ -233,11 +233,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"));
         MessageAssert.Contains("haiku", aSettings,
             "Auto-sync must capture live edits into the previously-active profile.");
-        Assert.Contains("external", aSettings);
+        OrdinalAssert.Contains("external", aSettings);
 
         // Live now reflects B's state.
         string liveAfter = await File.ReadAllTextAsync(LiveSettings);
-        Assert.Contains("opus", liveAfter);
+        OrdinalAssert.Contains("opus", liveAfter);
 
         // CLI-active pointer flipped to B.
         Assert.Equal("B", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty));
@@ -260,7 +260,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"));
         MessageAssert.Contains("sonnet", aSettings,
             "With autoSync=false the previously-active profile must NOT pick up live edits.");
-        Assert.DoesNotContain("haiku", aSettings);
+        OrdinalAssert.DoesNotContain("haiku", aSettings);
     }
 
     // ── MCP key handling ─────────────────────────────────────────────
@@ -348,7 +348,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Assert.True(created, "Create must report true on first creation.");
         Assert.True(File.Exists(DesktopProfileConfig("d-test")));
         string copied = await File.ReadAllTextAsync(DesktopProfileConfig("d-test"));
-        Assert.Contains("dark", copied);
+        OrdinalAssert.Contains("dark", copied);
     }
 
     [Fact]
@@ -375,7 +375,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Assert.False(created,
             "Create must report false (no overwrite) when the profile dir already exists.");
         // Existing content untouched.
-        Assert.Contains(
+        OrdinalAssert.Contains(
             "existing",
             await File.ReadAllTextAsync(DesktopProfileConfig("dup")));
     }
@@ -388,7 +388,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         await ProfileEngine.ApplyDesktopProfileToLiveAsync("d-apply", autoSync: false);
 
         Assert.True(File.Exists(DesktopLiveConfig));
-        Assert.Contains(
+        OrdinalAssert.Contains(
             "light", await File.ReadAllTextAsync(DesktopLiveConfig));
         Assert.Equal("d-apply", ProfileEngine.ReadCurrentDesktopProfileName());
     }
@@ -402,8 +402,8 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         FileNotFoundException ex = await Assert.ThrowsAsync<FileNotFoundException>(() =>
             ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan"));
 
-        Assert.Contains("d-orphan", ex.Message);
-        Assert.Contains("claude_desktop_config.json", ex.Message);
+        OrdinalAssert.Contains("d-orphan", ex.Message);
+        OrdinalAssert.Contains("claude_desktop_config.json", ex.Message);
     }
 
     [Fact]
@@ -479,7 +479,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
 
         Assert.True(created);
         string content = await File.ReadAllTextAsync(ProfileSettings("seed"));
-        Assert.Contains("haiku", content);
+        OrdinalAssert.Contains("haiku", content);
     }
 
     [Fact]
@@ -494,7 +494,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         string profileMd = Path.Combine(ProfileDir("withmd"), "CLAUDE.md");
         Assert.True(File.Exists(profileMd),
             "When live CLAUDE.md exists, it must be copied into the new profile dir.");
-        Assert.Contains("Project memory", await File.ReadAllTextAsync(profileMd));
+        OrdinalAssert.Contains("Project memory", await File.ReadAllTextAsync(profileMd));
     }
 
     [Fact]
@@ -538,7 +538,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         string profileMcp = ProfileMcp("hasmcp");
         Assert.True(File.Exists(profileMcp),
             "When live ~/.claude.json has mcpServers, profile/mcp.json must be written.");
-        Assert.Contains("echo", await File.ReadAllTextAsync(profileMcp));
+        OrdinalAssert.Contains("echo", await File.ReadAllTextAsync(profileMcp));
     }
 
     [Fact]
@@ -600,7 +600,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
 
         string profileMd = Path.Combine(ProfileDir("p"), "CLAUDE.md");
         Assert.True(File.Exists(profileMd));
-        Assert.Contains("updated", await File.ReadAllTextAsync(profileMd));
+        OrdinalAssert.Contains("updated", await File.ReadAllTextAsync(profileMd));
     }
 
     [Fact]

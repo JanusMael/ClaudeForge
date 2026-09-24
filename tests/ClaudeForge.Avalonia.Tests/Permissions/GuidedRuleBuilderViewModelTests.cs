@@ -208,7 +208,7 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.CommandText = "git commit";
         vm.MatchPrefix = true;
-        Assert.Contains("git commit", vm.PlainEnglishGloss);
+        OrdinalAssert.Contains("git commit", vm.PlainEnglishGloss);
         Assert.NotEqual(string.Empty, vm.PlainEnglishGloss);
     }
 
@@ -235,7 +235,7 @@ public sealed class GuidedRuleBuilderViewModelTests
         Assert.Equal(string.Empty, vm.LastAddMessage);
         vm.AddAllowCommand.Execute(null);
         // Confirmation mentions the rule that was added (auto-clears later).
-        Assert.Contains("Bash(npm test)", vm.LastAddMessage);
+        OrdinalAssert.Contains("Bash(npm test)", vm.LastAddMessage);
     }
 
     [Fact]
@@ -251,7 +251,7 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.MatchPrefix = false;
         vm.AddAllowCommand.Execute(null);
         Assert.NotEqual(string.Empty, vm.CollisionWarning);
-        Assert.Contains("Bash(npm test)", vm.CollisionWarning);
+        OrdinalAssert.Contains("Bash(npm test)", vm.CollisionWarning);
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.PathText = "src/**"; // recursive by the pattern, not the toggle
         Assert.Equal("Read(src/**)", vm.PreviewRule);
         // The gloss describes recursion and names the base directory, not "exact".
-        Assert.Contains("src", vm.PlainEnglishGloss);
+        OrdinalAssert.Contains("src", vm.PlainEnglishGloss);
         Assert.Equal(
             string.Format(
                 Bennewitz.Ninja.ClaudeForge.Avalonia.Localization.Strings.PermBuilderGlossPathRecursive,
