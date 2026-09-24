@@ -3,10 +3,9 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.FileIO;
 
-[TestClass]
 public class ConfigFileLoaderTests
 {
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_NonExistentFile_ReturnsEmptyRoot()
     {
         DiscoveredFile file = new(
@@ -18,11 +17,11 @@ public class ConfigFileLoaderTests
 
         SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-        Assert.AreEqual(0, doc.Root.Count);
-        Assert.IsFalse(doc.IsDirty);
+        Assert.Empty(doc.Root);
+        Assert.False(doc.IsDirty);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_ValidJson_ParsesCorrectly()
     {
         string path = Path.GetTempFileName();
@@ -36,8 +35,8 @@ public class ConfigFileLoaderTests
 
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-            Assert.AreEqual("sonnet", doc.Root["model"]!.GetValue<string>());
-            Assert.AreEqual(30, doc.Root["cleanupPeriodDays"]!.GetValue<int>());
+            Assert.Equal("sonnet", doc.Root["model"]!.GetValue<string>());
+            Assert.Equal(30, doc.Root["cleanupPeriodDays"]!.GetValue<int>());
         }
         finally
         {
@@ -45,7 +44,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SaveAsync_WritesIndentedJson()
     {
         string path = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
@@ -61,9 +60,9 @@ public class ConfigFileLoaderTests
             await ConfigFileLoader.SaveAsync(doc);
 
             string written = await File.ReadAllTextAsync(path);
-            Assert.IsTrue(written.Contains('\n'), "Expected indented JSON with newlines.");
-            Assert.IsTrue(written.Contains("opus"));
-            Assert.IsFalse(doc.IsDirty);
+            Assert.True(written.Contains('\n'), "Expected indented JSON with newlines.");
+            Assert.Contains("opus", written);
+            Assert.False(doc.IsDirty);
         }
         finally
         {
@@ -74,7 +73,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SaveAsync_ReadOnlyDoc_Throws()
     {
         DiscoveredFile file = new(
@@ -83,13 +82,13 @@ public class ConfigFileLoaderTests
 
         SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             ConfigFileLoader.SaveAsync(doc));
     }
 
     // ── LoadAsync error / edge paths + workspace helpers ──
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_CorruptJson_ReturnsEmptyRoot_NotCrash()
     {
         // Resilience contract: a hand-corrupted settings file must not crash
@@ -106,8 +105,8 @@ public class ConfigFileLoaderTests
 
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-            Assert.AreEqual(0, doc.Root.Count);
-            Assert.IsFalse(doc.IsDirty);
+            Assert.Empty(doc.Root);
+            Assert.False(doc.IsDirty);
         }
         finally
         {
@@ -115,7 +114,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_NonObjectRootJson_ReturnsEmptyRoot()
     {
         // `42` is valid JSON but not a JsonObject; the loader must coerce
@@ -130,7 +129,7 @@ public class ConfigFileLoaderTests
 
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-            Assert.AreEqual(0, doc.Root.Count);
+            Assert.Empty(doc.Root);
         }
         finally
         {
@@ -138,7 +137,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_ArrayRootJson_ReturnsEmptyRoot()
     {
         // Same coercion contract for a JsonArray root.
@@ -152,7 +151,7 @@ public class ConfigFileLoaderTests
 
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-            Assert.AreEqual(0, doc.Root.Count);
+            Assert.Empty(doc.Root);
         }
         finally
         {
@@ -160,7 +159,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAsync_StripsMetadataStamp_FromRoot()
     {
         // ConfigFileLoader.SaveAsync writes a "//" tool-stamp comment to
@@ -179,9 +178,9 @@ public class ConfigFileLoaderTests
 
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
 
-            Assert.IsFalse(doc.Root.ContainsKey("//"),
+            Assert.False(doc.Root.ContainsKey("//"),
                 "Tool-written metadata stamp must be stripped on load.");
-            Assert.AreEqual("sonnet", doc.Root["model"]!.GetValue<string>(),
+            MessageAssert.Equal("sonnet", doc.Root["model"]!.GetValue<string>(),
                 "Real settings keys must survive the strip.");
         }
         finally
@@ -190,7 +189,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadWorkspaceAsync_LoadsAllFiles_InOrder()
     {
         string pathA = Path.Combine(Path.GetTempPath(), $"wA_{Guid.NewGuid()}.json");
@@ -208,12 +207,12 @@ public class ConfigFileLoaderTests
 
             SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring);
 
-            Assert.AreEqual(2, workspace.Documents.Count);
+            Assert.Equal(2, workspace.Documents.Count);
             // Documents iterate in priority order. Project (= 2) outranks
             // User (= 3) per the merge-engine convention, so Project comes
             // first when sorted highest-priority-first.
-            Assert.AreEqual(ConfigScope.Project, workspace.Documents[0].Scope);
-            Assert.AreEqual(ConfigScope.User, workspace.Documents[1].Scope);
+            Assert.Equal(ConfigScope.Project, workspace.Documents[0].Scope);
+            Assert.Equal(ConfigScope.User, workspace.Documents[1].Scope);
         }
         finally
         {
@@ -229,7 +228,7 @@ public class ConfigFileLoaderTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SaveDirtyAsync_OnlyWritesDirtyDocuments()
     {
         string pathA = Path.Combine(Path.GetTempPath(), $"sA_{Guid.NewGuid()}.json");
@@ -255,10 +254,10 @@ public class ConfigFileLoaderTests
 
             // A should be written with the new value.
             string aText = await File.ReadAllTextAsync(pathA);
-            StringAssert.Contains(aText, "\"new\"");
+            Assert.Contains("\"new\"", aText);
 
             // B should NOT have been written — the file should still not exist.
-            Assert.IsFalse(File.Exists(pathB),
+            Assert.False(File.Exists(pathB),
                 "Clean documents must NOT be persisted by SaveDirtyAsync.");
         }
         finally

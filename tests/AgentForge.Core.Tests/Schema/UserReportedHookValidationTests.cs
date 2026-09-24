@@ -32,7 +32,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// the precise content does not affect validity.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class UserReportedHookValidationTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -172,7 +171,7 @@ public sealed class UserReportedHookValidationTests
         return ws;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UserSettings_AllHooksValid_ChangePermissionsDefaultMode_ReportsZeroErrors()
     {
         // The user's hooks are ALL well-formed command-type entries. Their
@@ -193,11 +192,11 @@ public sealed class UserReportedHookValidationTests
             ? "(none)"
             : string.Join("\n", errors.Select(e => $"  {e.DisplayPath}: {e.Message}"));
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"User's actual hook structure must validate cleanly. Got {errors.Count} errors:\n{formatted}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UserSettings_BaselineSnapshot_NoErrorsAtPhantomIndices()
     {
         // The user's report cited paths "hooks → Stop → 0 → hooks → 6"
@@ -233,7 +232,7 @@ public sealed class UserReportedHookValidationTests
             ? "(none)"
             : string.Join("\n", phantomErrors.Select(e => $"  {e.DisplayPath}: {e.Message}"));
 
-        Assert.AreEqual(0, phantomErrors.Count,
+        MessageAssert.Equal(0, phantomErrors.Count,
             $"Validator must NOT report errors at out-of-bounds array indices. " +
             $"Got {phantomErrors.Count} phantom-index errors:\n{formatted}");
     }

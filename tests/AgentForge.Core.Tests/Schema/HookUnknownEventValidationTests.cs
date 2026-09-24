@@ -22,7 +22,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 ///    cref="Bennewitz.Ninja.ClaudeForge.ViewModels.MainWindowViewModel.FriendlySchemaMessage"
 ///    />) can be authored against a known-real error shape.
 /// </summary>
-[TestClass]
 public sealed class HookUnknownEventValidationTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -57,7 +56,7 @@ public sealed class HookUnknownEventValidationTests
         return ws;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UnknownEventName_ProducesValidationError()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -65,7 +64,7 @@ public sealed class HookUnknownEventValidationTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "Schema with additionalProperties:false on /hooks must reject the unknown event 'PreBashToolUse'.");
 
         // Pin the exact validator output. The friendly-message translator
@@ -74,13 +73,12 @@ public sealed class HookUnknownEventValidationTests
         // string, the translator silently stops matching and the user
         // sees the raw "false schema" message again. Make that loud here.
         SchemaValidationError? unknownEventError = errors.FirstOrDefault(e => e.InstancePath.Contains("PreBashToolUse"));
-        Assert.IsNotNull(unknownEventError,
+        MessageAssert.NotNull(unknownEventError,
             "Expected at least one error whose path names the unknown event.");
-        Assert.AreEqual("/hooks/PreBashToolUse", unknownEventError!.InstancePath,
+        MessageAssert.Equal("/hooks/PreBashToolUse", unknownEventError!.InstancePath,
             "Friendly translator keys on this exact path; if it changes, update SchemaErrorMessages.Friendly accordingly.");
-        StringAssert.Contains(unknownEventError.Message, "false schema",
+        MessageAssert.Contains("false schema", unknownEventError.Message,
             "Friendly translator detects the unknown-hook-event case via this 'false schema' substring.");
     }
 
-    public TestContext? TestContext { get; set; }
 }

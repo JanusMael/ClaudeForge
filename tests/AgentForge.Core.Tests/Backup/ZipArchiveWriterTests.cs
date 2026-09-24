@@ -7,20 +7,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// Exercises <see cref="ZipArchiveWriter"/>'s contract:
 /// forward-slash entry names, atomic commit, traversal rejection, and temp-file cleanup.
 /// </summary>
-[TestClass]
-public sealed class ZipArchiveWriterTests
+public sealed class ZipArchiveWriterTests : IDisposable
 {
     private string _scratch = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ZipArchiveWriterTests() => Setup();
+
+    private void Setup()
     {
         _scratch = Path.Combine(Path.GetTempPath(), "zw-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_scratch);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -35,7 +34,13 @@ public sealed class ZipArchiveWriterTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task Commit_WritesEntriesWithForwardSlashNames()
     {
         string dest = Path.Combine(_scratch, "test.zip");
@@ -53,13 +58,13 @@ public sealed class ZipArchiveWriterTests
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
         List<string> names = archive.Entries.Select(e => e.FullName).ToList();
 
-        CollectionAssert.Contains(names, "ClaudeCode/claude.json");
-        CollectionAssert.Contains(names, "manifest.json");
-        Assert.IsFalse(names.Any(n => n.Contains('\\')),
+        Assert.Contains("ClaudeCode/claude.json", names);
+        Assert.Contains("manifest.json", names);
+        Assert.False(names.Any(n => n.Contains('\\')),
             "Entry names must use forward slashes.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Dispose_WithoutCommit_DeletesTempFile()
     {
         string dest = Path.Combine(_scratch, "abandon.zip");
@@ -70,14 +75,14 @@ public sealed class ZipArchiveWriterTests
             // No commit — simulates an exception or user cancel.
         }
 
-        Assert.IsFalse(File.Exists(dest),
+        Assert.False(File.Exists(dest),
             "Final file should never appear when CommitAsync was not called.");
         List<string> leftovers = Directory.EnumerateFiles(_scratch, "*.tmp-*").ToList();
-        Assert.AreEqual(0, leftovers.Count,
+        MessageAssert.Equal(0, leftovers.Count,
             "Temp files should be cleaned up on dispose without commit.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Commit_OverwritesExistingFinalFile()
     {
         string dest = Path.Combine(_scratch, "replace.zip");
@@ -91,28 +96,28 @@ public sealed class ZipArchiveWriterTests
 
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
-        Assert.AreEqual(1, archive.Entries.Count);
-        Assert.AreEqual("a.txt", archive.Entries[0].FullName);
+        Assert.Single(archive.Entries);
+        Assert.Equal("a.txt", archive.Entries[0].FullName);
     }
 
-    [TestMethod]
-    [DataRow("../escape")]
-    [DataRow("foo/../bar")]
-    [DataRow("/absolute")]
-    [DataRow("foo/./bar")]
+    [Theory]
+    [InlineData("../escape")]
+    [InlineData("foo/../bar")]
+    [InlineData("/absolute")]
+    [InlineData("foo/./bar")]
     public void NormaliseEntryName_RejectsDangerousPaths(string bad)
     {
-        Assert.ThrowsExactly<ArgumentException>(() =>
+        Assert.Throws<ArgumentException>(() =>
             ZipArchiveWriter.NormaliseEntryName(bad));
     }
 
-    [TestMethod]
+    [Fact]
     public void NormaliseEntryName_ConvertsBackslashes()
     {
-        Assert.AreEqual("foo/bar", ZipArchiveWriter.NormaliseEntryName("foo\\bar"));
+        Assert.Equal("foo/bar", ZipArchiveWriter.NormaliseEntryName("foo\\bar"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisposeAsync_AfterCommit_IsIdempotent()
     {
         // Regression: the `await using` block always calls DisposeAsync on exit, even after
@@ -130,10 +135,10 @@ public sealed class ZipArchiveWriterTests
         await w.DisposeAsync();
 
         // The committed archive must still be intact.
-        Assert.IsTrue(File.Exists(dest), "Committed archive must survive double-dispose.");
+        Assert.True(File.Exists(dest), "Committed archive must survive double-dispose.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisposeAsync_AfterCancellation_DeletesTempFile_AndDoesNotThrow()
     {
         // Regression: if CommitAsync throws OperationCanceledException (e.g. due to
@@ -161,10 +166,10 @@ public sealed class ZipArchiveWriterTests
         // Dispose must not throw.
         await w.DisposeAsync();
 
-        Assert.IsFalse(File.Exists(dest),
+        Assert.False(File.Exists(dest),
             "Final file must not appear when CommitAsync was cancelled.");
         List<string> leftovers = Directory.EnumerateFiles(_scratch, "*.tmp-*").ToList();
-        Assert.AreEqual(0, leftovers.Count,
+        MessageAssert.Equal(0, leftovers.Count,
             "Temp files must be cleaned up after a cancelled commit.");
     }
 
@@ -172,7 +177,7 @@ public sealed class ZipArchiveWriterTests
     // .gitignore integration
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task AddDirectory_HonorsGitignore_ExcludesMatchedFile()
     {
         string srcDir = Path.Combine(_scratch, "proj");
@@ -189,11 +194,11 @@ public sealed class ZipArchiveWriterTests
         }
 
         List<string> entries = GetEntryNames(dest);
-        Assert.IsTrue(entries.Any(n => n.EndsWith("app.cs")), "app.cs should be included");
-        Assert.IsFalse(entries.Any(n => n.EndsWith("debug.log")), "debug.log should be excluded by *.log pattern");
+        Assert.True(entries.Any(n => n.EndsWith("app.cs")), "app.cs should be included");
+        Assert.False(entries.Any(n => n.EndsWith("debug.log")), "debug.log should be excluded by *.log pattern");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AddDirectory_HonorsGitignore_InheritedFromParent_ExcludesChildFile()
     {
         string srcDir = Path.Combine(_scratch, "proj2");
@@ -211,12 +216,12 @@ public sealed class ZipArchiveWriterTests
         }
 
         List<string> entries = GetEntryNames(dest);
-        Assert.IsTrue(entries.Any(n => n.EndsWith("app.cs")), "app.cs should be included");
-        Assert.IsFalse(entries.Any(n => n.EndsWith("service.log")),
+        Assert.True(entries.Any(n => n.EndsWith("app.cs")), "app.cs should be included");
+        Assert.False(entries.Any(n => n.EndsWith("service.log")),
             "service.log in subdir should be excluded by inherited *.log");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AddDirectory_NegatedGitignorePattern_ReincludesFile()
     {
         string srcDir = Path.Combine(_scratch, "proj3");
@@ -233,8 +238,8 @@ public sealed class ZipArchiveWriterTests
         }
 
         List<string> entries = GetEntryNames(dest);
-        Assert.IsTrue(entries.Any(n => n.EndsWith("important.log")), "important.log should be re-included by negation");
-        Assert.IsFalse(entries.Any(n => n.EndsWith("debug.log")), "debug.log should still be excluded");
+        Assert.True(entries.Any(n => n.EndsWith("important.log")), "important.log should be re-included by negation");
+        Assert.False(entries.Any(n => n.EndsWith("debug.log")), "debug.log should still be excluded");
     }
 
     private static List<string> GetEntryNames(string zipPath)
@@ -244,14 +249,14 @@ public sealed class ZipArchiveWriterTests
         return archive.Entries.Select(e => e.FullName).ToList();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AddDirectory_SkipsSymlinks()
     {
         if (OperatingSystem.IsWindows())
         {
             // Creating symlinks on Windows needs either Dev Mode or admin; skip to avoid
             // environment-sensitive failures in CI.
-            Assert.Inconclusive("Symlink creation on Windows needs Dev Mode — covered in non-Windows runs.");
+            Assert.Skip("Symlink creation on Windows needs Dev Mode — covered in non-Windows runs.");
             return;
         }
 
@@ -269,7 +274,7 @@ public sealed class ZipArchiveWriterTests
         }
         catch (Exception ex)
         {
-            Assert.Inconclusive($"Symlink creation failed: {ex.Message}");
+            Assert.Skip($"Symlink creation failed: {ex.Message}");
             return;
         }
 
@@ -277,15 +282,15 @@ public sealed class ZipArchiveWriterTests
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "src");
-            Assert.AreEqual(1, w.SkippedSymlinks.Count, "Symlink should have been detected and skipped.");
+            MessageAssert.Equal(1, w.SkippedSymlinks.Count, "Symlink should have been detected and skipped.");
             await w.CommitAsync();
         }
 
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
         List<string> names = archive.Entries.Select(e => e.FullName).ToList();
-        CollectionAssert.Contains(names, "src/real.txt");
-        Assert.IsFalse(names.Any(n => n.Contains("link")),
+        Assert.Contains("src/real.txt", names);
+        Assert.False(names.Any(n => n.Contains("link")),
             "Symlinked directory should not be traversed.");
     }
 }

@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// write and caused JsonSchemaException "Overwriting registered schemas" on
 /// any second call within the same process run.
 /// </summary>
-[TestClass]
 public sealed class SchemaRegistryTests
 {
     // -----------------------------------------------------------------------
@@ -36,8 +35,8 @@ public sealed class SchemaRegistryTests
     // Bundled-fallback caching regression tests
     // -----------------------------------------------------------------------
 
-    [TestMethod]
-    [Description("Regression: second call must not throw JsonSchemaException " +
+    [Fact]
+    [Trait("Description", "Regression: second call must not throw JsonSchemaException " +
                  "'Overwriting registered schemas'. Reproduces the crash seen " +
                  "when Open Project or profile change triggered a second reload.")]
     public async Task GetClaudeDesktopConfigNodeAsync_CalledTwice_DoesNotThrow()
@@ -48,8 +47,8 @@ public sealed class SchemaRegistryTests
         await registry.GetClaudeDesktopConfigNodeAsync(); // second — must hit memory cache
     }
 
-    [TestMethod]
-    [Description("Same regression for the Claude Code settings schema.")]
+    [Fact]
+    [Trait("Description", "Same regression for the Claude Code settings schema.")]
     public async Task GetClaudeCodeSettingsNodeAsync_CalledTwice_DoesNotThrow()
     {
         using SchemaRegistry registry = OfflineRegistry();
@@ -58,8 +57,8 @@ public sealed class SchemaRegistryTests
         await registry.GetClaudeCodeSettingsNodeAsync();
     }
 
-    [TestMethod]
-    [Description("Simulates the LoadAllWorkspacesAsync sequence: both schemas " +
+    [Fact]
+    [Trait("Description", "Simulates the LoadAllWorkspacesAsync sequence: both schemas " +
                  "loaded once on startup, then again on Open Project / reload.")]
     public async Task BothSchemas_LoadedTwiceSequentially_DoNotThrow()
     {
@@ -78,21 +77,21 @@ public sealed class SchemaRegistryTests
     // Basic sanity: bundled schemas are parseable and non-empty
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public async Task GetClaudeCodeSettingsNodeAsync_ReturnsBundledSchema_WithProperties()
     {
         using SchemaRegistry registry = OfflineRegistry();
         JsonSchemaNode node = await registry.GetClaudeCodeSettingsNodeAsync();
 
-        Assert.IsNotNull(node, "Root schema node should not be null");
+        MessageAssert.NotNull(node, "Root schema node should not be null");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GetClaudeDesktopConfigNodeAsync_ReturnsBundledSchema_NotNull()
     {
         using SchemaRegistry registry = OfflineRegistry();
         JsonSchemaNode node = await registry.GetClaudeDesktopConfigNodeAsync();
 
-        Assert.IsNotNull(node, "Root schema node should not be null");
+        MessageAssert.NotNull(node, "Root schema node should not be null");
     }
 }

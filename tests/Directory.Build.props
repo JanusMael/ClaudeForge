@@ -17,6 +17,12 @@
         <!-- Without this an xunit.v3 executable runs xUnit's NATIVE console runner, which does
              not know `report-trx` — so CI would get no .trx files. Inert for MSTest projects. -->
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+        <!-- ⚠ xUnit1051 ("pass TestContext.Current.CancellationToken") is SUPPRESSED for the move.
+             It flagged 383 calls in AgentForge.Core.Tests alone. Adding a token to each would change
+             how those calls cancel, and plans/00006 decision 5 forbids rewriting tests during the
+             move — the identity proof depends on it. Advisory, not a correctness rule. Reconsider
+             it as its own change once the move is done. Inert for MSTest projects. -->
+        <NoWarn>$(NoWarn);xUnit1051</NoWarn>
     </PropertyGroup>
 
     <!-- ⚠ THE FRAMEWORK IS CHOSEN PER PROJECT while plans/00006 moves the suite, one project per

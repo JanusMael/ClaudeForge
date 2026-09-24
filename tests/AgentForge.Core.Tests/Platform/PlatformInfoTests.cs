@@ -13,122 +13,126 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 // class mutates it by design, so it must not run concurrently with anything that
 // reads PlatformInfo.Current. DoNotParallelize runs it serially, isolated from the
 // method-level-parallelized rest of the assembly.
-[DoNotParallelize]
-[TestClass]
-public sealed class PlatformInfoTests
+[Collection("DoNotParallelize")]
+public sealed class PlatformInfoTests : IDisposable
 {
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformInfo.ResetForTesting();
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     // -----------------------------------------------------------------------
     // EmulatedPlatformInfo: each id maps to the right flag tuple
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Emulated_Windows_HasWindowsFlagOnly()
     {
         EmulatedPlatformInfo info = EmulatedPlatformInfo.ForId("windows");
-        Assert.IsTrue(info.IsWindows);
-        Assert.IsFalse(info.IsMacOS);
-        Assert.IsFalse(info.IsLinux);
-        Assert.AreEqual("windows", info.PlatformId);
-        Assert.AreEqual("Windows", info.DisplayName);
-        Assert.AreEqual(';', info.PathListSeparator);
-        Assert.AreEqual(StringComparison.OrdinalIgnoreCase, info.PathComparison);
+        Assert.True(info.IsWindows);
+        Assert.False(info.IsMacOS);
+        Assert.False(info.IsLinux);
+        Assert.Equal("windows", info.PlatformId);
+        Assert.Equal("Windows", info.DisplayName);
+        Assert.Equal(';', info.PathListSeparator);
+        Assert.Equal(StringComparison.OrdinalIgnoreCase, info.PathComparison);
     }
 
-    [TestMethod]
+    [Fact]
     public void Emulated_MacOS_HasMacOSFlagOnly()
     {
         EmulatedPlatformInfo info = EmulatedPlatformInfo.ForId("macos");
-        Assert.IsFalse(info.IsWindows);
-        Assert.IsTrue(info.IsMacOS);
-        Assert.IsFalse(info.IsLinux);
-        Assert.AreEqual("macos", info.PlatformId);
-        Assert.AreEqual("macOS", info.DisplayName);
-        Assert.AreEqual(':', info.PathListSeparator);
-        Assert.AreEqual(StringComparison.Ordinal, info.PathComparison);
+        Assert.False(info.IsWindows);
+        Assert.True(info.IsMacOS);
+        Assert.False(info.IsLinux);
+        Assert.Equal("macos", info.PlatformId);
+        Assert.Equal("macOS", info.DisplayName);
+        Assert.Equal(':', info.PathListSeparator);
+        Assert.Equal(StringComparison.Ordinal, info.PathComparison);
     }
 
-    [TestMethod]
+    [Fact]
     public void Emulated_Linux_HasLinuxFlagOnly()
     {
         EmulatedPlatformInfo info = EmulatedPlatformInfo.ForId("linux");
-        Assert.IsFalse(info.IsWindows);
-        Assert.IsFalse(info.IsMacOS);
-        Assert.IsTrue(info.IsLinux);
-        Assert.AreEqual("linux", info.PlatformId);
-        Assert.AreEqual("Linux", info.DisplayName);
-        Assert.AreEqual(':', info.PathListSeparator);
-        Assert.AreEqual(StringComparison.Ordinal, info.PathComparison);
+        Assert.False(info.IsWindows);
+        Assert.False(info.IsMacOS);
+        Assert.True(info.IsLinux);
+        Assert.Equal("linux", info.PlatformId);
+        Assert.Equal("Linux", info.DisplayName);
+        Assert.Equal(':', info.PathListSeparator);
+        Assert.Equal(StringComparison.Ordinal, info.PathComparison);
     }
 
-    [TestMethod]
+    [Fact]
     public void Emulated_UnknownId_Throws()
     {
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => EmulatedPlatformInfo.ForId("freebsd"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => EmulatedPlatformInfo.ForId("freebsd"));
     }
 
     // -----------------------------------------------------------------------
     // PlatformInfo.Current override + reset
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Current_DefaultsToRuntimePlatformInfo()
     {
         // Cleanup runs after every test, so the static state is always fresh here.
-        Assert.AreSame(RuntimePlatformInfo.Instance, PlatformInfo.Current);
+        Assert.Same(RuntimePlatformInfo.Instance, PlatformInfo.Current);
     }
 
-    [TestMethod]
+    [Fact]
     public void OverrideForDebug_ReplacesCurrent()
     {
         EmulatedPlatformInfo emulated = EmulatedPlatformInfo.ForId("linux");
         PlatformInfo.OverrideForDebug(emulated);
 
-        Assert.AreSame(emulated, PlatformInfo.Current);
-        Assert.IsTrue(PlatformInfo.Current.IsLinux);
-        Assert.AreEqual("linux", PlatformInfo.Current.PlatformId);
+        Assert.Same(emulated, PlatformInfo.Current);
+        Assert.True(PlatformInfo.Current.IsLinux);
+        Assert.Equal("linux", PlatformInfo.Current.PlatformId);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetForTesting_RestoresRuntimeInstance()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
-        Assert.IsTrue(PlatformInfo.Current.IsMacOS, "Setup: emulated macOS is active.");
+        Assert.True(PlatformInfo.Current.IsMacOS, "Setup: emulated macOS is active.");
 
         PlatformInfo.ResetForTesting();
 
-        Assert.AreSame(RuntimePlatformInfo.Instance, PlatformInfo.Current);
+        Assert.Same(RuntimePlatformInfo.Instance, PlatformInfo.Current);
     }
 
-    [TestMethod]
+    [Fact]
     public void OverrideForDebug_NullArgument_Throws()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => PlatformInfo.OverrideForDebug(null!));
+        Assert.Throws<ArgumentNullException>(() => PlatformInfo.OverrideForDebug(null!));
     }
 
     // -----------------------------------------------------------------------
     // PlatformPaths integration: PlatformId routes through PlatformInfo
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void PlatformPaths_PlatformId_ReflectsEmulation()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("linux"));
-        Assert.AreEqual("linux", PlatformPaths.PlatformId);
+        Assert.Equal("linux", PlatformPaths.PlatformId);
 
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
-        Assert.AreEqual("macos", PlatformPaths.PlatformId);
+        Assert.Equal("macos", PlatformPaths.PlatformId);
 
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
-        Assert.AreEqual("windows", PlatformPaths.PlatformId);
+        Assert.Equal("windows", PlatformPaths.PlatformId);
     }
 
-    [TestMethod]
+    [Fact]
     public void PlatformPaths_DesktopConfigPath_RespectsEmulatedMacOS()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
@@ -138,16 +142,16 @@ public sealed class PlatformInfoTests
         // is intentionally NOT overridden — we are testing the BRANCH selection, which
         // is what the debug flag controls.
         string path = PlatformPaths.DesktopConfigPath;
-        StringAssert.Contains(path,
-            Path.Combine("Library", "Application Support", "Claude", "claude_desktop_config.json"),
+        MessageAssert.Contains(Path.Combine("Library", "Application Support", "Claude", "claude_desktop_config.json"),
+            path,
             $"Expected emulated-macOS path layout, got '{path}'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void PlatformPaths_DesktopLogsPath_RespectsEmulatedLinux()
     {
         // Linux: Claude Desktop has no persistent log dir → DesktopLogsPath returns null.
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("linux"));
-        Assert.IsNull(PlatformPaths.DesktopLogsPath);
+        Assert.Null(PlatformPaths.DesktopLogsPath);
     }
 }

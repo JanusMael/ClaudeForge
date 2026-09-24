@@ -19,7 +19,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
 /// refactor.
 /// </para>
 /// </summary>
-[TestClass]
 public class ConfigScopeTests
 {
     /// <summary>
@@ -29,13 +28,13 @@ public class ConfigScopeTests
     /// <c>3 - (int)scope</c>. Change a number here and settings silently resolve to the
     /// wrong file.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Ordinals_AreUnchangedFromTheEnum()
     {
-        Assert.AreEqual(0, (int)ConfigScope.Managed);
-        Assert.AreEqual(1, (int)ConfigScope.Local);
-        Assert.AreEqual(2, (int)ConfigScope.Project);
-        Assert.AreEqual(3, (int)ConfigScope.User);
+        Assert.Equal(0, (int)ConfigScope.Managed);
+        Assert.Equal(1, (int)ConfigScope.Local);
+        Assert.Equal(2, (int)ConfigScope.Project);
+        Assert.Equal(3, (int)ConfigScope.User);
     }
 
     /// <summary>
@@ -44,11 +43,11 @@ public class ConfigScopeTests
     /// as Managed. A struct backed by anything other than the ordinal would give them an
     /// all-zero value whose identity is nothing at all, and no test would notice.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Default_IsManaged_SoUninitialisedFieldsKeepTheirOldMeaning()
     {
-        Assert.AreEqual(ConfigScope.Managed, default(ConfigScope));
-        Assert.AreEqual(0, (int)default(ConfigScope));
+        Assert.Equal(ConfigScope.Managed, default(ConfigScope));
+        Assert.Equal(0, (int)default(ConfigScope));
     }
 
     /// <summary>
@@ -58,13 +57,13 @@ public class ConfigScopeTests
     /// labels from it. A record struct's compiler-generated <c>ToString</c> would emit
     /// <c>ConfigScope { … }</c> and break all of them without a single compile error.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ToString_ReturnsTheFormerEnumMemberNames()
     {
-        Assert.AreEqual("Managed", ConfigScope.Managed.ToString());
-        Assert.AreEqual("Local", ConfigScope.Local.ToString());
-        Assert.AreEqual("Project", ConfigScope.Project.ToString());
-        Assert.AreEqual("User", ConfigScope.User.ToString());
+        Assert.Equal("Managed", ConfigScope.Managed.ToString());
+        Assert.Equal("Local", ConfigScope.Local.ToString());
+        Assert.Equal("Project", ConfigScope.Project.ToString());
+        Assert.Equal("User", ConfigScope.User.ToString());
     }
 
     /// <summary>
@@ -72,10 +71,10 @@ public class ConfigScopeTests
     /// declaration order. The scope legend and the property editor's per-scope rows render
     /// in that order, so it is visible behaviour rather than an implementation detail.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void All_IsEveryScopeInPriorityOrder()
     {
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { ConfigScope.Managed, ConfigScope.Local, ConfigScope.Project, ConfigScope.User },
             ConfigScope.All.ToArray());
     }
@@ -86,29 +85,29 @@ public class ConfigScopeTests
     /// whose equality covered a display string would still compile and would still mostly
     /// work, failing only where two instances were built differently.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Equality_IsByValue_SoScopesWorkAsDictionaryKeys()
     {
         ConfigScope a = ConfigScope.Project;
         ConfigScope b = ConfigScope.Project;
 
-        Assert.AreEqual(a, b);
-        Assert.IsTrue(a == b);
-        Assert.IsFalse(a != b);
-        Assert.AreEqual(a.GetHashCode(), b.GetHashCode());
-        Assert.AreNotEqual(ConfigScope.Project, ConfigScope.Local);
+        Assert.Equal(a, b);
+        Assert.True(a == b);
+        Assert.False(a != b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.NotEqual(ConfigScope.Project, ConfigScope.Local);
 
         Dictionary<ConfigScope, string> byScope = new()
         {
             [ConfigScope.User] = "user",
             [ConfigScope.Managed] = "managed",
         };
-        Assert.AreEqual("user", byScope[ConfigScope.User]);
-        Assert.AreEqual(2, byScope.Count);
-        Assert.IsFalse(byScope.ContainsKey(ConfigScope.Project));
+        Assert.Equal("user", byScope[ConfigScope.User]);
+        Assert.Equal(2, byScope.Count);
+        Assert.False(byScope.ContainsKey(ConfigScope.Project));
 
         HashSet<ConfigScope> set = [ConfigScope.Local, ConfigScope.Local];
-        Assert.AreEqual(1, set.Count, "The same scope added twice must collapse to one entry.");
+        MessageAssert.Equal(1, set.Count, "The same scope added twice must collapse to one entry.");
     }
 
     /// <summary>
@@ -116,13 +115,13 @@ public class ConfigScopeTests
     /// than per-value so a reordering of <see cref="ConfigScope.All"/> cannot pass by
     /// agreeing with itself.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SortingByOrdinal_PutsHighestPriorityFirst()
     {
         ConfigScope[] shuffled =
             [ConfigScope.User, ConfigScope.Project, ConfigScope.Managed, ConfigScope.Local];
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { ConfigScope.Managed, ConfigScope.Local, ConfigScope.Project, ConfigScope.User },
             shuffled.OrderBy(s => (int)s).ToArray());
     }
@@ -134,17 +133,17 @@ public class ConfigScopeTests
     /// is written as "the read-only scopes are precisely these" rather than "Managed is
     /// read-only".
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void IsReadOnly_MarksPreciselyThePolicyScopes()
     {
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { ConfigScope.Managed },
             ConfigScope.All.Where(s => s.IsReadOnly).ToArray(),
             "Managed is Claude's only policy-controlled scope.");
 
-        Assert.IsFalse(ConfigScope.User.IsReadOnly);
-        Assert.IsFalse(ConfigScope.Project.IsReadOnly);
-        Assert.IsFalse(ConfigScope.Local.IsReadOnly);
+        Assert.False(ConfigScope.User.IsReadOnly);
+        Assert.False(ConfigScope.Project.IsReadOnly);
+        Assert.False(ConfigScope.Local.IsReadOnly);
     }
 
     /// <summary>
@@ -154,10 +153,10 @@ public class ConfigScopeTests
     /// literal strings rather than derived from <see cref="ConfigScope.DisplayName"/>, so a
     /// change to the casing rule cannot pass by agreeing with itself.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Id_IsTheLowerCasedMemberName_WhichAxamlLookupsKeyOn()
     {
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "managed", "local", "project", "user" },
             ConfigScope.All.Select(s => s.Id).ToArray());
     }
@@ -168,15 +167,15 @@ public class ConfigScopeTests
     /// consumed-as-data, and two spellings of the same fact drifting apart is how the load
     /// order in step 1h came to be stated backwards in four places.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void DisplayName_AgreesWithToString_AndIsNotUpperCased()
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
-            Assert.AreEqual(scope.ToString(), scope.DisplayName);
+            Assert.Equal(scope.ToString(), scope.DisplayName);
         }
 
-        Assert.AreEqual("User", ConfigScope.User.DisplayName,
+        MessageAssert.Equal("User", ConfigScope.User.DisplayName,
             "Not \"USER\". The chiclets render in caps, but that upper-casing belongs to "
             + "ConfigScopeAdapter — baking presentation into a Core model is what this separation "
             + "exists to avoid.");
@@ -188,15 +187,15 @@ public class ConfigScopeTests
     /// zero, so a nullable wrapper that confused the two would silently attribute every
     /// undefined setting to enterprise policy.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Nullable_DistinguishesNoScopeFromManaged()
     {
         ConfigScope? none = null;
         ConfigScope? managed = ConfigScope.Managed;
 
-        Assert.IsFalse(none.HasValue);
-        Assert.IsTrue(managed.HasValue);
-        Assert.AreNotEqual(none, managed);
-        Assert.AreEqual(ConfigScope.Managed, managed!.Value);
+        Assert.False(none.HasValue);
+        Assert.True(managed.HasValue);
+        Assert.NotEqual(none, managed);
+        Assert.Equal(ConfigScope.Managed, managed!.Value);
     }
 }

@@ -16,25 +16,24 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// the Hooks editor for a product that has none — with a green suite.
 /// </para>
 /// </summary>
-[TestClass]
 public class ProductDescriptorSchemaTests
 {
     private const string ClaudeCodeSchemaFile = "claude-code-settings.json";
     private const string ClaudeDesktopSchemaFile = "claude-desktop-config.json";
 
-    [TestMethod]
+    [Fact]
     public void Descriptors_NameDistinctProductsAndSchemas()
     {
         ProductDescriptor code = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
         ProductDescriptor desktop = SchemaRegistry.ClaudeDesktopProduct;
 
-        Assert.AreEqual("claude-code", code.Id);
-        Assert.AreEqual(ClaudeCodeSchemaFile, code.SchemaFileName);
+        Assert.Equal("claude-code", code.Id);
+        Assert.Equal(ClaudeCodeSchemaFile, code.SchemaFileName);
 
-        Assert.AreEqual("claude-desktop", desktop.Id);
-        Assert.AreEqual(ClaudeDesktopSchemaFile, desktop.SchemaFileName);
+        Assert.Equal("claude-desktop", desktop.Id);
+        Assert.Equal(ClaudeDesktopSchemaFile, desktop.SchemaFileName);
 
-        Assert.AreNotEqual(code.SchemaFileName, desktop.SchemaFileName,
+        MessageAssert.NotEqual(code.SchemaFileName, desktop.SchemaFileName,
             "The two products must not resolve to the same schema file.");
     }
 
@@ -44,7 +43,7 @@ public class ProductDescriptorSchemaTests
     /// name, so the test fails if the file names are right but the loading chain returns
     /// the wrong document.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task Descriptors_LoadTheSchemaBelongingToTheirOwnProduct()
     {
         SchemaRegistry registry = new();
@@ -53,16 +52,16 @@ public class ProductDescriptorSchemaTests
         // namespace here collides with Core's own Schema types (same reason
         // NavigationTreeBuilderThreadSafetyTests uses var).
         var codeRoot =
-            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.CancellationToken);
+            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         var desktopRoot =
-            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.CancellationToken);
+            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
 
         IReadOnlyList<SchemaNode> codeNodes = SchemaTreeBuilder.BuildTopLevel(codeRoot);
         IReadOnlyList<SchemaNode> desktopNodes = SchemaTreeBuilder.BuildTopLevel(desktopRoot);
 
-        Assert.IsTrue(codeNodes.Any(n => n.Name == "permissions"),
+        Assert.True(codeNodes.Any(n => n.Name == "permissions"),
             "Claude Code's settings schema declares 'permissions'.");
-        Assert.IsFalse(desktopNodes.Any(n => n.Name == "permissions"),
+        Assert.False(desktopNodes.Any(n => n.Name == "permissions"),
             "Claude Desktop's config schema does not — if it appears here, Desktop loaded "
             + "Claude Code's schema.");
     }
@@ -73,19 +72,18 @@ public class ProductDescriptorSchemaTests
     /// was <i>told</i> to; the new code asks Desktop's schema and finds no hooks in it.
     /// Those agree only for as long as Desktop's schema genuinely declares none.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void HookMetadata_IsDeclaredByClaudeCodesSchemaAndAbsentFromDesktops()
     {
-        Assert.IsTrue(SchemaRegistry.GetHookEvents(ClaudeCodeSchemaFile).Count > 0,
+        Assert.True(SchemaRegistry.GetHookEvents(ClaudeCodeSchemaFile).Count > 0,
             "Claude Code's schema declares hook events.");
-        Assert.IsTrue(SchemaRegistry.GetHookCommandVariants(ClaudeCodeSchemaFile).Count > 0,
+        Assert.True(SchemaRegistry.GetHookCommandVariants(ClaudeCodeSchemaFile).Count > 0,
             "Claude Code's schema declares hook command variants.");
 
-        Assert.AreEqual(0, SchemaRegistry.GetHookEvents(ClaudeDesktopSchemaFile).Count,
+        MessageAssert.Equal(0, SchemaRegistry.GetHookEvents(ClaudeDesktopSchemaFile).Count,
             "Desktop has no hooks. The client no longer hardcodes that — it reads it here.");
-        Assert.AreEqual(0, SchemaRegistry.GetHookCommandVariants(ClaudeDesktopSchemaFile).Count,
+        MessageAssert.Equal(0, SchemaRegistry.GetHookCommandVariants(ClaudeDesktopSchemaFile).Count,
             "Desktop has no hook command variants, for the same reason.");
     }
 
-    public TestContext TestContext { get; set; } = null!;
 }

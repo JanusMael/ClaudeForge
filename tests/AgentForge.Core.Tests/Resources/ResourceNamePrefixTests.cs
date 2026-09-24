@@ -22,19 +22,18 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Resources;
 /// when someone needs the backup.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ResourceNamePrefixTests
 {
     private static string[] ManifestNames => typeof(ResourceHelper).Assembly.GetManifestResourceNames();
 
-    [TestMethod]
+    [Fact]
     public void SchemasPrefix_MatchesAtLeastOneRealManifestResource()
     {
         string[] matches = ManifestNames
                            .Where(n => n.StartsWith(ResourceHelper.SchemasPrefix, StringComparison.Ordinal))
                            .ToArray();
 
-        Assert.IsTrue(
+        Assert.True(
             matches.Length > 0,
             $"No embedded resource starts with '{ResourceHelper.SchemasPrefix}'. The derived "
             + "prefix no longer matches the assembly's RootNamespace, so BackupEngine.BundleSchemas "
@@ -42,14 +41,14 @@ public sealed class ResourceNamePrefixTests
             + "Actual manifest resources:\n  " + string.Join("\n  ", ManifestNames));
     }
 
-    [TestMethod]
+    [Fact]
     public void AssetName_ResolvesTheBundledClaudeCodeSchema()
     {
         string name = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
 
         using Stream? stream = typeof(ResourceHelper).Assembly.GetManifestResourceStream(name);
 
-        Assert.IsNotNull(
+        MessageAssert.NotNull(
             stream,
             $"'{name}' did not resolve. Every bundled schema, the model catalog, and the enum "
             + "descriptions are read through this path, so a mismatch here breaks all of them.\n"
@@ -62,20 +61,20 @@ public sealed class ResourceNamePrefixTests
     /// <see cref="ResourceHelper.RootNamespace"/> derives from the former while the resource
     /// names derive from the latter.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void DerivedRootNamespace_AgreesWithTheActualResourceNames()
     {
         string[] assetResources = ManifestNames
                                   .Where(n => n.Contains(".Assets.", StringComparison.Ordinal))
                                   .ToArray();
 
-        Assert.IsTrue(assetResources.Length > 0,
+        Assert.True(assetResources.Length > 0,
             "Expected at least one embedded resource under Assets/. Manifest:\n  "
             + string.Join("\n  ", ManifestNames));
 
         foreach (string resource in assetResources)
         {
-            Assert.StartsWith(
+            MessageAssert.StartsWith(
                 $"{ResourceHelper.RootNamespace}.Assets.",
                 resource,
                 StringComparison.Ordinal,

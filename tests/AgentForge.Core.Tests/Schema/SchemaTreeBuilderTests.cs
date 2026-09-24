@@ -5,7 +5,6 @@ using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 
-[TestClass]
 public class SchemaTreeBuilderTests
 {
     // -----------------------------------------------------------------------
@@ -44,119 +43,119 @@ public class SchemaTreeBuilderTests
     // Type mapping
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_String_ReturnsString()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""string""}");
-        Assert.AreEqual(SchemaValueType.String, node.ValueType);
+        Assert.Equal(SchemaValueType.String, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_Boolean_ReturnsBoolean()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""boolean""}");
-        Assert.AreEqual(SchemaValueType.Boolean, node.ValueType);
+        Assert.Equal(SchemaValueType.Boolean, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_Integer_ReturnsInteger()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""integer""}");
-        Assert.AreEqual(SchemaValueType.Integer, node.ValueType);
+        Assert.Equal(SchemaValueType.Integer, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_Number_ReturnsNumber()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""number""}");
-        Assert.AreEqual(SchemaValueType.Number, node.ValueType);
+        Assert.Equal(SchemaValueType.Number, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_Array_ReturnsArray()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""array""}");
-        Assert.AreEqual(SchemaValueType.Array, node.ValueType);
+        Assert.Equal(SchemaValueType.Array, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_ObjectNoProperties_ReturnsComplex()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""object""}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_ObjectWithProperties_ReturnsObject()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""object"",""properties"":{""child"":{""type"":""string""}}}");
-        Assert.AreEqual(SchemaValueType.Object, node.ValueType);
+        Assert.Equal(SchemaValueType.Object, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_SpecializedName_mcpServers_ReturnsComplex()
     {
         // Even if the schema says string, SpecializedProperties override to Complex.
         SchemaNode node = FirstTopLevel("mcpServers",
             @"{""type"":""object"",""properties"":{""child"":{""type"":""string""}}}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_SpecializedName_hooks_ReturnsComplex()
     {
         SchemaNode node = FirstTopLevel("hooks", @"{""type"":""object"",""properties"":{""child"":{""type"":""string""}}}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void TypeMapping_SpecializedName_permissions_ReturnsComplex()
     {
         SchemaNode node = FirstTopLevel("permissions",
             @"{""type"":""object"",""properties"":{""child"":{""type"":""string""}}}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
     // -----------------------------------------------------------------------
     // Metadata extraction
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Metadata_TitleAndDescription_Populated()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""string"",""title"":""My Title"",""description"":""My description""}");
-        Assert.AreEqual("My Title", node.Title);
-        Assert.AreEqual("My description", node.Description);
+        Assert.Equal("My Title", node.Title);
+        Assert.Equal("My description", node.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_EnumValues_Extracted()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""string"",""enum"":[""alpha"",""beta"",""gamma""]}");
-        Assert.AreEqual(SchemaValueType.Enum, node.ValueType);
-        CollectionAssert.AreEquivalent(new[] { "alpha", "beta", "gamma" }, node.EnumValues.ToList());
+        Assert.Equal(SchemaValueType.Enum, node.ValueType);
+        MessageAssert.SameElements(new[] { "alpha", "beta", "gamma" }, node.EnumValues.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_ExamplesArray_BecomesEnumValuesWhenTypeIsString()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""string"",""examples"":[""foo"",""bar""]}");
-        Assert.AreEqual(SchemaValueType.Enum, node.ValueType);
-        CollectionAssert.AreEquivalent(new[] { "foo", "bar" }, node.EnumValues.ToList());
+        Assert.Equal(SchemaValueType.Enum, node.ValueType);
+        MessageAssert.SameElements(new[] { "foo", "bar" }, node.EnumValues.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_DeprecatedKeyword_SetsIsDeprecated()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""string"",""deprecated"":true}");
-        Assert.IsTrue(node.IsDeprecated);
+        Assert.True(node.IsDeprecated);
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_DeprecatedDescriptionPrefix_SetsIsDeprecated()
     {
         // A description beginning with "DEPRECATED" sets IsDeprecated=true.
@@ -164,100 +163,100 @@ public class SchemaTreeBuilderTests
         // so the tooltip can still show the deprecation message to the user.
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""string"",""description"":""DEPRECATED. Use newProp instead.""}");
-        Assert.IsTrue(node.IsDeprecated);
-        Assert.IsNotNull(node.Description);
-        StringAssert.StartsWith(node.Description, "DEPRECATED");
+        Assert.True(node.IsDeprecated);
+        Assert.NotNull(node.Description);
+        Assert.StartsWith("DEPRECATED", node.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_MinimumMaximum_PopulatedForInteger()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""integer"",""minimum"":1,""maximum"":100}");
-        Assert.AreEqual(1.0, node.Minimum);
-        Assert.AreEqual(100.0, node.Maximum);
+        Assert.Equal(1.0, node.Minimum);
+        Assert.Equal(100.0, node.Maximum);
     }
 
-    [TestMethod]
+    [Fact]
     public void Metadata_MinimumMaximum_PopulatedForNumber()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""number"",""minimum"":0.5,""maximum"":9.9}");
-        Assert.AreEqual(0.5, node.Minimum!.Value, 1e-9);
-        Assert.AreEqual(9.9, node.Maximum!.Value, 1e-9);
+        Assert.Equal(0.5, node.Minimum!.Value, 1e-9);
+        Assert.Equal(9.9, node.Maximum!.Value, 1e-9);
     }
 
     // -----------------------------------------------------------------------
     // Nullable collapsing
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Nullable_AnyOfStringAndNull_IsNullableTrueAndTypeString()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""anyOf"":[{""type"":""string""},{""type"":""null""}]}");
-        Assert.IsTrue(node.IsNullable);
-        Assert.AreEqual(SchemaValueType.String, node.ValueType);
+        Assert.True(node.IsNullable);
+        Assert.Equal(SchemaValueType.String, node.ValueType);
     }
 
     // -----------------------------------------------------------------------
     // anyOf / oneOf
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void AnyOf_TwoNonNullVariants_ReturnsComplex()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""anyOf"":[{""type"":""string""},{""type"":""integer""}]}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void OneOf_TwoVariants_ReturnsComplex()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""oneOf"":[{""type"":""string""},{""type"":""boolean""}]}");
-        Assert.AreEqual(SchemaValueType.Complex, node.ValueType);
+        Assert.Equal(SchemaValueType.Complex, node.ValueType);
     }
 
     // -----------------------------------------------------------------------
     // IsNew flag
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsNew_KnownPathsNull_AlwaysFalse()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""string""}", knownPaths: null);
-        Assert.IsFalse(node.IsNew);
+        Assert.False(node.IsNew);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_EmptyKnownPaths_FalseFirstRun()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""string""}",
             knownPaths: new HashSet<string>());
-        Assert.IsFalse(node.IsNew);
+        Assert.False(node.IsNew);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_NonEmptyKnownPathsWithoutThisPath_True()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""string""}",
             knownPaths: new HashSet<string> { "other" });
-        Assert.IsTrue(node.IsNew);
+        Assert.True(node.IsNew);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_KnownPathsContainsThisPath_False()
     {
         SchemaNode node = FirstTopLevel("myProp", @"{""type"":""string""}",
             knownPaths: new HashSet<string> { "myProp" });
-        Assert.IsFalse(node.IsNew);
+        Assert.False(node.IsNew);
     }
 
     // ── --showAllNew debug override ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void IsNew_FlagAllAsNewTrue_OverridesKnownPaths_TopLevel()
     {
         // debug flag --showAllNew forces every node to render
@@ -269,11 +268,11 @@ public class SchemaTreeBuilderTests
             root,
             knownPaths: new HashSet<string> { "myProp" },
             flagAllAsNew: true);
-        Assert.IsTrue(nodes[0].IsNew,
+        Assert.True(nodes[0].IsNew,
             "flagAllAsNew=true must stamp IsNew=true even when the path is in the snapshot.");
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_FlagAllAsNewTrue_PropagatesToNestedChildren()
     {
         // Locks the recursion: BuildNode forwards flagAllAsNew to its
@@ -286,13 +285,13 @@ public class SchemaTreeBuilderTests
             knownPaths: new HashSet<string> { "parent", "parent.child" },
             flagAllAsNew: true);
 
-        Assert.IsTrue(nodes[0].IsNew, "parent must be flagged new");
-        Assert.AreEqual(1, nodes[0].Properties.Count, "precondition: parent has one child");
-        Assert.IsTrue(nodes[0].Properties[0].IsNew,
+        Assert.True(nodes[0].IsNew, "parent must be flagged new");
+        MessageAssert.Equal(1, nodes[0].Properties.Count, "precondition: parent has one child");
+        Assert.True(nodes[0].Properties[0].IsNew,
             "Nested child must also be flagged new under flagAllAsNew=true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_FlagAllAsNewFalse_NormalDiffSemanticsApply()
     {
         // Symmetric guard: flagAllAsNew=false is the production default and
@@ -307,9 +306,9 @@ public class SchemaTreeBuilderTests
             knownPaths: new HashSet<string> { "other" },
             flagAllAsNew: false);
 
-        Assert.IsFalse(inSnapshot[0].IsNew,
+        Assert.False(inSnapshot[0].IsNew,
             "flagAllAsNew=false: paths in snapshot must NOT be flagged new.");
-        Assert.IsTrue(notInSnapshot[0].IsNew,
+        Assert.True(notInSnapshot[0].IsNew,
             "flagAllAsNew=false: paths missing from snapshot must be flagged new.");
     }
 
@@ -317,75 +316,75 @@ public class SchemaTreeBuilderTests
     // ExtractSuggestedEnvVarNames (static)
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_NoEnvironmentVariableMention_EmptyList()
     {
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(
             "Set this to the API key for authentication.");
-        Assert.AreEqual(0, result.Count);
+        Assert.Empty(result);
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_WithAnthropicApiKey_ReturnsThatToken()
     {
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(
             "Set the environment variable ANTHROPIC_API_KEY to authenticate.");
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("ANTHROPIC_API_KEY", result[0]);
+        Assert.Single(result);
+        Assert.Equal("ANTHROPIC_API_KEY", result[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_WithClaudeDebug_ReturnsThatToken()
     {
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(
             "You can also set the environment variable CLAUDE_DEBUG to enable debug output.");
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("CLAUDE_DEBUG", result[0]);
+        Assert.Single(result);
+        Assert.Equal("CLAUDE_DEBUG", result[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_WithEnvironmentVariablePhraseButNoMatchingToken_EmptyList()
     {
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(
             "Use the environment variable to configure this option.");
-        Assert.AreEqual(0, result.Count);
+        Assert.Empty(result);
     }
 
     // -----------------------------------------------------------------------
     // Child properties
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ChildProperties_ObjectWithTwoProperties_HasTwoChildrenWithCorrectNames()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""object"",""properties"":{""alpha"":{""type"":""string""},""beta"":{""type"":""boolean""}}}");
-        Assert.AreEqual(SchemaValueType.Object, node.ValueType);
-        Assert.AreEqual(2, node.Properties.Count);
+        Assert.Equal(SchemaValueType.Object, node.ValueType);
+        Assert.Equal(2, node.Properties.Count);
         HashSet<string> names = node.Properties.Select(p => p.Name).ToHashSet();
-        Assert.IsTrue(names.Contains("alpha"), "Expected child named 'alpha'");
-        Assert.IsTrue(names.Contains("beta"), "Expected child named 'beta'");
+        Assert.True(names.Contains("alpha"), "Expected child named 'alpha'");
+        Assert.True(names.Contains("beta"), "Expected child named 'beta'");
     }
 
     // -----------------------------------------------------------------------
     // ItemsSchema
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ItemsSchema_ArrayWithItemsDefinition_ItemsSchemaNotNull()
     {
         SchemaNode node = FirstTopLevel("myProp",
             @"{""type"":""array"",""items"":{""type"":""string""}}");
-        Assert.AreEqual(SchemaValueType.Array, node.ValueType);
-        Assert.IsNotNull(node.ItemsSchema, "ItemsSchema should not be null when items keyword is present");
-        Assert.AreEqual(SchemaValueType.String, node.ItemsSchema!.ValueType);
+        Assert.Equal(SchemaValueType.Array, node.ValueType);
+        MessageAssert.NotNull(node.ItemsSchema, "ItemsSchema should not be null when items keyword is present");
+        Assert.Equal(SchemaValueType.String, node.ItemsSchema!.ValueType);
     }
 
     // -----------------------------------------------------------------------
     // CollectPaths
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void CollectPaths_FlatList_ReturnsAllPaths()
     {
         JsonSchemaNode root = ParseNode(@"{
@@ -397,12 +396,12 @@ public class SchemaTreeBuilderTests
         }");
         IReadOnlyList<SchemaNode> nodes = SchemaTreeBuilder.BuildTopLevel(root);
         List<string> paths = SchemaTreeBuilder.CollectPaths(nodes).ToList();
-        CollectionAssert.Contains(paths, "propA");
-        CollectionAssert.Contains(paths, "propB");
-        Assert.AreEqual(2, paths.Count);
+        Assert.Contains("propA", paths);
+        Assert.Contains("propB", paths);
+        Assert.Equal(2, paths.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void CollectPaths_NestedObject_ReturnsParentAndChildPaths()
     {
         JsonSchemaNode root = ParseNode(@"{
@@ -418,8 +417,8 @@ public class SchemaTreeBuilderTests
         }");
         IReadOnlyList<SchemaNode> nodes = SchemaTreeBuilder.BuildTopLevel(root);
         List<string> paths = SchemaTreeBuilder.CollectPaths(nodes).ToList();
-        CollectionAssert.Contains(paths, "parent");
-        CollectionAssert.Contains(paths, "parent.child");
-        Assert.AreEqual(2, paths.Count);
+        Assert.Contains("parent", paths);
+        Assert.Contains("parent.child", paths);
+        Assert.Equal(2, paths.Count);
     }
 }

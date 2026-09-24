@@ -24,32 +24,37 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 /// <c>DoNotParallelize</c> and resets in both directions, matching <c>PlatformInfoTests</c>.
 /// </para>
 /// </remarks>
-[TestClass]
-[DoNotParallelize]
-public sealed class ManagedSettingsLocationTests
+[Collection("DoNotParallelize")]
+public sealed class ManagedSettingsLocationTests : IDisposable
 {
-    [TestInitialize]
-    public void Init() => PlatformInfo.ResetForTesting();
+    public ManagedSettingsLocationTests() => Init();
 
-    [TestCleanup]
-    public void Cleanup() => PlatformInfo.ResetForTesting();
+    private void Init() => PlatformInfo.ResetForTesting();
 
-    [TestMethod]
+    private void Cleanup() => PlatformInfo.ResetForTesting();
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void OnMacOS_PolicyLivesUnderLibraryApplicationSupport()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
 
-        StringAssert.EndsWith(
-            Normalize(PlatformPaths.ManagedSettingsRoot),
-            "/Library/Application Support/ClaudeCode");
+        Assert.EndsWith(
+            "/Library/Application Support/ClaudeCode",
+            Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
-    [TestMethod]
+    [Fact]
     public void OnLinux_PolicyLivesUnderEtcClaudeCode()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("linux"));
 
-        StringAssert.EndsWith(Normalize(PlatformPaths.ManagedSettingsRoot), "/etc/claude-code");
+        Assert.EndsWith("/etc/claude-code", Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
     /// <summary>
@@ -64,34 +69,34 @@ public sealed class ManagedSettingsLocationTests
     /// happens to contain the expected text; macOS returns something non-empty and unrelated. Two
     /// green platforms out of three is exactly enough to look deliberate.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void OnWindows_PolicyIsAClaudeCodeFolder()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
 
         // True on every host: the branch selected is the Windows one, whatever root it resolves.
-        StringAssert.EndsWith(Normalize(PlatformPaths.ManagedSettingsRoot), "/ClaudeCode");
+        Assert.EndsWith("/ClaudeCode", Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
     /// <summary>
     /// The Program Files half, asserted only where <see cref="Environment.SpecialFolder"/> can
     /// answer for it — which is the same host the claim is about.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void OnARealWindowsHost_PolicyLivesUnderProgramFiles()
     {
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive(
+            Assert.Skip(
                 "Only meaningful on Windows: SpecialFolder.ProgramFiles answers for the HOST, not "
                 + "for the emulated platform, so this says nothing when run elsewhere.");
         }
 
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
 
-        StringAssert.Contains(
-            Normalize(PlatformPaths.ManagedSettingsRoot),
+        MessageAssert.Contains(
             "Program Files",
+            Normalize(PlatformPaths.ManagedSettingsRoot),
             "Windows policy must resolve under Program Files.");
     }
 
@@ -100,10 +105,10 @@ public sealed class ManagedSettingsLocationTests
     /// Adding the system directory while still reading the old one leaves the confidently-wrong
     /// display in place for exactly the users who already have such a file.
     /// </summary>
-    [TestMethod]
-    [DataRow("windows")]
-    [DataRow("macos")]
-    [DataRow("linux")]
+    [Theory]
+    [InlineData("windows")]
+    [InlineData("macos")]
+    [InlineData("linux")]
     public void NoManagedPath_ResolvesUnderTheUserHome(string platformId)
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId(platformId));
@@ -118,7 +123,7 @@ public sealed class ManagedSettingsLocationTests
                      PlatformPaths.ManagedMcpPath,
                  })
         {
-            Assert.IsFalse(
+            Assert.False(
                 Normalize(managed).StartsWith(home, StringComparison.OrdinalIgnoreCase),
                 $"'{managed}' resolves under the user home '{home}'. Managed policy lives in a " +
                 "system directory; a path under the home is the original defect.");
@@ -129,29 +134,29 @@ public sealed class ManagedSettingsLocationTests
     /// ⚠ The legacy Windows location is explicitly NOT one Claude Code consults, so reading it
     /// would put the confidently-wrong display back in a new place.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void OnWindows_TheLegacyProgramDataLocationIsNotUsed()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("windows"));
 
-        StringAssert.DoesNotMatch(
-            Normalize(PlatformPaths.ManagedSettingsRoot),
-            new System.Text.RegularExpressions.Regex("ProgramData", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+        Assert.DoesNotMatch(
+            new System.Text.RegularExpressions.Regex("ProgramData", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+            Normalize(PlatformPaths.ManagedSettingsRoot));
     }
 
-    [TestMethod]
-    [DataRow("windows")]
-    [DataRow("macos")]
-    [DataRow("linux")]
+    [Theory]
+    [InlineData("windows")]
+    [InlineData("macos")]
+    [InlineData("linux")]
     public void TheThreeManagedFiles_SitDirectlyInThePolicyRoot(string platformId)
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId(platformId));
 
         string root = Normalize(PlatformPaths.ManagedSettingsRoot);
 
-        Assert.AreEqual(root + "/managed-settings.json", Normalize(PlatformPaths.ManagedSettingsPath));
-        Assert.AreEqual(root + "/managed-settings.d", Normalize(PlatformPaths.ManagedSettingsDropInDir));
-        Assert.AreEqual(root + "/managed-mcp.json", Normalize(PlatformPaths.ManagedMcpPath));
+        Assert.Equal(root + "/managed-settings.json", Normalize(PlatformPaths.ManagedSettingsPath));
+        Assert.Equal(root + "/managed-settings.d", Normalize(PlatformPaths.ManagedSettingsDropInDir));
+        Assert.Equal(root + "/managed-mcp.json", Normalize(PlatformPaths.ManagedMcpPath));
     }
 
     /// <summary>

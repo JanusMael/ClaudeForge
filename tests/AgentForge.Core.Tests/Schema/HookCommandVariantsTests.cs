@@ -9,12 +9,11 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// don't survive the flattened <see cref="SchemaNode"/> tree. This is the SDK-first source
 /// that replaces the editor's hardcoded command-type mirror.
 /// </summary>
-[TestClass]
 public sealed class HookCommandVariantsTests
 {
     private const string SchemaFile = "claude-code-settings.json";
 
-    [TestMethod]
+    [Fact]
     public void GetHookCommandVariants_ReadsBundledSchema_TypesAndDescriptions()
     {
         IReadOnlyList<HookCommandVariantInfo> variants = SchemaRegistry.GetHookCommandVariants(SchemaFile);
@@ -22,16 +21,16 @@ public sealed class HookCommandVariantsTests
         // The bundled schema defines the standard hook command shapes; the parse must
         // surface each variant keyed by its `type` const, carrying the schema description.
         HookCommandVariantInfo command = variants.First(v => v.Type == "command");
-        StringAssert.Contains(command.Description!, "Bash command hook");
+        Assert.Contains("Bash command hook", command.Description!);
 
         HookCommandVariantInfo prompt = variants.First(v => v.Type == "prompt");
-        StringAssert.Contains(prompt.Description!, "LLM prompt hook");
+        Assert.Contains("LLM prompt hook", prompt.Description!);
 
         HookCommandVariantInfo http = variants.First(v => v.Type == "http");
-        StringAssert.Contains(http.Description!, "HTTP webhook hook");
+        Assert.Contains("HTTP webhook hook", http.Description!);
     }
 
-    [TestMethod]
+    [Fact]
     public void GetHookCommandVariants_CarriesFieldDescriptions_ExcludingDiscriminator()
     {
         HookCommandVariantInfo command = SchemaRegistry
@@ -40,21 +39,21 @@ public sealed class HookCommandVariantsTests
 
         // Field descriptions flow through for the per-field tooltips headless consumers use.
         HookFieldInfo ifField = command.Fields.First(f => f.Name == "if");
-        StringAssert.Contains(ifField.Description!, "permission-rule-syntax");
+        Assert.Contains("permission-rule-syntax", ifField.Description!);
 
-        Assert.IsTrue(command.Fields.Any(f => f.Name == "timeout"),
+        Assert.True(command.Fields.Any(f => f.Name == "timeout"),
             "The command variant's fields must include timeout.");
 
         // The `type` discriminator is captured as Type, not surfaced as a field — its
         // bare "Hook type" description adds nothing as a tooltip.
-        Assert.IsFalse(command.Fields.Any(f => f.Name == "type"),
+        Assert.False(command.Fields.Any(f => f.Name == "type"),
             "The type discriminator must not appear in the field list.");
     }
 
-    [TestMethod]
+    [Fact]
     public void GetHookCommandVariants_MissingResource_ReturnsEmpty()
     {
         // A schema filename with no bundled resource → fail-open empty list, never a throw.
-        Assert.AreEqual(0, SchemaRegistry.GetHookCommandVariants("does-not-exist.json").Count);
+        Assert.Empty(SchemaRegistry.GetHookCommandVariants("does-not-exist.json"));
     }
 }

@@ -13,20 +13,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.FileIO;
 /// baseline, render, atomic write — because that is the path a user's file actually takes,
 /// and every one of those steps had to cooperate for the formatting to survive.
 /// </remarks>
-[TestClass]
-public sealed class ConfigFileLoaderPreservationTests
+public sealed class ConfigFileLoaderPreservationTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public ConfigFileLoaderPreservationTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), $"cfl-preserve-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_sandbox);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -39,6 +38,12 @@ public sealed class ConfigFileLoaderPreservationTests
         {
             // Transient lock; leave it for the OS reaper rather than failing the test.
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private async Task<(string Path, SettingsDocument Doc)> LoadFixtureAsync(string content)
@@ -55,7 +60,7 @@ public sealed class ConfigFileLoaderPreservationTests
     /// The headline promise. Before Phase 2 this file came back re-serialized: comments
     /// gone, blank line gone, tabs turned into two spaces.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task EditingOneValue_LeavesCommentsBlankLinesAndTabsIntact()
     {
         const string original = "{\n"
@@ -75,13 +80,13 @@ public sealed class ConfigFileLoaderPreservationTests
 
         string after = await File.ReadAllTextAsync(path);
 
-        Assert.AreEqual(original.Replace("\"sonnet\"", "\"opus\""), after,
+        MessageAssert.Equal(original.Replace("\"sonnet\"", "\"opus\""), after,
                         "Only the edited value's span should differ from the original.");
-        StringAssert.Contains(after, "// pinned deliberately");
-        StringAssert.Contains(after, "/* the permissions block is reviewed quarterly */");
+        Assert.Contains("// pinned deliberately", after);
+        Assert.Contains("/* the permissions block is reviewed quarterly */", after);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EditingANestedValue_DoesNotDisturbTheSurroundingObject()
     {
         const string original = "{\n"
@@ -106,42 +111,42 @@ public sealed class ConfigFileLoaderPreservationTests
 
         string after = await File.ReadAllTextAsync(path);
 
-        Assert.AreEqual(original.Replace("\"ask\"", "\"acceptEdits\""), after,
+        MessageAssert.Equal(original.Replace("\"ask\"", "\"acceptEdits\""), after,
                         "Replacing the parent object in memory must still produce a leaf-level "
                         + "edit on disk — otherwise the comment inside it would be destroyed.");
-        StringAssert.Contains(after, "// keep this note");
+        Assert.Contains("// keep this note", after);
     }
 
     /// <summary>
     /// A file with a comment used to load as <i>empty</i> and then get overwritten. This is
     /// the data-loss path, tested from the outside.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task CommentedFile_LoadsItsRealContent_NotAnEmptyDocument()
     {
         const string original = "{\n  // a comment\n  \"model\": \"sonnet\",\n  \"verbose\": true\n}";
 
         (_, SettingsDocument doc) = await LoadFixtureAsync(original);
 
-        Assert.AreEqual(2, doc.Root.Count,
+        MessageAssert.Equal(2, doc.Root.Count,
                         "A commented file must load its real keys. Loading it as empty is what "
                         + "let the next save destroy the user's config.");
-        Assert.AreEqual("sonnet", doc.Root["model"]!.GetValue<string>());
-        Assert.IsTrue(doc.Root["verbose"]!.GetValue<bool>());
+        Assert.Equal("sonnet", doc.Root["model"]!.GetValue<string>());
+        Assert.True(doc.Root["verbose"]!.GetValue<bool>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TrailingCommaFile_AlsoLoadsItsRealContent()
     {
         const string original = "{\n  \"model\": \"sonnet\",\n}";
 
         (_, SettingsDocument doc) = await LoadFixtureAsync(original);
 
-        Assert.AreEqual(1, doc.Root.Count);
-        Assert.AreEqual("sonnet", doc.Root["model"]!.GetValue<string>());
+        Assert.Single(doc.Root);
+        Assert.Equal("sonnet", doc.Root["model"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RemovingAKey_TakesItsSeparatorWithIt_AndLeavesValidJson()
     {
         const string original = "{\n  \"model\": \"sonnet\",\n  \"verbose\": true\n}";
@@ -153,7 +158,7 @@ public sealed class ConfigFileLoaderPreservationTests
 
         string after = await File.ReadAllTextAsync(path);
 
-        Assert.AreEqual("{\n  \"model\": \"sonnet\"\n}", after);
+        Assert.Equal("{\n  \"model\": \"sonnet\"\n}", after);
     }
 
     /// <summary>
@@ -167,7 +172,7 @@ public sealed class ConfigFileLoaderPreservationTests
     /// tests above cannot pass by accident — if both writers behaved the same, this test
     /// would fail.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task LegacyWriter_StillReSerializes_SoTheContrastIsExplicit()
     {
         const string original = "{\n\t// this will not survive the legacy writer\n\t\"model\": \"sonnet\"\n}";
@@ -179,9 +184,9 @@ public sealed class ConfigFileLoaderPreservationTests
 
         string after = await File.ReadAllTextAsync(path);
 
-        Assert.IsFalse(after.Contains("this will not survive", StringComparison.Ordinal),
+        Assert.False(after.Contains("this will not survive", StringComparison.Ordinal),
                        "The legacy writer is lossy by construction — that is why it is the "
                        + "fallback and not the default.");
-        StringAssert.Contains(after, "\"opus\"");
+        Assert.Contains("\"opus\"", after);
     }
 }

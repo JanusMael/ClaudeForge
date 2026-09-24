@@ -8,14 +8,13 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// pattern of constructing real temp directories and zip archives for every
 /// retention / discovery assertion.
 /// </summary>
-[TestClass]
 public class BackupEngineSeamTests
 {
     private const string BackupDir = "/backups";
 
     // ── ApplyRetention ────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ApplyRetention_KeepsNewestN_DeletesOlderFiles()
     {
         // Arrange: 5 archives, written across 5 distinct days. Newest first by
@@ -32,20 +31,20 @@ public class BackupEngineSeamTests
         BackupEngine.ApplyRetention(fs, BackupDir, keepLast: 3);
 
         // Assert: c, d, e survive; a, b are gone (oldest).
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-c.zip"), "Newest 3 must survive");
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-d.zip"), "Newest 3 must survive");
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-e.zip"), "Newest 3 must survive");
-        Assert.IsFalse(fs.FileExists($"{BackupDir}/backup-a.zip"), "Oldest must be deleted");
-        Assert.IsFalse(fs.FileExists($"{BackupDir}/backup-b.zip"), "Oldest must be deleted");
+        Assert.True(fs.FileExists($"{BackupDir}/backup-c.zip"), "Newest 3 must survive");
+        Assert.True(fs.FileExists($"{BackupDir}/backup-d.zip"), "Newest 3 must survive");
+        Assert.True(fs.FileExists($"{BackupDir}/backup-e.zip"), "Newest 3 must survive");
+        Assert.False(fs.FileExists($"{BackupDir}/backup-a.zip"), "Oldest must be deleted");
+        Assert.False(fs.FileExists($"{BackupDir}/backup-b.zip"), "Oldest must be deleted");
 
         // The seam recorded both deletions.
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { $"{BackupDir}/backup-a.zip", $"{BackupDir}/backup-b.zip" }
                 .Select(p => p.Replace('/', Path.DirectorySeparatorChar)).ToList(),
             fs.DeletedPaths.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyRetention_KeepLastZero_IsNoOp()
     {
         // Defensive contract: keepLast <= 0 short-circuits — never wipe everything.
@@ -55,20 +54,20 @@ public class BackupEngineSeamTests
 
         BackupEngine.ApplyRetention(fs, BackupDir, keepLast: 0);
 
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-only.zip"));
-        Assert.AreEqual(0, fs.DeletedPaths.Count);
+        Assert.True(fs.FileExists($"{BackupDir}/backup-only.zip"));
+        Assert.Empty(fs.DeletedPaths);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyRetention_MissingDirectory_IsNoOp()
     {
         // No directory → nothing to do; must not throw.
         InMemoryBackupFileSystem fs = new();
         BackupEngine.ApplyRetention(fs, "/does/not/exist", keepLast: 3);
-        Assert.AreEqual(0, fs.DeletedPaths.Count);
+        Assert.Empty(fs.DeletedPaths);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyRetention_FewerFilesThanKeep_KeepsAll()
     {
         InMemoryBackupFileSystem fs = new();
@@ -78,14 +77,14 @@ public class BackupEngineSeamTests
 
         BackupEngine.ApplyRetention(fs, BackupDir, keepLast: 5);
 
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-a.zip"));
-        Assert.IsTrue(fs.FileExists($"{BackupDir}/backup-b.zip"));
-        Assert.AreEqual(0, fs.DeletedPaths.Count);
+        Assert.True(fs.FileExists($"{BackupDir}/backup-a.zip"));
+        Assert.True(fs.FileExists($"{BackupDir}/backup-b.zip"));
+        Assert.Empty(fs.DeletedPaths);
     }
 
     // ── MergeExplicitAndDiscovered ────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void MergeExplicitAndDiscovered_FiltersOutMissingDirectories()
     {
         InMemoryBackupFileSystem fs = new();
@@ -97,11 +96,11 @@ public class BackupEngineSeamTests
             explicitDirs: ["/projects/real", "/projects/missing"],
             discovered: []);
 
-        Assert.AreEqual(1, merged.Count);
-        Assert.IsTrue(merged[0].EndsWith("real", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(merged);
+        Assert.EndsWith("real", merged[0], StringComparison.OrdinalIgnoreCase);
     }
 
-    [TestMethod]
+    [Fact]
     public void MergeExplicitAndDiscovered_DeduplicatesPathInBothLists()
     {
         // a path that appears in
@@ -116,13 +115,13 @@ public class BackupEngineSeamTests
             explicitDirs: ["/projects/shared", "/projects/explicit-only"],
             discovered: ["/projects/shared", "/projects/discovered-only"]);
 
-        Assert.AreEqual(3, merged.Count, "Shared path must collapse to a single entry.");
-        Assert.IsTrue(merged.Any(p => p.EndsWith("shared", StringComparison.OrdinalIgnoreCase)));
-        Assert.IsTrue(merged.Any(p => p.EndsWith("explicit-only", StringComparison.OrdinalIgnoreCase)));
-        Assert.IsTrue(merged.Any(p => p.EndsWith("discovered-only", StringComparison.OrdinalIgnoreCase)));
+        MessageAssert.Equal(3, merged.Count, "Shared path must collapse to a single entry.");
+        Assert.Contains(merged, p => p.EndsWith("shared", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(merged, p => p.EndsWith("explicit-only", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(merged, p => p.EndsWith("discovered-only", StringComparison.OrdinalIgnoreCase));
     }
 
-    [TestMethod]
+    [Fact]
     public void MergeExplicitAndDiscovered_ReturnsCanonicalAbsolutePaths()
     {
         // Path.GetFullPath should normalise the entries — verify the dedup
@@ -136,8 +135,8 @@ public class BackupEngineSeamTests
             explicitDirs: ["/projects/canonical"],
             discovered: []);
 
-        Assert.AreEqual(1, merged.Count);
-        Assert.IsTrue(Path.IsPathRooted(merged[0]),
+        Assert.Single(merged);
+        Assert.True(Path.IsPathRooted(merged[0]),
             "MergeExplicitAndDiscovered must return absolute paths via Path.GetFullPath.");
     }
 }

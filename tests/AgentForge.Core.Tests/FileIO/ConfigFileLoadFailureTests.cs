@@ -23,20 +23,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.FileIO;
 /// wired correctly.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class ConfigFileLoadFailureTests
+public sealed class ConfigFileLoadFailureTests : IDisposable
 {
     private string _dir = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ConfigFileLoadFailureTests() => Setup();
+
+    private void Setup()
     {
         _dir = Path.Combine(Path.GetTempPath(), "cfl_fail_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_dir);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -51,6 +50,12 @@ public sealed class ConfigFileLoadFailureTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private async Task<SettingsDocument> LoadText(string contents)
     {
         string path = Path.Combine(_dir, "settings.json");
@@ -60,30 +65,30 @@ public sealed class ConfigFileLoadFailureTests
                                Exists: true, IsReadOnly: false));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task MalformedJson_IsFlagged_ButStillLoadsAsEmpty()
     {
         SettingsDocument doc = await LoadText("""{"model": invalid""");
 
-        Assert.IsNotNull(doc.LoadFailure,
+        MessageAssert.NotNull(doc.LoadFailure,
             "A file that could not be parsed must say so. Without this the caller cannot "
             + "distinguish it from an empty file, which is how an unparseable file used to be "
             + "swapped into memory and then saved over.");
-        Assert.AreEqual(0, doc.Root.Count,
+        MessageAssert.Equal(0, doc.Root.Count,
             "The resilience contract still holds: a corrupt file degrades to an empty root "
             + "rather than throwing. Both contracts hold at once — that is the point.");
-        Assert.IsNull(doc.OriginalText,
+        MessageAssert.Null(doc.OriginalText,
             "No original text, so a save cannot attempt a surgical edit against content that "
             + "was never parsed.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ValidJson_IsNotFlagged()
     {
         SettingsDocument doc = await LoadText("""{"model":"sonnet"}""");
 
-        Assert.IsNull(doc.LoadFailure);
-        Assert.AreEqual(1, doc.Root.Count);
+        Assert.Null(doc.LoadFailure);
+        Assert.Single(doc.Root);
     }
 
     /// <summary>
@@ -91,16 +96,16 @@ public sealed class ConfigFileLoadFailureTests
     /// If it were, every reload against a fresh install would bail and the app would never
     /// load — which is exactly the failure mode a naive "empty means broken" check produces.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task GenuinelyEmptyObject_IsNotFlagged()
     {
         SettingsDocument doc = await LoadText("{}");
 
-        Assert.IsNull(doc.LoadFailure);
-        Assert.AreEqual(0, doc.Root.Count);
+        Assert.Null(doc.LoadFailure);
+        Assert.Empty(doc.Root);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task MissingFile_IsNotFlagged()
     {
         // A file that does not exist is not a failure — it is the normal state before the user
@@ -110,8 +115,8 @@ public sealed class ConfigFileLoadFailureTests
                                Path.Combine(_dir, "absent.json"),
                                Exists: false, IsReadOnly: false));
 
-        Assert.IsNull(doc.LoadFailure);
-        Assert.AreEqual(0, doc.Root.Count);
+        Assert.Null(doc.LoadFailure);
+        Assert.Empty(doc.Root);
     }
 
     /// <summary>
@@ -120,18 +125,18 @@ public sealed class ConfigFileLoadFailureTests
     /// load failure — nothing was corrupt, the shape is simply wrong, and blocking reloads on
     /// it would strand the user with no way to fix the file from the app.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task NonObjectRoot_IsNotFlagged()
     {
         SettingsDocument doc = await LoadText("[1, 2, 3]");
 
-        Assert.IsNull(doc.LoadFailure);
-        Assert.AreEqual(0, doc.Root.Count);
+        Assert.Null(doc.LoadFailure);
+        Assert.Empty(doc.Root);
     }
 
     // ── Workspace-level view, which is what the reload actually consults ──
 
-    [TestMethod]
+    [Fact]
     public async Task FailedDocuments_NamesOnlyTheUnparseableFile()
     {
         string good = Path.Combine(_dir, "good.json");
@@ -148,8 +153,8 @@ public sealed class ConfigFileLoadFailureTests
             ],
             TestMergePolicy.Inferring);
 
-        Assert.AreEqual(2, ws.Documents.Count, "Both documents still load — nothing throws.");
-        CollectionAssert.AreEqual(
+        MessageAssert.Equal(2, ws.Documents.Count, "Both documents still load — nothing throws.");
+        MessageAssert.SequenceEqual(
             new[] { bad },
             ws.FailedDocuments.Select(d => d.FilePath).ToArray(),
             "Only the unparseable file is reported. A workspace over a corrupt file is "
@@ -157,7 +162,7 @@ public sealed class ConfigFileLoadFailureTests
             + "has to ask rather than inspect the merged result.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task FailedDocuments_IsEmpty_ForACleanLoad()
     {
         string good = Path.Combine(_dir, "good.json");
@@ -170,6 +175,6 @@ public sealed class ConfigFileLoadFailureTests
             ],
             TestMergePolicy.Inferring);
 
-        Assert.IsFalse(ws.FailedDocuments.Any());
+        Assert.False(ws.FailedDocuments.Any());
     }
 }

@@ -4,8 +4,7 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.FileIO;
 
-[TestClass]
-public class ConfigFileDiscovererTests
+public class ConfigFileDiscovererTests : IDisposable
 {
     private string _sandbox = null!;
 
@@ -22,8 +21,9 @@ public class ConfigFileDiscovererTests
     /// </remarks>
     private string _managedRoot = null!;
 
-    [TestInitialize]
-    public void Init()
+    public ConfigFileDiscovererTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -36,8 +36,7 @@ public class ConfigFileDiscovererTests
         Directory.CreateDirectory(_managedRoot);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_sandbox))
@@ -48,6 +47,12 @@ public class ConfigFileDiscovererTests
         {
             Directory.Delete(_managedRoot, recursive: true);
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     // -----------------------------------------------------------------------
@@ -64,19 +69,19 @@ public class ConfigFileDiscovererTests
     // DiscoverClaudeCodeSettings
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_NoProjectRoot_NoManagedFile_ReturnsOneUserEntry()
     {
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(1, files.Count);
-        Assert.AreEqual(ConfigScope.User, files[0].Scope);
-        Assert.AreEqual(ConfigFileType.ClaudeCodeSettings, files[0].FileType);
-        Assert.AreEqual(PlatformPaths.UserSettingsPath(ClaudeEnvironment.Empty), files[0].FilePath);
-        Assert.IsFalse(files[0].IsReadOnly);
+        Assert.Single(files);
+        Assert.Equal(ConfigScope.User, files[0].Scope);
+        Assert.Equal(ConfigFileType.ClaudeCodeSettings, files[0].FileType);
+        Assert.Equal(PlatformPaths.UserSettingsPath(ClaudeEnvironment.Empty), files[0].FilePath);
+        Assert.False(files[0].IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_NoProjectRoot_WithManagedFile_ReturnsTwoEntries()
     {
         Touch(Path.Combine(_managedRoot, "managed-settings.json"));
@@ -84,13 +89,13 @@ public class ConfigFileDiscovererTests
         IReadOnlyList<DiscoveredFile> files =
             ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, managedRoot: _managedRoot);
 
-        Assert.AreEqual(2, files.Count);
-        Assert.AreEqual(ConfigScope.Managed, files[0].Scope);
-        Assert.IsTrue(files[0].IsReadOnly);
-        Assert.AreEqual(ConfigScope.User, files[1].Scope);
+        Assert.Equal(2, files.Count);
+        Assert.Equal(ConfigScope.Managed, files[0].Scope);
+        Assert.True(files[0].IsReadOnly);
+        Assert.Equal(ConfigScope.User, files[1].Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_WithProjectRoot_ReturnsThreeEntries()
     {
         string projectRoot = Path.Combine(_sandbox, "myproject");
@@ -98,13 +103,13 @@ public class ConfigFileDiscovererTests
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, projectRoot: projectRoot);
 
-        Assert.AreEqual(3, files.Count);
-        Assert.AreEqual(ConfigScope.User, files[0].Scope);
-        Assert.AreEqual(ConfigScope.Project, files[1].Scope);
-        Assert.AreEqual(ConfigScope.Local, files[2].Scope);
+        Assert.Equal(3, files.Count);
+        Assert.Equal(ConfigScope.User, files[0].Scope);
+        Assert.Equal(ConfigScope.Project, files[1].Scope);
+        Assert.Equal(ConfigScope.Local, files[2].Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_WithProjectRoot_AndManagedFile_ReturnsFourEntries()
     {
         Touch(Path.Combine(_managedRoot, "managed-settings.json"));
@@ -114,14 +119,14 @@ public class ConfigFileDiscovererTests
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, 
             projectRoot: projectRoot, managedRoot: _managedRoot);
 
-        Assert.AreEqual(4, files.Count);
-        Assert.AreEqual(ConfigScope.Managed, files[0].Scope);
-        Assert.AreEqual(ConfigScope.User, files[1].Scope);
-        Assert.AreEqual(ConfigScope.Project, files[2].Scope);
-        Assert.AreEqual(ConfigScope.Local, files[3].Scope);
+        Assert.Equal(4, files.Count);
+        Assert.Equal(ConfigScope.Managed, files[0].Scope);
+        Assert.Equal(ConfigScope.User, files[1].Scope);
+        Assert.Equal(ConfigScope.Project, files[2].Scope);
+        Assert.Equal(ConfigScope.Local, files[3].Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_ProjectScopePaths_MatchPlatformPaths()
     {
         string projectRoot = Path.Combine(_sandbox, "myproject");
@@ -131,23 +136,23 @@ public class ConfigFileDiscovererTests
 
         DiscoveredFile project = files.Single(f => f.Scope == ConfigScope.Project);
         DiscoveredFile local = files.Single(f => f.Scope == ConfigScope.Local);
-        Assert.AreEqual(PlatformPaths.ProjectSettingsPath(projectRoot), project.FilePath);
-        Assert.AreEqual(PlatformPaths.LocalSettingsPath(projectRoot), local.FilePath);
+        Assert.Equal(PlatformPaths.ProjectSettingsPath(projectRoot), project.FilePath);
+        Assert.Equal(PlatformPaths.LocalSettingsPath(projectRoot), local.FilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_WithProfileName_UserPathIsProfilePath()
     {
         const string profile = "work";
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, profileName: profile);
 
-        Assert.AreEqual(1, files.Count);
-        Assert.AreEqual(ConfigScope.User, files[0].Scope);
-        Assert.AreEqual(PlatformPaths.ProfileSettingsPath(ClaudeEnvironment.Empty, profile), files[0].FilePath);
+        Assert.Single(files);
+        Assert.Equal(ConfigScope.User, files[0].Scope);
+        Assert.Equal(PlatformPaths.ProfileSettingsPath(ClaudeEnvironment.Empty, profile), files[0].FilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_DropInDir_AddsOneManagedEntryPerJsonFile()
     {
         string dropDir = Path.Combine(_managedRoot, "managed-settings.d");
@@ -159,12 +164,12 @@ public class ConfigFileDiscovererTests
             ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, managedRoot: _managedRoot);
 
         List<DiscoveredFile> managed = files.Where(f => f.Scope == ConfigScope.Managed).ToList();
-        Assert.AreEqual(2, managed.Count);
-        Assert.IsTrue(managed.All(f => f.IsReadOnly));
-        Assert.IsTrue(managed.All(f => f.FileType == ConfigFileType.ClaudeCodeSettings));
+        Assert.Equal(2, managed.Count);
+        Assert.True(managed.All(f => f.IsReadOnly));
+        Assert.True(managed.All(f => f.FileType == ConfigFileType.ClaudeCodeSettings));
         // Sorted by name
-        Assert.IsTrue(managed[0].FilePath.EndsWith("a-policy.json"));
-        Assert.IsTrue(managed[1].FilePath.EndsWith("b-policy.json"));
+        Assert.EndsWith("a-policy.json", managed[0].FilePath);
+        Assert.EndsWith("b-policy.json", managed[1].FilePath);
     }
 
     /// <summary>
@@ -173,19 +178,19 @@ public class ConfigFileDiscovererTests
     /// would leave the confidently-wrong display in place for exactly the users who already have
     /// such a file — it shows as enforced policy and does nothing.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AManagedFileInTheOldHomeLocation_IsNotDiscovered()
     {
         string legacy = Path.Combine(_sandbox, ".claude", "managed-settings.json");
         Touch(legacy);
 
         // Assert the premise, or the claim below is about a file that was never written.
-        Assert.IsTrue(File.Exists(legacy), "Precondition: the legacy file must exist.");
+        Assert.True(File.Exists(legacy), "Precondition: the legacy file must exist.");
 
         IReadOnlyList<DiscoveredFile> files =
             ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, managedRoot: _managedRoot);
 
-        Assert.IsFalse(
+        Assert.False(
             files.Any(f => f.Scope == ConfigScope.Managed),
             "A managed-settings.json under the user home was discovered as policy. Claude Code " +
             "never reads that location, so showing it as enforced is the original defect.");
@@ -195,7 +200,7 @@ public class ConfigFileDiscovererTests
     /// The drop-in directory has the same failure mode as the file beside it, and a sweep that
     /// fixed only the file would leave this one reading the home.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ADropInDirectoryInTheOldHomeLocation_IsNotDiscovered()
     {
         string legacyDropIn = Path.Combine(_sandbox, ".claude", "managed-settings.d");
@@ -205,12 +210,12 @@ public class ConfigFileDiscovererTests
         IReadOnlyList<DiscoveredFile> files =
             ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty, managedRoot: _managedRoot);
 
-        Assert.IsFalse(
+        Assert.False(
             files.Any(f => f.Scope == ConfigScope.Managed),
             "A managed-settings.d under the user home was discovered as policy.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_ExistingFile_ExistsIsTrue()
     {
         Touch(PlatformPaths.UserSettingsPath(ClaudeEnvironment.Empty));
@@ -218,58 +223,58 @@ public class ConfigFileDiscovererTests
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty);
 
         DiscoveredFile user = files.Single(f => f.Scope == ConfigScope.User);
-        Assert.IsTrue(user.Exists);
+        Assert.True(user.Exists);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverClaudeCodeSettings_MissingFile_ExistsIsFalse()
     {
         // user settings file is not created
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverClaudeCodeSettings(ClaudeEnvironment.Empty);
 
         DiscoveredFile user = files.Single(f => f.Scope == ConfigScope.User);
-        Assert.IsFalse(user.Exists);
+        Assert.False(user.Exists);
     }
 
     // -----------------------------------------------------------------------
     // DiscoverDesktopConfig
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopConfig_ReturnsSingleUserScopeEntry()
     {
         DiscoveredFile file = ConfigFileDiscoverer.DiscoverDesktopConfig();
 
-        Assert.AreEqual(ConfigScope.User, file.Scope);
-        Assert.AreEqual(ConfigFileType.ClaudeDesktopConfig, file.FileType);
-        Assert.AreEqual(PlatformPaths.DesktopConfigPath, file.FilePath);
-        Assert.IsFalse(file.IsReadOnly);
+        Assert.Equal(ConfigScope.User, file.Scope);
+        Assert.Equal(ConfigFileType.ClaudeDesktopConfig, file.FileType);
+        Assert.Equal(PlatformPaths.DesktopConfigPath, file.FilePath);
+        Assert.False(file.IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopConfig_WhenFileExists_ExistsIsTrue()
     {
         Touch(PlatformPaths.DesktopConfigPath);
 
         DiscoveredFile file = ConfigFileDiscoverer.DiscoverDesktopConfig();
 
-        Assert.IsTrue(file.Exists);
+        Assert.True(file.Exists);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopConfig_WithProfileName_ReturnsProfileSpecificPath()
     {
         const string profile = "work";
 
         DiscoveredFile file = ConfigFileDiscoverer.DiscoverDesktopConfig(profileName: profile);
 
-        Assert.AreEqual(ConfigScope.User, file.Scope);
-        Assert.AreEqual(ConfigFileType.ClaudeDesktopConfig, file.FileType);
-        Assert.AreEqual(PlatformPaths.DesktopProfileConfigPath(profile), file.FilePath);
-        Assert.IsFalse(file.IsReadOnly);
+        Assert.Equal(ConfigScope.User, file.Scope);
+        Assert.Equal(ConfigFileType.ClaudeDesktopConfig, file.FileType);
+        Assert.Equal(PlatformPaths.DesktopProfileConfigPath(profile), file.FilePath);
+        Assert.False(file.IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopConfig_WithProfileName_WhenFileExists_ExistsIsTrue()
     {
         const string profile = "work";
@@ -277,35 +282,35 @@ public class ConfigFileDiscovererTests
 
         DiscoveredFile file = ConfigFileDiscoverer.DiscoverDesktopConfig(profileName: profile);
 
-        Assert.IsTrue(file.Exists);
+        Assert.True(file.Exists);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopConfig_WithNullProfileName_ReturnsLivePath()
     {
         // Explicitly passing null should behave identically to the parameterless call.
         DiscoveredFile file = ConfigFileDiscoverer.DiscoverDesktopConfig(profileName: null);
 
-        Assert.AreEqual(PlatformPaths.DesktopConfigPath, file.FilePath);
+        Assert.Equal(PlatformPaths.DesktopConfigPath, file.FilePath);
     }
 
     // -----------------------------------------------------------------------
     // DiscoverMcpFiles
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DiscoverMcpFiles_NoProjectRoot_ReturnsOneUserEntry()
     {
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(1, files.Count);
-        Assert.AreEqual(ConfigScope.User, files[0].Scope);
-        Assert.AreEqual(ConfigFileType.McpJson, files[0].FileType);
-        Assert.AreEqual(PlatformPaths.UserMcpPath(ClaudeEnvironment.Empty), files[0].FilePath);
-        Assert.IsFalse(files[0].IsReadOnly);
+        Assert.Single(files);
+        Assert.Equal(ConfigScope.User, files[0].Scope);
+        Assert.Equal(ConfigFileType.McpJson, files[0].FileType);
+        Assert.Equal(PlatformPaths.UserMcpPath(ClaudeEnvironment.Empty), files[0].FilePath);
+        Assert.False(files[0].IsReadOnly);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverMcpFiles_WithProjectRoot_ReturnsTwoEntries()
     {
         string projectRoot = Path.Combine(_sandbox, "myproject");
@@ -313,65 +318,65 @@ public class ConfigFileDiscovererTests
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty, projectRoot: projectRoot);
 
-        Assert.AreEqual(2, files.Count);
-        Assert.AreEqual(ConfigScope.User, files[0].Scope);
-        Assert.AreEqual(ConfigScope.Project, files[1].Scope);
-        Assert.AreEqual(PlatformPaths.ProjectMcpPath(projectRoot), files[1].FilePath);
+        Assert.Equal(2, files.Count);
+        Assert.Equal(ConfigScope.User, files[0].Scope);
+        Assert.Equal(ConfigScope.Project, files[1].Scope);
+        Assert.Equal(PlatformPaths.ProjectMcpPath(projectRoot), files[1].FilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverMcpFiles_WithProfileName_UserPathIsProfileMcpPath()
     {
         const string profile = "work";
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty, profileName: profile);
 
-        Assert.AreEqual(1, files.Count);
-        Assert.AreEqual(PlatformPaths.ProfileMcpPath(ClaudeEnvironment.Empty, profile), files[0].FilePath);
+        Assert.Single(files);
+        Assert.Equal(PlatformPaths.ProfileMcpPath(ClaudeEnvironment.Empty, profile), files[0].FilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverMcpFiles_ExistingFile_ExistsIsTrue()
     {
         Touch(PlatformPaths.UserMcpPath(ClaudeEnvironment.Empty));
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty);
 
-        Assert.IsTrue(files[0].Exists);
+        Assert.True(files[0].Exists);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverMcpFiles_MissingFile_ExistsIsFalse()
     {
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverMcpFiles(ClaudeEnvironment.Empty);
 
-        Assert.IsFalse(files[0].Exists);
+        Assert.False(files[0].Exists);
     }
 
     // -----------------------------------------------------------------------
     // DiscoverProfiles
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DiscoverProfiles_NoProfilesDir_ReturnsEmptyList()
     {
         // ProfilesDirectory does not exist in the fresh sandbox
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverProfiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(0, files.Count);
+        Assert.Empty(files);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverProfiles_EmptyProfilesDir_ReturnsEmptyList()
     {
         Directory.CreateDirectory(PlatformPaths.ProfilesDirectory(ClaudeEnvironment.Empty));
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverProfiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(0, files.Count);
+        Assert.Empty(files);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverProfiles_SingleProfile_ReturnsTwoEntries()
     {
         string profileDir = Path.Combine(PlatformPaths.ProfilesDirectory(ClaudeEnvironment.Empty), "work");
@@ -380,18 +385,18 @@ public class ConfigFileDiscovererTests
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverProfiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(2, files.Count);
+        Assert.Equal(2, files.Count);
         DiscoveredFile settings = files.Single(f => f.FileType == ConfigFileType.ProfileSettings);
         DiscoveredFile mcp = files.Single(f => f.FileType == ConfigFileType.ProfileMcp);
-        Assert.AreEqual("work", settings.ProfileName);
-        Assert.AreEqual("work", mcp.ProfileName);
-        Assert.AreEqual(ConfigScope.User, settings.Scope);
-        Assert.AreEqual(ConfigScope.User, mcp.Scope);
-        Assert.IsTrue(settings.Exists);
-        Assert.IsTrue(mcp.Exists);
+        Assert.Equal("work", settings.ProfileName);
+        Assert.Equal("work", mcp.ProfileName);
+        Assert.Equal(ConfigScope.User, settings.Scope);
+        Assert.Equal(ConfigScope.User, mcp.Scope);
+        Assert.True(settings.Exists);
+        Assert.True(mcp.Exists);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverProfiles_ProfileWithMissingFiles_ExistsIsFalse()
     {
         // Create the profile directory but leave files absent
@@ -399,7 +404,7 @@ public class ConfigFileDiscovererTests
 
         IReadOnlyList<DiscoveredFile> files = ConfigFileDiscoverer.DiscoverProfiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(2, files.Count);
-        Assert.IsTrue(files.All(f => !f.Exists));
+        Assert.Equal(2, files.Count);
+        Assert.True(files.All(f => !f.Exists));
     }
 }

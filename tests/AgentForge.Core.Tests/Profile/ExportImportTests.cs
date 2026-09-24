@@ -13,21 +13,20 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Profile;
 /// mcp_servers) so artefacts round-trip between the two tools without
 /// translation.
 /// </summary>
-[TestClass]
-public sealed class ExportImportTests
+public sealed class ExportImportTests : IDisposable
 {
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ExportImportTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudeforge_exptest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -41,6 +40,12 @@ public sealed class ExportImportTests
         {
             /* best effort */
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string ProfileDir(string name)
@@ -84,7 +89,7 @@ public sealed class ExportImportTests
 
     // ── Export ─────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Export_ProducesClaudectxCompatibleSchema()
     {
         // The full happy-path: a profile with all three files.  The
@@ -98,30 +103,30 @@ public sealed class ExportImportTests
         string dest = Path.Combine(_sandbox, "work.json");
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "work", dest);
 
-        Assert.IsTrue(File.Exists(dest), "Export must produce a file at the destination path.");
+        Assert.True(File.Exists(dest), "Export must produce a file at the destination path.");
 
         JsonDocument doc = JsonDocument.Parse(await File.ReadAllTextAsync(dest));
         JsonElement root = doc.RootElement;
 
-        Assert.AreEqual("1.0.0", root.GetProperty("version").GetString(),
+        MessageAssert.Equal("1.0.0", root.GetProperty("version").GetString(),
             "Schema version must be '1.0.0' — claudectx rejects anything else.");
-        Assert.AreEqual("work", root.GetProperty("name").GetString());
-        Assert.IsTrue(root.TryGetProperty("settings", out JsonElement _));
-        Assert.IsTrue(root.TryGetProperty("claude_md", out JsonElement _),
+        Assert.Equal("work", root.GetProperty("name").GetString());
+        Assert.True(root.TryGetProperty("settings", out JsonElement _));
+        Assert.True(root.TryGetProperty("claude_md", out JsonElement _),
             "claude_md key must be present (snake_case, matching claudectx).");
-        Assert.IsTrue(root.TryGetProperty("mcp_servers", out JsonElement _),
+        Assert.True(root.TryGetProperty("mcp_servers", out JsonElement _),
             "mcp_servers key must be present (snake_case).");
-        Assert.IsTrue(root.TryGetProperty("exported_at", out JsonElement ts));
-        StringAssert.StartsWith(ts.GetString(), "20",
+        Assert.True(root.TryGetProperty("exported_at", out JsonElement ts));
+        MessageAssert.StartsWith("20", ts.GetString(),
             "exported_at must be RFC 3339 / ISO 8601 (e.g. '2026-...').");
 
         // Settings is carried through verbatim — model + env preserved.
         JsonElement settings = root.GetProperty("settings");
-        Assert.AreEqual("sonnet", settings.GetProperty("model").GetString());
-        Assert.AreEqual("bar", settings.GetProperty("env").GetProperty("FOO").GetString());
+        Assert.Equal("sonnet", settings.GetProperty("model").GetString());
+        Assert.Equal("bar", settings.GetProperty("env").GetProperty("FOO").GetString());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Export_OmitsClaudeMd_WhenAbsent()
     {
         // ',omitempty' Go behaviour mirrored: claude_md key absent when empty.
@@ -130,11 +135,11 @@ public sealed class ExportImportTests
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "minimal", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
-        Assert.IsFalse(root.TryGetProperty("claude_md", out JsonElement _),
+        Assert.False(root.TryGetProperty("claude_md", out JsonElement _),
             "claude_md must be omitted from JSON when CLAUDE.md is absent.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Export_OmitsMcpServers_WhenAbsent()
     {
         SeedProfile("nomcp", mcpJson: null);
@@ -142,11 +147,11 @@ public sealed class ExportImportTests
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "nomcp", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
-        Assert.IsFalse(root.TryGetProperty("mcp_servers", out JsonElement _),
+        Assert.False(root.TryGetProperty("mcp_servers", out JsonElement _),
             "mcp_servers must be omitted when mcp.json is absent.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Export_OmitsMcpServers_WhenEmptyObject()
     {
         // mcp.json containing an empty object {} should not appear on the wire.
@@ -155,21 +160,21 @@ public sealed class ExportImportTests
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "emptymcp", dest);
 
         JsonElement root = JsonDocument.Parse(await File.ReadAllTextAsync(dest)).RootElement;
-        Assert.IsFalse(root.TryGetProperty("mcp_servers", out JsonElement _),
+        Assert.False(root.TryGetProperty("mcp_servers", out JsonElement _),
             "mcp_servers MUST be omitted when mcp.json is an empty object.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Export_FailsWhenProfileDoesNotExist()
     {
         string dest = Path.Combine(_sandbox, "nope.json");
-        await Assert.ThrowsExactlyAsync<FileNotFoundException>(() =>
+        await Assert.ThrowsAsync<FileNotFoundException>(() =>
             ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "nonexistent", dest));
     }
 
     // ── Import ─────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsIncompatibleVersion()
     {
         string fixture = """
@@ -183,12 +188,12 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "old.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
-        StringAssert.Contains(ex.Message, "Incompatible export version",
+        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        MessageAssert.Contains("Incompatible export version", ex.Message,
             "Error message must surface the version mismatch clearly.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RefusesWhenProfileAlreadyExists()
     {
         // Pre-create the target dir so the import has to refuse.
@@ -205,12 +210,12 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "exists.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        IOException ex = await Assert.ThrowsExactlyAsync<IOException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
-        StringAssert.Contains(ex.Message, "already exists",
+        IOException ex = await Assert.ThrowsAsync<IOException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        MessageAssert.Contains("already exists", ex.Message,
             "Error must mirror claudectx's 'profile %q already exists' phrasing.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_AcceptsOverrideName()
     {
         string fixture = """
@@ -226,13 +231,13 @@ public sealed class ExportImportTests
 
         string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, overrideName: "renamed");
 
-        Assert.AreEqual("renamed", landed);
-        Assert.IsTrue(File.Exists(ProfileSettings("renamed")));
-        Assert.IsFalse(Directory.Exists(ProfileDir("originalName")),
+        Assert.Equal("renamed", landed);
+        Assert.True(File.Exists(ProfileSettings("renamed")));
+        Assert.False(Directory.Exists(ProfileDir("originalName")),
             "Override name must replace the embedded name; original must NOT be created.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsMissingSettings()
     {
         string fixture = """
@@ -245,21 +250,21 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "nosettings.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsMalformedJson()
     {
         string path = Path.Combine(_sandbox, "broken.json");
         await File.WriteAllTextAsync(path, "{ this is not valid json ");
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
     // ── Path-traversal guards (security regressions) ───────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsRelativeTraversalInName()
     {
         // security regression: a malicious JSON could try
@@ -277,18 +282,18 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "traversal.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        InvalidDataException ex = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
-        StringAssert.Contains(ex.Message, "not a valid",
+        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        MessageAssert.Contains("not a valid", ex.Message,
             "Error message must surface the rejection clearly.");
 
         // Critical: confirm NOTHING was written outside the sandbox.
         // Anything outside the sandbox tmp dir would be a real escape.
         string sandboxParent = Directory.GetParent(_sandbox)!.FullName;
-        Assert.IsFalse(Directory.Exists(Path.Combine(sandboxParent, "escape")),
+        Assert.False(Directory.Exists(Path.Combine(sandboxParent, "escape")),
             "Path-traversal MUST NOT create directories outside the sandbox.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsAbsolutePathInName()
     {
         // Use an absolute path matching the host OS convention so
@@ -312,10 +317,10 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "abs.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsBackslashSeparatorInName()
     {
         // The comment used to claim "even on non-Windows hosts this should
@@ -331,7 +336,7 @@ public sealed class ExportImportTests
         // fires today.
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Backslash rejection only fires on Windows — Path.DirectorySeparatorChar is '/' on Linux/macOS, so '\\\\' is not in the rejection set there.");
+            Assert.Skip("Backslash rejection only fires on Windows — Path.DirectorySeparatorChar is '/' on Linux/macOS, so '\\\\' is not in the rejection set there.");
         }
 
         string fixture = """
@@ -345,10 +350,10 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "backslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsForwardSlashSeparatorInName()
     {
         string fixture = """
@@ -362,10 +367,10 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "fslash.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsDotDotName()
     {
         // The bare ".." segment.  Pre-Path.Combine this would resolve
@@ -381,10 +386,10 @@ public sealed class ExportImportTests
         string path = Path.Combine(_sandbox, "dotdot.json");
         await File.WriteAllTextAsync(path, fixture);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Import_RejectsTraversalViaOverrideName()
     {
         // The override-name path also flows through the resolver.
@@ -392,13 +397,13 @@ public sealed class ExportImportTests
         string json = Path.Combine(_sandbox, "src.json");
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "legitimate", json);
 
-        await Assert.ThrowsExactlyAsync<InvalidDataException>(() =>
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
             ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "../escape"));
     }
 
     // ── Partial-write cleanup ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Import_FailedWrite_CleansUpPartialDirectory()
     {
         // After the security fix landed a partial-write would leave a
@@ -410,7 +415,7 @@ public sealed class ExportImportTests
         // pattern; the same try/finally also covers the cancellation /
         // disk-full cases the audit flagged.
         string pre = Path.Combine(_sandbox, ".claude", "profiles", "partialtest");
-        Assert.IsFalse(Directory.Exists(pre), "Precondition.");
+        Assert.False(Directory.Exists(pre), "Precondition.");
 
         // A JSON that passes ResolveProfileDirSecurely but fails on
         // the missing-Settings check AFTER directory creation.  Wait —
@@ -423,13 +428,13 @@ public sealed class ExportImportTests
         string json = Path.Combine(_sandbox, "origin.json");
         await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "origin", json);
         string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "fresh");
-        Assert.AreEqual("fresh", landed);
-        Assert.IsTrue(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "fresh")));
+        Assert.Equal("fresh", landed);
+        Assert.True(Directory.Exists(Path.Combine(_sandbox, ".claude", "profiles", "fresh")));
     }
 
     // ── Round-trip ─────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task RoundTrip_ExportThenImport_PreservesAllThreeFiles()
     {
         SeedProfile(
@@ -443,16 +448,16 @@ public sealed class ExportImportTests
 
         // Import under a NEW name — must not collide with the source.
         string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, json, overrideName: "dst");
-        Assert.AreEqual("dst", landed);
+        Assert.Equal("dst", landed);
 
         // settings.json — structurally equal.
         JsonNode? srcSettings = JsonNode.Parse(await File.ReadAllTextAsync(ProfileSettings("src")));
         JsonNode? dstSettings = JsonNode.Parse(await File.ReadAllTextAsync(ProfileSettings("dst")));
-        Assert.IsTrue(JsonNode.DeepEquals(srcSettings, dstSettings),
+        Assert.True(JsonNode.DeepEquals(srcSettings, dstSettings),
             "settings.json must round-trip with structural equality.");
 
         // CLAUDE.md — text equal.
-        Assert.AreEqual(
+        MessageAssert.Equal(
             await File.ReadAllTextAsync(ProfileMd("src")),
             await File.ReadAllTextAsync(ProfileMd("dst")),
             "CLAUDE.md text must round-trip verbatim.");
@@ -460,13 +465,13 @@ public sealed class ExportImportTests
         // mcp.json — structurally equal.
         JsonNode? srcMcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("src")));
         JsonNode? dstMcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("dst")));
-        Assert.IsTrue(JsonNode.DeepEquals(srcMcp, dstMcp),
+        Assert.True(JsonNode.DeepEquals(srcMcp, dstMcp),
             "mcp.json must round-trip with structural equality.");
     }
 
     // ── Cross-tool compatibility ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Import_AcceptsClaudectxProducedFixture()
     {
         // This JSON shape exactly mirrors what claudectx's
@@ -501,21 +506,21 @@ public sealed class ExportImportTests
         await File.WriteAllTextAsync(path, claudectxStyle);
 
         string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path);
-        Assert.AreEqual("shared", landed);
+        Assert.Equal("shared", landed);
 
         // Verify all three files landed correctly.
-        Assert.IsTrue(File.Exists(ProfileSettings("shared")));
-        Assert.IsTrue(File.Exists(ProfileMd("shared")));
-        Assert.IsTrue(File.Exists(ProfileMcp("shared")));
+        Assert.True(File.Exists(ProfileSettings("shared")));
+        Assert.True(File.Exists(ProfileMd("shared")));
+        Assert.True(File.Exists(ProfileMcp("shared")));
 
         // Spot-check content.
         JsonObject settings = JsonNode.Parse(await File.ReadAllTextAsync(ProfileSettings("shared")))!.AsObject();
-        Assert.AreEqual("claude-sonnet-4-5", settings["model"]!.GetValue<string>());
+        Assert.Equal("claude-sonnet-4-5", settings["model"]!.GetValue<string>());
 
         string claudeMd = await File.ReadAllTextAsync(ProfileMd("shared"));
-        StringAssert.Contains(claudeMd, "Shared guidelines");
+        Assert.Contains("Shared guidelines", claudeMd);
 
         JsonObject mcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("shared")))!.AsObject();
-        Assert.IsTrue(mcp.ContainsKey("context7"));
+        Assert.True(mcp.ContainsKey("context7"));
     }
 }

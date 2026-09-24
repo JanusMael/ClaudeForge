@@ -22,7 +22,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Updates;
 ///         <c>tag_name</c>, missing <c>html_url</c>.</item>
 /// </list>
 /// </summary>
-[TestClass]
 public sealed class GithubReleaseCheckerTests
 {
     /// <summary>
@@ -78,7 +77,7 @@ public sealed class GithubReleaseCheckerTests
 
     // ── Version-comparison contracts ────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_NewerReleaseAvailable_ReturnsUpdateAvailable()
     {
         // Current 1.0.0; remote latest v2.0.0 → banner should fire.
@@ -87,15 +86,15 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsTrue(result.IsUpdateAvailable,
+        Assert.True(result.IsUpdateAvailable,
             "Newer remote version must trigger the banner.");
-        Assert.AreEqual("v2.0.0", result.LatestTagName,
+        MessageAssert.Equal("v2.0.0", result.LatestTagName,
             "Result must carry the raw tag (load-bearing — drives the dismissed-versions persistence).");
-        Assert.AreEqual(new Version(2, 0, 0), result.LatestVersion);
-        Assert.AreEqual("https://github.com/foo/bar/releases/tag/v2.0.0", result.ReleaseUrl);
+        Assert.Equal(new Version(2, 0, 0), result.LatestVersion);
+        Assert.Equal("https://github.com/foo/bar/releases/tag/v2.0.0", result.ReleaseUrl);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_SameVersion_ReturnsNoUpdate()
     {
         // Running the exact version GitHub says is latest → no banner.
@@ -104,11 +103,11 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable,
+        Assert.False(result.IsUpdateAvailable,
             "Same-version-as-current must NOT trigger the banner.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_OlderRemoteVersion_ReturnsNoUpdate()
     {
         // Local dev build that's somehow ahead of the public release — no banner.
@@ -117,11 +116,11 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(2, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable,
+        Assert.False(result.IsUpdateAvailable,
             "Local version > remote latest must NOT trigger the banner.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_NewerBuildNumberOnly_ReturnsUpdateAvailable()
     {
         // Catches a strict ">" comparison: 1.0.0.5 vs 1.0.0.4 must trigger.
@@ -133,50 +132,50 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(2026, 5, 523, 0));
 
-        Assert.IsTrue(result.IsUpdateAvailable,
+        Assert.True(result.IsUpdateAvailable,
             "Build-number-only bumps (last component) must trigger the banner.");
     }
 
     // ── Tag-parsing edge cases ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_LowercaseVPrefix_Parses()
     {
         bool ok = GithubReleaseChecker.TryParseTag("v1.2.3", out Version? v);
-        Assert.IsTrue(ok);
-        Assert.AreEqual(new Version(1, 2, 3), v);
+        Assert.True(ok);
+        Assert.Equal(new Version(1, 2, 3), v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_UppercaseVPrefix_Parses()
     {
         // Some repos use "V" — accept both.  Cheap to handle; expensive
         // to omit (would silently fail to trigger the banner for one tag).
         bool ok = GithubReleaseChecker.TryParseTag("V1.2.3", out Version? v);
-        Assert.IsTrue(ok);
-        Assert.AreEqual(new Version(1, 2, 3), v);
+        Assert.True(ok);
+        Assert.Equal(new Version(1, 2, 3), v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_NoVPrefix_Parses()
     {
         // Tag without leading v should still parse — defensive.
         bool ok = GithubReleaseChecker.TryParseTag("1.2.3.4", out Version? v);
-        Assert.IsTrue(ok);
-        Assert.AreEqual(new Version(1, 2, 3, 4), v);
+        Assert.True(ok);
+        Assert.Equal(new Version(1, 2, 3, 4), v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_FourPartVersion_Parses()
     {
         // The auto-versioning source generator emits 4-part tags; this is
         // the production shape.
         bool ok = GithubReleaseChecker.TryParseTag("v2026.2.524.0", out Version? v);
-        Assert.IsTrue(ok);
-        Assert.AreEqual(new Version(2026, 2, 524, 0), v);
+        Assert.True(ok);
+        Assert.Equal(new Version(2026, 2, 524, 0), v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_AlphaSuffix_ReturnsFalse()
     {
         // "v1.2.3-alpha" — pre-release-style tag.  System.Version doesn't
@@ -185,37 +184,37 @@ public sealed class GithubReleaseCheckerTests
         // pre-releases" contract (defense-in-depth on top of the API's
         // own /releases/latest behaviour).
         bool ok = GithubReleaseChecker.TryParseTag("v1.2.3-alpha", out Version? v);
-        Assert.IsFalse(ok);
-        Assert.IsNull(v);
+        Assert.False(ok);
+        Assert.Null(v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_NotAVersionAtAll_ReturnsFalse()
     {
         bool ok = GithubReleaseChecker.TryParseTag("nightly-build", out Version? v);
-        Assert.IsFalse(ok);
-        Assert.IsNull(v);
+        Assert.False(ok);
+        Assert.Null(v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_Empty_ReturnsFalse()
     {
         bool ok = GithubReleaseChecker.TryParseTag(string.Empty, out Version? v);
-        Assert.IsFalse(ok);
-        Assert.IsNull(v);
+        Assert.False(ok);
+        Assert.Null(v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryParseTag_Whitespace_ReturnsFalse()
     {
         bool ok = GithubReleaseChecker.TryParseTag("  ", out Version? v);
-        Assert.IsFalse(ok);
-        Assert.IsNull(v);
+        Assert.False(ok);
+        Assert.Null(v);
     }
 
     // ── Network-error behaviour ────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_HttpRequestException_ReturnsNoUpdate()
     {
         // DNS failure, TLS error, connection-reset — any HttpRequestException
@@ -225,11 +224,11 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
-        Assert.IsNull(result.LatestTagName);
+        Assert.False(result.IsUpdateAvailable);
+        Assert.Null(result.LatestTagName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_Timeout_ReturnsNoUpdate()
     {
         // TaskCanceledException covers BOTH the HttpClient timeout path
@@ -240,10 +239,10 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_403RateLimit_ReturnsNoUpdate()
     {
         // GitHub's rate-limit response is 403 with a JSON body explaining
@@ -255,10 +254,10 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_404RepoNotFound_ReturnsNoUpdate()
     {
         // Hypothetical: the canonical repo got renamed/deleted/private.
@@ -267,10 +266,10 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_MalformedJson_ReturnsNoUpdate()
     {
         // Truncated response body — JsonDocument.Parse throws JsonException.
@@ -279,12 +278,12 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
     // ── Response-shape edge cases ───────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_MissingTagNameField_ReturnsNoUpdate()
     {
         // Response with no tag_name at all — odd, but graceful.
@@ -292,10 +291,10 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_EmptyTagName_ReturnsNoUpdate()
     {
         GithubReleaseChecker checker = MakeCheckerOne(
@@ -303,10 +302,10 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_MissingHtmlUrl_StillReportsUpdate()
     {
         // No html_url is unusual but shouldn't block surfacing the update.
@@ -316,12 +315,12 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsTrue(result.IsUpdateAvailable);
-        Assert.AreEqual("v2.0.0", result.LatestTagName);
-        Assert.IsNull(result.ReleaseUrl);
+        Assert.True(result.IsUpdateAvailable);
+        Assert.Equal("v2.0.0", result.LatestTagName);
+        Assert.Null(result.ReleaseUrl);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckAsync_UnparseableTagName_ReturnsNoUpdate()
     {
         // Tag like "alpha-1" doesn't fit System.Version — collapses to
@@ -331,30 +330,30 @@ public sealed class GithubReleaseCheckerTests
 
         UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
 
-        Assert.IsFalse(result.IsUpdateAvailable);
+        Assert.False(result.IsUpdateAvailable);
     }
 
     // ── UpdateCheckResult contract ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void NoUpdate_HasAllFieldsNullOrFalse()
     {
         // Locks the "no update" canonical shape — every field zeroed.
         UpdateCheckResult result = UpdateCheckResult.NoUpdate();
-        Assert.IsFalse(result.IsUpdateAvailable);
-        Assert.IsNull(result.LatestTagName);
-        Assert.IsNull(result.LatestVersion);
-        Assert.IsNull(result.ReleaseUrl);
+        Assert.False(result.IsUpdateAvailable);
+        Assert.Null(result.LatestTagName);
+        Assert.Null(result.LatestVersion);
+        Assert.Null(result.ReleaseUrl);
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdateAvailable_CarriesAllFields()
     {
         Version v = new(2, 0, 0);
         UpdateCheckResult result = UpdateCheckResult.UpdateAvailable("v2.0.0", v, "https://x");
-        Assert.IsTrue(result.IsUpdateAvailable);
-        Assert.AreEqual("v2.0.0", result.LatestTagName);
-        Assert.AreEqual(v, result.LatestVersion);
-        Assert.AreEqual("https://x", result.ReleaseUrl);
+        Assert.True(result.IsUpdateAvailable);
+        Assert.Equal("v2.0.0", result.LatestTagName);
+        Assert.Equal(v, result.LatestVersion);
+        Assert.Equal("https://x", result.ReleaseUrl);
     }
 }

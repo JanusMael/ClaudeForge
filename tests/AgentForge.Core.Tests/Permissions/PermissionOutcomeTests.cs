@@ -14,7 +14,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Permissions;
 /// it is cheap to pin.
 /// </para>
 /// </summary>
-[TestClass]
 public class PermissionOutcomeTests
 {
     /// <summary>
@@ -22,7 +21,7 @@ public class PermissionOutcomeTests
     /// zero-initialised field, a struct default, a deserialised object with the property
     /// absent — must not read as an affirmative grant.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Default_IsDefault_NotAllow_SoAnUnsetOutcomeNeverReadsAsPermission()
     {
         // Read through an uninitialised field rather than `default(PermissionOutcome)`.
@@ -31,14 +30,14 @@ public class PermissionOutcomeTests
         // this, as `[ObservableProperty] private PermissionOutcome _outcome;`.
         UnresolvedVerdict verdict = new();
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             PermissionOutcome.Default,
             verdict.Outcome,
             "An uninitialised PermissionOutcome must mean 'nothing decided this', not "
             + "'allowed'. The members were ordered Allow-first when this type was "
             + "Claude-only, which made the zero value an affirmative grant.");
 
-        Assert.AreNotEqual(PermissionOutcome.Allow, verdict.Outcome);
+        Assert.NotEqual(PermissionOutcome.Allow, verdict.Outcome);
     }
 
     /// <summary>
@@ -57,10 +56,10 @@ public class PermissionOutcomeTests
     /// plus the fall-through. A product adding a fifth outcome is a real decision that
     /// should break this test and be made deliberately, not arrive as a merge artefact.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheVocabularyIsTheThreeSharedAnswersPlusFallThrough()
     {
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[]
             {
                 PermissionOutcome.Default,

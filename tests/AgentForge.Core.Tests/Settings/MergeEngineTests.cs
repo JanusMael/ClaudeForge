@@ -3,14 +3,13 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
 
-[TestClass]
 public class MergeEngineTests
 {
     // -----------------------------------------------------------------------
     // Non-array: highest-priority scope wins
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void NonArray_ManagedWinsOverUser()
     {
         ScopeEntry[] entries =
@@ -21,11 +20,11 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
-        Assert.AreEqual("managed-value", result.EffectiveValue?.GetValue<string>());
-        Assert.AreEqual(ConfigScope.Managed, result.EffectiveScope);
+        Assert.Equal("managed-value", result.EffectiveValue?.GetValue<string>());
+        Assert.Equal(ConfigScope.Managed, result.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void NonArray_UserWinsOverProject()
     {
         ScopeEntry[] entries =
@@ -36,11 +35,11 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
-        Assert.AreEqual("user", result.EffectiveValue?.GetValue<string>());
-        Assert.AreEqual(ConfigScope.User, result.EffectiveScope);
+        Assert.Equal("user", result.EffectiveValue?.GetValue<string>());
+        Assert.Equal(ConfigScope.User, result.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void NonArray_SingleScopeReturned()
     {
         ScopeEntry[] entries =
@@ -50,24 +49,24 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
-        Assert.AreEqual(42, result.EffectiveValue?.GetValue<int>());
-        Assert.AreEqual(ConfigScope.Local, result.EffectiveScope);
+        Assert.Equal(42, result.EffectiveValue?.GetValue<int>());
+        Assert.Equal(ConfigScope.Local, result.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void NoEntries_ReturnsNull()
     {
         MergeResult result = MergeEngine.Merge([], "key", TestMergePolicy.NeverUnions);
 
-        Assert.IsNull(result.EffectiveValue);
-        Assert.IsNull(result.EffectiveScope);
+        Assert.Null(result.EffectiveValue);
+        Assert.Null(result.EffectiveScope);
     }
 
     // -----------------------------------------------------------------------
     // Inferring policy: only a uniform all-array set unions
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Inferred_MixedScalarAndArray_HighestPriorityScopeWins()
     {
         // Regression: a key whose value is a bool at a higher-priority scope and an
@@ -82,12 +81,12 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
-        Assert.IsTrue(result.EffectiveValue is JsonValue jv && jv.GetValue<bool>(),
+        Assert.True(result.EffectiveValue is JsonValue jv && jv.GetValue<bool>(),
             "The higher-priority Project bool must win over the lower-priority User array.");
-        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope);
+        Assert.Equal(ConfigScope.Project, result.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void Inferred_AllArrays_StillUnions()
     {
         // Guard: the fix only changes the MIXED case — a homogeneous all-array set,
@@ -101,15 +100,15 @@ public class MergeEngineTests
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonArray? arr = result.EffectiveValue as JsonArray;
-        Assert.IsNotNull(arr);
-        Assert.AreEqual(2, arr!.Count, "Two distinct array entries must union.");
+        Assert.NotNull(arr);
+        MessageAssert.Equal(2, arr!.Count, "Two distinct array entries must union.");
     }
 
     // -----------------------------------------------------------------------
     // Array: union across all scopes
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Array_UnionAcrossScopes()
     {
         ScopeEntry[] entries =
@@ -123,10 +122,10 @@ public class MergeEngineTests
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         List<string> items = arr.Select(x => x!.GetValue<string>()).OrderBy(s => s).ToList();
-        CollectionAssert.AreEqual(new[] { "a", "b", "c", "d" }, items);
+        Assert.Equal(new[] { "a", "b", "c", "d" }, items);
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_DeduplicatesItems()
     {
         ScopeEntry[] entries =
@@ -137,10 +136,10 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
         JsonArray arr = (JsonArray)result.EffectiveValue!;
-        Assert.AreEqual(3, arr.Count); // x, y, z — x not duplicated
+        Assert.Equal(3, arr.Count); // x, y, z — x not duplicated
     }
 
-    [TestMethod]
+    [Fact]
     public void Array_DeduplicatesObjects_RegardlessOfPropertyOrder()
     {
         // Regression: pre-fix the dedup keyed on JsonNode.ToJsonString(), which is
@@ -158,14 +157,14 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.AlwaysUnions);
         JsonArray arr = (JsonArray)result.EffectiveValue!;
-        Assert.AreEqual(1, arr.Count);
+        Assert.Single(arr);
     }
 
     // -----------------------------------------------------------------------
     // Object: deep merge
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Object_DeepMerge()
     {
         JsonObject user = new() { ["a"] = "user-a", ["b"] = "user-b" };
@@ -180,16 +179,16 @@ public class MergeEngineTests
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.Inferring);
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
-        Assert.AreEqual("user-a", obj["a"]!.GetValue<string>()); // only user defines a
-        Assert.AreEqual("user-b", obj["b"]!.GetValue<string>()); // user wins over project
-        Assert.AreEqual("project-c", obj["c"]!.GetValue<string>()); // only project defines c
+        Assert.Equal("user-a", obj["a"]!.GetValue<string>()); // only user defines a
+        Assert.Equal("user-b", obj["b"]!.GetValue<string>()); // user wins over project
+        Assert.Equal("project-c", obj["c"]!.GetValue<string>()); // only project defines c
     }
 
     // -----------------------------------------------------------------------
     // ComputeEffective
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ComputeEffective_MergesAllDocuments()
     {
         SettingsDocument[] docs =
@@ -200,9 +199,9 @@ public class MergeEngineTests
 
         JsonObject effective = MergeEngine.ComputeEffective(docs, TestMergePolicy.Inferring);
 
-        Assert.AreEqual("sonnet", effective["model"]!.GetValue<string>());
-        Assert.AreEqual(30, effective["cleanupPeriodDays"]!.GetValue<int>()); // user wins
-        Assert.AreEqual("en", effective["language"]!.GetValue<string>());
+        Assert.Equal("sonnet", effective["model"]!.GetValue<string>());
+        Assert.Equal(30, effective["cleanupPeriodDays"]!.GetValue<int>()); // user wins
+        Assert.Equal("en", effective["language"]!.GetValue<string>());
     }
 
     private static SettingsDocument MakeDoc(ConfigScope scope, string json)
@@ -215,7 +214,7 @@ public class MergeEngineTests
     // All-null entries
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Merge_AllNullEntries_ReturnsNullWithNoScope()
     {
         ScopeEntry[] entries =
@@ -227,15 +226,15 @@ public class MergeEngineTests
 
         MergeResult result = MergeEngine.Merge(entries, "key", TestMergePolicy.NeverUnions);
 
-        Assert.IsNull(result.EffectiveValue);
-        Assert.IsNull(result.EffectiveScope);
+        Assert.Null(result.EffectiveValue);
+        Assert.Null(result.EffectiveScope);
     }
 
     // -----------------------------------------------------------------------
     // Array: higher-scope empty array still unions lower-scope entries
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Merge_ArrayWithHigherScopeEmpty_StillUnionsLowerScope()
     {
         ScopeEntry[] entries =
@@ -248,9 +247,9 @@ public class MergeEngineTests
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
         List<string> items = arr.Select(x => x!.GetValue<string>()).OrderBy(s => s).ToList();
-        CollectionAssert.Contains(items, "a");
-        CollectionAssert.Contains(items, "b");
-        Assert.AreEqual(ConfigScope.User, result.EffectiveScope,
+        Assert.Contains("a", items);
+        Assert.Contains("b", items);
+        MessageAssert.Equal(ConfigScope.User, result.EffectiveScope,
             "Effective scope is the first scope with a non-empty array contribution.");
     }
 
@@ -258,7 +257,7 @@ public class MergeEngineTests
     // ComputeEffective: nested array path union
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ComputeEffective_WithNestedArrayPath_ArraysUnioned()
     {
         SettingsDocument[] docs =
@@ -271,16 +270,16 @@ public class MergeEngineTests
 
         JsonArray allow = (JsonArray)effective["permissions"]!["allow"]!;
         HashSet<string> items = allow.Select(x => x!.GetValue<string>()).ToHashSet();
-        Assert.IsTrue(items.Contains("Bash(*)"), "Bash(*) must be present");
-        Assert.IsTrue(items.Contains("Read(*)"), "Read(*) must be present");
-        Assert.IsTrue(items.Contains("Edit(*)"), "Edit(*) must be present");
+        Assert.True(items.Contains("Bash(*)"), "Bash(*) must be present");
+        Assert.True(items.Contains("Read(*)"), "Read(*) must be present");
+        Assert.True(items.Contains("Edit(*)"), "Edit(*) must be present");
     }
 
     // -----------------------------------------------------------------------
     // ComputeEffective: non-array nested path — highest scope wins
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ComputeEffective_WithNestedPath_NotInArrayPaths_HighestWins()
     {
         SettingsDocument[] docs =
@@ -298,18 +297,18 @@ public class MergeEngineTests
         // Inferred as array because both sides are JsonArray values; User's items win dedup
         // but Project's unique "Edit(*)" is still included in the union. What we can assert
         // is that the User values are present and the result does NOT contain duplicates.
-        Assert.IsTrue(items.Contains("Bash(*)"), "Bash(*) from User is present");
-        Assert.IsTrue(items.Contains("Read(*)"), "Read(*) from User is present");
+        Assert.True(items.Contains("Bash(*)"), "Bash(*) from User is present");
+        Assert.True(items.Contains("Read(*)"), "Read(*) from User is present");
         // "Edit(*)" may or may not be present depending on inferred-array logic; the key
         // invariant is User values are not lost.
-        Assert.AreEqual(items.Count, items.Distinct().Count(), "No duplicates in result");
+        MessageAssert.Equal(items.Count, items.Distinct().Count(), "No duplicates in result");
     }
 
     // -----------------------------------------------------------------------
     // MergeObjects: null child value is omitted from result
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void MergeObjects_NullChildValue_KeyOmittedFromResult()
     {
         // ScopeEntry with a null Value reference (not a JSON null node, but a missing key)
@@ -332,12 +331,12 @@ public class MergeEngineTests
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
         // Only Project defined "model"; result must contain it.
-        Assert.IsTrue(obj.ContainsKey("model"),
+        Assert.True(obj.ContainsKey("model"),
             "model key must be present when only Project defines it");
-        Assert.AreEqual("sonnet", obj["model"]!.GetValue<string>());
+        Assert.Equal("sonnet", obj["model"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void MergeObjects_ExplicitNullJsonValue_LowerScopeWins()
     {
         // JsonValue.Create<string?>(null) returns null (a null reference, not a JSON null node)
@@ -356,9 +355,9 @@ public class MergeEngineTests
 
         JsonObject obj = (JsonObject)result.EffectiveValue!;
         // User's null reference is treated as absent; Project's value is the only defined one.
-        Assert.IsTrue(obj.ContainsKey("model"),
+        Assert.True(obj.ContainsKey("model"),
             "model key is present because Project's value is the only defined one");
-        Assert.AreEqual("sonnet", obj["model"]!.GetValue<string>(),
+        MessageAssert.Equal("sonnet", obj["model"]!.GetValue<string>(),
             "Project's value wins when User's null JsonValue is treated as absent");
     }
 
@@ -366,7 +365,7 @@ public class MergeEngineTests
     // Inferred array: both entries are JsonArrays → result is a union
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Merge_InferredArray_WhenAllDefinedValuesAreArrays()
     {
         // An inferring policy derives array semantics from the actual values.
@@ -383,7 +382,7 @@ public class MergeEngineTests
         // If treated as array (inferred), the result is a union: alpha, beta, gamma
         // If treated as scalar (first-wins), the result is only: alpha, beta
         // The engine must produce the union.
-        CollectionAssert.AreEqual(new[] { "alpha", "beta", "gamma" }, items,
+        MessageAssert.SequenceEqual(new[] { "alpha", "beta", "gamma" }, items,
             "Result must be a union when array-ness is inferred from actual JsonArray values.");
     }
 
@@ -393,7 +392,7 @@ public class MergeEngineTests
     // would sit unexercised until a second product arrived to discover them.
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Union_HighestPriorityFirst_PutsTheWinningScopesEntriesFirst()
     {
         // The baseline the next test contrasts with — asserted on ORDER, not membership,
@@ -407,13 +406,13 @@ public class MergeEngineTests
         MergeResult result = MergeEngine.Merge(entries, "instructions", TestMergePolicy.Inferring);
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "proj", "user" },
             arr.Select(x => x!.GetValue<string>()).ToArray(),
             "Claude's order: the highest-priority scope's entries lead.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Union_LowestPriorityFirst_ReversesTheConcatenationOrder()
     {
         // OpenCode's measured order (Spike S1): a global `instructions` entry precedes the
@@ -429,17 +428,17 @@ public class MergeEngineTests
         MergeResult result = MergeEngine.Merge(entries, "instructions", TestMergePolicy.InferringLowestFirst);
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "user", "proj" },
             arr.Select(x => x!.GetValue<string>()).ToArray(),
             "Lowest-priority contributions lead when the policy says so.");
 
-        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope,
+        MessageAssert.Equal(ConfigScope.Project, result.EffectiveScope,
             "Union order describes where the result starts, NOT which scope is credited: "
             + "the effective scope stays the highest-priority contributor either way.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DeclaringOnlyPolicy_UndeclaredAllArrayPath_IsReplacedNotUnioned()
     {
         // The shape OpenCode needs and Claude must not have: `disabled_providers` is an
@@ -456,14 +455,14 @@ public class MergeEngineTests
             entries, "disabled_providers", TestMergePolicy.DeclaringOnly("instructions"));
 
         JsonArray arr = (JsonArray)result.EffectiveValue!;
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "openai" },
             arr.Select(x => x!.GetValue<string>()).ToArray(),
             "An undeclared path must be replaced when the policy does not infer.");
-        Assert.AreEqual(ConfigScope.Project, result.EffectiveScope);
+        Assert.Equal(ConfigScope.Project, result.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void Policy_RulesOnTheDottedChildPath_NotJustTheTopLevelKey()
     {
         // The prefix threading is load-bearing: "permissions.allow" has to be recognisable
@@ -480,20 +479,20 @@ public class MergeEngineTests
             docs, TestMergePolicy.DeclaringOnly("permissions.allow"));
 
         JsonArray allow = (JsonArray)effective["permissions"]!["allow"]!;
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "Bash(*)", "Read(*)" },
             allow.Select(x => x!.GetValue<string>()).ToArray(),
             "permissions.allow is declared, so it unions.");
 
         JsonArray deny = (JsonArray)effective["permissions"]!["deny"]!;
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "Edit(*)" },
             deny.Select(x => x!.GetValue<string>()).ToArray(),
             "permissions.deny is NOT declared and inference is off, so User replaces Project. "
             + "Proves the policy is consulted per dotted child path rather than per top-level key.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Merge_NullPolicy_Throws()
     {
         ScopeEntry[] entries =
@@ -501,7 +500,7 @@ public class MergeEngineTests
             new ScopeEntry(ConfigScope.User, JsonValue.Create("x"), "user.json"),
         ];
 
-        Assert.ThrowsExactly<ArgumentNullException>(() => MergeEngine.Merge(entries, "key", null!));
-        Assert.ThrowsExactly<ArgumentNullException>(() => MergeEngine.ComputeEffective([], null!));
+        Assert.Throws<ArgumentNullException>(() => MergeEngine.Merge(entries, "key", null!));
+        Assert.Throws<ArgumentNullException>(() => MergeEngine.ComputeEffective([], null!));
     }
 }

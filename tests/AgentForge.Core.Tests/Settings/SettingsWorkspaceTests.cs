@@ -4,10 +4,9 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
 
-[TestClass]
 public class SettingsWorkspaceTests
 {
-    [TestMethod]
+    [Fact]
     public void GetLayeredValue_ReturnsAllEntries()
     {
         SettingsWorkspace workspace = MakeWorkspace(
@@ -16,11 +15,11 @@ public class SettingsWorkspaceTests
 
         LayeredValue layered = workspace.GetLayeredValue("model");
 
-        Assert.AreEqual(2, layered.Entries.Count);
-        Assert.IsTrue(layered.IsOverridden);
+        Assert.Equal(2, layered.Entries.Count);
+        Assert.True(layered.IsOverridden);
     }
 
-    [TestMethod]
+    [Fact]
     public void GetLayeredValue_EffectiveValue_ProjectWinsOverUser()
     {
         // ConfigScope priority (lower numeric value = higher priority):
@@ -33,11 +32,11 @@ public class SettingsWorkspaceTests
 
         LayeredValue layered = workspace.GetLayeredValue("model");
 
-        Assert.AreEqual("haiku", layered.EffectiveValue!.GetValue<string>());
-        Assert.AreEqual(ConfigScope.Project, layered.EffectiveScope);
+        Assert.Equal("haiku", layered.EffectiveValue!.GetValue<string>());
+        Assert.Equal(ConfigScope.Project, layered.EffectiveScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_MarksDocumentDirty()
     {
         SettingsWorkspace workspace = MakeWorkspace(
@@ -45,10 +44,10 @@ public class SettingsWorkspaceTests
 
         workspace.SetValue("model", JsonValue.Create("opus"), ConfigScope.User);
 
-        Assert.IsTrue(workspace.Documents.Single(d => d.Scope == ConfigScope.User).IsDirty);
+        Assert.True(workspace.Documents.Single(d => d.Scope == ConfigScope.User).IsDirty);
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveValue_RemovesKeyFromScope()
     {
         SettingsWorkspace workspace = MakeWorkspace(
@@ -57,10 +56,10 @@ public class SettingsWorkspaceTests
         workspace.RemoveValue("model", ConfigScope.User);
 
         LayeredValue layered = workspace.GetLayeredValue("model");
-        Assert.AreEqual(0, layered.Entries.Count);
+        Assert.Empty(layered.Entries);
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveValue_AbsentKey_IsNoOp_DoesNotFireChanged()
     {
         SettingsWorkspace workspace = MakeWorkspace(
@@ -71,11 +70,11 @@ public class SettingsWorkspaceTests
 
         workspace.RemoveValue("model", ConfigScope.User); // key absent → should be a no-op
 
-        Assert.AreEqual(0, eventCount, "Changed must not fire when key was not present");
-        Assert.IsFalse(workspace.Documents[0].IsDirty, "document must not be marked dirty");
+        MessageAssert.Equal(0, eventCount, "Changed must not fire when key was not present");
+        Assert.False(workspace.Documents[0].IsDirty, "document must not be marked dirty");
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveValue_AbsentKey_DoesNotAffectHasActualChanges()
     {
         // Simulates: user opens page, clicks Reset on a field that was never set at this scope.
@@ -85,20 +84,20 @@ public class SettingsWorkspaceTests
 
         workspace.RemoveValue("model", ConfigScope.User);
 
-        Assert.IsFalse(workspace.Documents[0].HasActualChanges());
+        Assert.False(workspace.Documents[0].HasActualChanges());
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_ReadOnlyScope_Throws()
     {
         SettingsDocument doc = new(ConfigScope.Managed, "/managed.json", new JsonObject(), isReadOnly: true);
         SettingsWorkspace workspace = new([doc], TestMergePolicy.Inferring);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
+        Assert.Throws<InvalidOperationException>(() =>
             workspace.SetValue("model", JsonValue.Create("x"), ConfigScope.Managed));
     }
 
-    [TestMethod]
+    [Fact]
     public void ComputeEffective_ProducesFullMerge()
     {
         // ConfigScope priority (lower numeric value = higher priority):
@@ -114,9 +113,9 @@ public class SettingsWorkspaceTests
 
         JsonObject effective = workspace.ComputeEffective();
 
-        Assert.AreEqual("sonnet", effective["model"]!.GetValue<string>());
-        Assert.AreEqual("fr", effective["language"]!.GetValue<string>()); // project wins
-        Assert.AreEqual(60, effective["cleanupPeriodDays"]!.GetValue<int>());
+        Assert.Equal("sonnet", effective["model"]!.GetValue<string>());
+        Assert.Equal("fr", effective["language"]!.GetValue<string>()); // project wins
+        Assert.Equal(60, effective["cleanupPeriodDays"]!.GetValue<int>());
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -129,7 +128,7 @@ public class SettingsWorkspaceTests
     //  hardcoded rule ever returns, one of them goes red.
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void GetLayeredValue_UnionsWhenThePolicyDeclaresThePath()
     {
         SettingsWorkspace workspace = MakeWorkspace(
@@ -140,13 +139,13 @@ public class SettingsWorkspaceTests
         LayeredValue value = workspace.GetLayeredValue("tools");
 
         JsonArray tools = (JsonArray)value.EffectiveValue!;
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "b", "a" },
             tools.Select(t => t!.GetValue<string>()).ToArray(),
             "A declared path unions both scopes' contributions.");
     }
 
-    [TestMethod]
+    [Fact]
     public void GetLayeredValue_ReplacesWhenThePolicyDoesNotUnion()
     {
         // Same documents, same key, a policy that never unions: the highest-priority scope
@@ -159,7 +158,7 @@ public class SettingsWorkspaceTests
         LayeredValue value = workspace.GetLayeredValue("tools");
 
         JsonArray tools = (JsonArray)value.EffectiveValue!;
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "b" },
             tools.Select(t => t!.GetValue<string>()).ToArray(),
             "Without a union rule, Project replaces User outright — this is OpenCode's "
@@ -167,14 +166,14 @@ public class SettingsWorkspaceTests
             + "able to express it.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Constructor_NullPolicy_Throws()
     {
         // A defaulted policy is what would let a new product silently inherit Claude's
         // rules, so omitting one is a programmer error rather than a shrug.
         SettingsDocument doc = new(ConfigScope.User, "/user.json", new JsonObject(), isReadOnly: false);
 
-        Assert.ThrowsExactly<ArgumentNullException>(() => new SettingsWorkspace([doc], null!));
+        Assert.Throws<ArgumentNullException>(() => new SettingsWorkspace([doc], null!));
     }
 
     private static SettingsWorkspace MakeWorkspace(params (ConfigScope Scope, string Json)[] entries)

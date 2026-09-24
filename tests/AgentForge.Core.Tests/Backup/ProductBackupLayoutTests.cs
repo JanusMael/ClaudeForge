@@ -13,10 +13,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// wrong sub-path restores nothing while reporting success — neither throws, so both need a test
 /// rather than a reading.
 /// </remarks>
-[TestClass]
 public sealed class ProductBackupLayoutTests
 {
-    [TestMethod]
+    [Fact]
     public void ClaudeCode_SkipRules_AreTheSevenTheEngineUsedToHardcode()
     {
         // ⚠ These were eight `if`s in BackupEngine.ShouldSkipHomeSubdir. If one goes missing the
@@ -25,12 +24,12 @@ public sealed class ProductBackupLayoutTests
         string[] expected =
             ["backups", "projects", "cache", "downloads", "statsig", "shell-snapshots", "local"];
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             expected,
             SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Select(r => r.Name).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void ClaudeCode_OnlyProjects_SurvivesIntoAFullBackup()
     {
         // The mirror of FootprintCatalogTests.OnlySessionTranscripts_IsExcludedFromTheStandardBackup.
@@ -41,50 +40,50 @@ public sealed class ProductBackupLayoutTests
             .. SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Where(r => r.IncludedInFullBackup)
         ];
 
-        Assert.AreEqual(1, fullOnly.Length);
-        Assert.AreEqual("projects", fullOnly[0].Name);
+        Assert.Single(fullOnly);
+        Assert.Equal("projects", fullOnly[0].Name);
     }
 
-    [TestMethod]
+    [Fact]
     public void EverySkipRule_ExplainsItself()
     {
         // The reason is what a maintainer reads when a user asks why something is missing from
         // their archive. A blank one makes the rule unexplainable without git archaeology.
         foreach (ProductSkippedSubdir rule in SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs)
         {
-            Assert.IsFalse(string.IsNullOrWhiteSpace(rule.Reason), $"Rule '{rule.Name}' has no reason.");
+            Assert.False(string.IsNullOrWhiteSpace(rule.Reason), $"Rule '{rule.Name}' has no reason.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void TheArchiveSections_MatchTheFoldersTheWriterProduces()
     {
         // Claude Code contributes claude.json + the claude-dir subtree; Desktop contributes its
         // config, its profiles directory and the active-profile pointer. These sub-paths are what
         // a restore looks for inside the archive, and the frozen fixture in
         // BackupArchiveCompatibilityTests proves they are what a shipped build actually wrote.
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "claude.json", "claude-dir" },
             SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "claude_desktop_config.json", "profiles", ".desktop-current" },
             SchemaRegistry.ClaudeDesktopProduct.Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void TheOnlyDirectorySections_AreTheOnesThatAreActuallyDirectories()
     {
         // ⛔ IsDirectory is the field whose failure is silent: a single file restored as a
         // directory finds nothing, restores nothing, and still reports success.
-        Assert.IsTrue(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").IsDirectory);
-        Assert.IsTrue(Section(SchemaRegistry.ClaudeDesktopProduct, "profiles").IsDirectory);
+        Assert.True(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").IsDirectory);
+        Assert.True(Section(SchemaRegistry.ClaudeDesktopProduct, "profiles").IsDirectory);
 
-        Assert.IsFalse(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude.json").IsDirectory);
-        Assert.IsFalse(Section(SchemaRegistry.ClaudeDesktopProduct, ".desktop-current").IsDirectory);
+        Assert.False(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude.json").IsDirectory);
+        Assert.False(Section(SchemaRegistry.ClaudeDesktopProduct, ".desktop-current").IsDirectory);
     }
 
-    [TestMethod]
+    [Fact]
     public void Destinations_ResolveAtCallTime_NotAtTypeInitialisation()
     {
         // ⛔ The reason Destination is Func<string> rather than string. The descriptors are
@@ -96,7 +95,7 @@ public sealed class ProductBackupLayoutTests
         try
         {
             string resolved = Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").Destination();
-            StringAssert.StartsWith(resolved, sandbox,
+            MessageAssert.StartsWith(sandbox, resolved,
                 "The destination must follow the profile override that is current when it is CALLED.");
         }
         finally
@@ -105,7 +104,7 @@ public sealed class ProductBackupLayoutTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void AProductWithNoLayout_ContributesNothingRatherThanThrowing()
     {
         // A product can be schema-editable long before it is backup-able, so the engines must
@@ -113,9 +112,9 @@ public sealed class ProductBackupLayoutTests
         // product they meet.
         ProductDescriptor bare = new("x", "X", "bundled://x", "x.json", "X");
 
-        Assert.IsNull(bare.BackupLayout);
-        Assert.AreEqual(0, bare.Backup.Sections.Count);
-        Assert.AreEqual(0, bare.Backup.SkippedSubdirs.Count);
+        Assert.Null(bare.BackupLayout);
+        Assert.Empty(bare.Backup.Sections);
+        Assert.Empty(bare.Backup.SkippedSubdirs);
     }
 
     private static ProductArchiveSection Section(ProductDescriptor product, string subPath) =>

@@ -101,6 +101,38 @@ internal static class MessageAssert
     public static void SequenceEqual<T>(IEnumerable<T>? expected, IEnumerable<T>? actual, string message) =>
         With(message, () => Assert.Equal(expected, actual));
 
+    /// <summary>MSTest's CollectionAssert.AreNotEqual with a message: differs in elements or order.</summary>
+    public static void SequenceNotEqual<T>(IEnumerable<T>? expected, IEnumerable<T>? actual, string message) =>
+        With(message, () => Assert.NotEqual(expected, actual));
+
+    /// <summary>MSTest's CollectionAssert.AllItemsAreUnique with a message.</summary>
+    public static void Distinct<T>(IEnumerable<T> collection, string message) =>
+        With(message, () => Assert.Distinct(collection));
+
+    /// <summary>MSTest's AreEqual(string, string, ignoreCase, message).</summary>
+    public static void Equal(string? expected, string? actual, bool ignoreCase, string message) =>
+        With(message, () => Assert.Equal(expected, actual, ignoreCase: ignoreCase));
+
+    /// <summary>MSTest's AreEqual(expected, actual, comparer, message).</summary>
+    public static void Equal<T>(T expected, T actual, IEqualityComparer<T> comparer, string message) =>
+        With(message, () => Assert.Equal(expected, actual, comparer));
+
+    /// <summary>MSTest's AreNotEqual(notExpected, actual, comparer, message).</summary>
+    public static void NotEqual<T>(T expected, T actual, IEqualityComparer<T> comparer, string message) =>
+        With(message, () => Assert.NotEqual(expected, actual, comparer));
+
+    public static void Contains(string expectedSubstring, string? actualString, StringComparison comparisonType, string message) =>
+        With(message, () => Assert.Contains(expectedSubstring, actualString, comparisonType));
+
+    public static void DoesNotContain(string expectedSubstring, string? actualString, StringComparison comparisonType, string message) =>
+        With(message, () => Assert.DoesNotContain(expectedSubstring, actualString, comparisonType));
+
+    public static void StartsWith(string? expectedStart, string? actualString, StringComparison comparisonType, string message) =>
+        With(message, () => Assert.StartsWith(expectedStart, actualString, comparisonType));
+
+    public static void EndsWith(string? expectedEnd, string? actualString, StringComparison comparisonType, string message) =>
+        With(message, () => Assert.EndsWith(expectedEnd, actualString, comparisonType));
+
     public static T Throws<T>(Action testCode, string message) where T : Exception
     {
         T result = default!;

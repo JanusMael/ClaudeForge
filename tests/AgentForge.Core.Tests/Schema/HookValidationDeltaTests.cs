@@ -34,7 +34,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// </list>
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class HookValidationDeltaTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -90,7 +89,7 @@ public sealed class HookValidationDeltaTests
 
     // ── Concern A: pre-existing VALID hooks don't leak through ─────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ValidHooksInBaseline_UnrelatedEdit_ReportsZeroErrors()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -105,13 +104,13 @@ public sealed class HookValidationDeltaTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"Pre-existing valid hooks + unrelated edit must report zero errors.\n{FormatErrors(errors)}");
     }
 
     // ── Concern B: pre-existing INVALID hooks are filtered as baseline ────
 
-    [TestMethod]
+    [Fact]
     public async Task InvalidHookInBaseline_UnrelatedEdit_DeltaFiltersErrors()
     {
         // This is the user's exact scenario. If the delta filter is correct,
@@ -134,7 +133,7 @@ public sealed class HookValidationDeltaTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             "User scenario: pre-existing invalid hook + unrelated edit. Delta filter " +
             "MUST strip the pre-existing errors. If errors leaked through, the delta " +
             "filter is the regression source.\n" +
@@ -143,7 +142,7 @@ public sealed class HookValidationDeltaTests
 
     // ── Concern C: new errors the user actually introduced are reported ──
 
-    [TestMethod]
+    [Fact]
     public async Task NewlyIntroducedInvalidHook_IsReported()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -161,13 +160,13 @@ public sealed class HookValidationDeltaTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "User-introduced invalid hooks MUST be reported (delta filter only strips baseline-equal errors).");
     }
 
     // ── Concern D: reproduce the user's exact 18-error report ────────────
 
-    [TestMethod]
+    [Fact]
     public async Task UserReportedScenario_PreExistingHooksWithEditOfUnrelatedField_NoSpuriousErrors()
     {
         // Exact reproduction of the user's pattern from manual testing 2026-04-29.
@@ -218,14 +217,14 @@ public sealed class HookValidationDeltaTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"User scenario reproduction must produce zero errors. If errors > 0, " +
             $"we've reproduced the user-reported bug and can debug it.\n{FormatErrors(errors)}");
     }
 
     // ── Concern E: validator is deterministic ─────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ValidateWorkspaceAsync_IsDeterministic()
     {
         // The delta filter relies on (InstancePath, Message) tuples being
@@ -246,12 +245,12 @@ public sealed class HookValidationDeltaTests
         IReadOnlyList<SchemaValidationError> errors1 = await registry.ValidateWorkspaceAsync(workspace1, isClaudeCode: true);
         IReadOnlyList<SchemaValidationError> errors2 = await registry.ValidateWorkspaceAsync(workspace2, isClaudeCode: true);
 
-        Assert.AreEqual(errors1.Count, errors2.Count,
+        MessageAssert.Equal(errors1.Count, errors2.Count,
             "Validator must produce the same error count for identical input.");
         // Compare error tuples set-wise (order may differ but contents must match).
         HashSet<(string InstancePath, string Message)> set1 = errors1.Select(e => (e.InstancePath, e.Message)).ToHashSet();
         HashSet<(string InstancePath, string Message)> set2 = errors2.Select(e => (e.InstancePath, e.Message)).ToHashSet();
-        Assert.IsTrue(set1.SetEquals(set2),
+        Assert.True(set1.SetEquals(set2),
             "Validator must produce the same (InstancePath, Message) set for identical input.");
     }
 }
