@@ -308,6 +308,20 @@ The UI also reported `v2026.3.922.0`.
     `.924` is a new version of the ids pinned at `.923`. Here: three `PackageReference`s and the
     comments naming the package changed; the local prerelease moved to **`-local.3`**, packed from
     those two commits, with both `.nupkg`s checked to carry the `.AvaloniaUI` DLL.
+15. ⛔ **Avalonia 12.1.3 is the family floor** (developer's decision, 2026-09-23, relayed by the
+    ScopedEditors session and checked here: AppServices `d1c5c9c` and ScopedEditors `64769ae` both
+    set it, and every id exists on nuget.org). At `.924` both Avalonia packages depend on
+    `Avalonia >= 12.1.3`, so this repo's direct `12.1.0` pins would fail restore with NU1605 (the
+    peer measured that; not re-measured here). Moved to 12.1.3: `Avalonia` ×3 projects,
+    `Avalonia.Desktop`, `Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`, and `Avalonia.Headless`
+    (from 12.1.2, kept at the framework's version). ⚠ **`Avalonia.Controls.DataGrid` stays 12.1.0**:
+    it has no 12.1.3, and ScopedEditors keeps it there too. The local prerelease moved to
+    **`-local.4`**, packed from those two commits; its nuspec carries `Avalonia 12.1.3` and
+    `DataGrid 12.1.0`. Build 0/0; suite green at the usual totals.
+    ⚠ **One unexplained run:** the first full-suite run after the bump reported `ClaudeForge.Tests`
+    at **1,606 tests, 0 skipped** — 154 short of 1,760, with the 3 skips missing too, and nothing
+    failed. Four runs since (one isolated, three full-suite) each report 1,760. It left no TRX, so
+    the cause is unknown. If a total ever reads short again, capture the TRX before rerunning.
 
 ### ⏭ QUEUED — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3
 

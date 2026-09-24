@@ -51,7 +51,7 @@
     </PropertyGroup>
 
     <!--
-      ══ THE VERSION OF THE ELEVEN SHARED PACKAGES THE RELEASE CONSUMES ══════════════════════
+      ══ THE VERSION OF THE SIX SHARED PACKAGES THE RELEASE CONSUMES ═════════════════════════
 
       plans/00003, Phase D. This is a COMMITTED PIN, deliberately, and it belongs in the ROOT
       props rather than src/'s: the test projects consume the packages too, and only the root
@@ -97,8 +97,8 @@
       variable, and a global property on the command line still outranks it.
     -->
     <PropertyGroup>
-        <AppServicesVersion>2026.3.924-local.3</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/localfeed. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
-        <ScopedEditorsVersion>2026.3.924-local.3</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
+        <AppServicesVersion>2026.3.924-local.4</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/prerelease-924. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
+        <ScopedEditorsVersion>2026.3.924-local.4</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
     </PropertyGroup>
 
     <!--
