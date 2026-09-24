@@ -252,6 +252,95 @@ public sealed class NoLiteralMonospaceFontStackTests
     }
 
     /// <summary>
+    /// Every weight the markup asks of a monospace token is drawn by a face of THAT weight.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>A missing weight does not fail — it borrows.</b> Measured by the ScopedEditors repository:
+    /// SemiBold (600) asked of a family with no SemiBold file is drawn with the Bold face and reports
+    /// 700. Nothing throws, so <see cref="EveryBundledFontUri_LaysOutText"/> cannot see it.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>The pairs come from the markup</b>: every element that binds an <c>AppMono*</c> token,
+    /// with the <c>FontWeight</c> it sets (Normal when it sets none), resolved through the token's own
+    /// definition in <c>App.axaml</c>. A new weight in a view is checked the day it is written. The
+    /// control — SemiBold asked of the ligatures family, which ships no such face — must come back as
+    /// another weight, or this probe cannot see a substitution at all.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task EveryWeightTheMarkupAsksOfAMonospaceToken_HasItsOwnFace()
+    {
+        Dictionary<string, string> tokenUris = TokenUris();
+        Assert.IsTrue(tokenUris.ContainsKey(Token), $"App.axaml no longer defines {Token} as a FontFamily element.");
+
+        SortedSet<(string Token, string Weight)> pairs = [];
+        Regex element = new(@"<[A-Za-z][^<>]*?>", RegexOptions.Singleline);
+        foreach (string path in EnumerateAxaml())
+        {
+            string text = Regex.Replace(File.ReadAllText(path), "<!--.*?-->", " ", RegexOptions.Singleline);
+            foreach (Match m in element.Matches(text))
+            {
+                if (Regex.Match(m.Value, @"\{DynamicResource (AppMono\w*FontFamily)\}") is { Success: true } token)
+                {
+                    Match weight = Regex.Match(m.Value, @"FontWeight=""(\w+)""");
+                    pairs.Add((token.Groups[1].Value, weight.Success ? weight.Groups[1].Value : "Normal"));
+                }
+            }
+        }
+
+        // Premise: the scan found the weights it exists for. Without a non-Normal pair it would
+        // pass by checking only the regular face.
+        Assert.IsTrue(pairs.Any(p => p.Weight != "Normal"),
+            $"Found {pairs.Count} token/weight pair(s) and none asks for a weight other than Normal: "
+            + string.Join(", ", pairs) + ". The markup scan stopped matching.");
+
+        string ligatures = tokenUris.GetValueOrDefault("AppMonoLigaturesFontFamily")
+            ?? throw new InvalidOperationException("App.axaml no longer defines AppMonoLigaturesFontFamily; the control needs a family without a SemiBold face.");
+        int control = await ShapedWeightAsync(ligatures, FontWeight.SemiBold);
+        Assert.AreNotEqual((int)FontWeight.SemiBold, control,
+            "SemiBold asked of the ligatures family came back as SemiBold. Either that family now ships a "
+            + "SemiBold face — pick another control weight — or the probe no longer sees substitution.");
+
+        List<string> wrong = [];
+        foreach ((string token, string weightName) in pairs)
+        {
+            if (!tokenUris.TryGetValue(token, out string? uri))
+            {
+                wrong.Add($"{token}: bound by markup but not defined as a FontFamily in App.axaml");
+                continue;
+            }
+            FontWeight asked = Enum.Parse<FontWeight>(weightName);
+            int got = await ShapedWeightAsync(uri, asked);
+            if (got != (int)asked)
+            {
+                wrong.Add($"{token} ({uri}) at {weightName} ({(int)asked}) is drawn with a weight-{got} face");
+            }
+        }
+
+        Assert.AreEqual(0, wrong.Count,
+            "A weight the markup asks for has no face of its own, so another face silently stands in:\n  "
+            + string.Join("\n  ", wrong)
+            + "\n\nShip the missing file in the font package, or stop asking for that weight.");
+    }
+
+    /// <summary><c>&lt;FontFamily x:Key="AppMono…"&gt;uri&lt;/FontFamily&gt;</c> in App.axaml, by key.</summary>
+    private static Dictionary<string, string> TokenUris()
+    {
+        string app = File.ReadAllText(Path.Combine(RepoRoot(), "src", "ClaudeForge", "App.axaml"));
+        return Regex.Matches(app, @"<FontFamily\s+x:Key=""(AppMono\w*)"">\s*([^<]+?)\s*</FontFamily>")
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value, StringComparer.Ordinal);
+    }
+
+    /// <summary>The weight of the face that actually shapes text for <paramref name="uri"/> at <paramref name="weight"/>.</summary>
+    private static Task<int> ShapedWeightAsync(string uri, FontWeight weight) =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly()).Dispatch(() =>
+        {
+            using TextLayout layout = new("abc", new Typeface(new FontFamily(uri), FontStyle.Normal, weight), 12, Brushes.Black);
+            return (int)layout.TextLines[0].TextRuns.OfType<ShapedTextRun>().First().GlyphRun.GlyphTypeface.Weight;
+        }, CancellationToken.None);
+
+    /// <summary>
     /// Lays out a line in <paramref name="uri"/>'s family on the headless session; the error
     /// message if that fails, otherwise <see langword="null"/>.
     /// </summary>

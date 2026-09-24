@@ -292,8 +292,12 @@ The UI also reported `v2026.3.922.0`.
     `EveryBundledFontUri_LaysOutText`: it lays out text in every full `avares://…#Family` URI in
     `src/` on the headless session, behind a nonexistent-family control that must fail. All three
     sites resolve; canaried with `#JetBrains Mona`, which reddens with Avalonia's own message. The
-    remark that said "does not throw" is corrected. ⓘ Weight is NOT asserted: the peer measured that
-    a missing weight silently resolves to the nearest face (600 → 700).
+    remark that said "does not throw" is corrected. ✅ **Weight is asserted too** (maintainer,
+    2026-09-23): a missing weight throws nothing and borrows the nearest face (the peer measured
+    600 → 700), so `EveryWeightTheMarkupAsksOfAMonospaceToken_HasItsOwnFace` takes every token/weight
+    pair the markup binds (Normal, Bold and SemiBold today) and asserts the shaping face's weight,
+    behind a control that must substitute. Canaried: the SemiBold site set to Light reddens with
+    *"drawn with a weight-400 face"*.
 14. ⛔ **Drift 1 is half-REVERSED: at `.924` the two package IDS are `.Avalonia` again** (developer's
     decision, 2026-09-23, before anything was published — AppServices `a853070`, ScopedEditors
     `6525d87`). AQ1004 governs namespaces and a package id is not one. So
@@ -312,6 +316,12 @@ Starts **after `00005` merges**, on its own branch and PR. The converter is
 — the commit to pin and name in each conversion commit. Already piloted on a scratch clone:
 `JsonC.Tests` converted with nothing unmapped, 0 warnings, 73 of 73. ⚠ Step 1 selects the MTP runner
 explicitly: an `xunit.v3` executable otherwise runs xUnit's native runner.
+
+⭐ **Decided, 2026-09-23 — `[assembly: Parallelize(Scope = MethodLevel)]` becomes xUnit's DEFAULT.**
+Six projects set it and xUnit has no method-level mode; the converter reports it UNMAPPED on purpose.
+Each conversion commit deletes the attribute: xUnit then runs classes in parallel and a class's
+methods serially — strictly less parallel than today, so no new interleaving can appear. Assemblies
+serial today (`DoNotParallelize`) stay serial under decision 6 of the plan.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
